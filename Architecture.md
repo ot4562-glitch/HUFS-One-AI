@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.task00-contracts-r6` · 상태: 설계 승인 검토용 · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-30.google-oidc-mail-gate-r8` · 상태: 설계 승인 검토용 (Google OAuth·학교 메일 검증·도메인 가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -9,20 +9,21 @@
 
 ### A00.1 제품 순서와 구현 경계
 
-1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수.
+1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수. **공개 인터넷 배포 시 **Google OAuth 로그인 + 외대 메일 소유 검증 + 베타 승인**을 선행시키는 것은 P0 필수 출시 게이트**이며, 로그인 전 제품 화면·API·개인자료 접근을 차단한다.
 2. **P1 병렬:** 실제 수강원장·Forms 제출 대상인 **최대 4명**의 졸업요건·간단 계획, 공식 근거 기반 제한적 전망. 개발팀 5명과 학생 입력자 4명은 다르다. 다섯 데모 슬롯 중 실제 데이터 없는 한 슬롯은 PENDING 또는 명시적 SYNTHETIC 상태다.
-3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 공식 SSO·학교 DB 연동, 앱스토어·푸시, 완전한 오프라인 동기화. P2 미완료로 P0 통합을 늦추지 않는다.
+3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 학교 DB/학사시스템의 공식 자료 연동, 앱스토어·푸시, 완전한 오프라인 동기화. **외대 계정 인증 게이트는 P2가 아니라 P0 공개 웹 배포의 전제**이며, 학교 공식 SSO는 허가를 전제하지 않으며 P0 범위 밖이다. 이를 대신할 독립 Google OAuth/외대 메일 검증을 P0으로 수행한다. 공식 기관 SSO·학교 DB 통합은 향후 별도 허가 시에만 검토한다.
 4. **NCP 사용은 이 프로젝트의 필수 선택**이다. 공식 공모전에서 NCP가 선택인지와는 별개다. 실제 배포·유료 호출은 계정·자료·예산 승인 후 수행한다. 문서 작성은 제품 구현 또는 리소스 생성 허가가 아니다.
 5. 상단 이름 변경은 실제 로그인 변경이 아닌 **승인된 demoSubject 전환**이다. `S01`~`S05` 다섯 시연 슬롯은 유지하되 실자료는 최대4명만 후보이며 동의가 없으면 공유할 수 없다. private source 및 타인의 실제 기록 수정권은 공유하지 않는다.
 6. 첫 데모는 온라인. 장애는 명시적 캐시·읽기 전용·재시도로 복구한다. 공개 합성 fixture와 모의 AI는 개발·검증 대안이지 NCP live 실적이 아니다.
 7. ‘결정론 AI’라는 모호한 이름 대신 **규칙·검색 기반 판단 엔진 + CLOVA 언어 이해**를 사용한다. 모델 학습을 하지 않았다면 학습형 AI라고 쓰지 않는다. temperature=0도 LLM의 완전한 결정성을 보장하지 않는다.
 8. **팀원 이해가 배포 준비 조건**이다. 에이전트는 소스/테스트 외에 구조 지도·요청 흐름·쉬운 설명·질문 답변을 제공한다. 공식 독립 배점이라고 허위 표기하지 않는다.
+9. **공개 DNS·폐쇄형 서비스:** 사용자가 확보했다고 알린 접속 예정 도메인은 **`외대.온라인.한국`**, 정규 HTTPS origin은 `https://외대.온라인.한국`이다. 인터넷에서 DNS·TLS 연결이 가능하다는 뜻이지 익명으로 제품을 열람할 권한은 아니다. **Google OIDC 로그인 → 외대 메일 현재 소유 확인 → 베타 이용자 승인 → 개별 자료 SharingGrant**를 각각 서버에서 검증한다. 도메인 소유권·DNS·TLS·Google OAuth 클라이언트 설정·외대 메일 인증 발송 경로·실제 배포 완료는 아직 검증되지 않았다. 학교 SSO는 제공받지 않는 전제다. 저장소는 Private을 유지한다.
 
 ### A00.2 권위와 문서 역할
 
 최신 사용자 승인 → 실제 개인정보/기관/서비스 이용조건 → 본 문서 타입·판정·권한·시험 → Proposal의 설명·예시 → 외부 디자인 영감 순이다. 공식 규정이 소프트웨어 가정과 다르면 대상 규칙팩을 검수 상태로 돌린다. 모든 예시는 `SYNTHETIC`이며 실제 5명의 정보로 보지 않는다.
 
-`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다.
+`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
 
 **현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개의 제출자는 사용자 확인에 따라 **김채윤(별명 까마르)·이의상·심민성**이다. 별명 대응은 입력 단계에서 소유자 확인 완료이지만 목적별 동의·실제 Forms 대조는 별도다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
 
@@ -53,9 +54,11 @@
 - NCP: 인터넷 HTTPS에서 이 실행부를 운영하는 장소.
 
 ```text
-React web / future native wrapper
-  -> same-origin HTTPS Fastify API
-     -> authentication + actor/demo-subject authorization
+Untrusted internet -> https://외대.온라인.한국 (planned)
+  -> TLS ingress + deny-by-default edge access gate
+     -> minimal login / Google OAuth redirect+callback + school-mail OTP only before auth
+  -> authenticated React web / same-origin HTTPS Fastify API
+     -> verified Google subject + current HUFS mailbox ownership + beta allowlist + actor/demo-subject authorization
      -> deterministic core (no hidden clock/network)
      -> PostgreSQL / authorized media registry
      -> queue worker -> privacy/policy gate -> CLOVA Studio
@@ -91,6 +94,8 @@ local_only/{real5,source_raw,consents,private_reports,backups}
 ## A02. 다섯 명 전환: UX와 보안 계약
 
 ### A02.1 로그인한 사람과 보는 대상
+
+**인증 주체 조건:** 학교의 공식 SSO/IdP 연동 허가가 없으므로, **별도 Google OAuth/OIDC + 현재 외대 이메일 계정 소유 확인**을 채택한다. Google 토큰의 검증된 `sub`로만 `actorId`를 서버에서 매핑한다. 기관 Google Workspace `hd=hufs.ac.kr`와 `email_verified=true`, 실제 `@hufs.ac.kr` 이메일을 모두 확인할 수 있는 경우 외대 메일 소유의 강한 증거로 인정한다. **학교가 Google Workspace인지 미확인**이며, `hd`가 없거나 Google 계정이 개인 Gmail/외부 이메일이면 **실제 `@hufs.ac.kr` 수신함으로 발송한 단기 일회용 코드(OTP)를 별도로 확인**하고 해당 Google `sub`에 결속한다. `example@hufs.ac.kr`은 형식 예시일 뿐 사용 가능한 계정이나 실제 인증 완료를 뜻하지 않는다. 이메일 접미사·Google `email_verified` 단독·OAuth `hd` 요청 힌트만으로 통과시키지 않는다. 초기 베타 allowlist/역할, 학생별 SharingGrant를 추가로 검사한다. 외대 메일 소유 증명은 **현재 재학/재직 증명이나 학교 공식 서비스 인가가 아니다**. 공식 SSO가 없어도 이 독립 인증 설계는 추진 가능하지만 OAuth/메일 경로 미구현이면 배포는 차단한다.
 
 ```ts
 export type SubjectAlias = 'S01'|'S02'|'S03'|'S04'|'S05';
@@ -676,7 +681,7 @@ rolling-origin: 시점T에 publishedAt≤T이고 당시 확보가능한 source�
 
 ### A11.1 화면 우선순위와 구조
 
-Routes: `/login`, `/today`, `/opportunities`, `/opportunities/:id`, `/notices`, `/experience`, `/experience/:id`, `/graduation`, `/plan`, `/outlook`, `/saved`, `/settings`, `/admin`.
+Routes: `/login`, `/today`, `/opportunities`, `/opportunities/:id`, `/notices`, `/experience`, `/experience/:id`, `/graduation`, `/plan`, `/outlook`, `/saved`, `/settings`, `/admin`. 인터넷 미인증 상태에서는 **최소 로그인 안내/인증 왕복 및 일반 오류 화면 외 모든 route의 HTML·데이터 로딩을 서버/edge에서 차단**한다. 프런트 라우터만으로 비공개 화면을 보호하지 않는다.
 
 하단 5탭은 오늘·기회·경험·졸업·보관함이다. 공지는 홈 고정 알림과 별도 목록에서, 개설 전망은 졸업 탭 안에서 접근한다. 상단 시연 selector는 주요 화면에서 유지한다. `/settings`는 로그인한 actor의 개인 설정과 현재 시연 대상 정보를 나눈다. `/admin` 권한은 이름 선택으로 바뀌지 않는다.
 
@@ -705,7 +710,7 @@ PC 1440에서는 최대폭 1392px·좌우 24px, 주영역과 보조영역은 약
 | AI_REVIEW_REQUIRED | 해석 확인이 필요합니다 | 원문·검수 |
 | AI_SKIPPED_PRIVACY | 이 내용은 외부 AI로 보내지 않았습니다 | 로컬 태그 선택·사람 정리 |
 | BUDGET_PAUSED | AI 새 요청 한도에 도달했습니다 | 코드 기능·검증 캐시 계속 |
-| OFFLINE_READONLY | 연결 끊김·마지막 검증본 보기 | 재연결, 새 쓰기 차단 |
+| OFFLINE_READONLY | 연결 끊김·재인증 필요 | 공개 합성 안내만 표시, 개인 snapshot은 인증 재확인 전 차단 |
 | SHARING_REVOKED | 공유 허용이 변경되었습니다 | 해당 화면 비우기 |
 | SYNTHETIC | 시연용 가상 자료 | 실제 신청 비활성화 |
 
@@ -795,8 +800,10 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 | API | 처리 | 필수 검사 |
 |---|---|---|
-| POST /api/auth/login | 초대 계정 로그인 | 인증 정책·rate·세션 생성 |
-| GET /api/auth/session | actor·role 조회 | 세션 유효성 |
+| POST /api/auth/login | 과거 초대 로그인 초안; 공개 웹에서 미활성화 | Google OIDC/외대 메일 검증 경로로만 후속 계약 PR에서 교체 |
+| GET /api/auth/session | actor·role 조회 | 세션 유효성, 미인증 401 및 최소 응답 |
+| GET /auth/google/start · GET /auth/google/callback (제안) | Google OAuth/OIDC 시작·검증 완료 | provider token signature/iss/aud/exp/nonce/state/PKCE; 경로는 계약 PR에서 확정 |
+| POST /auth/hufs-email/challenge · /verify (제안) | 외대 이메일 현재 수신권 확인 | OTP 제한시간·횟수·재전송 rate limit·Google sub+session 결속·1회 사용; Workspace 검증 시 생략 가능 |
 | POST /api/auth/logout | 세션 폐기 | CSRF·캐시 정리 |
 | GET /api/demo/profiles | 다섯 표시 옵션 | actor·grant·준비상태 |
 | POST /api/demo/contexts | 대상 문맥 발급 | session·target·grant·dataset |
@@ -834,7 +841,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 {task}는 네 작업만 등록한다: `experience-skills`, `opportunity-terms`, `personal-action-brief`, `graduation-explanation`. 초대 계정5개 중 운영 역할을 부여할 수 있지만 admin이 개인 동의를 우회하는 것은 아니다. 시연과 개인 쓰기 경로를 혼용하지 않는다.
 
-세션 쿠키는 HttpOnly/Secure/SameSite, 상태 변경은 Origin·CSRF 검사다. 에이전트는 검증된 인증 부속을 선택하고 암호·세션 토큰을 직접 평문 저장하지 않는다. 운영 domain이 확정되면 쿠키·CORS·로그아웃 계약 시험을 수행한다.
+세션 쿠키는 HttpOnly/Secure/SameSite, 상태 변경은 Origin·CSRF 검사다. 에이전트는 검증된 라이브러리를 사용하며 암호·세션 토큰을 평문 저장하지 않는다. 쿠키는 `외대.온라인.한국`의 **host-only** 범위로 제한하며 wildcard `Domain`·브라우저 저장 토큰·검증 없는 `X-Forwarded-User`를 금지한다. **Google OAuth Authorization Code + PKCE / OIDC**로 `iss=https://accounts.google.com`, JWKS 서명, `aud=등록된 client ID`, `exp`·`iat`, `nonce`·`state`, `email_verified`, 고유 `sub`를 검증하고 식별키는 이메일이 아니라 `sub`다. `hd` 요청 매개변수는 UX 힌트일 뿐 접근통제가 아니며 **실제 ID token의 `hd` 값**을 확인한다. `email_verified=true`이지만 `hd`가 없는 외부 도메인 Google 계정은 외대 메일의 현재 소유 증거가 아니므로 HUFS 메일 OTP가 필수다. 개인 Gmail 로그인도 본인 외대 메일 OTP 및 beta allowlist를 통과한 경우에만 제한 허용한다. OTP는 10분 이내·1회 사용·해시 보관·요청/시도 제한, Google `sub`/server session/메일 주소에 결속하고 새 기기·재인증 또는 최대30일 이내 재검증을 요구한다(기간은 정책 제안). 수신함 접근이 불가능하면 `HUFS_MAIL_PROOF_REQUIRED`로 거부하고 우회 예외를 자동 생성하지 않는다. 만료·철회·비초대 계정·로그아웃은 세션과 개인 캐시를 차단한다. **학교 SSO 미제공만으로는 출시를 막지 않지만 Google/메일 증빙 미구현·보안 부정시험 실패면 `BLOCKED`**다.
 
 오류 응답은 `{code,message,requestId,retryable,contextId?}`다. 401=인증, 403=권한/철회, 409=버전, 422=입력/근거, 429=한도, 503=외부서비스. DB 예외·모델 raw 오류·비밀키·다른 대상의 원문은 응답하지 않는다.
 
@@ -859,17 +866,29 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 ### A14.1 승인된 최소 배치
 
-인터넷 HTTPS hostname → TLS reverse proxy → 정적 React + 같은 origin의 `/api` → Fastify/worker → 비공개 PostgreSQL 및 CLOVA HTTPS 순서다. Object Storage의 공용 합성 이미지와 비공개 백업·자료는 별도 bucket/prefix 권한을 쓴다. 공인 DB5432·Node3000 직접 노출은 금지한다.
+접속 예정 `https://외대.온라인.한국` → DNS/TLS ingress → **익명 기본 거부 인증 게이트** → 권한 있는 React 및 같은 origin `/api` → Fastify/worker → 비공개 PostgreSQL·CLOVA HTTPS 순서다. 별도 인증 redirect/callback과 최소 로그인 shell 이외에는 유효 세션 없이 앱 HTML/JS·API·파일을 내려주지 않는다. Object Storage의 합성/개인 자산도 로그인 전 공개 URL에 배포하지 않으며 백업·개인자료는 비공개 bucket/prefix로 분리한다. 공인 DB5432·Node3000 직접 노출은 금지한다.
 
 VM 2vCPU/8GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
 
-팀원은 HTTPS와 초대 로그인만 사용한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. 유효 TLS와 승인 domain이 없으면 온라인 ready가 아니다. 미승인 도메인 구매나 경고 무시 안내를 하지 않는다.
+팀원은 HTTPS와 **Google OAuth + 외대 메일 소유 검증 + 베타 초대 권한**으로 접속한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. **도메인은 사용자 확보 신고 상태**지만 DNS 레코드·인증서·Google OAuth·학교 메일 OTP 발송·실서비스 가동은 확인되지 않았다. 유효 TLS, Google 인증·메일 검증 및 모든 우회 경로 검사 전에는 온라인 ready가 아니다.
+
+### A14.1a Google OAuth + 외대 이메일 인증과 인터넷 공개 경계 — 출시 전 MUST
+
+- **학교 공식 SSO 불필요:** 학교 IdP/SSO 사용 허가를 받지 못하는 전제로 독립 서비스를 설계한다. `외대.온라인.한국`은 사용자 확보 신고에 따른 *예정 주소*이며 학교 공식 사이트·승인 서비스가 아니다. 학교 비밀번호를 수집하거나 공식 로그인 화면을 복제하지 않는다. DNS 소유·TLS/IDN·HSTS는 개통 전 검증한다.
+- **Google OAuth/OIDC P0:** 팀 소유 Google OAuth 클라이언트에서 Authorization Code+PKCE로 로그인한다. 서버는 Google ID token의 JWKS 서명, `iss`/`aud`/`exp`/`iat`/`nonce`, 요청 `state`/PKCE, `sub`, `email_verified`를 검증한다. 영속 식별자는 이메일이 아닌 `sub`이며, `hd=hufs.ac.kr` 요청 파라미터는 힌트이지 접근 통제가 아니다.[R31][R32]
+- **외대 메일 현재 소유 확인:** (A) 기관이 실제 Google Workspace일 때만 검증된 **토큰 `hd=hufs.ac.kr` + `email_verified=true` + 정확한 `@hufs.ac.kr` 주소**를 인정한다. 학교 Workspace 이용 여부는 미확인. (B) `hd`가 없거나 개인 Gmail/외부 Google 계정이면 **현재 `@hufs.ac.kr` 메일함으로 보내는 일회용 코드(OTP)**를 별도 검증하고 Google `sub`·세션·학교 메일 주소에 결속한다. Gmail 단독이나 `email_verified` 단독으로 통과 금지: Google이 확인한 외부 메일 소유권은 오래됐을 수 있다.[R32]
+- **메일 OTP 조건:** 10분 유효/일회용/서버 해시 보관, 시도 횟수·재발송 제한, 계정 열거 방지, 요청 `state`·CSRF 검증. 이미 다른 Google `sub`에 묶인 학교 메일의 조용한 재결속 금지. 새 기기·이상 접속·정해진 주기(최대30일 제안)마다 재검증하고 인증 불가 시 `HUFS_MAIL_PROOF_REQUIRED`로 거부한다. **학교 메일 소유는 현재 재학·재직의 증명이 아니다.**
+- **베타 allowlist + SharingGrant:** Google 인증과 학교 메일 증명을 모두 통과해도 초대 actor/역할 검증을 통과하지 못하면 403. 각 학생의 원장/경험/시연 projection은 별도 owner/SharingGrant/목적·섹션·만료·철회를 확인한다. 전교생 자동가입 없음.
+- **기본 거부:** 최소 `/login`, Google 시작/callback, 제한된 학교 메일 OTP challenge/verify, 오류/로그아웃만 인증 준비 경로로 허용한다. 나머지 React HTML/JS·`/api/**`·다운로드·media·storage/CDN·WebSocket/SSE·admin/debug·health·다른 호스트/포트·직접 origin IP·staging/preview·서비스워커는 edge와 API 양쪽에서 차단한다. 로그인 shell은 실제 자료·시연 fixture를 포함하지 않는다.
+- **세션·데이터:** Secure/HttpOnly/SameSite/host-only 쿠키, OAuth state/nonce/PKCE, Origin/CSRF, strict CORS, 프록시 인증 헤더 검증, session/allowlist 철회, 개인 데이터 `Cache-Control: no-store`, 공용/오프라인 캐시 금지. 실제 CSV/Forms·키·Google 토큰·OTP·메일/신원 매핑은 정적 앱·로그·CI·공개 이미지에 넣지 않는다.
+- **실패 검증:** Google token 위조/만료·`hd` 힌트 변조·개인 Gmail만 제출·`email_verified`만 true·이메일 미소유·OTP 만료/재사용/다른 sub 도용·미초대 계정·SharingGrant 철회·익명 HTML/API/CDN/스토리지/직접IP/preview/뒤로가기·캐시 우회를 모두 독립 부정시험한다. **하나라도 우회되면 공개 트래픽 닫기**.
+- **승인 분리:** 학교 공식 SSO 허가는 P0 필요 조건에서 제외한다. 하지만 Google OAuth 설정·메일 발송 제공자·실학생 데이터 저장/공유 동의·NCP 사용 및 비용 승인은 별도로 필요하다. Google/학교 메일 검증과 보안 E2E 미구현이면 서비스는 `BLOCKED`다.
 
 ### A14.2 장애·캐시 정책
 
-정상 온라인은 API 버전 봉투 조회·즉시 코드 계산·비동기 AI다. AI 장애 시 검증 캐시와 코드 추천·학업 기능은 유지하고 새 해석의 실패를 표시한다. 네트워크 단절 시 승인된 마지막 snapshot을 읽기 전용으로 보여주고 마지막 확인시각·재시도를 제공한다. 대상 B의 snapshot이 없으면 A의 정보를 B 화면의 대안으로 사용하지 않는다.
+정상 온라인은 API 버전 봉투 조회·즉시 코드 계산·비동기 AI다. AI 장애 시 검증 캐시와 코드 추천·학업 기능은 유지하고 새 해석의 실패를 표시한다. 네트워크 단절 시 인증·세션·공유권한을 재확인할 수 없으면 **실학생 snapshot을 표시하지 않고 차단**하며 재로그인/연결 복구를 안내한다. 별도로 승인된 합성 로컬 시험만 읽기 전용으로 유지할 수 있다. 대상 B의 snapshot이 없으면 A의 정보를 B 화면의 대안으로 사용하지 않는다.
 
-서비스워커를 쓰더라도 정적 앱과 공개 합성 자산만 캐시한다. 개인 API 응답·projection·동의는 공용 HTTP 캐시에서 제외한다. 탭별 메모리를 기본으로 하고 개인자료의 지속 저장은 별도 승인 대상이다. 로그아웃·refresh 이후 다른 사람의 자료가 남지 않는지 시험한다. 완전한 offline write·자동 동기화는 P2다.
+공개 도메인에서 서비스워커는 로그인 shell의 비민감 자산 외 precache를 하지 않는다. 개인 API 응답·projection·동의는 모든 공유 HTTP/CDN/서비스워커 캐시에서 제외하고, 인증 중에도 `no-store`를 사용한다. 탭별 메모리만 임시로 사용하고 로그아웃·세션만료·grant 철회 시 즉시 비운다. 개인자료의 오프라인 지속 저장은 이번 인터넷 서비스 범위에 포함하지 않는다. 로그아웃·refresh·뒤로가기·다른 탭 이후에도 다른 사람의 자료가 남지 않는지 시험한다. 완전한 offline write·자동 동기화는 P2다.
 
 ### A14.3 환경변수 계약
 
@@ -878,6 +897,21 @@ VM 2vCPU/8GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아�
 ```text
 APP_ENV
 PUBLIC_APP_ORIGIN
+AUTH_REQUIRED
+AUTH_PROVIDER_KIND
+GOOGLE_OAUTH_CLIENT_ID
+GOOGLE_OAUTH_CLIENT_SECRET_REF
+GOOGLE_OIDC_ISSUER
+GOOGLE_OAUTH_CALLBACK_URL
+AUTH_ALLOWED_EMAIL_DOMAIN
+AUTH_GOOGLE_WORKSPACE_HD_OPTIONAL
+HUFS_EMAIL_OTP_ENABLED
+HUFS_EMAIL_OTP_SENDER_REF
+HUFS_EMAIL_OTP_TTL_SECONDS
+HUFS_EMAIL_OTP_RATE_LIMIT
+AUTH_BETA_ALLOWLIST_REF
+EDGE_AUTH_REQUIRED
+TRUSTED_PROXY_CIDRS
 API_INTERNAL_PORT
 DATABASE_URL
 SESSION_SECRET_REF
@@ -898,14 +932,14 @@ CONSENT_POLICY_VERSION
 LOG_LEVEL
 ```
 
-브라우저 빌드에는 공개 origin·release ID 외 비밀을 넣지 않는다. `VITE_` 변수에 CLOVA/DB secret을 넣지 않는다. 서버 키는 승인된 비밀 저장 경로에 주입하고 최소권한 계정·회전·폐기 책임자를 지정한다. request body 전체를 로그에 남기지 않는다.
+위 AUTH_*/GOOGLE_*/HUFS_EMAIL_* 이름은 **구현 전 제안 설정 키**이며 Google OAuth·메일 전송·코드 계약 확정 후 고정한다. 예상 값은 canonical origin `https://외대.온라인.한국`, 정확한 허용 도메인 `hufs.ac.kr`, 초기 외부 트래픽은 `AUTH_REQUIRED=true`와 ingress 기본 거부다. 이 문서에 client secret/실제 계정/토큰을 넣지 않는다. 브라우저 빌드에는 공개 origin·release ID 외 비밀을 넣지 않는다. `VITE_` 변수에 CLOVA/DB secret을 넣지 않는다. 서버 키는 승인된 비밀 저장 경로에 주입하고 최소권한 계정·회전·폐기 책임자를 지정한다. request body 전체를 로그에 남기지 않는다.
 
 ### A14.4 배포·복원 런북
 
-1. 사람과 에이전트가 계정·지원금·가격·자료 범위·domain·예산 상한·종료일을 확인한다.
+1. 사람이 사용자 확보 신고 도메인 `외대.온라인.한국`의 소유/DNS 권한·TLS 인증서·Google OAuth client/consent screen·학교 이메일 OTP 발송 경로·계정/초대 정책·지원금·가격·자료 범위·예산 상한·종료일을 각각 확인한다. 공식 SSO 허가는 전제하지 않는다.
 2. 에이전트가 lockfile build, 단위/계약/개인정보 검사, migration dry run, image hash, NCP 설정 diff를 준비한다.
-3. 승인된 pipeline으로 저장소/DB 권한 → TLS/로그인 → 앱/worker → health/readiness → 합성 smoke → grant별 projection smoke를 수행한다.
-4. 익명 가입 없음, 허가되지 않은 대상 접근403, 원문/키 유출 없음, 로그인/공유 철회 반영을 검사한다.
+3. 승인된 pipeline으로 DNS/TLS → ingress 익명 기본 거부 → Google OIDC·학교 메일 OTP/확인된 Workspace 조직·베타 인가 → 내부 DB/Storage 권한 → 앱/worker → 내부 health/readiness → 합성 smoke → grant별 projection smoke를 수행한다.
+4. 익명 HTML/JS·API·스토리지·origin IP·preview 접근 거부, 비외대/위조 token 401, 미초대·무권한 403, 원문/키 유출 없음, 로그인·공유 철회·캐시 정리를 독립 검사한다. **배포 승인 전에는 DNS 연결만으로 화면을 열거나 live 데이터를 제공하지 않는다.**
 5. 실패하면 새 배포 트래픽을 차단하고 직전 앱 hash·호환 migration으로 복구한다. destructive DB rollback은 별도 승인 없이 실행하지 않는다.
 6. private backup 매일1회·7개 보관, 원문 없는 운영로그30일은 초기 정책안이다. 보존 목적·동의에 맞게 승인하고 합성 DB에서 복원시험을 먼저 수행한다.
 7. 종료 시 자료 반환/삭제, storage·VM·IP·모델 키와 비용 종료를 확인한다. 크레딧 잔액을 무기한 운영 승인으로 보지 않는다.
@@ -935,7 +969,8 @@ P@3(rel≥1), nDCG@3, 조건 precision/recall, 중대한 허위 적격 수, unkn
 | 학업 규칙 초안 | 예외·각주/대상누락, 조항→후보 coverage, RulePack 무승인 활성화 차단, 합성 RULE-EXC-01~04 |
 | 전망 | 누락≠미개설, 0/n과 UNKNOWN 구분, IoU≠accuracy, asOf/rolling-origin 누출 방지, 공식 override, 연구학기≠폐강, 가정 분리 |
 | 모바일 | 360/390/768/1440, 확대, 터치, 키보드, 긴 이름·과목, loading/error |
-| NCP | TLS·인증·비공개 DB·키 서버 보관, live/cache, 복원, 비용 중단 |
+| NCP | `외대.온라인.한국` DNS/TLS·Google OAuth·학교 메일 OTP 또는 Workspace 검증·beta allowlist·비공개 DB·키 서버 보관, live/cache, 복원, 비용 중단 |
+| 외대 인증 경계 | 익명 HTML/JS·API·media·storage 거부, Google token/hd 위조·Gmail 단독·메일 OTP 누락/만료/재사용·미초대, direct-IP/preview·CDN/SW 우회, CSRF·logout·권한철회·no-store |
 | 공개 | 실제 CSV·개인사진·원문 규정집·키·private fixture가 Git/ZIP/CI에 없음 |
 
 ### A15.3 성능·비용 목표
@@ -991,12 +1026,12 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-04 UI·모바일 | Claude / A02·A11 | 5탭·상태·viewport·selector. API 교차검토 |
 | TASK-05 경험·보관 | Claude UI·GPT 저장 / A10 | owner·overlay·승인·철회·초안. 보안 검토 |
 | TASK-06 추천 코어 | GPT / A04~05·A15 | 동일 입력·근거·다양성·정답. 독립 평가 |
-| TASK-07 DB·인증 | GPT / A02~03·A13 | 권한·문맥·버전·import. 공격 시험 |
+| TASK-07 DB·인증 | GPT / A02~03·A13·A14.1a | Google OAuth·외대 메일 OTP/Workspace 증빙·초대 인가·세션·권한·문맥·버전·import. 위조/재사용·무권한 시험 |
 | TASK-08 CLOVA | GPT 통합 / A06 | 제품 AI 4작업 policy·safeJSON·quote·enum·quota·합성 live. RulePack 작성 도구는 별도 승인/검수 |
 | TASK-09 통합 흐름 | 통합+Claude / A02·A05·A10~13 | 대상별 원자적 snapshot·계약·E2E |
 | TASK-10 온라인 복구 | GPT network·Claude 상태 / A14~15 | 읽기 전용·stale·late job·재연결. 과거 full-offline 선행 작업 대체 |
-| TASK-11 NCP 필수 | GPT 운영 / A14 | TLS·초대·키·DB·live·비용·복원. 보안 독립검사 |
-| TASK-12 독립 출시검사 | 별도 검증자 / A15·A18 | 실패·미완료 포함 전체 검사와 release 증거 |
+| TASK-11 NCP 필수 | GPT 운영 / A14 | 도메인 DNS/TLS·ingress fail-closed·Google OAuth·학교 메일 인증 경로·직접IP/Storage 차단·키·DB·live·비용·복원 |
+| TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
@@ -1019,9 +1054,9 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | 12/02 | 미확보 실제 자료는 준비 중 또는 합성 표시. 성공 위조 금지 |
 | 12/09 | 같은 공고·다른 화면 → AI 근거 → 추가 학업 → NCP·평가 증거 |
 
-공동 승인 대상: 학생별 팀 공유·이름 표시·녹화, 서비스 약관·학교 자료권한, NCP 계정·domain·지출상한·지원금, 공개 저장소 범위, 전망 근거·합성 배지, 최종 제출. Course Compass 코드·원자료의 실제 이식/재배포는 자료 소유자·학내 이용조건 및 허용 범위를 별도로 확인한다. 에이전트는 선택지·비용·위험·시험을 준비하며 동의·결제를 대신 생성하지 않는다.
+공동 승인 대상: 학생별 팀 공유·이름 표시·녹화, 서비스 약관·학교 자료권한, 사용자 확보 도메인의 실제 DNS/TLS 연결·Google OAuth/외대 이메일 현재 소유 확인·NCP 계정·지출상한·지원금, **인터넷 서비스 접속 공개와 GitHub 저장소 public 전환의 별도 승인**, 전망 근거·합성 배지, 최종 제출. Course Compass 코드·원자료의 실제 이식/재배포는 자료 소유자·학내 이용조건 및 허용 범위를 별도로 확인한다. 에이전트는 선택지·비용·위험·시험을 준비하며 동의·결제를 대신 생성하지 않는다.
 
-문서 완료와 제품 완료는 별개다. release gate는 계약 일치, 필수 시험 통과, 실측 결과표, NCP 실제 경로, 개인정보 경계, 20개 전환쌍, 모바일 상태, 팀 설명 준비, rollback 증거다. 미완료 항목은 정확히 미완료로 보고한다.
+문서 완료와 제품 완료는 별개다. **공개 도메인 오픈 전 release BLOCKER:** Google OIDC 토큰·외대 메일 소유 증명(Workspace `hd` 또는 메일 OTP), 초기 베타 인가, 익명 페이지/API/CDN/스토리지/direct-IP 접근 전면 차단, 인증 후 개인별 SharingGrant, TLS·CSRF·세션/캐시·철회·부정 시험 증거. 하나라도 미확인·실패면 앱 공개 금지다. 그 밖의 release gate는 계약 일치, 필수 시험 통과, 실측 결과표, NCP 실제 경로, 개인정보 경계, 20개 전환쌍, 모바일 상태, 팀 설명 준비, rollback 증거다. 미완료 항목은 정확히 미완료로 보고한다.
 
 ## A19. 레퍼런스 흡수·라이선스·출처 원장
 
@@ -1072,6 +1107,9 @@ OSS 후보는 Radix, TanStack Query, Zod, Papa Parse, Playwright, MSW, Lucide, C
 - [R28] 한국외대 전공과정. https://www.hufs.ac.kr/hufs/11371/subview.do
 - [R29] 서울대 공식 과거 연구년 관련 미개설 안내. https://cse.snu.ac.kr/ko/community/notice/17889
 - [R30] 한국외대 공식 UI 안내서(기존 확인 근거). https://www.hufs.ac.kr/sites/hufs/files/HUFS_UI.pdf
+
+- [R31] Google OpenID Connect: 토큰 `sub`·`hd`와 검증 단계. https://developers.google.com/identity/openid-connect/openid-connect
+- [R32] Google 백엔드 인증: 외부 메일에서 `hd` 없으면 현재 소유권 별도 확인. https://developers.google.com/identity/sign-in/web/backend-auth
 
 ### 기존 상세 설계의 이전 대응
 

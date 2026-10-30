@@ -1,13 +1,13 @@
 # HUFS One AI | 현재 작업 상태
 
-**기준일: 2026-10-30.** TASK-00 공통 TypeScript/Zod 계약과 합성 검증 코드를 로컬에서 구현했다. **실제 학생용 웹·API·CLOVA·NCP·학교 연동은 구현/승인 전**이며, 유료 호출·서비스 배포·개인자료 외부 이전은 별도 승인 대상이다.
+**기준일: 2026-10-30.** TASK-00 공통 TypeScript/Zod 계약과 합성 검증 코드를 로컬에서 구현했다. **실제 학생용 웹·API·CLOVA·NCP·학교 연동은 구현/승인 전**이며, 유료 호출·서비스 배포·개인자료 외부 이전은 별도 승인 대상이다. 사용자 확보 신고 도메인 `외대.온라인.한국`은 독립 서비스의 예정 주소이며, **공식 학교 SSO 미승인을 전제로 Google OAuth + 외대 메일 현재 수신권 증명 + 베타 allowlist**를 P0 출시 설계로 채택했다. DNS/TLS·Google/OTP/배포 구현은 미확인이다.
 
 ## 현재 정본과 독자
 
 | 파일 | 목적 | 상태 |
 | --- | --- | --- |
 | **[Proposal.md](Proposal.md)** | **팀원·심사자용**: HUFSAbility 현안, AI 개인화·졸업 확장, 60초 시연·3주 계획·공식 심사배점·평가 설계 | 개정 완료, 제품 구현 성과 아님 |
-| **[Proposal.pdf](Proposal.pdf)** | Proposal.md의 팀원 공유용 A4 PDF | **9페이지 출력 완료**. 원문 변경 시 재생성 필요 |
+| **[Proposal.pdf](Proposal.pdf)** | Proposal.md의 팀원 공유용 A4 PDF | **Google OAuth/외대 메일 인증 반영 16쪽 출력 완료, Windows 16/16쪽 렌더링·시각 검수**. 원문 변경 시 재생성 필요 |
 | **[Architecture.md](Architecture.md)** | **에이전트 상세 기준**: P0·P1·P2, 24개 TopicCode, 26열 Forms 계약, 타입·API·UI·AI·학사·NCP·TASK-00~17 및 독립검증 | 기존 상세 명세를 보존하고 누락 계약 보완 |
 | **[AGENTS.md](AGENTS.md)** | 안전·협업·권한 가이드 | Proposal/Architecture 역할에 맞춰 안내 갱신 |
 | **[README.md](README.md)** | 두 문서의 독자와 자료·공개 경계에 대한 빠른 진입점 | 개정 완료 |
@@ -23,6 +23,18 @@
 - **네이버클라우드 연계:** 한국외대·NCP의 2026-03-13 MOU에 관한 2026-03-16 네이버 공식 보도를 참조한다. 학생 파일럿의 학교 채택·공식 데이터 연동·비용 승인이 이미 결정된 것은 아니다.
 - **평가 수치:** 공고 25건(사용조건 확인 필요)+합성 예외 15건 = **40건 목표**, 5개 프로필×40건 = 최대 **200개 라벨 목표**. P@3 개선 **+20%p**, 조건 추출 재현율 **90%** 등은 **사전 평가 목표**일 뿐 측정 결과가 아니다.
 
+## 도메인·로그인·공개 웹 준비 상태 (설계 확정 ≠ 운영 완료)
+
+| 항목 | 상태 | 근거·남은 게이트 |
+| --- | --- | --- |
+| 도메인 `외대.온라인.한국` 확보 | **USER_REPORTED** | 2026-10-30 사용자 진술. 관리자 권한·DNS 증거는 별도 확인 |
+| `https://외대.온라인.한국` DNS/TLS/실서비스 | **NOT_VERIFIED / NOT_DEPLOYED** | 인증서·도메인 일치, HTTPS, origin/직접 IP 우회 차단, NCP 연결 미검증 |
+| Google OAuth + 외대 메일 현재 소유 증명 (`example@hufs.ac.kr`은 예시) | **DESIGNED / NOT_IMPLEMENTED** | 실제 Workspace `hd=hufs.ac.kr` 검증 또는 Google 계정과 결속한 외대 메일 OTP; Google OAuth/메일 발송·보안 시험 미완료. 학교 SSO 허가는 출시조건에서 제외 |
+| 초기 베타 계정 인가·학생별 SharingGrant | **NOT_DEPLOYED** | Google `sub` + 학교 메일 검증 후 초대 allowlist/role, owner·공유범위/철회 401·403 E2E 필요 |
+| 인터넷 공개 준비 | **BLOCKED** | DNS/TLS·Google OAuth·외대 이메일 OTP/Workspace 증빙·미인증 HTML/API/CDN·directIP/preview 접근 거부 부정시험 및 개인정보/NCP 승인 전 개통 금지 |
+
+정본: [Architecture.md](Architecture.md) A02·A13·A14.1a·A15·A18, [CLOUD.md](CLOUD.md). GitHub Private 유지와 외부 웹 주소 사용은 별개다.
+
 ## 실제 확보한 자료와 미확정 상태
 
 - Google Forms **구성 완료**. 실제 한국어 질문 **26열**, 응답 예시 **1건** 확인. Forms **4인 통합 내보내기 CSV**와 개별 적용 규칙 검증은 **PENDING**이며 이서연의 응답은 미제출이다. 박준영은 제출 대상이 아니다. 과목 CSV 목표는 4개이며, Private 저장소의 파일 3개는 **김채윤(사용자 확인 제출 별명 `까마르`)·심민성·이의상**의 파일로 소유자 연결이 확인됐다. **이서연 CSV는 아직 확인 전**이다. 실제 Forms 대응·학칙·팀 공유 동의는 별도 검증 대상이다. 형식 확인=학사 판정·공유 동의 완료가 아니다.
@@ -32,10 +44,12 @@
 
 ## 확정 팀 구성과 TASK-00 준비 (2026-10-30 사용자 지시)
 
-- **김채윤:** 추천·공지; GPT/Claude/Gemini. **박준영:** 학업·개설 전망; GPT/Claude, 실제 개인자료 제출 대상 아님. **이의상:** UI·모바일; Claude/Gemini. **이서연:** 팀 결성·기획 리드 + API·CLOVA·NCP; AI 구독 미확인. **심민성:** GPT, 기술 총괄·GitHub 통합·공통 계약/교차 QA 담당.
+- **김채윤:** 추천·공지; GPT/Claude/Gemini. **박준영:** 학업·개설 전망; GPT/Claude, 실학생 CSV 제출 대상 아님. **이의상:** UI·모바일; Claude/Gemini. **이서연:** 팀 결성·기획 리드 + API·CLOVA·NCP; **Gemini 사용(2026-10-30 사용자 확인)**. **심민성:** GPT, 기술 총괄·GitHub 통합·공통 계약/교차 QA 담당.
 - 로컬 `C:\AIProjects\naver_competition`의 `main`은 2026-10-30 원격 커밋 `9930505`까지 fast-forward 동기화했다. TASK-00 코드는 **별도 `chore/task00-contracts-implementation` 브랜치**에서 작성했으며 main 병합 여부는 GitHub PR에서 확인한다. 사용자의 '로컬 전용 내부문서 삭제' 지시에 따라 중복·구식 인수인계 문서 **1개만** 참조 검색 후 삭제. 실제 Forms 예시·과목 CSV 로컬 백업·조사 원자료·retire는 **보호 유지**.
 - **TASK-00 진행 상태:** TypeScript/Zod 공통 계약 패키지 v0.1.0, Node ESM 출력+타입선언, npm 잠금파일, 합성 Golden/Negative fixture 및 4개 자동 소비자 관점 테스트를 구현했다. **로컬 `npm run check`: 계약87/87 + 4트랙 소비 20/20 = 107/107 통과**. Private 학생 자료 미사용. GitHub Actions remote CI/4명 실제 사람 리뷰/최종 main 병합은 별도 확인 대상이다.
 - 실제 학생 Forms/과목자료 통합·동의 확인·졸업 계산·NCP/CLOVA 유료 호출은 **미실행**. 다섯 데모 슬롯 중 현재 실학생 자료 대상은 최대 4명이며 남는 하나는 PENDING 또는 명시적 합성.
+
+**제안서 PDF 재출력 완료:** `Proposal.md`의 독립 Google OAuth + 외대 메일 OTP/Workspace 증빙과 4명 실자료/5슬롯 구분을 반영해 `Proposal.pdf`를 저장소 기존 `reference/export_proposal_pdf.py` 출력 방식으로 **16쪽 생성**했다. Windows PDF 렌더러로 **16/16쪽** 시각 검수했고 마지막 R31/R32 출처와 본문 마감이 같은 페이지에 맞도록 출력기 CSS를 보정했다. 원문 SHA-256 `80c442ff511f40e755ac50919fdc5be349a76646f9b67f3b64b1ffc0f52ac67b`, PDF SHA-256 `b5d3252531d7bb787c7b72eca5d41b6028539678384d607db636c2f06fb773ef`. PDF 출력은 실제 Google 로그인/웹 배포 시험이 아니다.
 
 ## GitHub 반영·Course Compass 선행 보고 검수
 

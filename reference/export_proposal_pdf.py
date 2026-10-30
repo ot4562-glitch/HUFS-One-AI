@@ -86,6 +86,9 @@ pre {font-size:7.7pt;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere
 pre code {padding:0; background:transparent; color:#283d5d;}
 img {max-width:100%;height:auto;break-inside:avoid;}
 table p {margin:0;}
+/* Keep the final evidence table with two additional Google auth references on one page. */
+h2#chapter-20 + table {font-size:7.25pt;line-height:1.28;margin:8px 0 9px;}
+h2#chapter-20 + table th,h2#chapter-20 + table td {padding:4px 5px;}
 """
 
 

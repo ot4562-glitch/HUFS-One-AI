@@ -13,6 +13,7 @@
 | SafeLlmPacket·증거 | A06 | 이서연 → 추천·UI | 네 AI 작업, 안전 입력과 quote ID |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
 | 인증·오류 enum·API v1 | A02·A13 | 이서연 → 모든 팀 | 401/403/409/422/429/503, requestId |
+| **외대 이메일 확인·Google 로그인 공개 접속 게이트 (P0, 미구현)** | A14.1a·A13 | 이서연 API/NCP(Gemini) → 이의상 UI → 심민성 통합/QA | `외대.온라인.한국`, Google OIDC 토큰의 `sub`/`iss`/`aud`/nonce/PKCE, 검증된 Workspace `hd` 또는 외대 메일 OTP, beta allowlist, 익명 HTML/API·directIP/CDN 차단, 401/403·철회 E2E |
 
 ## 구현한 TypeScript/Zod v0.1.0 타입·동작 (A02/A04/A06/A13과 동일 의미)
 
@@ -24,6 +25,8 @@
 - **CLOVA:** 제품 AI 업무는 `experience_skills`, `opportunity_terms`, `personal_action_brief`, `graduation_explanation`의 **네 작업**이다. 구조화 JSON/quote를 실제 자격·학점 검증 대신 사용하지 않으며 개인정보 원본/actor/subject 매핑을 제공자에 보내지 않는다.
 - **API 오류:** 통일된 응답 봉투는 `{code,message,requestId,retryable,contextId?}`. 상태 401(인증), 403(미공유/철회), 409(버전), 422(스키마/근거), 429(한도), 503(서비스 장애). 세부 `code` literal과 Zod 스키마는 실제 계약 PR에서 하나의 정본으로 고정한다.
 - **Intake:** Forms 원본은 **26열 헤더/4인 응답**, 과목 CSV는 동일 4명의 각 6열 파일이다. **사용자가 `까마르=김채윤` 별명 소유자를 직접 확인**했으므로 이 파일은 3번째 제출로 집계한다. 하지만 실명↔가명 매핑은 런타임의 별도 승인 registry에 주입하고 코드/CI에 하드코딩하지 않는다. 아직 이서연 파일/Forms 통합본/동의는 미완료; 원본 학업행은 합성 fixture에 사용 금지.
+
+**변경 영향 — 구현 전:** 현재 v0.1.0 contracts/fixture는 Google OAuth/학교 메일 확인을 구현하지 않는다. 기존 `POST /api/auth/login` 초안은 인터넷 공개용으로 쓰지 않는다. 실제 callback·Google `sub`·OTP challenge/verify·session/401·403·재인증·확인 주기를 별도 **공통 인증 계약 PR**로 정의하고 4개 트랙이 검토한다. Google `email_verified=true`만으로 외대 메일 수신권을 주장하거나, 개인 Gmail만으로 로그인시키지 않는다. 학교 공식 SSO 허가는 필요 조건이 아니지만 Google OAuth+외대 메일 검증 미구현이면 인터넷 배포 BLOCKED.
 
 ## TASK-00 승인 체크리스트 — 합성 fixture만 사용
 

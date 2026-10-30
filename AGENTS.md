@@ -26,9 +26,10 @@
 
 ## 자료·접근·비용
 
-- 공식 운영·학교 데이터 협조·SSO 허가는 확인되지 않았다. 공개 규정의 해석/독립 코드화와 원본 복제·재배포·클라우드/AI 전송을 구분하여 적용범위·이용조건을 확인한다. 개인 기록은 목적별 동의와 제한된 저장이 필요하다. 연구 원본/승인되지 않은 실학생 자료는 Git·공개 CI·정적 번들에서 제외하고 DATA_PERMISSION_GATE.md를 따른다.
+- **사용자 확보 신고 도메인:** `외대.온라인.한국` (예정 origin `https://외대.온라인.한국`). 학교 공식 SSO/IdP 허가는 없을 것으로 예상하여 **독립 Google OAuth + 현재 외대 이메일 소유 확인(검증된 Google Workspace `hd=hufs.ac.kr` 또는 외대 메일 OTP) + 초기 베타 승인**을 P0 보안 게이트로 사용한다. Google `email_verified`/이메일 접미사만으로 통과시키지 않는다. 미인증 화면/API/CDN/storage/직접IP/preview는 기본 차단한다. DNS·TLS·Google OAuth·메일 발송/검증·부정시험은 아직 미구현이며, 모두 완료 전 개통 금지. GitHub Private 유지. 정본 Architecture A14.1a/CLOUD.md.
+- 공식 학교 운영·자료 협조·SSO 허가는 확인되지 않았다. 이 때문에 공식 SSO는 **P0 출시 의존성에서 제외**하고 향후 기관 제휴 시에만 검토한다. Google OAuth 및 외대 메일 OTP는 기관 인증을 사칭하지 않는 독립 서비스 절차다. 개인 기록은 목적별 동의·제한된 저장이 필요하며 연구 원본/승인되지 않은 학생자료는 공개 CI·정적번들에서 제외한다.
 - **Google Forms는 구성 완료.** 실제 응답 CSV 원본을 그대로 읽고, 각 팀원은 본인이 캡처한 **이수완료·현재수강 과목만 6열 CSV**로 작성·검수한다. 학생 식별은 CSV 파일명과 Forms 표시이름을 대조한다. 사용자 예시 1건만 확인됐고 최종 통합 Forms는 박준영을 제외한 실제 제출자 4명을 기준으로 검증한다(이서연 미제출). 입력 계약은 Architecture.md A3.1·§5.2.1과 `templates/real5-intake/`다. 내부 표시이름은 실명 또는 별명을 선택할 수 있으나 로컬 제한 저장한다. 과목별 성적/GPA·석차·전체 학번·원본 성적증명서·로그인정보는 수집하지 않는다. 외부 AI·Google/Drive·NCP·팀검토·발표 공개는 각각 목적별 범위를 안내한다.
-- 온라인은 5명용 HTTPS 초대 계정, 내부 DB 직접 공개 차단, 서버만 AI키, 원자적 quota·예산예약·kill switch. 초기 모델 정책은 사용자5/전역20회·입력1500/출력800토큰 초안이며 실제 모델 완결성과 단가 확인 후 승인한다. 비공개라고 무과금이 되지는 않는다.
+- 온라인은 HTTPS + Google OAuth 검증 + 외대 메일 현재 소유 증명 + 초기 베타 allowlist/role 인가 구조다. 학교 공식 비밀번호를 직접 받지 않으며 익명 앱 HTML/JS·API/CDN/스토리지·직접IP/preview, 내부 DB 직접 공개를 차단한다. 서버만 AI키에 접근, 원자적 quota·예산예약·kill switch. 모델 사용 한도는 가격/정책 확인과 별도 승인 후 적용한다.
 
 ## 문서 관리
 
@@ -38,4 +39,4 @@
 
 - **파일별 지시의 좁은 예외:** 기존 두 과목 CSV 외에 2026-10-30 사용자가 지정한 `csv/이수과목_이의상.csv` 한 파일을 별도 Private PR에 추가한다. 다른 학생 파일·Google Forms 원본·성적은 제외하며, 외부 AI·NCP·공개 배포·타 팀원 실자료 열람은 계속 별도 당사자 동의 및 이용범위 확인 대상이다. docs/DATA_GOVERNANCE.md를 따른다.
 
-프로젝트를 하나의 저장소로 관리하되 `.gitignore`와 `.dockerignore`를 우회하지 않는다. `local_only/`, `templates/real5-intake/*.csv`(실제 사용자 Google Forms 예시 포함), `HUFS_UI.pdf`, 승인되지 않은 실제 학생 자료, 원본/개인 화면, 수집 원문, 로그/DB/키, `retire/`는 로컬 보존 전용이다. 업로드 전 `tools/verify_release_boundary.py`로 추적 후보와 이미 추적된 파일을 검사한다. **초기 Private 저장소 생성·commit·push는 2026-10-30 사용자 최신 지시로 승인됐으며**, 추후 public 전환·실학생 업로드·유료 서비스·릴리스는 별도 승인 대상이다.
+프로젝트를 하나의 저장소로 관리하되 `.gitignore`와 `.dockerignore`를 우회하지 않는다. `local_only/`, `templates/real5-intake/*.csv`(실제 사용자 Google Forms 예시 포함), `HUFS_UI.pdf`, 승인되지 않은 실제 학생 자료, 원본/개인 화면, 수집 원문, 로그/DB/키, `retire/`는 로컬 보존 전용이다. 업로드 전 `tools/verify_release_boundary.py`로 추적 후보와 이미 추적된 파일을 검사한다. **초기 Private 저장소 생성·commit·push는 2026-10-30 사용자 최신 지시로 승인됐으며**, 추후 **GitHub 저장소 public 전환**, 실학생 데이터의 NCP 이전·외부 AI 처리, 유료 서비스 및 실제 도메인 개통은 각각 별도 자료권한·기관/운영 승인과 출시 검증 대상이다. 현재는 공개 웹 **설계 결정**만 갱신한다.
