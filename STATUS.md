@@ -7,7 +7,7 @@
 | 파일 | 목적 | 상태 |
 | --- | --- | --- |
 | **[Proposal.md](Proposal.md)** | **팀원·심사자용**: HUFSAbility 현안, AI 개인화·졸업 확장, 60초 시연·3주 계획·공식 심사배점·평가 설계 | 개정 완료, 제품 구현 성과 아님 |
-| **[Proposal.pdf](Proposal.pdf)** | Proposal.md의 팀원 공유용 A4 PDF | **9페이지 출력 완료**. 원문 변경 시 재생성 필요 |
+| **[Proposal.pdf](Proposal.pdf)** | Proposal.md의 팀원 공유용 A4 PDF | **Google OAuth/외대 메일 인증 반영 16쪽 출력 완료, Windows 16/16쪽 렌더링·시각 검수**. 원문 변경 시 재생성 필요 |
 | **[Architecture.md](Architecture.md)** | **에이전트 상세 기준**: P0·P1·P2, 24개 TopicCode, 26열 Forms 계약, 타입·API·UI·AI·학사·NCP·TASK-00~17 및 독립검증 | 기존 상세 명세를 보존하고 누락 계약 보완 |
 | **[AGENTS.md](AGENTS.md)** | 안전·협업·권한 가이드 | Proposal/Architecture 역할에 맞춰 안내 갱신 |
 | **[README.md](README.md)** | 두 문서의 독자와 자료·공개 경계에 대한 빠른 진입점 | 개정 완료 |
@@ -49,7 +49,7 @@
 - **TASK-00 진행 상태:** TypeScript/Zod 공통 계약 패키지 v0.1.0, Node ESM 출력+타입선언, npm 잠금파일, 합성 Golden/Negative fixture 및 4개 자동 소비자 관점 테스트를 구현했다. **로컬 `npm run check`: 계약87/87 + 4트랙 소비 20/20 = 107/107 통과**. Private 학생 자료 미사용. GitHub Actions remote CI/4명 실제 사람 리뷰/최종 main 병합은 별도 확인 대상이다.
 - 실제 학생 Forms/과목자료 통합·동의 확인·졸업 계산·NCP/CLOVA 유료 호출은 **미실행**. 다섯 데모 슬롯 중 현재 실학생 자료 대상은 최대 4명이며 남는 하나는 PENDING 또는 명시적 합성.
 
-**제안서 재출력:** `Proposal.md`는 공개 도메인·외대 계정 선행 로그인과 4명 실자료/5슬롯 구분을 이번 문서 변경에 맞춰 갱신했지만, **기존 `Proposal.pdf`는 아직 재생성·레이아웃 검증하지 않았다.** 최신 제안 내용으로 외부에 전달하지 말고 PDF 재출력 후 동기화 여부를 확인한다.
+**제안서 PDF 재출력 완료:** `Proposal.md`의 독립 Google OAuth + 외대 메일 OTP/Workspace 증빙과 4명 실자료/5슬롯 구분을 반영해 `Proposal.pdf`를 저장소 기존 `reference/export_proposal_pdf.py` 출력 방식으로 **16쪽 생성**했다. Windows PDF 렌더러로 **16/16쪽** 시각 검수했고 마지막 R31/R32 출처와 본문 마감이 같은 페이지에 맞도록 출력기 CSS를 보정했다. 원문 SHA-256 `80c442ff511f40e755ac50919fdc5be349a76646f9b67f3b64b1ffc0f52ac67b`, PDF SHA-256 `b5d3252531d7bb787c7b72eca5d41b6028539678384d607db636c2f06fb773ef`. PDF 출력은 실제 Google 로그인/웹 배포 시험이 아니다.
 
 ## GitHub 반영·Course Compass 선행 보고 검수
 
