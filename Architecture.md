@@ -24,7 +24,7 @@
 
 `Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약의 경로·명령·schema는 **구현할 규격**이며 현재 실행 가능한 코드 존재를 뜻하지 않는다.
 
-**기존 자료:** Google Forms 구성 완료, 응답 예시 1건·26열 확인. 나머지 네 명과 전체 수강과목·개인별 적용 학칙은 검증 전. 별도 빈 CSV 5종을 재생성하지 않는다. 이수과목 외 정보는 Forms 원본으로 받는다.
+**기존 자료:** Google Forms 구성 완료, 응답 예시 1건·26열 확인. csv/의 두 명 이수과목 CSV(48/39행)는 형태 확인됐고 다른 세 명·공식 학칙/공유 허가는 미검증. **이번 사용자 명시 지시로 csv/ 두 과목 원본만 Private 협업 PR에 제한 포함한다.** 다른 Forms 원본, 학번/성적, 개인자료, 외부 AI/NCP 전송은 별도 승인 대상이며 docs/DATA_GOVERNANCE.md를 따른다. 별도 빈 CSV 5종을 재생성하지 않는다. 이수과목 외 정보는 Forms 원본으로 받는다.
 
 ### A00.3 규범 용어와 증거 상태
 
@@ -65,6 +65,8 @@ React web / future native wrapper
 ```
 
 ### A01.2 선택한 스택과 최소 저장소
+
+실제 빈 디렉터리 골자·에이전트별 소유권·충돌 예방 기준은 docs/WORKSTREAMS.md, docs/CONTRACT_BOUNDARIES.md 및 각 폴더의 AGENTS.md에 고정한다. CODEOWNERS와 PR 템플릿은 통합 담당자 검토를 지원하지만 이 문서만으로 GitHub 보호 기능을 강제하지는 않는다.
 
 React + TypeScript + Vite; Fastify + Node.js LTS; PostgreSQL; 순수 TypeScript `core`; runtime validation Zod; CSV Papa Parse; UI 접근성 부속 Radix; API cache TanStack Query; 테스트 Vitest/Playwright/MSW 후보. 버전과 라이선스는 TASK-00에서 공식 문서/잠금파일로 고정한다. 전역 패키지 설치·대규모 framework 교체는 범위 밖이다.
 

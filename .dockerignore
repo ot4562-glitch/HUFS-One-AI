@@ -44,5 +44,6 @@ __pycache__
 
 # Google Forms and named course CSVs must never enter a build context.
 templates/real5-intake/*.csv
+csv/
 
 reference/import_proposal*.ps1

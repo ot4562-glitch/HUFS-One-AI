@@ -82,5 +82,10 @@ build/
 # Forms response exports and personal course CSVs (including local examples) are private.
 /templates/real5-intake/*.csv
 
+# Private course CSV exception: only the two files approved for this PR.
+/csv/*.csv
+!/csv/이수과목_까마르.csv
+!/csv/이수과목_심민성.csv
+
 # Obsolete one-time import helpers, preserved locally only.
 /reference/import_proposal*.ps1
