@@ -1,37 +1,42 @@
-# HUFS One AI | 공개 접속 도메인·기관 인증·클라우드 경계
+# HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
-정본: [Architecture.md](Architecture.md) A02·A13·**A14.1a**·A15·A18. 이 문서는 운영 요약이며 실제 인프라·DNS·학교 인증을 구성한 기록이 아니다.
+기술 계약 정본: [Architecture.md](Architecture.md) A02·A13·A14.1a·A15·A18. 아래는 **예정 아키텍처**로, DNS·Google OAuth·NCP가 설정/배포됐다는 뜻이 아니다.
 
-## 사용자가 확보한 도메인과 공개 범위
+## 공개 주소와 접근 제한
 
-- **접속 예정 주소:** `https://외대.온라인.한국` (도메인 확보: 2026-10-30 사용자 진술).
-- **인터넷에서는 접속 가능하게 배치할 계획이나 제품은 비공개:** 유효한 **한국외국어대학교 계정**으로 로그인해야 UI·API·자료를 볼 수 있다. `example@hufs.ac.kr`은 형식 예시이며 사용 가능한 계정이 아니다.
-- **미완료:** DNS 및 TLS 검증, NCP 배포, 기관 IdP/SSO 연동 허가·기술 방식, 인증/권한 부정시험. 도메인 확보만으로 웹 가동·학교 공식 서비스·학교 계정 SSO 완료를 주장하지 않는다. **GitHub 저장소는 Private 유지**; 웹 주소 공개와 코드/학생 자료 공개는 다르다.
+- 사용자 확보 신고 접속 주소: `https://외대.온라인.한국`. 실제 DNS/TLS/연결 검증은 미완료.
+- 공개 인터넷 주소를 쓰되 **비로그인 사용자는 서비스 React HTML/JS·API·이미지·파일에 접근하지 못한다.** 최소 로그인 안내·인증 왕복만 허용한다.
+- 학교의 **공식 SSO/IdP 연동 허가를 기대하지 않는다.** 학교 인증 시스템과 연계하지 않고 **Google OAuth 로그인 + 현재 외대 이메일 수신권 확인 + 베타 초대 allowlist**를 별도로 구현한다.
+- 학교가 운영/보증하는 공식 서비스가 아니며 GitHub 저장소는 Private 유지. `example@hufs.ac.kr`은 외대 이메일 **형식 예시**다.
 
-## 필수 인증·인가 흐름
+## Google 로그인과 외대 이메일 검증
 
 ```text
-Internet → 외대.온라인.한국:443 (TLS)
-  → ingress 기본 거부 (미인증은 최소 로그인/IdP 왕복만 허용)
-  → 승인된 한국외대 기관 인증 (실제 제공자·허가 미확정)
-  → 초기 베타 초대/role 확인
-  → React + same-origin Fastify
-  → actor/owner/SharingGrant 검사 → 비공개 PostgreSQL
-  → 승인된 비식별 요청만 worker → CLOVA
+인터넷 → 외대.온라인.한국 HTTPS → 인증 전 기본 거부
+  → Google OAuth/OIDC authorization-code + PKCE (제안)
+  → 서버 검증: 서명/JWKS·iss·aud·exp·nonce·state·sub
+  → 외대 메일 현재 수신권:
+       A. Google Workspace 소속이 확인될 때만 token의 hd=hufs.ac.kr
+          + email_verified=true + 정확한 @hufs.ac.kr 이메일 검증
+       B. 그 외(개인 Gmail 포함) 실제 @hufs.ac.kr 메일함으로 OTP 발송·검증
+  → 승인된 베타 actor allowlist + 역할
+  → 권한 있는 React / same-origin Fastify → owner/SharingGrant 검사
+  → 비공개 PostgreSQL + 승인된 요청만 CLOVA worker
 ```
 
-**보안 원칙:** 이메일 문자열 `@hufs.ac.kr`만 입력해 통과하는 방식을 금지한다. IdP의 서명/발급자/수신자/만료/재전송 방어 및 신뢰된 이메일 확인이 필요하다. 학교 로그인 비밀번호를 서비스가 직접 받지 않는다. 기관 로그인에 성공해도 초기에는 승인된 초대 계정만 이용하며 개인 원본·다른 학생의 시연 projection은 별도 SharingGrant 없이는 열리지 않는다. 기관 IdP 접근 승인이 없다면 공개 도메인에서 앱을 제공하지 않는다.
+Google 토큰의 `email_verified` 또는 요청의 `hd` 힌트 단독으로 **외대 메일 현재 소유 여부를 판단하지 않는다**. `hd`가 없는 비Gmail 외부 이메일은 Google이 현재 메일함의 소유자를 보증하지 않는다. 인증되지 않은 개인 Google 계정만으로 사용 불가. 학교가 실제로 Google Workspace를 쓰는지 미확정이며, 그렇지 않으면 **OTP 이메일 전달 경로가 필수**다. 학교 메일 소유 증명은 재학생 신분 인증과 다르다. 계정별 승인과 수시 권한 철회를 유지한다.
 
-미인증 요청은 HTML/JS 앱 번들뿐 아니라 `/api/**`, 파일/다운로드, 이미지/CDN/스토리지, WebSocket/SSE, 관리자·문서/debug, origin IP·staging/preview·다른 포트도 **서버와 ingress에서 기본 거부**한다. 로그인 안내와 필요한 인증 callback만 최소한 공개한다. 인증 판단은 프런트 라우터, `robots.txt`, UI 숨김에 맡기지 않는다. DB·worker·CLOVA 키는 외부에 직접 노출하지 않는다.
+메일 OTP는 10분·1회·서버 해시·시도/재발송 제한을 제안한다. 학교 메일 주소·Google `sub`·세션에 결속하며 주기/이상 로그인 시 재검증한다. Google OAuth client/consent screen과 OTP 발송자 설정은 별도 이용 조건·비용 검토 대상. 학교 비밀번호는 절대로 받지 않는다.
 
-세션 쿠키는 Secure·HttpOnly·SameSite·host-only, 상태변경은 CSRF/Origin 검증, 신뢰 프록시만 인증헤더 전달, rate/감사·logout/권한철회를 적용한다. 개인 API는 `Cache-Control: no-store`, 공개 CDN/service worker/오프라인 캐시 사용 금지. 접근권한이 재검증되지 않는 네트워크 단절에서는 실학생 내용을 표시하지 않는다. 합성 로컬 테스트는 별도다.
+## 배포 보안과 개인정보
 
-## 학생 자료·AI·비용
+- 로그인 시작/Google callback/검증된 Google 세션의 OTP 경로와 비민감 오류 안내 이외 경로는 **edge + API에서 기본 거부**. 직접 origin IP·staging·preview·CDN/Object Storage·다른 포트·WebSocket/SSE·관리자/API 문서도 점검.
+- TLS, Secure/HttpOnly/SameSite/host-only 쿠키, CSRF/Origin, Google `sub` 식별, rate limit, session/SharingGrant 철회. 개인 응답 `Cache-Control: no-store`; 정적 앱·서비스워커/공용 캐시·로그에 원본 넣지 않음.
+- 실제 과목/Forms 입력자는 최대4명이며 시연 선택 슬롯은5개. **외대 메일 소유 증명과 베타 로그인 자체는 NCP 업로드·CLOVA 전송·타 팀원 데이터 공유 동의가 아니다.** [자료 정책](docs/DATA_GOVERNANCE.md) 우선.
+- 제품 CLOVA는 네 작업만, 서버 비밀키·원자적 예산 상한·kill switch. 클라우드 개통·유료 서비스·실자료 이전은 별도 승인 대상.
 
-실제 Forms/과목 자료의 제출 목표는 4명이며 시연 선택 슬롯은 5개다. 인증된 학교 계정이라는 이유만으로 CSV/Forms를 NCP에 옮기거나 팀원에게 공유할 수 없다. 원본/개인자료·목적별 동의·자료권한은 [DATA_GOVERNANCE.md](docs/DATA_GOVERNANCE.md)와 Architecture A03을 따른다. 디폴트 이미지·DB seed·로그·CI·정적번들·브라우저 공용 캐시에 실학생 자료를 포함하지 않는다.
+## 개통 전 필수 부정시험
 
-제품 CLOVA 작업은 `experience_skills`, `opportunity_terms`, `personal_action_brief`, `graduation_explanation` 네 가지다. 서버만 키에 접근하며 안전 입력·검증 후보·원자적 quota/금액 상한·kill switch를 사용한다. 유료 호출과 서비스 개통은 별도 승인 전 OFF다.
+Google ID token 위조/만료, Gmail 단독, `hd` 요청값 변조, 외대 이메일 미소유, OTP 만료/재사용/다른 Google `sub` 가로채기, 미초대 actor, 동의 철회, 익명 HTML·API·저장소·직접 IP·preview·캐시·로그아웃 후 접근을 모두 막는지 검증한다. DNS/TLS·Google OAuth·OTP 메일 발송·인가·부정 E2E 중 하나라도 미검증/실패면 **인터넷 서비스 배포 BLOCKED**다. 학교 **공식 SSO 허가 부재만으로는 차단하지 않는다**.
 
-## 출시 차단 조건
-
-운영자는 DNS 소유/레코드·TLS/인증서·기관 IdP 허가·실제 테스트 계정·베타 allowlist·NCP 예산·배포 이미지의 자료 경계를 확인한다. 독립 검증자는 익명·위조토큰·타도메인·미초대 외대 계정·동의철회·직접IP·storage/CDN·뒤로가기·오프라인 캐시 우회를 시험한다. **하나라도 실패하거나 IdP 승인 미확인이면 공개 앱 배포 BLOCKED**다. 실제 승인/운영 로그는 학생 신원·토큰을 마스킹해 남긴다.
+검증 근거: [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect) · [Google 서버 로그인 검증](https://developers.google.com/identity/sign-in/web/backend-auth).
