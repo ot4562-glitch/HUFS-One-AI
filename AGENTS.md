@@ -40,3 +40,7 @@
 - **파일별 지시의 좁은 예외:** 기존 두 과목 CSV 외에 2026-10-30 사용자가 지정한 `csv/이수과목_이의상.csv` 한 파일을 별도 Private PR에 추가한다. 다른 학생 파일·Google Forms 원본·성적은 제외하며, 외부 AI·NCP·공개 배포·타 팀원 실자료 열람은 계속 별도 당사자 동의 및 이용범위 확인 대상이다. docs/DATA_GOVERNANCE.md를 따른다.
 
 프로젝트를 하나의 저장소로 관리하되 `.gitignore`와 `.dockerignore`를 우회하지 않는다. `local_only/`, `templates/real5-intake/*.csv`(실제 사용자 Google Forms 예시 포함), `HUFS_UI.pdf`, 승인되지 않은 실제 학생 자료, 원본/개인 화면, 수집 원문, 로그/DB/키, `retire/`는 로컬 보존 전용이다. 업로드 전 `tools/verify_release_boundary.py`로 추적 후보와 이미 추적된 파일을 검사한다. **초기 Private 저장소 생성·commit·push는 2026-10-30 사용자 최신 지시로 승인됐으며**, 추후 **GitHub 저장소 public 전환**, 실학생 데이터의 NCP 이전·외부 AI 처리, 유료 서비스 및 실제 도메인 개통은 각각 별도 자료권한·기관/운영 승인과 출시 검증 대상이다. 현재는 공개 웹 **설계 결정**만 갱신한다.
+
+## 2026-10-31 신뢰형 RAG·멀티모달·Laya 설계 분리
+
+**신규 정본:** `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 NCP Standard-g2 2vCPU·8GB, Laya multilingual 322M CPU(선택 비동기), General OCR + 조건부 HCX-005 Vision, HCX-007, 시간·권한 기반 PostgreSQL RAG/SourceRevision의 새 **설계 계약**이다. 기존 AI 네 작업과 개인정보/인증·CLOVA 정책을 유지한다. 후속 contracts Zod·DB·API 변경은 기술 총괄 심민성 전용 PR과 소비자 리뷰 후에만 병합한다. 검증/요금/권리/CPU RSS/클라우드 크레딧 확인 및 명시적 승인 전에는 모델 다운로드·NCP 생성·유료 호출·개통 금지. 설계 변경과 코드 구현 완료를 혼동하지 않는다.

@@ -36,3 +36,13 @@
 4. 매 PR에서 `ownedPaths`, `input/outputContract`, 합성 fixture, `testsRun/testsFailed/notTested`, `privacyImpact`, rollback과 쉬운 설명을 제출한다.
 
 상세 권한·입력 검증: [DATA_GOVERNANCE.md](DATA_GOVERNANCE.md) · [계약 경계](CONTRACT_BOUNDARIES.md) · [PR 방식](PR_WORKFLOW.md).
+
+## 신뢰형 RAG·이미지 공고·Laya 교차 책임 (2026-10-31 설계)
+
+- **심민성 / 통합:** `SourceRevision`·`SourceSpan(TEXT|IMAGE)`·`VerifiedClaim`·`RetrievalEnvelope`·LayaDecisionAdvice 공통 타입, time-`asOf`/rights guard, release QA·비용 하드킬·공통계약 PR 조정.
+- **이서연 / API·CLOVA·NCP:** Standard-g2 2vCPU·8GB 운영 설계/보안, CPU Laya 프로세스(한국어 처리 판단만), General OCR·HCX-005 Vision·HCX-007 연결, 수집권한 필터·비공개 스토리지·예산 원장·OCR 인덱싱 워커. 실제 모델 다운로드/유료 호출/서버 개통은 승인 전 금지.
+- **김채윤 / 추천·공지:** 유효한 source revision과 APPROVED claim만 사용하고 연장/취소/정정에 따른 개인화 피드·공지 버전 및 캐시 무효화, 미래 자료 누출/구본 활성화 부정시험.
+- **박준영 / 학사:** OCR/이미지로 수집된 학사 규칙의 표·각주·졸업예정학기·적용학번/RulePack 요구사항 독립 검수; LLM 추출을 공식 졸업 확정으로 승격 금지.
+- **이의상 / UI:** 공식 출처 링크·원본 포스터 박스 하이라이트·최종 확인 시각·OCR 오독/UNKNOWN/STALE/REPLAY 배지와 접근·모바일·캐시 철회.
+
+**병합 절차:** 이 **설계 PR은 기존 #15/#16의 공통 타입을 직접 수정하지 않음** → 소비자 교차검토 → 독립 contracts vNext PR → 합성 검증팩 → 비용·계정 권한 승인 후 구현. 세부: [검증형 RAG 계약](TRUSTED_RAG_MEDIA_VERSIONING.md).
