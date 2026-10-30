@@ -1,0 +1,45 @@
+{
+  "name": "@hufs-one/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./identity": {
+      "types": "./dist/identity/index.d.ts",
+      "default": "./dist/identity/index.js"
+    },
+    "./topics": {
+      "types": "./dist/topics/index.d.ts",
+      "default": "./dist/topics/index.js"
+    },
+    "./corpus": {
+      "types": "./dist/corpus/index.d.ts",
+      "default": "./dist/corpus/index.js"
+    },
+    "./academics": {
+      "types": "./dist/academics/index.d.ts",
+      "default": "./dist/academics/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "default": "./dist/ai/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
+    },
+    "./intake": {
+      "types": "./dist/intake/index.d.ts",
+      "default": "./dist/intake/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}

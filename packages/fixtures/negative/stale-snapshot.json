@@ -1,0 +1,95 @@
+{
+  "contextId": "SYN-CTX-STALE",
+  "demoSubjectId": "S01",
+  "datasetMode": "SYNTHETIC",
+  "asOf": "2026-10-30T09:00:00.000Z",
+  "versions": {
+    "profile": "P1",
+    "projection": "PR1",
+    "consent": "C1",
+    "dataset": "D1",
+    "topics": "topics-v1",
+    "rules": "R1",
+    "overlay": "OV1",
+    "rankConfig": "RC1"
+  },
+  "feed": {
+    "asOf": "2026-10-30T09:00:00.000Z",
+    "featured": [
+      {
+        "opportunityId": "SYN-OPP-001",
+        "displayMode": "FEATURED_LARGE",
+        "title": "가상 데이터 체험",
+        "eligibility": "UNKNOWN",
+        "lifecycle": "OPEN",
+        "topics": [
+          "DATA_ANALYTICS"
+        ],
+        "evidenceRefs": [
+          "EV-SYN-OPP-001"
+        ],
+        "score": 50,
+        "dataMode": "SYNTHETIC"
+      },
+      {
+        "opportunityId": "SYN-OPP-002",
+        "displayMode": "FEATURED_LARGE",
+        "title": "가상 통상 활동",
+        "eligibility": "ELIGIBLE",
+        "lifecycle": "OPEN",
+        "topics": [
+          "TRADE_OVERSEAS"
+        ],
+        "evidenceRefs": [
+          "EV-SYN-OPP-002"
+        ],
+        "score": 50,
+        "dataMode": "SYNTHETIC"
+      }
+    ],
+    "compact": [
+      {
+        "opportunityId": "SYN-OPP-003",
+        "displayMode": "COMPACT_LIST",
+        "title": "가상 문화 지원",
+        "eligibility": "UNKNOWN",
+        "lifecycle": "OPEN",
+        "topics": [
+          "CULTURE_TOURISM"
+        ],
+        "evidenceRefs": [
+          "EV-SYN-OPP-003"
+        ],
+        "score": 50,
+        "dataMode": "SYNTHETIC"
+      }
+    ],
+    "hasMore": true,
+    "totalCandidates": 4
+  },
+  "notices": {
+    "asOf": "2026-10-30T09:00:00.000Z",
+    "items": [
+      {
+        "noticeId": "SYN-NOT-001",
+        "title": "가상 학사 확인 안내",
+        "priority": "ACADEMIC_REQUIRED",
+        "appliesTo": "UNKNOWN",
+        "evidenceRefs": [
+          "EV-SYN-NOT-001"
+        ],
+        "verificationState": "CANDIDATE"
+      }
+    ],
+    "pinnedIds": [
+      "SYN-NOT-001"
+    ]
+  },
+  "academics": {
+    "state": "PENDING"
+  },
+  "forecast": {
+    "state": "PENDING"
+  },
+  "aiProvenance": "MOCK"
+}

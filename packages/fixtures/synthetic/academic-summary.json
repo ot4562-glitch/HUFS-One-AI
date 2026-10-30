@@ -1,0 +1,21 @@
+{
+  "state": "NEEDS_REVIEW",
+  "rulePackVersion": "SYN-RULE-1",
+  "asOf": "2026-10-30T09:00:00.000Z",
+  "earnedCreditUnits": 12,
+  "inProgressCreditUnits": 6,
+  "plannedCreditUnits": 0,
+  "deficits": [
+    {
+      "requirementId": "R-1",
+      "missingCreditUnits": 12,
+      "state": "NEEDS_REVIEW",
+      "evidenceRefs": [
+        "SYN-CLAUSE-1"
+      ]
+    }
+  ],
+  "caveats": [
+    "시연용 규칙이며 실제 학칙 아님"
+  ]
+}
