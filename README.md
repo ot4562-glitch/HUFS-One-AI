@@ -7,7 +7,7 @@
 | 문서 | 독자와 역할 | 바꾸어야 할 때 |
 | --- | --- | --- |
 | **[Proposal.md](Proposal.md)** | **팀원·심사자용**: 1쪽 요약, 학교 문제와 실제 근거, 개인화 핵심 기능, 60초 시연, 구현계획, 공식 심사배점·예상 효과의 측정법, 학내 도입안 | 아이디어·기능 우선순위·심사 메시지가 바뀔 때 |
-| **[Proposal.pdf](Proposal.pdf)** | `Proposal.md` 기반 공유·회의용 PDF. **이번 도메인·인증 변경 전 판본이므로 재출력 전에는 최신 제안서로 배포하지 않음** | Proposal.md 변경 반영 후 PDF 재출력 |
+| **[Proposal.pdf](Proposal.pdf)** | **Google OAuth·외대 메일 확인 정책을 반영한 16쪽 A4 제안서 PDF.** `Proposal.md`에서 재생성하고 16/16쪽 렌더링 검수 완료. 실제 서비스 구현 증거는 아님 | 원문 변경 시 [출력기](reference/export_proposal_pdf.py)로 재생성·검수 |
 | **[Architecture.md](Architecture.md)** | **다중 AI 개발·검증 에이전트용**: 공고-관심 공통 분류코드 24개, 실제 Forms 26열 입력 계약, CSV·규칙팩, 화면·API·AI·DB·NCP·동의·시험·TASK-00~17 | 구현 계약·데이터·테스트·에이전트 실행순서가 바뀔 때 |
 | **[AGENTS.md](AGENTS.md)** | 에이전트의 지속 안전·권한 규칙. 최신 지시와 자료 사용·동의 경계가 우선 | 실행·보안 정책이 바뀔 때 |
 | **[STATUS.md](STATUS.md)** | 현재 확인된 사실·미완료·검증 결과 | 실제 수행/검증 직후 |
