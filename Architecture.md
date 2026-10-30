@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.academics-evidence-r4` · 상태: 설계 승인 검토용 · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-30.team-roster-r5` · 상태: 설계 승인 검토용 · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -10,10 +10,10 @@
 ### A00.1 제품 순서와 구현 경계
 
 1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수.
-2. **P1 병렬:** 실제 학생 5명의 졸업학점·필수과목·비학점 확인, 간단한 수강계획, 공식 사건·과거 개설에 근거한 제한적 개설 전망과 가정 비교.
+2. **P1 병렬:** 실제 수강원장·Forms 제출 대상인 **최대 4명**의 졸업요건·간단 계획, 공식 근거 기반 제한적 전망. 개발팀 5명과 학생 입력자 4명은 다르다. 다섯 데모 슬롯 중 실제 데이터 없는 한 슬롯은 PENDING 또는 명시적 SYNTHETIC 상태다.
 3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 공식 SSO·학교 DB 연동, 앱스토어·푸시, 완전한 오프라인 동기화. P2 미완료로 P0 통합을 늦추지 않는다.
 4. **NCP 사용은 이 프로젝트의 필수 선택**이다. 공식 공모전에서 NCP가 선택인지와는 별개다. 실제 배포·유료 호출은 계정·자료·예산 승인 후 수행한다. 문서 작성은 제품 구현 또는 리소스 생성 허가가 아니다.
-5. 상단 이름 변경은 실제 로그인 변경이 아닌 **승인된 demoSubject 전환**이다. 5명 모두 공유 승인된 다섯 데모 프로필을 조회할 수 있다. private source 및 타인의 실제 기록 수정권은 공유하지 않는다.
+5. 상단 이름 변경은 실제 로그인 변경이 아닌 **승인된 demoSubject 전환**이다. `S01`~`S05` 다섯 시연 슬롯은 유지하되 실자료는 최대4명만 후보이며 동의가 없으면 공유할 수 없다. private source 및 타인의 실제 기록 수정권은 공유하지 않는다.
 6. 첫 데모는 온라인. 장애는 명시적 캐시·읽기 전용·재시도로 복구한다. 공개 합성 fixture와 모의 AI는 개발·검증 대안이지 NCP live 실적이 아니다.
 7. ‘결정론 AI’라는 모호한 이름 대신 **규칙·검색 기반 판단 엔진 + CLOVA 언어 이해**를 사용한다. 모델 학습을 하지 않았다면 학습형 AI라고 쓰지 않는다. temperature=0도 LLM의 완전한 결정성을 보장하지 않는다.
 8. **팀원 이해가 배포 준비 조건**이다. 에이전트는 소스/테스트 외에 구조 지도·요청 흐름·쉬운 설명·질문 답변을 제공한다. 공식 독립 배점이라고 허위 표기하지 않는다.
@@ -24,7 +24,7 @@
 
 `Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약의 경로·명령·schema는 **구현할 규격**이며 현재 실행 가능한 코드 존재를 뜻하지 않는다.
 
-**기존 자료:** Google Forms 구성 완료, 응답 예시 1건·26열 확인. csv/의 두 명 이수과목 CSV(48/39행)는 형태 확인됐고 다른 세 명·공식 학칙/공유 허가는 미검증. **이번 사용자 명시 지시로 csv/ 두 과목 원본만 Private 협업 PR에 제한 포함한다.** 다른 Forms 원본, 학번/성적, 개인자료, 외부 AI/NCP 전송은 별도 승인 대상이며 docs/DATA_GOVERNANCE.md를 따른다. 별도 빈 CSV 5종을 재생성하지 않는다. 이수과목 외 정보는 Forms 원본으로 받는다.
+**현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개 중 이번 명단과 이름 일치하는 것은 이의상·심민성 두 개이며 `까마르`는 별칭·소유자 확인 전 **자동 import/시연 매핑 제외**한다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
 
 ### A00.3 규범 용어와 증거 상태
 
@@ -239,6 +239,15 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 `pnpm intake:validate --forms <private.csv> --courses-dir <private-dir>` → `intake:preview` → `intake:apply --expected-version V`. 먼저 actor·대상·목적·헤더hash를 확인하고, 건수·형식·중복·상태·소유자·self-report 합계 차이를 출력한다. 동일 파일hash+학생+importversion은 idempotent. 원장은 원자적으로 commit하고 기존 sourceVersion을 보존한다. 미확정 인정은 해당 계산을 확정값으로 만들지 않는다.
 
 상태: `FORM_RECEIVED → COURSES_RECEIVED → STUDENT_REVIEWED → RULE_MATCHED → INDEPENDENTLY_VERIFIED → SHARING_APPROVED → DEMO_READY`. 부분 준비와 동의는 별개다. 현재 예시 응답 1건만 확인한 것을 전체 DEMO_READY로 세지 않는다.
+
+### A03.4 확정 팀 구성과 4인 실제 자료 매칭 (2026-10-30)
+
+**5인 개발팀:** 심민성=GitHub/공통 계약·기술 통합, 김채윤=추천·공지, 이의상=UI·모바일, 박준영=졸업·전망(개인 원장 제출 제외), 이서연=팀 결성·기획 리드 및 API·CLOVA·NCP. 자세한 구독·편집 소유권은 `docs/WORKSTREAMS.md`가 정본이다.
+
+- **4인 수집 목표:** `Forms 통합 1파일 × 원문 26열 × 4명`과 `1인당 과목 CSV 1파일 × 정확히 6열`(김채윤·이의상·이서연·심민성). 현재 이서연 Forms 미제출; 파일로 확인되지 않은 동료의 응답·과목 제출은 `PENDING`이다. 가명/파일명/Forms 표시이름 연결은 본인 검수와 명시된 alias 승인 후에만 적용한다.
+- **자동 연결 금지:** 명단에 없는 `까마르` 파일을 4명 중 누구의 자료로도 추측하지 않는다. 매핑 오류·동명이인·중복 응답·미동의·미수령은 fail closed로 처리하고, 원본을 수정하거나 다른 프로필의 부족분으로 보충하지 않는다.
+- **5개 시연 슬롯:** `S01`~`S05`는 UI 계약을 위해 유지. 실제 데이터가 없는 다섯째 슬롯은 `PENDING` 또는 데이터 출처가 명시된 `SYNTHETIC`이다. 타인 조회를 위해 `SharingGrant` 목적·허용 섹션·만료·철회·버전이 모두 확인되어야 한다.
+- **통합 검증:** 26개 헤더·중복/alias, 6열 과목 상태/학점/원장 구분, 실제 학생별 독립 근거 RulePack, 본인 보고 총학점과 계산 차이, 파일 hash/idempotent import, consent/revocation을 제한된 로컬 환경에서 검증한다. 개인정보·이름↔S번호 매핑·원본 학업행은 GitHub CI·합성 fixture·외부 AI·로그에 복제하지 않는다.
 
 ## A04. 공통 분류·출처·자료 타입
 
@@ -835,6 +844,17 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 계산 캐시는 profile/projection/grant/consent/transcript/rulePack/plan/experience/source/topic/rank/forecast/prompt/schema/model 중 실제 의존 버전을 갖는다. write에는 expectedVersion을 필수로 두고 409일 때 비교·다시 저장한다. 원장이 바뀌면 학업·전망·연결 공지 결과를 무효화한다. 표시 색이나 카드 정렬 UI 설정만 바뀌면 AI를 호출하지 않는다.
 
+### A13.4 TASK-00 공통 타입 잠금 게이트
+
+**기술 총괄 심민성**은 `packages/contracts`를 소유하고, UI/추천/학업/API 네 소비 트랙이 같은 계약을 사용하도록 조정한다. 이 문서는 **설계 후보**이며 실제 TypeScript/Zod 코드·lockfile·CI·팀원 검토가 아직 완료됐다는 뜻이 아니다. 자세한 체크리스트는 `docs/CONTRACT_BOUNDARIES.md`.
+
+1. **주체·문맥:** `actorId`(서버 인증), `demoSubjectId`(5개 슬롯), `DemoContext`의 `contextId,demoRunId,sessionIdHash,datasetVersion,projectionVersion,sharingGrantVersion,expiresAt`을 하나의 타입 정본으로 고정한다. 프로필 선택은 인증 변경이 아니다.
+2. **원자적 UI/API 출력:** `DemoSnapshot`의 `contextId,demoSubjectId,datasetMode,asOf,versions,feed,notices,academics,forecast,aiProvenance`. `VersionEnvelope`는 A04.3의 `profile,projection,consent,dataset,topics,rules,overlay,rankConfig` 그대로 사용하며 subject/grant/selectionEpoch 불일치는 렌더 금지.
+3. **코어:** 닫힌 TopicCode 24개, 큰 추천 카드 최대3/일반 작은 목록 최대6, `ELIGIBLE|INELIGIBLE|UNKNOWN`과 출처·근거, 공지 적용범위/기한. 학업의 3원장·정수 `creditUnits`·공식 RulePack 승인/UNKNOWN·개설 전망 asOf를 분리한다.
+4. **입력·개인정보:** Forms 26열/실자료 대상4명, 수강 CSV 6열/실자료 대상4명, 동명이인/alias·불일치 차단. `까마르` 파일의 owner 확인 전 자동 통합 금지. 5개 demo 슬롯의 남는 1개는 미공유/합성으로 표현. raw 데이터는 fixture에 넣지 않는다.
+5. **CLOVA·오류:** 네 제품 AI 작업만 허용하고 A06의 안전 packet/검증을 적용한다. API 오류 `{code,message,requestId,retryable,contextId?}`와 HTTP 401/403/409/422/429/503 동작을 통일한다.
+6. **검증/병합:** 합성 정상·미공유·403 철회·409 충돌·422 형식·503 장애 fixture, 5×4 유향 전환·2탭·지연 응답·철회, A08 손계산 9개/예외 누락 4개 등 계약 시험을 진행하고 소비자 4트랙 리뷰를 기록한다. 이후 계약 전용 PR을 **심민성이 최종 병합**한 SHA를 독립 기능 개발의 기준으로 삼는다.
+
 ## A14. NCP 온라인 배치·접속·운영
 
 ### A14.1 승인된 최소 배치
@@ -942,7 +962,7 @@ Claude 기반 에이전트는 UI·UX·모바일·접근성·시각 검수60%, �
 
 ### A16.2 모듈 소유권·병합
 
-통합 담당자만 공통 contracts index·lockfile·공용 설정·migration 순서를 최종 병합한다. UI 담당은 web/features, 기회 담당은 core/opportunities, 학사 담당은 core/academics·forecast, API 담당은 api/modules, 독립 검증자는 tests/evaluation·security를 우선 소유한다. branch/worktree/포트/testDB를 분리하고 같은 파일을 동시에 덮어쓰지 않는다.
+통합 담당자(심민성, 기술 총괄/저장소 소유자)만 공통 contracts index·lockfile·공용 설정·migration 순서를 최종 병합한다. 팀 결성과 기획을 이끈 이서연은 API·CLOVA·NCP 기술 트랙을 책임지며, 확정 팀별 경로·구독 현황은 docs/WORKSTREAMS.md를 따른다. UI 담당은 web/features, 기회 담당은 core/opportunities, 학사 담당은 core/academics·forecast, API 담당은 api/modules, 독립 검증자는 tests/evaluation·security를 우선 소유한다. branch/worktree/포트/testDB를 분리하고 같은 파일을 동시에 덮어쓰지 않는다.
 
 API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실제 backend로 교체한다. 각 인수인계는 scope, ownedPaths, input/outputContract, fixtures, testsRun, testsFailed, notTested, privacyImpact, rollback, **teamExplanation**을 포함한다. 마지막 항목은 기술용어를 줄인 5문장과 요청 흐름 하나다.
 
@@ -964,7 +984,7 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 
 | 작업 | 담당 우선·읽을 절 | 완료 증거·독립 검토 |
 |---|---|---|
-| TASK-00 공통 계약 | 통합·GPT / A00~06·A13 | 24topics·26headers·6columns·문맥·버전·API fixture·lockfile. UI 교차검토 |
+| TASK-00 공통 계약 | 심민성·GPT / A00~06·A13 | 24topics·26headers·6columns·4인 roster/5슬롯·문맥·오류·버전·합성 API fixture·lockfile·4트랙 교차검토 |
 | TASK-01 이수원장 | 학사·GPT / A03·A08 | 고유학점·재수강·중복·9케이스. 독립 계산 |
 | TASK-02 졸업·계획 | 학사·GPT/Claude / A08 | 실제 rule scope·각주/예외 역방향 coverage·독립 검수·미확정·원장 불변. 규정 검토 |
 | TASK-03 학업후보 | 학사+UI / A08~09 | 공식 선수·대체·간단 계획. solver P2 분리 |
