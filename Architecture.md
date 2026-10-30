@@ -865,17 +865,26 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 ### A14.1 승인된 최소 배치
 
-인터넷 HTTPS hostname → TLS reverse proxy → 정적 React + 같은 origin의 `/api` → Fastify/worker → 비공개 PostgreSQL 및 CLOVA HTTPS 순서다. Object Storage의 공용 합성 이미지와 비공개 백업·자료는 별도 bucket/prefix 권한을 쓴다. 공인 DB5432·Node3000 직접 노출은 금지한다.
+접속 예정 `https://외대.온라인.한국` → DNS/TLS ingress → **익명 기본 거부 인증 게이트** → 권한 있는 React 및 같은 origin `/api` → Fastify/worker → 비공개 PostgreSQL·CLOVA HTTPS 순서다. 별도 인증 redirect/callback과 최소 로그인 shell 이외에는 유효 세션 없이 앱 HTML/JS·API·파일을 내려주지 않는다. Object Storage의 합성/개인 자산도 로그인 전 공개 URL에 배포하지 않으며 백업·개인자료는 비공개 bucket/prefix로 분리한다. 공인 DB5432·Node3000 직접 노출은 금지한다.
 
 VM 2vCPU/8GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
 
-팀원은 HTTPS와 초대 로그인만 사용한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. 유효 TLS와 승인 domain이 없으면 온라인 ready가 아니다. 미승인 도메인 구매나 경고 무시 안내를 하지 않는다.
+팀원은 HTTPS와 **검증된 외대 계정 인증 + 베타 초대 권한**으로 접속한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. **도메인은 사용자 확보 신고 상태**지만 DNS 레코드·인증서·IdP 연동·실서비스 가동은 확인되지 않았다. 유효 TLS, 학교 계정 인증 및 모든 우회 경로 검사 전에는 온라인 ready가 아니다.
 
+### A14.1a 외대 계정 인증과 인터넷 공개 경계 — 출시 전 MUST
+
+- **도메인과 대상:** `외대.온라인.한국`은 사용자 확보 신고에 따른 *예정 주소*다. 학교의 공식 `hufs.ac.kr` 서비스나 기관 운영/추천으로 소개하지 않는다. DNS 소유·A/AAAA/CNAME·HTTPS 인증서의 IDN 호스트 일치·정규 origin·갱신·리다이렉트·HSTS를 배포 환경에서 별도로 검증한다. 이 문서는 DNS 설정이나 사이트 개통을 수행하지 않는다.
+- **기관 신원:** 한국외대 소속 계정으로 확인 가능한, 공식 사용 허가를 받은 IdP/OIDC/SAML 등의 인증 방식을 실제 계약과 함께 결정한다. 예시 `example@hufs.ac.kr`의 접미사만 신뢰하거나 아무 Google 계정의 이메일 표시를 인증으로 취급하지 않는다. 공급자가 학교 계정에 대한 암호학적 assertion을 제공하지 못하거나 학교의 사용 허가가 없으면 **배포 중단(`AUTH_PROVIDER_UNVERIFIED`)**. 로그인 폼에 학교 비밀번호를 직접 받거나 학교 로그인 화면을 흉내 내지 않는다.
+- **두 단계 인가:** 유효 학교 계정이어도 초기 베타 actor 등록/초대 승인 없이는 `403`이다. actorId는 검증된 provider 고유 ID(`issuer + subject`)에 서버 매핑한다. 승인된 actor도 각 학생의 원장/경험/시연 데이터는 A02의 owner·`SharingGrant`·scope·만료·철회가 없으면 `403`이다. 전체 HUFS 구성원 자동 가입·실학생 자료 자동 공유는 금지한다.
+- **사전 인증 허용 경로:** 최소 `/login`, IdP 로그인 시작·callback·필수 오류/로그아웃 흐름만 allowlist로 노출한다. 그 밖의 페이지, JS 앱 번들, `/api/**`, 다운로드·업로드·이미지·Object Storage/CDN URL, `/admin`, OpenAPI/debug, websocket/SSE, 서비스워커 precache·manifest, origin IP/다른 hostname·포트, staging/preview는 **서버/ingress에서 기본 거부**한다. 헬스체크는 내부 네트워크/관측 주체에만 제공한다. 검색엔진 `robots.txt`·숨겨진 메뉴·클라이언트 guard는 보안 경계가 아니다. 공개 로그인 shell은 실제 개인/서비스 데이터·관리 기능·시연 fixture를 포함하지 않는다.
+- **세션/브라우저:** TLS 종료 구간과 앱 사이에 인증된 전달경로를 두고, 인증 헤더는 신뢰된 프록시만 주입한다. 쿠키는 Secure/HttpOnly/SameSite/host-only, CSRF·Origin·CORS allowlist, 세션 갱신/폐기·로그아웃/권한철회·rate limit·audit을 검증한다. 개인 응답에는 `Cache-Control: no-store`, CDN/브라우저 공용 캐시 금지; service worker·PWA·오프라인 캐시·에러페이지·SSR·정적 빌드·sourcemap에 인증 후 자료를 복제하지 않는다. public build에 CSV·Forms 원문·비밀키·신원 매핑 없음.
+- **검증 게이트:** 익명·`@hufs.ac.kr` 문자열 조작·다른 이메일 도메인·위조/만료 IdP 토큰·미초대 외대 계정·철회된 공유·직접 API/스토리지/origin IP/preview·로그아웃 뒤 브라우저 뒤로가기·캐시·동시 세션을 부정 시험한다. 권한 우회 1건이라도 발견되면 공개 트래픽을 닫는다. 로그인 성공 로그뿐 아니라 **익명/위조/비권한 요청이 실패한 HTTP 상태·범위·배포 SHA**를 저장한다(실제 이메일·토큰·원문은 기록하지 않음).
+- **승인 분리:** 사용자 도메인 확보 사실 ≠ 학교 IdP 연동 허가 ≠ 클라우드 개통·비용 허가 ≠ CSV/Forms의 NCP 이전·공유·발표 동의. 네 경계를 독립 확인한 후에만 실학생 데이터 경로를 켠다. 미확인 기간에는 서비스 미공개/익명 기본 차단으로 유지한다.
 ### A14.2 장애·캐시 정책
 
-정상 온라인은 API 버전 봉투 조회·즉시 코드 계산·비동기 AI다. AI 장애 시 검증 캐시와 코드 추천·학업 기능은 유지하고 새 해석의 실패를 표시한다. 네트워크 단절 시 승인된 마지막 snapshot을 읽기 전용으로 보여주고 마지막 확인시각·재시도를 제공한다. 대상 B의 snapshot이 없으면 A의 정보를 B 화면의 대안으로 사용하지 않는다.
+정상 온라인은 API 버전 봉투 조회·즉시 코드 계산·비동기 AI다. AI 장애 시 검증 캐시와 코드 추천·학업 기능은 유지하고 새 해석의 실패를 표시한다. 네트워크 단절 시 인증·세션·공유권한을 재확인할 수 없으면 **실학생 snapshot을 표시하지 않고 차단**하며 재로그인/연결 복구를 안내한다. 별도로 승인된 합성 로컬 시험만 읽기 전용으로 유지할 수 있다. 대상 B의 snapshot이 없으면 A의 정보를 B 화면의 대안으로 사용하지 않는다.
 
-서비스워커를 쓰더라도 정적 앱과 공개 합성 자산만 캐시한다. 개인 API 응답·projection·동의는 공용 HTTP 캐시에서 제외한다. 탭별 메모리를 기본으로 하고 개인자료의 지속 저장은 별도 승인 대상이다. 로그아웃·refresh 이후 다른 사람의 자료가 남지 않는지 시험한다. 완전한 offline write·자동 동기화는 P2다.
+공개 도메인에서 서비스워커는 로그인 shell의 비민감 자산 외 precache를 하지 않는다. 개인 API 응답·projection·동의는 모든 공유 HTTP/CDN/서비스워커 캐시에서 제외하고, 인증 중에도 `no-store`를 사용한다. 탭별 메모리만 임시로 사용하고 로그아웃·세션만료·grant 철회 시 즉시 비운다. 개인자료의 오프라인 지속 저장은 이번 인터넷 서비스 범위에 포함하지 않는다. 로그아웃·refresh·뒤로가기·다른 탭 이후에도 다른 사람의 자료가 남지 않는지 시험한다. 완전한 offline write·자동 동기화는 P2다.
 
 ### A14.3 환경변수 계약
 
@@ -884,6 +893,16 @@ VM 2vCPU/8GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아�
 ```text
 APP_ENV
 PUBLIC_APP_ORIGIN
+AUTH_REQUIRED
+AUTH_PROVIDER_KIND
+AUTH_ISSUER_URL
+AUTH_CLIENT_ID
+AUTH_CLIENT_SECRET_REF
+AUTH_CALLBACK_URL
+AUTH_ALLOWED_EMAIL_DOMAIN
+AUTH_BETA_ALLOWLIST_REF
+EDGE_AUTH_REQUIRED
+TRUSTED_PROXY_CIDRS
 API_INTERNAL_PORT
 DATABASE_URL
 SESSION_SECRET_REF
@@ -904,14 +923,14 @@ CONSENT_POLICY_VERSION
 LOG_LEVEL
 ```
 
-브라우저 빌드에는 공개 origin·release ID 외 비밀을 넣지 않는다. `VITE_` 변수에 CLOVA/DB secret을 넣지 않는다. 서버 키는 승인된 비밀 저장 경로에 주입하고 최소권한 계정·회전·폐기 책임자를 지정한다. request body 전체를 로그에 남기지 않는다.
+위 AUTH_* 이름은 **구현 전 제안 설정 키**이며, 기관 IdP·플로우·코드 계약 확정 뒤 고정한다. 예상 값은 canonical origin `https://외대.온라인.한국`, 정확한 허용 도메인 `hufs.ac.kr`, 초기 외부 트래픽은 `AUTH_REQUIRED=true`와 ingress 기본 거부다. 이 문서에 client secret/실제 계정/토큰을 넣지 않는다. 브라우저 빌드에는 공개 origin·release ID 외 비밀을 넣지 않는다. `VITE_` 변수에 CLOVA/DB secret을 넣지 않는다. 서버 키는 승인된 비밀 저장 경로에 주입하고 최소권한 계정·회전·폐기 책임자를 지정한다. request body 전체를 로그에 남기지 않는다.
 
 ### A14.4 배포·복원 런북
 
-1. 사람과 에이전트가 계정·지원금·가격·자료 범위·domain·예산 상한·종료일을 확인한다.
+1. 사람이 사용자 확보 신고 도메인 `외대.온라인.한국`의 소유/DNS 권한·TLS 인증서·기관 IdP 허가·로그인 정책·계정·지원금·가격·자료 범위·예산 상한·종료일을 각각 확인한다.
 2. 에이전트가 lockfile build, 단위/계약/개인정보 검사, migration dry run, image hash, NCP 설정 diff를 준비한다.
-3. 승인된 pipeline으로 저장소/DB 권한 → TLS/로그인 → 앱/worker → health/readiness → 합성 smoke → grant별 projection smoke를 수행한다.
-4. 익명 가입 없음, 허가되지 않은 대상 접근403, 원문/키 유출 없음, 로그인/공유 철회 반영을 검사한다.
+3. 승인된 pipeline으로 DNS/TLS → ingress 익명 기본 거부 → 학교 계정 IdP 검증·베타 인가 → 내부 DB/Storage 권한 → 앱/worker → 내부 health/readiness → 합성 smoke → grant별 projection smoke를 수행한다.
+4. 익명 HTML/JS·API·스토리지·origin IP·preview 접근 거부, 비외대/위조 token 401, 미초대·무권한 403, 원문/키 유출 없음, 로그인·공유 철회·캐시 정리를 독립 검사한다. **배포 승인 전에는 DNS 연결만으로 화면을 열거나 live 데이터를 제공하지 않는다.**
 5. 실패하면 새 배포 트래픽을 차단하고 직전 앱 hash·호환 migration으로 복구한다. destructive DB rollback은 별도 승인 없이 실행하지 않는다.
 6. private backup 매일1회·7개 보관, 원문 없는 운영로그30일은 초기 정책안이다. 보존 목적·동의에 맞게 승인하고 합성 DB에서 복원시험을 먼저 수행한다.
 7. 종료 시 자료 반환/삭제, storage·VM·IP·모델 키와 비용 종료를 확인한다. 크레딧 잔액을 무기한 운영 승인으로 보지 않는다.
