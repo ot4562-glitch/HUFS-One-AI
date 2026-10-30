@@ -25,7 +25,7 @@
 
 ## 현재 자료와 개인정보 경계
 
-Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인됐다. 나머지 네 명의 응답과 아직 확보하지 못한 두 명의 과목표, 학번·전공별 공식 규칙 검수는 아직 완료되지 않았다. **Private PR #1에 두 학생 CSV(48/39행)가 병합됐고, 별도 명시 지시에 따라 추가 한 학생 CSV(28행)를 새 PR로 제안한다. 공유 동의와 공식 학사 검증은 별도다.** 별도 학생 프로필 CSV 템플릿을 만들지 않는다. 수강과목은 학생별 **`학기,학수번호,과목명,학점,이수구분,이수상태` 6열 CSV**를 한 번 검수하며, 사용자는 파일명으로 팀원을 식별한다. 내부/공개 결과는 **S01~S05 가명 코드**로 별도 매핑한다.
+Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인됐다. 실제 제출 대상은 **김채윤·이의상·심민성·이서연 4명**이다(박준영은 CSV/Forms 제출 제외). Forms **26열짜리 통합 CSV 1개**는 아직 완성되지 않았고 이서연은 미제출이다. 수강 CSV 목표는 4개(6열)이며, 현재 3개 파일 중 **이번 명단과 이름이 확인되는 두 개는 심민성·이의상**이다. `까마르` 파일은 소유자·별칭 미확인으로 자동 통합하지 않는다. 학번·전공별 공식 학사 규칙과 공유 동의 검수는 미완료다. **Private PR #1에 두 학생 CSV(48/39행)가 병합됐고, 별도 명시 지시에 따라 추가 한 학생 CSV(28행)를 새 PR로 제안한다. 공유 동의와 공식 학사 검증은 별도다.** 별도 학생 프로필 CSV 템플릿을 만들지 않는다. 수강과목은 학생별 **`학기,학수번호,과목명,학점,이수구분,이수상태` 6열 CSV**를 한 번 검수하며, 사용자는 파일명으로 팀원을 식별한다. 내부/공개 결과는 **S01~S05 가명 코드**로 별도 매핑한다.
 
 **외부 AI 전사 전에는 과목표 외 이름·학번·성적 등이 보이지 않도록 분리하고 별도 동의를 확인**한다. 동의가 없으면 사람이 전사한다. 성적/GPA·전체 학번·사진·원본 성적증명서를 시연 데이터에 수집하지 않는다.
 
@@ -33,8 +33,8 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 
 ## 병렬 에이전트 폴더 골자 (애플리케이션 코드 미작성)
 
-- **5개 책임 트랙:** 통합 ot4562-glitch, UI·모바일(Claude 우선), 추천·공지(GPT 우선), 학업·전망(GPT 우선), API·CLOVA·NCP(GPT 우선). [소유권 표](docs/WORKSTREAMS.md) · [팀원 구조지도](docs/TEAM_GUIDE.md).
-- **공통 계약:** [docs/CONTRACT_BOUNDARIES.md](docs/CONTRACT_BOUNDARIES.md). packages/contracts와 루트 설정·DB migration·lockfile은 팀장이 변경을 조정한다.
+- **확정 5인 분담:** 심민성(GPT, 기술 총괄·TASK-00/통합), 이의상(Claude·Gemini, UI/모바일), 김채윤(GPT·Claude·Gemini, 추천/공지), 박준영(GPT·Claude, 졸업·전망), 이서연(AI 구독 미확인, 팀 결성·기획 리드 + API/CLOVA/NCP). [작업/구독/경계](docs/WORKSTREAMS.md) · [팀원 구조지도](docs/TEAM_GUIDE.md).
+- **TASK-00 공통 계약:** [docs/CONTRACT_BOUNDARIES.md](docs/CONTRACT_BOUNDARIES.md)에서 타입/오류/버전/합성 fixture를 먼저 잠그고, 네 트랙 교차검토를 거쳐 전용 PR을 병합한 후 독립 개발을 시작한다. 심민성이 공유 계약·루트 설정·DB migration·lockfile을 조정한다. 아직 구현·계약 테스트가 완료된 것은 아니다.
 - **독립 브랜치/PR:** [docs/PR_WORKFLOW.md](docs/PR_WORKFLOW.md)와 각 폴더의 AGENTS.md. main은 통합 담당자가 검토 후 병합.
 - **실제 CSV 예외:** 기존 Private PR #1 두 파일과 2026-10-30 사용자 지정 추가 파일 한 개만 한정 포함. [자료 취급·동의 규칙](docs/DATA_GOVERNANCE.md). Google Forms 원본·비밀키·성적·기타 학생자료는 제외하며 컨테이너/AI/CI에서 사용하지 않는다.
 
@@ -43,4 +43,4 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 - 1차 공식 배점: **한국외대 현안 관련성 40 / 독창성 30 / AI 활용 30**. 2차: **구현 30 / 학내 적용 30 / 파급효과 25 / 발표 15**, NCP 실제 활용 최대 +5점. 공식 페이지: https://contest.hufs.ac.kr/
 - 기존 HUFSAbility 근거: [2026-10-29 스냅샷](reference/hufsability/snapshots/2026-10-29/README.md) · [후속 공개자료 색인](reference/hufsability/snapshots/2026-10-29-followup/README.md). 자료 권한: [DATA_PERMISSION_GATE.md](reference/hufsability/DATA_PERMISSION_GATE.md).
 - PDF 재출력: WSL `python3 reference/export_proposal_pdf.py --replace`. [Architecture.md](Architecture.md)의 구현은 채택 후 별도 실행 승인 전까지 계획 단계다.
-- **검증:** `python.exe tools/verify_release_boundary.py`와 기존 출처 검증 도구를 사용한다. Private GitHub 저장소 생성과 안전한 초기 커밋·푸시는 사용자 최신 지시로 승인됐다. Public 전환·두 학생 과목 CSV의 Private PR 포함은 이번 명시 요청으로 제한 허용했고, 기타 실학생 자료·public 전환·서비스 배포는 별도 승인이 필요하다.
+- **검증:** `python.exe tools/verify_release_boundary.py`와 기존 출처 검증 도구를 사용한다. Private GitHub 저장소 생성과 안전한 초기 커밋·푸시는 사용자 최신 지시로 승인됐다. 현재 Private 저장소의 기존 3개 과목 CSV 예외는 **추가 학생 파일/통합 Forms의 GitHub 게시 또는 외부 AI/NCP 전송 허가가 아니다**. 학생별 접근·public 전환·서비스 배포는 별도 동의·승인이 필요하다.
