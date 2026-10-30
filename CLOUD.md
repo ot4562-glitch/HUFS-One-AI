@@ -1,21 +1,37 @@
-# HUFS One AI | 클라우드·AI·자료 경계
+# HUFS One AI | 공개 접속 도메인·기관 인증·클라우드 경계
 
-상세 실행 계약은 [Architecture.md](Architecture.md) A0~A3·§8.4·§10~12·§15다. [Proposal.md](Proposal.md)는 팀/심사용이다. 지금은 문서 단계이며 NCP 자원·키·유료 호출을 생성하지 않는다.
+정본: [Architecture.md](Architecture.md) A02·A13·**A14.1a**·A15·A18. 이 문서는 운영 요약이며 실제 인프라·DNS·학교 인증을 구성한 기록이 아니다.
 
-## 경로와 자료
+## 사용자가 확보한 도메인과 공개 범위
 
-승인된 5인 비공개 웹은 개인 VPN → 내부 HTTPS → 앱 인증 → 소유권/동의 검사 → API·PostgreSQL → 결정론 학사/기회 코어 → 필요한 경우만 서버측 CLOVA 순서다. 기존 소형 VM·사설 DB·비공개 Object Storage 배치 제안을 유지한다.
+- **접속 예정 주소:** `https://외대.온라인.한국` (도메인 확보: 2026-10-30 사용자 진술).
+- **인터넷에서는 접속 가능하게 배치할 계획이나 제품은 비공개:** 유효한 **한국외국어대학교 계정**으로 로그인해야 UI·API·자료를 볼 수 있다. `example@hufs.ac.kr`은 형식 예시이며 사용 가능한 계정이 아니다.
+- **미완료:** DNS 및 TLS 검증, NCP 배포, 기관 IdP/SSO 연동 허가·기술 방식, 인증/권한 부정시험. 도메인 확보만으로 웹 가동·학교 공식 서비스·학교 계정 SSO 완료를 주장하지 않는다. **GitHub 저장소는 Private 유지**; 웹 주소 공개와 코드/학생 자료 공개는 다르다.
 
-주시연 학업 데이터는 실제 5명의 최소 원장과 실제 규칙이다. **로컬 계산 동의, NCP 저장, 외부 AI, 팀 공유, 발표는 별도 목적**이다. 실학생 자료를 기본 seed·Docker image·GitHub·공용 캐시로 옮기지 않는다. 가명화가 공개 허가를 뜻하지 않는다. 목적별 승인이 없는 실제 기록은 전송하지 않으며 합성 공급자와 분리한다.
+## 필수 인증·인가 흐름
 
-## AI 책임
+```text
+Internet → 외대.온라인.한국:443 (TLS)
+  → ingress 기본 거부 (미인증은 최소 로그인/IdP 왕복만 허용)
+  → 승인된 한국외대 기관 인증 (실제 제공자·허가 미확정)
+  → 초기 베타 초대/role 확인
+  → React + same-origin Fastify
+  → actor/owner/SharingGrant 검사 → 비공개 PostgreSQL
+  → 승인된 비식별 요청만 worker → CLOVA
+```
 
-CLOVA 작업은 **네 가지**다. **HUFSAbility 취업·비교과 개인화가 먼저**이며, `experience_skills`로 학생이 제공·승인한 경험 태그를 해석하고, `opportunity_terms`로 공고 조건·기한을 추출한다. 코어는 24개 공통 TopicCode로 관심·직무·태그와 공고의 의미를 대조해 관련 공고를 `FEATURED_LARGE`로 크게, 일반 공고를 `COMPACT_LIST`로 작게 노출한다. `personal_action_brief`는 강조된 기회와 다음 행동을 설명한다. **추가 졸업지원**의 `graduation_explanation`은 공식 규칙 코어의 계산을 쉬운 말로 안내한다. 학점·자격·추천순위의 판정은 코드가 수행한다.
+**보안 원칙:** 이메일 문자열 `@hufs.ac.kr`만 입력해 통과하는 방식을 금지한다. IdP의 서명/발급자/수신자/만료/재전송 방어 및 신뢰된 이메일 확인이 필요하다. 학교 로그인 비밀번호를 서비스가 직접 받지 않는다. 기관 로그인에 성공해도 초기에는 승인된 초대 계정만 이용하며 개인 원본·다른 학생의 시연 projection은 별도 SharingGrant 없이는 열리지 않는다. 기관 IdP 접근 승인이 없다면 공개 도메인에서 앱을 제공하지 않는다.
 
-개인 선택기록·동의·입력버전 → 캐시 → 원자적 quota/금액예약 → job/worker → 출력 검증 → 후보 → 학생 승인 흐름을 유지한다. 초기 사용자5회/전역20회·동시1개, 입력1500/출력800토큰 초안은 실제 지원조건·완결성·비용 확인 후 승인한다. 오류를 감추거나 승인 없이 더 비싼 모델/한도로 확대하지 않는다.
+미인증 요청은 HTML/JS 앱 번들뿐 아니라 `/api/**`, 파일/다운로드, 이미지/CDN/스토리지, WebSocket/SSE, 관리자·문서/debug, origin IP·staging/preview·다른 포트도 **서버와 ingress에서 기본 거부**한다. 로그인 안내와 필요한 인증 callback만 최소한 공개한다. 인증 판단은 프런트 라우터, `robots.txt`, UI 숨김에 맡기지 않는다. DB·worker·CLOVA 키는 외부에 직접 노출하지 않는다.
 
-## 로컬과 운영
+세션 쿠키는 Secure·HttpOnly·SameSite·host-only, 상태변경은 CSRF/Origin 검증, 신뢰 프록시만 인증헤더 전달, rate/감사·logout/권한철회를 적용한다. 개인 API는 `Cache-Control: no-store`, 공개 CDN/service worker/오프라인 캐시 사용 금지. 접근권한이 재검증되지 않는 네트워크 단절에서는 실학생 내용을 표시하지 않는다. 합성 로컬 테스트는 별도다.
 
-`PrivateApiProvider`, 공개 합성용 `OfflineFixtureProvider`, 개인 동의 로컬용 `ConsentedLocalProvider`를 구분한다. 개인 replay·원장·백업은 별도 제한 namespace이며 서비스워커 공용 캐시에 넣지 않는다. reset은 시연 작업 사본의 임시 상태만 복원한다.
+## 학생 자료·AI·비용
 
-배포·백업·복원·VPN/행권한·금액·종료 검증은 담당 에이전트가 수행한다. 실제 계정·결제·전송·공개 결정은 사람이 에이전트와 함께 하며 권한자가 승인한다. 계정별 모델·요금·지원금 지급/만료와 초과청구는 활성화 때 최신 조건을 확인한다. 회의·특강의 미확정 날짜를 실행 근거로 사용하지 않는다.
+실제 Forms/과목 자료의 제출 목표는 4명이며 시연 선택 슬롯은 5개다. 인증된 학교 계정이라는 이유만으로 CSV/Forms를 NCP에 옮기거나 팀원에게 공유할 수 없다. 원본/개인자료·목적별 동의·자료권한은 [DATA_GOVERNANCE.md](docs/DATA_GOVERNANCE.md)와 Architecture A03을 따른다. 디폴트 이미지·DB seed·로그·CI·정적번들·브라우저 공용 캐시에 실학생 자료를 포함하지 않는다.
+
+제품 CLOVA 작업은 `experience_skills`, `opportunity_terms`, `personal_action_brief`, `graduation_explanation` 네 가지다. 서버만 키에 접근하며 안전 입력·검증 후보·원자적 quota/금액 상한·kill switch를 사용한다. 유료 호출과 서비스 개통은 별도 승인 전 OFF다.
+
+## 출시 차단 조건
+
+운영자는 DNS 소유/레코드·TLS/인증서·기관 IdP 허가·실제 테스트 계정·베타 allowlist·NCP 예산·배포 이미지의 자료 경계를 확인한다. 독립 검증자는 익명·위조토큰·타도메인·미초대 외대 계정·동의철회·직접IP·storage/CDN·뒤로가기·오프라인 캐시 우회를 시험한다. **하나라도 실패하거나 IdP 승인 미확인이면 공개 앱 배포 BLOCKED**다. 실제 승인/운영 로그는 학생 신원·토큰을 마스킹해 남긴다.
