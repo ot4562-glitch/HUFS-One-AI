@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.google-oidc-mail-gate-r8` · 상태: 설계 승인 검토용 (도메인·기관 인증은 구현/가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-30.google-oidc-mail-gate-r8` · 상태: 설계 승인 검토용 (Google OAuth·학교 메일 검증·도메인 가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -936,9 +936,9 @@ LOG_LEVEL
 
 ### A14.4 배포·복원 런북
 
-1. 사람이 사용자 확보 신고 도메인 `외대.온라인.한국`의 소유/DNS 권한·TLS 인증서·기관 IdP 허가·로그인 정책·계정·지원금·가격·자료 범위·예산 상한·종료일을 각각 확인한다.
+1. 사람이 사용자 확보 신고 도메인 `외대.온라인.한국`의 소유/DNS 권한·TLS 인증서·Google OAuth client/consent screen·학교 이메일 OTP 발송 경로·계정/초대 정책·지원금·가격·자료 범위·예산 상한·종료일을 각각 확인한다. 공식 SSO 허가는 전제하지 않는다.
 2. 에이전트가 lockfile build, 단위/계약/개인정보 검사, migration dry run, image hash, NCP 설정 diff를 준비한다.
-3. 승인된 pipeline으로 DNS/TLS → ingress 익명 기본 거부 → 학교 계정 IdP 검증·베타 인가 → 내부 DB/Storage 권한 → 앱/worker → 내부 health/readiness → 합성 smoke → grant별 projection smoke를 수행한다.
+3. 승인된 pipeline으로 DNS/TLS → ingress 익명 기본 거부 → Google OIDC·학교 메일 OTP/확인된 Workspace 조직·베타 인가 → 내부 DB/Storage 권한 → 앱/worker → 내부 health/readiness → 합성 smoke → grant별 projection smoke를 수행한다.
 4. 익명 HTML/JS·API·스토리지·origin IP·preview 접근 거부, 비외대/위조 token 401, 미초대·무권한 403, 원문/키 유출 없음, 로그인·공유 철회·캐시 정리를 독립 검사한다. **배포 승인 전에는 DNS 연결만으로 화면을 열거나 live 데이터를 제공하지 않는다.**
 5. 실패하면 새 배포 트래픽을 차단하고 직전 앱 hash·호환 migration으로 복구한다. destructive DB rollback은 별도 승인 없이 실행하지 않는다.
 6. private backup 매일1회·7개 보관, 원문 없는 운영로그30일은 초기 정책안이다. 보존 목적·동의에 맞게 승인하고 합성 DB에서 복원시험을 먼저 수행한다.
@@ -969,8 +969,8 @@ P@3(rel≥1), nDCG@3, 조건 precision/recall, 중대한 허위 적격 수, unkn
 | 학업 규칙 초안 | 예외·각주/대상누락, 조항→후보 coverage, RulePack 무승인 활성화 차단, 합성 RULE-EXC-01~04 |
 | 전망 | 누락≠미개설, 0/n과 UNKNOWN 구분, IoU≠accuracy, asOf/rolling-origin 누출 방지, 공식 override, 연구학기≠폐강, 가정 분리 |
 | 모바일 | 360/390/768/1440, 확대, 터치, 키보드, 긴 이름·과목, loading/error |
-| NCP | `외대.온라인.한국` DNS/TLS 준비·IdP 허가·학교 계정 검증·beta allowlist·비공개 DB·키 서버 보관, live/cache, 복원, 비용 중단 |
-| 외대 인증 경계 | 익명 HTML/JS·API·media·storage 거부, 이메일 위조/외부 도메인/비초대/토큰 변조·만료, direct-IP/preview·CDN/SW 우회, CSRF·logout·권한철회·no-store |
+| NCP | `외대.온라인.한국` DNS/TLS·Google OAuth·학교 메일 OTP 또는 Workspace 검증·beta allowlist·비공개 DB·키 서버 보관, live/cache, 복원, 비용 중단 |
+| 외대 인증 경계 | 익명 HTML/JS·API·media·storage 거부, Google token/hd 위조·Gmail 단독·메일 OTP 누락/만료/재사용·미초대, direct-IP/preview·CDN/SW 우회, CSRF·logout·권한철회·no-store |
 | 공개 | 실제 CSV·개인사진·원문 규정집·키·private fixture가 Git/ZIP/CI에 없음 |
 
 ### A15.3 성능·비용 목표
@@ -1026,11 +1026,11 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-04 UI·모바일 | Claude / A02·A11 | 5탭·상태·viewport·selector. API 교차검토 |
 | TASK-05 경험·보관 | Claude UI·GPT 저장 / A10 | owner·overlay·승인·철회·초안. 보안 검토 |
 | TASK-06 추천 코어 | GPT / A04~05·A15 | 동일 입력·근거·다양성·정답. 독립 평가 |
-| TASK-07 DB·인증 | GPT / A02~03·A13·A14.1a | 외대 IdP 확인·초대 인가·세션·권한·문맥·버전·import. 위조/만료·무권한 공격 시험 |
+| TASK-07 DB·인증 | GPT / A02~03·A13·A14.1a | Google OAuth·외대 메일 OTP/Workspace 증빙·초대 인가·세션·권한·문맥·버전·import. 위조/재사용·무권한 시험 |
 | TASK-08 CLOVA | GPT 통합 / A06 | 제품 AI 4작업 policy·safeJSON·quote·enum·quota·합성 live. RulePack 작성 도구는 별도 승인/검수 |
 | TASK-09 통합 흐름 | 통합+Claude / A02·A05·A10~13 | 대상별 원자적 snapshot·계약·E2E |
 | TASK-10 온라인 복구 | GPT network·Claude 상태 / A14~15 | 읽기 전용·stale·late job·재연결. 과거 full-offline 선행 작업 대체 |
-| TASK-11 NCP 필수 | GPT 운영 / A14 | 도메인 DNS/TLS·ingress fail-closed·학교 인증·직접IP/Storage 차단·키·DB·live·비용·복원. 보안 독립검사 |
+| TASK-11 NCP 필수 | GPT 운영 / A14 | 도메인 DNS/TLS·ingress fail-closed·Google OAuth·학교 메일 인증 경로·직접IP/Storage 차단·키·DB·live·비용·복원 |
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
@@ -1054,9 +1054,9 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | 12/02 | 미확보 실제 자료는 준비 중 또는 합성 표시. 성공 위조 금지 |
 | 12/09 | 같은 공고·다른 화면 → AI 근거 → 추가 학업 → NCP·평가 증거 |
 
-공동 승인 대상: 학생별 팀 공유·이름 표시·녹화, 서비스 약관·학교 자료권한, 사용자 확보 도메인의 실제 DNS/TLS 연결·학교 IdP/SSO 사용 허가·`hufs.ac.kr` 계정 인증·NCP 계정·지출상한·지원금, **인터넷 서비스 접속 공개와 GitHub 저장소 public 전환의 별도 승인**, 전망 근거·합성 배지, 최종 제출. Course Compass 코드·원자료의 실제 이식/재배포는 자료 소유자·학내 이용조건 및 허용 범위를 별도로 확인한다. 에이전트는 선택지·비용·위험·시험을 준비하며 동의·결제를 대신 생성하지 않는다.
+공동 승인 대상: 학생별 팀 공유·이름 표시·녹화, 서비스 약관·학교 자료권한, 사용자 확보 도메인의 실제 DNS/TLS 연결·Google OAuth/외대 이메일 현재 소유 확인·NCP 계정·지출상한·지원금, **인터넷 서비스 접속 공개와 GitHub 저장소 public 전환의 별도 승인**, 전망 근거·합성 배지, 최종 제출. Course Compass 코드·원자료의 실제 이식/재배포는 자료 소유자·학내 이용조건 및 허용 범위를 별도로 확인한다. 에이전트는 선택지·비용·위험·시험을 준비하며 동의·결제를 대신 생성하지 않는다.
 
-문서 완료와 제품 완료는 별개다. **공개 도메인 오픈 전 release BLOCKER:** 유효한 학교 계정 인증 제공자/허가, `hufs.ac.kr` 소속 신원 검증, 초기 베타 인가, 익명 페이지/API/CDN/스토리지/direct-IP 접근 전면 차단, 인증 후 개인별 SharingGrant, TLS·CSRF·세션/캐시·철회·부정 시험 증거. 하나라도 미확인·실패면 앱 공개 금지다. 그 밖의 release gate는 계약 일치, 필수 시험 통과, 실측 결과표, NCP 실제 경로, 개인정보 경계, 20개 전환쌍, 모바일 상태, 팀 설명 준비, rollback 증거다. 미완료 항목은 정확히 미완료로 보고한다.
+문서 완료와 제품 완료는 별개다. **공개 도메인 오픈 전 release BLOCKER:** Google OIDC 토큰·외대 메일 소유 증명(Workspace `hd` 또는 메일 OTP), 초기 베타 인가, 익명 페이지/API/CDN/스토리지/direct-IP 접근 전면 차단, 인증 후 개인별 SharingGrant, TLS·CSRF·세션/캐시·철회·부정 시험 증거. 하나라도 미확인·실패면 앱 공개 금지다. 그 밖의 release gate는 계약 일치, 필수 시험 통과, 실측 결과표, NCP 실제 경로, 개인정보 경계, 20개 전환쌍, 모바일 상태, 팀 설명 준비, rollback 증거다. 미완료 항목은 정확히 미완료로 보고한다.
 
 ## A19. 레퍼런스 흡수·라이선스·출처 원장
 
