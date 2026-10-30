@@ -1,0 +1,26 @@
+{
+  "version": "SYN-RULE-1",
+  "scope": {
+    "campus": "가상 캠퍼스",
+    "admissionYear": 2025,
+    "majorTrack": "가상 전공"
+  },
+  "sourceDocumentVersion": "synthetic-v1",
+  "state": "APPROVED",
+  "requirements": [
+    {
+      "id": "R-1",
+      "kind": "CREDIT_TOTAL",
+      "requiredCreditUnits": 24,
+      "sourceClauseIds": [
+        "SYN-CLAUSE-1"
+      ],
+      "exceptionClauseIds": [
+        "SYN-CLAUSE-1-EXC"
+      ],
+      "exceptionCoverageComplete": true
+    }
+  ],
+  "approvedBy": "synthetic-reviewer-A",
+  "independentlyCheckedBy": "synthetic-reviewer-B"
+}

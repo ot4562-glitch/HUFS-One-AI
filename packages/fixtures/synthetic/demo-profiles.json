@@ -1,0 +1,51 @@
+{
+  "profiles": [
+    {
+      "demoSubjectId": "S01",
+      "displayLabel": "가상 대상 1",
+      "dataMode": "SYNTHETIC",
+      "readiness": "READY",
+      "allowedSections": [
+        "FEED",
+        "NOTICES"
+      ]
+    },
+    {
+      "demoSubjectId": "S02",
+      "displayLabel": "가상 대상 2",
+      "dataMode": "SYNTHETIC",
+      "readiness": "READY",
+      "allowedSections": [
+        "FEED",
+        "NOTICES"
+      ]
+    },
+    {
+      "demoSubjectId": "S03",
+      "displayLabel": "가상 대상 3",
+      "dataMode": "SYNTHETIC",
+      "readiness": "READY",
+      "allowedSections": [
+        "FEED",
+        "NOTICES"
+      ]
+    },
+    {
+      "demoSubjectId": "S04",
+      "displayLabel": "가상 대상 4",
+      "dataMode": "SYNTHETIC",
+      "readiness": "READY",
+      "allowedSections": [
+        "FEED",
+        "NOTICES"
+      ]
+    },
+    {
+      "demoSubjectId": "S05",
+      "displayLabel": "가상 대상 5",
+      "dataMode": "SYNTHETIC",
+      "readiness": "PENDING",
+      "allowedSections": []
+    }
+  ]
+}

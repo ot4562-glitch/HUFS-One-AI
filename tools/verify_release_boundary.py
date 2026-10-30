@@ -57,8 +57,9 @@ check('no_old_palette_or_fixed_success',all(x not in p for x in ['#3558F0','#7C5
 check('official_rgb_hex_palette',all(x in p for x in ['#146E7A','#DADAD3','#002D56','#8D7150','#9D9FA2']))
 check('team_first_and_dev_spec_split', '팀원용 제안' in team and '## A01.' in p and '## A17.' in p)
 check('screenshot_bounded_observation','로그인 첫 화면 한 장' in team and '전체 시스템에 추천 기능이 없다는 뜻은 아니다' in team)
-intake=json.loads((ROOT/'local_only/real5/intake_status.json').read_text(encoding='utf-8'))
-check('five_pending_no_fabricated_transcripts',len(intake['records'])==5 and all(x['transcript']=='NOT_RECEIVED' and x['consent']=='PENDING' for x in intake['records']))
+# Private intake is a separate four-person, consent-gated workflow. The publication
+# audit must never require or parse local personal status/raw records.
+check('no_private_intake_in_git_candidates',not any(x.startswith(('local_only/','templates/real5-intake/')) for x in candidates))
 # Existing relative links must work locally, including ignored research material.
 active_docs=['Proposal.md','Architecture.md','README.md','AGENTS.md','PROJECT.md','REPORT.md','CLOUD.md','TEAM_SURVEY.md','APPLICATION.md','STATUS.md','reference/hufsability/DATA_PERMISSION_GATE.md']
 for name in active_docs:

@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.team-roster-r5` · 상태: 설계 승인 검토용 · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-30.task00-contracts-r6` · 상태: 설계 승인 검토용 · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -22,9 +22,9 @@
 
 최신 사용자 승인 → 실제 개인정보/기관/서비스 이용조건 → 본 문서 타입·판정·권한·시험 → Proposal의 설명·예시 → 외부 디자인 영감 순이다. 공식 규정이 소프트웨어 가정과 다르면 대상 규칙팩을 검수 상태로 돌린다. 모든 예시는 `SYNTHETIC`이며 실제 5명의 정보로 보지 않는다.
 
-`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약의 경로·명령·schema는 **구현할 규격**이며 현재 실행 가능한 코드 존재를 뜻하지 않는다.
+`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다.
 
-**현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개 중 이번 명단과 이름 일치하는 것은 이의상·심민성 두 개이며 `까마르`는 별칭·소유자 확인 전 **자동 import/시연 매핑 제외**한다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
+**현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개의 제출자는 사용자 확인에 따라 **김채윤(별명 까마르)·이의상·심민성**이다. 별명 대응은 입력 단계에서 소유자 확인 완료이지만 목적별 동의·실제 Forms 대조는 별도다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
 
 ### A00.3 규범 용어와 증거 상태
 
@@ -236,7 +236,7 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 
 ### A03.3 import 계약
 
-`pnpm intake:validate --forms <private.csv> --courses-dir <private-dir>` → `intake:preview` → `intake:apply --expected-version V`. 먼저 actor·대상·목적·헤더hash를 확인하고, 건수·형식·중복·상태·소유자·self-report 합계 차이를 출력한다. 동일 파일hash+학생+importversion은 idempotent. 원장은 원자적으로 commit하고 기존 sourceVersion을 보존한다. 미확정 인정은 해당 계산을 확정값으로 만들지 않는다.
+**현재 구현:** `@hufs-one/contracts`의 `validateApprovedIntakeBundle` / `validateFormsCsv` / `validateCourseCsv`는 제한된 로컬 호출자가 전달한 원문을 **순수 함수로 검증**한다. 실제 사람 이름↔불투명 subject key·파일명 binding은 승인된 외부 registry로만 주입한다. `intake:preview`/`intake:apply --expected-version V`와 DB 트랜잭션·원본 hash 보존·self-report 일치 검사는 **TASK-07 후속 미구현**이며 구현된 CLI로 오인하지 않는다. 향후에는 actor·대상·목적·헤더hash를 확인하고 건수·중복·원장/합계 차이를 제한된 출력만으로 대조한다. 동일 파일hash+학생+importversion은 idempotent. 원장은 원자적으로 commit하고 기존 sourceVersion을 보존한다. 미확정 인정은 해당 계산을 확정값으로 만들지 않는다.
 
 상태: `FORM_RECEIVED → COURSES_RECEIVED → STUDENT_REVIEWED → RULE_MATCHED → INDEPENDENTLY_VERIFIED → SHARING_APPROVED → DEMO_READY`. 부분 준비와 동의는 별개다. 현재 예시 응답 1건만 확인한 것을 전체 DEMO_READY로 세지 않는다.
 
@@ -245,7 +245,7 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 **5인 개발팀:** 심민성=GitHub/공통 계약·기술 통합, 김채윤=추천·공지, 이의상=UI·모바일, 박준영=졸업·전망(개인 원장 제출 제외), 이서연=팀 결성·기획 리드 및 API·CLOVA·NCP. 자세한 구독·편집 소유권은 `docs/WORKSTREAMS.md`가 정본이다.
 
 - **4인 수집 목표:** `Forms 통합 1파일 × 원문 26열 × 4명`과 `1인당 과목 CSV 1파일 × 정확히 6열`(김채윤·이의상·이서연·심민성). 현재 이서연 Forms 미제출; 파일로 확인되지 않은 동료의 응답·과목 제출은 `PENDING`이다. 가명/파일명/Forms 표시이름 연결은 본인 검수와 명시된 alias 승인 후에만 적용한다.
-- **자동 연결 금지:** 명단에 없는 `까마르` 파일을 4명 중 누구의 자료로도 추측하지 않는다. 매핑 오류·동명이인·중복 응답·미동의·미수령은 fail closed로 처리하고, 원본을 수정하거나 다른 프로필의 부족분으로 보충하지 않는다.
+- **검증된 별명 매핑:** 요청자가 `이수과목_까마르.csv`가 **김채윤 제출물**이라고 직접 확인했다. 유효한 파일 제출은 **3/4명**, 이서연은 미수령이다. 실제 학생명 대응을 소스코드나 synthetic fixture에 넣지 말고 제한된 import registry에서만 명시 주입한다. 별명 매핑 오류·동명이인·중복 응답·미동의·미수령은 fail closed로 처리하고, 동의나 학점 판정을 매핑 하나로 확정하지 않는다.
 - **5개 시연 슬롯:** `S01`~`S05`는 UI 계약을 위해 유지. 실제 데이터가 없는 다섯째 슬롯은 `PENDING` 또는 데이터 출처가 명시된 `SYNTHETIC`이다. 타인 조회를 위해 `SharingGrant` 목적·허용 섹션·만료·철회·버전이 모두 확인되어야 한다.
 - **통합 검증:** 26개 헤더·중복/alias, 6열 과목 상태/학점/원장 구분, 실제 학생별 독립 근거 RulePack, 본인 보고 총학점과 계산 차이, 파일 hash/idempotent import, consent/revocation을 제한된 로컬 환경에서 검증한다. 개인정보·이름↔S번호 매핑·원본 학업행은 GitHub CI·합성 fixture·외부 AI·로그에 복제하지 않는다.
 
@@ -846,7 +846,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 ### A13.4 TASK-00 공통 타입 잠금 게이트
 
-**기술 총괄 심민성**은 `packages/contracts`를 소유하고, UI/추천/학업/API 네 소비 트랙이 같은 계약을 사용하도록 조정한다. 이 문서는 **설계 후보**이며 실제 TypeScript/Zod 코드·lockfile·CI·팀원 검토가 아직 완료됐다는 뜻이 아니다. 자세한 체크리스트는 `docs/CONTRACT_BOUNDARIES.md`.
+**기술 총괄 심민성**은 `packages/contracts`를 소유하고 UI/추천/학업/API 네 트랙의 계약을 조정한다. **TypeScript/Zod v0.1.0 패키지와 합성 fixture·자동 소비자 테스트·lockfile이 로컬에서 구현·검증됐다**. 독립 실행용 빌드된 ESM·타입선언과 synthetic-only GitHub Action을 제공한다. 단 **GitHub PR CI 결과·4명의 실제 사람 리뷰·계약 PR 병합은 별도 확인/게이트**이며 미완료를 완료로 표기하지 않는다. 사용법은 `packages/contracts/README.md`, 체크리스트는 `docs/CONTRACT_BOUNDARIES.md`.
 
 1. **주체·문맥:** `actorId`(서버 인증), `demoSubjectId`(5개 슬롯), `DemoContext`의 `contextId,demoRunId,sessionIdHash,datasetVersion,projectionVersion,sharingGrantVersion,expiresAt`을 하나의 타입 정본으로 고정한다. 프로필 선택은 인증 변경이 아니다.
 2. **원자적 UI/API 출력:** `DemoSnapshot`의 `contextId,demoSubjectId,datasetMode,asOf,versions,feed,notices,academics,forecast,aiProvenance`. `VersionEnvelope`는 A04.3의 `profile,projection,consent,dataset,topics,rules,overlay,rankConfig` 그대로 사용하며 subject/grant/selectionEpoch 불일치는 렌더 금지.

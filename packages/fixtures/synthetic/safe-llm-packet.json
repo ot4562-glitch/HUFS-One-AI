@@ -1,0 +1,31 @@
+{
+  "packetId": "SYN-REQUEST-TOKEN-01",
+  "task": "opportunity_terms",
+  "providerInputClass": "SYNTHETIC_CLEARED",
+  "sourceTokens": [
+    {
+      "token": "SYN-DOC-01",
+      "paragraphs": [
+        {
+          "id": "p1",
+          "text": "가상 데이터 체험 프로그램은 누구나 지원할 수 있습니다."
+        }
+      ]
+    }
+  ],
+  "allowedTopicCodes": [
+    "DATA_ANALYTICS"
+  ],
+  "allowedObjectTokens": [
+    "SYN-OPP-001"
+  ],
+  "approvedFacts": [
+    {
+      "token": "SYN-OPP-001",
+      "key": "kind",
+      "value": "CONTEST"
+    }
+  ],
+  "schemaVersion": "v1",
+  "promptVersion": "v1"
+}

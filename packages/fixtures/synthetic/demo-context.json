@@ -1,0 +1,11 @@
+{
+  "contextId": "SYN-CTX-01",
+  "actorId": "SYN-ACTOR-01",
+  "demoSubjectId": "S01",
+  "demoRunId": "SYN-RUN-01",
+  "sessionIdHash": "SYN-HASH-01",
+  "datasetVersion": "D1",
+  "projectionVersion": "PR1",
+  "sharingGrantVersion": "G1",
+  "expiresAt": "2026-11-01T09:00:00.000Z"
+}

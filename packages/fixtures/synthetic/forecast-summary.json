@@ -1,0 +1,19 @@
+{
+  "asOf": "2026-10-30T09:00:00.000Z",
+  "status": "PARTIAL",
+  "items": [
+    {
+      "courseId": "SYN-COURSE-01",
+      "targetTerm": "2027-1",
+      "signal": "HISTORICAL_PATTERN",
+      "asOf": "2026-10-30T09:00:00.000Z",
+      "coverage": "COMPLETE_TERM_CATALOG",
+      "sameSeasonObservedTerms": 3,
+      "sameSeasonOfferedTerms": 2,
+      "evidenceRefs": [
+        "SYN-EV-FORECAST"
+      ],
+      "caveat": "시연용 과거 패턴, 개설 확정 아님"
+    }
+  ]
+}

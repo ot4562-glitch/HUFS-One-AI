@@ -23,12 +23,12 @@
 ## 5명 개발팀 ≠ 5명 실학생 입력
 
 - **학생 과목 CSV 4명 + Google Forms 통합 CSV 4명:** 김채윤·이의상·이서연·심민성. **박준영은 CSV/Forms 제출 대상이 아니다.**
-- 현재 Private 저장소 `csv/`의 세 파일 중 이름이 명단에 일치하는 것은 심민성·이의상 두 파일이다. **`까마르` 파일은 동일인/alias·접근권한 확인 전 4명 중 누구에게도 자동 연결하지 않는다.** 김채윤·이서연의 CSV 제출은 미확인; 이서연의 Forms 미제출은 사용자 확인 사실이다.
+- **사용자가 직접 확인:** `이수과목_까마르.csv`는 김채윤의 제출 파일이다. 현재 과목 CSV **3/4명(김채윤·이의상·심민성)의 파일 소유자가 확인**됐으며, 이서연 파일은 미확인이고 Forms 응답도 아직 미제출이다. 별명 대응을 private 입력 단계에서만 사용하고, 제출은 팀 공유/공식 졸업판정/AI 전송 동의와 구분한다.
 - 5개 `S01`~`S05` 시연 슬롯을 유지하더라도 실제 자료 대상은 최대4명이다. 한 슬롯은 `PENDING` 또는 명시적 `SYNTHETIC`으로만 표현한다. 사람별 원본과 공유 projection은 별도의 동의를 요구한다.
 
 ## 독립 개발 시작 순서
 
-1. **TASK-00부터:** [공통 계약 게이트](CONTRACT_BOUNDARIES.md) 및 `Architecture.md` A02~A04·A06·A08~A09·A13의 타입·오류·버전·합성 fixture를 기술 총괄이 별도 PR로 작성한다. 현재는 계약 잠금 후보이며 타입 구현·CI 완료가 아니다.
+1. **TASK-00부터:** [공통 계약 게이트](CONTRACT_BOUNDARIES.md) 및 [실행 가능한 계약 사용법](../packages/contracts/README.md)을 사용한다. TypeScript/Zod 계약·synthetic fixture·자동 4트랙 소비 검증 코드를 별도 브랜치에서 구현했으며, **PR 병합/CI 결과/실제 팀원 승인 여부는 별도로 확인**한다.
 2. 4개 트랙이 자신의 API/타입 소비·실패 상태를 승인한 뒤 TASK-00을 병합하고, **그 커밋을 각 브랜치/worktree의 기준점으로 사용**한다.
 3. 각 트랙은 해당 소유 경로만 변경한다. 독립 에이전트라도 공유 타입/DB migration/root lockfile을 임의 수정할 수 없다. 실제 원장·키·CLOVA/NCP 유료호출은 별도 승인 전 사용 금지.
 4. 매 PR에서 `ownedPaths`, `input/outputContract`, 합성 fixture, `testsRun/testsFailed/notTested`, `privacyImpact`, rollback과 쉬운 설명을 제출한다.
