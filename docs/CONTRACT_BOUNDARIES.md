@@ -39,3 +39,7 @@
 - [ ] **실제 사람의 승인:** 이의상(UI), 김채윤(추천), 박준영(학업), 이서연(API)의 코드 검토와 심민성 최종 승인·PR merge SHA를 남긴다. **자동화된 4트랙 소비 테스트 20/20은 통과했지만 본인의 검토 서명이 아니다.**
 
 **변경 순서:** TASK-00 이슈 → 이 문서/A02~A13 기준 합성 fixture → `chore/contracts-...` 전용 PR → 네 소비자 교차검토 → 통합 담당 최종 병합 → 각 기능 브랜치 재동기화. 소비자가 공통 타입을 독자 생성하거나 실제 CSV를 fixture로 업로드하는 것은 금지한다.
+
+## 시간·이미지·RAG 계약 vNext 제안(구현·승인 별도)
+
+이번 2026-10-31 설계 변경은 기존 TASK-00 Zod 스키마를 자동으로 변경하지 않는다. 기술 총괄 심민성이 `SourceRevision`(hash·게시/확인/검수/효력 시각·정정 상태), `SourceSpan`(TEXT 문자범위 | IMAGE bbox/ocrLine/page), `VerifiedClaim`(근거·검수·허용 scope), `RetrievalEnvelope`(권한·asOf·retrieval 정책/결과), `DecisionAdvice`(Laya 모델판본·선택·폴백)를 **별도 contracts vNext PR**로 제출한다. `Opportunity`·`NoticeResult`·`SafeLlmPacket`에 바뀐 `sourceVersion` 및 이미지 근거를 호환 가능한 optional 필드로 연결하며 미래 자료를 과거 시점에 노출하지 않는다. 4트랙 소비 테스트/독립 이미지·시간 fixture·API 게이트·OCR/Vision budget·CPU 메모리 조건이 잠금 조건이다. 상세: [TRUSTED_RAG_MEDIA_VERSIONING.md](TRUSTED_RAG_MEDIA_VERSIONING.md).

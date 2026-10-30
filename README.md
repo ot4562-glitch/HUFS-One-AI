@@ -50,3 +50,11 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 - 기존 HUFSAbility 근거: [2026-10-29 스냅샷](reference/hufsability/snapshots/2026-10-29/README.md) · [후속 공개자료 색인](reference/hufsability/snapshots/2026-10-29-followup/README.md). 자료 권한: [DATA_PERMISSION_GATE.md](reference/hufsability/DATA_PERMISSION_GATE.md).
 - PDF 재출력: WSL `python3 reference/export_proposal_pdf.py --replace`. [Architecture.md](Architecture.md)의 구현은 채택 후 별도 실행 승인 전까지 계획 단계다.
 - **검증:** `python.exe tools/verify_release_boundary.py`와 기존 출처 검증 도구를 사용한다. Private GitHub 저장소 생성과 안전한 초기 커밋·푸시는 사용자 최신 지시로 승인됐다. 현재 Private 저장소의 기존 3개 과목 CSV 예외는 **추가 학생 파일/통합 Forms의 GitHub 게시 또는 외부 AI/NCP 전송 허가가 아니다**. 학생별 접근·GitHub 저장소 public 전환·실학생 데이터 외부 전송·서비스 개통은 서로 별도 동의·승인 및 검증이 필요하다.
+
+## 신규 신뢰형 AI·이미지 수집 설계 (2026-10-31, 아직 미구현)
+
+- **서버:** NCP `Standard-g2` Linux 2 vCPU·8GB·50GB 단일 호스트를 설계 SKU로 선택. 오픈 가중치 **Laya multilingual 322M**은 CPU 비동기 문서 라우팅(검수 우선도) 전용이며 장애·부하 시 확정 코드로 폴백한다. 실제 서버 생성/배포/모델 설치/실측은 미완료다.
+- **포스터:** 권리 확인된 HTML·이미지·PDF만 수집, 변경된 포스터에 General OCR, 누락/충돌/표 등 복잡 사례에 조건부 **HCX-005 Vision**, 안전한 문장 구조화에 기존 HCX-007. 이미지 원문 위치와 인용을 보존한다.
+- **RAG:** 인용 가능한 근거를 문서버전/게시·수집·확인·적용기간/`asOf`로 선필터하는 **Temporal RAG**. 직접 만든 PostgreSQL lexical 검색부터 시작하고 벡터DB·managed RAG는 필수가 아니다.
+- **지원금:** 본선팀 개발비 50만원과 **별도 NCP 크레딧 50만원 상당**은 수령·사용가능성 미검증; 실제 지출은 승인 전 0원. OCR·Vision·CPU 작업에도 비용·메모리 하드 게이트를 둔다.
+- **정본:** [기술 계약](Architecture.md) A04/A06/A12~A15, [세부 신뢰형 RAG·멀티모달·버전·비용 설계](docs/TRUSTED_RAG_MEDIA_VERSIONING.md), [갱신 제안서](Proposal.md). 기존 공통 `packages/contracts`는 이번 설계 PR에서 수정하지 않는다.

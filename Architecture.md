@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.google-oidc-mail-gate-r8` · 상태: 설계 승인 검토용 (Google OAuth·학교 메일 검증·도메인 가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-31.trusted-rag-laya-media-design-r9` · 상태: 설계 승인 검토용 (Google OAuth·학교 메일 검증·도메인 가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -15,7 +15,7 @@
 4. **NCP 사용은 이 프로젝트의 필수 선택**이다. 공식 공모전에서 NCP가 선택인지와는 별개다. 실제 배포·유료 호출은 계정·자료·예산 승인 후 수행한다. 문서 작성은 제품 구현 또는 리소스 생성 허가가 아니다.
 5. 상단 이름 변경은 실제 로그인 변경이 아닌 **승인된 demoSubject 전환**이다. `S01`~`S05` 다섯 시연 슬롯은 유지하되 실자료는 최대4명만 후보이며 동의가 없으면 공유할 수 없다. private source 및 타인의 실제 기록 수정권은 공유하지 않는다.
 6. 첫 데모는 온라인. 장애는 명시적 캐시·읽기 전용·재시도로 복구한다. 공개 합성 fixture와 모의 AI는 개발·검증 대안이지 NCP live 실적이 아니다.
-7. ‘결정론 AI’라는 모호한 이름 대신 **규칙·검색 기반 판단 엔진 + CLOVA 언어 이해**를 사용한다. 모델 학습을 하지 않았다면 학습형 AI라고 쓰지 않는다. temperature=0도 LLM의 완전한 결정성을 보장하지 않는다.
+7. **검증형 RAG + 이미지/시간 검증 + 선택형 Laya**를 기존 규칙·검색 코어와 CLOVA에 추가한다. Laya는 세계지식·학생 자격의 정답 판정기가 아니라 CPU에서 구동하는 비동기 문서 라우팅 후보 모델이다. OCR/HCX-005 Vision 모두 근거 추출 단계이고, 실제 신청마감·자격은 코드와 출처 검수로만 승인한다. 모델 학습을 하지 않았다면 학습형 AI라고 쓰지 않는다. temperature=0도 LLM의 완전한 결정성을 보장하지 않는다.
 8. **팀원 이해가 배포 준비 조건**이다. 에이전트는 소스/테스트 외에 구조 지도·요청 흐름·쉬운 설명·질문 답변을 제공한다. 공식 독립 배점이라고 허위 표기하지 않는다.
 9. **공개 DNS·폐쇄형 서비스:** 사용자가 확보했다고 알린 접속 예정 도메인은 **`외대.온라인.한국`**, 정규 HTTPS origin은 `https://외대.온라인.한국`이다. 인터넷에서 DNS·TLS 연결이 가능하다는 뜻이지 익명으로 제품을 열람할 권한은 아니다. **Google OIDC 로그인 → 외대 메일 현재 소유 확인 → 베타 이용자 승인 → 개별 자료 SharingGrant**를 각각 서버에서 검증한다. 도메인 소유권·DNS·TLS·Google OAuth 클라이언트 설정·외대 메일 인증 발송 경로·실제 배포 완료는 아직 검증되지 않았다. 학교 SSO는 제공받지 않는 전제다. 저장소는 Private을 유지한다.
 
@@ -23,7 +23,7 @@
 
 최신 사용자 승인 → 실제 개인정보/기관/서비스 이용조건 → 본 문서 타입·판정·권한·시험 → Proposal의 설명·예시 → 외부 디자인 영감 순이다. 공식 규정이 소프트웨어 가정과 다르면 대상 규칙팩을 검수 상태로 돌린다. 모든 예시는 `SYNTHETIC`이며 실제 5명의 정보로 보지 않는다.
 
-`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
+`Proposal.md`는 팀원 설명, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 이미지·시간·검색·Laya 실행 세부 계약, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
 
 **현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개의 제출자는 사용자 확인에 따라 **김채윤(별명 까마르)·이의상·심민성**이다. 별명 대응은 입력 단계에서 소유자 확인 완료이지만 목적별 동의·실제 Forms 대조는 별도다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
 
@@ -284,6 +284,8 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 | PERSONAL_CONSENTED | 학생 동의 개인자료 | private 보관/목적별 공유; **raw는 CLOVA에 보내지 않음** |
 | RESEARCH_REFERENCE_ONLY | 조사 근거 | 제품 seed·공개 재배포·LLM 전송에 자동 사용 불가 |
 
+**새 공통 출처 변경 계약(설계):** HTML뿐 아니라 이미지·PDF의 `SourceRevision`을 immutable hash/이전버전/superseded/정정·연장·취소 상태로 연결한다. `publishedAt`(게시), `fetchedAt`(실다운로드), `lastCheckedAt`(조건부 GET 확인), `lastVerifiedAt`(검수 완료), `validFrom/validUntil`(효력)을 분리한다. OCR 구역 좌표가 있는 `IMAGE` evidence와 텍스트 offset `TEXT` evidence를 하나의 `VerifiedClaim`이 참조하되, 실제 Zod vNext 변경은 별도 PR에서 수행한다. 정본 세부내용은 [시간·이미지·RAG 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §3~5다.
+
 `providerInputClass`는 별도 `PUBLIC_CLEARED|SYNTHETIC_CLEARED|NON_IDENTIFYING_REVIEWED|BLOCKED`다. SourceClass가 허용돼도 개인정보나 약관 제한이 있으면 BLOCKED. 별명·S01이라는 가명만 붙였다고 익명인 것은 아니다. 현재 CLOVA 공식 안내의 개인정보 입력 제한을 서비스 정책으로 반영한다.[R05]
 
 ### A04.3 최소 공용 타입
@@ -377,6 +379,8 @@ interface VersionEnvelope {
 점수는 디버그·검증용 분해값이지 취업가능성·역량숙련도 퍼센트가 아니다. 가중치는 검증 전 성능 근거가 없는 **팀의 초기 선택**이다. 추천 이유는 실제 일치 topic·학생 승인 evidence·원문 조건을 코드 템플릿으로 먼저 구성하고 LLM은 해당 근거 안에서 문장만 정리한다.
 
 ### A05.3 제어와 캐시
+
+**시간·근거 보호:** `composeFeed`/공지 입력은 권리 확인·정정 반영·검수완료된 `SourceRevision`만 사용하고, `publishedAt/fetchedAt/lastVerifiedAt > asOf` 데이터는 과거 조회·시연의 미래 정보로 누출하지 않는다. 출처 취소·연장·마감 변경은 소스 버전 증가→검색색인 교체→관련 claim·추천·공지 캐시 무효화 순으로 반영한다. 상태 확인 실패·권한 미확인 문서는 새 LLM 추측으로 대신하지 않고 STALE/NEEDS_REVIEW로 격리한다. [세부계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §3·§5.
 
 관심 낮음(개인/시연 overlay별 숨김), 전체보기, 최신순, 유형필터, 추천 이유, 관심 편집을 제공한다. 관심 변경은 overlayVersion/profileVersion을 올리고 추천 코드만 재실행. 매번 LLM 재호출하지 않는다. 동일 입력·asOf·config는 byte-stable 정렬 ID를 반환해야 한다. 두 학생의 관심이 같으면 큰 카드가 같을 수 있으며 **다르게 보이게 하려고 사람별 결과를 하드코딩하지 않는다**.
 
@@ -509,6 +513,16 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 
 팀원 보고: HCX-007 호출 3회에서 숫자·과목 대조 10/10이라 주장하지만 **세 번 모두 `※` 예외 문장을 누락**했다. 제공된 보고만 검토했고 실제 입력·응답·과금 영수증을 독립 재현하지 못했다. 이는 HUFS One AI의 라이브 NCP 연동 성과나 RulePack 승인 근거가 아니다.
 
+### A06.9 이미지 공고·Temporal RAG·선택형 Laya 결정 모델 (신규 설계, 미구현)
+
+**설계 확정 후보:** NCP `Standard-g2 2vCPU/8GB/50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
+
+1. **발견·버전:** 이용 권리가 확인된 allowlist 공식 출처/RSS/API부터 변경 탐색. HTTP validator(`ETag`/`Last-Modified`) + HTML/image/PDF의 개별 SHA-256와 정정·취소 연결. 스냅샷은 불변, current pointer만 승인 후 이동. 크롤러가 로그인/CAPTCHA를 우회하지 않는다.
+2. **OCR+Vision:** 최초 새 포스터는 CLOVA General OCR(라인/좌표/원본변환 기록). 날짜 누락·작은 글자·복잡한 표 등 규칙상 필요할 때만 HCX-005 Vision을 **병행**해 의미 후보를 얻는다. Vision 결과가 OCR 원문과 일치하지 않거나 근거 좌표가 없으면 NEEDS_REVIEW. HCX-005 Structured Outputs 지원을 전제하지 않으며 검증된 스키마로 후검사한다.
+3. **시간 기반 RAG:** 권한/sourceClass/적용학년도·전공·기관·valid interval/`asOf`를 먼저 필터링하고 exact field+keyword/한국어 토큰 검색 `topK≤12`, 변경 전후 revision 충돌검사. `pg_trgm`/임베딩은 Recall@k 비교 후 선택. 검색 근거가 없으면 `NO_EVIDENCE`; LLM 추측 금지. 학생 원본·CLOVA 전송금지 자료는 인덱싱하지 않는다.
+4. **결정·추출·검증:** CPU Laya는 문서/이미지의 처리 우선순위·OCR_ONLY/ESCALATE_VISION/HUMAN_REVIEW 제안에만 사용하고, API 사용자 응답의 필수 의존이 아니다. 호출 비용·RSS·latency 한도를 어기면 룰기반으로 자동 폴백. HCX-007은 안전한 문단+OCR 인용으로 네 작업 후보를 만들고, 원문 인용·날짜 종류·예외/범위·모순·sourceVersion/consentVersion을 독립 코드와 사람 검수로 확인한다.
+5. **계약 변경은 분리:** `SourceRevision`, `SourceSpan(TEXT|IMAGE)`, `VerifiedClaim`, `RetrievalEnvelope`, `DecisionAdvice`와 추출기/모델/retrieval 정책 버전, 실패 상태, Zod 확장은 심민성의 전용 `contracts` PR에서 API/UI/추천/학업 검토 후 병합한다. 자세한 필드·가드·성능·롤백은 [검증형 RAG 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md)을 따른다.
+
 ## A07. 개인별 단과대·학과 중요공지
 
 ### A07.1 Notice 타입과 기준
@@ -526,7 +540,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 5. `GENERAL` = 일반공지. 동일tier 안에서는 학생마감→publishedAt→id.
 6. 홈 고정알림 최대2개, 전체 중요공지 목록은 별도. 일반 추천 3카드를 전부 경고로 대체하지 않는다.
 
-공지-학생 연결에 사용한 requirementId/courseId/topicCode와 source quote를 반환한다. 학과의 학생 서류 마감과 대학의 성적보고서 마감을 혼동하지 않는다. 공고 변경/철회시 snapshotVersion을 올리고 관련 notice cache 무효화. 기본 갱신은 승인된 source의 일일확인+운영자정정; 실시간이라고 약속하지 않는다.
+공지-학생 연결에 사용한 requirementId/courseId/topicCode와 source quote를 반환한다. 학과의 학생 서류 마감과 대학의 성적보고서 마감을 혼동하지 않는다. 공고 변경/철회시 `SourceRevision`/sourceVersion과 snapshotVersion을 올리고 검색 인덱스·검증된 claim·관련 notice cache를 동시 무효화. OCR/HCX 후보는 검증 전 학사 필수로 승격하지 않는다. 기본 갱신은 승인된 source의 일일확인+운영자정정; 실시간이라고 약속하지 않는다.
 
 ## A08. 졸업·학점·계획 코어 (P1)
 
@@ -726,6 +740,8 @@ React 공용 UI와 API를 플랫폼 독립적으로 유지하고 필요한 경�
 
 ### A12.1 수량과 출처
 
+**신규 별도 합성 평가팩(모수 중복 금지):** 포스터/이미지 20건(세로·가로·글자크기·표·레이아웃·PDF 페이지·적용 범위·오독)과 시간/정정 12건(신규/변경 없음/마감 연장/취소/고정 과거 `asOf`/조항 충돌/비활성 구본/권한 철회)을 독립 ground truth로 제작한다. 외부 실자료 이미지 재배포·저작권 위반/승인 없는 LLM 투입은 금지. 목표와 실제 완성 건수는 구분한다. OCR bbox IoU·핵심 필드 recall·검증 정확도·시간 누출·비용을 분리 측정한다.
+
 목표는 기회40건이다. 이용·외부 AI 처리 조건이 확인된 실제 공고 약25건+합성 예외15건을 기본안으로 하고, 권한이 불명확하면 **40건 전체를 합성**으로 바꾼다. 별도 학사공지10건(졸업3·장학3·수강/교류4)을 준비한다. 추천 평가200라벨은 기회40×프로필5의 설계이며 학사공지10을 모수에 자동 추가하지 않는다.
 
 종류별 최소5건(job/intern/contest/extracurricular/scholarship)과 추가 경계15건을 구성한다. 언어·전공·마감·자격·역할·외부 신청을 다양하게 배치하고 OPEN/UPCOMING/CLOSED/UNKNOWN을 포함한다. 각 프로필의 상위3개를 수동으로 지정하지 않는다. `demoAsOf`는 고정된 시연 시각이며 실제 현재시각과 화면에서 구분한다. 리허설마다 만료일을 조용히 연장하지 않는다.
@@ -788,6 +804,9 @@ AI 생성물은 도구·일자·promptVersion·hash·검수 기록을 남긴다.
 | academic_event, course_outlook | 공식 사건·전망·평가 | asOf·유효기간·미래 유출 방지 |
 | experience_card, approved_tag | 기록·근거·승인 | 수정·철회 후 파생결과 무효화 |
 | source_snapshot, opportunity, notice | 원문hash·정형값·AI후보 | 사용권한·가상/실제 분리 |
+| source_revision, media_asset_revision, ocr_span | 이미지/PDF/HTML별 불변 hash·OCR 좌표·검수·최신성 | 원문 권리·원본 좌표·시계열 provenance 격리(설계, 미구현) |
+| verified_claim, retrieval_index_revision | 문단/이미지 근거·임계시각/asOf·검색 정책 버전 | 권한·정정·미래 정보 누출 방지(설계, 미구현) |
+| model_decision_advice, crawl_job | Laya 처리 제안·문서 변경 확인·이중 호출 차단 | 비동기/예산 예약, 학생 원본 미저장(설계, 미구현) |
 | topic_dictionary, opportunity_topic | 폐쇄 분류·alias·근거 | enum·사전 버전 |
 | recommendation_run, notice_run | 후보·점수·이유·입력 버전 | 같은 입력 재현 |
 | saved_item, action_plan | 저장·준비·마감 | 공식 접수 결과와 구분 |
@@ -868,6 +887,8 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 접속 예정 `https://외대.온라인.한국` → DNS/TLS ingress → **익명 기본 거부 인증 게이트** → 권한 있는 React 및 같은 origin `/api` → Fastify/worker → 비공개 PostgreSQL·CLOVA HTTPS 순서다. 별도 인증 redirect/callback과 최소 로그인 shell 이외에는 유효 세션 없이 앱 HTML/JS·API·파일을 내려주지 않는다. Object Storage의 합성/개인 자산도 로그인 전 공개 URL에 배포하지 않으며 백업·개인자료는 비공개 bucket/prefix로 분리한다. 공인 DB5432·Node3000 직접 노출은 금지한다.
 
+**신규 설계 SKU는 NCP Standard-g2 Linux 2vCPU·8GB·기본 50GB 한 대다.** 국내 Classic 50GB 공개표는 **119원/시간·85,120원/월(VAT 별도)**이며, 실제 콘솔에서 리전·VPC/Classic·크레딧 적용, IP/스토리지/네트워크/백업·OCR/API Gateway·HCX-005/007 토큰 요금을 별도 확인한다. GPU/두 번째 VM/상시 관리형 RAG는 예산상 자동 생성하지 않는다. 8GiB 안에 OS1.0/Node0.8/Postgres1.2/Laya3.0/worker0.7/여유1.3GiB(예상 RSS 상한)를 놓고 **실측 peak≤7GiB·OOM 0·API 지연 악화 없음**을 전제조건으로 삼는다. 측정 실패시 Laya 비활성화하고 확정 코드로 폴백한다. 예산 근거·메모리 표·하드킬 스위치는 [RAG 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §6~7.
+
 VM 2vCPU/8GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
 
 팀원은 HTTPS와 **Google OAuth + 외대 메일 소유 검증 + 베타 초대 권한**으로 접속한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. **도메인은 사용자 확보 신고 상태**지만 DNS 레코드·인증서·Google OAuth·학교 메일 OTP 발송·실서비스 가동은 확인되지 않았다. 유효 TLS, Google 인증·메일 검증 및 모든 우회 경로 검사 전에는 온라인 ready가 아니다.
@@ -920,6 +941,17 @@ NCP_REGION
 NCP_STORAGE_BUCKET
 CLOVA_API_KEY_REF
 CLOVA_MODEL_ID
+CLOVA_VISION_MODEL_ID
+CLOVA_OCR_DOMAIN_REF
+MEDIA_INGEST_ENABLED
+VISION_ENABLED
+RAG_ENABLED
+LAYA_ENABLED
+LAYA_MODEL_REVISION
+LAYA_MAX_RSS_MIB
+INGEST_MAX_CONCURRENCY
+RETRIEVAL_CONFIG_VERSION
+SOURCE_STALE_TTL_HOURS
 AI_ENABLED
 AI_PHASE
 MAX_PHASE_CALLS
@@ -957,6 +989,8 @@ A=최신순, B=명시 alias·규칙만, C=코드 정리+CLOVA 추출+검증+동�
 P@3(rel≥1), nDCG@3, 조건 precision/recall, 중대한 허위 적격 수, unknown 수, latency, cost를 함께 보고한다. P@3+20%p·조건 recall90%는 목표다. 후보가3개 미만이면 실제 k에 대한 P@k와 coverage를 별도 표시한다. N=5의 평균 P@3는 1/15 단위이므로 큰 모집단의 정확한 효과처럼 일반화하지 않는다. 데이터의 실제/합성 비중·평가자 이견을 숨기지 않는다.
 
 ### A15.2 시험 그룹
+
+**추가 품질 시험:** 동일 합성 자료의 HTML-only/HTML+General OCR/선택 HCX-005 비교, 근거위치 정확도·이미지 누락·날짜 종류·false eligibility 확정, 12개 정정/취소/시간여행 시나리오의 stale 노출 및 미래 look-ahead=0, RAG Recall@k/근거 지지/NO_EVIDENCE, Laya 유무의 분류 F1·CPU RSS peak·p95·실제 NCP 비용. 환각 감소라는 주장은 claim-groundedness와 중대한 오류율이 개선됐을 때만 사용한다.
 
 | 그룹 | 최소 시험 |
 |---|---|
@@ -1027,16 +1061,18 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-05 경험·보관 | Claude UI·GPT 저장 / A10 | owner·overlay·승인·철회·초안. 보안 검토 |
 | TASK-06 추천 코어 | GPT / A04~05·A15 | 동일 입력·근거·다양성·정답. 독립 평가 |
 | TASK-07 DB·인증 | GPT / A02~03·A13·A14.1a | Google OAuth·외대 메일 OTP/Workspace 증빙·초대 인가·세션·권한·문맥·버전·import. 위조/재사용·무권한 시험 |
-| TASK-08 CLOVA | GPT 통합 / A06 | 제품 AI 4작업 policy·safeJSON·quote·enum·quota·합성 live. RulePack 작성 도구는 별도 승인/검수 |
+| TASK-08 CLOVA | GPT 통합 / A06 | 제품 AI 4작업 policy·safeJSON·quote·enum·quota·합성 live. 신규 OCR+HCX-005·RAG·CPU Laya·SourceRevision 설계는 별도 공통 계약/예산 승인 뒤 구현. RulePack 작성 도구는 별도 승인/검수 |
 | TASK-09 통합 흐름 | 통합+Claude / A02·A05·A10~13 | 대상별 원자적 snapshot·계약·E2E |
 | TASK-10 온라인 복구 | GPT network·Claude 상태 / A14~15 | 읽기 전용·stale·late job·재연결. 과거 full-offline 선행 작업 대체 |
 | TASK-11 NCP 필수 | GPT 운영 / A14 | 도메인 DNS/TLS·ingress fail-closed·Google OAuth·학교 메일 인증 경로·직접IP/Storage 차단·키·DB·live·비용·복원 |
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
-| TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest |
+| TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest; 신규 포스터 20건 + 시의성 정정 12건 별도 검증팩, 원본 이미지 bbox·오독·변경 이벤트 |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
 | TASK-16 팀원 이해 | 설명 담당+각 모듈 / A01·A16 | 지도3개·질문10개·역할별 설명·팀원 재설명 |
 | TASK-17 개설 전망 | GPT/Claude 계산·교차검토 / A09 | 완전성·n/k·0/n·정보누출 방지·rolling-origin·precision/recall/IoU·공식 override·가정 분리 |
+
+**신뢰성 추가 게이트(기존 TASK 번호 유지):** 합성 SourceRevision+SourceSpan·RAG 계약/독립 코드 리뷰 → OCR/변경감지 → 조건부 HCX-005/HCX-007 → 검색 인덱스/인용검증 → Laya CPU 선택 실측 → 예산·인증·권한·시의성 부정 E2E. 이 설계 PR은 실행 완료가 아니다.
 
 병렬 의존성: TASK00 → (04·06·07·13·15) →09. 08은 정책·모델 계약 후, 14는 공고 정규화 후 연결한다. 01→02·03·17은 P1 병렬이다. 11은 마지막 날에 미루지 않고 첫 주 합성 health부터 준비한다. 16은 매 통합 때 갱신하고, 12는 초반부터 부정 시험을 작성한다.
 

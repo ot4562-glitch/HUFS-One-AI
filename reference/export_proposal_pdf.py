@@ -86,9 +86,65 @@ pre {font-size:7.7pt;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere
 pre code {padding:0; background:transparent; color:#283d5d;}
 img {max-width:100%;height:auto;break-inside:avoid;}
 table p {margin:0;}
-/* Keep the final evidence table with two additional Google auth references on one page. */
-h2#chapter-20 + table {font-size:7.25pt;line-height:1.28;margin:8px 0 9px;}
-h2#chapter-20 + table th,h2#chapter-20 + table td {padding:4px 5px;}
+/* Dense reference tables can continue to the next page; never cram source URLs into a tiny font. */
+h2#chapter-19 + table, h2#chapter-20 + table {font-size:7.3pt;line-height:1.34;table-layout:auto;}
+h2#chapter-19 + table th, h2#chapter-19 + table td,
+h2#chapter-20 + table th, h2#chapter-20 + table td {padding:5px 6px;}
+h2#chapter-19 + table td:first-child, h2#chapter-20 + table td:first-child {width:42px;min-width:42px;font-weight:700;color:var(--primary);}
+.figure {margin:15px 0 21px;padding:13px 12px 9px;border:1px solid #dbe5ea;background:#f9fcfc;border-radius:12px;break-inside:avoid;page-break-inside:avoid;}
+.figure svg {display:block;width:100%;max-height:280px;}
+.figure figcaption {font-size:8.3pt;color:#526574;line-height:1.55;margin:6px 3px 1px;}
+.cover .accent-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:24px;width:100%;max-width:155mm;}
+.cover .accent-grid div {border-top:2px solid #146E7A;padding:10px 6px 7px 0;font-size:9.2pt;font-weight:700;color:#173657;line-height:1.5;}
+.cover .accent-grid small {display:block;margin-top:4px;font-size:8pt;font-weight:400;color:#60758A;}
+.cover:before {content:"";position:absolute;right:0;top:7mm;width:85mm;height:85mm;border-radius:50%;background:radial-gradient(circle at 36% 40%,rgba(16,117,128,.12) 0 19%,transparent 20%),radial-gradient(circle at 70% 35%,rgba(145,119,77,.11) 0 14%,transparent 15%),linear-gradient(135deg,rgba(12,63,111,.06),rgba(255,255,255,0));}
+.cover {position:relative;}
+h2.chapter {break-after:avoid;}
+article > p {text-wrap:pretty;}
+
+"""
+
+PIPELINE_FIGURE = """
+<figure class="figure" aria-label="신뢰형 AI 처리 구조">
+<svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="ft fd">
+  <title id="ft">포스터에서 검증된 맞춤 정보까지의 처리 흐름</title>
+  <desc id="fd">공식 출처를 저장하고 OCR과 조건부 Vision으로 이미지 문구를 추출한 뒤, 날짜·권한 필터 RAG와 CLOVA 구조화를 거쳐 코드가 검증한다. Laya는 추가 검수 우선순위만 제공한다.</desc>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#6c8794"/></marker>
+  </defs>
+  <rect x="10" y="25" width="162" height="96" rx="12" fill="#002d56"/>
+  <rect x="202" y="25" width="162" height="96" rx="12" fill="#e6f4f2" stroke="#83bdb9"/>
+  <rect x="394" y="25" width="162" height="96" rx="12" fill="#eaf0f7" stroke="#abbcd0"/>
+  <rect x="586" y="25" width="162" height="96" rx="12" fill="#146e7a"/>
+  <path d="M173 73 H198 M365 73 H390 M557 73 H582" fill="none" stroke="#6c8794" stroke-width="2.7" marker-end="url(#arr)"/>
+  <g font-family="Malgun Gothic, Noto Sans CJK KR, sans-serif" text-anchor="middle">
+    <text x="91" y="63" fill="#ffffff" font-size="18" font-weight="700">공식 출처</text>
+    <text x="91" y="89" fill="#d3e2ec" font-size="12.5">HTML · 이미지 · PDF</text>
+    <text x="283" y="58" fill="#174959" font-size="17" font-weight="700">General OCR</text>
+    <text x="283" y="84" fill="#28636d" font-size="12.5">+ 조건부 HCX-005</text>
+    <text x="475" y="58" fill="#20415e" font-size="17" font-weight="700">Temporal RAG</text>
+    <text x="475" y="84" fill="#3c607b" font-size="12.5">권한 · 날짜 · 근거</text>
+    <text x="667" y="57" fill="#ffffff" font-size="17" font-weight="700">HCX-007</text>
+    <text x="667" y="82" fill="#d8f0eb" font-size="12.5">+ 독립 코드 검증</text>
+  </g>
+  <rect x="10" y="143" width="354" height="65" rx="10" fill="#f4f8fb" stroke="#d8e3ed"/>
+  <rect x="394" y="143" width="354" height="65" rx="10" fill="#fff7eb" stroke="#e7d3ac"/>
+  <g font-family="Malgun Gothic, Noto Sans CJK KR, sans-serif">
+    <text x="27" y="170" font-size="15" font-weight="700" fill="#1c4d69">Laya multilingual 322M · CPU</text>
+    <text x="27" y="191" font-size="12.5" fill="#537089">검수 우선순위 조언만 · 비동기 · 실패 시 폴백</text>
+    <text x="411" y="170" font-size="15" font-weight="700" fill="#866333">검증 실패 또는 최신성 불명확</text>
+    <text x="411" y="191" font-size="12.5" fill="#8a744e">UNKNOWN · 사람 재검토 · 사용자에게 표시</text>
+  </g>
+</svg>
+<figcaption>도형 기반 개념도 · 기존 공통 코어는 판단과 권한을 계속 소유하며, OCR·Vision·RAG·Laya는 승인된 자료를 보조 처리한다. (설계·미구현)</figcaption>
+</figure>
+"""
+COVER_INSIGHT = """
+<div class="accent-grid">
+<div>01 / DISCOVER<small>포스터와 변경 확인</small></div>
+<div>02 / VERIFY<small>검색 근거와 독립 검증</small></div>
+<div>03 / PERSONALIZE<small>학생별 중요 정보</small></div>
+</div>
 """
 
 
@@ -121,6 +177,8 @@ def describe_tables(rendered: str):
 
 
 def create_html(markdown: str, checksum: str):
+    # Source-only editing marker: omit it in the visual PDF.
+    markdown = markdown.replace('<!-- PAGEBREAK -->', '')
     parser = MarkdownIt("default", {"html": False, "breaks": False}).enable("table")
     rendered = parser.render(markdown)
     intro = re.match(r"\s*(<h1>.*?</h1>\s*<p>.*?</p>\s*<p>.*?</p>)", rendered, flags=re.S)
@@ -139,6 +197,11 @@ def create_html(markdown: str, checksum: str):
 
     rendered = re.sub(r"<h2>(.*?)</h2>", number_chapters, rendered, flags=re.S)
     rendered, n_tables, max_cols = describe_tables(rendered)
+    # Original Markdown contains no text-art. Illustrate the system as an actual vector graphic.
+    chapter_seven = re.compile(r'(<h2 class="chapter" id="chapter-7">.*?</h2>\s*<p>.*?</p>)', flags=re.S)
+    rendered, inserted = chapter_seven.subn(lambda m: m.group(1) + PIPELINE_FIGURE, rendered, count=1)
+    if inserted != 1:
+        raise ValueError('Cannot place vector pipeline diagram in chapter 07.')
     toc_items = "\n".join(
         f'<li><a href="#chapter-{index}"><small>{index:02d}</small>{html.escape(label)}</a></li>'
         for index, label in chapters
@@ -156,10 +219,11 @@ def create_html(markdown: str, checksum: str):
 <section class="cover">
 <div class="eyebrow">HUFS ONE AI  /  PROPOSAL</div>
 {cover_content}
+{COVER_INSIGHT}
 <div class="bar"></div>
 <div class="meta"><strong>검토용 제안서</strong> &nbsp; | &nbsp; 기준 원본: Proposal.md<br>
-2026-10-30 기준 제안 · 실제 서비스 구현 전 문서 단계<br>
-HUFSAbility 취업·비교과 개인화 → AI 공고 해석 → 추가 졸업지원</div>
+2026-10-31 신뢰형 AI 설계 개정 · 실제 배포 전<br>
+포스터 OCR / 시간 RAG / Laya CPU / CLOVA 검증 / 학생별 맞춤 피드</div>
 </section>
 <nav class="toc">
 <h2>목차</h2>

@@ -40,3 +40,12 @@ Google 토큰의 `email_verified` 또는 요청의 `hd` 힌트 단독으로 **�
 Google ID token 위조/만료, Gmail 단독, `hd` 요청값 변조, 외대 이메일 미소유, OTP 만료/재사용/다른 Google `sub` 가로채기, 미초대 actor, 동의 철회, 익명 HTML·API·저장소·직접 IP·preview·캐시·로그아웃 후 접근을 모두 막는지 검증한다. DNS/TLS·Google OAuth·OTP 메일 발송·인가·부정 E2E 중 하나라도 미검증/실패면 **인터넷 서비스 배포 BLOCKED**다. 학교 **공식 SSO 허가 부재만으로는 차단하지 않는다**.
 
 검증 근거: [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect) · [Google 서버 로그인 검증](https://developers.google.com/identity/sign-in/web/backend-auth).
+
+## 2026-10-31 Standard-g2·Laya·OCR/Vision·Temporal RAG 설계 (미구현)
+
+- **NCP Linux 단일 서버:** `Standard-g2 2vCPU/8GB/50GB`, 공개 Classic 기본 SKU 119원/시간·85,120원/월 VAT 별도(실청구 전 리전·크레딧·추가 스토리지/네트워크 확인). API·제한 PostgreSQL 검색·OCR ingest-worker·CPU Laya 비동기 프로세스를 단일 서버에서 시작하며 GPU·두 번째 서버·관리형 RAG 자동 생성 금지.
+- **Laya:** Apache-2.0 `laya-multilingual` 322M, ONNX FP32 CPU pinned revision, 워커 1개·최대 RSS 3GiB 가설. peak/지연/한국어 분류 성능 검증 실패면 `LAYA_ENABLED=false`로 폴백. 실제 weight 다운로드/프로세스 가동은 별도 승인.
+- **이미지:** General OCR을 허용된 새 이미지/변경 이미지에 1차 실행. 좌표·원본 해시 보존 후 필요한 경우에만 HCX-005 Vision 후보 호출, HCX-007은 허용 근거 텍스트 구조화. 인증·자료권한을 우회하거나 학생 raw를 AI로 전송하지 않음.
+- **시간 기반 RAG:** 동일 NCP 서버 PostgreSQL의 승인 문서 revision·인용좌표·적용기간/`asOf` 선필터 + 경량 lexical 검색, 변경/취소 시 검색 인덱스·검증캐시 무효화. 별도 vector DB는 검증 후 opt-in.
+- **NCP 크레딧 50만원**(본선 수령 및 적용 미확인) 가상 상한: 컴퓨트 19만, HCX 11만, OCR/Gateway 2만, 기타 5만, 잠금 예비 13만. 별도 개발비 50만원은 클라우드 크레딧이 아님. 새 유료 자원·토큰 사용·DNS 공개는 **별도 승인과 콘솔 최신 견적** 전 금지.
+- **릴리스:** `AI_ENABLED`, `MEDIA_INGEST_ENABLED`, `VISION_ENABLED`, `RAG_ENABLED`, `LAYA_ENABLED` 기본 false; 예산 미설정/권한 실패/자료 stale/모델 장애는 fail closed. 상세 게이트: [docs/TRUSTED_RAG_MEDIA_VERSIONING.md](docs/TRUSTED_RAG_MEDIA_VERSIONING.md).

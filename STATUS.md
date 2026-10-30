@@ -69,3 +69,12 @@
 - 실학생/원본 공고/학교 UI 규정집·스크린샷·토큰·백업·`retire/`는 추적/공개 제외. 향후 GitHub 게시 전 다시 경계 검증을 수행한다.
 
 **다음 시점:** 2026-11-06 팀 의견 수렴·제안 채택 판단 후, 실제 제품 구현 및 자료·비용·기관협조에 관해 **사람이 에이전트와 함께** 별도 결정한다.
+
+## 2026-10-31 새 설계 PR: 신뢰형 포스터·Temporal RAG·Laya (구현/배포 전)
+
+- **아키텍처 제안:** `Standard-g2` Linux 2vCPU·8GB·50GB에서 API+PostgreSQL 검색+제한 OCR 수집 워커+**Laya multilingual 322M CPU** 비동기 판단기를 검토. CPU RSS/한국어 분류/latency 실측 실패 시 Laya off, GPU/추가 서버 자동 증설 없음.
+- **멀티모달:** 권리 확인 공식 이미지·PDF의 General OCR 좌표/원본 hash 기본, 복잡한 경우 **HCX-005 Vision** 후보 보완, HCX-007 구조화 추출+독립 검증. 실제 live 호출/성과 **0건**, 아직 사용 승인 없음.
+- **시의성 RAG:** 게시·수집·마지막 검수·적용기간, 정정/취소/연장 sourceRevision을 불변 보관하고 `asOf`/권한 선필터 검색. 변경 시 인덱스·후속 캐시 무효화. 실제 코어/DB 구축은 미완료.
+- **신규 계약 대상:** `SourceSpan IMAGE`·`SourceRevision`·`VerifiedClaim`·`RetrievalEnvelope`·`DecisionAdvice`는 별도 Zod contracts PR/4트랙 리뷰 후 구현. 이 PR은 문서와 제안서 PDF만 수정하고 기존 #15/#16 코드를 변경하지 않는다.
+- **공모전 예산:** 본선팀 **별도 개발비 50만원 + NCP 크레딧 50만원 상당**; 지급·클라우드 적용·VAT/실청구 미확인, **유료 리소스 배포 없음**. 상세 기준: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`.
+- **제안서 PDF 완료:** GitHub PR 브랜치에서 새로 내려받은 `Proposal.md`(SHA-256 `797684a363a4428966b6bf7fb5e0882ec97e8b488a8a907cc5ae7d561986acf9`)를 기준으로 SVG 벡터 구조도·새 표지·목차·테이블을 포함한 **A4 17쪽 `Proposal.pdf`**를 제작했다. Windows.Data.Pdf 렌더러 **17/17페이지 출력**과 2개 전체 contact sheet 시각 검수를 마쳤다. PDF SHA-256 `f3d387a005f2792a47fb70ae373182c33e104fe5a1284000878329dfbb988518`, 722,163바이트. 이번 설계 PR에 업로드하며, 원문 변경 시 재출력·전체 페이지 재검증이 필요하다.
