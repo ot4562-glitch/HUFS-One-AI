@@ -13,6 +13,8 @@ on:
       - packages/fixtures/negative/**
       - tests/contracts/**
       - tests/consumers/**
+      - tests/api/**
+      - apps/api/**
       - .github/workflows/task00-contracts.yml
   push:
     branches: [main]
@@ -26,6 +28,8 @@ on:
       - packages/fixtures/negative/**
       - tests/contracts/**
       - tests/consumers/**
+      - tests/api/**
+      - apps/api/**
       - .github/workflows/task00-contracts.yml
 
 permissions:
@@ -51,6 +55,8 @@ jobs:
             /packages/fixtures/negative/
             /tests/contracts/
             /tests/consumers/
+            /tests/api/
+            /apps/api/
       - name: Prove real-student sources are not in this workspace
         run: |
           test ! -d csv
@@ -63,5 +69,5 @@ jobs:
           cache: npm
       - name: Install pinned lockfile without dependency lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: TypeScript and four-track consumer contract regression
+      - name: TypeScript, four-track contracts, and fail-closed local API regression
         run: npm run check

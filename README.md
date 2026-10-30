@@ -1,5 +1,9 @@
 # HUFS One AI
 
+## 2026-10-31 API 로컬 구현 브랜치 (NCP/실인증 미연결)
+
+기술 총괄이 이서연 담당 API 코드를 대신 작성한 **별도 feature PR 단계**다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. DB·OCR·HCX·Laya·NCP·실학생 자료는 연결하지 않았으며 공통 SourceRevision vNext 계약 #18 및 추천/공지 PR #15/#16 변경요청 해결 뒤 별도 통합한다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
+
 **HUFSAbility의 기존 취업·진로·비교과 정보를 AI로 학생별로 재배치하고, 졸업지원까지 확장하는 한국외대 바이브코딩 공모전 제안.**
 
 ## 문서 두 개: 읽는 사람에 따라 역할을 분리
