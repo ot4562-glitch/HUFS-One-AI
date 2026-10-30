@@ -46,3 +46,12 @@
 - **이의상 / UI:** 공식 출처 링크·원본 포스터 박스 하이라이트·최종 확인 시각·OCR 오독/UNKNOWN/STALE/REPLAY 배지와 접근·모바일·캐시 철회.
 
 **병합 절차:** 이 **설계 PR은 기존 #15/#16의 공통 타입을 직접 수정하지 않음** → 소비자 교차검토 → 독립 contracts vNext PR → 합성 검증팩 → 비용·계정 권한 승인 후 구현. 세부: [검증형 RAG 계약](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 2026-10-31 설계 PR 이후 작업 이슈 지도 (각 담당자 에이전트 확인)
+- **통합 추적 [#23](https://github.com/ot4562-glitch/HUFS-One-AI/issues/23)**, 설계 [PR #17](https://github.com/ot4562-glitch/HUFS-One-AI/pull/17): 인프라 설치/결제 승인이 아닌 **문서 설계**이며, 병합해도 신규 기능 구현을 뜻하지 않는다.
+- **심민성:** 공통 계약 v0.1.0 [#8](https://github.com/ot4562-glitch/HUFS-One-AI/issues/8)과 **새 vNext [#18](https://github.com/ot4562-glitch/HUFS-One-AI/issues/18)**는 분리. 새 SourceRevision·TEXT/IMAGE evidence·RAG/Laya 어댑터 계약 및 네 소비자 리뷰 담당.
+- **이의상 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9):** 포스터 bbox 근거 확대·latest verified / STALE / UNKNOWN / synthetic 표시, 권한철회/캐시·모바일.
+- **김채윤 [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10):** 최신 승인 공고/정정·취소만 추천·공지 소비, [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15) 미래 `asOf` 노출 및 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 학기범위/미검증 필수공지/overdue **변경요청 먼저 해결**.
+- **박준영 [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11):** OCR 표·각주/예외/졸업예정학기·Requirement ID/룰팩 검증, 학사·공지 독립 교차리뷰.
+- **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12):** 출처 변경감지 [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), OCR·HCX-005 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), Temporal RAG [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), Laya CPU·Standard-g2·비용 하드 게이트 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). 실제 GitHub ID 매핑 확인 전 자동 assign/mention 금지.
+- **모든 에이전트:** 다음 세션 시작 즉시 원격 최신 main/이슈/PR과 이전 이슈 댓글을 확인하고 담당 이슈만 분기·PR·테스트로 진행한다. 이슈와 문서 작성은 자동 실행 아님. NCP/이미지/개인원본 전송·실배포는 별도 명시 승인 전 금지.
