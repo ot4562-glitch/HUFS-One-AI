@@ -1,6 +1,6 @@
 # HUFS One AI | 현재 작업 상태
 
-**기준일: 2026-10-30.** TASK-00 공통 TypeScript/Zod 계약과 합성 검증 코드를 로컬에서 구현했다. **실제 학생용 웹·API·CLOVA·NCP·학교 연동은 구현/승인 전**이며, 유료 호출·서비스 배포·개인자료 외부 이전은 별도 승인 대상이다. **사용자가 `외대.온라인.한국` 도메인을 확보했다고 보고했고, 공개 HTTPS 입구 + HUFS 계정 전용 접근을 신규 설계 결정으로 채택했다. DNS/TLS/실제 인증·배포는 아직 확인하지 않았다.**
+**기준일: 2026-10-30.** TASK-00 공통 TypeScript/Zod 계약과 합성 검증 코드를 로컬에서 구현했다. **실제 학생용 웹·API·CLOVA·NCP·학교 연동은 구현/승인 전**이며, 유료 호출·서비스 배포·개인자료 외부 이전은 별도 승인 대상이다. 사용자 확보 신고 도메인 `외대.온라인.한국`은 독립 서비스의 예정 주소이며, **공식 학교 SSO 미승인을 전제로 Google OAuth + 외대 메일 현재 수신권 증명 + 베타 allowlist**를 P0 출시 설계로 채택했다. DNS/TLS·Google/OTP/배포 구현은 미확인이다.
 
 ## 현재 정본과 독자
 
@@ -29,9 +29,9 @@
 | --- | --- | --- |
 | 도메인 `외대.온라인.한국` 확보 | **USER_REPORTED** | 2026-10-30 사용자 진술. 관리자 권한·DNS 증거는 별도 확인 |
 | `https://외대.온라인.한국` DNS/TLS/실서비스 | **NOT_VERIFIED / NOT_DEPLOYED** | 인증서·도메인 일치, HTTPS, origin/직접 IP 우회 차단, NCP 연결 미검증 |
-| 한국외대 계정 로그인 (`example@hufs.ac.kr`은 예시) | **NOT_IMPLEMENTED / IDP_PERMISSION_PENDING** | 기관 IdP/SSO 제공자·이용 허가·서명 검증·실제 계정 인증 시험 필요 |
-| 초기 베타 계정 인가·학생별 SharingGrant | **NOT_DEPLOYED** | 검증된 학교계정/초대 분리, 소유자/공유범위/철회 401·403 E2E 필요 |
-| 인터넷 공개 준비 | **BLOCKED** | 미인증 HTML·API·번들·storage/CDN·directIP·preview/서비스워커 우회 부정시험 및 NCP/개인자료 승인 전 개통 금지 |
+| Google OAuth + 외대 메일 현재 소유 증명 (`example@hufs.ac.kr`은 예시) | **DESIGNED / NOT_IMPLEMENTED** | 실제 Workspace `hd=hufs.ac.kr` 검증 또는 Google 계정과 결속한 외대 메일 OTP; Google OAuth/메일 발송·보안 시험 미완료. 학교 SSO 허가는 출시조건에서 제외 |
+| 초기 베타 계정 인가·학생별 SharingGrant | **NOT_DEPLOYED** | Google `sub` + 학교 메일 검증 후 초대 allowlist/role, owner·공유범위/철회 401·403 E2E 필요 |
+| 인터넷 공개 준비 | **BLOCKED** | DNS/TLS·Google OAuth·외대 이메일 OTP/Workspace 증빙·미인증 HTML/API/CDN·directIP/preview 접근 거부 부정시험 및 개인정보/NCP 승인 전 개통 금지 |
 
 정본: [Architecture.md](Architecture.md) A02·A13·A14.1a·A15·A18, [CLOUD.md](CLOUD.md). GitHub Private 유지와 외부 웹 주소 사용은 별개다.
 
@@ -44,7 +44,7 @@
 
 ## 확정 팀 구성과 TASK-00 준비 (2026-10-30 사용자 지시)
 
-- **김채윤:** 추천·공지; GPT/Claude/Gemini. **박준영:** 학업·개설 전망; GPT/Claude, 실제 개인자료 제출 대상 아님. **이의상:** UI·모바일; Claude/Gemini. **이서연:** 팀 결성·기획 리드 + API·CLOVA·NCP; AI 구독 미확인. **심민성:** GPT, 기술 총괄·GitHub 통합·공통 계약/교차 QA 담당.
+- **김채윤:** 추천·공지; GPT/Claude/Gemini. **박준영:** 학업·개설 전망; GPT/Claude, 실학생 CSV 제출 대상 아님. **이의상:** UI·모바일; Claude/Gemini. **이서연:** 팀 결성·기획 리드 + API·CLOVA·NCP; **Gemini 사용(2026-10-30 사용자 확인)**. **심민성:** GPT, 기술 총괄·GitHub 통합·공통 계약/교차 QA 담당.
 - 로컬 `C:\AIProjects\naver_competition`의 `main`은 2026-10-30 원격 커밋 `9930505`까지 fast-forward 동기화했다. TASK-00 코드는 **별도 `chore/task00-contracts-implementation` 브랜치**에서 작성했으며 main 병합 여부는 GitHub PR에서 확인한다. 사용자의 '로컬 전용 내부문서 삭제' 지시에 따라 중복·구식 인수인계 문서 **1개만** 참조 검색 후 삭제. 실제 Forms 예시·과목 CSV 로컬 백업·조사 원자료·retire는 **보호 유지**.
 - **TASK-00 진행 상태:** TypeScript/Zod 공통 계약 패키지 v0.1.0, Node ESM 출력+타입선언, npm 잠금파일, 합성 Golden/Negative fixture 및 4개 자동 소비자 관점 테스트를 구현했다. **로컬 `npm run check`: 계약87/87 + 4트랙 소비 20/20 = 107/107 통과**. Private 학생 자료 미사용. GitHub Actions remote CI/4명 실제 사람 리뷰/최종 main 병합은 별도 확인 대상이다.
 - 실제 학생 Forms/과목자료 통합·동의 확인·졸업 계산·NCP/CLOVA 유료 호출은 **미실행**. 다섯 데모 슬롯 중 현재 실학생 자료 대상은 최대 4명이며 남는 하나는 PENDING 또는 명시적 합성.
