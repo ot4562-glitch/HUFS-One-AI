@@ -8,11 +8,11 @@
 | **이의상** | UI·모바일·UX·접근성 | Claude, Gemini | `apps/web`, `packages/ui`, `assets/synthetic` | 04 및 05·09·15의 화면 |
 | **김채윤** | 개인화 추천·중요공지 | GPT, Claude, Gemini | `packages/core/src/normalization`, `opportunities`, `notices` | 06·14 |
 | **박준영** | 졸업요건·학점·수강계획·미래 개설 전망 | GPT, Claude | `packages/core/src/academics`, `forecast` | 01·02·03·17 |
-| **이서연** | 팀 결성·기획 리드 + API·CLOVA·NCP 기술 책임 | **확인되지 않음** | `apps/api`, `packages/ai`, `packages/core/src/privacy`, `infra` | 07·08·11 및 05·10·15의 서버 |
+| **이서연** | 팀 결성·기획 리드 + API·CLOVA·NCP 기술 책임 | **Gemini (2026-10-30 사용자 확인)** | `apps/api`, `packages/ai`, `packages/core/src/privacy`, `infra` | 07·08·11 및 05·10·15의 서버 |
 
-**GitHub ID 확인 필요:** 현재 저장소 소유자 `ot4562-glitch` 외 팀원별 GitHub 계정의 실명 대응은 검증되지 않았다. 과거 PR 작성자 닉네임만으로 사람을 연결하거나 자동 리뷰어/권한을 지정하지 않는다. 이서연의 구독 '미확인'을 '없음'으로 바꾸지 않는다.
+**GitHub ID 확인 필요:** 현재 저장소 소유자 `ot4562-glitch` 외 팀원별 GitHub 계정의 실명 대응은 검증되지 않았다. PR 닉네임만으로 사람을 연결하거나 자동 리뷰어/권한을 지정하지 않는다. **이서연의 Gemini 사용은 사용자가 확인했으며**, 다른 AI 구독·결제 상태는 추정하지 않는다.
 
-- **공개 웹 도메인/인증 P0 협업:** 이서연(API·NCP)이 기관 IdP 계약 확인·서버 세션·ingress/스토리지 경계를 구현하고, 이의상(UI)이 인증 전 최소 로그인·403·재인증 UX와 민감 캐시 금지를 담당한다. 심민성은 공용 auth 계약·정확한 `외대.온라인.한국` origin·negative E2E/CI·PR 통합 게이트를 소유한다. 학교 IdP의 실제 사용 허가, DNS/TLS, 개인정보 처리·NCP 과금은 사람의 승인 대상이다. 인증 전 정적 번들/API·directIP·preview 접근을 허용하는 PR은 병합 불가(Architecture A14.1a).
+- **공개 웹 도메인/Google 인증 P0 협업:** 이서연(API·NCP, Gemini 사용)은 독립 Google OAuth OIDC·외대 메일 OTP 발송/검증·세션·ingress/스토리지 경계를 담당한다. 이의상(UI)은 Google 로그인·학교 메일 코드·403·재인증 UX와 민감 캐시 차단을 담당한다. 심민성은 공용 auth contract, `외대.온라인.한국` origin, `hd`/메일 OTP 우회 부정시험, CI/PR 통합 게이트를 맡는다. **공식 학교 SSO 허가는 전제하지 않으며** Google OAuth 클라이언트·메일 발송 서비스·NCP 비용·학생자료 공유는 별도 승인한다. 인증 전 앱 번들/API·directIP·preview 접근을 허용하는 PR은 병합 금지(Architecture A14.1a).
 
 ## 충돌 방지와 교차 검토
 
