@@ -36,6 +36,6 @@
 
 ## GitHub 게시 준비
 
-- **최신 사용자 요청의 좁은 예외:** 기존 csv/ 이수과목 파일 2개만 Private 저장소의 본 PR 브랜치에 포함한다. 다른 실제 학생 원본과 Google Forms 응답은 계속 제외하며, 외부 AI·NCP·공개/배포·타 팀원 실자료 조회는 별도 동의 범위다. docs/DATA_GOVERNANCE.md를 따른다.
+- **파일별 지시의 좁은 예외:** 기존 두 과목 CSV 외에 2026-10-30 사용자가 지정한 `csv/이수과목_이의상.csv` 한 파일을 별도 Private PR에 추가한다. 다른 학생 파일·Google Forms 원본·성적은 제외하며, 외부 AI·NCP·공개 배포·타 팀원 실자료 열람은 계속 별도 당사자 동의 및 이용범위 확인 대상이다. docs/DATA_GOVERNANCE.md를 따른다.
 
 프로젝트를 하나의 저장소로 관리하되 `.gitignore`와 `.dockerignore`를 우회하지 않는다. `local_only/`, `templates/real5-intake/*.csv`(실제 사용자 Google Forms 예시 포함), `HUFS_UI.pdf`, 승인되지 않은 실제 학생 자료, 원본/개인 화면, 수집 원문, 로그/DB/키, `retire/`는 로컬 보존 전용이다. 업로드 전 `tools/verify_release_boundary.py`로 추적 후보와 이미 추적된 파일을 검사한다. **초기 Private 저장소 생성·commit·push는 2026-10-30 사용자 최신 지시로 승인됐으며**, 추후 public 전환·실학생 업로드·유료 서비스·릴리스는 별도 승인 대상이다.
