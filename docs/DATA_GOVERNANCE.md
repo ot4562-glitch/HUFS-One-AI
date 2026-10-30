@@ -15,7 +15,7 @@
 
 ## 외대 계정 로그인 웹 배포에 대한 추가 제한
 
-사용자 확보 신고 도메인 `외대.온라인.한국`으로 인터넷 접속이 가능해지더라도 **기관 로그인 인증 자체는 실학생 CSV·Forms 원본을 NCP/정적 프런트/공용 DB에 전송하는 동의가 아니다**. `@hufs.ac.kr` 계정 신원 확인, 초기 베타 접근 인가, 개인별 공유 목적·섹션·철회(SharingGrant), 클라우드 저장·AI 처리 동의는 별도로 입증한다. 원본/신원 대응은 기존 Private 저장소/제한 로컬 자료 경계에서 검토하고 공개 앱의 HTML·JS·asset·preview·CI·클라우드 로그로 복사하지 않는다. 디폴트는 미인증/무권한 접근 차단이며, SSO 연결 허가·사용자 자료권한이 없으면 합성 검증만 수행한다. [Architecture.md](../Architecture.md) A14.1a와 [CLOUD.md](../CLOUD.md) 참조.
+사용자 확보 신고 도메인 `외대.온라인.한국`에 **학교 SSO 없이 Google 로그인 + 외대 메일 현재 소유 확인(Workspace `hd` 또는 메일 OTP)**을 도입하더라도, 이메일 소유/초대 승인 자체는 실학생 CSV·Forms 원본을 NCP·정적 프런트·공용 DB에 전송하는 동의가 아니다. 확인된 Google `sub`/메일 소유/초대 actor, 개인별 SharingGrant, 클라우드 저장·AI 처리 동의는 별개다. 원본 신원대응은 제한 보관하고 공개 HTML/JS·assets·preview·CI·클라우드 로그로 복사하지 않는다. Gmail-only·OTP 재사용·미초대·철회 등은 기본 차단하며 외부 자료 처리 동의가 없다면 합성 검증만 수행한다. [Architecture.md](../Architecture.md) A14.1a 및 [CLOUD.md](../CLOUD.md) 참조.
 
 ## 4인 제출·동의 검증 게이트 (2026-10-30 확정)
 
