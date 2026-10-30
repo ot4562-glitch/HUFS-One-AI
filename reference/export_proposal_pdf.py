@@ -177,6 +177,8 @@ def describe_tables(rendered: str):
 
 
 def create_html(markdown: str, checksum: str):
+    # Source-only editing marker: omit it in the visual PDF.
+    markdown = markdown.replace('<!-- PAGEBREAK -->', '')
     parser = MarkdownIt("default", {"html": False, "breaks": False}).enable("table")
     rendered = parser.render(markdown)
     intro = re.match(r"\s*(<h1>.*?</h1>\s*<p>.*?</p>\s*<p>.*?</p>)", rendered, flags=re.S)

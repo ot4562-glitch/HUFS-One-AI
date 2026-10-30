@@ -77,4 +77,4 @@
 - **시의성 RAG:** 게시·수집·마지막 검수·적용기간, 정정/취소/연장 sourceRevision을 불변 보관하고 `asOf`/권한 선필터 검색. 변경 시 인덱스·후속 캐시 무효화. 실제 코어/DB 구축은 미완료.
 - **신규 계약 대상:** `SourceSpan IMAGE`·`SourceRevision`·`VerifiedClaim`·`RetrievalEnvelope`·`DecisionAdvice`는 별도 Zod contracts PR/4트랙 리뷰 후 구현. 이 PR은 문서와 제안서 PDF만 수정하고 기존 #15/#16 코드를 변경하지 않는다.
 - **공모전 예산:** 본선팀 **별도 개발비 50만원 + NCP 크레딧 50만원 상당**; 지급·클라우드 적용·VAT/실청구 미확인, **유료 리소스 배포 없음**. 상세 기준: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`.
-- **제안서:** `Proposal.md` 개정 완료. PDF는 최종 원문 검수 및 PDF 스킬 렌더 후 동일 설계 PR에 올리는 대상이며 최종 PDF 생성 정보로 본 항목을 갱신한다.
+- **제안서 PDF 완료:** GitHub PR 브랜치에서 새로 내려받은 `Proposal.md`(SHA-256 `797684a363a4428966b6bf7fb5e0882ec97e8b488a8a907cc5ae7d561986acf9`)를 기준으로 SVG 벡터 구조도·새 표지·목차·테이블을 포함한 **A4 17쪽 `Proposal.pdf`**를 제작했다. Windows.Data.Pdf 렌더러 **17/17페이지 출력**과 2개 전체 contact sheet 시각 검수를 마쳤다. PDF SHA-256 `f3d387a005f2792a47fb70ae373182c33e104fe5a1284000878329dfbb988518`, 722,163바이트. 이번 설계 PR에 업로드하며, 원문 변경 시 재출력·전체 페이지 재검증이 필요하다.
