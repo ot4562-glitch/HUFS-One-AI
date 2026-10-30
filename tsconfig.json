@@ -23,6 +23,7 @@
   },
   "include": [
     "packages/contracts/src/**/*.ts",
+    "packages/core/src/**/*.ts",
     "tests/**/*.ts",
     "vitest.config.ts"
   ]

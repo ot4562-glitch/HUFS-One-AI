@@ -10,7 +10,7 @@
     "packages/contracts"
   ],
   "scripts": {
-    "check": "npm run typecheck && npm run test:contracts && npm run test:consumers",
+    "check": "npm run typecheck && npm run test:contracts && npm run test:consumers && npm run test:core",
     "typecheck": "npm run build:contracts && tsc --noEmit -p tsconfig.json",
     "test": "npm run build:contracts && vitest run",
     "test:contracts": "npm run build:contracts && vitest run tests/contracts",
@@ -19,6 +19,7 @@
     "test:consumer:recommendations": "npm run build:contracts && vitest run tests/consumers/recommendation-contract.test.ts",
     "test:consumer:academics": "npm run build:contracts && vitest run tests/consumers/academics-contract.test.ts",
     "test:consumer:api": "npm run build:contracts && vitest run tests/consumers/api-contract.test.ts",
+    "test:core": "npm run build:contracts && vitest run packages/core",
     "test:watch": "npm run build:contracts && vitest",
     "check:privacy": "python3 tools/verify_release_boundary.py",
     "build:contracts": "npm run build -w @hufs-one/contracts"

@@ -9,6 +9,7 @@ on:
       - tsconfig.json
       - vitest.config.ts
       - packages/contracts/**
+      - packages/core/**
       - packages/fixtures/synthetic/**
       - packages/fixtures/negative/**
       - tests/contracts/**
@@ -22,6 +23,7 @@ on:
       - tsconfig.json
       - vitest.config.ts
       - packages/contracts/**
+      - packages/core/**
       - packages/fixtures/synthetic/**
       - packages/fixtures/negative/**
       - tests/contracts/**
@@ -47,6 +49,7 @@ jobs:
             /tsconfig.json
             /vitest.config.ts
             /packages/contracts/
+            /packages/core/
             /packages/fixtures/synthetic/
             /packages/fixtures/negative/
             /tests/contracts/
