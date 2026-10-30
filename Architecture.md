@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.task00-contracts-r6` · 상태: 설계 승인 검토용 · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-30.hufs-domain-auth-r7` · 상태: 설계 승인 검토용 (도메인·기관 인증은 구현/가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -9,20 +9,21 @@
 
 ### A00.1 제품 순서와 구현 경계
 
-1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수.
+1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수. **공개 인터넷 배포 시 외대 계정의 검증된 기관 인증을 선행시키는 것은 P0 필수 출시 게이트**이며, 로그인 전 제품 화면·API·개인자료 접근을 차단한다.
 2. **P1 병렬:** 실제 수강원장·Forms 제출 대상인 **최대 4명**의 졸업요건·간단 계획, 공식 근거 기반 제한적 전망. 개발팀 5명과 학생 입력자 4명은 다르다. 다섯 데모 슬롯 중 실제 데이터 없는 한 슬롯은 PENDING 또는 명시적 SYNTHETIC 상태다.
-3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 공식 SSO·학교 DB 연동, 앱스토어·푸시, 완전한 오프라인 동기화. P2 미완료로 P0 통합을 늦추지 않는다.
+3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 학교 DB/학사시스템의 공식 자료 연동, 앱스토어·푸시, 완전한 오프라인 동기화. **외대 계정 인증 게이트는 P2가 아니라 P0 공개 웹 배포의 전제**이며, 학교 IdP/SSO 연동은 공식 허가·기술 지원 확인 전까지 미확정이다.
 4. **NCP 사용은 이 프로젝트의 필수 선택**이다. 공식 공모전에서 NCP가 선택인지와는 별개다. 실제 배포·유료 호출은 계정·자료·예산 승인 후 수행한다. 문서 작성은 제품 구현 또는 리소스 생성 허가가 아니다.
 5. 상단 이름 변경은 실제 로그인 변경이 아닌 **승인된 demoSubject 전환**이다. `S01`~`S05` 다섯 시연 슬롯은 유지하되 실자료는 최대4명만 후보이며 동의가 없으면 공유할 수 없다. private source 및 타인의 실제 기록 수정권은 공유하지 않는다.
 6. 첫 데모는 온라인. 장애는 명시적 캐시·읽기 전용·재시도로 복구한다. 공개 합성 fixture와 모의 AI는 개발·검증 대안이지 NCP live 실적이 아니다.
 7. ‘결정론 AI’라는 모호한 이름 대신 **규칙·검색 기반 판단 엔진 + CLOVA 언어 이해**를 사용한다. 모델 학습을 하지 않았다면 학습형 AI라고 쓰지 않는다. temperature=0도 LLM의 완전한 결정성을 보장하지 않는다.
 8. **팀원 이해가 배포 준비 조건**이다. 에이전트는 소스/테스트 외에 구조 지도·요청 흐름·쉬운 설명·질문 답변을 제공한다. 공식 독립 배점이라고 허위 표기하지 않는다.
+9. **공개 DNS·폐쇄형 서비스:** 사용자가 확보했다고 알린 접속 예정 도메인은 **`외대.온라인.한국`**, 정규 HTTPS origin은 `https://외대.온라인.한국`이다. 인터넷에서 DNS·TLS 연결이 가능하다는 뜻이지 익명으로 제품을 열람할 권한은 아니다. **학교 계정 인증 → 베타 이용자 승인 → 개별 자료 SharingGrant**를 각각 서버에서 검증한다. 도메인 소유권·DNS·TLS·학교 IdP/SSO 연결·실제 배포 완료는 아직 검증되지 않았다. 저장소는 Private을 유지한다.
 
 ### A00.2 권위와 문서 역할
 
 최신 사용자 승인 → 실제 개인정보/기관/서비스 이용조건 → 본 문서 타입·판정·권한·시험 → Proposal의 설명·예시 → 외부 디자인 영감 순이다. 공식 규정이 소프트웨어 가정과 다르면 대상 규칙팩을 검수 상태로 돌린다. 모든 예시는 `SYNTHETIC`이며 실제 5명의 정보로 보지 않는다.
 
-`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다.
+`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, 외대 계정 인증·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
 
 **현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개의 제출자는 사용자 확인에 따라 **김채윤(별명 까마르)·이의상·심민성**이다. 별명 대응은 입력 단계에서 소유자 확인 완료이지만 목적별 동의·실제 Forms 대조는 별도다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
 
@@ -53,9 +54,11 @@
 - NCP: 인터넷 HTTPS에서 이 실행부를 운영하는 장소.
 
 ```text
-React web / future native wrapper
-  -> same-origin HTTPS Fastify API
-     -> authentication + actor/demo-subject authorization
+Untrusted internet -> https://외대.온라인.한국 (planned)
+  -> TLS ingress + deny-by-default edge access gate
+     -> minimal login / approved campus IdP redirect+callback only before auth
+  -> authenticated React web / same-origin HTTPS Fastify API
+     -> verified campus principal + beta allowlist + actor/demo-subject authorization
      -> deterministic core (no hidden clock/network)
      -> PostgreSQL / authorized media registry
      -> queue worker -> privacy/policy gate -> CLOVA Studio
@@ -91,6 +94,8 @@ local_only/{real5,source_raw,consents,private_reports,backups}
 ## A02. 다섯 명 전환: UX와 보안 계약
 
 ### A02.1 로그인한 사람과 보는 대상
+
+**인증 주체 조건:** 인터넷 서비스에서는 학교가 승인한 IdP의 암호학적으로 검증된 OIDC/SAML 로그인 결과 또는 별도 승인된 동등 수준의 학교 계정 검증 방식으로만 `actorId`를 생성한다. `example@hufs.ac.kr`은 이메일 형식 예시일 뿐 존재·인증·접근권을 의미하지 않는다. 이메일 문자열의 `@hufs.ac.kr` 접미사만 검사하거나 브라우저가 전달한 주소를 믿어서는 안 된다. 로그인 성공은 그 사람의 비공개 학업 자료나 다른 시연 대상에 대한 접근 허가가 아니다. 초기 베타는 별도 승인된 actor allowlist만 허용하고, 학내 전체 자동 가입은 확장 승인 전 금지한다.
 
 ```ts
 export type SubjectAlias = 'S01'|'S02'|'S03'|'S04'|'S05';
@@ -676,7 +681,7 @@ rolling-origin: 시점T에 publishedAt≤T이고 당시 확보가능한 source�
 
 ### A11.1 화면 우선순위와 구조
 
-Routes: `/login`, `/today`, `/opportunities`, `/opportunities/:id`, `/notices`, `/experience`, `/experience/:id`, `/graduation`, `/plan`, `/outlook`, `/saved`, `/settings`, `/admin`.
+Routes: `/login`, `/today`, `/opportunities`, `/opportunities/:id`, `/notices`, `/experience`, `/experience/:id`, `/graduation`, `/plan`, `/outlook`, `/saved`, `/settings`, `/admin`. 인터넷 미인증 상태에서는 **최소 로그인 안내/인증 왕복 및 일반 오류 화면 외 모든 route의 HTML·데이터 로딩을 서버/edge에서 차단**한다. 프런트 라우터만으로 비공개 화면을 보호하지 않는다.
 
 하단 5탭은 오늘·기회·경험·졸업·보관함이다. 공지는 홈 고정 알림과 별도 목록에서, 개설 전망은 졸업 탭 안에서 접근한다. 상단 시연 selector는 주요 화면에서 유지한다. `/settings`는 로그인한 actor의 개인 설정과 현재 시연 대상 정보를 나눈다. `/admin` 권한은 이름 선택으로 바뀌지 않는다.
 
@@ -705,7 +710,7 @@ PC 1440에서는 최대폭 1392px·좌우 24px, 주영역과 보조영역은 약
 | AI_REVIEW_REQUIRED | 해석 확인이 필요합니다 | 원문·검수 |
 | AI_SKIPPED_PRIVACY | 이 내용은 외부 AI로 보내지 않았습니다 | 로컬 태그 선택·사람 정리 |
 | BUDGET_PAUSED | AI 새 요청 한도에 도달했습니다 | 코드 기능·검증 캐시 계속 |
-| OFFLINE_READONLY | 연결 끊김·마지막 검증본 보기 | 재연결, 새 쓰기 차단 |
+| OFFLINE_READONLY | 연결 끊김·재인증 필요 | 공개 합성 안내만 표시, 개인 snapshot은 인증 재확인 전 차단 |
 | SHARING_REVOKED | 공유 허용이 변경되었습니다 | 해당 화면 비우기 |
 | SYNTHETIC | 시연용 가상 자료 | 실제 신청 비활성화 |
 
@@ -795,8 +800,9 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 | API | 처리 | 필수 검사 |
 |---|---|---|
-| POST /api/auth/login | 초대 계정 로그인 | 인증 정책·rate·세션 생성 |
-| GET /api/auth/session | actor·role 조회 | 세션 유효성 |
+| POST /api/auth/login | 과거 초대 로그인 초안; 공개 웹에서 미활성화 | 학교 계정 인증 경로를 별도 공용 계약 PR로 확정 전 차단 |
+| GET /api/auth/session | actor·role 조회 | 세션 유효성, 미인증 401 및 최소 응답 |
+| GET /auth/start · GET/POST /auth/callback (제안) | 승인된 기관 IdP 인증 시작·검증 완료 | 실제 경로·provider별 메서드는 후속 계약 PR에서 확정; 인가 전 비활성화 |
 | POST /api/auth/logout | 세션 폐기 | CSRF·캐시 정리 |
 | GET /api/demo/profiles | 다섯 표시 옵션 | actor·grant·준비상태 |
 | POST /api/demo/contexts | 대상 문맥 발급 | session·target·grant·dataset |
@@ -834,7 +840,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 {task}는 네 작업만 등록한다: `experience-skills`, `opportunity-terms`, `personal-action-brief`, `graduation-explanation`. 초대 계정5개 중 운영 역할을 부여할 수 있지만 admin이 개인 동의를 우회하는 것은 아니다. 시연과 개인 쓰기 경로를 혼용하지 않는다.
 
-세션 쿠키는 HttpOnly/Secure/SameSite, 상태 변경은 Origin·CSRF 검사다. 에이전트는 검증된 인증 부속을 선택하고 암호·세션 토큰을 직접 평문 저장하지 않는다. 운영 domain이 확정되면 쿠키·CORS·로그아웃 계약 시험을 수행한다.
+세션 쿠키는 HttpOnly/Secure/SameSite, 상태 변경은 Origin·CSRF 검사다. 에이전트는 검증된 인증 부속을 선택하고 암호·세션 토큰을 직접 평문 저장하지 않는다. 쿠키는 `외대.온라인.한국`의 **host-only** 범위로 제한하며 wildcard `Domain`·브라우저 저장 토큰·검증 없는 `X-Forwarded-User`를 금지한다. OAuth/OIDC를 채택하면 서명/JWKS·issuer·audience·만료·nonce·state·PKCE, SAML을 채택하면 서명된 assertion·recipient·InResponseTo·만료 등을 공급자 계약에 맞게 검증한다. 신뢰 가능한 provider assertion의 이메일이 확인된 경우에만 정규화한 정확한 `hufs.ac.kr` 도메인을 허용하며, 그것만으로 인증이나 현재 재학/재직·자료 공유권을 증명하지 않는다. 만료·철회·비초대 계정·로그아웃은 세션과 개인 캐시를 차단한다. 학교 IdP 지원·승인이 없으면 외부 서비스 공개는 `BLOCKED`로 유지한다.
 
 오류 응답은 `{code,message,requestId,retryable,contextId?}`다. 401=인증, 403=권한/철회, 409=버전, 422=입력/근거, 429=한도, 503=외부서비스. DB 예외·모델 raw 오류·비밀키·다른 대상의 원문은 응답하지 않는다.
 
