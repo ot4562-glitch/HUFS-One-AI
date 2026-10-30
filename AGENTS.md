@@ -44,3 +44,9 @@
 ## 2026-10-31 신뢰형 RAG·멀티모달·Laya 설계 분리
 
 **신규 정본:** `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 NCP Standard-g2 2vCPU·8GB, Laya multilingual 322M CPU(선택 비동기), General OCR + 조건부 HCX-005 Vision, HCX-007, 시간·권한 기반 PostgreSQL RAG/SourceRevision의 새 **설계 계약**이다. 기존 AI 네 작업과 개인정보/인증·CLOVA 정책을 유지한다. 후속 contracts Zod·DB·API 변경은 기술 총괄 심민성 전용 PR과 소비자 리뷰 후에만 병합한다. 검증/요금/권리/CPU RSS/클라우드 크레딧 확인 및 명시적 승인 전에는 모델 다운로드·NCP 생성·유료 호출·개통 금지. 설계 변경과 코드 구현 완료를 혼동하지 않는다.
+
+## 2026-10-31 RAG·OCR/Vision·Laya 운영 이슈 추적 (개발 에이전트 필독)
+- **매 세션 최신 GitHub 이슈부터 확인:** [통합 EPIC #23](https://github.com/ot4562-glitch/HUFS-One-AI/issues/23), 본인 담당 이슈 **심민성 #8/#18, 이의상 #9, 김채윤 #10, 박준영 #11, 이서연 #12 및 #19~#22**, 설계 [PR #17](https://github.com/ot4562-glitch/HUFS-One-AI/pull/17). 이 번호들은 작업 추적이며 자동 실행·구현 완료가 아니다.
+- **의존 순서:** #17 설계 리뷰 → #18 공통 계약/소비자 승인 → #19 출처 버전·권한 수집 → #20 General OCR·조건부 HCX-005 → #21 asOf·권한 기반 RAG/근거검증 → #22 Laya CPU Standard-g2 자원·비용 실측(실제 과금/모델 다운로드/배포는 추가 승인). UI/추천/학업은 각 소유 이슈를 합성 테스트와 연결한다.
+- **먼저 남은 코드 차단 해결:** 추천 [PR #15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), 중요공지 [PR #16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)는 독립 변경요청이 남아 있으므로 해소+리뷰 전 병합 금지. #16은 #15 기반이므로 병합 순서를 지킨다.
+- 이슈 체크는 **합격한 CI만이 아니라 변경 PR·재현 테스트·권한·출처 라이선스·비용·모델 RSS/latency·실제 독립 리뷰/미실행 항목**을 기록한 뒤 수행한다. 모델 confidence/JSON을 자격·학칙·마감 확정으로 사용하지 않는다. 자동 배포·main 병합 금지.
