@@ -13,6 +13,7 @@
 | SafeLlmPacket·증거 | A06 | 이서연 → 추천·UI | 네 AI 작업, 안전 입력과 quote ID |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
 | 인증·오류 enum·API v1 | A02·A13 | 이서연 → 모든 팀 | 401/403/409/422/429/503, requestId |
+| **외대 계정 로그인·외부 접속 게이트 (신규 P0, 미구현)** | A14.1a·A13 | 이서연 API/NCP → 이의상 UI → 심민성 통합/QA | `외대.온라인.한국` origin, 검증된 기관 IdP, 베타 인가, 익명 HTML/API·직접IP/CDN 차단, 401/403·철회 E2E; 학교 허가 미확인 |
 
 ## 구현한 TypeScript/Zod v0.1.0 타입·동작 (A02/A04/A06/A13과 동일 의미)
 
@@ -24,6 +25,8 @@
 - **CLOVA:** 제품 AI 업무는 `experience_skills`, `opportunity_terms`, `personal_action_brief`, `graduation_explanation`의 **네 작업**이다. 구조화 JSON/quote를 실제 자격·학점 검증 대신 사용하지 않으며 개인정보 원본/actor/subject 매핑을 제공자에 보내지 않는다.
 - **API 오류:** 통일된 응답 봉투는 `{code,message,requestId,retryable,contextId?}`. 상태 401(인증), 403(미공유/철회), 409(버전), 422(스키마/근거), 429(한도), 503(서비스 장애). 세부 `code` literal과 Zod 스키마는 실제 계약 PR에서 하나의 정본으로 고정한다.
 - **Intake:** Forms 원본은 **26열 헤더/4인 응답**, 과목 CSV는 동일 4명의 각 6열 파일이다. **사용자가 `까마르=김채윤` 별명 소유자를 직접 확인**했으므로 이 파일은 3번째 제출로 집계한다. 하지만 실명↔가명 매핑은 런타임의 별도 승인 registry에 주입하고 코드/CI에 하드코딩하지 않는다. 아직 이서연 파일/Forms 통합본/동의는 미완료; 원본 학업행은 합성 fixture에 사용 금지.
+
+**변경 영향 — 구현 전:** 현재 v0.1.0 contracts/fixture는 기관 IdP 로그인 구현을 포함하지 않는다. 기존 `POST /api/auth/login` 초대 로그인 초안은 인터넷 공개용 로그인으로 쓰지 않는다. Provider 확인 후 실제 callback/인증 actor/session/오류 스키마를 통합 담당에게 **별도 계약 PR**로 제안하고 4개 트랙 소비자 검토 후 연결한다. 이메일 `@hufs.ac.kr` 단순 비교는 인증이 아니며 로그인 성공은 다른 학생 원장 공유권이 아니다. 기관 SSO 허가가 없으면 앱 인터넷 공개는 BLOCKED.
 
 ## TASK-00 승인 체크리스트 — 합성 fixture만 사용
 
