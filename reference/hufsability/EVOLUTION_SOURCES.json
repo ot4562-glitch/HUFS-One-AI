@@ -1,0 +1,52 @@
+{
+    "scope":  "Official public HUFSAbility evolution newsletters and HUFS Vision 2028; local reference only",
+    "collectedAt":  "2026-10-28T15:49:50+09:00",
+    "items":  [
+                  {
+                      "sha256":  "7fbee0526a0233a1927c5a07a3c746b803e5b80cabc7dba3efcb09b22da9f7f6",
+                      "bytes":  7697643,
+                      "year":  2025,
+                      "volume":  4,
+                      "referenceOnly":  true,
+                      "url":  "https://iei.hufs.ac.kr/sites/iei/file/%5B%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%5D%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%20Vol.4_%EC%B5%9C%EC%A2%85_250226_%EC%9B%B9%EC%9A%A9_%EB%8B%A8%EB%A9%B4.pdf",
+                      "file":  "raw/HUFS_2025_newsletter_vol4.pdf"
+                  },
+                  {
+                      "sha256":  "c34f8374ee9976b40fd3a683c3dfb3608f8b21b58884d126e41ac63c12a369cb",
+                      "bytes":  13165746,
+                      "year":  2025,
+                      "volume":  5,
+                      "referenceOnly":  true,
+                      "url":  "https://iei.hufs.ac.kr/sites/iei/file/%5B%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%5D%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%20Vol.5_v10_%EC%9B%B9%EC%9A%A9%EB%8B%A8%EB%A9%B4.pdf",
+                      "file":  "raw/HUFS_2025_newsletter_vol5.pdf"
+                  },
+                  {
+                      "sha256":  "378a1463a96c4f811fc685bce2cf57f47fa7449c8cf6cd0a687b36516a5463ff",
+                      "bytes":  5097891,
+                      "year":  2026,
+                      "volume":  6,
+                      "referenceOnly":  true,
+                      "url":  "https://iei.hufs.ac.kr/sites/iei/file/%5B%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%5D%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%20Vol.6_v7.pdf",
+                      "file":  "raw/HUFS_2026_newsletter_vol6.pdf"
+                  },
+                  {
+                      "sha256":  "908abbf0a8c7d6befd8f6c092da0ccdfe953339bd6492c89b3b078cb313bc82d",
+                      "bytes":  2000157,
+                      "year":  2020,
+                      "volume":  0,
+                      "referenceOnly":  true,
+                      "url":  "https://www.hufs.ac.kr/sites/hufsplan/download/vision2028.pdf",
+                      "file":  "raw/HUFS_Vision_2028.pdf"
+                  },
+                  {
+                      "year":  2023,
+                      "volume":  1,
+                      "file":  "raw/HUFS_2023_newsletter_vol1.pdf",
+                      "url":  "https://dep.hufs.ac.kr/sites/iei/file/%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%20%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%28Vol.1%29.pdf",
+                      "sha256":  "7bb5062ee02e4acae0a8af1b08e24864fb70b8e8924c6edd065f8dc7a87e214f",
+                      "bytes":  3465686,
+                      "referenceOnly":  true
+                  }
+              ],
+    "institution":  "HUFS"
+}

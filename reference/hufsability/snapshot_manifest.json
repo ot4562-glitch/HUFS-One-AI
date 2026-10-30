@@ -1,0 +1,57 @@
+{
+    "source":  "HUFSAbility and HUFS Job public webpages",
+    "total":  4,
+    "no_login":  true,
+    "robots_status":  "robots.txt returned 404 on both hosts; sample intentionally limited",
+    "collected_at":  "2026-10-28T11:41:14+09:00",
+    "items":  [
+                  {
+                      "url":  "https://hufsability.hufs.ac.kr/common/user/login.do",
+                      "content_type":  "text/html;charset=utf-8",
+                      "filename":  "raw/public_login.html",
+                      "key":  "public_login",
+                      "visibility":  "public_unauthed",
+                      "reuse":  "internal_layout_and_schema_reference_only",
+                      "sha256":  "670933e307231f09bb389a92e979e654e1d30b35899ef81aa5084e6f765182b0",
+                      "fetched_at":  "2026-10-28T11:41:10+09:00",
+                      "size":  23255,
+                      "status":  200
+                  },
+                  {
+                      "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmList.do",
+                      "content_type":  "text/html;charset=utf-8",
+                      "filename":  "raw/program_list.html",
+                      "key":  "program_list",
+                      "visibility":  "public_unauthed",
+                      "reuse":  "internal_layout_and_schema_reference_only",
+                      "sha256":  "04f9c2c313c1a8150b61a7dd90a7c313901bd92153e41768dd885e47812fe374",
+                      "fetched_at":  "2026-10-28T11:41:11+09:00",
+                      "size":  60396,
+                      "status":  200
+                  },
+                  {
+                      "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089",
+                      "content_type":  "text/html;charset=utf-8",
+                      "filename":  "raw/program_detail_2026_ai_campus.html",
+                      "key":  "program_detail",
+                      "visibility":  "public_unauthed",
+                      "reuse":  "internal_layout_and_schema_reference_only",
+                      "sha256":  "3c248172d3decc2bb35b0a24d4d4caaeb51c69e6e9028e3af6f2814048c46844",
+                      "fetched_at":  "2026-10-28T11:41:12+09:00",
+                      "size":  38295,
+                      "status":  200
+                  },
+                  {
+                      "url":  "https://job.hufs.ac.kr/job/main/index.do",
+                      "content_type":  "text/html;charset=utf-8",
+                      "filename":  "raw/job_hufs_home.html",
+                      "key":  "public_jobs_home",
+                      "visibility":  "public_unauthed",
+                      "reuse":  "internal_layout_and_schema_reference_only",
+                      "sha256":  "9ef03a64e3deebf7024de5614695519deefbf39ff8be23c1a2d5e128a9def6dc",
+                      "fetched_at":  "2026-10-28T11:41:13+09:00",
+                      "size":  24050,
+                      "status":  200
+                  }
+              ]
+}

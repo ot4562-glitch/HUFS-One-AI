@@ -1,0 +1,188 @@
+{
+    "check_time":  "2026-10-28T17:52:46+09:00",
+    "approved_source_hosts":  [
+                                  "hufsability.hufs.ac.kr",
+                                  "job.hufs.ac.kr",
+                                  "iei.hufs.ac.kr",
+                                  "dep.hufs.ac.kr",
+                                  "www.hufs.ac.kr",
+                                  "hufsplan.hufs.ac.kr"
+                              ],
+    "source_count":  20,
+    "screenshot_count":  3,
+    "dataset_examples_total":  30,
+    "forbidden_university_token_count":  0,
+    "unregistered_files":  [
+
+                           ],
+    "source_receipts":  [
+                            {
+                                "path":  "raw/public_login.html",
+                                "sha256":  "670933e307231f09bb389a92e979e654e1d30b35899ef81aa5084e6f765182b0",
+                                "allowed_host":  true,
+                                "size":  23255,
+                                "source_url":  "https://hufsability.hufs.ac.kr/common/user/login.do"
+                            },
+                            {
+                                "path":  "raw/program_list.html",
+                                "sha256":  "04f9c2c313c1a8150b61a7dd90a7c313901bd92153e41768dd885e47812fe374",
+                                "allowed_host":  true,
+                                "size":  60396,
+                                "source_url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmList.do"
+                            },
+                            {
+                                "path":  "raw/program_detail_2026_ai_campus.html",
+                                "sha256":  "3c248172d3decc2bb35b0a24d4d4caaeb51c69e6e9028e3af6f2814048c46844",
+                                "allowed_host":  true,
+                                "size":  38295,
+                                "source_url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089"
+                            },
+                            {
+                                "path":  "raw/job_hufs_home.html",
+                                "sha256":  "9ef03a64e3deebf7024de5614695519deefbf39ff8be23c1a2d5e128a9def6dc",
+                                "allowed_host":  true,
+                                "size":  24050,
+                                "source_url":  "https://job.hufs.ac.kr/job/main/index.do"
+                            },
+                            {
+                                "path":  "raw/recruitment_general.html",
+                                "sha256":  "60552db0d3d87ee36f97eb17dcd0ed3a9f342a87d0cee3ba82b3bdda5dbac963",
+                                "allowed_host":  true,
+                                "size":  35642,
+                                "source_url":  "https://job.hufs.ac.kr/job/ncEm/job/rcrt/nor/rcrt/index.do"
+                            },
+                            {
+                                "path":  "raw/external_activities.html",
+                                "sha256":  "05b95531f211bd468f3f7165ca8dc96bfb16c4db31fc86f615800b303bd5f79c",
+                                "allowed_host":  true,
+                                "size":  30877,
+                                "source_url":  "https://job.hufs.ac.kr/job/ncEm/jobActy/exOutRcri/index.do"
+                            },
+                            {
+                                "path":  "raw/iei_official_hufsability_intro.html",
+                                "sha256":  "fd7b5756c31b013ebcb1b69a84ab03b41395365b322fce502a224f745552038c",
+                                "allowed_host":  true,
+                                "size":  76040,
+                                "source_url":  "https://iei.hufs.ac.kr/iei/13534/subview.do"
+                            },
+                            {
+                                "path":  "raw/HUFSAbility_student_manual_public.pdf",
+                                "sha256":  "ed6f5c354db79e49deba688a2efbf97233ffd27f1d067414cdaa1bd5eb3f7c7c",
+                                "allowed_host":  true,
+                                "size":  10302155,
+                                "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/한국외대매뉴얼_학생.pdf"
+                            },
+                            {
+                                "path":  "raw/HUFSAbility_keyword_subscription_manual.pdf",
+                                "sha256":  "3bfb3f9499de9fcaf84e2b03c877d883e2f02705075bbfc9bf1f548560c0c59b",
+                                "allowed_host":  true,
+                                "size":  95233,
+                                "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/HUFSAbility 비교과 프로그램 키워드 구독 기능 학생 매뉴얼.pdf"
+                            },
+                            {
+                                "path":  "raw/HUFSAbility_extracurricular_admin_manual.pdf",
+                                "sha256":  "b70c69df8c3ed86e250bec7aeb23c1668655653b0e963967cdae4f2a42997500",
+                                "allowed_host":  true,
+                                "size":  1556569,
+                                "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/한국외대매뉴얼_비교과 등록_관리자.pdf"
+                            },
+                            {
+                                "path":  "raw/css_reference/ptfol_common.css",
+                                "sha256":  "cb6594e71400b5e6411ceee524c167ffb0b28462aaecd060dd295e4adf823a4e",
+                                "allowed_host":  true,
+                                "size":  30640,
+                                "source_url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/common.css"
+                            },
+                            {
+                                "path":  "raw/css_reference/ptfol_content.css",
+                                "sha256":  "b987f750c9fa9a2030186fefb8ee218bce6aa062fc6b4cd3ca7c5ee8dd8cebd5",
+                                "allowed_host":  true,
+                                "size":  246044,
+                                "source_url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/content.css"
+                            },
+                            {
+                                "path":  "raw/css_reference/ptfol_design.css",
+                                "sha256":  "d097ed94c9f5e71c302056e8b0310b6153b98a39b2f4fba02b49d249fd6621c4",
+                                "allowed_host":  true,
+                                "size":  77729,
+                                "source_url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/design.css"
+                            },
+                            {
+                                "path":  "raw/css_reference/ptfol_main.css",
+                                "sha256":  "014ad7b29f1187046ed0955966a4c99a22d624d141894d9affb63baff088bb08",
+                                "allowed_host":  true,
+                                "size":  66502,
+                                "source_url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/main.css"
+                            },
+                            {
+                                "path":  "raw/css_reference/login_common.css",
+                                "sha256":  "f7464227ab9a8954fa3d26fdfd13f498664515b89cdf54fb208f23efc0efb474",
+                                "allowed_host":  true,
+                                "size":  108883,
+                                "source_url":  "https://hufsability.hufs.ac.kr/common/1user/common/css/common.css"
+                            },
+                            {
+                                "path":  "raw/HUFS_2025_newsletter_vol4.pdf",
+                                "sha256":  "7fbee0526a0233a1927c5a07a3c746b803e5b80cabc7dba3efcb09b22da9f7f6",
+                                "allowed_host":  true,
+                                "size":  7697643,
+                                "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/%5B%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%5D%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%20Vol.4_%EC%B5%9C%EC%A2%85_250226_%EC%9B%B9%EC%9A%A9_%EB%8B%A8%EB%A9%B4.pdf"
+                            },
+                            {
+                                "path":  "raw/HUFS_2025_newsletter_vol5.pdf",
+                                "sha256":  "c34f8374ee9976b40fd3a683c3dfb3608f8b21b58884d126e41ac63c12a369cb",
+                                "allowed_host":  true,
+                                "size":  13165746,
+                                "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/%5B%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%5D%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%20Vol.5_v10_%EC%9B%B9%EC%9A%A9%EB%8B%A8%EB%A9%B4.pdf"
+                            },
+                            {
+                                "path":  "raw/HUFS_2026_newsletter_vol6.pdf",
+                                "sha256":  "378a1463a96c4f811fc685bce2cf57f47fa7449c8cf6cd0a687b36516a5463ff",
+                                "allowed_host":  true,
+                                "size":  5097891,
+                                "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/%5B%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%5D%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%20Vol.6_v7.pdf"
+                            },
+                            {
+                                "path":  "raw/HUFS_Vision_2028.pdf",
+                                "sha256":  "908abbf0a8c7d6befd8f6c092da0ccdfe953339bd6492c89b3b078cb313bc82d",
+                                "allowed_host":  true,
+                                "size":  2000157,
+                                "source_url":  "https://www.hufs.ac.kr/sites/hufsplan/download/vision2028.pdf"
+                            },
+                            {
+                                "path":  "raw/HUFS_2023_newsletter_vol1.pdf",
+                                "sha256":  "7bb5062ee02e4acae0a8af1b08e24864fb70b8e8924c6edd065f8dc7a87e214f",
+                                "allowed_host":  true,
+                                "size":  3465686,
+                                "source_url":  "https://dep.hufs.ac.kr/sites/iei/file/%ED%95%9C%EA%B5%AD%EC%99%B8%EA%B5%AD%EC%96%B4%EB%8C%80%ED%95%99%EA%B5%90%20%EB%8C%80%ED%95%99%ED%98%81%EC%8B%A0%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85%20%EB%89%B4%EC%8A%A4%EB%A0%88%ED%84%B0%28Vol.1%29.pdf"
+                            }
+                        ],
+    "datasets":  [
+                     {
+                         "public_program_metadata":  true,
+                         "sha256":  "d297ab1b2086187d2df4e56cdbe229d7d4a7b0cc81ddd66d45b6096071e44cfb",
+                         "file":  "data/program_sample_10.json",
+                         "count":  10,
+                         "eligibility_still_unverified":  true
+                     },
+                     {
+                         "public_program_metadata":  true,
+                         "sha256":  "ee5ec8f5daf9aabf2a1d44ada871a0027191cc94c1adb45fb754329d418c9f89",
+                         "file":  "data/jobs_sample_10.json",
+                         "count":  10,
+                         "eligibility_still_unverified":  true
+                     },
+                     {
+                         "public_program_metadata":  true,
+                         "sha256":  "a908b46eadb5d157e034cf49d55e3613b4f97ce2d68f150729c9343e7c5921d5",
+                         "file":  "data/activities_sample_10.json",
+                         "count":  10,
+                         "eligibility_still_unverified":  true
+                     }
+                 ],
+    "pass":  true,
+    "failures":  [
+
+                 ],
+    "notes":  "Original 15 HUFS public reference assets plus verified local official HUFS newsletters 2023-2026/Vision 2028. PDF SHA checked against EVOLUTION_SOURCES manifest; no student login data. Raw source is not a reuse license."
+}

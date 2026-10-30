@@ -1,0 +1,80 @@
+{
+    "browser":  "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "sources":  [
+                    {
+                        "id":  "H01",
+                        "url":  "https://hufsability.hufs.ac.kr/common/user/login.do",
+                        "captured_at":  "2026-10-29T06:42:38.1964063+09:00",
+                        "viewport":  {
+                                         "height":  1000,
+                                         "width":  1440
+                                     },
+                        "mode":  "public_live_unauthenticated",
+                        "result":  "CAPTURED_UNREVIEWED",
+                        "file":  "screenshots/H01.png",
+                        "bytes":  198579,
+                        "sha256":  "7241a0560ce38aa8e524757c95f15874d9d5980fe39c8fce102c18a13d658831",
+                        "isolated_profile":  true
+                    },
+                    {
+                        "id":  "H02",
+                        "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmList.do",
+                        "captured_at":  "2026-10-29T06:42:41.5753215+09:00",
+                        "viewport":  {
+                                         "height":  2400,
+                                         "width":  1440
+                                     },
+                        "mode":  "public_live_unauthenticated",
+                        "result":  "CAPTURED_UNREVIEWED",
+                        "file":  "screenshots/H02.png",
+                        "bytes":  585664,
+                        "sha256":  "d81ec46e75e9e1172320806760bf4029ba3315d122c127e862a8fc24f80e1a53",
+                        "isolated_profile":  true
+                    },
+                    {
+                        "id":  "H03",
+                        "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089",
+                        "captured_at":  "2026-10-29T06:42:45.4320393+09:00",
+                        "viewport":  {
+                                         "height":  4000,
+                                         "width":  1440
+                                     },
+                        "mode":  "public_live_unauthenticated",
+                        "result":  "CAPTURED_UNREVIEWED",
+                        "file":  "screenshots/H03.png",
+                        "bytes":  718671,
+                        "sha256":  "eb8a74830a49e99a50647cec111092444080fa8f95d7475aa9d420ef63c5552b",
+                        "isolated_profile":  true
+                    },
+                    {
+                        "id":  "H07",
+                        "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=515c7b7bbd0cc276cccc920ee73ba3c5",
+                        "captured_at":  "2026-10-29T06:42:49.2218446+09:00",
+                        "viewport":  {
+                                         "height":  3000,
+                                         "width":  1440
+                                     },
+                        "mode":  "public_live_unauthenticated",
+                        "result":  "CAPTURED_UNREVIEWED",
+                        "file":  "screenshots/H07.png",
+                        "bytes":  527262,
+                        "sha256":  "ff880c219cbdc737555839d992367e9e0c3646398437a61c55b6b57ca92261d3",
+                        "isolated_profile":  true
+                    },
+                    {
+                        "id":  "G01",
+                        "url":  "https://www.hufs.ac.kr/hufs/11373/subview.do",
+                        "captured_at":  "2026-10-29T06:42:53.1737742+09:00",
+                        "viewport":  {
+                                         "height":  2400,
+                                         "width":  1440
+                                     },
+                        "mode":  "public_live_unauthenticated",
+                        "result":  "CAPTURED_UNREVIEWED",
+                        "file":  "screenshots/G01.png",
+                        "bytes":  633676,
+                        "sha256":  "22321cdef113ac04bf1f0030c5ec9668562ff14182ec8eca358c7acaae697f29",
+                        "isolated_profile":  true
+                    }
+                ]
+}

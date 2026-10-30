@@ -1,0 +1,13 @@
+{
+  "review_date": "2026-10-29",
+  "method": "Direct visual inspection using CodexPro Local view_image; no OCR",
+  "scope": "Current public site screenshots, not prototype visual QA or authenticated student screens",
+  "pdf_visual_review": "G12 web PDF rendering failed; no claim of full PDF visual verification. Official HTML credit tables were inspected in G01.png instead.",
+  "images": [
+    {"id":"H01","file":"screenshots/H01.png","sha256":"7241a0560ce38aa8e524757c95f15874d9d5980fe39c8fce102c18a13d658831","width":1440,"height":1000,"reviewed":true,"observed":"Public HUFSAbility entry with blank login fields, account tabs and public notice tabs; no student session.","limitation":"Viewport capture, not authenticated UI."},
+    {"id":"H02","file":"screenshots/H02.png","sha256":"d81ec46e75e9e1172320806760bf4029ba3315d122c127e862a8fc24f80e1a53","width":1440,"height":2400,"reviewed":true,"observed":"Public filters and several program cards with application/education periods and eligibility labels.","limitation":"Only the upper portion of the listing is visible; ten records are supported by the separately saved HTML."},
+    {"id":"H03","file":"screenshots/H03.png","sha256":"eb8a74830a49e99a50647cec111092444080fa8f95d7475aa9d420ef63c5552b","width":1440,"height":4000,"reviewed":true,"observed":"Competition title, structured fields, poster, team participation instructions and schedule table are visible.","limitation":"Lower page content extends beyond this viewport; preserved HTML supports additional text."},
+    {"id":"H07","file":"screenshots/H07.png","sha256":"ff880c219cbdc737555839d992367e9e0c3646398437a61c55b6b57ca92261d3","width":1440,"height":3000,"reviewed":true,"observed":"Bootcamp priority selection, 70 percent completion requirement and poster sessions: Nov 25 19:00-22:00 and Nov 26 19:00-21:00, total five hours.","limitation":"Poster text was read visually; these session details are not claimed to come from HTML text extraction."},
+    {"id":"G01","file":"screenshots/G01.png","sha256":"22321cdef113ac04bf1f0030c5ec9668562ff14182ec8eca358c7acaae697f29","width":1440,"height":2400,"reviewed":true,"observed":"Merged table cells confirm Seoul non-education 2025+ dual-major 42/42/32/6 and total 126; 2015-2024 general group excluding Education/AI shows 54/42/32 and total 134.","limitation":"Lower tables and other cohorts are not fully visible. Values must retain cohort, faculty and program qualifiers."}
+  ]
+}

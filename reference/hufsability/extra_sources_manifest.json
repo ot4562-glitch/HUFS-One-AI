@@ -1,0 +1,22 @@
+{
+    "scope":  "two public listing pages, limited sampling",
+    "unauthenticated":  true,
+    "items":  [
+                  {
+                      "status":  200,
+                      "bytes":  35642,
+                      "fetched_at":  "2026-10-28T11:48:29+09:00",
+                      "sha256":  "60552db0d3d87ee36f97eb17dcd0ed3a9f342a87d0cee3ba82b3bdda5dbac963",
+                      "url":  "https://job.hufs.ac.kr/job/ncEm/job/rcrt/nor/rcrt/index.do",
+                      "file":  "raw/recruitment_general.html"
+                  },
+                  {
+                      "status":  200,
+                      "bytes":  30877,
+                      "fetched_at":  "2026-10-28T11:48:30+09:00",
+                      "sha256":  "05b95531f211bd468f3f7165ca8dc96bfb16c4db31fc86f615800b303bd5f79c",
+                      "url":  "https://job.hufs.ac.kr/job/ncEm/jobActy/exOutRcri/index.do",
+                      "file":  "raw/external_activities.html"
+                  }
+              ]
+}

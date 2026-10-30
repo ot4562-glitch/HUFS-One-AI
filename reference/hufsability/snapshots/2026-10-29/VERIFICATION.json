@@ -1,0 +1,773 @@
+{
+  "verified_at": "2026-10-30T11:37:36.408649+09:00",
+  "result": "PASS",
+  "checks_total": 146,
+  "checks_passed": 146,
+  "failed": [],
+  "checks": [
+    {
+      "check": "unique_source_ids",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "twenty_saved_originals",
+      "passed": true,
+      "detail": 20
+    },
+    {
+      "check": "one_intentionally_skipped_index",
+      "passed": true,
+      "detail": [
+        {
+          "id": "G11",
+          "url": "https://wis.hufs.ac.kr/jsp/HUFS/seb/listCourseCatalog.jsp?campusGb=H1",
+          "kind": "official_index",
+          "result": "NOT_FETCHED_ROBOTS_REVIEW",
+          "checked_at": "2026-10-29T06:41:39.8705174+09:00"
+        }
+      ]
+    },
+    {
+      "check": "H01_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/public_entry.html"
+    },
+    {
+      "check": "H01_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H01_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H01_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H01_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H02_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/program_list.html"
+    },
+    {
+      "check": "H02_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H02_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H02_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H02_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H03_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/program_ai_campus.html"
+    },
+    {
+      "check": "H03_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H03_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H03_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H03_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H04_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/jobs_list.html"
+    },
+    {
+      "check": "H04_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H04_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H04_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H04_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H05_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/activities_list.html"
+    },
+    {
+      "check": "H05_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H05_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H05_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H05_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H06_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/official_intro.html"
+    },
+    {
+      "check": "H06_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H06_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H06_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H06_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G01_file_hash",
+      "passed": true,
+      "detail": "raw/academic/graduation_credits.html"
+    },
+    {
+      "check": "G01_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G01_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G01_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G01_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G02_file_hash",
+      "passed": true,
+      "detail": "raw/academic/graduation_requirements.html"
+    },
+    {
+      "check": "G02_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G02_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G02_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G02_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G03_file_hash",
+      "passed": true,
+      "detail": "raw/academic/major_curriculum.html"
+    },
+    {
+      "check": "G03_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G03_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G03_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G03_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G04_file_hash",
+      "passed": true,
+      "detail": "raw/academic/calendar.html"
+    },
+    {
+      "check": "G04_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G04_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G04_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G04_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G05_file_hash",
+      "passed": true,
+      "detail": "raw/academic/economics_notices.html"
+    },
+    {
+      "check": "G05_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G05_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G05_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G05_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G06_file_hash",
+      "passed": true,
+      "detail": "raw/academic/economics_home.html"
+    },
+    {
+      "check": "G06_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G06_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G06_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G06_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G07_file_hash",
+      "passed": true,
+      "detail": "raw/academic/academic_support.html"
+    },
+    {
+      "check": "G07_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G07_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G07_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G07_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H07_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/program_detail_07.html"
+    },
+    {
+      "check": "H07_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H07_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H07_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H07_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H08_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/program_detail_08.html"
+    },
+    {
+      "check": "H08_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H08_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H08_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H08_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H09_file_hash",
+      "passed": true,
+      "detail": "raw/hufsability/program_detail_09.html"
+    },
+    {
+      "check": "H09_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H09_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H09_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H09_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G08_file_hash",
+      "passed": true,
+      "detail": "raw/academic/course_registration.html"
+    },
+    {
+      "check": "G08_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G08_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G08_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G08_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G09_file_hash",
+      "passed": true,
+      "detail": "raw/academic/language_certification.html"
+    },
+    {
+      "check": "G09_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G09_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G09_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G09_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G10_file_hash",
+      "passed": true,
+      "detail": "raw/academic/enrollment_limit_update.html"
+    },
+    {
+      "check": "G10_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G10_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G10_text_readable",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G10_links_json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G12_file_hash",
+      "passed": true,
+      "detail": "raw/academic/2026_2_seoul_handbook.pdf"
+    },
+    {
+      "check": "G12_file_size",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G12_official_public_provenance",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G12_pdf_signature",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "original_formats",
+      "passed": true,
+      "detail": {
+        "html": 19,
+        "pdf": 1
+      }
+    },
+    {
+      "check": "five_captures_and_reviews",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H01_png_hash",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H01_png_signature",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H01_review_dimensions",
+      "passed": true,
+      "detail": [
+        1440,
+        1000
+      ]
+    },
+    {
+      "check": "H02_png_hash",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H02_png_signature",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H02_review_dimensions",
+      "passed": true,
+      "detail": [
+        1440,
+        2400
+      ]
+    },
+    {
+      "check": "H03_png_hash",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H03_png_signature",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H03_review_dimensions",
+      "passed": true,
+      "detail": [
+        1440,
+        4000
+      ]
+    },
+    {
+      "check": "H07_png_hash",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H07_png_signature",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "H07_review_dimensions",
+      "passed": true,
+      "detail": [
+        1440,
+        3000
+      ]
+    },
+    {
+      "check": "G01_png_hash",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G01_png_signature",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "G01_review_dimensions",
+      "passed": true,
+      "detail": [
+        1440,
+        2400
+      ]
+    },
+    {
+      "check": "ten_public_cards",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "card_links_and_titles",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "architecture_section_2.5",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "architecture_section_5.7",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "architecture_section_7.6",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "ten_student_scenes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "deferred_implementation_date",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "README.md_utf8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:CURRENT_STATE_COMPARISON.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:GRADUATION_RESEARCH.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:../../../../Proposal.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "CURRENT_STATE_COMPARISON.md_utf8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "GRADUATION_RESEARCH.md_utf8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "README.md_utf8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:Proposal.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:Proposal.pdf",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:Architecture.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:AGENTS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:STATUS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:reference/hufsability/snapshots/2026-10-29/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:reference/hufsability/snapshots/2026-10-29-followup/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:reference/hufsability/DATA_PERMISSION_GATE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:README.md:Architecture.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Proposal.md_utf8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Architecture.md_utf8",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "link:Architecture.md:Proposal.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "historic_manual_reference_exists",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "scope": "Offline file integrity, source metadata, screenshot dimensions/hashes, JSON and documentation links; not product behavior or final graduation eligibility.",
+  "limitations": [
+    "G11 was not crawled; robots disallows automatic collection.",
+    "No authenticated student UI inspected.",
+    "G12 PDF signature verified, not full PDF visual layout.",
+    "Screenshots are bounded viewports.",
+    "Actual personal academic applicability and department submission deadlines remain unresolved."
+  ]
+}

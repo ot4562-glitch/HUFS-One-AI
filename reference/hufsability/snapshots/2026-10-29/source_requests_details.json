@@ -1,0 +1,28 @@
+{
+    "sources":  [
+                    {
+                        "id":  "H07",
+                        "title":  "AI 활용한 데이터 실무 부트캠프",
+                        "discovery_source":  "H02",
+                        "kind":  "program_detail",
+                        "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=515c7b7bbd0cc276cccc920ee73ba3c5",
+                        "file":  "hufsability/program_detail_07.html"
+                    },
+                    {
+                        "id":  "H08",
+                        "title":  "전문가와 함께하는 \"경력관리 집단 컨설팅\"",
+                        "discovery_source":  "H02",
+                        "kind":  "program_detail",
+                        "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=04adbc707e42883b119bf8cdbb928ff4",
+                        "file":  "hufsability/program_detail_08.html"
+                    },
+                    {
+                        "id":  "H09",
+                        "title":  "금융직무특화_증권/IB기업상장",
+                        "discovery_source":  "H02",
+                        "kind":  "program_detail",
+                        "url":  "https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=e221ae218a8fe133cf5f9fb2a6b58857",
+                        "file":  "hufsability/program_detail_09.html"
+                    }
+                ]
+}

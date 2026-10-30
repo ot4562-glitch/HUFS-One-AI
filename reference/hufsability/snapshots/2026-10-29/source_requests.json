@@ -1,0 +1,18 @@
+{
+  "purpose": "One-time owner-requested public research snapshot; not a product feed or redistribution permission.",
+  "sources": [
+    {"id":"H01","url":"https://hufsability.hufs.ac.kr/common/user/login.do","file":"hufsability/public_entry.html","kind":"public_entry"},
+    {"id":"H02","url":"https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmList.do","file":"hufsability/program_list.html","kind":"listing"},
+    {"id":"H03","url":"https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089","file":"hufsability/program_ai_campus.html","kind":"program_detail"},
+    {"id":"H04","url":"https://job.hufs.ac.kr/job/ncEm/job/rcrt/nor/rcrt/index.do","file":"hufsability/jobs_list.html","kind":"listing"},
+    {"id":"H05","url":"https://job.hufs.ac.kr/job/ncEm/jobActy/exOutRcri/index.do","file":"hufsability/activities_list.html","kind":"listing"},
+    {"id":"H06","url":"https://iei.hufs.ac.kr/iei/13534/subview.do","file":"hufsability/official_intro.html","kind":"official_description"},
+    {"id":"G01","url":"https://www.hufs.ac.kr/hufs/11373/subview.do","file":"academic/graduation_credits.html","kind":"academic_rule"},
+    {"id":"G02","url":"https://www.hufs.ac.kr/hufs/11390/subview.do","file":"academic/graduation_requirements.html","kind":"academic_rule"},
+    {"id":"G03","url":"https://www.hufs.ac.kr/hufs/11371/subview.do","file":"academic/major_curriculum.html","kind":"academic_rule"},
+    {"id":"G04","url":"https://www.hufs.ac.kr/hufs/11360/subview.do","file":"academic/calendar.html","kind":"academic_calendar"},
+    {"id":"G05","url":"https://econ.hufs.ac.kr/econ/3802/subview.do","file":"academic/economics_notices.html","kind":"department_listing"},
+    {"id":"G06","url":"https://econ.hufs.ac.kr/econ/index.do","file":"academic/economics_home.html","kind":"department_listing"},
+    {"id":"G07","url":"https://haksa.hufs.ac.kr/haksa/index.do","file":"academic/academic_support.html","kind":"official_description"}
+  ]
+}

@@ -1,0 +1,48 @@
+{
+    "sources":  [
+                    {
+                        "sections":  [
+                                         "institution/brand header",
+                                         "portal vs other account navigation",
+                                         "public information tabs: programs, scholarship, notices, recruitment",
+                                         "footer"
+                                     ],
+                        "name":  "HUFSAbility public login landing",
+                        "file":  "raw/public_login.html",
+                        "warning":  "Do NOT reproduce school login form or collect school credentials"
+                    },
+                    {
+                        "sections":  [
+                                         "year, semester, grade, category, campus, query filters",
+                                         "ability/period advanced filters",
+                                         "sort by recent, newest, closing date, title",
+                                         "program card: operating unit, ability labels, application period, eligibility, applicant count, capacity, status"
+                                     ],
+                        "name":  "Public comparison program listing",
+                        "file":  "raw/program_list.html"
+                    },
+                    {
+                        "sections":  [
+                                         "organizer and program type",
+                                         "application period and selection",
+                                         "audience/grade/campus/capacity",
+                                         "recognized participation hours and ability proportions",
+                                         "description, source, application flow"
+                                     ],
+                        "name":  "Public program detail",
+                        "file":  "raw/program_detail_2026_ai_campus.html"
+                    },
+                    {
+                        "sections":  [
+                                         "extra-curricular programs",
+                                         "recruitment: referred/general jobs, part time, external recruitment events",
+                                         "career counseling and external activities",
+                                         "quick links to HUFSAbility modules"
+                                     ],
+                        "name":  "HUFS job public homepage",
+                        "file":  "raw/job_hufs_home.html"
+                    }
+                ],
+    "reference_policy":  "For internal product proposal and independent component architecture only; branding, login and proprietary source are not deployment templates.",
+    "checked_at":  "2026-10-28T11:43:57+09:00"
+}

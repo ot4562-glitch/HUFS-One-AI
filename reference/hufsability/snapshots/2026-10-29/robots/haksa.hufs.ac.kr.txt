@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /*/*Mngr
+Disallow: /topLogin/*
+Disallow: /jwadLogin/*
+Disallow: /jwadLogin/*
+Disallow: /bbs/*/*/*/artclView.do
+Disallow: /*/*/subview.do?enc=*
+Disallow: /bbs/*
+Disallow: /guide/*
+Disallow: /temp/*
+Disallow: /*temp*/*
+Disallow: /tmplt*/*
+Disallow: /test*/*
+Disallow: /*test/*
+Disallow: /hufstmp*/*

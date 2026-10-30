@@ -1,0 +1,19 @@
+{
+    "items":  [
+                  {
+                      "fetched_at":  "2026-10-28T11:57:16+09:00",
+                      "sha256":  "3bfb3f9499de9fcaf84e2b03c877d883e2f02705075bbfc9bf1f548560c0c59b",
+                      "file":  "raw/HUFSAbility_keyword_subscription_manual.pdf",
+                      "bytes":  95233,
+                      "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/HUFSAbility 비교과 프로그램 키워드 구독 기능 학생 매뉴얼.pdf"
+                  },
+                  {
+                      "fetched_at":  "2026-10-28T11:57:19+09:00",
+                      "sha256":  "b70c69df8c3ed86e250bec7aeb23c1668655653b0e963967cdae4f2a42997500",
+                      "file":  "raw/HUFSAbility_extracurricular_admin_manual.pdf",
+                      "bytes":  1556569,
+                      "source_url":  "https://iei.hufs.ac.kr/sites/iei/file/한국외대매뉴얼_비교과 등록_관리자.pdf"
+                  }
+              ],
+    "scope":  "HUFSAbility manuals linked from official HUFS IEI site"
+}

@@ -1,0 +1,86 @@
+.venv/
+.tools/
+.runtime/
+logs/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.db
+*.db-*
+data/student/
+data/incoming/
+mobile/.dart_tool/
+mobile/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/.flutter-plugins-dependencies
+mobile/.idea/
+*.iml
+*.log
+.env
+.env.*
+artifacts/
+*.egg-info/
+
+# Prior Android/FastAPI prototype, raw school files, tools and recovery archive.
+# Retire is preserved locally and must not be committed or published by mistake.
+/retire/
+
+# Third-party HUFS pages, manuals, CSS, screenshots and temporary collectors
+# are only local reference copies. Do not redistribute in GitHub by default.
+/reference/hufsability/raw/
+/reference/hufsability/screenshots/
+/reference/hufsability/data/
+/reference/hufsability/tools/
+
+# Personal student/teammate inputs, access secrets, and offline private samples
+/private/
+/secrets/
+*.pem
+*.key
+
+# Current proposal: local evidence, personal records and recovery copies never publish.
+/local_only/
+/HUFS_UI.pdf
+**/HUFS_UI.pdf
+/reference/**/raw/
+/reference/**/screenshots/
+/reference/**/text/
+/reference/**/data/
+/reference/**/links/
+/reference/hufsability/snapshots/**/tools/
+/data/real5/
+/data/students/
+/packages/fixtures/real5/
+/real5/
+/student_records/
+/backups/
+/exports/
+/.proposal_pdf_*/
+/.pdf_render/
+**/*_qa_*.png
+**/*_qa_*.html
+node_modules/
+dist/
+build/
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+*.pfx
+*.p12
+*.keystore
+*.zip
+*.7z
+*.tar
+*.gz
+
+# Office lock/temporary files must not be committed.
+~$*
+*.tmp
+
+# Forms response exports and personal course CSVs (including local examples) are private.
+/templates/real5-intake/*.csv
+
+# Obsolete one-time import helpers, preserved locally only.
+/reference/import_proposal*.ps1

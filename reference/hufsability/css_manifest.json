@@ -1,0 +1,43 @@
+{
+    "scope":  "Five publicly referenced CSS assets, internal reference only",
+    "fetched_at":  "2026-10-28T11:46:51+09:00",
+    "no_scripts":  true,
+    "reuse":  "Do not redistribute or deploy as HUFS One AI theme",
+    "items":  [
+                  {
+                      "status":  200,
+                      "url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/common.css",
+                      "file":  "raw/css_reference/ptfol_common.css",
+                      "size":  30640,
+                      "sha256":  "cb6594e71400b5e6411ceee524c167ffb0b28462aaecd060dd295e4adf823a4e"
+                  },
+                  {
+                      "status":  200,
+                      "url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/content.css",
+                      "file":  "raw/css_reference/ptfol_content.css",
+                      "size":  246044,
+                      "sha256":  "b987f750c9fa9a2030186fefb8ee218bce6aa062fc6b4cd3ca7c5ee8dd8cebd5"
+                  },
+                  {
+                      "status":  200,
+                      "url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/design.css",
+                      "file":  "raw/css_reference/ptfol_design.css",
+                      "size":  77729,
+                      "sha256":  "d097ed94c9f5e71c302056e8b0310b6153b98a39b2f4fba02b49d249fd6621c4"
+                  },
+                  {
+                      "status":  200,
+                      "url":  "https://hufsability.hufs.ac.kr/common/ptfol/css/main.css",
+                      "file":  "raw/css_reference/ptfol_main.css",
+                      "size":  66502,
+                      "sha256":  "014ad7b29f1187046ed0955966a4c99a22d624d141894d9affb63baff088bb08"
+                  },
+                  {
+                      "status":  200,
+                      "url":  "https://hufsability.hufs.ac.kr/common/1user/common/css/common.css",
+                      "file":  "raw/css_reference/login_common.css",
+                      "size":  108883,
+                      "sha256":  "f7464227ab9a8954fa3d26fdfd13f498664515b89cdf54fb208f23efc0efb474"
+                  }
+              ]
+}

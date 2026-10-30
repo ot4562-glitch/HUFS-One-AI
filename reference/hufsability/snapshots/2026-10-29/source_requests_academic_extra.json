@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {"id":"G08","url":"https://www.hufs.ac.kr/hufs/11377/subview.do","file":"academic/course_registration.html","kind":"academic_rule"},
+    {"id":"G09","url":"https://flec.hufs.ac.kr/flec/14669/subview.do","file":"academic/language_certification.html","kind":"academic_rule"},
+    {"id":"G10","url":"https://biz.hufs.ac.kr/biz/7865/subview.do","file":"academic/enrollment_limit_update.html","kind":"department_rule"},
+    {"id":"G11","url":"https://wis.hufs.ac.kr/jsp/HUFS/seb/listCourseCatalog.jsp?campusGb=H1","file":"academic/handbook_index_seoul.html","kind":"official_index"},
+    {"id":"G12","url":"https://e-book.hufs.ac.kr/src/viewer/download.php?host=main&no=1&site=20260728_sugang_h1","file":"academic/2026_2_seoul_handbook.pdf","kind":"academic_handbook"}
+  ]
+}
