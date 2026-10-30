@@ -1,7 +1,7 @@
 # HUFS One AI | Architecture.md
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
-버전: `2026-10-30.hufs-domain-auth-r7` · 상태: 설계 승인 검토용 (도메인·기관 인증은 구현/가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
+버전: `2026-10-30.google-oidc-mail-gate-r8` · 상태: 설계 승인 검토용 (도메인·기관 인증은 구현/가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
@@ -9,21 +9,21 @@
 
 ### A00.1 제품 순서와 구현 경계
 
-1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수. **공개 인터넷 배포 시 외대 계정의 검증된 기관 인증을 선행시키는 것은 P0 필수 출시 게이트**이며, 로그인 전 제품 화면·API·개인자료 접근을 차단한다.
+1. **P0:** HUFSAbility의 취업·진로·역량·비교과·대외활동을 개인별로 다른 크기와 순서로 제공. 5인 시연 대상 선택기, 코드+LLM 해석/검증, 중요공지, 모바일, NCP 온라인 경로, 팀원 설명 자료가 필수. **공개 인터넷 배포 시 **Google OAuth 로그인 + 외대 메일 소유 검증 + 베타 승인**을 선행시키는 것은 P0 필수 출시 게이트**이며, 로그인 전 제품 화면·API·개인자료 접근을 차단한다.
 2. **P1 병렬:** 실제 수강원장·Forms 제출 대상인 **최대 4명**의 졸업요건·간단 계획, 공식 근거 기반 제한적 전망. 개발팀 5명과 학생 입력자 4명은 다르다. 다섯 데모 슬롯 중 실제 데이터 없는 한 슬롯은 PENDING 또는 명시적 SYNTHETIC 상태다.
-3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 학교 DB/학사시스템의 공식 자료 연동, 앱스토어·푸시, 완전한 오프라인 동기화. **외대 계정 인증 게이트는 P2가 아니라 P0 공개 웹 배포의 전제**이며, 학교 IdP/SSO 연동은 공식 허가·기술 지원 확인 전까지 미확정이다.
+3. **P2 확장:** 모든 학과·전교생, 고급 분반 최적화, 학교 DB/학사시스템의 공식 자료 연동, 앱스토어·푸시, 완전한 오프라인 동기화. **외대 계정 인증 게이트는 P2가 아니라 P0 공개 웹 배포의 전제**이며, 학교 공식 SSO는 허가를 전제하지 않으며 P0 범위 밖이다. 이를 대신할 독립 Google OAuth/외대 메일 검증을 P0으로 수행한다. 공식 기관 SSO·학교 DB 통합은 향후 별도 허가 시에만 검토한다.
 4. **NCP 사용은 이 프로젝트의 필수 선택**이다. 공식 공모전에서 NCP가 선택인지와는 별개다. 실제 배포·유료 호출은 계정·자료·예산 승인 후 수행한다. 문서 작성은 제품 구현 또는 리소스 생성 허가가 아니다.
 5. 상단 이름 변경은 실제 로그인 변경이 아닌 **승인된 demoSubject 전환**이다. `S01`~`S05` 다섯 시연 슬롯은 유지하되 실자료는 최대4명만 후보이며 동의가 없으면 공유할 수 없다. private source 및 타인의 실제 기록 수정권은 공유하지 않는다.
 6. 첫 데모는 온라인. 장애는 명시적 캐시·읽기 전용·재시도로 복구한다. 공개 합성 fixture와 모의 AI는 개발·검증 대안이지 NCP live 실적이 아니다.
 7. ‘결정론 AI’라는 모호한 이름 대신 **규칙·검색 기반 판단 엔진 + CLOVA 언어 이해**를 사용한다. 모델 학습을 하지 않았다면 학습형 AI라고 쓰지 않는다. temperature=0도 LLM의 완전한 결정성을 보장하지 않는다.
 8. **팀원 이해가 배포 준비 조건**이다. 에이전트는 소스/테스트 외에 구조 지도·요청 흐름·쉬운 설명·질문 답변을 제공한다. 공식 독립 배점이라고 허위 표기하지 않는다.
-9. **공개 DNS·폐쇄형 서비스:** 사용자가 확보했다고 알린 접속 예정 도메인은 **`외대.온라인.한국`**, 정규 HTTPS origin은 `https://외대.온라인.한국`이다. 인터넷에서 DNS·TLS 연결이 가능하다는 뜻이지 익명으로 제품을 열람할 권한은 아니다. **학교 계정 인증 → 베타 이용자 승인 → 개별 자료 SharingGrant**를 각각 서버에서 검증한다. 도메인 소유권·DNS·TLS·학교 IdP/SSO 연결·실제 배포 완료는 아직 검증되지 않았다. 저장소는 Private을 유지한다.
+9. **공개 DNS·폐쇄형 서비스:** 사용자가 확보했다고 알린 접속 예정 도메인은 **`외대.온라인.한국`**, 정규 HTTPS origin은 `https://외대.온라인.한국`이다. 인터넷에서 DNS·TLS 연결이 가능하다는 뜻이지 익명으로 제품을 열람할 권한은 아니다. **Google OIDC 로그인 → 외대 메일 현재 소유 확인 → 베타 이용자 승인 → 개별 자료 SharingGrant**를 각각 서버에서 검증한다. 도메인 소유권·DNS·TLS·Google OAuth 클라이언트 설정·외대 메일 인증 발송 경로·실제 배포 완료는 아직 검증되지 않았다. 학교 SSO는 제공받지 않는 전제다. 저장소는 Private을 유지한다.
 
 ### A00.2 권위와 문서 역할
 
 최신 사용자 승인 → 실제 개인정보/기관/서비스 이용조건 → 본 문서 타입·판정·권한·시험 → Proposal의 설명·예시 → 외부 디자인 영감 순이다. 공식 규정이 소프트웨어 가정과 다르면 대상 규칙팩을 검수 상태로 돌린다. 모든 예시는 `SYNTHETIC`이며 실제 5명의 정보로 보지 않는다.
 
-`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, 외대 계정 인증·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
+`Proposal.md`는 팀원 설명, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
 
 **현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개의 제출자는 사용자 확인에 따라 **김채윤(별명 까마르)·이의상·심민성**이다. 별명 대응은 입력 단계에서 소유자 확인 완료이지만 목적별 동의·실제 Forms 대조는 별도다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
 
@@ -56,9 +56,9 @@
 ```text
 Untrusted internet -> https://외대.온라인.한국 (planned)
   -> TLS ingress + deny-by-default edge access gate
-     -> minimal login / approved campus IdP redirect+callback only before auth
+     -> minimal login / Google OAuth redirect+callback + school-mail OTP only before auth
   -> authenticated React web / same-origin HTTPS Fastify API
-     -> verified campus principal + beta allowlist + actor/demo-subject authorization
+     -> verified Google subject + current HUFS mailbox ownership + beta allowlist + actor/demo-subject authorization
      -> deterministic core (no hidden clock/network)
      -> PostgreSQL / authorized media registry
      -> queue worker -> privacy/policy gate -> CLOVA Studio
@@ -95,7 +95,7 @@ local_only/{real5,source_raw,consents,private_reports,backups}
 
 ### A02.1 로그인한 사람과 보는 대상
 
-**인증 주체 조건:** 인터넷 서비스에서는 학교가 승인한 IdP의 암호학적으로 검증된 OIDC/SAML 로그인 결과 또는 별도 승인된 동등 수준의 학교 계정 검증 방식으로만 `actorId`를 생성한다. `example@hufs.ac.kr`은 이메일 형식 예시일 뿐 존재·인증·접근권을 의미하지 않는다. 이메일 문자열의 `@hufs.ac.kr` 접미사만 검사하거나 브라우저가 전달한 주소를 믿어서는 안 된다. 로그인 성공은 그 사람의 비공개 학업 자료나 다른 시연 대상에 대한 접근 허가가 아니다. 초기 베타는 별도 승인된 actor allowlist만 허용하고, 학내 전체 자동 가입은 확장 승인 전 금지한다.
+**인증 주체 조건:** 학교의 공식 SSO/IdP 연동 허가가 없으므로, **별도 Google OAuth/OIDC + 현재 외대 이메일 계정 소유 확인**을 채택한다. Google 토큰의 검증된 `sub`로만 `actorId`를 서버에서 매핑한다. 기관 Google Workspace `hd=hufs.ac.kr`와 `email_verified=true`, 실제 `@hufs.ac.kr` 이메일을 모두 확인할 수 있는 경우 외대 메일 소유의 강한 증거로 인정한다. **학교가 Google Workspace인지 미확인**이며, `hd`가 없거나 Google 계정이 개인 Gmail/외부 이메일이면 **실제 `@hufs.ac.kr` 수신함으로 발송한 단기 일회용 코드(OTP)를 별도로 확인**하고 해당 Google `sub`에 결속한다. `example@hufs.ac.kr`은 형식 예시일 뿐 사용 가능한 계정이나 실제 인증 완료를 뜻하지 않는다. 이메일 접미사·Google `email_verified` 단독·OAuth `hd` 요청 힌트만으로 통과시키지 않는다. 초기 베타 allowlist/역할, 학생별 SharingGrant를 추가로 검사한다. 외대 메일 소유 증명은 **현재 재학/재직 증명이나 학교 공식 서비스 인가가 아니다**. 공식 SSO가 없어도 이 독립 인증 설계는 추진 가능하지만 OAuth/메일 경로 미구현이면 배포는 차단한다.
 
 ```ts
 export type SubjectAlias = 'S01'|'S02'|'S03'|'S04'|'S05';
@@ -800,9 +800,10 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 | API | 처리 | 필수 검사 |
 |---|---|---|
-| POST /api/auth/login | 과거 초대 로그인 초안; 공개 웹에서 미활성화 | 학교 계정 인증 경로를 별도 공용 계약 PR로 확정 전 차단 |
+| POST /api/auth/login | 과거 초대 로그인 초안; 공개 웹에서 미활성화 | Google OIDC/외대 메일 검증 경로로만 후속 계약 PR에서 교체 |
 | GET /api/auth/session | actor·role 조회 | 세션 유효성, 미인증 401 및 최소 응답 |
-| GET /auth/start · GET/POST /auth/callback (제안) | 승인된 기관 IdP 인증 시작·검증 완료 | 실제 경로·provider별 메서드는 후속 계약 PR에서 확정; 인가 전 비활성화 |
+| GET /auth/google/start · GET /auth/google/callback (제안) | Google OAuth/OIDC 시작·검증 완료 | provider token signature/iss/aud/exp/nonce/state/PKCE; 경로는 계약 PR에서 확정 |
+| POST /auth/hufs-email/challenge · /verify (제안) | 외대 이메일 현재 수신권 확인 | OTP 제한시간·횟수·재전송 rate limit·Google sub+session 결속·1회 사용; Workspace 검증 시 생략 가능 |
 | POST /api/auth/logout | 세션 폐기 | CSRF·캐시 정리 |
 | GET /api/demo/profiles | 다섯 표시 옵션 | actor·grant·준비상태 |
 | POST /api/demo/contexts | 대상 문맥 발급 | session·target·grant·dataset |
@@ -840,7 +841,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 {task}는 네 작업만 등록한다: `experience-skills`, `opportunity-terms`, `personal-action-brief`, `graduation-explanation`. 초대 계정5개 중 운영 역할을 부여할 수 있지만 admin이 개인 동의를 우회하는 것은 아니다. 시연과 개인 쓰기 경로를 혼용하지 않는다.
 
-세션 쿠키는 HttpOnly/Secure/SameSite, 상태 변경은 Origin·CSRF 검사다. 에이전트는 검증된 인증 부속을 선택하고 암호·세션 토큰을 직접 평문 저장하지 않는다. 쿠키는 `외대.온라인.한국`의 **host-only** 범위로 제한하며 wildcard `Domain`·브라우저 저장 토큰·검증 없는 `X-Forwarded-User`를 금지한다. OAuth/OIDC를 채택하면 서명/JWKS·issuer·audience·만료·nonce·state·PKCE, SAML을 채택하면 서명된 assertion·recipient·InResponseTo·만료 등을 공급자 계약에 맞게 검증한다. 신뢰 가능한 provider assertion의 이메일이 확인된 경우에만 정규화한 정확한 `hufs.ac.kr` 도메인을 허용하며, 그것만으로 인증이나 현재 재학/재직·자료 공유권을 증명하지 않는다. 만료·철회·비초대 계정·로그아웃은 세션과 개인 캐시를 차단한다. 학교 IdP 지원·승인이 없으면 외부 서비스 공개는 `BLOCKED`로 유지한다.
+세션 쿠키는 HttpOnly/Secure/SameSite, 상태 변경은 Origin·CSRF 검사다. 에이전트는 검증된 라이브러리를 사용하며 암호·세션 토큰을 평문 저장하지 않는다. 쿠키는 `외대.온라인.한국`의 **host-only** 범위로 제한하며 wildcard `Domain`·브라우저 저장 토큰·검증 없는 `X-Forwarded-User`를 금지한다. **Google OAuth Authorization Code + PKCE / OIDC**로 `iss=https://accounts.google.com`, JWKS 서명, `aud=등록된 client ID`, `exp`·`iat`, `nonce`·`state`, `email_verified`, 고유 `sub`를 검증하고 식별키는 이메일이 아니라 `sub`다. `hd` 요청 매개변수는 UX 힌트일 뿐 접근통제가 아니며 **실제 ID token의 `hd` 값**을 확인한다. `email_verified=true`이지만 `hd`가 없는 외부 도메인 Google 계정은 외대 메일의 현재 소유 증거가 아니므로 HUFS 메일 OTP가 필수다. 개인 Gmail 로그인도 본인 외대 메일 OTP 및 beta allowlist를 통과한 경우에만 제한 허용한다. OTP는 10분 이내·1회 사용·해시 보관·요청/시도 제한, Google `sub`/server session/메일 주소에 결속하고 새 기기·재인증 또는 최대30일 이내 재검증을 요구한다(기간은 정책 제안). 수신함 접근이 불가능하면 `HUFS_MAIL_PROOF_REQUIRED`로 거부하고 우회 예외를 자동 생성하지 않는다. 만료·철회·비초대 계정·로그아웃은 세션과 개인 캐시를 차단한다. **학교 SSO 미제공만으로는 출시를 막지 않지만 Google/메일 증빙 미구현·보안 부정시험 실패면 `BLOCKED`**다.
 
 오류 응답은 `{code,message,requestId,retryable,contextId?}`다. 401=인증, 403=권한/철회, 409=버전, 422=입력/근거, 429=한도, 503=외부서비스. DB 예외·모델 raw 오류·비밀키·다른 대상의 원문은 응답하지 않는다.
 
