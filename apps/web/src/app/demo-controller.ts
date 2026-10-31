@@ -53,6 +53,7 @@ export class DemoController {
   };
   private current:AbortController|null=null;
   private revalidation:AbortController|null=null;
+  private readonly scopedActions=new Set<AbortController>();
   private readonly listeners=new Set<()=>void>();
   private disposed=false;
   private endingSession=false;
@@ -77,6 +78,11 @@ export class DemoController {
     this.current=null;
     this.revalidation?.abort();
     this.revalidation=null;
+    this.abortScopedActions();
+  }
+  private abortScopedActions():void {
+    for(const action of this.scopedActions)action.abort();
+    this.scopedActions.clear();
   }
 
   async loadProfiles():Promise<void> {
@@ -155,6 +161,8 @@ export class DemoController {
     if(this.disposed||this.endingSession||this.state.status!=='READY'
       ||!this.state.context)return;
     this.revalidation?.abort();
+    // Pending UI writes/reads must never survive a new authorization check.
+    this.abortScopedActions();
     const active=new AbortController();
     this.revalidation=active;
     const {context,epoch}=this.state;
@@ -176,6 +184,37 @@ export class DemoController {
       if(current())this.applyContextError(context.contextId,epoch,error);
     }finally{
       if(this.revalidation===active)this.revalidation=null;
+    }
+  }
+
+  /**
+   * Use for REVIEWER sandbox reads/writes, synthetic AI jobs and sections.
+   * Never publish a response from an old context even if its transport ignores
+   * AbortSignal. The server still owns all actor/subject/grant checks.
+   *
+   * Returning null means denied, stale, cancelled or unavailable. Error codes
+   * are exposed only through the immutable controller state, not raw payloads.
+   */
+  async runContextOperation<T>(
+    perform:(context:DemoContext,signal:AbortSignal)=>Promise<T>,
+  ):Promise<T|null> {
+    if(this.disposed||this.endingSession||this.state.status!=='READY'
+      ||!this.state.context)return null;
+    const {context,epoch}=this.state;
+    const request=new AbortController();
+    this.scopedActions.add(request);
+    const current=()=>!this.disposed&&!this.endingSession
+      &&!request.signal.aborted
+      &&this.state.epoch===epoch&&this.state.status==='READY'
+      &&this.state.context?.contextId===context.contextId;
+    try {
+      const result=await perform(context,request.signal);
+      return current()?result:null;
+    }catch(error){
+      if(current())this.applyContextError(context.contextId,epoch,error);
+      return null;
+    }finally{
+      this.scopedActions.delete(request);
     }
   }
 
