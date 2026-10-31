@@ -3,7 +3,7 @@ import {
   SourceRevisionVNextSchema,SourceSpanVNextSchema,VerifiedClaimVNextSchema,
   RetrievalEnvelopeVNextSchema,RevisionInvalidationVNextSchema,
   DecisionAdviceVNextSchema,EvidenceBoundPacketVNextSchema,
-  matchesTextSpan,matchesImageSpan,
+  matchesTextSpan,matchesImageSpan,EvidenceScopeSchema,matchesEvidenceScope,
 } from '@hufs-one/contracts';
 
 const A='a'.repeat(64),B='b'.repeat(64);
@@ -230,5 +230,56 @@ describe('TASK-18 Laya decision and separately gated LLM packet',()=>{
       providerInputPermission:'ALLOWED',sourceVersion:'rev-01',permissionVersion:'perm-v1'};
     expect(EvidenceBoundPacketVNextSchema.safeParse(value).success).toBe(false);
     expect(EvidenceBoundPacketVNextSchema.safeParse({...value,mediaExtractorVersion:'ocr-v1'}).success).toBe(true);
+  });
+});
+
+describe('TASK-18 academic notice scope: verified provenance and one-ended cohort',()=>{
+  const scope=EvidenceScopeSchema.parse({
+    campuses:['SEOUL'],majorCodes:['ECONOMICS'],majorRoles:['PRIMARY'],
+    admissionTypes:['FOREIGN'],graduationTermScope:['2026-2'],cohortMax:2014,
+  });
+  const actor={
+    campus:'SEOUL',majorCode:'ECONOMICS',
+    majors:[{code:'ECONOMICS',role:'PRIMARY' as const}],
+    admissionType:'FOREIGN',graduationTerm:'2026-2',
+    graduationTermVerified:true,cohort:2014,
+  };
+  it('preserves optional scope on an ACTIVE immutable revision and allows only an exact match',()=>{
+    const r=SourceRevisionVNextSchema.parse({...rev,applicableScope:scope});
+    expect(r.applicableScope).toEqual(scope);
+    expect(matchesEvidenceScope(r.applicableScope,actor)).toBe(true);
+  });
+  it('does not treat another admission type or major role as matching',()=>{
+    expect(matchesEvidenceScope(scope,{...actor,admissionType:'GENERAL'})).toBe(false);
+    expect(matchesEvidenceScope(scope,{...actor,majors:[{code:'ECONOMICS',role:'DOUBLE'}]})).toBe(false);
+    expect(matchesEvidenceScope(scope,{...actor,majors:[
+      {code:'OTHER',role:'PRIMARY'},{code:'ECONOMICS',role:'DOUBLE'},
+    ]})).toBe(false); // cannot borrow PRIMARY role from another major
+    expect(matchesEvidenceScope(scope,{...actor,majors:undefined})).toBe(false);
+  });
+  it('does not promote a self-reported or missing graduation term to YES',()=>{
+    expect(matchesEvidenceScope(scope,{...actor,graduationTermVerified:false})).toBe(false);
+    expect(matchesEvidenceScope(scope,{...actor,graduationTermVerified:undefined})).toBe(false);
+    expect(matchesEvidenceScope(scope,{...actor,graduationTerm:'2027-2'})).toBe(false);
+    expect(matchesEvidenceScope(scope,{...actor,graduationTerm:undefined})).toBe(false);
+  });
+  it('supports an upper OR lower cohort bound without requiring the other bound',()=>{
+    expect(matchesEvidenceScope(scope,{...actor,cohort:2015})).toBe(false);
+    expect(matchesEvidenceScope(EvidenceScopeSchema.parse({cohortMin:2022}),{cohort:2021})).toBe(false);
+    expect(matchesEvidenceScope(EvidenceScopeSchema.parse({cohortMin:2022}),{cohort:2024})).toBe(true);
+    expect(matchesEvidenceScope(EvidenceScopeSchema.parse({cohortRange:[2020,2026]}),{cohort:2024})).toBe(true);
+    expect(matchesEvidenceScope(EvidenceScopeSchema.parse({cohortRange:[2020,2026]}),{cohort:2027})).toBe(false);
+  });
+  it('rejects contradictory scope representations, duplicates and malformed graduation terms',()=>{
+    for(const invalid of [
+      {cohortMin:2026,cohortMax:2022},
+      {cohortRange:[2020,2026],cohortMax:2025},
+      {graduationTermScope:['2026-3']},
+      {graduationTermScope:['2026-2','2026-2']},
+      {majorRoles:['PRIMARY','PRIMARY']},
+      {admissionTypes:[]},
+      {majorRoles:['UNKNOWN']},
+    ])expect(EvidenceScopeSchema.safeParse(invalid).success).toBe(false);
+    expect(matchesEvidenceScope({unknownStudentCondition:true} as never,actor)).toBe(false);
   });
 });
