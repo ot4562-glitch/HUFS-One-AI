@@ -21,6 +21,14 @@ describe('A04/A05/A07 recommendation/notice wire shape',()=>{
     expect(NoticeResultSchema.safeParse({...original.notices,pinnedIds:['A','B','C']}).success).toBe(false);
     expect(NoticeResultSchema.safeParse({...original.notices,pinnedIds:['UNKNOWN']}).success).toBe(false);
   });
+  it('preserves optional overdue boolean through the strict notice wire without breaking legacy payloads',()=>{
+    expect(NoticeResultSchema.safeParse(original.notices).success).toBe(true);
+    const candidate={...original.notices,items:original.notices.items.map((item:any)=>({...item,overdue:true}))};
+    const parsed=NoticeResultSchema.parse(candidate);
+    expect(parsed.items[0]?.overdue).toBe(true);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:'true'}]}).success).toBe(false);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:null}]}).success).toBe(false);
+  });
   it('rejects unsafe eligibility predicate field and invalid evidence offsets',()=>{
     expect(EligibilityConditionSchema.safeParse({field:'customJs',operator:'EQ',value:'x',evidenceId:'EV-1'}).success).toBe(false);
     expect(EvidenceSpanSchema.safeParse({evidenceId:'EV-1',sourceId:'SRC-1',snapshotVersion:'v1',paragraphId:'p1',quote:'test',startCodePoint:4,endCodePoint:2}).success).toBe(false);
