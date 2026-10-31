@@ -94,7 +94,7 @@ export const RecommendationExplanationSchema=z.strictObject({
     evidenceRefs:z.array(z.string().min(1).max(200)).max(50),
   }),
   deadline:z.strictObject({
-    kind:z.enum(['CONFIRMED','EVENT_ONLY','RECORD_ONLY','UNKNOWN']),
+    kind:z.enum(['CONFIRMED','EVENT_ONLY','RECORD_ONLY','ROLLING','UNKNOWN']),
     text:z.string().min(1).max(300),
     iso:z.iso.datetime({offset:true}).optional(),
   }).superRefine((deadline,ctx)=>{
