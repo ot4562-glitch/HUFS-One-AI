@@ -13,7 +13,8 @@ const Row=z.object({
   paragraph_text:z.string().min(1).max(20_000),
   score:z.coerce.number().int().min(1).max(20),
 });
-type EmptyReason='NO_EVIDENCE'|'STALE'|'BLOCKED_RIGHTS'|'UNKNOWN';
+type EmptyReason='NO_EVIDENCE'|'STALE'|'CONFLICT'|'BLOCKED_RIGHTS'|'UNKNOWN';
+const ConflictResult=z.object({confirmed_conflict:z.boolean()});
 const EmptyFlags=z.object({
   blocked_rights:z.boolean(),unknown:z.boolean(),stale:z.boolean(),
 });
@@ -91,8 +92,8 @@ export class PostgresTemporalEvidenceReader{
     // State detection repeats ALL actor-grant and applicability predicates.
     // Matching a historical text phrase is used solely to classify its latest
     // revision; no historical quote is ever selected into the response.
-    // CONFLICT requires an independently reviewed conflict record. This
-    // schema has no such registry, so it must never be inferred from keywords.
+    // CONFLICT is never inferred from mere keyword overlap: a separate,
+    // immutable, independently human-reviewed decision must prove it.
     const classifySql=`WITH latest AS (
       SELECT DISTINCT ON (r.source_id)
         r.source_id,r.revision_id,r.permission_ref,r.source_class,
@@ -134,6 +135,56 @@ export class PostgresTemporalEvidenceReader{
         OR (valid_until IS NOT NULL AND valid_until<=$1::timestamptz)),false)
         AS stale
     FROM scoped`;
+    // A confirmed dispute must override READY even when topK selects only
+    // one side. Both revisions must be the newest verified, currently
+    // authorized, query-matching evidence at the requested historical asOf.
+    // Human-reviewed RESOLVED decisions supersede earlier disputes.
+    const conflictSql=`WITH latest AS (
+      SELECT DISTINCT ON (r.source_id)
+        r.source_id,r.revision_id,r.permission_ref,r.source_class,
+        r.provenance,r.status,r.change_kind,r.last_verified_at,
+        r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,
+        r.cohort_min,r.cohort_max
+      FROM source_revisions_vnext r
+      WHERE r.fetched_at<=$1::timestamptz
+        AND (r.published_at IS NULL OR r.published_at<=$1::timestamptz)
+      ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
+    ), candidates AS (
+      SELECT l.revision_id
+      FROM latest l
+      WHERE l.permission_ref=ANY($2::text[])
+        AND ($3::text[] IS NULL OR l.source_id=ANY($3::text[]))
+        AND l.source_class!='RESEARCH_REFERENCE_ONLY'
+        AND l.provenance!='RESEARCH_ONLY'
+        AND l.status='ACTIVE' AND l.change_kind!='UNKNOWN'
+        AND l.last_verified_at<=$1::timestamptz
+        AND (l.valid_from IS NULL OR l.valid_from<=$1::timestamptz)
+        AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
+        AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
+        AND (l.scope_majors IS NULL OR $5::text=ANY(l.scope_majors))
+        AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
+        AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
+        AND EXISTS (
+          SELECT 1 FROM source_paragraphs_vnext p
+          WHERE p.revision_id=l.revision_id AND EXISTS (
+            SELECT 1 FROM unnest($7::text[]) AS token(term)
+            WHERE position(token.term IN lower(p.paragraph_text))>0
+          )
+        )
+    ), decisions AS (
+      SELECT DISTINCT ON (d.left_revision_id,d.right_revision_id)
+        d.left_revision_id,d.right_revision_id,d.disposition
+      FROM source_conflict_decisions_vnext d
+      WHERE d.reviewed_at<=$1::timestamptz
+      ORDER BY d.left_revision_id,d.right_revision_id,
+        d.reviewed_at DESC,d.decision_id DESC
+    )
+    SELECT EXISTS (
+      SELECT 1 FROM decisions d
+      WHERE d.disposition='CONFLICT'
+        AND d.left_revision_id IN (SELECT revision_id FROM candidates)
+        AND d.right_revision_id IN (SELECT revision_id FROM candidates)
+    ) AS confirmed_conflict`;
     const connection=await this.pool.connect();
     try {
       const params=[
@@ -151,6 +202,11 @@ export class PostgresTemporalEvidenceReader{
         return empty(input,flags.blocked_rights?'BLOCKED_RIGHTS'
           :flags.unknown?'UNKNOWN':flags.stale?'STALE':'NO_EVIDENCE');
       }
+      const checkedConflicts=await connection.query(conflictSql,params.slice(0,7));
+      if(checkedConflicts.rows.length!==1)
+        throw new Error('Invalid reviewed conflict provider');
+      const dispute=ConflictResult.parse(checkedConflicts.rows[0]);
+      if(dispute.confirmed_conflict)return empty(input,'CONFLICT');
       const evidence=matches.map(x=>SourceSpanVNextSchema.parse({
         kind:'TEXT',sourceRevisionId:x.revision_id,
         paragraphId:x.paragraph_id,startCodePoint:0,
