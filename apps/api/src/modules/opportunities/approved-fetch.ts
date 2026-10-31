@@ -160,7 +160,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
           throw new SourceIngestionError();
         // A permission revoked during the fetch invalidates the whole result.
         // Check the same policy snapshot even for HTTP 304 observations.
-        if(await requireCurrentRights(options,checkedAt)!==rightsBefore)
+        if(await requireCurrentRights(options,clock().toISOString())!==rightsBefore)
           throw new SourceIngestionError();
         if(response.status===304){
           if(!latest)throw new SourceIngestionError();
@@ -182,7 +182,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
         if(!Array.isArray(paragraphs)||!paragraphs.length
           ||paragraphs.some(p=>!p.id||!p.text||/<script\b/i.test(p.text)))
           throw new SourceIngestionError();
-        if(await requireCurrentRights(options,checkedAt)!==rightsBefore)
+        if(await requireCurrentRights(options,clock().toISOString())!==rightsBefore)
           throw new SourceIngestionError();
         const contentSha256=hashRevisionParagraphs(paragraphs);
         const originalSha256=(await import('node:crypto')).createHash('sha256').update(bytes).digest('hex');
