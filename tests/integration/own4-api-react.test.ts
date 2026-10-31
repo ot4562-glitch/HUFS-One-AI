@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it} from 'vitest';
-import {DemoProfileOptionSchema,DemoSnapshotSchema,SharingGrantSchema} from '@hufs-one/contracts';
+import {DemoProfileOptionSchema,DemoSnapshotSchema,SharingGrantSchema,SafeLlmPacketSchema} from '@hufs-one/contracts';
 import type {ApiFetch} from '../../apps/web/src/integrations/api-client.js';
 import {HufsApiClient,HufsApiError} from '../../apps/web/src/integrations/api-client.js';
 import {DemoController} from '../../apps/web/src/app/demo-controller.js';
@@ -7,6 +7,7 @@ import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import profiles from '../../packages/fixtures/synthetic/demo-profiles.json';
 import snapshot from '../../packages/fixtures/synthetic/demo-snapshot.json';
+import safePacket from '../../packages/fixtures/synthetic/safe-llm-packet.json';
 
 const origin='https://hufs-test.invalid';
 const now='2026-10-31T00:00:00.000Z';
@@ -24,11 +25,13 @@ const grant=SharingGrantSchema.parse({
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
 afterEach(async()=>{await Promise.all(apps.map(a=>a.close()));apps.length=0;});
 
-function harness() {
+function harness(withAi=false) {
   let active=true;
   const repository=new MemoryApiRepository({
     profiles:profiles.profiles.map(p=>DemoProfileOptionSchema.parse(p)),
     projections:[DemoSnapshotSchema.parse(snapshot)],grants:[grant],
+    safePackets:[{actorId:actor.actorId,ref:'SYN-PACKET',
+      packet:SafeLlmPacketSchema.parse(safePacket)}],
   });
   const app=createIntegratedApi({
     repository,allowedOrigin:origin,now:()=>now,
@@ -36,6 +39,11 @@ function harness() {
       verifySession:async(req)=>active&&req.headers.cookie==='sid=good'?actor:null,
       revokeSession:async()=>{active=false;},
     },
+    ...(withAi?{syntheticAiProvider:{analyze:async()=>({
+      task:'opportunity_terms',reviewRequired:true,citations:[{
+        sourceToken:'SYN-DOC-01',paragraphId:'p1',quote:'가상 데이터 체험',
+      }],
+    })}}:{}),
   });
   apps.push(app);
   const requests:Array<{url:string;init:RequestInit}>=[];
@@ -135,6 +143,49 @@ describe('integration: real Fastify inject with synthetic browser transport',()=
       auth:{verifySession:async()=>actor,revokeSession:async()=>{}},
       reviewer:{} as never,
     })).toThrow('REVIEWER sandbox');
+  });
+
+  it('submits exactly one cleared synthetic AI packet and retrieves only a NEEDS_REVIEW mock',async()=>{
+    const {client,requests}=harness(true);
+    const accepted=await client.submitSyntheticAi(
+      'opportunity-terms','SYN-PACKET','SYN-IDEMPOTENCY-01',
+    );
+    expect(accepted.state).toBe('NEEDS_REVIEW');
+    expect(accepted.provenance).toBe('MOCK');
+    const job=await client.getSyntheticAiJob(accepted.jobId);
+    expect(job.state).toBe('NEEDS_REVIEW');
+    expect(job.candidate.reviewState).toBe('NEEDS_REVIEW');
+    expect(job.candidate.provenance).toBe('MOCK');
+    expect(job.candidate.task).toBe('opportunity_terms');
+    expect(job.candidate.citations).toHaveLength(1);
+    expect(job.candidate.citations[0]?.quote).toBe('가상 데이터 체험');
+    expect(requests.some(x=>x.url.startsWith('/api/ai/jobs/'))).toBe(true);
+    expect(requests.every(x=>!String(x.init.body??'').includes('sourceTokens'))).toBe(true);
+  });
+
+  it('fails closed on an unconfigured AI model or an invalid job identifier',async()=>{
+    const {client}=harness();
+    await expect(client.submitSyntheticAi(
+      'opportunity-terms','SYN-PACKET','SYN-IDEMPOTENCY-02',
+    )).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE',status:503});
+    await expect(client.getSyntheticAiJob('../private')).rejects.toMatchObject({
+      code:'INVALID_INPUT',status:422,
+    });
+  });
+
+  it('rejects a fabricated VERIFIED job even if it has a plausible citation',async()=>{
+    const job={
+      jobId:'SYN-JOB',state:'NEEDS_REVIEW',task:'opportunity_terms',
+      createdAt:'2026-10-31T00:00:00.000Z',
+      candidate:{task:'opportunity_terms',reviewState:'VERIFIED',provenance:'MOCK',
+        citations:[{sourceToken:'SYN-DOC-01',paragraphId:'p1',quote:'synthetic'}]},
+    };
+    const client=new HufsApiClient(async()=>new Response(JSON.stringify(job),{
+      status:200,headers:{'content-type':'application/json'},
+    }));
+    await expect(client.getSyntheticAiJob('SYN-JOB')).rejects.toMatchObject({
+      code:'PROVIDER_UNAVAILABLE',status:503,
+    });
   });
 
   it('drops malformed error envelopes and rejects third-party URL inputs',async()=>{
