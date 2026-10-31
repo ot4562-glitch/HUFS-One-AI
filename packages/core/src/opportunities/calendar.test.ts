@@ -117,6 +117,11 @@ describe('mini calendar "내 주요 일정"', () => {
     expect(() => buildCalendar(feed, notices, noticeInputs, {asOf:'2026-11-20T09:00:00+09:00'})).not.toThrow();
   });
 
+  it('deduplicates evidence references so every entry has unique evidence ids', () => {
+    const c = build({}, [notice('DUPEV', {requirementRefs:['REQ-EXAM'], studentDeadline:D(4), evidenceRefs:['EV-1', 'EV-1', 'EV-2']})], []);
+    expect(c.entries[0]?.evidenceRefs).toEqual(['EV-1', 'EV-2']);
+  });
+
   it('respects the look-ahead window and includes saved opportunities only while visible', () => {
     expect(build().entries.some(e => e.refId === 'FAR')).toBe(false);
     expect(build({daysAhead:120}).entries.some(e => e.refId === 'FAR')).toBe(true);
