@@ -44,14 +44,13 @@
 
 `LIVE_NCP`, `VALIDATED_CACHE`, `MOCK`는 처리 출처다. `REAL_CONSENTED`, `SYNTHETIC`, `MIXED`는 시연 자료 종류다. 두 차원을 별도 표시한다. 합성 데이터로 CLOVA를 실제 호출하면 `SYNTHETIC + LIVE_NCP`가 맞다.
 
-### A00.4 사용자 최신 리뷰 기준과 병합 현황 (2026-10-31)
+### A00.4 사용자 최신 리뷰 기준과 실제 병합 결과 (2026-10-31 최종 동기화)
 
-> **최신 권한 API 수정:** 기존 #54는 #37 병합 이후의 통합 테스트/부분공유 리뷰를 반영한 [후속 #55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)로 대체되어 미병합 폐쇄. #55 synthetic-contracts SUCCESS, 독립 승인 전·실 PG 미검증. #55는 FEED/NOTICES 사전 계산 결과의 ACADEMICS/EXPERIENCE 미공유 간접 노출을 403으로 차단한다.
-
-- **새 병합 기준:** 작성자가 아닌 **1명 이상의 현재 HEAD 리뷰 승인(APPROVED)** 후 코드/계약 PR을 병합한다. 요청된 리뷰어 전원 승인 규칙은 해제됐다. 다만 현재 HEAD 필수 CI 성공, 의존 스택 정리, unresolved CHANGES_REQUESTED/권한·개인정보 차단 해결은 필수다. 다른 커밋이 추가되면 재승인. 문서는 PR_WORKFLOW의 직접 정정 예외를 적용한다.
-- **병합됨:** [#15 추천 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), [#36 학업 vNext](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), [#44 overdue 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), [#47 추천 설명 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), [#53 캘린더 Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), [#37 웹/API 통합 어댑터](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), [#48 합성 평가 도구](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48).
-- **미병합:** #16 → #40 → #41 추천/공지 잔여, #49 공유입력, #50 캘린더 계산, #32 인증, #33 → #34 Temporal 근거, #35 PG 동의, #55 Fastify 원자적 조회. #16은 NoticeResult.items[].overdue 실제 직렬화 누락이 차단 사유로 남고, #49/#50이 #16 미병합 파일을 포함하므로 선행 병합 전 별도로 병합하지 않는다.
-- **안전/출시:** 원자적 grant+source scoped projection, 실 PG/Google/학교 이메일, 실제 권한 동의, 브라우저 E2E와 NCP 허가는 미검증. 합성 CI/PR 병합을 실서비스 완료로 기록하지 않는다. 계획에 없던 캘린더는 A07.3·A11·A13·A17과 Proposal·STATUS·이슈까지 동기화한다.
+- **병합 정책:** PR의 작성자가 아닌 **최소 1명의 현재 HEAD APPROVED**와 동일 HEAD 필수 GitHub Actions 성공, main 병합 가능, 보안·개인정보 blocker 해결 후 통합 담당자가 병합한다. CODEOWNERS/리뷰 요청자 전원 승인은 기본 요건에서 제외됐다. 본인 PR은 타인 승인 필요, COMMENTED/과거 HEAD 승인은 불충분. 문서 보정은 PR_WORKFLOW의 운영문서 직접 커밋 예외를 사용한다.
+- **main 병합 완료:** 추천 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), 학업 계약 [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), Notice overdue 계약 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), 추천 설명 계약 [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), 캘린더 결과 계약 [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), React/API 합성 통합 [#37](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), A15 평가코어 [#48](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48), 중요공지 실제 출력 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16), scopeInputsToGrant 공유 입력 [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49), 시간/출처 gate [#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40), 신규 캘린더 계산 [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50). **병합은 합성 코드 단계만** 뜻하고 실학생·live PostgreSQL/Google/NCP/브라우저 E2E는 해당되지 않는다.
+- **남은 PR:** #41 추천 설명 직렬화는 추가 미공유 근거 시험이 반영됐지만 최신 main과 충돌(mergeable=false)·HEAD Actions 0건으로 작성자 재기반/재승인 대기. #32 Google OIDC, #33 EvidenceScope, #34 Temporal PG, #35 SharingGrant PG, #55 Fastify 원자적 조회는 독립 최신 승인/충돌/안전 검증 게이트 대기. #54는 최신 main 통합 CI·부분공유 차단 반영 #55로 **미병합 폐쇄/대체**되었다. #35의 사전계산 FEED/NOTICES는 ACADEMICS·EXPERIENCE 일부 미공유이면 fail-closed하되 실제 범위별 재계산은 미구현.
+- **새 기능 동기화:** 계약 #53 + 계산 #50이 모두 main. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52) actor/grant/source-scoped 캘린더 REST API와 [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51) 이의상 모바일/접근성 React 위젯은 미구현. 신규 기능은 Proposal, A07.3·A11·A13·A17, WORKSTREAMS, STATUS, README, 이슈에 실제 상태를 유지한다.
+- **운영 안전:** 출처 권한·학생 개별 동의·공식 학업 검수·실 PG 원자 철회/캐시·Google OIDC/외대 메일·NCP 사용승인·시연/브라우저 E2E가 빠진 공개 제공은 BLOCKED. raw 학생 CSV/Forms를 코드/CI/PR/모델로 재배포 금지.
 
 ## A01. 사람이 이해할 시스템 지도와 실행 구조
 
@@ -577,7 +576,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 
 **사용자 가치와 UI:** '오늘' 화면 하단에 별도 탭 없이 2주/월간 미니 뷰로 학생 본인에게 해당하는 날짜를 표시한다. STUDENT_DEADLINE(학생 제출), APPLY_DEADLINE(실제 접수), EVENT(시험·행사)를 구분한다. 행정 내부 보고 마감은 학생 마감으로 쓰지 않는다. ROLLING/DEADLINE_UNKNOWN은 날짜를 꾸며 넣지 않고 별도 '날짜 미정' 목록으로 표시한다. UNKNOWN 적용 범위나 모호한 notice ID는 확정 중요 일정이 아닌 '적용 여부 확인 필요'로 격리한다. 지난 마감은 '기한 경과·담당부서 확인'으로 안내한다.
 
-**계약과 구현 상태:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)에서 CalendarResultSchema와 validateCalendarWire, 합성 부정 검증을 main에 병합했다. 응답은 asOf/from/to, entries, undated, needsConfirmation, ambiguousNoticeIds로 구분하고 서울 날짜/중복/참조/asOf를 검증한다. [#50 계산](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50), [#51 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), [#52 HTTP 전달](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)은 **아직 실제 main 경로 미완료**. .ics 내보내기·푸시 알림은 미니 캘린더 범위 밖이다.
+**계약과 계산은 main 병합:** [#53 CalendarResultSchema/validateCalendarWire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)와 [#50 순수 buildCalendar](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)가 실제 병합됐다. 결과는 asOf/from/to, entries, undated, needsConfirmation, ambiguousNoticeIds를 구분하고 서울 날짜/중복/기한·asOf/검수 상태와 합성 음성 사례를 검사한다. **아직 미구현:** [#52 인증된 캘린더 HTTP 전달](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52), [#51 React 미니 위젯](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51). .ics 내보내기·푸시 알림은 이번 범위 밖이다.
 
 **보안과 API:** 화면이 FeedResult/NoticeResult를 독자 재계산하지 않는다. 별도 인증된 GET /api/demo/contexts/:contextId/calendar (no-store, **예정/미구현**)을 사용한다. 요청별 server actor/subject/context/grantVersion, 공유 섹션/만료/철회, scopeInputsToGrant, 검증된 source rights·asOf·scopeKey 캐시를 같은 권한 경계에서 확인한다. ACADEMICS 미공유의 학업 마감, EXPERIENCE 미공유의 추천 근거, FEED 미공유의 관심정보는 파생 일정에도 새지 않아야 한다. 불확실하면 403/UNKNOWN으로 실패를 닫는다. REVIEWER는 합성만. #35/#49/#55 및 동시 철회·부분공유·과거/미래 출처 부정 E2E 없이는 운영 완료로 보지 않는다.
 
@@ -908,7 +907,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 ### A13.3 함수·버전 계약
 
-`normalizeIntake`, `buildDemoProjection`, `authorizeDemoContext`, `buildCalendar`(신규 #50, main 연동 전), `buildAcademicLedger`, `auditGraduation`, `simulateStudyPlan`, `forecastOffering`, `evaluateNotice`, `evaluateOpportunity`, `rankOpportunities`, `composeFeed`, `buildSafeLlmPacket`, `validateLlmCandidate`를 구현한다. 순수 코어는 숨은 네트워크·Date.now·난수를 읽지 않고 `asOf/configVersion`을 입력받는다. 서버 authorization을 브라우저 계산으로 대체하지 않는다.
+`normalizeIntake`, `buildDemoProjection`, `authorizeDemoContext`, `buildCalendar`(신규 #50 main 병합, HTTP 연결 전), `buildAcademicLedger`, `auditGraduation`, `simulateStudyPlan`, `forecastOffering`, `evaluateNotice`, `evaluateOpportunity`, `rankOpportunities`, `composeFeed`, `buildSafeLlmPacket`, `validateLlmCandidate`를 구현한다. 순수 코어는 숨은 네트워크·Date.now·난수를 읽지 않고 `asOf/configVersion`을 입력받는다. 서버 authorization을 브라우저 계산으로 대체하지 않는다.
 
 계산 캐시는 profile/projection/grant/consent/transcript/rulePack/plan/experience/source/topic/rank/forecast/prompt/schema/model 중 실제 의존 버전을 갖는다. write에는 expectedVersion을 필수로 두고 409일 때 비교·다시 저장한다. 원장이 바뀌면 학업·전망·연결 공지 결과를 무효화한다. 표시 색이나 카드 정렬 UI 설정만 바뀌면 AI를 호출하지 않는다.
 
@@ -1110,7 +1109,7 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest; 신규 포스터 20건 + 시의성 정정 12건 별도 검증팩, 원본 이미지 bbox·오독·변경 이벤트 |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
-| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire 병합; #50·#51·#52 실제 연동, partial sharing/철회/시점·접근성 검증 전 |
+| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET·#51 UI 미구현, partial sharing/철회/출처 시점·접근성 E2E 미검증 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
 | TASK-16 팀원 이해 | 설명 담당+각 모듈 / A01·A16 | 지도3개·질문10개·역할별 설명·팀원 재설명 |
 | TASK-17 개설 전망 | GPT/Claude 계산·교차검토 / A09 | 완전성·n/k·0/n·정보누출 방지·rolling-origin·precision/recall/IoU·공식 override·가정 분리 |
