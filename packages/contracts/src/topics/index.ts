@@ -37,6 +37,7 @@ export const TOPIC_ALIASES_V1 = {
   '무역': 'TRADE_OVERSEAS',
   '데이터분석': 'DATA_ANALYTICS',
   '소프트웨어개발': 'SOFTWARE_DEV',
+  '소프트웨어/개발': 'SOFTWARE_DEV',
 } as const satisfies Record<string, TopicCode>;
 
 export const InterestTopicsSchema = z.array(TopicCodeSchema).max(5);
