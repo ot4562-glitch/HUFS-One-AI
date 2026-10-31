@@ -87,7 +87,13 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     throw new Error('Incomplete REVIEWER sandbox: fail closed');
   // The approved deployment assembly does not yet exist. This prevents an
   // alternate launcher from bypassing main.ts's existing production block.
-  if(process.env.APP_ENV==='production')
+  // NODE_ENV is the standard deployment marker. APP_ENV alone is not a
+  // reliable production gate: an alternate launcher can omit it. Default
+  // deny unknown staging/preview modes until a reviewed release assembly exists.
+  const appEnv=process.env.APP_ENV;
+  const nodeEnv=process.env.NODE_ENV;
+  if((appEnv!==undefined && !['test','development','local','synthetic'].includes(appEnv))
+    ||(nodeEnv!==undefined && !['test','development'].includes(nodeEnv)))
     throw new Error('Production integration disabled pending audited OAuth/PG/ingress gates');
   if(!deps.allowedOrigin || new URL(deps.allowedOrigin).origin!==deps.allowedOrigin
     || !deps.allowedOrigin.startsWith('https://'))

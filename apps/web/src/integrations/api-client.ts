@@ -48,7 +48,7 @@ const ReviewerEnrollmentSchema = z.strictObject({
   dataMode:z.literal('SYNTHETIC'),readOnly:z.boolean(),sandboxOnly:z.literal(true),
 });
 const TeamSessionSchema = z.strictObject({
-  actorId:z.string().min(1),role:z.enum(['BETA','ADMIN']),
+  actorId:z.string().min(1),role:z.literal('BETA'),
   schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),
 });
 const ReviewerSessionSchema = z.strictObject({
@@ -261,8 +261,28 @@ export class HufsApiClient {
     const snapshot=await this.request(
       '/api/reviewer/demo/subjects/'+subject+'/snapshot',DemoSnapshotSchema,{signal});
     if(snapshot.demoSubjectId!==subject || snapshot.datasetMode!=='SYNTHETIC'
-      ||snapshot.aiProvenance==='LIVE_NCP'
+      ||(snapshot.aiProvenance!=='MOCK'&&snapshot.aiProvenance!=='NONE')
       ||snapshot.feed.asOf!==snapshot.asOf || snapshot.notices.asOf!==snapshot.asOf)
+      throw new HufsApiError('FORBIDDEN',403);
+    // REVIEWER must never render real academic rules, course histories or
+    // model caches accidentally embedded beneath a SYNTHETIC root label.
+    // This is a defense-in-depth consumer check, not proof of source rights:
+    // the independent server-side reviewer sandbox is still authoritative.
+    const syntheticEvidence=(refs:readonly string[])=>
+      refs.every(ref=>ref.startsWith('EV-SYN-'));
+    const academics=snapshot.academics;
+    if('rulePackVersion' in academics
+      &&(!academics.rulePackVersion.startsWith('SYN-')
+        ||Date.parse(academics.asOf)>Date.parse(snapshot.asOf)
+        ||academics.deficits.some(d=>!d.requirementId.startsWith('SYN-')
+          ||!syntheticEvidence(d.evidenceRefs))))
+      throw new HufsApiError('FORBIDDEN',403);
+    const forecast=snapshot.forecast;
+    if('items' in forecast
+      &&(Date.parse(forecast.asOf)>Date.parse(snapshot.asOf)
+        ||forecast.items.some(item=>!item.courseId.startsWith('SYN-')
+          ||Date.parse(item.asOf)>Date.parse(snapshot.asOf)
+          ||!syntheticEvidence(item.evidenceRefs))))
       throw new HufsApiError('FORBIDDEN',403);
     const cards=[...snapshot.feed.featured,...snapshot.feed.compact];
     if(cards.some(card=>card.dataMode!=='SYNTHETIC'||!card.opportunityId.startsWith('SYN-')
