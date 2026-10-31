@@ -268,15 +268,22 @@ describe('TASK-06 v1.1 topic diversity in large cards', () => {
     expect(r.rankConfigVersion).toBe('rank-v1.1');
   });
 
+  it('is opt-in: the default stays rank-v1.0 until A15/UI review', () => {
+    const r = composeFeed(dataStudent, corpus, {asOf:ASOF});
+    expect(r.rankConfigVersion).toBe('rank-v1.0');
+    expect(r.feed.featured.map(c => c.opportunityId)).toEqual(['D1', 'D2', 'D3']);
+  });
+
   it('never drops cards or relaxes rules when only one topic matches', () => {
-    const single = profile({interestTopics:['DATA_ANALYTICS']});
-    expect(composeFeed(single, corpus, {asOf:ASOF}).feed.featured.map(c => c.opportunityId)).toEqual(['D1', 'D2', 'D3']);
-    expect(composeFeed(profile({interestTopics:['AI_ML']}), corpus, {asOf:ASOF}).feed.featured.map(c => c.opportunityId)).toEqual(['A1']);
+    const v11 = {asOf:ASOF, config:RANK_CONFIG_V1_1};
+    expect(composeFeed(profile({interestTopics:['DATA_ANALYTICS']}), corpus, v11).feed.featured.map(c => c.opportunityId)).toEqual(['D1', 'D2', 'D3']);
+    expect(composeFeed(profile({interestTopics:['AI_ML']}), corpus, v11).feed.featured.map(c => c.opportunityId)).toEqual(['A1']);
   });
 
   it('is byte-stable for reversed input', () => {
-    const a = JSON.stringify(composeFeed(dataStudent, corpus, {asOf:ASOF}).feed);
-    expect(JSON.stringify(composeFeed(dataStudent, [...corpus].reverse(), {asOf:ASOF}).feed)).toBe(a);
+    const v11 = {asOf:ASOF, config:RANK_CONFIG_V1_1};
+    const a = JSON.stringify(composeFeed(dataStudent, corpus, v11).feed);
+    expect(JSON.stringify(composeFeed(dataStudent, [...corpus].reverse(), v11).feed)).toBe(a);
   });
 });
 

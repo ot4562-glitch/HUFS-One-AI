@@ -20,9 +20,12 @@ export const RANK_CONFIG_V1:RankConfig = {
   maxPerKindOrganization:2,
   topicDiversity:false,
 };
-/** v1.1 = v1.0 weights + topic diversity in the large cards. Default. */
+/**
+ * v1.1 = v1.0 weights + topic diversity in the large cards. Opt-in only: promotion to default waits for
+ * A15 golden/diversity regression and UI review (integration decision on PR #41).
+ */
 export const RANK_CONFIG_V1_1:RankConfig = {...RANK_CONFIG_V1, version:'rank-v1.1', topicDiversity:true};
-export const DEFAULT_RANK_CONFIG = RANK_CONFIG_V1_1;
+export const DEFAULT_RANK_CONFIG = RANK_CONFIG_V1;
 
 const DAY_MS = 86_400_000;
 
