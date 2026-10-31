@@ -41,6 +41,11 @@ export interface PurposeConsentVerifier {
   }):Promise<boolean>;
 }
 const SHARED_SECTIONS_ARRAY=[...SHARED_SECTIONS];
+// A global precomputed feed/notice projection can contain academic eligibility,
+// approved experience and preferences even when its top-level academics field
+// is redacted. Until a *verified scope-specific recomputation* is persisted,
+// never serve that snapshot to a partially shared grant (Issue #39 / PR #49).
+const PRECOMPUTED_DERIVED_INPUTS=['FEED','NOTICES','ACADEMICS','EXPERIENCE'] as const;
 
 async function queryOnce(
   pool:ReviewerSqlPool,sql:string,params:readonly unknown[],
@@ -149,10 +154,11 @@ export class PostgresApiProjectionRepository implements ApiRepository {
   }
 
   /**
-   * Agent 4 should prefer this atomic authorization+projection read over
-   * calling readGrant() then readSnapshot() in separate PG connections.
-   * Locks the live grant row against concurrent revoke until the projection
-   * has been read; always redacts unshared academic/forecast projections.
+   * Atomic authorized projection read. The stored snapshot is unscoped and
+   * its derived feed/notices may reveal private academic or experience inputs.
+   * Until the writer stores a verified grant-scoped recomputation, deny partial
+   * grants rather than leaking through ranking scores or notice priorities.
+   * Lock the live grant row within this SELECT; reject revocation/expiry/version.
    */
   async readAuthorizedSnapshot(input:{
     actorId:string;subjectId:SubjectAlias;grantVersion:string;
@@ -166,6 +172,10 @@ export class PostgresApiProjectionRepository implements ApiRepository {
     if(!required.length||new Set(required).size!==required.length
       ||required.some(v=>!SHARED_SECTIONS_ARRAY.includes(v)))
       throw new Error('Invalid section request');
+    // A DemoSnapshot always contains feed+notices. Requiring only the requested
+    // visible section is insufficient because the stored result is precomputed
+    // using four inputs; SQL must lock and authorize every such source section.
+    const sourceSections=[...new Set([...required,...PRECOMPUTED_DERIVED_INPUTS])];
     const rows=await queryOnce(this.pool,`
       SELECT p.subject_id,p.snapshot_json,g.actor_id,g.version,g.allowed_sections
       FROM api_demo_snapshot_projections p
@@ -176,14 +186,14 @@ export class PostgresApiProjectionRepository implements ApiRepository {
         AND public.api_lock_authorized_personal_grant(
           $1::text,$2::char(3),$3::text,$4::text[])
       LIMIT 2`,[
-      input.actorId,id,input.grantVersion,required,
+      input.actorId,id,input.grantVersion,sourceSections,
     ]);
     const snap=this.checkSnapshot(rows,id);
     if(!snap)return null;
     const row=rows[0]!;
     if(row.actor_id!==input.actorId||row.version!==input.grantVersion
       ||!Array.isArray(row.allowed_sections)
-      ||required.some(v=>!(row.allowed_sections as unknown[]).includes(v))
+      ||sourceSections.some(v=>!(row.allowed_sections as unknown[]).includes(v))
       ||(row.allowed_sections as unknown[]).some(v=>!SHARED_SECTIONS.has(v as string)))
       throw new Error('Stale or cross-account projection');
     const sections=new Set(row.allowed_sections as string[]);
