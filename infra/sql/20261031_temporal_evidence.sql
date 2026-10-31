@@ -25,6 +25,14 @@ CREATE TABLE IF NOT EXISTS source_revisions_vnext (
   valid_until timestamptz,
   scope_campuses text[],
   scope_majors text[],
+  scope_colleges text[],
+  scope_major_roles text[] CHECK (
+    scope_major_roles <@ ARRAY['PRIMARY','DOUBLE','MINOR']::text[]),
+  scope_admission_types text[],
+  scope_enrollment_states text[],
+  scope_graduation_terms text[],
+  -- Nullable endpoints are independently meaningful: "until 2014" is
+  -- NOT the same as unrestricted. New restrictions may never be dropped.
   cohort_min integer,
   cohort_max integer,
   CONSTRAINT source_revision_time CHECK (
