@@ -1,5 +1,5 @@
 param(
- [string]$InputPdf='Proposal.pdf',
+ [string]$InputPdf='reference/reviewer/ReviewerInvitation.TEMPLATE.pdf',
  [string]$OutputDirectory='local_only/pdf_qa',
  [int]$Width=1200,
  [int]$FirstPage=1,

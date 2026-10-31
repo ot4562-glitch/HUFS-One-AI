@@ -1,5 +1,8 @@
 # Private 저장소의 명시 승인 학생 수강 CSV 예외
 
+> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP Standard-g3 4vCPU·16GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
+
+
 기존 두 학생 수강과목 CSV는 PR #1에서 별도 요청에 따라 Private 저장소에 포함했다(48행과 39행). **2026-10-30 사용자의 추가 명시 지시로 `csv/이수과목_이의상.csv` 28행을 별도 PR에 추가**한다. 세 파일은 동일한 6열 헤더를 사용한다. 신규 파일은 데이터 내용을 바꾸지 않고 BOM 없는 UTF-8로 변환했다. 업로드된 원본을 수정하지 않는다. 이 요청은 다른 학생 파일 전체에 대한 허가가 아니다.
 
 **주의:** 파일명 자체에 표시이름이 포함된다. 비공개 브랜치라도 초대된 협업자가 열람/복제할 수 있다. 다른 학생의 저장·팀 공유 동의 여부는 업로드 지시와 별개로 확인할 필요가 있다.
@@ -31,3 +34,7 @@
 ## 2026-10-31 외부 포스터·RAG·OCR/HCX·Laya의 권리와 정보 보호
 
 공개 게시물이라는 이유만으로 **이미지 다운로드·재배포·OCR 결과 보관·NCP 전송·CLOVA 입력**이 자동 허용되는 것은 아니다. 출처별 허용된 **수집/보존/변환/외부 AI 제공/전시** 범위를 확인하고, `RESEARCH_REFERENCE_ONLY`나 비승인 학생 원본을 제품 RAG 색인·HCX-005/007·OCR·Laya 입력·CI fixture에 사용하지 않는다. 학생 가명만 제거한다고 비식별화됐다고 단정하지 않는다. `SourceSpan IMAGE`는 원본 구역 좌표를 보관하되 이미지 원본은 비공개 권한 별도 검증으로 열람한다. 정정·취소된 자료의 hash/revision 기록도 보존기간·권리 검토에 따른다. 로그에 개인정보·이미지 원문·OCR 전문·모델 safe packet을 찍지 않는다. [세부 수집·권한 규칙](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 심사자 REVIEWER 합성자료 전용 접근 (Issue #25)
+
+심사자가 담당자라는 이유로 Forms/과목 CSV/학번·성적/비동의 원본의 열람·외부 AI 제출 권한이 생기지 않는다. 심사자는 전용 합성 리플레이만 접근하며, `dataMode=SYNTHETIC` 검증은 API와 UI 양쪽에서 하고 실제/혼합 자료가 섞이면 전부 차단한다. 시연 슬롯 S01~S05는 사람 계정이 아니며 5번째 미준비 슬롯을 허위 실제 자료로 채우지 않는다. PDF 개인별 초대 코드·심사자 이메일·Google sub·IP는 공개 GitHub/CI/analytics/log에 남기지 않는다. 평가 종료 `endsAt`(UTC exclusive)에 모든 API 열람을 차단하고 브라우저/SW/cache에 남은 민감 내용을 정리한다. 개발·테스트는 합성만 사용. 정확한 접근정책: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).
