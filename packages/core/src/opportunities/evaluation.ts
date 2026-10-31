@@ -6,8 +6,8 @@ import {composeFeed, type ComposeFeedOptions} from './feed.js';
 /**
  * A15.1 evaluation helpers. Pure and deterministic: they measure a ranking against human labels,
  * they never change it. Labels: 0 = 무관, 1 = 보조, 2 = 매우 관련 (eligibility is labelled separately).
- * Results are exact fractions as well as decimals: with N=5 profiles a mean P@3 moves in 1/15 steps,
- * so it must not be reported as a population-level effect.
+ * Per-profile results are exact fractions as well as decimals: with N=5 profiles a mean P@3 moves in 1/15
+ * steps, so it must not be reported as a population-level effect.
  */
 export type RelevanceLabel = 0|1|2;
 export type LabelSet = Readonly<Record<string, RelevanceLabel>>; // opportunityId → label, for one profile
@@ -34,11 +34,16 @@ export function precisionAtK(rankedIds:readonly string[], labels:LabelSet, k:num
   return {k, actualK:top.length, precision:frac(hits, top.length), coverage:frac(labelled, top.length)};
 }
 
-/** nDCG@k with gain 2^rel − 1 and log2(i+2) discount; ideal order from all labels of the profile. */
+/**
+ * nDCG@k with gain 2^rel − 1 and log2(i+2) discount. `rankedIds` must be the **whole evaluable candidate
+ * list** in ranked order: the ideal order (IDCG) is built only from the labels of those same candidates,
+ * so labels of hidden / future / ineligible / closed items never lower the score (PR #48 review).
+ */
 export function ndcgAtK(rankedIds:readonly string[], labels:LabelSet, k:number):number {
   if (!Number.isInteger(k) || k < 1) throw new RangeError('k must be a positive integer');
   const dcg = (rels:readonly number[]) => rels.slice(0, k).reduce((sum, rel, i) => sum + (2 ** rel - 1) / Math.log2(i + 2), 0);
-  const ideal = dcg(Object.values(labels).sort((a, b) => b - a));
+  const gains = [...new Set(rankedIds)].map(id => labels[id] ?? 0);
+  const ideal = dcg([...gains].sort((a, b) => b - a));
   if (ideal === 0) return 0;
   return Math.round(dcg(rankedIds.map(id => labels[id] ?? 0)) / ideal * 1e6) / 1e6;
 }
@@ -80,13 +85,21 @@ export function eligibilityAgreement(
 export interface EvalProfile {profileId:string; profile:RecommendationProfile; labels:LabelSet}
 export interface RankerScore {p3:PrecisionAtK; ndcg3:number; top3:string[]}
 export interface ProfileComparison {profileId:string; latestFirst:RankerScore; recommended:RankerScore}
+/** Both averages are reported because they differ when a profile has fewer than k candidates. */
+export interface MeanP3 {
+  /** Arithmetic mean of each profile's P@3 (A15.1 "N명 평균 P@3"; the +20%p goal uses this). */
+  macro:number;
+  /** Pooled hits / pooled ranked slots over all profiles, as an exact fraction. */
+  micro:Fraction;
+}
 export interface RankerComparison {
   profiles:ProfileComparison[];
-  /** Mean P@3 over profiles, as an exact fraction of total hits / total ranked slots. */
-  meanP3:{latestFirst:Fraction; recommended:Fraction};
+  meanP3:{latestFirst:MeanP3; recommended:MeanP3};
   meanNdcg3:{latestFirst:number; recommended:number};
-  /** recommended − latestFirst, in percentage points of mean P@3 (A15.1 goal: +20%p). */
+  /** recommended − latestFirst in percentage points of the **macro** mean P@3 (A15.1 goal: +20%p). */
   deltaP3Points:number;
+  /** Same difference on the micro (pooled) mean, for transparency. */
+  deltaP3PointsMicro:number;
   rankConfigVersion:string;
 }
 
@@ -112,18 +125,19 @@ export function compareRankers(
     const latest = [...visible].sort((a, b) => (at(b) - at(a)) || byCodeUnit(a.id, b.id)).map(o => o.id);
     return {profileId, latestFirst:score(latest, labels), recommended:score(visible.map(o => o.id), labels)};
   });
-  const mean = (pick:(r:ProfileComparison) => PrecisionAtK) => {
-    const num = rows.reduce((s, r) => s + pick(r).precision.num, 0);
-    const den = rows.reduce((s, r) => s + pick(r).precision.den, 0);
-    return frac(num, den);
-  };
   const avg = (xs:number[]) => xs.length === 0 ? 0 : Math.round(xs.reduce((s, x) => s + x, 0) / xs.length * 1e6) / 1e6;
+  const mean = (pick:(r:ProfileComparison) => PrecisionAtK):MeanP3 => ({
+    macro:avg(rows.map(r => pick(r).precision.value)),
+    micro:frac(rows.reduce((s, r) => s + pick(r).precision.num, 0), rows.reduce((s, r) => s + pick(r).precision.den, 0)),
+  });
+  const points = (a:number, b:number) => Math.round((b - a) * 1e4) / 100;
   const meanP3 = {latestFirst:mean(r => r.latestFirst.p3), recommended:mean(r => r.recommended.p3)};
   return {
     profiles:rows,
     meanP3,
     meanNdcg3:{latestFirst:avg(rows.map(r => r.latestFirst.ndcg3)), recommended:avg(rows.map(r => r.recommended.ndcg3))},
-    deltaP3Points:Math.round((meanP3.recommended.value - meanP3.latestFirst.value) * 1e4) / 100,
+    deltaP3Points:points(meanP3.latestFirst.macro, meanP3.recommended.macro),
+    deltaP3PointsMicro:points(meanP3.latestFirst.micro.value, meanP3.recommended.micro.value),
     rankConfigVersion:version,
   };
 }

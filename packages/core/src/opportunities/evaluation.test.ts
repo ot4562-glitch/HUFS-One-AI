@@ -26,11 +26,16 @@ describe('A15.1 P@k and nDCG@k (hand-calculated)', () => {
     expect(precisionAtK([], {}, 3).precision).toEqual({num:0, den:0, value:0});
   });
 
-  it('nDCG@3 uses 2^rel−1 gains and the ideal order of all labels', () => {
-    // DCG = 3/1 + 0 + 1/2 = 3.5; IDCG = 3 + 3/log2(3) + 1/2 = 5.39279 → 0.649015
-    expect(ndcgAtK(['a', 'b', 'c'], {a:2, b:0, c:1, d:2}, 3)).toBe(0.649015);
-    expect(ndcgAtK(['a', 'd', 'c'], {a:2, b:0, c:1, d:2}, 3)).toBe(1);
+  it('nDCG@3 uses 2^rel−1 gains and the ideal order of the same candidate list', () => {
+    // candidates a,b,c,d. DCG = 3/1 + 0 + 1/2 = 3.5; IDCG = 3 + 3/log2(3) + 1/2 = 5.39279 → 0.649015
+    expect(ndcgAtK(['a', 'b', 'c', 'd'], {a:2, b:0, c:1, d:2}, 3)).toBe(0.649015);
+    expect(ndcgAtK(['a', 'd', 'c', 'b'], {a:2, b:0, c:1, d:2}, 3)).toBe(1);
     expect(ndcgAtK(['a'], {a:0}, 3)).toBe(0);
+  });
+
+  it('labels outside the evaluable candidates never lower nDCG (PR #48 review #1)', () => {
+    expect(ndcgAtK(['A'], {A:2, HIDDEN:2}, 2)).toBe(1);
+    expect(ndcgAtK(['A', 'B'], {A:2, B:0, FUTURE:2, INELIGIBLE:2}, 3)).toBe(1);
   });
 
   it('rejects an invalid k', () => {
@@ -68,12 +73,28 @@ describe('A15.1 A (latest first) vs B (recommended) on the same visible candidat
     expect(r.profiles.map(p => p.profileId)).toEqual(['SYN-P1', 'SYN-P2']);
     expect(r.profiles[0]?.latestFirst.top3).toEqual(['NEW1', 'NEW2', 'NEW3']);
     expect(r.profiles[0]?.recommended.top3.slice(0, 2)).toEqual(['D2', 'D1']);
-    // A: P1 0/3, P2 1/3 (NEW1) → 1/6. B: P1 2/3, P2 T1 first + NEW1 in top3 → 2/3 → 4/6.
-    expect(r.meanP3.latestFirst).toMatchObject({num:1, den:6});
-    expect(r.meanP3.recommended).toMatchObject({num:4, den:6});
+    // A: P1 0/3, P2 1/3 (NEW1) → macro 1/6, micro 1/6. B: P1 2/3, P2 T1 first + NEW1 in top3 → 2/3 → 4/6.
+    expect(r.meanP3.latestFirst).toEqual({macro:0.166667, micro:{num:1, den:6, value:0.166667}});
+    expect(r.meanP3.recommended).toEqual({macro:0.666667, micro:{num:4, den:6, value:0.666667}});
     expect(r.deltaP3Points).toBe(50);
+    expect(r.deltaP3PointsMicro).toBe(50);
     expect(r.meanNdcg3.recommended).toBeGreaterThan(r.meanNdcg3.latestFirst);
     expect(r.rankConfigVersion).toBe('rank-v1.0');
+  });
+
+  it('reports macro and micro separately when a profile has fewer than 3 candidates (PR #48 review #2)', () => {
+    // Different visible sets per profile via eligibility: S1 sees 1 candidate (1/1), S2 sees 3 (0/3) → macro 1/2, micro 1/4.
+    const items = [opp('D1', ['DATA_ANALYTICS']), opp('X1', ['HR_ORG']), opp('X2', ['HR_ORG'])].map((o, i) =>
+      i === 0 ? o : OpportunitySchema.parse({...o, conditions:[{field:'campus', operator:'EQ', value:'GLOBAL', evidenceId:`EV-${o.id}`}]}));
+    const seoul = profile({interestTopics:['DATA_ANALYTICS'], facts:{campus:'SEOUL'}}); // X1/X2 ineligible → 1 candidate
+    const unknown = profile({interestTopics:['DATA_ANALYTICS']});                     // X1/X2 UNKNOWN → 3 candidates
+    const r = compareRankers([
+      {profileId:'S1', profile:seoul, labels:{D1:2}},
+      {profileId:'S2', profile:unknown, labels:{}},
+    ], items, {asOf:ASOF});
+    expect(r.profiles.map(p => p.recommended.p3.actualK)).toEqual([1, 3]);
+    expect(r.meanP3.recommended.macro).toBe(0.5);
+    expect(r.meanP3.recommended.micro).toMatchObject({num:1, den:4});
   });
 
   it('is deterministic for reordered profiles and opportunities', () => {
