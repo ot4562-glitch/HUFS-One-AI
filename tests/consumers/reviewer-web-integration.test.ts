@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
+import {HufsApiClient,HufsApiError} from '../../apps/web/src/integrations/api-client.js';
 import type {ApiFetch} from '../../apps/web/src/integrations/api-client.js';
 import profiles from '../../packages/fixtures/synthetic/demo-profiles.json';
 import snapshot from '../../packages/fixtures/synthetic/demo-snapshot.json';
@@ -70,9 +70,10 @@ describe('reviewer API consumer (isolated synthetic HTTP responses)',()=>{
         expect(requestUrl).toBe(url);
         return respond(malicious);
       });
-      await expect(client.getReviewerSnapshot('S01')).rejects.toMatchObject({
-        code:'FORBIDDEN',
-      });
+      // Invalid wire schemas are 503; valid-but-crossing the sandbox boundary are 403.
+      // Both must reject without returning any student data to the UI.
+      await expect(client.getReviewerSnapshot('S01'))
+        .rejects.toBeInstanceOf(HufsApiError);
     }
     const good=new HufsApiClient(async()=>respond(snapshot));
     expect((await good.getReviewerSnapshot('S01')).datasetMode).toBe('SYNTHETIC');
