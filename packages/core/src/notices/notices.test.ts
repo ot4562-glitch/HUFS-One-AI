@@ -184,6 +184,23 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
     ]);
   });
 
+  it('serializes overdue on every item of the official NoticeResult wire (contracts #44)', () => {
+    const r = composeNotices(student, list, {asOf:ASOF});
+    const parsed = NoticeResultSchema.parse(JSON.parse(JSON.stringify(r.result)));
+    const overdue = Object.fromEntries(parsed.items.map(i => [i.noticeId, i.overdue]));
+    expect(overdue).toEqual({
+      'CRIT-1':false, 'CRIT-2':false, 'REQ-LATE':false, 'OVERDUE':true, 'SCH':false, 'SCH-OLD':true, 'CAND':false, 'SCH-CAND':false, 'GEN':false,
+    });
+    expect(parsed.items.filter(i => i.overdue).map(i => i.noticeId)).toEqual(r.overdueIds);
+    expect(parsed.pinnedIds.some(id => overdue[id])).toBe(false);
+  });
+
+  it('an out-of-scope (NO) notice with a passed deadline is serialized overdue:false and accepted by the wire', () => {
+    const r = composeNotices(student, [notice('OUT', {campus:'GLOBAL', studentDeadline:inDays(-1)})], {asOf:ASOF});
+    expect(r.result.items[0]).toMatchObject({appliesTo:'NO', overdue:false});
+    expect(NoticeResultSchema.safeParse(r.result).success).toBe(true);
+  });
+
   it('a malformed date excludes only that notice; the rest of the list still renders (P3)', () => {
     const r = composeNotices(student, [notice('OK'), notice('BAD', {studentDeadline:'2026-11-25'})], {asOf:ASOF});
     expect(r.result.items.map(i => i.noticeId)).toEqual(['OK']);
