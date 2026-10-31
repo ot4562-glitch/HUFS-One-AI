@@ -93,18 +93,70 @@ describe('#10 trusted sources: only the current, verified, valid revision at asO
 });
 
 describe('#10 deadlines from verified claims only', () => {
+  // Trusted paragraph of revision r2 (synthetic); span() computes exact code-point offsets of a quote.
+  const text = '학생 제출 마감: 11월 27일 23:59까지, 학과 보고: 12월 3일 18:00';
+  const paragraphs = [{revisionId:'r2', paragraphId:'p1', text}, {revisionId:'r1', paragraphId:'p1', text:'학생 제출 마감: 11월 22일'}];
+  const span = (quote:string, rev = 'r2') => {
+    const start = Array.from(text).join('').indexOf(quote);
+    const s0 = Array.from(text.slice(0, start)).length;
+    return {kind:'TEXT' as const, sourceRevisionId:rev, paragraphId:'p1', startCodePoint:s0, endCodePoint:s0 + Array.from(quote).length, quote};
+  };
+  const STUDENT = span('11월 27일 23:59');
+  const ADMIN = span('12월 3일 18:00');
+  const opts = {currentRevisionId:'r2', asOf:ASOF, paragraphs};
   const claim = (claimId:string, over:Loose<ClaimRecord>):ClaimRecord => {
-    const out:ClaimRecord = {claimId, sourceRevisionId:'r2', field:'studentDeadline', value:'2026-11-27T23:59:59+09:00', state:'VERIFIED', dateKind:'STUDENT', ...strip(over)};
+    const out:ClaimRecord = {
+      claimId, sourceRevisionId:'r2', field:'studentDeadline', value:'2026-11-27T23:59:59+09:00', state:'VERIFIED', dateKind:'STUDENT',
+      reviewerId:'reviewer-01', claimCheckedAt:D(-2), evidence:[STUDENT], ...strip(over),
+    };
     for (const [k, v] of Object.entries(over)) if (v === undefined) delete (out as unknown as Record<string, unknown>)[k];
     return out;
   };
 
-  it('uses VERIFIED claims of the current revision with the matching date kind', () => {
+  it('uses claims VERIFIED by a reviewer at or before asOf, on the current revision, with exact evidence', () => {
     const r = resolveDeadlineClaims([
       claim('c1', {}),
-      claim('c2', {field:'adminReportDeadline', dateKind:'ADMIN', value:'2026-12-03T18:00:00+09:00'}),
-    ], 'r2');
+      claim('c2', {field:'adminReportDeadline', dateKind:'ADMIN', value:'2026-12-03T18:00:00+09:00', evidence:[ADMIN]}),
+    ], opts);
     expect(r.dates).toEqual({studentDeadline:'2026-11-27T14:59:59.000Z', adminReportDeadline:'2026-12-03T09:00:00.000Z'});
+    expect(r.ignored).toEqual([]);
+  });
+
+  it('no backward leak: a verification finished on 12/01 is not used for an 11/20 view (PR #40 review)', () => {
+    const late = claim('late', {claimCheckedAt:'2026-12-01T00:00:00.000Z'});
+    expect(resolveDeadlineClaims([late], opts)).toMatchObject({dates:{}, ignored:[{claimId:'late', reason:'CHECKED_AFTER_ASOF'}]});
+    expect(resolveDeadlineClaims([late], {...opts, asOf:'2026-12-01T00:00:00.000Z'}).dates.studentDeadline).toBe('2026-11-27T14:59:59.000Z');
+  });
+
+  it('rejects missing or malformed verification time / reviewer', () => {
+    const r = resolveDeadlineClaims([
+      claim('no-time', {claimCheckedAt:undefined}),
+      claim('bad-time', {claimCheckedAt:'어제'}),
+      claim('no-reviewer', {reviewerId:undefined}),
+      claim('blank-reviewer', {reviewerId:' '}),
+    ], opts);
+    expect(r.dates).toEqual({});
+    expect(r.ignored).toEqual([
+      {claimId:'bad-time', reason:'BAD_CHECK_TIME'},
+      {claimId:'blank-reviewer', reason:'NO_REVIEWER'},
+      {claimId:'no-reviewer', reason:'NO_REVIEWER'},
+      {claimId:'no-time', reason:'BAD_CHECK_TIME'},
+    ]);
+  });
+
+  it('re-checks evidence: exact quote of the current revision only; IMAGE spans are not trusted by the core', () => {
+    const r = resolveDeadlineClaims([
+      claim('none', {evidence:[]}),
+      claim('wrong-quote', {evidence:[{...STUDENT, quote:'11월 28일 23:59'}]}),
+      claim('shifted', {evidence:[{...STUDENT, startCodePoint:STUDENT.startCodePoint + 1, endCodePoint:STUDENT.endCodePoint + 1}]}),
+      claim('old-span', {evidence:[span('11월 27일 23:59', 'r1')]}),
+      claim('image', {evidence:[{kind:'IMAGE', sourceRevisionId:'r2'}]}),
+    ], opts);
+    expect(r.dates).toEqual({});
+    expect(r.ignored.map(x => [x.claimId, x.reason])).toEqual([
+      ['image', 'UNVERIFIABLE_EVIDENCE'], ['none', 'NO_EVIDENCE'], ['old-span', 'OTHER_REVISION'],
+      ['shifted', 'EVIDENCE_MISMATCH'], ['wrong-quote', 'EVIDENCE_MISMATCH'],
+    ]);
   });
 
   it('ignores candidates, old revisions, wrong kinds (event/admin as student) and vague text', () => {
@@ -115,16 +167,24 @@ describe('#10 deadlines from verified claims only', () => {
       claim('admin-as-student', {dateKind:'ADMIN'}),
       claim('vague', {value:'다음 주'}),
       claim('unrelated', {field:'organizer', dateKind:undefined, value:'시연가상기관'}),
-    ], 'r2');
+    ], opts);
     expect(r.dates).toEqual({});
-    expect(r.ignoredClaimIds).toEqual(['admin-as-student', 'cand', 'event', 'old', 'vague']);
+    expect(r.ignored.map(x => [x.claimId, x.reason])).toEqual([
+      ['admin-as-student', 'WRONG_DATE_KIND'], ['cand', 'NOT_VERIFIED'], ['event', 'WRONG_DATE_KIND'], ['old', 'OTHER_REVISION'], ['vague', 'BAD_VALUE'],
+    ]);
   });
 
   it('extension: the new revision deadline replaces the old one; conflicting verified values stay unset', () => {
-    expect(resolveDeadlineClaims([claim('old', {sourceRevisionId:'r1', value:'2026-11-22T23:59:59+09:00'}), claim('new', {})], 'r2').dates.studentDeadline)
+    expect(resolveDeadlineClaims([claim('old', {sourceRevisionId:'r1', value:'2026-11-22T23:59:59+09:00'}), claim('new', {})], opts).dates.studentDeadline)
       .toBe('2026-11-27T14:59:59.000Z');
-    const conflict = resolveDeadlineClaims([claim('a', {}), claim('b', {value:'2026-11-29T23:59:59+09:00'})], 'r2');
+    const conflict = resolveDeadlineClaims([claim('a', {}), claim('b', {value:'2026-11-29T23:59:59+09:00'})], opts);
     expect(conflict).toMatchObject({dates:{}, conflicts:['studentDeadline']});
+  });
+
+  it('is byte-stable for reversed input and rejects an invalid asOf', () => {
+    const list = [claim('late', {claimCheckedAt:'2026-12-01T00:00:00.000Z'}), claim('ok', {}), claim('cand', {state:'CANDIDATE'})];
+    expect(JSON.stringify(resolveDeadlineClaims([...list].reverse(), opts))).toBe(JSON.stringify(resolveDeadlineClaims(list, opts)));
+    expect(() => resolveDeadlineClaims(list, {...opts, asOf:'now'})).toThrow(RangeError);
   });
 });
 
