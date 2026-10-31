@@ -63,6 +63,28 @@ describe('TASK-19 SQL append-only revisions and atomic cross-instance invalidati
     expect(x.calls.at(-1)?.sql.trim()).toBe('COMMIT');
     expect(x.released).toHaveLength(1);
   });
+  it('never drops source cohort/major-role/admission/term constraints in the immutable insert',async()=>{
+    const x=db();
+    const item=record();
+    item.revision={...item.revision,
+      applicableScope:{
+        campuses:['SEOUL'],majorCodes:['ECONOMICS'],colleges:['SOCSCI'],
+        majorRoles:['PRIMARY'],admissionTypes:['FOREIGN'],
+        enrollmentStates:['ENROLLED'],graduationTermScope:['2026-2'],
+        cohortMax:2014,
+      },
+    } as typeof item.revision;
+    await x.store.append(item);
+    const write=x.calls.find(q=>q.sql.includes('INSERT INTO source_revisions_vnext'))!;
+    for(const field of ['scope_colleges','scope_major_roles','scope_admission_types',
+      'scope_enrollment_states','scope_graduation_terms','cohort_min','cohort_max']){
+      expect(write.sql).toContain(field);
+    }
+    expect(write.params.slice(17,26)).toEqual([
+      ['SEOUL'],['ECONOMICS'],['SOCSCI'],['PRIMARY'],['FOREIGN'],
+      ['ENROLLED'],['2026-2'],null,2014,
+    ]);
+  });
   it('atomically appends corrected version and full invalidation in same transaction',async()=>{
     const x=db({head:'rev-1',headAt:T(20)});
     const result=await x.store.append(record({
