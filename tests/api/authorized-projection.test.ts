@@ -85,7 +85,7 @@ describe('BETA must use a single atomic actor/grant/projection read (#39)',()=>{
       repo.setGrant({...grant,allowedSections:grant.allowedSections.filter(section=>section!==removed)});
       expect(await repo.readAuthorizedSnapshot({
         actorId:actor.actorId,subjectId:'S01',grantVersion:'v1',now:NOW,
-        requiredSections:removed==='FEED'||removed==='NOTICES'?undefined:['FEED','NOTICES'],
+        requiredSections:['FEED','NOTICES'],
       })).toBeNull();
       const app=server(repo);
       expect((await app.inject(post)).statusCode).toBe(403);
