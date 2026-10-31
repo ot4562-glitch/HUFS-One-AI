@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {
   AiTaskPathSchema, ApiErrorSchema, DemoContextSchema, DemoProfilesResponseSchema,
-  DemoSnapshotSchema, httpStatusForError,
+  DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
 } from '@hufs-one/contracts';
 import type {
   ApiErrorCode, AiTaskPath, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
@@ -18,11 +18,16 @@ export class HufsApiError extends Error {
 }
 
 const CsrfSchema = z.strictObject({csrfToken:z.string().min(16)});
-const ReviewerCapabilitiesSchema = z.object({
+const ReviewerCapabilitiesSchema = z.strictObject({
   role:z.literal('REVIEWER'), dataMode:z.literal('SYNTHETIC'),
   sandboxOnly:z.literal(true), ncpCalls:z.literal(false),
   externalSubmission:z.literal(false),
-  sections:z.array(z.string()), actions:z.array(z.string()),
+  sections:z.array(z.string()).max(20), actions:z.array(z.string()).max(30),
+  aiProvenance:z.literal('MOCK'),actualBrowserUiVerified:z.boolean(),
+});
+const ReviewerEnrollmentSchema = z.strictObject({
+  role:z.literal('REVIEWER'),accessEndsAt:z.iso.datetime({offset:true}),
+  dataMode:z.literal('SYNTHETIC'),readOnly:z.boolean(),sandboxOnly:z.literal(true),
 });
 const AiJobAcceptedSchema = z.strictObject({
   jobId:z.string().min(1),state:z.literal('NEEDS_REVIEW'),provenance:z.literal('MOCK'),
@@ -117,6 +122,45 @@ export class HufsApiClient {
     return this.request('/api/reviewer/capabilities',ReviewerCapabilitiesSchema,{signal});
   }
 
+  async listReviewerProfiles(signal?:AbortSignal):Promise<DemoProfileOption[]> {
+    const response=await this.request('/api/reviewer/demo/profiles',DemoProfilesResponseSchema,{signal});
+    if(response.profiles.some(profile=>profile.dataMode!=='SYNTHETIC'))
+      throw new HufsApiError('FORBIDDEN',403);
+    return response.profiles;
+  }
+
+  async getReviewerSnapshot(subject:SubjectAlias,signal?:AbortSignal):Promise<DemoSnapshot> {
+    if(!SubjectAliasSchema.safeParse(subject).success)
+      throw new HufsApiError('INVALID_INPUT',422);
+    const snapshot=await this.request(
+      '/api/reviewer/demo/subjects/'+subject+'/snapshot',DemoSnapshotSchema,{signal});
+    if(snapshot.demoSubjectId!==subject || snapshot.datasetMode!=='SYNTHETIC'
+      ||snapshot.aiProvenance==='LIVE_NCP'
+      ||snapshot.feed.asOf!==snapshot.asOf || snapshot.notices.asOf!==snapshot.asOf)
+      throw new HufsApiError('FORBIDDEN',403);
+    const cards=[...snapshot.feed.featured,...snapshot.feed.compact];
+    if(cards.some(card=>card.dataMode!=='SYNTHETIC'||!card.opportunityId.startsWith('SYN-')
+      ||card.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-')))
+      ||snapshot.notices.items.some(notice=>!notice.noticeId.startsWith('SYN-')
+        ||notice.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-'))))
+      throw new HufsApiError('FORBIDDEN',403);
+    return snapshot;
+  }
+
+  /**
+   * The UI owner removes the URL fragment *before* invoking this method.
+   * A token is transmitted only in a CSRF-protected POST body, never the URL
+   * or persistent browser storage. Google identity is still verified server-side.
+   */
+  async redeemReviewerInvite(enrollmentCode:string,signal?:AbortSignal) {
+    if(!/^[A-Za-z0-9_-]{43}$/.test(enrollmentCode))
+      throw new HufsApiError('INVALID_INPUT',422);
+    const {csrfToken}=await this.request('/api/auth/csrf',CsrfSchema,{signal});
+    return this.request('/api/reviewer/invitations/redeem',ReviewerEnrollmentSchema,{
+      method:'POST',body:{enrollmentCode},csrf:csrfToken,signal,
+    });
+  }
+
   /**
    * Fail closed until PR #33's authoritative RetrievalEnvelopeVNextSchema
    * and PR #34's permission-first route are merged and reviewed.
@@ -130,7 +174,10 @@ export class HufsApiClient {
     taskPath:AiTaskPath,packetRef:string,idempotencyKey:string,
     contextId?:string,signal?:AbortSignal,
   ) {
-    AiTaskPathSchema.parse(taskPath);
+    if(!AiTaskPathSchema.safeParse(taskPath).success
+      || !/^[A-Za-z0-9_-]{1,90}$/.test(packetRef)
+      || !/^[A-Za-z0-9_-]{8,100}$/.test(idempotencyKey))
+      throw new HufsApiError('INVALID_INPUT',422);
     const csrf=await this.request('/api/auth/csrf',CsrfSchema,{signal});
     return this.request('/api/ai/'+taskPath,AiJobAcceptedSchema,{
       method:'POST',csrf:csrf.csrfToken,signal,
