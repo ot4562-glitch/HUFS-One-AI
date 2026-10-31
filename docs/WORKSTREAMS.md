@@ -29,13 +29,13 @@
 
 ## 2026-10-31 신규 추가 기능: ‘내 주요 일정’ 캘린더 협업 지도
 
-- **김채윤 `qamarrchae` — 계산 코어:** [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)에서 확정 학생 서류마감·공고 신청마감·행사/시험을 구분해 `buildCalendar`를 계산한다. [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 공식 `NoticeResult.items[].overdue` 직렬화와 선행 병합·최신 승인이 먼저다. [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)의 일부 미공유 입력 차단도 계산 전 적용한다.
-- **심민성 `ot4562-glitch` — 공통 계약·권한/API:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) `CalendarResultSchema`는 2026-10-31 main에 병합됨. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 `GET /api/demo/contexts/:contextId/calendar`는 아직 미구현. 서버 인증 actor·subject·SharingGrant·source rights·`asOf`·`scopeKey`와 철회/동시성/partial sharing 검증 뒤 안전한 결과만 전달한다. 관련 #35/#39/#55.
+- **김채윤 `qamarrchae` — 계산 코어 완료:** [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) `buildCalendar`의 학생 제출 마감/실제 신청마감/행사·시험, UNKNOWN/날짜 미정/모호한 notice와 서울 날짜 처리를 **main 병합 완료**. 선행 공식 `NoticeResult.items[].overdue` [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)과 일부 미공유 입력을 먼저 제거하는 [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)도 main 병합됐다. 서버 #52는 해당 함수를 **현재 권한으로 제한된 입력**에서만 실행해야 한다.
+- **심민성 `ot4562-glitch` — 공통 계약·권한/API:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) `CalendarResultSchema`와 [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) 계산 코어는 2026-10-31 main에 병합됨. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 `GET /api/demo/contexts/:contextId/calendar`는 아직 미구현. 서버 인증 actor·subject·SharingGrant·source rights·`asOf`·`scopeKey`와 철회/동시성/partial sharing 검증 뒤 안전한 결과만 전달한다. 관련 #35/#39/#55.
 - **이의상 `uisang2004-maker` — 웹 UI:** [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), 오늘 탭 하단 2주/월간 보기·날짜 미정/적용 확인 필요 별도 목록·360px 모바일·키보드/스크린리더·텍스트+아이콘 보장. 컨텍스트 교체·철회 후 이전 학생 일정이 잠시도 남지 않게 한다.
 - **박준영 `taewangim-alt` — 학사 검토:** 실제 학생 대상 졸업시험·인증 서류 마감, 적용 전공/입학학기·학적/졸업예정기간의 공식 근거를 독립 검토한다. 자기기재 목표학기를 공식 검증으로 승격하지 않는다.
 - **이서연 `lhh42001`:** 제공자·NCP 환경 책임만 유지하며 캘린더 API/React 코어를 대신하지 않는다. 개인정보·실자료 전송/유료 호출은 별도 승인 전 금지.
 
-**문서/계획 변경 절차:** 원래 계획에 없던 기능을 추가하면 새 이슈/담당자, 사용자 시나리오, 공통 계약, 권한·실패·비용, UI, 테스트, 남은 게이트를 정하고 [Proposal](../Proposal.md)·[Architecture](../Architecture.md)·[STATUS](../STATUS.md)·[README](../README.md)에 동시에 반영한다. `.ics`·푸시는 이번 미니 캘린더 범위 밖. **계약 병합 != 실서비스 구현 완료**. 사용자의 최신 PR 정책은 **작성자가 아닌 1명 이상 현재 HEAD 승인과 성공 CI, 미해소 blocker 해결 후 병합**이며 [PR_WORKFLOW](PR_WORKFLOW.md)를 따른다.
+**문서/계획 변경 절차:** 원래 계획에 없던 기능을 추가하면 새 이슈/담당자, 사용자 시나리오, 공통 계약, 권한·실패·비용, UI, 테스트, 남은 게이트를 정하고 [Proposal](../Proposal.md)·[Architecture](../Architecture.md)·[STATUS](../STATUS.md)·[README](../README.md)에 동시에 반영한다. `.ics`·푸시는 이번 미니 캘린더 범위 밖. **계약·계산 병합 != 실서비스 UI/API 구현 완료**. 사용자의 최신 PR 정책은 **작성자가 아닌 1명 이상 현재 HEAD 승인과 성공 CI, 미해소 blocker 해결 후 병합**이며 [PR_WORKFLOW](PR_WORKFLOW.md)를 따른다.
 
 ## 충돌 방지와 교차 검토
 
@@ -74,7 +74,7 @@
 - **통합 추적 [#23](https://github.com/ot4562-glitch/HUFS-One-AI/issues/23)**, 설계 [PR #17](https://github.com/ot4562-glitch/HUFS-One-AI/pull/17): 인프라 설치/결제 승인이 아닌 **문서 설계**이며, 병합해도 신규 기능 구현을 뜻하지 않는다.
 - **심민성:** 공통 계약 v0.1.0 [#8](https://github.com/ot4562-glitch/HUFS-One-AI/issues/8)과 **새 vNext [#18](https://github.com/ot4562-glitch/HUFS-One-AI/issues/18)**는 분리. 새 SourceRevision·TEXT/IMAGE evidence·RAG/Laya 어댑터 계약 및 네 소비자 리뷰 담당.
 - **이의상 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9):** 포스터 bbox 근거 확대·latest verified / STALE / UNKNOWN / synthetic 표시, 권한철회/캐시·모바일.
-- **김채윤 [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10):** 최신 승인 공고/정정·취소만 추천·공지 소비, [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15) 미래 `asOf` 노출 및 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 학기범위/미검증 필수공지/overdue **변경요청 먼저 해결**.
+- **김채윤 [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10):** 최신 승인 공고·정정·취소만 소비하며 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15) 추천, [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 중요공지 overdue, [#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40) 시점, [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49) 공유입력, [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) 캘린더 코어는 **main 병합**. 설명 #41은 최신 HEAD 충돌·CI 재실행·독립 승인 대기, API/React 실제 소비는 별도.
 - **박준영 [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11):** OCR 표·각주/예외/졸업예정학기·Requirement ID/룰팩 검증, 학사·공지 독립 교차리뷰.
 - **이서연 NCP [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12):** API 수집 연계 심민성 [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), NCP OCR·HCX-005 이서연 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), 웹 API Temporal RAG 심민성 [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), Laya CPU·High Memory-g3·비용 하드 게이트 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). 실제 GitHub ID 매핑 확인 전 자동 assign/mention 금지.
 - **모든 에이전트:** 다음 세션 시작 즉시 원격 최신 main/이슈/PR과 이전 이슈 댓글을 확인하고 담당 이슈만 분기·PR·테스트로 진행한다. 이슈와 문서 작성은 자동 실행 아님. NCP/이미지/개인원본 전송·실배포는 별도 명시 승인 전 금지.
