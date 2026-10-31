@@ -13,6 +13,8 @@ export const TOPIC_CODES = [
 export const TopicCodeSchema = z.enum(TOPIC_CODES);
 export type TopicCode = z.infer<typeof TopicCodeSchema>;
 export const TOPIC_DICTIONARY_VERSION = 'topics-v1';
+/** Explicit alias mapping revision; the closed set of 24 TopicCodes is unchanged. */
+export const TOPIC_ALIAS_VERSION = 'aliases-v1.1';
 
 // Source class and permission gate are independent: public does not equal cleared.
 export const SourceClassSchema = z.enum([
