@@ -57,6 +57,74 @@ describe('synthetic transport-level E2E (NOT a real browser test)',()=>{
     controller.dispose();
   });
 
+  it('uses context ID and epoch to ignore stale permission errors from a previous student',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>id==='CTX-S02-RUN-A'?snap('S02','RUN-A'):snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const previous=controller.getState();
+    await controller.select('S02');
+    const current=controller.getState();
+    expect(current.snapshot?.demoSubjectId).toBe('S02');
+    expect(controller.applyContextError(previous.context!.contextId,previous.epoch,
+      new HufsApiError('SHARING_REVOKED',403))).toBe(false);
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    expect(controller.applyContextError(current.context!.contextId,current.epoch,
+      new HufsApiError('SHARING_REVOKED',403))).toBe(true);
+    expect(controller.getState().status).toBe('REVOKED');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(controller.getState().profiles).toEqual([]);
+    controller.dispose();
+  });
+
+  it('handles session expiry as a terminal state and prevents replaying old requests',async()=>{
+    let creations=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>{creations++;return ctx(subject,runId);},
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const state=controller.getState();
+    expect(controller.applyContextError(state.context!.contextId,state.epoch,
+      new HufsApiError('UNAUTHENTICATED',401))).toBe(true);
+    expect(controller.getState().status).toBe('SIGNED_OUT');
+    await controller.select('S01');
+    expect(creations).toBe(1); // Requires a new server-authenticated controller
+    expect(controller.getState().snapshot).toBeNull();
+    controller.dispose();
+  });
+
+  it('cannot select another student while server logout revocation is in flight',async()=>{
+    let release!:()=>void;
+    const revoked=new Promise<void>(resolve=>{release=resolve;});
+    let requests=0;
+    let logouts=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>{requests++;return ctx(subject,runId);},
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{logouts++;await revoked;},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const pending=controller.logout();
+    expect(controller.getState().snapshot).toBeNull();
+    await controller.select('S02');
+    expect(requests).toBe(1);
+    release();
+    await pending;
+    expect(controller.getState().status).toBe('SIGNED_OUT');
+    expect(logouts).toBe(1);
+    controller.dispose();
+  });
+
   it('keeps two independent controllers and demoRunId values isolated',async()=>{
     const client:DemoClientPort={
       listProfiles:async()=>[],
