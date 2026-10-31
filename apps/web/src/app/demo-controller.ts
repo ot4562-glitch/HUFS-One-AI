@@ -52,6 +52,7 @@ export class DemoController {
     context:null,snapshot:null,error:null,
   };
   private current:AbortController|null=null;
+  private revalidation:AbortController|null=null;
   private readonly listeners=new Set<()=>void>();
   private disposed=false;
   private endingSession=false;
@@ -74,6 +75,8 @@ export class DemoController {
   private abort():void {
     this.current?.abort();
     this.current=null;
+    this.revalidation?.abort();
+    this.revalidation=null;
   }
 
   async loadProfiles():Promise<void> {
@@ -139,6 +142,40 @@ export class DemoController {
       if(failure.status==='SIGNED_OUT')this.endingSession=true;
       this.emit({...this.state,status:failure.status,
         snapshot:null,context:null,error:failure.code});
+    }
+  }
+
+  /**
+   * On resume/focus, hide previously rendered data BEFORE rechecking the live
+   * server's session, consent, grant, invitation and dataset revision gates.
+   * The server's snapshot route is the authority: a cached browser roster or
+   * OAuth access hint alone never proves a current SharingGrant.
+   */
+  async revalidate():Promise<void> {
+    if(this.disposed||this.endingSession||this.state.status!=='READY'
+      ||!this.state.context)return;
+    this.revalidation?.abort();
+    const active=new AbortController();
+    this.revalidation=active;
+    const {context,epoch}=this.state;
+    this.emit({...this.state,status:'LOADING',snapshot:null,error:null});
+    const current=()=>!this.disposed&&!this.endingSession
+      &&!active.signal.aborted&&this.revalidation===active
+      &&this.state.epoch===epoch
+      &&this.state.context?.contextId===context.contextId;
+    try{
+      const raw=await this.api.getSnapshot(context.contextId,active.signal);
+      if(!current())return;
+      const parsed=DemoSnapshotSchema.safeParse(raw);
+      if(!parsed.success)throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+      if(!isSnapshotCurrent(parsed.data,{
+        context,selectionEpoch:epoch,currentSelectionEpoch:this.state.epoch,
+      }))throw new HufsApiError('VERSION_CONFLICT',409);
+      this.emit({...this.state,status:'READY',snapshot:parsed.data,error:null});
+    }catch(error){
+      if(current())this.applyContextError(context.contextId,epoch,error);
+    }finally{
+      if(this.revalidation===active)this.revalidation=null;
     }
   }
 
