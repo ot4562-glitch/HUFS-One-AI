@@ -25,6 +25,8 @@
     "packages/contracts/src/**/*.ts",
     "apps/api/src/**/*.ts",
     "tests/**/*.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "packages/core/src/**/*.ts",
+    "apps/web/src/**/*.ts"
   ]
 }
