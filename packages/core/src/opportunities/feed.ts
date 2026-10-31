@@ -98,7 +98,7 @@ function latestFirst(items:readonly RankedOpportunity[], options:RankOptions):Ra
   return [...items].sort((a, b) => (at(b) - at(a)) || byCodeUnit(a.opportunity.id, b.opportunity.id));
 }
 
-function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST') {
+function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST', explanation:RecommendationExplanation) {
   return {
     opportunityId:r.opportunity.id,
     displayMode,
@@ -109,6 +109,8 @@ function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST'
     evidenceRefs:r.evaluation.evidenceRefs,
     score:r.score.total,
     dataMode:r.opportunity.dataMode,
+    // Optional FeedCard.explanation wire (contracts #47): same id/score/topics, validated by FeedCardSchema.
+    explanation,
   };
 }
 
@@ -138,8 +140,8 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
 
   const feed = FeedResultSchema.parse({
     asOf:options.asOf,
-    featured:featured.map(r => toCard(r, 'FEATURED_LARGE')),
-    compact:compact.map(r => toCard(r, 'COMPACT_LIST')),
+    featured:featured.map(r => toCard(r, 'FEATURED_LARGE', explainRecommendation(r, cfg))),
+    compact:compact.map(r => toCard(r, 'COMPACT_LIST', explainRecommendation(r, cfg))),
     hasMore:visible.length > featured.length + compact.length,
     totalCandidates:visible.length,
   });

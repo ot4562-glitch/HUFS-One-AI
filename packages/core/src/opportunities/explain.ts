@@ -1,4 +1,4 @@
-import type {TopicCode} from '@hufs-one/contracts';
+import {RECOMMENDATION_SCORE_DISCLAIMER, type TopicCode} from '@hufs-one/contracts';
 import {TOPIC_LABELS_KO} from '../normalization/topics.js';
 import type {ConditionField} from './evaluate.js';
 import {DEFAULT_RANK_CONFIG, type RankConfig, type RankedOpportunity} from './rank.js';
@@ -48,7 +48,8 @@ export interface RecommendationExplanation {
 
 /** Design thresholds on the 0–100 score (team choice, revisit with A15 evaluation). */
 export const RELEVANCE_THRESHOLDS = {HIGH:60, MEDIUM:35} as const;
-export const SCORE_DISCLAIMER = '관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요.';
+/** Single source: the contracts literal (FeedCard.explanation requires this exact text). */
+export const SCORE_DISCLAIMER = RECOMMENDATION_SCORE_DISCLAIMER;
 
 const LEVEL_LABEL:Record<RelevanceLevel, string> = {HIGH:'관련 높음', MEDIUM:'관련 보통', LOW:'관련 낮음', GENERAL:'일반 공고'};
 const FIELD_LABEL:Record<ConditionField, string> = {
@@ -108,6 +109,7 @@ function deadlineNote(r:RankedOpportunity):DeadlineNote {
     return {kind:'CONFIRMED', iso:r.evaluation.deadline, text:`${seoulText(r.evaluation.deadline)}까지 신청`};
   }
   if (o.actualApplicationRoute === 'RECORD_ONLY') return {kind:'RECORD_ONLY', text:'기록용 페이지예요. 실제 모집 마감은 원문에서 확인하세요.'};
+  if (o.deadlineKind === 'ROLLING') return {kind:'UNKNOWN', text:'상시 모집이에요. 정해진 마감일이 없으니 원문에서 확인하세요.'};
   if (o.eventSessions.length > 0) return {kind:'EVENT_ONLY', text:'행사 기간만 공개돼 있어요. 신청 마감은 원문에서 확인하세요.'};
   return {kind:'UNKNOWN', text:'마감일이 확인되지 않았어요(상시·채용 시 마감 포함). 원문을 확인하세요.'};
 }
