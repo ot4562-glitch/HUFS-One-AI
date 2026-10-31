@@ -6,6 +6,7 @@ describe('A04 closed topic contract',()=>{
     expect(TOPIC_CODES).toHaveLength(24);
     expect(new Set(TOPIC_CODES).size).toBe(24);
     expect(TOPIC_DICTIONARY_VERSION).toBe('topics-v1');
+    expect(TOPIC_ALIAS_VERSION).toBe('aliases-v1.1');
   });
   it.each(TOPIC_CODES)('accepts canonical code %s',code=>{
     expect(TopicCodeSchema.parse(code)).toBe(code);
