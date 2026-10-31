@@ -17,6 +17,8 @@ import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/aut
 import {GoogleAuthFlowError} from './modules/auth/google-auth-flow.js';
 import {SchoolMailProofError} from './modules/auth/school-mail-proof.js';
 import {validateModelCandidate} from './modules/ai/candidate.js';
+import {computeAuthorizedCalendar} from './modules/calendar.js';
+import type {CalendarReadRequest} from './modules/calendar.js';
 
 const SelectBody=z.strictObject({
   demoSubjectId:SubjectAliasSchema,
@@ -99,7 +101,7 @@ export function createApi(options:ApiOptions) {
         ||path==='/api/reviewer/capabilities'
         ||path==='/api/demo/profiles'
         ||/^\/api\/reviewer\/demo\/subjects\/S0[1-5]\/snapshot$/.test(path??'')
-        ||/^\/api\/demo\/contexts\/[^/]+\/(snapshot|notices|graduation|outlook)$/.test(path??'')
+        ||/^\/api\/demo\/contexts\/[^/]+\/(snapshot|notices|graduation|outlook|calendar)$/.test(path??'')
         ||/^\/api\/reviewer\/demo\/contexts\/[^/]+\/actions$/.test(path??'')
         ||/^\/api\/ai\/jobs\/[^/]+$/.test(path??'')
       );
@@ -257,6 +259,50 @@ export function createApi(options:ApiOptions) {
     if(validated.asOf!==at)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     return validated;
   });
+  app.get('/api/demo/contexts/:id/calendar',async(req)=>{
+    const {id}=ContextParams.parse(req.params);
+    z.strictObject({}).parse(req.query);
+    const actor=principal(req),context=contexts.get(id);
+    if(!context||context.actorId!==actor.actorId||context.sessionIdHash!==actor.sessionIdHash)
+      throw new ApiFailure('FORBIDDEN');
+    if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    if(!options.calendarSource)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const input:CalendarReadRequest={actorId:actor.actorId,context,now:clock()};
+    if(actor.role==='REVIEWER'){
+      const grant=reviewerGrants.get(req);
+      if(!grant||context.sharingGrantVersion!==`REVIEWER:${grant.inviteId}`)
+        throw new ApiFailure('FORBIDDEN');
+      input.reviewerInviteId=grant.inviteId;
+    }
+    const bundle=await options.calendarSource.readAuthorizedInputs(input);
+    if(!bundle)throw new ApiFailure('FORBIDDEN');
+    let result;
+    try {result=computeAuthorizedCalendar(bundle,input);}
+    catch(error){
+      // A malformed server projection is an unavailable provider, not invalid client input.
+      if(error instanceof ApiFailure)throw error;
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    }
+    // All awaits can race with expiry/revoke. Recheck the session, context, invite and atomic
+    // source receipt just before returning; never send an already-computed stale result.
+    const current=authorizeSession(await verifier(req),clock());
+    if(current.actorId!==actor.actorId||current.sessionIdHash!==actor.sessionIdHash||current.role!==actor.role)
+      throw new ApiFailure('FORBIDDEN');
+    if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    if(!await options.calendarSource.revalidateAuthorization(input,{
+      authorizationToken:bundle.authorizationToken,sourceVersion:bundle.sourceVersion,
+      scopeKey:bundle.scopeKey,asOf:bundle.asOf,
+    },clock()))throw new ApiFailure('FORBIDDEN');
+    if(actor.role==='REVIEWER'){
+      const active=await options.reviewerAccess!.readActive({actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock()});
+      if(!active||active.inviteId!==input.reviewerInviteId||Date.parse(active.endsAt)<=nowEpoch(clock()))
+        throw new ApiFailure('FORBIDDEN');
+    }
+    authorizeSession(current,clock());
+    if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    return result;
+  });
+
   app.get('/api/health',async()=>({
     mode:'LOCAL_ONLY',releaseReady:false,oidcConnected:false,schoolMailOtpConnected:false,
     ncpConnected:false,aiProviderConnected:false,
