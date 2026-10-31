@@ -4,17 +4,17 @@
 
 > 작성자 아닌 1명 이상의 **현재 HEAD APPROVED**, 같은 SHA 필수 CI 성공, 스택/보안 blocker 해소 후 병합한다. 여러 협업자의 승인 전부는 필수 요건이 아니지만 본인 PR에 자기 승인은 인정하지 않는다. 수정·리뷰·코드 병합과 실서비스 배포·학생 권한·실 PG/NCP/Google 검증은 엄격히 구분한다. 이 절을 최신 상태로 보고 아래 이전 기록은 해당 시점의 이력이다.
 
-### main 병합 완료: 이번 두 차례 검토로 총 11 PR
+### main 병합 완료: 이번 두 차례 검토로 총 12 PR
 
 - [#15 추천 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), [#36 학업 vNext](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), [#44 overdue/alias Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), [#47 추천 설명 Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), [#53 캘린더 Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), [#37 Fastify–React 합성 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), [#48 추천 순위 평가](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48): 첫 배치 **7건** 병합.
 - [#16 중요공지 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16): #44 선택적 NoticeItem.overdue를 composeNotices().result.items[]에 직접 직렬화하고 부정 합성 테스트·비작성자 최신 승인 후 병합됨. 기존 'overdue Wire 미연결' 결함 **해소**.
 - [#49 공유범위별 입력](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49): 승인 경험/공식 졸업학기·전공/학업 facts/관심 주제의 부분공유 간접 노출 차단 합성 회귀; 최신 HEAD `027d6dd`를 재승인·CI 성공 후 병합, merge `503760ca`.
 - [#40 신뢰형 출처 시점 검증](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40): asOf 이전에 알 수 없는 revision·미래 검증 claim·과거 TEXT 인용/취소 구판을 코어에서 격리; 최신 HEAD `10d21eb` 재승인·CI 후 병합, merge `35a155f7`.
 - [#50 신규 '내 주요 일정' 계산](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50): UNKNOWN·학업 미공유→needsConfirmation, 중복 notice 제외, verified deadline vs EVENT/행정기한, 서울 날짜·시점·CalendarResultSchema 합성 검증; #16/#49 최신 main 재동기화 후 HEAD `7df0ec9` 재승인·CI 성공·병합, merge `fb87fdaa`.
+- [#41 추천 이유·관련도·상시마감 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41): #40/#49/#50 선행 병합 뒤 main 충돌 해소, 고유 10파일 diff, FeedCard.explanation 정식 Zod 직렬화/코드관련도·고정문구·경험/전공 미공유 설명 제거, ROLLING/UNKNOWN 분리와 rank-v1.1 opt-in. HEAD `c5e86f2` 재승인·[Actions SUCCESS](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41210722496) 후 merge `563e9f24`. **실제 React·인증된 API 출력/접근성은 아직 별도**.
 
-### 현재 미병합 PR 6건과 정확한 차단 이유
+### 현재 미병합 PR 5건과 정확한 차단 이유
 
-- **#41 추천 설명/관련도 직렬화(김채윤):** #47·#49에 맞춘 FeedCard.explanation 및 경험·전공 미공유 부정 테스트 `explain-scope.test.ts` 반영. 하지만 HEAD `10beffb`가 최신 main과 충돌, check-runs 0건, fresh HEAD APPROVED 없음. 작성자에게 #40/#49/#50 main 재동기화·CI 및 재검토 요청. rank-v1.1은 선택, 기본 rank-v1.0 유지.
 - **#55 HTTP 원자적 권한 조회(심민성):** 기존 #54를 **미병합 폐쇄 후 최신 main에서 대체**. BETA readAuthorizedSnapshot 필수, FEED/NOTICES/ACADEMICS/EXPERIENCE가 모두 공유되지 않은 선계산 출력은 403 fail-closed, 합성 API+React CI [SUCCESS](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41208683862). 단, 작성자 본인 PR이어서 김채윤 또는 이의상의 **실제 HEAD APPROVED 미수신**, 미병합.
 - **#35 PostgreSQL grant/projection(심민성):** 김채윤 기존 CHANGES_REQUESTED가 지적한 미공유 학업/경험의 FEED/NOTICES 간접 노출에 대해 전부 공유가 아니면 precomputed 조회 403으로 임시 방어·합성 CI 통과. 리뷰어의 최신 해결 승인 없음·main conflict, 실 PG/migration/원자성 실험 미실시. 부분공유 scope별 재계산과 provenance는 후속.
 - **#32 Google OIDC/메일 OTP(심민성):** 합성 CI 성공이지만 UI 소비자의 현재 HEAD APPROVED 없음·최신 main 충돌. 실제 Google/메일 전송/브라우저/도메인 보안 검증은 별도.
@@ -23,7 +23,7 @@
 ### 이슈와 계획에 새로 추가된 캘린더
 
 - 최초 계획에 없던 기능을 [Architecture A07.3](Architecture.md)·A11·A13·A17 TASK-14C와 [Proposal 08](Proposal.md), [WORKSTREAMS](docs/WORKSTREAMS.md)·[CONTRACT_BOUNDARIES](docs/CONTRACT_BOUNDARIES.md)에 추가했다. 캘린더 **계산 #50와 Wire #53은 main 완료**. [#52 actor/grant-scoped GET API](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52), [#51 이의상 모바일/접근성 위젯](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)은 **미구현**. 권한 없이 달력에 학업/경험 사실을 추정 표시하거나 .ics/푸시를 기정사실화하지 않는다.
-- 이슈 #8/#10/#18/#19/#21/#23/#27/#39/#42/#51/#52는 최신 병합·차단 근거로 갱신했고, 공지 overdue 계약/소비 완료 [#38](https://github.com/ot4562-glitch/HUFS-One-AI/issues/38)은 CLOSED 확인. 캘린더 API/학업 실검수·출처/실 학생 동의 등 큰 이슈는 OPEN 유지.
+- 이슈 #8/#9/#10/#18/#19/#21/#23/#27/#39/#51/#52는 최신 병합·차단 근거로 갱신했고, 계약·코어 리뷰 완료 [#42](https://github.com/ot4562-glitch/HUFS-One-AI/issues/42)와 공지 overdue 완료 [#38](https://github.com/ot4562-glitch/HUFS-One-AI/issues/38)은 **CLOSED** 확인. 실제 React 추천 이유 UI·캘린더 UI/API·학업 실검수·출처/실 학생 동의는 큰 기능 이슈에서 OPEN 유지. 캘린더 API/학업 실검수·출처/실 학생 동의 등 큰 이슈는 OPEN 유지.
 
 **배포 제한:** 네 계정 원본·Forms/CSV 권한 감사 #46, 실제 Google OIDC·외대 메일 proof·세션 철회, 실 PG SharingGrant/트랜잭션·source rights/asOf/provenance, 모바일/브라우저·다중탭·권한 축소 E2E, 승인된 NCP 개통/비용·모델 실측이 미완료다. 이번 결과는 합성 코드와 문서·issue 정리이며 공개 서비스 인증·실사용이 아니다.
 
