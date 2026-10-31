@@ -101,6 +101,12 @@ export class PostgresSourceRevisionWriter {
           event.newRevisionId,event.reason,event.changedAt,
           event.permissionPolicyVersion,event.invalidates,
         ]);
+      if(event){
+        // Invalidation delivery rows and the source head are committed together.
+        // Consumers process these rows at least once outside this transaction.
+        await c.query(`INSERT INTO source_invalidation_deliveries(event_id,target)
+          SELECT $1, unnest($2::text[])`,[event.eventId,event.invalidates]);
+      }
       await c.query('COMMIT');started=false;
       return event;
     }catch(e){
