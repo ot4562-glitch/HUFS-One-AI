@@ -185,8 +185,16 @@ export class PostgresTemporalEvidenceReader{
         AND d.left_revision_id IN (SELECT revision_id FROM candidates)
         AND d.right_revision_id IN (SELECT revision_id FROM candidates)
     ) AS confirmed_conflict`;
+    // Each evidence read, negative-state classification and human-reviewed
+    // conflict decision MUST see the same database snapshot. Under the
+    // default READ COMMITTED isolation, a revision/cancellation may appear
+    // between statements and cause a stale quote or incorrect conflict.
     const connection=await this.pool.connect();
+    let transactionOpen=false;
     try {
+      await connection.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      transactionOpen=true;
+      const retrieval:TemporalResult=await (async()=>{
       const params=[
         asOf,grants,sources,input.campus??null,input.majorCode??null,
         cohort??null,keywords,limit,
@@ -224,7 +232,16 @@ export class PostgresTemporalEvidenceReader{
         sourceId:x.source_id,revisionId:x.revision_id,
         paragraphId:x.paragraph_id,quote:x.paragraph_text,score:x.score,
       }))};
+      })();
+      // Do not return a READY envelope until the snapshot safely commits.
+      await connection.query('COMMIT');
+      transactionOpen=false;
+      return retrieval;
     }catch{
+      if(transactionOpen){
+        try{await connection.query('ROLLBACK');}
+        catch{/* Preserve the retrieval error without leaking SQL details. */}
+      }
       // Fail closed on malformed database rows, stale permissions and SQL errors.
       // The HTTP layer maps this to PROVIDER_UNAVAILABLE, never public raw SQL.
       throw new Error('Temporal retrieval unavailable');
