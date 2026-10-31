@@ -44,14 +44,14 @@
 
 `LIVE_NCP`, `VALIDATED_CACHE`, `MOCK`는 처리 출처다. `REAL_CONSENTED`, `SYNTHETIC`, `MIXED`는 시연 자료 종류다. 두 차원을 별도 표시한다. 합성 데이터로 CLOVA를 실제 호출하면 `SYNTHETIC + LIVE_NCP`가 맞다.
 
-### A00.4 협업 코드 리뷰·계약·병합 순서(2026-10-31 현재)
+### A00.4 사용자 최신 리뷰 기준과 병합 현황 (2026-10-31)
 
-- 최초 감사 스냅샷은 일반 이슈 17건(16 open/1 closed), PR 26건(10 open/16 merged)이었다. 이후 [데이터 권한 감사 이슈 #46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), 선택적 공지 Wire 계약 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), 추천 설명 Wire 계약 [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)을 추가했고, 중복 문서 PR #45는 14개 문서 main 직접 커밋 확인 뒤 close(not merged)했다. 숫자는 **시점 스냅샷**으로 최신 GitHub 목록을 기준으로 다시 확인한다.
-- 추천/공지 코드의 의존 순서는 **#15 → #16 → #40 → #41**. #15 미래 게시 누출 차단 후 총괄 승인 기록이 있어도, 요청된 이의상 UI 리뷰가 없으면 병합하지 않는다. #16의 `reviewPending` 개선은 제출됐으나 `NoticeResult.items[].overdue` 연결과 별도 계약 #44, 최신 독립 리뷰가 필요하다. #40의 `claimCheckedAt <= asOf`·정확한 TEXT evidence 검증 수정은 제출됐으나 출처권한/API 연동 검증과 리뷰가 남았다. #41의 추천 설명은 현재 strict `FeedResult` 바깥이며 화면 전달·접근성 검증 미완료; 기본 랭크는 `rank-v1.0`이다.
-- 별도 계약/일반 API 스택 **#33 → #34**, 병렬 인증 **#32**, 개인정보 DB **#35**, 학업 계약 **#36**, 웹/API 통합 **#37**도 원격 CI, 의존 리베이스, 각 요청된 리뷰어 **전원의 최신 승인**, 테스트·권한 근거가 갖춰져야 병합할 수 있다. 이 목록은 코드 작성·합성 테스트 성공과 실제 서비스 배포 승인/최종 검증을 구분한다.
-- `overdue`는 **학생 제출 마감**이 `asOf` 이전 또는 같고 `appliesTo != NO`인 경우만 true. #44에는 선택적 Zod wire와 부정 테스트가 있으며 GitHub CI 통과/김채윤 소비자 승인 기록이 있지만 독립 학업/UI 리뷰와 #16 실제 직렬화 연결 전 병합하지 않는다. 정확한 `소프트웨어/개발` alias만 허용하고 fuzzy 분류는 금지한다.
-- [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)은 `FeedCard.explanation?`의 카드 ID·관련도 0~100 정수·CODE_RULES·주제·증거 안내·타임스탬프 검증과 optional `programScope`/`deadlineKind`를 제안하며 CI에 성공했다. **#41 코어의 `ComposedFeed.explanations`를 실제 React/API까지 연결하는 별도 소비자 작업**이 끝나기 전에는 기능 완료라고 표시하지 않는다. `rank-v1.1`의 기본 승격은 여전히 보류한다.
-- 실제 학생자료가 추적된 Git 이력과 현재 권한·접근 범위는 데이터 관리 이슈에서 개별 검증한다. 원본을 새 코드·CI·로그·PR 토론·외부 제공자로 재배포하지 않고, `PENDING`이면 합성 시연만 허용한다.
+> **최신 권한 API 수정:** 기존 #54는 #37 병합 이후의 통합 테스트/부분공유 리뷰를 반영한 [후속 #55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)로 대체되어 미병합 폐쇄. #55 synthetic-contracts SUCCESS, 독립 승인 전·실 PG 미검증. #55는 FEED/NOTICES 사전 계산 결과의 ACADEMICS/EXPERIENCE 미공유 간접 노출을 403으로 차단한다.
+
+- **새 병합 기준:** 작성자가 아닌 **1명 이상의 현재 HEAD 리뷰 승인(APPROVED)** 후 코드/계약 PR을 병합한다. 요청된 리뷰어 전원 승인 규칙은 해제됐다. 다만 현재 HEAD 필수 CI 성공, 의존 스택 정리, unresolved CHANGES_REQUESTED/권한·개인정보 차단 해결은 필수다. 다른 커밋이 추가되면 재승인. 문서는 PR_WORKFLOW의 직접 정정 예외를 적용한다.
+- **병합됨:** [#15 추천 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), [#36 학업 vNext](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), [#44 overdue 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), [#47 추천 설명 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), [#53 캘린더 Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), [#37 웹/API 통합 어댑터](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), [#48 합성 평가 도구](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48).
+- **미병합:** #16 → #40 → #41 추천/공지 잔여, #49 공유입력, #50 캘린더 계산, #32 인증, #33 → #34 Temporal 근거, #35 PG 동의, #55 Fastify 원자적 조회. #16은 NoticeResult.items[].overdue 실제 직렬화 누락이 차단 사유로 남고, #49/#50이 #16 미병합 파일을 포함하므로 선행 병합 전 별도로 병합하지 않는다.
+- **안전/출시:** 원자적 grant+source scoped projection, 실 PG/Google/학교 이메일, 실제 권한 동의, 브라우저 E2E와 NCP 허가는 미검증. 합성 CI/PR 병합을 실서비스 완료로 기록하지 않는다. 계획에 없던 캘린더는 A07.3·A11·A13·A17과 Proposal·STATUS·이슈까지 동기화한다.
 
 ## A01. 사람이 이해할 시스템 지도와 실행 구조
 
@@ -532,7 +532,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 3. 제공자 구조화 출력이 JSON 형식에 맞더라도 문장 누락을 막지 못하므로, 후보 조항이 하나라도 누락/충돌하면 `NEEDS_REVIEW`로 처리한다. 문구 탐지 정규식은 보조 경고일 뿐 표·각주·상충 규정의 완전성 보증은 아니다. 사람 학사 검수 + 독립 검증 후 승인된 RulePack 버전만 코어에 적용한다.
 4. 모델 호출을 사용한다면 공식 Structured Outputs 지원 모델/Schema subset과 provider 정책, 허용 원문, 원화 예산 승인을 먼저 확인한다. 승인 전에는 합성 안내문과 사람이 작성한 후보만 사용한다. 승인된 호출에서도 안전 packet hash, 모델/스키마/프롬프트 버전, 누락 검사 결과를 보존하되 비밀키·원문 개인정보를 로그에 남기지 않는다.
 
-팀원 보고: HCX-007 호출 3회에서 숫자·과목 대조 10/10이라 주장하지만 **세 번 모두 `※` 예외 문장을 누락**했다. 제공된 보고만 검토했고 실제 입력·응답·과금 영수증을 독립 재현하지 못했다. 이는 HUFS One AI의 라이브 NCP 연동 성과나 RulePack 승인 근거가 아니다.
+**선행 검수 보고의 업데이트(2026-10-31, PR #4 병합 후 [학업 팀원 검토](https://github.com/ot4562-glitch/HUFS-One-AI/pull/4#pullrequestreview-5721561166)):** 초기 HCX-007 3회에서 숫자·과목 대조는 통과했으나 `※` 예외 3/3을 누락했다. 이후 [변환기 후속 실험](sandbox/taewangim-alt/converter-tests.md) 17회에서는 보강 지시문 조건의 원래 안내문 5/5에서 예외가 표기됐지만, 문서 안의 **함정 명령은 6/6 따랐고** 보강한 코드 검사기가 6/6 경고했다. 정정 충돌 2/2도 검사에서 경고했으나 어느 규정이 맞는지 자동 확정하지 못했다. **승인 저장 절차는 경고가 있는 후보도 원본 승인 규칙을 덮어쓰는 결함**이 있었으므로, 경고의 존재만으로 안전을 보증하지 않는다. 이 숫자는 개인 sandbox의 기록이며 입력/응답 전체·권한·비용을 독립 재현하지 못했고 HUFS One AI 제품의 CLOVA 실측·RulePack 승인 근거가 아니다. 필수 정책은 **서버의 승인 단계에서 원본 조항 역방향 대조·경고 0·인적 독립 검수·불변 버전**을 검증하는 것이다.
 
 ### A06.9 이미지 공고·Temporal RAG·선택형 Laya 결정 모델 (신규 설계, 미구현)
 
@@ -572,6 +572,16 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 6. 홈 고정알림 최대2개, 전체 중요공지 목록은 별도. 일반 추천 3카드를 전부 경고로 대체하지 않는다.
 
 공지-학생 연결에 사용한 requirementId/courseId/topicCode와 source quote를 반환한다. 학과의 학생 서류 마감과 대학의 성적보고서 마감을 혼동하지 않는다. 공고 변경/철회시 `SourceRevision`/sourceVersion과 snapshotVersion을 올리고 검색 인덱스·검증된 claim·관련 notice cache를 동시 무효화. OCR/HCX 후보는 검증 전 학사 필수로 승격하지 않는다. 기본 갱신은 승인된 source의 일일확인+운영자정정; 실시간이라고 약속하지 않는다.
+
+### A07.3 신규 홈 '내 주요 일정' 미니 캘린더 (2026-10-31 추가 기획)
+
+**사용자 가치와 UI:** '오늘' 화면 하단에 별도 탭 없이 2주/월간 미니 뷰로 학생 본인에게 해당하는 날짜를 표시한다. STUDENT_DEADLINE(학생 제출), APPLY_DEADLINE(실제 접수), EVENT(시험·행사)를 구분한다. 행정 내부 보고 마감은 학생 마감으로 쓰지 않는다. ROLLING/DEADLINE_UNKNOWN은 날짜를 꾸며 넣지 않고 별도 '날짜 미정' 목록으로 표시한다. UNKNOWN 적용 범위나 모호한 notice ID는 확정 중요 일정이 아닌 '적용 여부 확인 필요'로 격리한다. 지난 마감은 '기한 경과·담당부서 확인'으로 안내한다.
+
+**계약과 구현 상태:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)에서 CalendarResultSchema와 validateCalendarWire, 합성 부정 검증을 main에 병합했다. 응답은 asOf/from/to, entries, undated, needsConfirmation, ambiguousNoticeIds로 구분하고 서울 날짜/중복/참조/asOf를 검증한다. [#50 계산](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50), [#51 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), [#52 HTTP 전달](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)은 **아직 실제 main 경로 미완료**. .ics 내보내기·푸시 알림은 미니 캘린더 범위 밖이다.
+
+**보안과 API:** 화면이 FeedResult/NoticeResult를 독자 재계산하지 않는다. 별도 인증된 GET /api/demo/contexts/:contextId/calendar (no-store, **예정/미구현**)을 사용한다. 요청별 server actor/subject/context/grantVersion, 공유 섹션/만료/철회, scopeInputsToGrant, 검증된 source rights·asOf·scopeKey 캐시를 같은 권한 경계에서 확인한다. ACADEMICS 미공유의 학업 마감, EXPERIENCE 미공유의 추천 근거, FEED 미공유의 관심정보는 파생 일정에도 새지 않아야 한다. 불확실하면 403/UNKNOWN으로 실패를 닫는다. REVIEWER는 합성만. #35/#49/#55 및 동시 철회·부분공유·과거/미래 출처 부정 E2E 없이는 운영 완료로 보지 않는다.
+
+**책임 분리:** 김채윤 캘린더 계산(#50), 심민성 계약·API·DB/권한(#52), 이의상 모바일·스크린리더·색 이외 아이콘/텍스트 UI(#51), 박준영 시험/학사 마감 검수. 360px, 다섯 슬롯, 교차탭·철회·근거 링크를 통합 테스트한다.
 
 ## A08. 졸업·학점·계획 코어 (P1)
 
@@ -720,7 +730,7 @@ rolling-origin: 시점T에 publishedAt≤T이고 당시 확보가능한 source�
 
 `saveOpportunity`와 `createActionPlan`은 구분. 저장목록은 공고/학업계획/경험 링크를 유형별로 표시하고 날짜·출처버전을 보존한다. ‘나의 경험에 남기기’는 해당기회 제목·기간의 초안을 만들 뿐 신청→참여완료·수상으로 자동승격하지 않는다. 지원서용 사실 정리는 학생확인 역할·행동·결과 코드템플릿만 사용한다.
 
-마감 `.ics` 내보내기는 P1 선택 기능: 검증된 학생행동 마감만, timezone과 all-day 명시, TITLE/DESCRIPTION의 CSV/ICS injection escaping, 학교 행정 보고일을 학생마감으로 내보내지 않음. 합성공고는 파일제목에 DEMO표기. 캘린더 계정 자동추가·초대발송은 이번 범위 밖이다.
+마감 `.ics` 내보내기는 향후 P1 선택 기능(새 미니 캘린더 범위 밖·미구현): 검증된 학생행동 마감만, timezone과 all-day 명시, TITLE/DESCRIPTION의 CSV/ICS injection escaping, 학교 행정 보고일을 학생마감으로 내보내지 않음. 합성공고는 파일제목에 DEMO표기. 캘린더 계정 자동추가·초대발송은 이번 범위 밖이다.
 
 ## A11. 모바일·브랜드·화면 계약
 
@@ -728,7 +738,7 @@ rolling-origin: 시점T에 publishedAt≤T이고 당시 확보가능한 source�
 
 Routes: `/login`, `/today`, `/opportunities`, `/opportunities/:id`, `/notices`, `/experience`, `/experience/:id`, `/graduation`, `/plan`, `/outlook`, `/saved`, `/settings`, `/admin`. 인터넷 미인증 상태에서는 **최소 로그인 안내/인증 왕복 및 일반 오류 화면 외 모든 route의 HTML·데이터 로딩을 서버/edge에서 차단**한다. 프런트 라우터만으로 비공개 화면을 보호하지 않는다.
 
-하단 5탭은 오늘·기회·경험·졸업·보관함이다. 공지는 홈 고정 알림과 별도 목록에서, 개설 전망은 졸업 탭 안에서 접근한다. 상단 시연 selector는 주요 화면에서 유지한다. `/settings`는 로그인한 actor의 개인 설정과 현재 시연 대상 정보를 나눈다. `/admin` 권한은 이름 선택으로 바뀌지 않는다.
+하단 5탭은 오늘·기회·경험·졸업·보관함이다. 새 '내 주요 일정' 미니 캘린더는 오늘 화면 아래에 배치하는 계획이며, UI #51은 아직 구현 전이다(A07.3). 공지는 홈 고정 알림과 별도 목록에서, 개설 전망은 졸업 탭 안에서 접근한다. 상단 시연 selector는 주요 화면에서 유지한다. `/settings`는 로그인한 actor의 개인 설정과 현재 시연 대상 정보를 나눈다. `/admin` 권한은 이름 선택으로 바뀌지 않는다.
 
 PC 1440에서는 최대폭 1392px·좌우 24px, 주영역과 보조영역은 약 2.5:1로 배치한다. 태블릿 768에서는 단일/2열을 혼합하고 모바일 390에서는 좌우 16px·한 열을 사용한다. CSS grid의 minmax로 계산해 열 합이 viewport를 넘지 않게 한다. 모바일 큰 카드는 한 장씩 최대 3개, 일반 목록은 최대 6개와 전체보기다. 가로 스크롤에 필수 정보나 행동을 숨기지 않는다.
 
@@ -858,6 +868,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 | GET /api/demo/profiles | 다섯 표시 옵션 | actor·grant·준비상태 |
 | POST /api/demo/contexts | 대상 문맥 발급 | session·target·grant·dataset |
 | GET /api/demo/contexts/:id/snapshot | feed·공지·학업 요약 | context binding·버전 |
+| GET /api/demo/contexts/:contextId/calendar (**신규 예정, 미구현**) | A07.3 검증된 CalendarResult | actor·context·subject·현재 grant/section/sourceRights/asOf, no-store, REVIEWER 합성 |
 | PATCH /api/demo/contexts/:id/overlay | 관심·계획 가상변경 | 허용 필드·expectedVersion |
 | POST /api/demo/contexts/:id/reset | 내 overlay 복원 | 원본 불변 |
 | GET /api/demo/contexts/:id/graduation | 허용 학업결과 | grant section·규칙 버전 |
@@ -897,7 +908,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 ### A13.3 함수·버전 계약
 
-`normalizeIntake`, `buildDemoProjection`, `authorizeDemoContext`, `buildAcademicLedger`, `auditGraduation`, `simulateStudyPlan`, `forecastOffering`, `evaluateNotice`, `evaluateOpportunity`, `rankOpportunities`, `composeFeed`, `buildSafeLlmPacket`, `validateLlmCandidate`를 구현한다. 순수 코어는 숨은 네트워크·Date.now·난수를 읽지 않고 `asOf/configVersion`을 입력받는다. 서버 authorization을 브라우저 계산으로 대체하지 않는다.
+`normalizeIntake`, `buildDemoProjection`, `authorizeDemoContext`, `buildCalendar`(신규 #50, main 연동 전), `buildAcademicLedger`, `auditGraduation`, `simulateStudyPlan`, `forecastOffering`, `evaluateNotice`, `evaluateOpportunity`, `rankOpportunities`, `composeFeed`, `buildSafeLlmPacket`, `validateLlmCandidate`를 구현한다. 순수 코어는 숨은 네트워크·Date.now·난수를 읽지 않고 `asOf/configVersion`을 입력받는다. 서버 authorization을 브라우저 계산으로 대체하지 않는다.
 
 계산 캐시는 profile/projection/grant/consent/transcript/rulePack/plan/experience/source/topic/rank/forecast/prompt/schema/model 중 실제 의존 버전을 갖는다. write에는 expectedVersion을 필수로 두고 409일 때 비교·다시 저장한다. 원장이 바뀌면 학업·전망·연결 공지 결과를 무효화한다. 표시 색이나 카드 정렬 UI 설정만 바뀌면 AI를 호출하지 않는다.
 
@@ -1099,6 +1110,7 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest; 신규 포스터 20건 + 시의성 정정 12건 별도 검증팩, 원본 이미지 bbox·오독·변경 이벤트 |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
+| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire 병합; #50·#51·#52 실제 연동, partial sharing/철회/시점·접근성 검증 전 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
 | TASK-16 팀원 이해 | 설명 담당+각 모듈 / A01·A16 | 지도3개·질문10개·역할별 설명·팀원 재설명 |
 | TASK-17 개설 전망 | GPT/Claude 계산·교차검토 / A09 | 완전성·n/k·0/n·정보누출 방지·rolling-origin·precision/recall/IoU·공식 override·가정 분리 |

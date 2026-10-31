@@ -27,12 +27,22 @@
 
 - **공개 웹 도메인/Google 인증 P0 협업:** 심민성(API)은 독립 Google OAuth OIDC·외대 메일 OTP 발송/검증·세션/권한 코드를 담당한다. 이서연(NCP/Gemini 사용)은 ingress·TLS·스토리지·CLOVA SDK/HTTP 요청, 모델/OCR/Vision·Laya worker와 클라우드 비용/안전 운영을 모두 담당한다. 이의상(UI)은 Google 로그인·학교 메일 코드·403·재인증 UX와 민감 캐시 차단을 담당한다. 심민성은 공용 auth contract, `외대.온라인.한국` origin, `hd`/메일 OTP 우회 부정시험, CI/PR 통합 게이트를 맡는다. **공식 학교 SSO 허가는 전제하지 않으며** Google OAuth 클라이언트·메일 발송 서비스·NCP 비용·학생자료 공유는 별도 승인한다. 인증 전 앱 번들/API·directIP·preview 접근을 허용하는 PR은 병합 금지(Architecture A14.1a).
 
+## 2026-10-31 신규 추가 기능: ‘내 주요 일정’ 캘린더 협업 지도
+
+- **김채윤 `qamarrchae` — 계산 코어:** [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)에서 확정 학생 서류마감·공고 신청마감·행사/시험을 구분해 `buildCalendar`를 계산한다. [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 공식 `NoticeResult.items[].overdue` 직렬화와 선행 병합·최신 승인이 먼저다. [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)의 일부 미공유 입력 차단도 계산 전 적용한다.
+- **심민성 `ot4562-glitch` — 공통 계약·권한/API:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) `CalendarResultSchema`는 2026-10-31 main에 병합됨. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 `GET /api/demo/contexts/:contextId/calendar`는 아직 미구현. 서버 인증 actor·subject·SharingGrant·source rights·`asOf`·`scopeKey`와 철회/동시성/partial sharing 검증 뒤 안전한 결과만 전달한다. 관련 #35/#39/#55.
+- **이의상 `uisang2004-maker` — 웹 UI:** [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), 오늘 탭 하단 2주/월간 보기·날짜 미정/적용 확인 필요 별도 목록·360px 모바일·키보드/스크린리더·텍스트+아이콘 보장. 컨텍스트 교체·철회 후 이전 학생 일정이 잠시도 남지 않게 한다.
+- **박준영 `taewangim-alt` — 학사 검토:** 실제 학생 대상 졸업시험·인증 서류 마감, 적용 전공/입학학기·학적/졸업예정기간의 공식 근거를 독립 검토한다. 자기기재 목표학기를 공식 검증으로 승격하지 않는다.
+- **이서연 `lhh42001`:** 제공자·NCP 환경 책임만 유지하며 캘린더 API/React 코어를 대신하지 않는다. 개인정보·실자료 전송/유료 호출은 별도 승인 전 금지.
+
+**문서/계획 변경 절차:** 원래 계획에 없던 기능을 추가하면 새 이슈/담당자, 사용자 시나리오, 공통 계약, 권한·실패·비용, UI, 테스트, 남은 게이트를 정하고 [Proposal](../Proposal.md)·[Architecture](../Architecture.md)·[STATUS](../STATUS.md)·[README](../README.md)에 동시에 반영한다. `.ics`·푸시는 이번 미니 캘린더 범위 밖. **계약 병합 != 실서비스 구현 완료**. 사용자의 최신 PR 정책은 **작성자가 아닌 1명 이상 현재 HEAD 승인과 성공 CI, 미해소 blocker 해결 후 병합**이며 [PR_WORKFLOW](PR_WORKFLOW.md)를 따른다.
+
 ## 충돌 방지와 교차 검토
 
 - **UI ↔ API:** 이의상은 `DemoContext`·`DemoSnapshot`을 합성 mock으로 사용하고, 심민성은 실제 권한/403/409/503 응답을 구현한다. 화면의 임의 타입·보안 판정·가짜 실제 데이터를 API에 강요하지 않는다.
 - **추천 ↔ API:** 김채윤은 순수 정규화·매칭·점수·공지 코어, 심민성은 인증·DB·외부 REST API 및 provider-neutral 요청/결과 검증 경계를 맡고, CLOVA 호출·비용 처리는 이서연이 담당한다. `TopicCode` 등 공통 타입 변경은 심민성에게 계약 변경을 먼저 제안한다.
 - **학업 ↔ API/UI:** 박준영은 공식 RulePack·세 원장·전망 및 합성 시험을 구현한다. 심민성은 권한·저장·API를, 이의상은 **공유 승인된 요약**만 표시한다. `RulePackDraft`를 공식 졸업 확정으로 다루지 않는다.
-- **최종 중재:** 심민성은 4개 트랙 산출물의 계약·데이터·UX/API 충돌을 해결하고, CI·독립 리뷰·실제 실패와 미실행 항목을 확인한 후에만 최종 병합한다. 일방적인 main 직접 push나 자동 병합은 금지한다.
+- **최종 중재:** 심민성은 4개 트랙의 계약·데이터·UX/API 충돌을 해결하고, **비작성자 현재 HEAD 승인 최소 1명**·필수 CI 성공·스택 의존·차단 이슈 해결을 확인해 병합한다. 과거의 전원 승인 요구는 더 이상 기본 병합 규칙이 아니다. 일방적인 main 직접 push나 자동 병합은 금지한다.
 - **검토 매트릭스:** UI는 API+통합, 추천은 API+통합, 학업은 API+통합, API는 UI/추천 중 한 트랙+통합의 교차 검토를 받는다. 모델/사람의 검증은 실제 수행한 경우만 기록한다.
 
 ## 5명 개발팀 ≠ 5명 실학생 입력

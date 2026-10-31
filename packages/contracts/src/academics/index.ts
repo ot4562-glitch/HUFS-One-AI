@@ -97,3 +97,6 @@ export const ForecastSummarySchema = z.strictObject({
   status: z.enum(['READY','PARTIAL','INSUFFICIENT_DATA']),
 });
 export type ForecastSummary = z.infer<typeof ForecastSummarySchema>;
+
+// Additive reviewed academic contracts; legacy v0.1 wire types remain stable.
+export * from './vnext.js';
