@@ -12,15 +12,32 @@ const Token=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const StringText=z.string().trim().min(1).max(20000);
 const PageIndex=z.number().int().min(0).max(199);
 const CoPoint=z.number().finite().min(0).max(1);
+const Cohort=z.number().int().min(1950).max(2200);
+const MajorRole=z.enum(['PRIMARY','DOUBLE','MINOR']);
+const GraduationTerm=z.string().regex(/^(19|20|21|22)\d{2}-[12]$/);
 const ScopeSchema=z.strictObject({
   campuses:z.array(Token).max(8).optional(),
+  colleges:z.array(Token).min(1).max(32).optional(),
   majorCodes:z.array(Token).max(32).optional(),
-  cohortRange:z.tuple([z.number().int().min(1950).max(2200),
-    z.number().int().min(1950).max(2200)]).optional(),
+  /** Role restriction applies to the SAME major as majorCodes, not any unrelated major. */
+  majorRoles:z.array(MajorRole).min(1).max(3).optional(),
+  enrollmentStates:z.array(Token).min(1).max(12).optional(),
+  admissionTypes:z.array(Token).min(1).max(16).optional(),
+  /** Requires a verified official graduation candidate term; self-report is UNKNOWN. */
+  graduationTermScope:z.array(GraduationTerm).min(1).max(24).optional(),
+  /** Legacy closed interval. New one-ended restrictions use cohortMin/cohortMax. */
+  cohortRange:z.tuple([Cohort,Cohort]).optional(),
+  cohortMin:Cohort.optional(),
+  cohortMax:Cohort.optional(),
 }).superRefine((v,ctx)=>{
   if(v.cohortRange&&v.cohortRange[1]<v.cohortRange[0])
     ctx.addIssue({code:'custom',path:['cohortRange'],message:'Reversed cohort range'});
-  for(const key of ['campuses','majorCodes'] as const){
+  if(v.cohortRange&&(v.cohortMin!==undefined||v.cohortMax!==undefined))
+    ctx.addIssue({code:'custom',path:['cohortRange'],message:'Conflicting cohort representations'});
+  if(v.cohortMin!==undefined&&v.cohortMax!==undefined&&v.cohortMin>v.cohortMax)
+    ctx.addIssue({code:'custom',path:['cohortMin'],message:'Reversed one-ended cohort range'});
+  for(const key of ['campuses','colleges','majorCodes','majorRoles',
+    'enrollmentStates','admissionTypes','graduationTermScope'] as const){
     const list=v[key]??[];
     if(new Set(list).size!==list.length)
       ctx.addIssue({code:'custom',path:[key],message:'Duplicate scope'});
@@ -28,6 +45,53 @@ const ScopeSchema=z.strictObject({
 });
 export type EvidenceScope=z.infer<typeof ScopeSchema>;
 export const EvidenceScopeSchema=ScopeSchema;
+export interface EvidenceActorScope {
+  // Explicit undefined is accepted at this server-only boundary to represent
+  // unverified/withheld facts; the matcher treats them as missing, never YES.
+  campus?:string|undefined;
+  college?:string|undefined;
+  enrollmentState?:string|undefined;
+  admissionType?:string|undefined;
+  majorCode?:string|undefined; // legacy single official major, only without a role restriction
+  majors?:readonly {code:string;role:'PRIMARY'|'DOUBLE'|'MINOR'}[]|undefined;
+  cohort?:number|undefined;
+  graduationTerm?:string|undefined;
+  graduationTermVerified?:boolean|undefined;
+}
+
+/** Permission is independent. This checks ONLY trusted, reviewed academic scope.
+ * Unknown/missing verified actor facts fail closed. No browser data is authoritative.
+ */
+export function matchesEvidenceScope(scope:EvidenceScope|undefined,actor:EvidenceActorScope|undefined):boolean {
+  if(scope===undefined)return true;
+  const checked=EvidenceScopeSchema.safeParse(scope);
+  if(!checked.success)return false;
+  const s=checked.data;
+  const member=(list:readonly string[]|undefined,actual:string|undefined)=>
+    !list?.length || (actual!==undefined&&list.includes(actual));
+  if(!member(s.campuses,actor?.campus)
+    ||!member(s.colleges,actor?.college)
+    ||!member(s.enrollmentStates,actor?.enrollmentState)
+    ||!member(s.admissionTypes,actor?.admissionType))return false;
+  if(s.graduationTermScope?.length
+    &&(actor?.graduationTermVerified!==true
+      ||!member(s.graduationTermScope,actor.graduationTerm)))return false;
+  const majorCodes=s.majorCodes??[],roles=s.majorRoles??[];
+  if(majorCodes.length||roles.length){
+    const majors=actor?.majors??(actor?.majorCode&&roles.length===0
+      ?[{code:actor.majorCode,role:'PRIMARY' as const}]:[]);
+    if(!majors.some(m=>(!majorCodes.length||majorCodes.includes(m.code))
+      &&(!roles.length||roles.includes(m.role))))return false;
+  }
+  if(s.cohortRange||s.cohortMin!==undefined||s.cohortMax!==undefined){
+    if(!Number.isInteger(actor?.cohort))return false;
+    const year=actor!.cohort!;
+    if(s.cohortRange&&(year<s.cohortRange[0]||year>s.cohortRange[1]))return false;
+    if(s.cohortMin!==undefined&&year<s.cohortMin)return false;
+    if(s.cohortMax!==undefined&&year>s.cohortMax)return false;
+  }
+  return true;
+}
 
 export const SourceRevisionVNextSchema=z.strictObject({
   revisionId:Token,
