@@ -46,34 +46,48 @@ function setup(consent?:PurposeConsentVerifier){
   };
 }
 describe('TASK-27 atomic subject projection and independent purpose grants (SQL stub)',()=>{
-  it('redacts academics and forecast when only feed/notices shared',async()=>{
+  it('fails closed on a global precomputed feed/notice projection for any missing source section',async()=>{
     const h=setup();
-    const result=await h.repo.readAuthorizedSnapshot({
-      actorId:actor,subjectId:'S01',grantVersion:'v1',
-    });
-    expect(result?.academics).toEqual({state:'NOT_SHARED'});
-    expect(result?.forecast).toEqual({state:'NOT_SHARED'});
-    expect(result?.demoSubjectId).toBe('S01');
+    for(const sections of [
+      ['FEED','NOTICES'],
+      ['FEED','NOTICES','ACADEMICS'],
+      ['FEED','NOTICES','EXPERIENCE'],
+      ['ACADEMICS','FORECAST'],
+    ]){
+      h.allow(sections);
+      // Even a request for just ACADEMICS gets a full DemoSnapshot wire.
+      // Never release that wire while its precomputed FEED/NOTICES could
+      // reveal unshared experiences, academic status or private interests.
+      expect(await h.repo.readAuthorizedSnapshot({
+        actorId:actor,subjectId:'S01',grantVersion:'v1',
+        requiredSections:sections.includes('FEED')?['FEED','NOTICES']:['ACADEMICS'],
+      })).toBeNull();
+    }
     const query=h.calls[0]!;
     expect(query.sql).toContain('api_lock_authorized_personal_grant');
     expect(query.sql).toContain('g.actor_id=$1 AND p.subject_id=$2 AND g.version=$3');
     expect(query.sql).toContain('g.revoked_at IS NULL');
     expect(query.sql).toContain('p.current=true');
-    expect(query.params).toEqual([actor,'S01','v1',['FEED','NOTICES']]);
-    expect(h.releases).toHaveLength(1);
+    expect(query.params).toEqual([actor,'S01','v1',['FEED','NOTICES','ACADEMICS','EXPERIENCE']]);
+    expect(h.releases).toHaveLength(4);
   });
-  it('only releases explicitly requested additional sections on the same live grant',async()=>{
+  it('releases a complete-source grant and still redacts unshared forecast',async()=>{
     const h=setup();
-    h.allow(['FEED','NOTICES','ACADEMICS']);
+    h.allow(['FEED','NOTICES','ACADEMICS','EXPERIENCE']);
     const result=await h.repo.readAuthorizedSnapshot({
       actorId:actor,subjectId:'S01',grantVersion:'v1',
-      requiredSections:['FEED','NOTICES','ACADEMICS'],
     });
     expect(result?.academics).toEqual(snapshot.academics);
     expect(result?.forecast).toEqual({state:'NOT_SHARED'});
+    expect(result?.demoSubjectId).toBe('S01');
+    h.allow(['FEED','NOTICES','ACADEMICS','EXPERIENCE','FORECAST']);
+    const full=await h.repo.readAuthorizedSnapshot({
+      actorId:actor,subjectId:'S01',grantVersion:'v1',requiredSections:['FEED','NOTICES','FORECAST'],
+    });
+    expect(full?.forecast).toEqual(snapshot.forecast);
     expect(await h.repo.readAuthorizedSnapshot({
-      actorId:actor,subjectId:'S01',grantVersion:'v1',requiredSections:['FORECAST'],
-    })).toBeNull();
+      actorId:actor,subjectId:'S01',grantVersion:'v1',requiredSections:['RAW_COURSES'],
+    })).rejects.toThrow();
   });
   it('denies an old context after revocation/version change, or cross-actor access',async()=>{
     const h=setup();
