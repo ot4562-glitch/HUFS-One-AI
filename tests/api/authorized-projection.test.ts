@@ -14,7 +14,7 @@ const actor={
 };
 const grant=SharingGrantSchema.parse({
   grantId:'G-ATOMIC',actorId:actor.actorId,demoSubjectId:'S01',
-  allowedSections:['FEED','NOTICES'],displayNameAllowed:false,recordingAllowed:false,
+  allowedSections:['FEED','NOTICES','ACADEMICS','EXPERIENCE'],displayNameAllowed:false,recordingAllowed:false,
   version:'v1',expiresAt:'2026-11-05T00:00:00.000Z',
 });
 const post={method:'POST' as const,url:'/api/demo/contexts',
@@ -47,7 +47,7 @@ describe('BETA must use a single atomic actor/grant/projection read (#39)',()=>{
     const res=await app.inject({url:`/api/demo/contexts/${id}/snapshot`,
       headers:{cookie:'verified'}});
     expect(res.statusCode).toBe(200);
-    expect(res.json().academics).toEqual({state:'NOT_SHARED'});
+    expect(res.json().academics).toEqual(fixtureSnapshot.academics);
     expect(res.json().forecast).toEqual({state:'NOT_SHARED'});
     expect(unsafe).not.toHaveBeenCalled();
   });
@@ -79,6 +79,18 @@ describe('BETA must use a single atomic actor/grant/projection read (#39)',()=>{
       actorId:actor.actorId,subjectId:'S01',grantVersion:'v2',now:NOW,
     })).toBeNull();
   });
+  it('fails closed for precomputed derived feed/notices with partial ACADEMICS, EXPERIENCE or FEED sharing',async()=>{
+    for(const removed of ['ACADEMICS','EXPERIENCE','FEED','NOTICES'] as const){
+      const repo=memory();
+      repo.setGrant({...grant,allowedSections:grant.allowedSections.filter(section=>section!==removed)});
+      expect(await repo.readAuthorizedSnapshot({
+        actorId:actor.actorId,subjectId:'S01',grantVersion:'v1',now:NOW,
+        requiredSections:removed==='FEED'||removed==='NOTICES'?undefined:['FEED','NOTICES'],
+      })).toBeNull();
+      const app=server(repo);
+      expect((await app.inject(post)).statusCode).toBe(403);
+    }
+  });
   it('synthetic memory adapter never releases real or mixed projections',async()=>{
     for(const mode of ['REAL_CONSENTED','MIXED'] as const){
       const repo=memory(mode),app=server(repo);
@@ -92,7 +104,7 @@ describe('BETA must use a single atomic actor/grant/projection read (#39)',()=>{
     const repo=memory();
     expect(await repo.readAuthorizedSnapshot({
       actorId:actor.actorId,subjectId:'S01',grantVersion:'v1',
-      requiredSections:['ACADEMICS'],now:NOW,
+      requiredSections:['FORECAST'],now:NOW,
     })).toBeNull();
     expect(await repo.readAuthorizedSnapshot({
       actorId:'SYN-ACTOR-02',subjectId:'S01',grantVersion:'v1',now:NOW,
