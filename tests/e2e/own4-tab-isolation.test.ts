@@ -231,6 +231,96 @@ describe('synthetic transport-level E2E (NOT a real browser test)',()=>{
     controller.dispose();
   });
 
+  it('returns reviewer actions only while the original context is still READY',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    let requested=false;
+    expect(await controller.runContextOperation(async()=>{
+      requested=true;return 'SHOULD_NOT_RUN';
+    })).toBeNull();
+    expect(requested).toBe(false);
+    await controller.select('S01');
+    expect(await controller.runContextOperation(async(context,signal)=>{
+      expect(signal.aborted).toBe(false);
+      return {subject:context.demoSubjectId,mode:'SYNTHETIC_SANDBOX'};
+    })).toEqual({subject:'S01',mode:'SYNTHETIC_SANDBOX'});
+    controller.dispose();
+  });
+
+  it('aborts stale S01 sandbox work before S02 becomes visible',async()=>{
+    let finish!:(value:string)=>void;
+    const oldResult=new Promise<string>(resolve=>{finish=resolve;});
+    let aborted=false;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>id==='CTX-S01-RUN-A'
+        ?snap('S01','RUN-A'):snap('S02','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const old=controller.runContextOperation(async(context,signal)=>{
+      expect(context.demoSubjectId).toBe('S01');
+      signal.addEventListener('abort',()=>{aborted=true;},{once:true});
+      return oldResult;
+    });
+    await controller.select('S02');
+    expect(aborted).toBe(true);
+    finish('STALE_S01_PRIVATE_ACTION');
+    expect(await old).toBeNull();
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    controller.dispose();
+  });
+
+  it('invalidates the current context on a revoked synthetic sandbox action',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const attempted=await controller.runContextOperation(async()=>{
+      throw new HufsApiError('SHARING_REVOKED',403);
+    });
+    expect(attempted).toBeNull();
+    expect(controller.getState().status).toBe('REVOKED');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(controller.getState().context).toBeNull();
+    controller.dispose();
+  });
+
+  it('cancels pending AI work immediately when returning to a tab triggers grant recheck',async()=>{
+    let finish!:(value:string)=>void;
+    const pending=new Promise<string>(resolve=>{finish=resolve;});
+    let wasCancelled=false;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const task=controller.runContextOperation(async(_ctx,signal)=>{
+      signal.addEventListener('abort',()=>{wasCancelled=true;},{once:true});
+      return pending;
+    });
+    await controller.revalidate();
+    expect(wasCancelled).toBe(true);
+    expect(controller.getState().status).toBe('READY');
+    finish('STALE_AI_RESPONSE');
+    expect(await task).toBeNull();
+    controller.dispose();
+  });
+
   it('keeps two independent controllers and demoRunId values isolated',async()=>{
     const client:DemoClientPort={
       listProfiles:async()=>[],
