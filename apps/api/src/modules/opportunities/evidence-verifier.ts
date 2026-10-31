@@ -1,7 +1,7 @@
 import {
-  RetrievalEnvelopeVNextSchema,matchesTextSpan,matchesImageSpan,
+  RetrievalEnvelopeVNextSchema,matchesTextSpan,matchesImageSpan,matchesEvidenceScope,
 } from '@hufs-one/contracts';
-import type {RetrievalEnvelopeVNext,SourceSpanVNext} from '@hufs-one/contracts';
+import type {RetrievalEnvelopeVNext,SourceSpanVNext,EvidenceScope,EvidenceActorScope} from '@hufs-one/contracts';
 
 /** Verified, private server-side source metadata, never browser supplied. */
 interface TrustedOriginBase {
@@ -16,11 +16,7 @@ interface TrustedOriginBase {
   publishedAt?:string;
   validFrom?:string;
   validUntil?:string;
-  applicableScope?:{
-    campuses?:readonly string[];
-    majorCodes?:readonly string[];
-    cohortRange?:readonly [number,number];
-  };
+  applicableScope?:EvidenceScope;
 }
 export type NormalizedBbox=readonly [number,number,number,number];
 export interface TrustedTextOrigin extends TrustedOriginBase {
@@ -49,20 +45,13 @@ export interface VerifiedRetrievalInput {
   asOf:string;
   /** Trusted server time, not a browser timestamp. */
   now:string;
-  actorScope?:{campus?:string;majorCode?:string;cohort?:number};
+  actorScope?:EvidenceActorScope;
 }
 function epoch(s:string|undefined|null):number {
   return s?Date.parse(s):NaN;
 }
 function eligible(item:TrustedEvidenceOrigin,input:VerifiedRetrievalInput,at:number):boolean{
-  const scope=item.applicableScope,actor=input.actorScope;
-  if(scope?.campuses?.length&&(!actor?.campus||!scope.campuses.includes(actor.campus)))
-    return false;
-  if(scope?.majorCodes?.length&&(!actor?.majorCode
-    ||!scope.majorCodes.includes(actor.majorCode)))return false;
-  if(scope?.cohortRange&&(!Number.isInteger(actor?.cohort)
-    ||actor!.cohort!<scope.cohortRange[0]
-    ||actor!.cohort!>scope.cohortRange[1]))return false;
+  if(!matchesEvidenceScope(item.applicableScope,input.actorScope))return false;
   return item.status==='ACTIVE'
     &&item.sourceClass!=='RESEARCH_REFERENCE_ONLY'
     &&item.provenance!=='RESEARCH_ONLY'
