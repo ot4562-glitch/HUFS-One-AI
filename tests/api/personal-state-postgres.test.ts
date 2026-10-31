@@ -37,12 +37,10 @@ function fake(){
         events=eventSnapshot;snapshot=null;return {rows:[]};
       }
       if(statement==='COMMIT'){snapshot=null;return {rows:[]};}
-      if(sql.includes('FROM api_sharing_grants')){
-        if(!grantActive||otherActor||params[0]!==baseScope.actorId
-          ||params[1]!==baseScope.subjectId||params[2]!==grantVersion)return {rows:[]};
-        return {rows:[{
-          actor_id:baseScope.actorId,subject_id:baseScope.subjectId,version:grantVersion,
-        }]};
+      if(sql.includes('api_lock_authorized_personal_grant')){
+        const allowed=grantActive&&!otherActor&&params[0]===baseScope.actorId
+          &&params[1]===baseScope.subjectId&&params[2]===grantVersion;
+        return {rows:[{allowed}]};
       }
       if(sql.includes('INSERT INTO api_personal_records')){
         const k=identity(params),old=rows.get(k);
@@ -151,11 +149,11 @@ describe('TASK-27 personal PostgreSQL CRUD (SQL stub, not a real DB)',()=>{
     await expect(h.store.read({
       scope:{...baseScope,subjectId:'S02'},kind:'EXPERIENCE',itemId:'exp-01',
     })).rejects.toBeInstanceOf(PersonalStateDenied);
-    const checks=h.calls.filter(x=>x.sql.includes('FROM api_sharing_grants'));
-    expect(checks.every(x=>x.sql.includes('FOR SHARE'))).toBe(true);
-    expect(checks.every(x=>x.sql.includes('actor_id=$1 AND subject_id=$2'))).toBe(true);
+    const checks=h.calls.filter(x=>x.sql.includes('api_lock_authorized_personal_grant'));
+    expect(checks).toHaveLength(4);
+    expect(checks.every(x=>x.sql.includes('$1::text,$2::char(3)'))).toBe(true);
   });
-  it('competing update versions cannot both win, and stale grant version denies',async()=>{
+  it('optimistic CAS rejects sequential stale writes and stale grant versions',async()=>{
     const h=fake();
     await h.store.create({scope:baseScope,itemId:'exp-01',value:experience});
     await h.store.update({
@@ -245,6 +243,9 @@ describe('TASK-27 PG configuration and migration gate (offline static only)',()=
     expect(roles).toContain('hufs_api_projection_reader NOLOGIN');
     expect(roles).toContain('hufs_api_personal_writer NOLOGIN');
     expect(roles).toContain('hufs_api_grant_admin NOLOGIN');
+    expect(personal).toContain('SECURITY DEFINER');
+    expect(personal).toContain('FOR SHARE;');
+    expect(roles).toContain('GRANT EXECUTE ON FUNCTION');
     expect(roles).not.toMatch(/GRANT ALL PRIVILEGES/);
     expect(roles).not.toMatch(/GRANT DELETE ON/);
   });

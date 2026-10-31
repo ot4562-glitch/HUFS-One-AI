@@ -29,13 +29,17 @@ ALTER TABLE api_personal_records OWNER TO hufs_api_data_owner;
 ALTER TABLE api_personal_events OWNER TO hufs_api_data_owner;
 ALTER FUNCTION api_deny_grant_audit_mutation() OWNER TO hufs_api_data_owner;
 ALTER FUNCTION api_deny_personal_audit_mutation() OWNER TO hufs_api_data_owner;
+ALTER FUNCTION api_lock_authorized_personal_grant(text,char(3),text,text[])
+  OWNER TO hufs_api_data_owner;
 GRANT USAGE ON SCHEMA public TO
   hufs_api_projection_reader,hufs_api_personal_writer,hufs_api_grant_admin;
 GRANT SELECT ON
   api_demo_profile_projections,api_demo_snapshot_projections,
   api_sharing_grants,api_approved_safe_packets
   TO hufs_api_projection_reader;
-GRANT SELECT ON api_sharing_grants TO hufs_api_personal_writer;
+GRANT EXECUTE ON FUNCTION
+  api_lock_authorized_personal_grant(text,char(3),text,text[])
+  TO hufs_api_personal_writer,hufs_api_projection_reader;
 GRANT SELECT,INSERT,UPDATE ON api_personal_records TO hufs_api_personal_writer;
 GRANT INSERT ON api_personal_events TO hufs_api_personal_writer;
 GRANT SELECT,INSERT,UPDATE ON api_sharing_grants TO hufs_api_grant_admin;

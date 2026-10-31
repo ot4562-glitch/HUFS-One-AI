@@ -59,6 +59,32 @@ CREATE TRIGGER api_personal_audit_append_only
   BEFORE UPDATE OR DELETE ON api_personal_events
   FOR EACH ROW EXECUTE FUNCTION api_deny_personal_audit_mutation();
 
+
+-- This carefully scoped SECURITY DEFINER function takes a shared row lock
+-- without giving the public-facing personal writer UPDATE rights to grants.
+-- The lock is held until the caller's transaction ends.
+CREATE OR REPLACE FUNCTION api_lock_authorized_personal_grant(
+  p_actor_id text,p_subject_id char(3),p_version text,p_sections text[])
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+SET search_path=pg_catalog AS $$
+DECLARE active boolean := false;
+BEGIN
+  IF p_actor_id IS NULL OR p_subject_id IS NULL OR p_version IS NULL
+     OR p_sections IS NULL OR cardinality(p_sections)=0 THEN
+    RETURN false;
+  END IF;
+  SELECT true INTO active FROM public.api_sharing_grants
+  WHERE actor_id=p_actor_id AND subject_id=p_subject_id
+    AND version=p_version AND revoked_at IS NULL
+    AND expires_at>clock_timestamp()
+    AND allowed_sections @> p_sections
+  FOR SHARE;
+  RETURN COALESCE(active,false);
+END;
+$$;
+REVOKE ALL ON FUNCTION api_lock_authorized_personal_grant(
+  text,char(3),text,text[]) FROM PUBLIC;
+
 REVOKE ALL ON TABLE api_personal_records FROM PUBLIC;
 REVOKE ALL ON TABLE api_personal_events FROM PUBLIC;
 

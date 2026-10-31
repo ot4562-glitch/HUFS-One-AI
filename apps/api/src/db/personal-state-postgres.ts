@@ -139,13 +139,10 @@ export class PostgresPersonalStateStore {
       await c.query('BEGIN');started=true;
       await c.query("SET LOCAL statement_timeout = '5s'");
       const grant=await c.query(`
-        SELECT actor_id,subject_id,version FROM api_sharing_grants
-        WHERE actor_id=$1 AND subject_id=$2 AND version=$3
-          AND revoked_at IS NULL AND expires_at>clock_timestamp()
-          AND $4=ANY(allowed_sections)
-        FOR SHARE`,[actor,subject,version,Section[k]]);
-      if(grant.rows.length!==1||grant.rows[0]?.actor_id!==actor
-        ||grant.rows[0]?.subject_id!==subject||grant.rows[0]?.version!==version)
+        SELECT public.api_lock_authorized_personal_grant(
+          $1::text,$2::char(3),$3::text,ARRAY[$4]::text[]) AS allowed`,
+      [actor,subject,version,Section[k]]);
+      if(grant.rows.length!==1||grant.rows[0]?.allowed!==true)
         throw new PersonalStateDenied();
       const result=await work(c);
       await c.query('COMMIT');started=false;

@@ -14,6 +14,7 @@ import type {ReviewerSqlConnection,ReviewerSqlPool} from './modules/auth/reviewe
 const RAW_JSON_LIMIT=64*1024;
 const OPAQUE_ACTOR=/^[A-Za-z0-9_.:@-]{1,200}$/;
 const OPAQUE_REFERENCE=/^[A-Za-z0-9_-]{1,100}$/;
+const PURPOSE_CONSENT_REFERENCE=/^[A-Za-z0-9_.:@-]{1,128}$/;
 const SHARED_SECTIONS=new Set([
   'FEED','NOTICES','EXPERIENCE','ACADEMICS','FORECAST',
 ]);
@@ -110,7 +111,7 @@ export class PostgresApiProjectionRepository implements ApiRepository {
     // On missing/expired/revoked consent or a ledger outage, hide that purpose only.
     const purpose=async(enabled:boolean,ref:unknown,
       name:'DISPLAY_NAME'|'RECORDING'):Promise<boolean>=>{
-      if(!enabled||typeof ref!=='string'||!OPAQUE_REFERENCE.test(ref)
+      if(!enabled||typeof ref!=='string'||!PURPOSE_CONSENT_REFERENCE.test(ref)
         ||!this.consentVerifier)return false;
       try{
         return await this.consentVerifier.isActive({
@@ -172,7 +173,9 @@ export class PostgresApiProjectionRepository implements ApiRepository {
       WHERE g.actor_id=$1 AND p.subject_id=$2 AND g.version=$3
         AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp()
         AND g.allowed_sections @> $4::text[] AND p.current=true
-      LIMIT 2 FOR SHARE OF g`,[
+        AND public.api_lock_authorized_personal_grant(
+          $1::text,$2::char(3),$3::text,$4::text[])
+      LIMIT 2`,[
       input.actorId,id,input.grantVersion,required,
     ]);
     const snap=this.checkSnapshot(rows,id);

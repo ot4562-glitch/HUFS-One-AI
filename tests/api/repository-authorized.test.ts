@@ -31,7 +31,7 @@ function setup(consent?:PurposeConsentVerifier){
         grant_id:'G1',actor_id:actor,subject_id:'S01',
         allowed_sections:sections,
         display_name_allowed:true,recording_allowed:true,
-        display_name_consent_ref:'consent-name-1',
+        display_name_consent_ref:'consent:name.1',
         recording_consent_ref:'consent-recording-1',
         version,expires_at:'2026-11-05T00:00:00.000Z',revoked_at:null,
       }]};
@@ -55,7 +55,7 @@ describe('TASK-27 atomic subject projection and independent purpose grants (SQL 
     expect(result?.forecast).toEqual({state:'NOT_SHARED'});
     expect(result?.demoSubjectId).toBe('S01');
     const query=h.calls[0]!;
-    expect(query.sql).toContain('FOR SHARE OF g');
+    expect(query.sql).toContain('api_lock_authorized_personal_grant');
     expect(query.sql).toContain('g.actor_id=$1 AND p.subject_id=$2 AND g.version=$3');
     expect(query.sql).toContain('g.revoked_at IS NULL');
     expect(query.sql).toContain('p.current=true');
@@ -109,7 +109,7 @@ describe('TASK-27 atomic subject projection and independent purpose grants (SQL 
     expect(grant?.recordingAllowed).toBe(false);
     expect(verifier.isActive).toHaveBeenCalledTimes(2);
     expect(verifier.isActive).toHaveBeenCalledWith(expect.objectContaining({
-      actorId:actor,subjectId:'S01',purpose:'DISPLAY_NAME',consentRef:'consent-name-1',
+      actorId:actor,subjectId:'S01',purpose:'DISPLAY_NAME',consentRef:'consent:name.1',
     }));
   });
   it('purpose consent ledger outage denies display/recording without granting raw access',async()=>{
