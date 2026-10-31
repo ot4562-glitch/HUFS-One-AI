@@ -14,6 +14,8 @@ on:
       - tests/contracts/**
       - tests/consumers/**
       - tests/api/**
+      - tests/integration/**
+      - tests/e2e/**
       - apps/api/**
       - packages/core/**
       - apps/web/**
@@ -31,6 +33,8 @@ on:
       - tests/contracts/**
       - tests/consumers/**
       - tests/api/**
+      - tests/integration/**
+      - tests/e2e/**
       - apps/api/**
       - packages/core/**
       - apps/web/**
@@ -60,6 +64,8 @@ jobs:
             /tests/contracts/
             /tests/consumers/
             /tests/api/
+            /tests/integration/
+            /tests/e2e/
             /apps/api/
             /packages/core/
             /apps/web/
@@ -75,5 +81,7 @@ jobs:
           cache: npm
       - name: Install pinned lockfile without dependency lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: TypeScript, four-track contracts, and fail-closed local API regression
+      - name: TypeScript, four-track contracts and synthetic API/React E2E regressions
         run: npm run check
+      - name: Build local fail-closed Fastify API
+        run: npm run build:api
