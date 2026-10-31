@@ -2,7 +2,7 @@
 
 - **주 소유자: 이서연 (NCP·CLOVA/OCR/Vision·Laya provider·키·worker·과금 전체)**. 일반 웹/외부 Fastify API·인증·DTO/Zod는 심민성 `apps/api` 소유. 관련 [이슈 #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22).
 - 구조화 출력, evidence/enum 검증, quota. 실제 토큰·비밀키·개인 원본 전송 금지.
-- 다른 담당 경로는 읽기/리뷰만 가능하며 사전 합의 없는 동시 편집은 금지. 이번 PR은 구현코드를 작성하지 않는다.
+- 다른 담당 경로는 교차 리뷰를 우선하며 NCP provider 및 모델 실행 구현은 이서연 담당 이슈를 따른다.
 
 ## 2026-10-31 신뢰형 RAG·Laya·OCR/Vision 제안 (아직 구현 전)
 

@@ -1,9 +1,7 @@
 # HUFS One AI API — 로컬 합성 구현 (2026-10-31)
 
-> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP High Memory-g3 4vCPU·32GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
 
-
-심민성 소유 API 영역을 기술 총괄이 직접 구현한 첫 단계입니다. **Google OAuth·외대 메일 인증, NCP·CLOVA·OCR·Vision 실제 호출, 실학생 데이터/DB 연동, 배포는 전부 미실행**입니다. 구현/테스트 결과를 실서비스 준비 완료로 표현하지 않습니다.
+심민성 담당 Fastify 합성 API는 `main`에 반영됐다. Google OAuth·외대 메일 증빙·영속 DB 연결은 별도 출시 검증 대상이며, NCP·CLOVA·OCR/Vision 제공자 연동은 이서연 트랙에서 담당한다.
 
 ## 구현한 코드
 
@@ -14,7 +12,7 @@
 | 시연 목록/컨텍스트 | 5개 슬롯, SharingGrant·actor/session·철회/버전 검증, 원자적 DemoSnapshot |
 | AI 경계 | 계약상 네 작업만, 서버가 승인한 SafeLlmPacket reference, 인용문/TopicCode 검사, 가짜 모델 후보는 NEEDS_REVIEW, 중복요청/사용량 상한 |
 | LocalTemporalEvidenceIndex | 불변 revision/hash/정정·취소, 권한/검수/게시·수집/적용시각 필터, 한국어 lexical 후보 검색 |
-| 테스트 | Fastify inject 합성/부정 테스트. 실제 브라우저·학교 인증·CLOVA/NCP·DB E2E는 아님 |
+| 테스트 | Fastify inject 합성/부정 테스트 통과. 브라우저·학교 인증·CLOVA/NCP·DB E2E는 별도 검증 |
 
 ## 로컬 검증 및 실행
 
@@ -67,7 +65,7 @@ npm run start:api:local
 
 ## Laya CPU 스파이크로부터 API 보호 (설계, 미구현·미배포)
 
-Laya는 Fastify HTTP handler/REVIEWER GET/일반 데모의 동기 의존성이 **아니다**. 나중에 승인된 ingestion에서만 권한 있는 sourceRevision별 저우선순위 비동기 작업으로 예약. OS cgroup `CPUQuota=100%` (**1vCPU**), 단일 worker, queue 16, ONNX threads=1/spin OFF, `MemoryMax=3072M`로 CPU/메모리 급증을 가둔다. CPU/pressure/API p95/RAM 경계 초과 시 pause/off 및 `UNKNOWN/NEEDS_REVIEW`+규칙 폴백. 실제 queue/worker/systemd/model download/NCP 부하 실측은 **이 PR에서 구현하지 않았다**. 게이트·샘플: [docs/LAYA_CPU_SPIKE_PROTECTION.md](../../docs/LAYA_CPU_SPIKE_PROTECTION.md).
+Laya 워커는 Fastify HTTP handler·REVIEWER GET·일반 데모 요청 경로와 분리한다. 나중에 승인된 ingestion에서만 권한 있는 sourceRevision별 저우선순위 비동기 작업으로 예약. OS cgroup `CPUQuota=100%` (**1vCPU**), 단일 worker, queue 16, ONNX threads=1/spin OFF, `MemoryMax=3072M`로 CPU/메모리 급증을 가둔다. CPU/pressure/API p95/RAM 경계 초과 시 pause/off 및 `UNKNOWN/NEEDS_REVIEW`+규칙 폴백. 실제 queue/worker/systemd/model download/NCP 부하 실측은 **이 PR에서 구현하지 않았다**. 게이트·샘플: [docs/LAYA_CPU_SPIKE_PROTECTION.md](../../docs/LAYA_CPU_SPIKE_PROTECTION.md).
 
 ## PR #31: 심사자 전체 메뉴 합성 체험 및 제어 API 계약
 
