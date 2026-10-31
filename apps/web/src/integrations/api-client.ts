@@ -55,7 +55,7 @@ const SchoolMailChallengeSchema=z.strictObject({
   challengeId:z.string().regex(/^[A-Za-z0-9_-]{22}$/),
   expiresAt:z.iso.datetime({offset:true}),
 });
-const SchoolMailVerifiedSchema=z.strictObject({verified:z.literal(true)});
+const SchoolMailVerifiedSchema=z.strictObject({verified:z.boolean()});
 const SchoolEmail=/^[A-Za-z0-9.!#$%&'*+/=?^_\x60{|}~-]+@hufs\.ac\.kr$/;
 const MailChallengeId=/^[A-Za-z0-9_-]{22}$/;
 const MailCode=/^[0-9]{8}$/;
@@ -160,9 +160,11 @@ export class HufsApiClient {
       ||typeof input.code!=='string'||!MailCode.test(input.code))
       throw new HufsApiError('INVALID_INPUT',422);
     const {csrfToken}=await this.getCsrfProof(signal);
-    return this.request('/api/auth/school-mail/confirm',SchoolMailVerifiedSchema,{
+    const confirmed=await this.request('/api/auth/school-mail/confirm',SchoolMailVerifiedSchema,{
       method:'POST',csrf:csrfToken,signal,body:input,
     });
+    if(!confirmed.verified)throw new HufsApiError('FORBIDDEN',403);
+    return confirmed;
   }
 
   async listProfiles(signal?:AbortSignal):Promise<DemoProfileOption[]> {
