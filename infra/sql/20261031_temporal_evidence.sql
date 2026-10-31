@@ -58,11 +58,11 @@ CREATE TABLE IF NOT EXISTS source_paragraphs_vnext (
 -- Evidence is append-only: no updates/deletes to previous revision or quote.
 -- New approvals, corrections and revocations must create a successor revision.
 CREATE OR REPLACE FUNCTION deny_source_history_mutation()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   RAISE EXCEPTION 'immutable evidence history';
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION deny_source_history_mutation() FROM PUBLIC;
 DROP TRIGGER IF EXISTS immutable_source_revision ON source_revisions_vnext;
 CREATE TRIGGER immutable_source_revision
@@ -101,6 +101,32 @@ CREATE TABLE IF NOT EXISTS source_invalidation_events (
   CONSTRAINT invalidation_must_block_retrieval CHECK (
     invalidates @> ARRAY['RETRIEVAL','CLAIMS']::text[])
 );
+-- Durable, per-target outbox. A revision and five cache invalidations are
+-- committed in ONE transaction. Consumers must be idempotent (event_id,target).
+CREATE TABLE IF NOT EXISTS source_invalidation_deliveries (
+  event_id text NOT NULL REFERENCES source_invalidation_events(event_id),
+  target text NOT NULL CHECK(target IN (
+    'RETRIEVAL','CLAIMS','FEED','NOTICES','AI_CACHE')),
+  state text NOT NULL DEFAULT 'PENDING'
+    CHECK(state IN ('PENDING','LEASED','DELIVERED')),
+  attempt_count integer NOT NULL DEFAULT 0 CHECK(attempt_count>=0),
+  next_attempt_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+  lease_token uuid,
+  lease_until timestamptz,
+  delivered_at timestamptz,
+  last_error_code text,
+  PRIMARY KEY(event_id,target),
+  CONSTRAINT delivery_lease_consistent CHECK (
+    (state='PENDING' AND lease_token IS NULL AND lease_until IS NULL
+      AND delivered_at IS NULL)
+    OR (state='LEASED' AND lease_token IS NOT NULL AND lease_until IS NOT NULL
+      AND delivered_at IS NULL)
+    OR (state='DELIVERED' AND lease_token IS NULL AND lease_until IS NULL
+      AND delivered_at IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS source_delivery_retry
+  ON source_invalidation_deliveries(next_attempt_at,event_id,target)
+  WHERE state IN ('PENDING','LEASED');
 CREATE INDEX IF NOT EXISTS source_revisions_asof
   ON source_revisions_vnext(source_id,fetched_at DESC,revision_id DESC)
   INCLUDE(published_at);
@@ -115,6 +141,7 @@ REVOKE ALL ON TABLE source_paragraphs_vnext FROM PUBLIC;
 REVOKE ALL ON TABLE source_ingest_heads FROM PUBLIC;
 REVOKE ALL ON TABLE source_check_observations FROM PUBLIC;
 REVOKE ALL ON TABLE source_invalidation_events FROM PUBLIC;
+REVOKE ALL ON TABLE source_invalidation_deliveries FROM PUBLIC;
 -- A narrowly scoped API role gets SELECT on revisions/paragraphs only.
 -- The ingest service uses a distinct writer role with INSERT into revisions
 -- and inserts/updates HEAD + check observations. Neither role can DELETE
