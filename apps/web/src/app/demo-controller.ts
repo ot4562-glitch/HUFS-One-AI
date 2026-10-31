@@ -1,5 +1,6 @@
 import {
-  DemoContextSchema, DemoSnapshotSchema, isSnapshotCurrent,
+  DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, SubjectAliasSchema,
+  isSnapshotCurrent,
 } from '@hufs-one/contracts';
 import type {
   ApiErrorCode, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
@@ -80,10 +81,10 @@ export class DemoController {
     try {
       const profiles=await this.api.listProfiles();
       if(this.disposed||generation!==this.profileGeneration)return;
-      // Defense in depth; actual transport parses the exactly-five-slot contract.
-      if(profiles.length!==5 || new Set(profiles.map(p=>p.demoSubjectId)).size!==5)
-        throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
-      this.emit({...this.state,profiles});
+      // The injected transport may be replaced: validate its data independently.
+      const parsed=DemoProfilesResponseSchema.safeParse({profiles});
+      if(!parsed.success)throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+      this.emit({...this.state,profiles:parsed.data.profiles});
     } catch(error) {
       if(this.disposed||generation!==this.profileGeneration)return;
       const failure=statusForError(error);
@@ -101,6 +102,10 @@ export class DemoController {
     this.current=abort;
     this.emit({...this.state,epoch,selected:subject,status:'LOADING',
       context:null,snapshot:null,error:null});
+    if(!SubjectAliasSchema.safeParse(subject).success) {
+      this.emit({...this.state,selected:null,status:'INVALID',error:'INVALID_INPUT'});
+      return;
+    }
     const allowed=this.state.profiles.find(p=>p.demoSubjectId===subject);
     if(this.state.profiles.length && (!allowed
       || !['READY','PARTIAL'].includes(allowed.readiness) || !allowed.allowedSections.length)) {
