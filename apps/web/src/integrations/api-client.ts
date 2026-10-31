@@ -106,7 +106,7 @@ export class HufsApiClient {
     return context;
   }
 
-  getSnapshot(contextId:string,signal?:AbortSignal):Promise<DemoSnapshot> {
+  async getSnapshot(contextId:string,signal?:AbortSignal):Promise<DemoSnapshot> {
     if(!/^[A-Za-z0-9_-]{1,100}$/.test(contextId))
       throw new HufsApiError('INVALID_INPUT',422);
     return this.request('/api/demo/contexts/'+encodeURIComponent(contextId)+'/snapshot',
