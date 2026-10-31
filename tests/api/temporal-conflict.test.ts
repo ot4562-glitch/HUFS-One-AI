@@ -56,9 +56,15 @@ describe('TASK-21 human-reviewed asOf CONFLICT with no unauthorized quote',()=>{
     expect(query).toContain('l.permission_ref=ANY($2::text[])');
     expect(query).toContain('l.scope_campuses');
     expect(query).toContain('l.cohort_min');
-    expect(query).not.toContain('LIMIT $8::integer');
+    expect(query).not.toContain('LIMIT $14::integer');
+    expect(query).toContain('l.scope_admission_types');
+    expect(query).toContain('l.scope_major_roles');
+    expect(query).toContain('l.scope_graduation_terms');
+    expect(query).toContain('jsonb_to_recordset($12::jsonb)');
     expect(x.queries[1]!.params).toEqual([
-      ASOF,['P-GRANTED'],null,'SEOUL','ECONOMICS',2023,['데이터','모집'],
+      ASOF,['P-GRANTED'],null,'SEOUL','ECONOMICS',2023,
+      null,null,null,null,false,
+      JSON.stringify([{code:'ECONOMICS',role:''}]),['데이터','모집'],
     ]);
     expect(x.released).toHaveLength(1);
   });
