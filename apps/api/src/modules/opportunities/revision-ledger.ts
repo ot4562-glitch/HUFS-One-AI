@@ -161,7 +161,8 @@ export class MemorySourceRevisionLedger {
         ||r.sourceClass==='RESEARCH_REFERENCE_ONLY'
         ||r.provenance==='RESEARCH_ONLY'
         ||!matchesScope(r,input))continue;
-      if(r.status!=='ACTIVE'||!r.lastVerifiedAt||time(r.lastVerifiedAt)>at
+      if(r.status!=='ACTIVE'||r.changeKind==='UNKNOWN'
+        ||!r.lastVerifiedAt||time(r.lastVerifiedAt)>at
         ||(r.validFrom&&time(r.validFrom)>at)
         ||(r.validUntil&&time(r.validUntil)<=at)){
         // Only report a negative state if THIS query matched a paragraph in
