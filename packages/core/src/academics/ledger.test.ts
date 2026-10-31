@@ -1,0 +1,245 @@
+import {describe, expect, it} from 'vitest';
+import {AcademicAuditVNextSchema} from '@hufs-one/contracts';
+import {buildAcademicLedger, type AcademicLedgerRequest, type LedgerAttempt, type LedgerRequirement} from './ledger.js';
+
+/** Integer credit units only. 1 unit = 0.5학점, so 3학점 is 6 units. */
+const HALF = 1;
+const CREDIT_3 = 6;
+const CREDIT_6 = 12;
+const CREDIT_9 = 18;
+const CREDIT_12 = 24;
+const AS_OF = '2026-11-01T00:00:00.000Z';
+
+const attempt = (
+  attemptToken:string,
+  canonicalCourseId:string,
+  over:Partial<LedgerAttempt> = {},
+):LedgerAttempt => ({
+  attemptToken,
+  canonicalCourseId,
+  creditUnits:CREDIT_3,
+  ledger:'EARNED',
+  areaIds:[],
+  recognition:'RECOGNIZED',
+  ...over,
+});
+
+const base = (
+  attempts:readonly LedgerAttempt[],
+  requirements:readonly LedgerRequirement[] = [],
+  over:Partial<AcademicLedgerRequest> = {},
+):AcademicLedgerRequest => ({
+  asOf:AS_OF,
+  rulePackVersion:'SYN-PACK-1',
+  rulePackState:'APPROVED',
+  attempts,
+  requirements,
+  ...over,
+});
+
+const requirement = (id:string):LedgerRequirement => ({
+  id, kind:'K_OF_N', courseIds:['SYN-A', 'SYN-B', 'SYN-C'], k:2, evidenceRefs:[`SYN-EVIDENCE-${id}`],
+});
+
+describe('buildAcademicLedger A08.5 credit units', () => {
+  it('CREDIT-01 counts one 3학점 course once toward the total and fully toward each approved area', () => {
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-X-1', 'SYN-X', {areaIds:['SYN-AREA-A', 'SYN-AREA-B']}),
+    ]));
+    expect(AcademicAuditVNextSchema.parse(audit)).toEqual(audit);
+    expect(audit.earnedCreditUnits).toBe(CREDIT_3);
+    expect(audit.projectedUniqueCreditUnits).toBe(CREDIT_3);
+    expect(audit.inProgressCreditUnits).toBe(0);
+    expect(audit.plannedCreditUnits).toBe(0);
+    expect(audit.pendingRecognitionCreditUnits).toBe(0);
+    expect(audit.areaProgress).toEqual([
+      {areaId:'SYN-AREA-A', earnedCreditUnits:CREDIT_3, projectedCreditUnits:CREDIT_3},
+      {areaId:'SYN-AREA-B', earnedCreditUnits:CREDIT_3, projectedCreditUnits:CREDIT_3},
+    ]);
+    expect(audit.earnedCreditUnits).not.toBe(CREDIT_3 + CREDIT_3);
+    expect(audit.asOf).toBe(AS_OF);
+    expect(audit.rulePackVersion).toBe('SYN-PACK-1');
+  });
+
+  it('CREDIT-02 keeps only the approved retake and excludes the earlier attempt', () => {
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-X-1', 'SYN-X', {areaIds:['SYN-AREA-A']}),
+      attempt('SYN-X-2', 'SYN-X', {areaIds:['SYN-AREA-A'], supersedesAttemptToken:'SYN-X-1'}),
+    ]));
+    expect(audit.earnedCreditUnits).toBe(CREDIT_3);
+    expect(audit.projectedUniqueCreditUnits).toBe(CREDIT_3);
+    expect(audit.areaProgress).toEqual([
+      {areaId:'SYN-AREA-A', earnedCreditUnits:CREDIT_3, projectedCreditUnits:CREDIT_3},
+    ]);
+    expect(audit.excludedAttempts).toEqual([
+      {attemptToken:'SYN-X-1', reason:'RETAKE_SUPERSEDED'},
+    ]);
+  });
+
+  it('CREDIT-03 keeps a pending exchange out of earned credits and shows 3학점 awaiting recognition', () => {
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-EX-1', 'SYN-EXCHANGE', {recognition:'PENDING', areaIds:['SYN-AREA-A']}),
+    ]));
+    expect(audit.earnedCreditUnits).toBe(0);
+    expect(audit.inProgressCreditUnits).toBe(0);
+    expect(audit.plannedCreditUnits).toBe(0);
+    expect(audit.projectedUniqueCreditUnits).toBe(0);
+    expect(audit.pendingRecognitionCreditUnits).toBe(CREDIT_3);
+    expect(audit.areaProgress).toEqual([]);
+    expect(audit.excludedAttempts).toEqual([
+      {attemptToken:'SYN-EX-1', reason:'PENDING_RECOGNITION'},
+    ]);
+  });
+
+  it('CREDIT-04 satisfies 2-of-3 from two earned courses and reports count apart from 6학점', () => {
+    const choice = requirement('SYN-REQ-CHOICE');
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-ATT-A', 'SYN-A'),
+      attempt('SYN-ATT-B', 'SYN-B'),
+    ], [choice]));
+    expect(audit.requirements).toEqual([
+      {
+        requirementId:'SYN-REQ-CHOICE',
+        state:'SATISFIED',
+        earnedCreditUnits:CREDIT_6,
+        matchedCoursesCount:2,
+        requiredCoursesCount:2,
+        evidenceRefs:['SYN-EVIDENCE-SYN-REQ-CHOICE'],
+      },
+    ]);
+    expect(audit.earnedCreditUnits).toBe(CREDIT_6);
+    expect(audit.state).toBe('READY');
+  });
+
+  it('CREDIT-04 does not need the third course, and an in-progress course does not add a match', () => {
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-ATT-A', 'SYN-A'),
+      attempt('SYN-ATT-B', 'SYN-B', {ledger:'IN_PROGRESS'}),
+    ], [requirement('SYN-REQ-CHOICE')]));
+    expect(audit.requirements[0]).toMatchObject({
+      state:'UNSATISFIED',
+      matchedCoursesCount:1,
+      requiredCoursesCount:2,
+      earnedCreditUnits:CREDIT_3,
+    });
+    expect(audit.earnedCreditUnits).toBe(CREDIT_3);
+    expect(audit.inProgressCreditUnits).toBe(CREDIT_3);
+  });
+
+  it('CREDIT-05 keeps earned, in-progress, and planned courses on separate ledgers', () => {
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-E', 'SYN-EARNED', {creditUnits:CREDIT_6, areaIds:['SYN-AREA-E']}),
+      attempt('SYN-I', 'SYN-CURRENT', {creditUnits:CREDIT_3, ledger:'IN_PROGRESS', areaIds:['SYN-AREA-I']}),
+      attempt('SYN-P', 'SYN-PLAN', {creditUnits:CREDIT_3, ledger:'PLANNED', areaIds:['SYN-AREA-P']}),
+    ], [{
+      id:'SYN-REQ-TOTAL',
+      kind:'CREDIT_TOTAL',
+      requiredCreditUnits:CREDIT_12,
+      evidenceRefs:['SYN-EVIDENCE-TOTAL'],
+    }]));
+    expect(audit.earnedCreditUnits).toBe(CREDIT_6);
+    expect(audit.inProgressCreditUnits).toBe(CREDIT_3);
+    expect(audit.plannedCreditUnits).toBe(CREDIT_3);
+    expect(audit.projectedUniqueCreditUnits).toBe(CREDIT_12);
+    expect(audit.requirements[0]).toMatchObject({
+      state:'UNSATISFIED',
+      earnedCreditUnits:CREDIT_6,
+      projectedCreditUnits:CREDIT_12,
+      remainingCreditUnits:CREDIT_6,
+    });
+    expect(audit.areaProgress.find(area => area.areaId === 'SYN-AREA-E')).toEqual({
+      areaId:'SYN-AREA-E', earnedCreditUnits:CREDIT_6, projectedCreditUnits:CREDIT_6,
+    });
+    expect(audit.areaProgress.find(area => area.areaId === 'SYN-AREA-P')).toEqual({
+      areaId:'SYN-AREA-P', earnedCreditUnits:0, projectedCreditUnits:CREDIT_3,
+    });
+  });
+
+  it('CREDIT-06 can meet every area minimum and still miss the unique total', () => {
+    const category = (id:string, areaId:string):LedgerRequirement => ({
+      id, kind:'CATEGORY_MINIMUM', areaId, requiredCreditUnits:CREDIT_3, evidenceRefs:[`SYN-EVIDENCE-${id}`],
+    });
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-ATT-A', 'SYN-A', {areaIds:['SYN-AREA-A']}),
+      attempt('SYN-ATT-B', 'SYN-B', {areaIds:['SYN-AREA-B']}),
+      attempt('SYN-ATT-C', 'SYN-C', {areaIds:['SYN-AREA-C']}),
+    ], [
+      category('SYN-REQ-A', 'SYN-AREA-A'),
+      category('SYN-REQ-B', 'SYN-AREA-B'),
+      category('SYN-REQ-C', 'SYN-AREA-C'),
+      {id:'SYN-REQ-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:CREDIT_12, evidenceRefs:['SYN-EVIDENCE-TOTAL']},
+    ]));
+    expect(audit.earnedCreditUnits).toBe(CREDIT_9);
+    expect(audit.requirements.filter(row => row.requirementId !== 'SYN-REQ-TOTAL').map(row => row.state))
+      .toEqual(['SATISFIED', 'SATISFIED', 'SATISFIED']);
+    expect(audit.requirements.find(row => row.requirementId === 'SYN-REQ-TOTAL')).toMatchObject({
+      state:'UNSATISFIED',
+      requiredCreditUnits:CREDIT_12,
+      earnedCreditUnits:CREDIT_9,
+      remainingCreditUnits:CREDIT_3,
+    });
+    expect(audit.state).toBe('READY');
+    expect(audit.caveats[0]).toMatch(/not an official graduation decision/);
+    expect(audit.planIssues).toEqual([]);
+  });
+
+  it('records 0.5학점 as 1 unit and adds half-credit courses as integers', () => {
+    const audit = buildAcademicLedger(base([
+      attempt('SYN-HALF-1', 'SYN-HALF-A', {creditUnits:HALF, areaIds:['SYN-AREA-H']}),
+      attempt('SYN-HALF-2', 'SYN-HALF-B', {creditUnits:HALF}),
+    ]));
+    expect(audit.earnedCreditUnits).toBe(2);
+    expect(audit.areaProgress).toEqual([
+      {areaId:'SYN-AREA-H', earnedCreditUnits:HALF, projectedCreditUnits:HALF},
+    ]);
+  });
+
+  it('refuses a non-integer unit instead of coercing 0.3', () => {
+    expect(() => buildAcademicLedger(base([
+      attempt('SYN-BAD', 'SYN-BAD', {creditUnits:0.3}),
+    ]))).toThrow(TypeError);
+    expect(() => buildAcademicLedger(base([
+      attempt('SYN-BAD', 'SYN-BAD', {creditUnits:0.3}),
+    ]))).toThrow(/refused 0\.3/);
+    expect(() => buildAcademicLedger(base(
+      [attempt('SYN-OK', 'SYN-OK')],
+      [{id:'SYN-REQ-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:0.3, evidenceRefs:['SYN-EVIDENCE-TOTAL']}],
+    ))).toThrow(/refused 0\.3/);
+  });
+
+  it('leaves GPA_NOT_COLLECTED unchecked even when evidence is supplied', () => {
+    const audit = buildAcademicLedger(base([], [{
+      id:'SYN-REQ-GPA',
+      kind:'NON_CREDIT',
+      criterionId:'SYN-GPA',
+      verificationMode:'GPA_NOT_COLLECTED',
+      evidenceRefs:['SYN-GPA-PROOF'],
+    }]));
+    expect(audit.requirements).toEqual([{
+      requirementId:'SYN-REQ-GPA',
+      state:'NOT_CHECKED',
+      notCheckedReason:'GPA_NOT_COLLECTED',
+      evidenceRefs:[],
+    }]);
+    expect(audit.state).toBe('NEEDS_REVIEW');
+  });
+
+  it('does not claim satisfaction when the rule pack is missing or not approved', () => {
+    const attempts = [attempt('SYN-X-1', 'SYN-X')];
+    const requirements:LedgerRequirement[] = [{
+      id:'SYN-REQ-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:CREDIT_3, evidenceRefs:['SYN-EVIDENCE-TOTAL'],
+    }];
+    const missing = buildAcademicLedger(base(attempts, requirements, {
+      rulePackState:'MISSING', rulePackVersion:'SYN-PACK-NONE',
+    }));
+    const draft = buildAcademicLedger(base(attempts, requirements, {rulePackState:'DRAFT'}));
+    expect(missing.state).toBe('INSUFFICIENT_DATA');
+    expect(draft.state).toBe('NEEDS_REVIEW');
+    expect(missing.earnedCreditUnits).toBe(CREDIT_3);
+    expect(draft.earnedCreditUnits).toBe(CREDIT_3);
+    expect(missing.requirements[0]?.state).toBe('NEEDS_REVIEW');
+    expect(draft.requirements[0]?.state).toBe('NEEDS_REVIEW');
+    expect(missing.caveats.join(' ')).toMatch(/graduation is not claimed/);
+    expect(draft.caveats.join(' ')).toMatch(/graduation is not claimed/);
+  });
+});
