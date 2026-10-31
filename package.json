@@ -10,7 +10,7 @@
     "packages/contracts"
   ],
   "scripts": {
-    "check": "npm run typecheck && npm run test:contracts && npm run test:consumers",
+    "check": "npm run typecheck && npm run test",
     "typecheck": "npm run build:contracts && tsc --noEmit -p tsconfig.json",
     "test": "npm run build:contracts && vitest run",
     "test:contracts": "npm run build:contracts && vitest run tests/contracts",
@@ -20,17 +20,26 @@
     "test:consumer:academics": "npm run build:contracts && vitest run tests/consumers/academics-contract.test.ts",
     "test:consumer:api": "npm run build:contracts && vitest run tests/consumers/api-contract.test.ts",
     "test:watch": "npm run build:contracts && vitest",
+    "test:api": "npm run build:contracts && vitest run tests/api",
+    "build:api": "npm run build:contracts && tsc -p apps/api/tsconfig.build.json",
+    "admin:reviewer": "npm run build:api && node apps/api/dist/admin/reviewer-invite.js",
+    "start:api:local": "npm run build:api && node apps/api/dist/main.js",
     "check:privacy": "python3 tools/verify_release_boundary.py",
-    "build:contracts": "npm run build -w @hufs-one/contracts"
+    "build:contracts": "npm run build -w @hufs-one/contracts",
+    "test:core": "npm run build:contracts && vitest run packages/core/src",
+    "test:web": "npm run build:contracts && vitest run apps/web/src"
   },
   "devDependencies": {
     "@types/node": "22.19.15",
     "@types/papaparse": "5.5.2",
+    "@types/pg": "^8.15.5",
     "typescript": "5.9.3",
     "vitest": "5.0.5"
   },
   "dependencies": {
+    "fastify": "^5.12.7",
     "papaparse": "5.7.0",
+    "pg": "^8.16.3",
     "zod": "4.6.7"
   }
 }
