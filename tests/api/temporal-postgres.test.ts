@@ -52,12 +52,44 @@ describe('TASK-21 PostgreSQL permission-first historical retrieval (SQL stub)',(
     expect(sql).toContain("l.status='ACTIVE'");
     expect(sql).toContain("l.permission_ref=ANY($2::text[])");
     expect(sql).toContain('l.last_verified_at<=$1::timestamptz');
-    expect(sql).toContain('scope_campuses');
+    for(const column of ['scope_campuses','scope_majors','scope_colleges',
+      'scope_major_roles','scope_admission_types','scope_enrollment_states',
+      'scope_graduation_terms','cohort_min','cohort_max']){
+      expect(sql).toContain(column);
+    }
+    expect(sql).toContain('jsonb_to_recordset($12::jsonb)');
+    expect(sql).toContain('$11::boolean IS TRUE');
     expect(args).toEqual([
       ASOF,['permission-synthetic'],null,'SEOUL','ECONOMICS',2023,
+      null,null,null,null,false,
+      JSON.stringify([{code:'ECONOMICS',role:''}]),
       ['데이터','모집'],12,
     ]);
     expect(x.releases).toHaveLength(1);
+  });
+  it('binds every verified academic constraint into ALL retrieval/classification SQL paths',async()=>{
+    const x=stub([]);
+    await x.reader.retrieve({
+      ...policy,majorCode:undefined,
+      majors:[{code:'ECONOMICS',role:'PRIMARY'},{code:'DATA_SCIENCE',role:'DOUBLE'}],
+      college:'COLLEGE_A',enrollmentState:'ENROLLED',
+      admissionType:'FOREIGN',graduationTerm:'2026-2',
+      graduationTermVerified:true,
+    });
+    const q=x.calls[0]!;
+    const bindings=q.args;
+    expect(bindings.slice(6,12)).toEqual([
+      'COLLEGE_A','ENROLLED','FOREIGN','2026-2',true,
+      JSON.stringify([{code:'ECONOMICS',role:'PRIMARY'},{code:'DATA_SCIENCE',role:'DOUBLE'}]),
+    ]);
+    expect(q.sql).toContain('l.scope_major_roles');
+    expect(q.sql).toContain('l.scope_admission_types');
+    expect(q.sql).toContain('l.scope_graduation_terms');
+    expect(q.sql).toContain('$11::boolean IS TRUE');
+    // No first query hit -> classification uses the identical full actor scope.
+    expect(x.calls[1]?.args).toEqual(bindings.slice(0,13));
+    expect(x.calls[1]?.sql).toContain('jsonb_to_recordset($12::jsonb)');
+    expect(x.calls[1]?.sql).toContain('l.scope_graduation_terms');
   });
   it('does not query the DB without a trusted permission grant',async()=>{
     const x=stub([]);
