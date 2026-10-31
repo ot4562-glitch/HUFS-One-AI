@@ -1,12 +1,21 @@
 # HUFS One AI | 현재 작업 상태
 
 
+## 2026-10-31 협업 리뷰/문서·CSV 구조 감사 (관찰과 승인을 구별)
+
+- **기준 현황:** 원래 일반 이슈 17건 중 1건(#29)만 이미 closed, 16건 open; PR 26건 중 16건 merged, 10건 open. 전수 검토 이후 새 후속 [공통 계약 PR #44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)가 열렸으므로 최신 전체 건수는 별도 조회한다. 완료 근거가 없는 이슈는 일괄 닫지 않았다.
+- **협업자 최신 재검토:** #15 미래 게시 누출 수정·총괄 승인 기록은 있지만 독립 UI 리뷰 미완료; #16 미검증 비학업 공지 격리 수정은 제출됐지만 공식 `NoticeItem.overdue` Wire/소비자 리뷰 필요; #40 verified claim 시점/인용 증거 검증 수정 제출·API 연동 남음; #41 기본 rank-v1.0 복원, 설명은 아직 실제 UI 출력에 연결되지 않음. 이 스택은 서로 분리 병합 금지. 별도 API 계약/인증/DB PR #32~#37은 독립 리뷰·실 DB/인증 게이트 확인 전 open.
+- **수정 PR:** #44는 #38의 선택적 `NoticeItem.overdue`·명시적 SOFTWARE_DEV 별칭과 합성 부정 테스트를 제안한다. 독립 리뷰 및 CI, #16 downstream 직렬화·회귀가 남아 완료 처리/자동 병합하지 않는다.
+- **실제 파일 존재 구조 검사:** Private `csv/`의 수강 CSV 4개는 모두 UTF-8 BOM 없음/공통 6열/데이터 행 61·39·48·28/비정상 열 0. Forms 통합 CSV 1개는 26열·응답 4행/행 열수 오류 0. **소유자·Consent·역사적 게시 근거·학점/학칙·중복 응답 검증은 별도**. 과거 문서의 '3개·Forms 미수령'은 파일 존재 기준으로 정정; 원본 재업로드·데이터 내용 출력은 하지 않음.
+- **문서 정리:** `Proposal.md`는 팀·심사자용 '구현/설계/목표' 구분, `Architecture.md`는 계약·권한·병합 순서로 유지. `README`·`AGENTS`·`STATUS`·`TEAM_SURVEY`·`csv/README`·`docs/WORKSTREAMS`·`docs/PR_WORKFLOW`·`docs/DATA_GOVERNANCE`의 오래된 역할/입력 사실을 정정했다. 나머지 설계·운영 문서는 중복 축약을 강제하지 않고 최신 근거와 비교 검토했다.
+- **실행 구분:** 이 문서 감사 기록은 GitHub 관찰·계약 변경 요청이지 실제 Google OIDC·DB·NCP·OCR/HCX·동의 검증이나 릴리스 완성이 아니다.
+
 ## 2026-10-31 합성 API 구현·검증 기록
 
 - **로컬 코드 작성:** Fastify route·strict Zod·공통 오류, 익명 401/초대·메일증빙 403/Origin·CSRF·SharingGrant·session-bound DemoContext·snapshot/version/철회, 4종 AI 작업의 mock packet·인용 대조·idempotency/quota, immutable time/asOf·rights 기반 **LocalTemporalEvidenceIndex**. 세부 [apps/api/README.md](apps/api/README.md).
 - **자동 테스트:** 2026-10-31 로컬 결과로 기존 공통계약 87건 + 소비자 20건 + 신규 API 21건 = **128/128 PASS**. npm typecheck 및 build:api PASS. 이 수치는 실제 Google OIDC/OTP·DB·NCP·CLOVA/OCR/Vision/Laya 검증을 뜻하지 않는다. 원격 CI 결과와 PR/QA는 별도 확인한다.
 - **출시 차단 유지:** 실제 verifier/메일 OTP/Google PKCE·DB·영속 revoke·인증 우회 E2E·실학생 동의·NCP 승인 없이 배포 불가. 로컬 harness는 모든 HTTP 요청 401, 합성 Fastify inject에서만 DI 테스트. 
-- **GitHub 역할 ID:** 심민성 ot4562-glitch, 이의상 uisang2004-maker, 김채윤 qamarrchae, 박준영 taewangim-alt — 각 담당 이슈 assignee 확인. **이서연 ID는 미확인**. [docs/WORKSTREAMS.md](docs/WORKSTREAMS.md).
+- **GitHub 역할 ID(2026-10-31 현재 assignee 조회):** 심민성 `ot4562-glitch`, 이의상 `uisang2004-maker`, 김채윤 `qamarrchae`, 박준영 `taewangim-alt`, **이서연 `lhh42001`**(#12/#20/#22). 이는 업무 이슈 할당 사실이며 인물 신원/학생 데이터 동의 증명이 아니다.
 
 
 **NCP 새 운영 정본:** [NCP_OPERATIONS_2026.md](docs/NCP_OPERATIONS_2026.md) — 2026-11-06~12-09(816h 예산 상한), 실제 본선 발표 11/16 및 크레딧·사용자 승인 이후 개통. 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB SSD 8원/h(선택 공인 IP 5.6원/h); 816h 서버+CB 272,544원, IP 포함 277,113.6원(VAT 등 제외).
@@ -47,7 +56,7 @@
 
 ## 실제 확보한 자료와 미확정 상태
 
-- Google Forms **구성 완료**. 실제 한국어 질문 **26열**, 응답 예시 **1건** 확인. Forms **4인 통합 내보내기 CSV**와 개별 적용 규칙 검증은 **PENDING**이며 이서연의 응답은 미제출이다. 박준영은 제출 대상이 아니다. 과목 CSV 목표는 4개이며, Private 저장소의 파일 3개는 **김채윤(사용자 확인 제출 별명 `까마르`)·심민성·이의상**의 파일로 소유자 연결이 확인됐다. **이서연 CSV는 아직 확인 전**이다. 실제 Forms 대응·학칙·팀 공유 동의는 별도 검증 대상이다. 형식 확인=학사 판정·공유 동의 완료가 아니다.
+- Google Forms 구성과 이전 개인 응답 예시 **1건(26열)**은 과거 작업 내역이다. **2026-10-31 현재** Private `main`의 통합 Forms **1파일(26열·응답 4행)**과 과목 CSV **4파일(각 6열·BOM 없는 UTF-8)**의 존재 및 형식은 확인됐다. 4개 Forms 행↔목표 4인/기존 별명/파일 소유자의 1:1 대응, 중복·학점·공식 규칙, 업로드 경위/개별 동의는 여전히 `PENDING`이다. 동의 증거 없이 `READY`/개인정보 공유로 승격하지 않고 원본을 이 문서에 게시하지 않는다.
 - 학생 과목은 기존 파일 이름으로 구분한 **6열 CSV**(학기·학수번호·과목명·학점·이수구분·이수상태)만 사용. 이름 포함 원본은 제한 구역에, 공개/평가/로그용 가명ID S01~S05 매핑은 별도. **이름·학번·성적이 보이는 캡처를 외부 AI로 보내지 않는다.** 과목표 영역만 분리 후 목적별 동의가 있을 때 AI 사용, 아니면 사람 전사.
 - HUFSAbility 로그인 첫 화면 1장 비식별 관찰과 학교 공개 공고 연구는 존재한다. 한 화면 관찰을 전체 시스템의 기능 부재 주장으로 확대하지 않는다.
 - [2026-10-29 기존 공개 조사](reference/hufsability/snapshots/2026-10-29/README.md): 원문 20건·공개 화면 5장·첫 페이지 공고 10건. [후속 수집 색인](reference/hufsability/snapshots/2026-10-29-followup/README.md): 45개 출처의 저장/재사용/실패 구분(새 공개 HTML 31, 기존 원문 11, UI 안내서 1, 형식 확인 실패 1, HTTP404 1). **자료 보관은 서비스 사용/재배포 허가를 뜻하지 않는다.**
