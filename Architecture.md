@@ -46,10 +46,11 @@
 
 ### A00.4 협업 코드 리뷰·계약·병합 순서(2026-10-31 현재)
 
-- GitHub에서 일반 이슈 17건(16 open/1 closed) 및 PR 26건(10 open/16 merged)을 확인한 시점의 스냅샷이다. 이후 생성된 후속 PR(예: [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44))은 현황 숫자에 포함하지 않으며 최신 API 상태를 우선한다.
+- 최초 감사 스냅샷은 일반 이슈 17건(16 open/1 closed), PR 26건(10 open/16 merged)이었다. 이후 [데이터 권한 감사 이슈 #46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), 선택적 공지 Wire 계약 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), 추천 설명 Wire 계약 [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)을 추가했고, 중복 문서 PR #45는 14개 문서 main 직접 커밋 확인 뒤 close(not merged)했다. 숫자는 **시점 스냅샷**으로 최신 GitHub 목록을 기준으로 다시 확인한다.
 - 추천/공지 코드의 의존 순서는 **#15 → #16 → #40 → #41**. #15 미래 게시 누출 차단 후 총괄 승인 기록이 있어도, 요청된 이의상 UI 리뷰가 없으면 병합하지 않는다. #16의 `reviewPending` 개선은 제출됐으나 `NoticeResult.items[].overdue` 연결과 별도 계약 #44, 최신 독립 리뷰가 필요하다. #40의 `claimCheckedAt <= asOf`·정확한 TEXT evidence 검증 수정은 제출됐으나 출처권한/API 연동 검증과 리뷰가 남았다. #41의 추천 설명은 현재 strict `FeedResult` 바깥이며 화면 전달·접근성 검증 미완료; 기본 랭크는 `rank-v1.0`이다.
 - 별도 계약/일반 API 스택 **#33 → #34**, 병렬 인증 **#32**, 개인정보 DB **#35**, 학업 계약 **#36**, 웹/API 통합 **#37**도 원격 CI, 의존 리베이스, 각 요청된 리뷰어 **전원의 최신 승인**, 테스트·권한 근거가 갖춰져야 병합할 수 있다. 이 목록은 코드 작성·합성 테스트 성공과 실제 서비스 배포 승인/최종 검증을 구분한다.
-- `overdue`는 **학생 제출 마감**이 `asOf` 이전 또는 같고 `appliesTo != NO`인 경우만 true. Wire 계약 자체에는 선택적 boolean이며 구버전 호환을 유지한다. 계산·직렬화 코드는 추천/공지 담당자가 별도 #16 PR에서 연결하고 사용자 검토 전 병합하지 않는다. 소프트웨어/개발 alias는 정확한 명시 문자열에만 대응하며 fuzzy 분류는 금지한다.
+- `overdue`는 **학생 제출 마감**이 `asOf` 이전 또는 같고 `appliesTo != NO`인 경우만 true. #44에는 선택적 Zod wire와 부정 테스트가 있으며 GitHub CI 통과/김채윤 소비자 승인 기록이 있지만 독립 학업/UI 리뷰와 #16 실제 직렬화 연결 전 병합하지 않는다. 정확한 `소프트웨어/개발` alias만 허용하고 fuzzy 분류는 금지한다.
+- [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)은 `FeedCard.explanation?`의 카드 ID·관련도 0~100 정수·CODE_RULES·주제·증거 안내·타임스탬프 검증과 optional `programScope`/`deadlineKind`를 제안하며 CI에 성공했다. **#41 코어의 `ComposedFeed.explanations`를 실제 React/API까지 연결하는 별도 소비자 작업**이 끝나기 전에는 기능 완료라고 표시하지 않는다. `rank-v1.1`의 기본 승격은 여전히 보류한다.
 - 실제 학생자료가 추적된 Git 이력과 현재 권한·접근 범위는 데이터 관리 이슈에서 개별 검증한다. 원본을 새 코드·CI·로그·PR 토론·외부 제공자로 재배포하지 않고, `PENDING`이면 합성 시연만 허용한다.
 
 ## A01. 사람이 이해할 시스템 지도와 실행 구조
