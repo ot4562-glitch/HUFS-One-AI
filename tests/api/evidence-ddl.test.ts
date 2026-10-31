@@ -28,6 +28,15 @@ describe('TASK-19/21 offline PostgreSQL DDL safety review (NOT executed on a DB)
     expect(sql).toContain('source_delivery_retry');
     expect(sql).toContain('REVOKE ALL ON TABLE source_invalidation_deliveries FROM PUBLIC');
   });
+  it('requires reviewed, immutable and private conflict decisions with historical resolution',()=>{
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS source_conflict_decisions_vnext');
+    expect(sql).toMatch(/disposition IN \\('CONFLICT','RESOLVED'\\)/i);
+    expect(sql).toContain('reviewed_at timestamptz NOT NULL');
+    expect(sql).toContain('reviewer_id text NOT NULL');
+    expect(sql).toContain('CHECK(left_revision_id<right_revision_id)');
+    expect(sql).toContain('BEFORE UPDATE OR DELETE ON source_conflict_decisions_vnext');
+    expect(sql).toContain('REVOKE ALL ON TABLE source_conflict_decisions_vnext FROM PUBLIC');
+  });
   it('retains independent HTTP observations and rejects unverified ACTIVE rights',()=>{
     expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS source_check_observations/i);
     expect(sql).toMatch(/status!='ACTIVE'/i);
