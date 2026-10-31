@@ -3,6 +3,7 @@ import {RetrievalEnvelopeVNextSchema,SourceSpanVNextSchema} from '@hufs-one/cont
 import type {RetrievalEnvelopeVNext} from '@hufs-one/contracts';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import type {TemporalPolicy,TemporalResult} from './revision-ledger.js';
+import {temporalPermissionPolicyVersion} from './revision-ledger.js';
 const Iso=z.iso.datetime({offset:true});
 const Ref=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const Row=z.object({
@@ -20,7 +21,7 @@ const EmptyFlags=z.object({
 function empty(policy:TemporalPolicy,state:EmptyReason='NO_EVIDENCE'):TemporalResult{
   return {envelope:RetrievalEnvelopeVNextSchema.parse({
     queryVersion:'query-1',asOf:policy.asOf,
-    sourceRevisionIds:[],permissionPolicyVersion:'server-policy-v1',
+    sourceRevisionIds:[],permissionPolicyVersion:temporalPermissionPolicyVersion(policy),
     retrievalConfigVersion:'pg-lexical-v1',
     retrievalState:state,evidence:[],
   }),hits:[]};
@@ -33,6 +34,7 @@ export class PostgresTemporalEvidenceReader{
   constructor(private readonly pool:ReviewerSqlPool){}
   async retrieve(input:TemporalPolicy):Promise<TemporalResult>{
     const asOf=Iso.parse(input.asOf);
+    const permissionPolicyVersion=temporalPermissionPolicyVersion(input);
     const limit=input.topK??12;
     if(!Number.isInteger(limit)||limit<1||limit>12)
       throw new Error('topK outside 1..12');
@@ -276,7 +278,7 @@ export class PostgresTemporalEvidenceReader{
       const envelope:RetrievalEnvelopeVNext=RetrievalEnvelopeVNextSchema.parse({
         queryVersion:'query-1',asOf,
         sourceRevisionIds:revisionIds,
-        permissionPolicyVersion:'server-policy-v1',
+        permissionPolicyVersion,
         retrievalConfigVersion:'pg-lexical-v1',
         retrievalState:'READY',evidence,
       });

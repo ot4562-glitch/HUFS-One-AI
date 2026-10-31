@@ -34,6 +34,16 @@ function stub(rows:Record<string,unknown>[]){
   };
 }
 describe('TASK-21 PostgreSQL permission-first historical retrieval (SQL stub)',()=>{
+  it('preserves configured trusted policy versions on READY and empty reads',async()=>{
+    const x=stub([{source_id:'s',revision_id:'r',paragraph_id:'p',paragraph_text:'데이터',score:1}]);
+    expect((await x.reader.retrieve({...policy,permissionPolicyVersion:'rights-v2'}))
+      .envelope.permissionPolicyVersion).toBe('rights-v2');
+    expect((await x.reader.retrieve({...policy,permissionRefs:new Set(),permissionPolicyVersion:'rights-v3'}))
+      .envelope.permissionPolicyVersion).toBe('rights-v3');
+    const empty=stub([]);
+    expect((await empty.reader.retrieve({...policy,permissionPolicyVersion:'rights-v4'}))
+      .envelope.permissionPolicyVersion).toBe('rights-v4');
+  });
   it('selects latest revision before ACTIVE/rights, and uses parameters for all external values',async()=>{
     const x=stub([{
       source_id:'source-01',revision_id:'revision-01',paragraph_id:'p1',

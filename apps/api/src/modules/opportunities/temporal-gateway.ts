@@ -1,15 +1,13 @@
 import {RetrievalEnvelopeVNextSchema} from '@hufs-one/contracts';
+import type {EvidenceActorScope} from '@hufs-one/contracts';
 import type {VerifiedTeamActor,ApiOptions} from '../../types.js';
 import type {TemporalResult} from './revision-ledger.js';
 import type {PostgresTemporalEvidenceReader} from './temporal-postgres.js';
 
-export interface CurrentEvidenceGrants {
+export interface CurrentEvidenceGrants extends EvidenceActorScope {
   /** This set must come from a live, server-side authorization lookup. */
   permissionRefs:ReadonlySet<string>;
   sourceIds?:ReadonlySet<string>;
-  campus?:string;
-  majorCode?:string;
-  cohort?:number;
   policyVersion:string;
   /** Monotonic server-side source-head epoch, if the resolver supports it. */
   sourceHeadVersion?:string;
@@ -26,6 +24,16 @@ function policyFingerprint(scope:CurrentEvidenceGrants):string{
     sources:scope.sourceIds?[...scope.sourceIds].sort():null,
     campus:scope.campus??null,majorCode:scope.majorCode??null,
     cohort:scope.cohort??null,
+    college:scope.college??null,
+    enrollmentState:scope.enrollmentState??null,
+    admissionType:scope.admissionType??null,
+    graduationTerm:scope.graduationTerm??null,
+    graduationTermVerified:scope.graduationTermVerified??null,
+    majors:scope.majors?.map(({code,role})=>[code,role])
+      .sort((a,b)=>{
+        const left=JSON.stringify(a),right=JSON.stringify(b);
+        return left<right?-1:left>right?1:0;
+      })??null,
   });
 }
 function noEvidence(asOf:string,version:string):TemporalResult{
@@ -56,11 +64,19 @@ export function createPostgresTemporalGateway(
       // A grant store may mutate a Set in place during revocation.
       const authorizedPolicy=policyFingerprint(current);
       const request={
-        query,asOf,topK,permissionRefs:current.permissionRefs,
-        ...(current.sourceIds?{sourceIds:current.sourceIds}:{}),
+        query,asOf,topK,permissionRefs:new Set(current.permissionRefs),
+        permissionPolicyVersion:current.policyVersion,
+        ...(current.sourceIds?{sourceIds:new Set(current.sourceIds)}:{}),
         ...(current.campus?{campus:current.campus}:{}),
         ...(current.majorCode?{majorCode:current.majorCode}:{}),
         ...(current.cohort!==undefined?{cohort:current.cohort}:{}),
+        ...(current.college!==undefined?{college:current.college}:{}),
+        ...(current.enrollmentState!==undefined?{enrollmentState:current.enrollmentState}:{}),
+        ...(current.admissionType!==undefined?{admissionType:current.admissionType}:{}),
+        ...(current.graduationTerm!==undefined?{graduationTerm:current.graduationTerm}:{}),
+        ...(current.graduationTermVerified!==undefined
+          ?{graduationTermVerified:current.graduationTermVerified}:{}),
+        ...(current.majors!==undefined?{majors:current.majors.map(m=>({...m}))}:{}),
       };
       const result=await reader.retrieve(request);
       // A permission grant may be revoked or narrowed while the SQL query is

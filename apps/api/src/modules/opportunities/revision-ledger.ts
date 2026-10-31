@@ -13,20 +13,12 @@ export type StoredRevision={
   revision:SourceRevisionVNext;
   paragraphs:RevisionParagraph[];
 };
-export type TemporalPolicy={
+export type TemporalPolicy=EvidenceActorScope & {
   /** Trusted server-issued grants, never accepted from a browser query string. */
   permissionRefs:ReadonlySet<string>;
   sourceIds?:ReadonlySet<string>;
-  campus?:string;
-  majorCode?:string;
-  cohort?:number;
-  /** Verified academic scope fields. Never populate from browser self-report. */
-  college?:EvidenceActorScope['college'];
-  enrollmentState?:EvidenceActorScope['enrollmentState'];
-  admissionType?:EvidenceActorScope['admissionType'];
-  graduationTerm?:EvidenceActorScope['graduationTerm'];
-  graduationTermVerified?:EvidenceActorScope['graduationTermVerified'];
-  majors?:EvidenceActorScope['majors'];
+  /** Trusted server policy epoch; omitted only by legacy synthetic callers. */
+  permissionPolicyVersion?:string;
   asOf:string;
   query:string;
   topK?:number;
@@ -38,6 +30,13 @@ export type TemporalResult={
 const LIM_PARAGRAPHS=200;
 const LIM_CONTENT=500_000;
 const CURRENT_VERSION='lexical-vnext-1';
+export function temporalPermissionPolicyVersion(policy:TemporalPolicy):string {
+  const version=policy.permissionPolicyVersion??'server-policy-v1';
+  if(!/^[A-Za-z0-9_.:-]{1,128}$/.test(version))
+    throw new Error('Invalid trusted permission policy version');
+  return version;
+}
+const byCodeUnit=(a:string,b:string)=>a<b?-1:a>b?1:0;
 const hash=(bytes:Uint8Array|string)=>createHash('sha256').update(bytes).digest('hex');
 export function hashRevisionParagraphs(paragraphs:RevisionParagraph[]):string{
   return hash(JSON.stringify(paragraphs));
@@ -136,6 +135,7 @@ export class MemorySourceRevisionLedger {
 
   retrieve(input:TemporalPolicy):TemporalResult {
     const at=time(input.asOf);
+    const permissionPolicyVersion=temporalPermissionPolicyVersion(input);
     const limit=input.topK??12;
     if(!Number.isInteger(limit)||limit<1||limit>12)
       throw new Error('topK must be 1..12');
@@ -184,8 +184,8 @@ export class MemorySourceRevisionLedger {
           paragraphId:p.id,quote:p.text,score});
       }
     }
-    hits.sort((x,y)=>y.score-x.score||x.sourceId.localeCompare(y.sourceId)
-      ||x.paragraphId.localeCompare(y.paragraphId));
+    hits.sort((x,y)=>y.score-x.score||byCodeUnit(x.sourceId,y.sourceId)
+      ||byCodeUnit(x.paragraphId,y.paragraphId));
     const results=hits.slice(0,limit);
     if(!results.length)return this.empty(input,blockedRights?'BLOCKED_RIGHTS'
       :unknown?'UNKNOWN':stale?'STALE':'NO_EVIDENCE');
@@ -204,7 +204,7 @@ export class MemorySourceRevisionLedger {
     const sourceRevisionIds=[...new Set(results.map(x=>x.revisionId))];
     const envelope=RetrievalEnvelopeVNextSchema.parse({
       queryVersion:'query-1',asOf:input.asOf,
-      sourceRevisionIds,permissionPolicyVersion:'server-policy-v1',
+      sourceRevisionIds,permissionPolicyVersion,
       retrievalConfigVersion:CURRENT_VERSION,retrievalState:'READY',evidence,
     });
     return {envelope,hits:results};
@@ -214,7 +214,7 @@ export class MemorySourceRevisionLedger {
     state:'NO_EVIDENCE'|'STALE'|'BLOCKED_RIGHTS'|'UNKNOWN'):TemporalResult {
     return {envelope:RetrievalEnvelopeVNextSchema.parse({
       queryVersion:'query-1',asOf:input.asOf,sourceRevisionIds:[],
-      permissionPolicyVersion:'server-policy-v1',
+      permissionPolicyVersion:temporalPermissionPolicyVersion(input),
       retrievalConfigVersion:CURRENT_VERSION,retrievalState:state,evidence:[],
     }),hits:[]};
   }

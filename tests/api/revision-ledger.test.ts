@@ -40,6 +40,26 @@ function query(day=22,settings:Record<string,unknown>={}){
     permissionRefs:new Set([permissionRef]),...settings};
 }
 describe('TASK-19/21 deterministic source ledger and permission-first temporal retrieval',()=>{
+  it('uses code-unit source and paragraph tie-breaks for byte-stable results',()=>{
+    const ledger=new MemorySourceRevisionLedger();
+    for(const id of ['source-a','source-Z'])add(ledger,{sourceId:id,revisionId:'rev-'+id});
+    expect(ledger.retrieve(query()).hits.map(x=>x.sourceId)).toEqual(['source-Z','source-a']);
+    const record=item({sourceId:'single',revisionId:'single-rev'});
+    record.paragraphs=[{id:'p-a',text:'데이터 모집'},{id:'p-Z',text:'데이터 모집'}];
+    record.revision.contentSha256=hashRevisionParagraphs(record.paragraphs);
+    const single=new MemorySourceRevisionLedger();single.add(record);
+    expect(single.retrieve(query()).hits.map(x=>x.paragraphId)).toEqual(['p-Z','p-a']);
+  });
+  it('preserves a trusted policy version in READY and all negative-state envelopes',()=>{
+    const ledger=new MemorySourceRevisionLedger();add(ledger);
+    for(const q of [query(),query(19),query(22,{permissionRefs:new Set()})]){
+      expect(ledger.retrieve({...q,permissionPolicyVersion:'rights-v2'}).envelope.permissionPolicyVersion)
+        .toBe('rights-v2');
+    }
+    add(ledger,{date:25,revisionId:'rev2',supersedes:'rev1',changeKind:'CORRECTED',status:'NEEDS_REVIEW'});
+    expect(ledger.retrieve({...query(26),permissionPolicyVersion:'rights-v3'}).envelope)
+      .toMatchObject({retrievalState:'STALE',permissionPolicyVersion:'rights-v3'});
+  });
   it('returns approved source revisions and exact original quote spans',()=>{
     const ledger=new MemorySourceRevisionLedger();add(ledger);
     const value=ledger.retrieve(query());
