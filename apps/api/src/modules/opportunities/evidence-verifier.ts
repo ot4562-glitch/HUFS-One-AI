@@ -16,6 +16,11 @@ interface TrustedOriginBase {
   publishedAt?:string;
   validFrom?:string;
   validUntil?:string;
+  applicableScope?:{
+    campuses?:readonly string[];
+    majorCodes?:readonly string[];
+    cohortRange?:readonly [number,number];
+  };
 }
 export type NormalizedBbox=readonly [number,number,number,number];
 export interface TrustedTextOrigin extends TrustedOriginBase {
@@ -42,11 +47,22 @@ export interface VerifiedRetrievalInput {
   permissionRefs:ReadonlySet<string>;
   permissionPolicyVersion:string;
   asOf:string;
+  /** Trusted server time, not a browser timestamp. */
+  now:string;
+  actorScope?:{campus?:string;majorCode?:string;cohort?:number};
 }
 function epoch(s:string|undefined|null):number {
   return s?Date.parse(s):NaN;
 }
 function eligible(item:TrustedEvidenceOrigin,input:VerifiedRetrievalInput,at:number):boolean{
+  const scope=item.applicableScope,actor=input.actorScope;
+  if(scope?.campuses?.length&&(!actor?.campus||!scope.campuses.includes(actor.campus)))
+    return false;
+  if(scope?.majorCodes?.length&&(!actor?.majorCode
+    ||!scope.majorCodes.includes(actor.majorCode)))return false;
+  if(scope?.cohortRange&&(!Number.isInteger(actor?.cohort)
+    ||actor!.cohort!<scope.cohortRange[0]
+    ||actor!.cohort!>scope.cohortRange[1]))return false;
   return item.status==='ACTIVE'
     &&item.sourceClass!=='RESEARCH_REFERENCE_ONLY'
     &&item.provenance!=='RESEARCH_ONLY'
@@ -93,8 +109,9 @@ export function verifyRetrievalForAi(
 ):RetrievalEnvelopeVNext|null{
   const parsed=RetrievalEnvelopeVNextSchema.safeParse(input.retrieval);
   if(!parsed.success)return null;
-  const retrieval=parsed.data,at=epoch(input.asOf);
-  if(!Number.isFinite(at)||retrieval.retrievalState!=='READY'
+  const retrieval=parsed.data,at=epoch(input.asOf),current=epoch(input.now);
+  if(!Number.isFinite(at)||!Number.isFinite(current)||at>current
+    ||retrieval.retrievalState!=='READY'
     ||retrieval.asOf!==input.asOf
     ||retrieval.permissionPolicyVersion!==input.permissionPolicyVersion
     ||input.trustedOriginals.length>2000)return null;
