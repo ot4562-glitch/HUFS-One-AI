@@ -116,6 +116,32 @@ describe('TASK-21 original- and rights-bound provider evidence (synthetic only)'
       campus:'SEOUL',majorCode:'ECONOMICS',cohort:2021,
     }})).toBeNull();
   });
+  it('rechecks source restriction for an independent AI citation: verified graduation, admission, role and cohort',()=>{
+    const scoped:TrustedTextOrigin={...text,applicableScope:{
+      majorCodes:['ECONOMICS'],majorRoles:['PRIMARY'],
+      admissionTypes:['FOREIGN'],graduationTermScope:['2026-2'],
+      cohortMax:2014,
+    }};
+    const x=scenario(textSpan,[scoped]);
+    const actorScope={
+      majorCode:'ECONOMICS',
+      majors:[{code:'ECONOMICS',role:'PRIMARY' as const}],
+      admissionType:'FOREIGN',
+      graduationTerm:'2026-2',graduationTermVerified:true,cohort:2014,
+    };
+    expect(verifyRetrievalForAi({...x,actorScope})?.retrievalState).toBe('READY');
+    for(const changed of [
+      {graduationTermVerified:false},
+      {graduationTerm:'2028-1'},
+      {graduationTerm:undefined},
+      {admissionType:'DOMESTIC'},
+      {cohort:2015},
+      {majors:[{code:'ECONOMICS',role:'DOUBLE' as const}]},
+      {majors:[{code:'OTHER',role:'PRIMARY' as const},{code:'ECONOMICS',role:'DOUBLE' as const}]},
+    ])expect(verifyRetrievalForAi({
+      ...x,actorScope:{...actorScope,...changed},
+    })).toBeNull();
+  });
   it('never allows failure-state evidence or unlisted extra revision IDs',()=>{
     const x=scenario(textSpan,[text]);
     expect(verifyRetrievalForAi({...x,retrieval:{
