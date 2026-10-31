@@ -1,6 +1,6 @@
-# Laya CPU 급증 방어 설계 — Standard-g3 4 vCPU·16GB
+# Laya CPU 급증 방어 설계 — High Memory-g3 4 vCPU·32GB
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+> 최신 가격·예산·개통 승인 [NCP_OPERATIONS_2026.md](NCP_OPERATIONS_2026.md). 위 CPU 1vCPU 상한은 같은 4vCPU 서버에서 25%이며, 확대된 32GB RAM의 충분성은 실측 전 미보장.
 
 
 > 상태: **설계·오프라인 부하 시험 계획(미배포·미설치·실측 전)** · 작성 2026-10-31
@@ -9,7 +9,7 @@
 
 ## 1. 무엇이 문제인가
 
-Standard-g3(4vCPU·16GiB)에서 API/DB, 검색, NCP provider와 Laya 워커가 CPU 시간을 공유한다. 이는 **이서연이 담당하는 클라우드/모델 실행 설계**이며 심민성 API 코드는 Laya를 직접 실행하지 않는다. Laya는 모델 초기 적재·ONNX 그래프 최적화/weight prepacking·첫 추론·긴 입력·동시 호출 시 순간적으로 CPU와 메모리를 사용할 수 있다. 온디맨드 웹 요청에서 바로 Laya를 실행하면 **심사자 여러 명의 반복 열람이나 높은 API 요청 수가 추론량을 늘려 API p95·DB 응답을 악화**시킬 수 있다.
+High Memory-g3(4vCPU·32GiB)에서 API/DB, 검색, NCP provider와 Laya 워커가 CPU 시간을 공유한다. 이는 **이서연이 담당하는 클라우드/모델 실행 설계**이며 심민성 API 코드는 Laya를 직접 실행하지 않는다. Laya는 모델 초기 적재·ONNX 그래프 최적화/weight prepacking·첫 추론·긴 입력·동시 호출 시 순간적으로 CPU와 메모리를 사용할 수 있다. 온디맨드 웹 요청에서 바로 Laya를 실행하면 **심사자 여러 명의 반복 열람이나 높은 API 요청 수가 추론량을 늘려 API p95·DB 응답을 악화**시킬 수 있다.
 
 상위 Laya 자료는 multilingual 322M CPU·ONNX 구동을 지원하며 **CPU 지연이 입력 길이/코어/워밍 상태에 의존**한다고 설명한다. 4코어 환경 수치는 이 VM의 성능 증명이 아니다. 고정된 한글 라벨 평가에서 Laya가 규칙보다 개선 효과를 보이지 않으면 **모델 실행은 영구 선택 기능**으로 두고 기본 규칙을 사용한다. 파인튜닝은 초기 시연 계획에서 제외한다.
 
@@ -69,34 +69,34 @@ Environment="TRANSFORMERS_OFFLINE=1"
 | VM 전체 CPU | 10초 간격 관측, **20초 이상 ≥ 70%** (4vCPU 기준 약 2.8vCPU 소비) | **10초 이상 ≥ 90%**, API 오류/지연과 동반 |
 | `/proc/pressure/cpu` / cgroup `cpu.pressure` | `some avg10 > 10%`가 20초 연속 | `some avg10 > 20%`가 10초 연속 + API 지연 |
 | API P0 GET p95 | baseline의 **1.25배 이상**이거나 **400ms 이상**이 30초 연속 | p95 > baseline 1.5배 또는 HTTP 5xx 비율 ≥ 1%가 30초 지속 |
-| 가용 메모리 | `MemAvailable < 1.2GiB` 또는 worker `memory.current > 2.5GiB` | `MemAvailable < 0.8GiB`, cgroup OOM event, memory.max 도달 |
+| 가용 메모리 | `MemAvailable < 3.0GiB` 또는 worker `memory.current > 2.5GiB` | `MemAvailable < 2.0GiB`, cgroup OOM event, memory.max 도달 |
 | worker 지연 | queue 길이 > 12 / 16 또는 실행 p95 > 15초 | timeout 2회/10분, 동일 모델 3회 작업 실패, 프로세스 재시작 루프 |
 
 가드는 **앱 내부 조회뿐 아니라 보호 대상인 API p95·DB p95·실제 OS/cgroup 측정**과 연동한다. worker가 중단되면 체크포인트/원장에 `LAYA_DISABLED_RESOURCE` 이유와 당시 리소스를 남기고 **분류 결과를 거짓 VERIFIED로 승격하지 않는다**.
 
-- **PAUSE 상태**: 새 작업 예약 중단·진행 작업 timeout 처리·확정 규칙 우선. 60초 이상 VM CPU < 50%, available memory > 1.5GiB, API p95가 사전 baseline의 1.1배 이내를 모두 만족할 때만 큐 처리를 천천히 재개(기능 자체는 사전 승인된 ON 상태여야 함).
+- **PAUSE 상태**: 새 작업 예약 중단·진행 작업 timeout 처리·확정 규칙 우선. 60초 이상 VM CPU < 50%, available memory > 4.0GiB, API p95가 사전 baseline의 1.1배 이내를 모두 만족할 때만 큐 처리를 천천히 재개(기능 자체는 사전 승인된 ON 상태여야 함).
 - **OFF 상태**: `LAYA_ENABLED=false` 유지, 반복 실패/pressure로 자동 재활성화하지 않음. 활성 재개는 사람이 회귀 로그를 검토한 후 변경 승인. 안전한 결과 캐시만 제공.
 - `cpu.stat.nr_throttled`·`throttled_usec` 증가 자체는 quota 적용 시 정상일 수 있으므로 **그 수치 하나만으로 오류 선언하지 않는다**. API latency와 함께 해석한다.
 - 모니터링 agent/DB 스케줄러 자체의 CPU/RSS도 측정한다. 4vCPU에서 관측기/수집기의 비용을 무시하지 않는다.
 
 ## 5. 실제 NCP 활성화 전 필수 실험·수용 게이트
 
-**로컬 개발 PC 성공을 Standard-g3 성능 증거로 인정하지 않는다.** 실제 리전/SKU/OS/CPU throttling·4vCPU·16GB 안에서 동등한 검증을 수행해야 한다.
+**로컬 개발 PC 성공을 High Memory-g3 성능 증거로 인정하지 않는다.** 실제 리전/SKU/OS/CPU throttling·4vCPU·32GB 안에서 동등한 검증을 수행해야 한다.
 
 1. **기준선:** Laya OFF, 동일 synthetic 5 reviewer 동시 조회 + 동일 Node/Postgres/ingest 부하로 P0 GET p50/p95/p99, SQL p95, CPU steal/pressure, VM RSS/메모리 여유, 요청 실패율 30분 측정.
 2. **차례대로:** 모델 최초 로드(메모리/CPU spike), warm-up, 512·1024 input 토큰 비교(실 서비스는 512로 제한), 동시 1건과 5/10개 job burst, 10/30분 간헐 요청, 리뷰어 접속 70회 연속 + 브라우저 재접속, OCR burst 동시 상황. 스레드=1/기본 설정, CPUQuota=100% 비교; 예외는 기록.
-3. **하드 수용:** API p95 **baseline 대비 1.2배 이하**이면서 P0 GET 500ms 이하(초기 목표), 오류율 **0.5% 미만**, Laya RSS ≤ 3GiB, VM 총 peak < 14GiB, host memory available > 1GiB, **OOM 0**, 권한 우회/미래 자료 누출 0. 성능 변화/비용과 CPU steal로 노이즈가 있으면 보수적으로 다시 검증.
+3. **하드 수용:** API p95 **baseline 대비 1.2배 이하**이면서 P0 GET 500ms 이하(초기 목표), 오류율 **0.5% 미만**, Laya RSS ≤ 3GiB, VM 총 peak < 28GiB, host memory available > 3GiB, **OOM 0**, 권한 우회/미래 자료 누출 0. 성능 변화/비용과 CPU steal로 노이즈가 있으면 보수적으로 다시 검증.
 4. **품질 수용:** 라벨링된 합성 공고 30~50개를 규칙-only와 Laya ON으로 비교해 한국어 분류 F1과 **검수 누락(false-skip)**을 따로 기록; 중요한 false-skip 증가 시 정확도가 높아도 채택하지 않는다. 초기 자료량에서는 파인튜닝 불필요/금지; 모델 개정·온도/threshold 튜닝도 분리된 검증 데이터 필요.
 5. **실패 주입:** worker SIGKILL/OOM, CPU 상한 적용 누락, DB 쿼리 지연, 심사자 폭주, stale revision 갱신, 토큰 초과, 캐시 무효화 실패, queue overflow·backpressure, 모델 파일 훼손. 전부 API/P0는 계속 응답하거나 명시적 대기·차단 상태를 보여야 하고 **심사자 호출이 유료 HCX fallback을 자동 일으키면 안 된다**.
 6. 테스트/CPU·메모리 trace/설정 출력·비용 원장·모델 digest·실제 관측 환경/커밋 SHA와 독립 리뷰가 없는 경우 **`LAYA_ENABLED=false`**를 유지한다.
 
 ## 6. 구현 책임·비용·추가 자료
 
-- **현재 PR**에는 이 CPU 운영 계약만 반영. 이서연 전담 후속 PR에서 실제 Laya 모델 설치/다운로드·systemd/queue·NCP 인프라 개통·부하 시험은 하지 않는다.
+- **현재 문서는 CPU/메모리 운영 계약만 확정한 설계 자료다.** 이서연 #22 후속 승인 PR에서 Laya 모델 설치·systemd/worker·NCP 인프라 운영/부하 실측을 별도로 입증한다. 여기의 systemd 예시나 CPU quota는 배포 실행 또는 유료 NCP 리소스 개통을 승인하지 않는다.
 - [이슈 #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)에서 **이서연 NCP/모델/worker 단독 소유**이 런타임 구현/검증을 후속 PR로 관리하고, 심민성이 인프라·크레딧/비용 상한·서비스 오픈을 승인한다. Laya 업그레이드나 파인튜닝은 기본 로드맵에 없다.
 - 원본 학생 데이터/학교 자료가 모델에 전달되지 않도록 전용 입력 allowlist와 목적별 동의/권한 검사를 유지한다. 총 월 크레딧을 넘기지 않더라도 CPU 스파이크가 일으키는 **사용자 지연·추가 VM 요구**가 숨은 비용이므로 자동 증설하지 않는다.
 
-### 기술 근거 (실측 출처 아님)
+### 기술 근거 · 설계 참고자료
 - [systemd.resource-control: CPUQuota·CPUWeight·MemoryHigh/Max](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)
 - [Linux cgroup v2: cpu.max, cpu.stat, cpu.pressure](https://docs.kernel.org/admin-guide/cgroup-v2.html)
 - [ONNX Runtime CPU thread pools & spin controls](https://onnxruntime.ai/docs/performance/tune-performance/threading.html)
