@@ -43,6 +43,16 @@ describe('TASK-19/21 offline PostgreSQL DDL safety review (NOT executed on a DB)
     expect(sql).toMatch(/last_verified_at IS NOT NULL/i);
     expect(sql).toMatch(/provenance!='RESEARCH_ONLY'/i);
   });
+  it('retains all reviewed academic notice restrictions, including a one-sided cohort',()=>{
+    for(const column of [
+      'scope_campuses text[]','scope_majors text[]','scope_colleges text[]',
+      'scope_major_roles text[]','scope_admission_types text[]',
+      'scope_enrollment_states text[]','scope_graduation_terms text[]',
+      'cohort_min integer','cohort_max integer',
+    ])expect(sql).toContain(column);
+    expect(sql).toContain("ARRAY['PRIMARY','DOUBLE','MINOR']");
+    expect(sql).toMatch(/cohort_min IS NULL OR cohort_max IS NULL OR cohort_min<=cohort_max/i);
+  });
   it('does not grant public read/write rights to raw evidence or events',()=>{
     for(const table of [
       'source_revisions_vnext','source_paragraphs_vnext',
