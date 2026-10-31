@@ -1,11 +1,11 @@
 import {createHash} from 'node:crypto';
 import {
   RetrievalEnvelopeVNextSchema,RevisionInvalidationVNextSchema,
-  SourceRevisionVNextSchema,SourceSpanVNextSchema,matchesTextSpan,
+  SourceRevisionVNextSchema,SourceSpanVNextSchema,matchesTextSpan,matchesEvidenceScope,
 } from '@hufs-one/contracts';
 import type {
   RetrievalEnvelopeVNext,RevisionInvalidationVNext,SourceRevisionVNext,
-  SourceSpanVNext,
+  SourceSpanVNext,EvidenceActorScope,
 } from '@hufs-one/contracts';
 
 export type RevisionParagraph={id:string;text:string};
@@ -20,6 +20,13 @@ export type TemporalPolicy={
   campus?:string;
   majorCode?:string;
   cohort?:number;
+  /** Verified academic scope fields. Never populate from browser self-report. */
+  college?:EvidenceActorScope['college'];
+  enrollmentState?:EvidenceActorScope['enrollmentState'];
+  admissionType?:EvidenceActorScope['admissionType'];
+  graduationTerm?:EvidenceActorScope['graduationTerm'];
+  graduationTermVerified?:EvidenceActorScope['graduationTermVerified'];
+  majors?:EvidenceActorScope['majors'];
   asOf:string;
   query:string;
   topK?:number;
@@ -44,16 +51,7 @@ function tokenize(input:string):string[]{
   return input.normalize('NFKC').toLocaleLowerCase('ko-KR').match(/[\p{L}\p{N}]+/gu)??[];
 }
 function matchesScope(revision:SourceRevisionVNext,policy:TemporalPolicy):boolean {
-  const scope=revision.applicableScope;
-  if(!scope)return true;
-  if(scope.campuses?.length&&(!policy.campus||!scope.campuses.includes(policy.campus)))
-    return false;
-  if(scope.majorCodes?.length&&(!policy.majorCode
-    ||!scope.majorCodes.includes(policy.majorCode)))return false;
-  if(scope.cohortRange&&(!Number.isInteger(policy.cohort)
-    ||policy.cohort!<scope.cohortRange[0]||policy.cohort!>scope.cohortRange[1]))
-    return false;
-  return true;
+  return matchesEvidenceScope(revision.applicableScope,policy);
 }
 
 /**
