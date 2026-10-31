@@ -97,14 +97,8 @@ async function harness(installSyntheticAgent1Csrf=true){
     maxSyntheticAiCallsPerActor:6,
     now:()=>NOW,
   });
-  if(installSyntheticAgent1Csrf){
-    app.get('/api/auth/csrf',async(req)=>{
-      // The central onRequest hook has already verified the trusted session.
-      if(req.headers.cookie==='reviewer-one')return {csrfToken:reviewer.csrfToken};
-      if(req.headers.cookie==='reviewer-two')return {csrfToken:second.csrfToken};
-      throw new Error('Unrecognized synthetic session');
-    });
-  }
+  // Do not register GET /api/auth/csrf on this Fastify app: main's reviewer
+  // authorization hook intentionally denies it until #32 is merged.
   opened.push(app);
   function browser(cookie:'reviewer-one'|'reviewer-two'){
     const history:Array<{url:string;method:string;body:string|null}>=[];
@@ -113,6 +107,14 @@ async function harness(installSyntheticAgent1Csrf=true){
       history.push({
         url,method,body:typeof init.body==='string'?init.body:null,
       });
+      if(installSyntheticAgent1Csrf && url==='/api/auth/csrf'){
+        // Explicit test-transport ONLY stub for Agent1 #32's unmerged route.
+        // All POSTs still traverse Fastify's real CSRF/Origin/session guard.
+        const token=cookie==='reviewer-one'?reviewer.csrfToken:second.csrfToken;
+        return new Response(JSON.stringify({csrfToken:token}),{
+          status:200,headers:{'content-type':'application/json'},
+        });
+      }
       const response=await app.inject({
         url,method,
         headers:{
