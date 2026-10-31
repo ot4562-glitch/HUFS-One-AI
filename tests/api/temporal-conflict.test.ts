@@ -18,6 +18,10 @@ function stub(result:unknown,opts:{noHits?:boolean;failure?:boolean}={}){
   const queries:Array<{sql:string;params:readonly unknown[]}>=[],released:number[]=[];
   const connection:ReviewerSqlConnection={
     query:async(sql,params=[])=>{
+      // Transaction statements are covered in temporal-snapshot.test.ts;
+      // keep existing query-only expectations focused on data SELECTs.
+      if(sql.startsWith('BEGIN TRANSACTION ')||sql==='COMMIT'||sql==='ROLLBACK')
+        return {rows:[]};
       queries.push({sql,params});
       if(sql.includes('AS confirmed_conflict')){
         if(opts.failure)throw new Error('synthetic conflict table unavailable');
