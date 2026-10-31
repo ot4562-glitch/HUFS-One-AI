@@ -44,6 +44,7 @@ afterEach(async()=>{
 
 async function harness(){
   let realReads=0;
+  const requestProofs:Array<{method:string;url:string;originOk:boolean;csrfOk:boolean;sessionOk:boolean}>=[];
   const denied=async():Promise<never>=>{
     realReads++;
     throw new Error('Never read actual student or production database records');
@@ -72,8 +73,16 @@ async function harness(){
   const app=createIntegratedApi({
     allowedOrigin:ORIGIN,repository,
     auth:{
-      verifySession:async(req)=>req.headers.cookie==='reviewer-one'?reviewer:
-        req.headers.cookie==='reviewer-two'?second:null,
+      verifySession:async(req)=>{
+        const actor=req.headers.cookie==='reviewer-one'?reviewer:
+          req.headers.cookie==='reviewer-two'?second:null;
+        requestProofs.push({
+          method:req.method,url:req.url,originOk:req.headers.origin===ORIGIN,
+          csrfOk:req.headers['x-csrf-token']===actor?.csrfToken,
+          sessionOk:actor!==null,
+        });
+        return actor;
+      },
       revokeSession:async()=>{},
     },
     reviewer:{access,demo:reviewerDemo,sandbox},
@@ -108,7 +117,7 @@ async function harness(){
     };
     return {client:new HufsApiClient(transport),history};
   }
-  return {app,access,invite,browser,getRealReads:()=>realReads};
+  return {app,access,invite,browser,getRealReads:()=>realReads,requestProofs};
 }
 
 describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic only)',()=>{
@@ -124,6 +133,21 @@ describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic onl
     });
     expect(direct.statusCode).toBe(200);
     expect(direct.json().role).toBe('REVIEWER');
+  });
+
+  it('compares the browser POST proof with the exact server-authorized admission route',async()=>{
+    const {invite,browser,requestProofs}=await harness();
+    const {client}=browser('reviewer-one');
+    const response=await client.redeemReviewerInvite(invite.enrollmentCode)
+      .then(()=>200,(_error:unknown)=>403);
+    const proof=requestProofs.filter(x=>x.url==='/api/reviewer/invitations/redeem');
+    expect({response,proof}).toEqual({
+      response:200,
+      proof:[{
+        method:'POST',url:'/api/reviewer/invitations/redeem',
+        originOk:true,csrfOk:true,sessionOk:true,
+      }],
+    });
   });
 
   it('redeems an invitation and operates one fake student end-to-end without real reads',async()=>{
