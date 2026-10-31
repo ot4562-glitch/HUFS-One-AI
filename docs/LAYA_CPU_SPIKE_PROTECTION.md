@@ -1,6 +1,5 @@
 # Laya CPU 급증 방어 설계 — High Memory-g3 4 vCPU·32GB
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
 > 최신 가격·예산·개통 승인 [NCP_OPERATIONS_2026.md](NCP_OPERATIONS_2026.md). 위 CPU 1vCPU 상한은 같은 4vCPU 서버에서 25%이며, 확대된 32GB RAM의 충분성은 실측 전 미보장.
 
 
@@ -97,7 +96,7 @@ Environment="TRANSFORMERS_OFFLINE=1"
 - [이슈 #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)에서 **이서연 NCP/모델/worker 단독 소유**이 런타임 구현/검증을 후속 PR로 관리하고, 심민성이 인프라·크레딧/비용 상한·서비스 오픈을 승인한다. Laya 업그레이드나 파인튜닝은 기본 로드맵에 없다.
 - 원본 학생 데이터/학교 자료가 모델에 전달되지 않도록 전용 입력 allowlist와 목적별 동의/권한 검사를 유지한다. 총 월 크레딧을 넘기지 않더라도 CPU 스파이크가 일으키는 **사용자 지연·추가 VM 요구**가 숨은 비용이므로 자동 증설하지 않는다.
 
-### 기술 근거 (실측 출처 아님)
+### 기술 근거 · 설계 참고자료
 - [systemd.resource-control: CPUQuota·CPUWeight·MemoryHigh/Max](https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html)
 - [Linux cgroup v2: cpu.max, cpu.stat, cpu.pressure](https://docs.kernel.org/admin-guide/cgroup-v2.html)
 - [ONNX Runtime CPU thread pools & spin controls](https://onnxruntime.ai/docs/performance/tune-performance/threading.html)
