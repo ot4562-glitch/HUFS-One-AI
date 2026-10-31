@@ -1,9 +1,9 @@
 # HUFS One AI | 예선 제출 항목·근거 확인표
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
-**문서 역할:** 제출본이나 11월 6일 회의 진행안이 아니다. 실제 제출 양식·분량·마감은 주최 측의 최신 안내를 확인한다. 제품 가치·심사 설득은 [Proposal.md](Proposal.md), 실제 구현 계약은 [Architecture.md](Architecture.md)를 따른다.
+**문서 역할:** 제안서 준비 자료. 제출 양식·분량·마감과 회의 일정은 주최 측 및 팀 공지를 기준으로 확인한다. 제품 가치·심사 설득은 [Proposal.md](Proposal.md), 실제 구현 계약은 [Architecture.md](Architecture.md)를 따른다.
 
 ## 제안의 핵심 논거
 
@@ -16,7 +16,7 @@
 | 차별성 | **상위 3개 큰 추천 카드와 작은 일반 목록**, 관심·경험 변경에 따른 화면 변화, AI 공고 해석, 추가 졸업 점검 | Proposal.md §02~04의 개선·개인화 차이와 Architecture.md §5·§7·§9 |
 | 학생 사용 흐름 | **관심·경험 입력→관련 기회 크게 노출→AI 지원조건/행동→경험 기반 개인화 갱신**, 필요 시 졸업지원→수강계획 | Proposal.md §04 학생 시나리오와 Architecture.md A02·A04~A11, 실제 입력 대상 최대4명의 동의·검증 자료 |
 | CLOVA·NCP 필요성 | **관심·경험 태그 해석 → 공고조건 추출 → 맞춤형 노출 근거/개인 행동 브리프**, 추가 졸업요건 설명 | Architecture.md A1·§12.3~12.5의 네 작업, 자격·순위는 검증 가능한 코드가 수행 |
-| 구현 현실성 | 구성된 Google Forms 원본과 승인된 최대4명의 수강 완료/현재수강 CSV를 결합, 검수된 공식 학칙 적용. 전환 시연 슬롯은 5개 | Architecture.md TASK-00~TASK-17 검증, 실제 과목 CSV 3/4명 소유자 확인, 통합 Forms/동의·학칙 검증은 미완료 |
+| 구현 현실성 | 구성된 Google Forms와 6열 과목 CSV를 합성 UI·검증 API에 권한 확인 후 연결; 전체 기능·학점 판정은 별도 검증 | 2026-10-31 Private 저장소에 수강 CSV 4개(6열) 및 Forms 1개(26열·응답 4행) **구조만** 확인. 원본 게시·접근 동의/개별 본인 매칭·학칙·운영 검증은 미완료 |
 | 결과·평가 | **같은 공고 목록에서 두 학생의 강조 카드·순위·추천 이유 차이**, AI 공고조건 검증, 졸업 학점/계획 계산 | 입력·추천·학칙 독립 테스트, 동의/권한·NCP 검증. 미측정 성과 수치 제외 |
 | 지속 운영 | HUFS+·학교 연동 가능성, 자료 갱신 책임, 지원 종료 후 비용 | 학교 승인·NCP 실제 지급·운영 주체는 미확정 |
 | 공개 주소·폐쇄형 접근 | 사용자 확보 신고 도메인 `외대.온라인.한국`에서 **Google 로그인 + 외대 이메일 수신권 확인(Workspace `hd` 또는 메일 OTP) + 베타 승인** 후 서비스 이용 계획 | 학교 공식 SSO 허가 없이 독립 구현. DNS/TLS·Google OAuth 앱·메일 OTP/발송·익명 HTML/API/CDN/직접 IP 우회 시험은 **PENDING** |
@@ -45,4 +45,4 @@
 
 ## 2026-10-31 추가 설계: 최신 공고·포스터·근거 검증형 개인화
 
-예선 제안은 학교 HUFSAbility의 기존 공고를 **이미지 포스터까지 읽고 날짜·자격·우선선발을 분리**하는 문제에서 출발한다. 공식 출처의 정정/취소·확인 시각을 추적하는 **Temporal RAG**와 OCR·필요시 HCX-005 Vision, 기존 HCX-007 추출 및 코드 검증을 결합한다. CPU 오픈모델 **Laya**는 검수 우선순위 보조로 제한하고 NCP **Standard-g3 4 vCPU·16GB** 내 동작 가능성은 본선에 실측한다. 본선팀 개발비 50만원과 **별도 NCP 크레딧 50만원 상당**은 공식 공고의 조건부 지원으로, 실제 크레딧·사전 승인·배포 실적은 아직 없다. 이 문서는 적용 기술의 **설계 제안**이며 심사효과·환각 개선률의 실증을 주장하지 않는다. 정본 `Architecture.md`, `Proposal.md`, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`.
+예선 제안은 학교 HUFSAbility의 기존 공고를 **이미지 포스터까지 읽고 날짜·자격·우선선발을 분리**하는 문제에서 출발한다. 공식 출처의 정정/취소·확인 시각을 추적하는 **Temporal RAG**와 OCR·필요시 HCX-005 Vision, 기존 HCX-007 추출 및 코드 검증을 결합한다. CPU 오픈모델 **Laya**는 검수 우선순위 보조로 제한하고 NCP **High Memory-g3 4 vCPU·32GB** 내 동작 가능성은 본선에 실측한다. 본선팀 개발비 50만원과 **별도 NCP 크레딧 50만원 상당**은 공식 공고의 조건부 지원으로, 실제 크레딧·사전 승인·배포 실적은 아직 없다. 이 문서는 적용 기술의 **설계 제안**이며 심사효과·환각 개선률의 실증을 주장하지 않는다. 정본 `Architecture.md`, `Proposal.md`, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`.

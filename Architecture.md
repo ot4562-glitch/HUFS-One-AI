@@ -1,6 +1,6 @@
 # HUFS One AI | Architecture.md
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
@@ -8,7 +8,7 @@
 
 ## A00. 정본·최신 결정·용어
 
-이 문서는 기존 Architecture의 계약을 최신 요청에 맞게 재구성한 정본이다. 아래 규범과 충돌하는 과거의 ‘계정당 본인 자료만 시연’, ‘학생 단말 VPN/내부 CA 기본’, ‘NCP 선택’, ‘오프라인 PWA 완주가 선행’, ‘새 CSV 템플릿 필요’는 현재 구현 방향이 아니다. 단, 개인정보 원본의 소유권과 실제 권한자의 동의는 그대로 보호한다.
+이 문서는 구현 계약의 기준이다. 온라인 HTTPS·Google OIDC·외대 메일 확인·합성 REVIEWER 시연·NCP 배포를 기본 구조로 삼고, 실제 학생자료는 목적별 동의와 권한에 따라 보호한다.
 
 ### A00.1 제품 순서와 구현 경계
 
@@ -28,7 +28,7 @@
 
 `Proposal.md`는 팀원 설명, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 이미지·시간·검색·Laya 실행 세부 계약, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
 
-**현재 입력 경계:** Google Forms 26열 예시 응답 **1건만** 확인됐고 최종 4인 통합 Forms는 아직 미수령이다(이서연 미제출). 6열 수강과목 CSV 목표는 김채윤·이의상·심민성·이서연 4명이다. `csv/` 파일 3개의 제출자는 사용자 확인에 따라 **김채윤(별명 까마르)·이의상·심민성**이다. 별명 대응은 입력 단계에서 소유자 확인 완료이지만 목적별 동의·실제 Forms 대조는 별도다. 박준영은 Forms/CSV 제출 대상이 아니다. 동의·학칙 검증·외부 AI/NCP 처리 승인은 별개이며 docs/DATA_GOVERNANCE.md를 따른다.
+**현재 입력 경계(2026-10-31 `main` 관찰):** Private `csv/`에 수강과목 6열 CSV **4개**(61/39/48/28 데이터 행, 모두 BOM 없는 UTF-8)와 통합 Google Forms CSV **1개**(26열·응답 4행)가 존재하며 구조/인코딩만 확인했다. 4인 개인별 identity/표시이름 대응, 개별 GitHub 게시 권한·SharingGrant·NCP/AI 처리 동의, 이수원장의 학점/상태·학칙 정합성은 미확인이다. 이전의 '3개/이서연 미수령/Forms 통합본 없음' 기재는 현재 파일 존재 기준으로만 갱신하고, 동의 완료나 출시 승인으로 승격하지 않는다. 박준영은 제출 대상이 아니다. 상세: docs/DATA_GOVERNANCE.md.
 
 ### A00.3 규범 용어와 증거 상태
 
@@ -43,6 +43,15 @@
 | Verified result | 실제 명령/테스트/환경/입력 버전이 남아 있는 결과 |
 
 `LIVE_NCP`, `VALIDATED_CACHE`, `MOCK`는 처리 출처다. `REAL_CONSENTED`, `SYNTHETIC`, `MIXED`는 시연 자료 종류다. 두 차원을 별도 표시한다. 합성 데이터로 CLOVA를 실제 호출하면 `SYNTHETIC + LIVE_NCP`가 맞다.
+
+### A00.4 협업 코드 리뷰·계약·병합 순서(2026-10-31 현재)
+
+- 최초 감사 스냅샷은 일반 이슈 17건(16 open/1 closed), PR 26건(10 open/16 merged)이었다. 이후 [데이터 권한 감사 이슈 #46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), 선택적 공지 Wire 계약 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), 추천 설명 Wire 계약 [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)을 추가했고, 중복 문서 PR #45는 14개 문서 main 직접 커밋 확인 뒤 close(not merged)했다. 숫자는 **시점 스냅샷**으로 최신 GitHub 목록을 기준으로 다시 확인한다.
+- 추천/공지 코드의 의존 순서는 **#15 → #16 → #40 → #41**. #15 미래 게시 누출 차단 후 총괄 승인 기록이 있어도, 요청된 이의상 UI 리뷰가 없으면 병합하지 않는다. #16의 `reviewPending` 개선은 제출됐으나 `NoticeResult.items[].overdue` 연결과 별도 계약 #44, 최신 독립 리뷰가 필요하다. #40의 `claimCheckedAt <= asOf`·정확한 TEXT evidence 검증 수정은 제출됐으나 출처권한/API 연동 검증과 리뷰가 남았다. #41의 추천 설명은 현재 strict `FeedResult` 바깥이며 화면 전달·접근성 검증 미완료; 기본 랭크는 `rank-v1.0`이다.
+- 별도 계약/일반 API 스택 **#33 → #34**, 병렬 인증 **#32**, 개인정보 DB **#35**, 학업 계약 **#36**, 웹/API 통합 **#37**도 원격 CI, 의존 리베이스, 각 요청된 리뷰어 **전원의 최신 승인**, 테스트·권한 근거가 갖춰져야 병합할 수 있다. 이 목록은 코드 작성·합성 테스트 성공과 실제 서비스 배포 승인/최종 검증을 구분한다.
+- `overdue`는 **학생 제출 마감**이 `asOf` 이전 또는 같고 `appliesTo != NO`인 경우만 true. #44에는 선택적 Zod wire와 부정 테스트가 있으며 GitHub CI 통과/김채윤 소비자 승인 기록이 있지만 독립 학업/UI 리뷰와 #16 실제 직렬화 연결 전 병합하지 않는다. 정확한 `소프트웨어/개발` alias만 허용하고 fuzzy 분류는 금지한다.
+- [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)은 `FeedCard.explanation?`의 카드 ID·관련도 0~100 정수·CODE_RULES·주제·증거 안내·타임스탬프 검증과 optional `programScope`/`deadlineKind`를 제안하며 CI에 성공했다. **#41 코어의 `ComposedFeed.explanations`를 실제 React/API까지 연결하는 별도 소비자 작업**이 끝나기 전에는 기능 완료라고 표시하지 않는다. `rank-v1.1`의 기본 승격은 여전히 보류한다.
+- 실제 학생자료가 추적된 Git 이력과 현재 권한·접근 범위는 데이터 관리 이슈에서 개별 검증한다. 원본을 새 코드·CI·로그·PR 토론·외부 제공자로 재배포하지 않고, `PENDING`이면 합성 시연만 허용한다.
 
 ## A01. 사람이 이해할 시스템 지도와 실행 구조
 
@@ -146,7 +155,7 @@ private raw → approved derived projection → per-actor overlay라는 3층 구
 - **접근 횟수와 기간:** 최초 등록 이후 **동일 인증 주체가 심사기간 중 횟수 제한 없이 재로그인** 가능. 초대 코드 재사용은 동일 계정에만 멱등 허용. `startsAt <= now < endsAt`(UTC 서버, KST 화면), 최대 45일 설계. 초대 철회·기간만료는 **매 요청마다 서버의 영속 상태를 재조회해 403**으로 자동 차단한다. 자동 차단은 JS 타이머/cron에 의존하지 않는다.
 - **권한 분리:** `/api/reviewer/demo/*`의 GET과 초대 등록/자신의 로그아웃만 최소 허용하며 일반 `/api/demo`·AI 작업·팀원 섹션·실제 학생 데이터·관리/수정/내보내기/유료 LLM 호출 금지. 리뷰 데모의 `datasetMode`와 공고 card는 `SYNTHETIC`, `aiProvenance`는 mock/cache로만 제한한다. 초대 코드를 가진 익명인/다른 email/sub는 접근 불가.
 - **보안 운영:** Origin/CSRF + 등록시도 5회/15분/actor(실서비스 분산/IP 방어 추가), no-store·정확한 허용 origin, 영속 DB `SELECT ... FOR UPDATE` 등록·revoke, 세션 재검증, 클릭/방문 횟수 자체에는 제한을 두지 않되 폭주·유료 API에는 별도 방어 정책을 유지한다.
-- **현재 상태:** API/합성 테스트와 SQL adapter를 작성하는 **PR #24 기반 별도 스택 작업**이다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+- **현재 상태:** API/합성 테스트와 SQL adapter는 PR #24와 원본 #26을 재적용한 #30이 main에 반영됨. 합성 REVIEWER 액션과 통합 CI는 PR #31을 통해 `main`에 반영됐다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
 
 ### A02.3 상단 selector 화면 동작
 
@@ -261,8 +270,8 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 
 **5인 개발팀:** 심민성=GitHub/공통 계약·기술 통합, 김채윤=추천·공지, 이의상=UI·모바일, 박준영=졸업·전망(개인 원장 제출 제외), 이서연=팀 결성·기획 리드 및 NCP·CLOVA·OCR/Vision·Laya 모델/Provider 구현 및 운영 전체 전담(심민성=API 코드). 자세한 구독·편집 소유권은 `docs/WORKSTREAMS.md`가 정본이다.
 
-- **4인 수집 목표:** `Forms 통합 1파일 × 원문 26열 × 4명`과 `1인당 과목 CSV 1파일 × 정확히 6열`(김채윤·이의상·이서연·심민성). 현재 이서연 Forms 미제출; 파일로 확인되지 않은 동료의 응답·과목 제출은 `PENDING`이다. 가명/파일명/Forms 표시이름 연결은 본인 검수와 명시된 alias 승인 후에만 적용한다.
-- **검증된 별명 매핑:** 요청자가 `이수과목_까마르.csv`가 **김채윤 제출물**이라고 직접 확인했다. 유효한 파일 제출은 **3/4명**, 이서연은 미수령이다. 실제 학생명 대응을 소스코드나 synthetic fixture에 넣지 말고 제한된 import registry에서만 명시 주입한다. 별명 매핑 오류·동명이인·중복 응답·미동의·미수령은 fail closed로 처리하고, 동의나 학점 판정을 매핑 하나로 확정하지 않는다.
+- **4인 수집 목표와 형식 결과:** Forms 통합 1파일(26열·응답 4행) + 과목 CSV 4파일(각 6열)의 **Private `main` 파일 존재와 문법적 구조**를 확인했다. 각 행의 개인별 소유자·중복 응답·표시이름/본인 대조와 팀 공유·외부 처리 동의는 아직 `PENDING`; 실제 제출 완료/사용 승인으로 해석하지 않는다.
+- **이전 확인된 별명:** 요청자가 `이수과목_까마르.csv`가 **김채윤 제출물**임을 확인했다. 추가 이서연 명의 파일은 현재 GitHub Private에 존재하나 최초 업로드의 당사자 승인과 학사 내용·Forms 연결 검토는 별도로 남는다. 이름↔내부 ID 매핑을 코드·합성 fixture·이슈 본문에 복사하지 않고 승인된 비공개 import registry에서만 관리한다.
 - **5개 시연 슬롯:** `S01`~`S05`는 UI 계약을 위해 유지. 실제 데이터가 없는 다섯째 슬롯은 `PENDING` 또는 데이터 출처가 명시된 `SYNTHETIC`이다. 타인 조회를 위해 `SharingGrant` 목적·허용 섹션·만료·철회·버전이 모두 확인되어야 한다.
 - **통합 검증:** 26개 헤더·중복/alias, 6열 과목 상태/학점/원장 구분, 실제 학생별 독립 근거 RulePack, 본인 보고 총학점과 계산 차이, 파일 hash/idempotent import, consent/revocation을 제한된 로컬 환경에서 검증한다. 개인정보·이름↔S번호 매핑·원본 학업행은 GitHub CI·합성 fixture·외부 AI·로그에 복제하지 않는다.
 
@@ -527,7 +536,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 
 ### A06.9 이미지 공고·Temporal RAG·선택형 Laya 결정 모델 (신규 설계, 미구현)
 
-**설계 확정 후보:** NCP `Standard-g3 4vCPU/16GB + 별도 CB 50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
+**설계 확정 후보:** NCP `High Memory-g3 4vCPU/32GB + 별도 CB 50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
 
 1. **발견·버전:** 이용 권리가 확인된 allowlist 공식 출처/RSS/API부터 변경 탐색. HTTP validator(`ETag`/`Last-Modified`) + HTML/image/PDF의 개별 SHA-256와 정정·취소 연결. 스냅샷은 불변, current pointer만 승인 후 이동. 크롤러가 로그인/CAPTCHA를 우회하지 않는다.
 2. **OCR+Vision:** 최초 새 포스터는 CLOVA General OCR(라인/좌표/원본변환 기록). 날짜 누락·작은 글자·복잡한 표 등 규칙상 필요할 때만 HCX-005 Vision을 **병행**해 의미 후보를 얻는다. Vision 결과가 OCR 원문과 일치하지 않거나 근거 좌표가 없으면 NEEDS_REVIEW. HCX-005 Structured Outputs 지원을 전제하지 않으며 검증된 스키마로 후검사한다.
@@ -535,7 +544,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 4. **결정·추출·검증:** CPU Laya는 문서/이미지의 처리 우선순위·OCR_ONLY/ESCALATE_VISION/HUMAN_REVIEW 제안에만 사용하고, API 사용자 응답의 필수 의존이 아니다. 호출 비용·RSS·latency 한도를 어기면 룰기반으로 자동 폴백. HCX-007은 안전한 문단+OCR 인용으로 네 작업 후보를 만들고, 원문 인용·날짜 종류·예외/범위·모순·sourceVersion/consentVersion을 독립 코드와 사람 검수로 확인한다.
 5. **계약 변경은 분리:** `SourceRevision`, `SourceSpan(TEXT|IMAGE)`, `VerifiedClaim`, `RetrievalEnvelope`, `DecisionAdvice`와 추출기/모델/retrieval 정책 버전, 실패 상태, Zod 확장은 심민성의 전용 `contracts` PR에서 API/UI/추천/학업 검토 후 병합한다. 자세한 필드·가드·성능·롤백은 [검증형 RAG 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md)을 따른다.
 
-### A06.9a Laya CPU 스파이크 억제: 웹/API 우선 (4vCPU/16GB, 2026-10-31 추가)
+### A06.9a Laya CPU 스파이크 억제: 웹/API 우선 (4vCPU/32GB, 2026-10-31 추가)
 
 **실행 책임은 API가 아니라 독립 백그라운드 워커**에 있다. `LAYA_ENABLED=false`가 기본이고 CPU·품질 실측/승인 전 모델 적재를 금지한다. 사용자 HTTP 요청/심사자 반복 열람은 Laya를 호출·warm-up하지 않고, 검증된 캐시 또는 코드 기반 분류로 응답한다.
 
@@ -909,9 +918,9 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 접속 예정 `https://외대.온라인.한국` → DNS/TLS ingress → **익명 기본 거부 인증 게이트** → 권한 있는 React 및 같은 origin `/api` → Fastify/worker → 비공개 PostgreSQL·CLOVA HTTPS 순서다. 별도 인증 redirect/callback과 최소 로그인 shell 이외에는 유효 세션 없이 앱 HTML/JS·API·파일을 내려주지 않는다. Object Storage의 합성/개인 자산도 로그인 전 공개 URL에 배포하지 않으며 백업·개인자료는 비공개 bucket/prefix로 분리한다. 공인 DB5432·Node3000 직접 노출은 금지한다.
 
-**신규 설계 SKU는 NCP Standard-g3 Linux 4vCPU·16GB + 별도 CB 50GB 한 대다.** 국내 Classic 50GB 공개표는 **237원/시간·170,240원/월(VAT 별도)**이며, 실제 콘솔에서 리전·VPC/Classic·크레딧 적용, IP/스토리지/네트워크/백업·OCR/API Gateway·HCX-005/007 토큰 요금을 별도 확인한다. GPU/두 번째 VM/상시 관리형 RAG는 예산상 자동 생성하지 않는다. 16GiB 안에 OS1.5/Node1.5/Postgres2.5/Laya3.0/worker1.0/여유6.5GiB(예상 RSS 상한)를 놓고 **실측 peak≤14GiB·OOM 0·API 지연 악화 없음**을 전제조건으로 삼는다. 측정 실패시 Laya 비활성화하고 확정 코드로 폴백한다. 예산 근거·메모리 표·하드킬 스위치는 [RAG 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §6~7.
+**신규 설계 SKU는 한국 VPC Linux NCP High Memory-g3 4vCPU·32GB + 별도 CB SSD 50GB 한 대다.** 공식 한국 리전 VPC Linux 컴퓨트 가격은 **326원/h·234,240원/720h(VAT 별도)**이며 CB 50GB는 8원/h 별도이다. 11/06~12/09 전체 816h 서버+CB 272,544원, IP 선택 시 총 277,113.6원(VAT 등 제외)이고, 실제 콘솔에서 리전·VPC/Classic·크레딧 적용, IP/스토리지/네트워크/백업·OCR/API Gateway·HCX-005/007 토큰 요금을 별도 확인한다. GPU/두 번째 VM/상시 관리형 RAG는 예산상 자동 생성하지 않는다. 32GiB 안에 OS1.5/Node1.5/Postgres2.5/Laya3.0/worker1.0/여유6.5GiB(예상 RSS 상한)를 놓고 **실측 peak≤14GiB·OOM 0·API 지연 악화 없음**을 전제조건으로 삼는다. 측정 실패시 Laya 비활성화하고 확정 코드로 폴백한다. 예산 근거·메모리 표·하드킬 스위치는 [RAG 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §6~7.
 
-VM 4vCPU/16GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
+VM 4vCPU/32GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
 
 팀원은 HTTPS와 **Google OAuth + 외대 메일 소유 검증 + 베타 초대 권한**으로 접속한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. **도메인은 사용자 확보 신고 상태**지만 DNS 레코드·인증서·Google OAuth·학교 메일 OTP 발송·실서비스 가동은 확인되지 않았다. 유효 TLS, Google 인증·메일 검증 및 모든 우회 경로 검사 전에는 온라인 ready가 아니다.
 
