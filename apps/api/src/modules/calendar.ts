@@ -26,6 +26,8 @@ export interface CalendarInputBundle {
   context:DemoContext;
   asOf:string;
   datasetMode:DemoSnapshot['datasetMode'];
+  /** Approved summary row bound to the same transaction and authorization receipt. */
+  approvedSnapshot?:DemoSnapshot;
   /** Current SharingGrant, from the same transaction as the projection; absent for REVIEWER. */
   grant?:SharingGrant;
   profile:RecommendationProfile;

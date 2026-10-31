@@ -61,4 +61,32 @@ describe('server-owned per-grant recomputation before HTTP context creation',()=
     };
     await expect(h.repository.readAuthorizedSnapshot(request)).rejects.toThrow();
   });
+  it('never copies unreceipted academic results from the separately read base snapshot',async()=>{
+    const h=fixture(),fullGrant={...grant,allowedSections:[...grant.allowedSections,'ACADEMICS' as const]};
+    h.base.setGrant(fullGrant);
+    h.base.setProjection(DemoSnapshotSchema.parse({...snapshotRaw,academics:{state:'READY',
+      rulePackVersion:'PRIVATE-RULE',asOf:snapshotRaw.asOf,earnedCreditUnits:120,
+      inProgressCreditUnits:20,plannedCreditUnits:5,deficits:[],caveats:[]}}));
+    const read=h.source.readAuthorizedInputs;
+    h.source.readAuthorizedInputs=async input=>{
+      const bundle=await read(input);
+      return bundle?{...bundle,grant:fullGrant,scopeKey:'ACADEMICS,FEED,NOTICES'}:null;
+    };
+    const result=await h.repository.readAuthorizedSnapshot(request);
+    expect(result?.academics).toEqual({state:'PENDING'});
+    expect(JSON.stringify(result)).not.toContain('PRIVATE-RULE');
+  });
+  it.each(['asOf','dataset','projection','subject'])('rejects receipted metadata inconsistent with its input bundle: %s',async fault=>{
+    const h=fixture(),read=h.source.readAuthorizedInputs;
+    h.source.readAuthorizedInputs=async input=>{
+      const bundle=await read(input);if(!bundle)return null;
+      const approved=DemoSnapshotSchema.parse({...snapshotRaw,asOf:now});
+      if(fault==='asOf')approved.asOf=snapshotRaw.asOf;
+      if(fault==='dataset')approved.versions.dataset='OTHER';
+      if(fault==='projection')approved.versions.projection='OTHER';
+      if(fault==='subject')approved.demoSubjectId='S02';
+      return {...bundle,approvedSnapshot:approved};
+    };
+    expect(await h.repository.readAuthorizedSnapshot(request)).toBeNull();
+  });
 });

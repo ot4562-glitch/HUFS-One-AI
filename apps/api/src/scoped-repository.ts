@@ -44,10 +44,16 @@ export class ScopedApiRepository implements ApiRepository {
     if(required.some(section=>!canReadSharedSection(currentGrant,{
       actorId:input.actorId,demoSubjectId:input.subjectId,section,asOf:this.now()})))return null;
     if(bundle.datasetMode!==metadata.datasetMode)return null;
-    const candidate=DemoSnapshotSchema.parse({...metadata,asOf:bundle.asOf,
-      versions:{...metadata.versions,consent:grant.version},feed:result.feed,notices:result.notices,
-      academics:currentGrant.allowedSections.includes('ACADEMICS')?metadata.academics:{state:'NOT_SHARED'},
-      forecast:currentGrant.allowedSections.includes('FORECAST')?metadata.forecast:{state:'NOT_SHARED'},
+    const approved=bundle.approvedSnapshot===undefined?undefined:DemoSnapshotSchema.parse(bundle.approvedSnapshot);
+    if(approved&&(approved.demoSubjectId!==input.subjectId
+      ||approved.versions.dataset!==context.datasetVersion||approved.versions.projection!==context.projectionVersion
+      ||approved.datasetMode!==bundle.datasetMode||approved.asOf!==bundle.asOf
+      ||('asOf' in approved.academics&&approved.academics.asOf!==bundle.asOf)
+      ||('asOf' in approved.forecast&&approved.forecast.asOf!==bundle.asOf)))return null;
+    const candidate=DemoSnapshotSchema.parse({...approved??metadata,asOf:bundle.asOf,
+      versions:{...(approved?.versions??metadata.versions),consent:currentGrant.version},feed:result.feed,notices:result.notices,
+      academics:currentGrant.allowedSections.includes('ACADEMICS')?approved?.academics??{state:'PENDING'}:{state:'NOT_SHARED'},
+      forecast:currentGrant.allowedSections.includes('FORECAST')?approved?.forecast??{state:'PENDING'}:{state:'NOT_SHARED'},
       aiProvenance:'NONE'});
     if(!await this.inputs.revalidateAuthorization(request,{
       authorizationToken:bundle.authorizationToken,sourceVersion:bundle.sourceVersion,
