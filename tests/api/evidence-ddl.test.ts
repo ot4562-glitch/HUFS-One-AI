@@ -16,13 +16,13 @@ describe('TASK-19/21 offline PostgreSQL DDL safety review (NOT executed on a DB)
     expect(sql).toMatch(/RAISE EXCEPTION 'immutable evidence history'/i);
   });
   it('uses valid PL/pgSQL dollar quoting for the immutable-history trigger',()=>{
-    expect(sql).toMatch(/RETURNS trigger LANGUAGE plpgsql AS \\$\\$\\s*BEGIN/i);
-    expect(sql).toMatch(/END;\\s*\\$\\$;/i);
-    expect(sql).not.toMatch(/LANGUAGE plpgsql AS \\$\\s/);
+    expect(sql).toMatch(/RETURNS trigger LANGUAGE plpgsql AS \$\$\s*BEGIN/i);
+    expect(sql).toMatch(/END;\s*\$\$;/i);
+    expect(sql).not.toMatch(/LANGUAGE plpgsql AS \$\s/);
   });
   it('restricts per-target outbox retries to private, lease-fenced rows',()=>{
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS source_invalidation_deliveries');
-    expect(sql).toMatch(/PRIMARY KEY\\(event_id,target\\)/i);
+    expect(sql).toMatch(/PRIMARY KEY\(event_id,target\)/i);
     expect(sql).toContain('lease_token uuid');
     expect(sql).toContain('lease_until timestamptz');
     expect(sql).toContain('source_delivery_retry');
