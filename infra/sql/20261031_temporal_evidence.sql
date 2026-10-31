@@ -55,6 +55,23 @@ CREATE TABLE IF NOT EXISTS source_paragraphs_vnext (
     char_length(paragraph_text)>0 AND char_length(paragraph_text)<=20000),
   PRIMARY KEY(revision_id,paragraph_id)
 );
+-- Human-adjudicated pair conflicts are immutable. A later RESOLVED decision
+-- supersedes a previous CONFLICT by (left_revision_id,right_revision_id);
+-- do not infer contradiction from search similarity or model confidence.
+-- Always store the lexically smaller revision first to canonicalize pairs.
+CREATE TABLE IF NOT EXISTS source_conflict_decisions_vnext (
+  decision_id text PRIMARY KEY,
+  left_revision_id text NOT NULL REFERENCES source_revisions_vnext(revision_id),
+  right_revision_id text NOT NULL REFERENCES source_revisions_vnext(revision_id),
+  disposition text NOT NULL CHECK(disposition IN ('CONFLICT','RESOLVED')),
+  reviewed_at timestamptz NOT NULL,
+  reviewer_id text NOT NULL CHECK(char_length(reviewer_id)>0),
+  CONSTRAINT distinct_conflict_revisions CHECK(left_revision_id<right_revision_id),
+  UNIQUE(left_revision_id,right_revision_id,reviewed_at)
+);
+CREATE INDEX IF NOT EXISTS source_conflict_latest
+  ON source_conflict_decisions_vnext(
+    left_revision_id,right_revision_id,reviewed_at DESC,decision_id DESC);
 -- Evidence is append-only: no updates/deletes to previous revision or quote.
 -- New approvals, corrections and revocations must create a successor revision.
 CREATE OR REPLACE FUNCTION deny_source_history_mutation()
@@ -67,6 +84,10 @@ REVOKE ALL ON FUNCTION deny_source_history_mutation() FROM PUBLIC;
 DROP TRIGGER IF EXISTS immutable_source_revision ON source_revisions_vnext;
 CREATE TRIGGER immutable_source_revision
   BEFORE UPDATE OR DELETE ON source_revisions_vnext
+  FOR EACH ROW EXECUTE FUNCTION deny_source_history_mutation();
+DROP TRIGGER IF EXISTS immutable_conflict_decision ON source_conflict_decisions_vnext;
+CREATE TRIGGER immutable_conflict_decision
+  BEFORE UPDATE OR DELETE ON source_conflict_decisions_vnext
   FOR EACH ROW EXECUTE FUNCTION deny_source_history_mutation();
 DROP TRIGGER IF EXISTS immutable_source_paragraph ON source_paragraphs_vnext;
 CREATE TRIGGER immutable_source_paragraph
@@ -138,6 +159,7 @@ CREATE INDEX IF NOT EXISTS source_check_latest
 
 REVOKE ALL ON TABLE source_revisions_vnext FROM PUBLIC;
 REVOKE ALL ON TABLE source_paragraphs_vnext FROM PUBLIC;
+REVOKE ALL ON TABLE source_conflict_decisions_vnext FROM PUBLIC;
 REVOKE ALL ON TABLE source_ingest_heads FROM PUBLIC;
 REVOKE ALL ON TABLE source_check_observations FROM PUBLIC;
 REVOKE ALL ON TABLE source_invalidation_events FROM PUBLIC;
