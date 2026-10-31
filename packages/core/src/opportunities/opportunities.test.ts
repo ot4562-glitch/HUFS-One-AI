@@ -343,6 +343,20 @@ describe('TASK-06 recommendation reasons and relevance score (code-built, no AI)
     expect(explainOne(opp('A', {applyClosesAt:undefined as never})).deadline.kind).toBe('UNKNOWN');
   });
 
+  it('serializes FeedCard.explanation on the official FeedResult wire and it survives a JSON round trip (contracts #47)', () => {
+    const items = [opp('A', {topicCodes:['DATA_ANALYTICS', 'AI_ML'], conditions:[{field:'campus', operator:'EQ', value:'SEOUL', evidenceId:'EV-C'}]}), opp('B', {topicCodes:['CULTURE_TOURISM']})];
+    const r = composeFeed(student, items, asOf);
+    const parsed = FeedResultSchema.parse(JSON.parse(JSON.stringify(r.feed)));
+    const cards = [...parsed.featured, ...parsed.compact];
+    expect(cards.map(c => c.explanation?.opportunityId)).toEqual(cards.map(c => c.opportunityId));
+    expect(cards.map(c => c.explanation)).toEqual(r.explanations);
+    expect(cards.every(c => c.explanation?.relevance.score === Math.round(c.score ?? -1))).toBe(true);
+  });
+
+  it('says "상시 모집" for a source-verified rolling deadline instead of inventing a date', () => {
+    expect(explainOne(opp('A', {applyClosesAt:undefined as never, deadlineKind:'ROLLING'})).deadline).toEqual({kind:'UNKNOWN', text:'상시 모집이에요. 정해진 마감일이 없으니 원문에서 확인하세요.'});
+  });
+
   it('composeFeed returns one explanation per shown card in display order', () => {
     const items = [opp('A', {topicCodes:['DATA_ANALYTICS']}), opp('B', {topicCodes:['CULTURE_TOURISM']})];
     const r = composeFeed(student, items, {asOf:ASOF});
