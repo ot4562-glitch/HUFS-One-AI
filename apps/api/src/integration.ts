@@ -35,6 +35,15 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     || typeof deps.auth?.verifySession!=='function'
     || typeof deps.auth?.revokeSession!=='function')
     throw new Error('Missing verified auth, revocation or repository: fail closed');
+  if(deps.reviewer && (typeof deps.reviewer.access?.readActive!=='function'
+    || typeof deps.reviewer.access?.redeem!=='function'
+    || typeof deps.reviewer.demo?.listProfiles!=='function'
+    || typeof deps.reviewer.demo?.readSnapshot!=='function'
+    || typeof deps.reviewer.sandbox?.read!=='function'
+    || typeof deps.reviewer.sandbox?.save!=='function'))
+    throw new Error('Incomplete REVIEWER sandbox: fail closed');
+  if(process.env.APP_ENV==='production' && deps.syntheticAiProvider)
+    throw new Error('Synthetic AI provider must not be wired as a production model');
   if(!deps.allowedOrigin || new URL(deps.allowedOrigin).origin!==deps.allowedOrigin
     || !deps.allowedOrigin.startsWith('https://'))
     throw new Error('Exactly one HTTPS origin is required');
