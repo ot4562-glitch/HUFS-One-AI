@@ -9,7 +9,8 @@
 | DemoSnapshot, VersionEnvelope | A02·A04·A13 | API 심민성 → UI/추천/학업 | 원자적 봉투, 지연 응답·다중 탭 격리 |
 | TopicCode 24개·alias | A04.1~3 | 추천 김채윤 → 통합 심민성 → UI/AI | 24개 enum 단일 출처, UNKNOWN 보존 |
 | FeedResult·적격성 | A04~05 | 추천 김채윤 → UI/API | 큰 카드 최대3, 작은 목록 최대6, 전체 목록 |
-| NoticeResult | A07 | 김채윤 → UI/학업/API | 학년/학과/마감/근거 분리 |
+| NoticeResult | A07 | 김채윤 → UI/학업/API | 학년/학과/마감/근거 분리; #44 overdue 공식 계약 병합·#16 출력 연결 전 |
+| CalendarResult (신규, #53 main 병합) | A07.3·A13 | 김채윤 계산 #50 → 심민성 권한 API #52 → 이의상 UI #51 | asOf/서울 날짜·확정/미정/적용 미확인·rights/grant·철회, API 미연결 |
 | RulePack, AcademicSummary, Outlook | A08~09 | 학업 박준영 → UI/API | 3원장, 정수학점, 검수/미확정, asOf |
 | SafeLlmPacket·증거 | A06 | 심민성(웹 API/DTO·증거 검증) ↔ 이서연(NCP Provider SDK/실제 호출) → 추천·UI | 네 AI 작업, 안전 입력과 quote ID, NCP 외부 호출은 이서연 전담 |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
@@ -25,7 +26,7 @@
 - **학업:** `EARNED`/`IN_PROGRESS`/`PLANNED`를 분리하고 `creditUnits` 정수로 계산한다. `RulePackDraft`는 내부 작성/사람 승인 전 상태로, 공식 졸업 인정이나 새 공개 AI API가 아니다. Outlook은 확정/역사/UNKNOWN을 구분하고 asOf 이후 자료 유출을 금지한다.
 - **CLOVA:** 제품 AI 업무는 `experience_skills`, `opportunity_terms`, `personal_action_brief`, `graduation_explanation`의 **네 작업**이다. 구조화 JSON/quote를 실제 자격·학점 검증 대신 사용하지 않으며 개인정보 원본/actor/subject 매핑을 제공자에 보내지 않는다.
 - **API 오류:** 통일된 응답 봉투는 `{code,message,requestId,retryable,contextId?}`. 상태 401(인증), 403(미공유/철회), 409(버전), 422(스키마/근거), 429(한도), 503(서비스 장애). 세부 `code` literal과 Zod 스키마는 실제 계약 PR에서 하나의 정본으로 고정한다.
-- **Intake:** Forms 원본은 **26열 헤더/4인 응답**, 과목 CSV는 동일 4명의 각 6열 파일이다. **사용자가 `까마르=김채윤` 별명 소유자를 직접 확인**했으므로 이 파일은 3번째 제출로 집계한다. 하지만 실명↔가명 매핑은 런타임의 별도 승인 registry에 주입하고 코드/CI에 하드코딩하지 않는다. 아직 이서연 파일/Forms 통합본/동의는 미완료; 원본 학업행은 합성 fixture에 사용 금지.
+- **Intake:** Forms 원본은 **26열 헤더/4인 응답**, 과목 CSV는 동일 4명의 각 6열 파일이다. **사용자가 `까마르=김채윤` 별명 소유자를 직접 확인**했으므로 이 파일은 3번째 제출로 집계한다. 하지만 실명↔가명 매핑은 런타임의 별도 승인 registry에 주입하고 코드/CI에 하드코딩하지 않는다. main에 파일 4개/Forms 통합본이 존재해도 개인별 게시·열람·AI/NCP 처리 동의는 미확인; 원본 학업행은 합성 fixture에 사용 금지.
 
 **변경 영향 — 구현 전:** 현재 v0.1.0 contracts/fixture는 Google OAuth/학교 메일 확인을 구현하지 않는다. 기존 `POST /api/auth/login` 초안은 인터넷 공개용으로 쓰지 않는다. 실제 callback·Google `sub`·OTP challenge/verify·session/401·403·재인증·확인 주기를 별도 **공통 인증 계약 PR**로 정의하고 4개 트랙이 검토한다. Google `email_verified=true`만으로 외대 메일 수신권을 주장하거나, 개인 Gmail만으로 로그인시키지 않는다. 학교 공식 SSO 허가는 필요 조건이 아니지만 Google OAuth+외대 메일 검증 미구현이면 인터넷 배포 BLOCKED.
 
@@ -44,6 +45,13 @@
 ## 시간·이미지·RAG 계약 vNext 제안(구현·승인 별도)
 
 이번 2026-10-31 설계 변경은 기존 TASK-00 Zod 스키마를 자동으로 변경하지 않는다. 기술 총괄 심민성이 `SourceRevision`(hash·게시/확인/검수/효력 시각·정정 상태), `SourceSpan`(TEXT 문자범위 | IMAGE bbox/ocrLine/page), `VerifiedClaim`(근거·검수·허용 scope), `RetrievalEnvelope`(권한·asOf·retrieval 정책/결과), `DecisionAdvice`(Laya 모델판본·선택·폴백)를 **별도 contracts vNext PR**로 제출한다. `Opportunity`·`NoticeResult`·`SafeLlmPacket`에 바뀐 `sourceVersion` 및 이미지 근거를 호환 가능한 optional 필드로 연결하며 미래 자료를 과거 시점에 노출하지 않는다. 4트랙 소비 테스트/독립 이미지·시간 fixture·API 게이트·OCR/Vision budget·CPU 메모리 조건이 잠금 조건이다. 상세: [TRUSTED_RAG_MEDIA_VERSIONING.md](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 2026-10-31 합병된 선택적 계약 및 신규 캘린더 데이터 경계
+
+- **main 병합 계약:** [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36) 학업 검수 vNext, [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44) NoticeResult.items[].overdue optional 검증·명시 TopicCode alias, [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47) FeedCard.explanation?/programScope/deadlineKind, [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) CalendarResultSchema/validateCalendarWire. 각각 합성 CI/승인 뒤 병합됐지만 소비자가 응답에 실제 필드를 넣는 연결은 별개다.
+- **캘린더 요청·응답:** 기존 DemoSnapshot을 무단 확장하지 않고 인증된 GET /api/demo/contexts/:contextId/calendar (**계약상 예정, 아직 미구현**)이 CalendarResult를 반환하도록 한다. `asOf/from/to`, `entries`(NOTICE/OPPORTUNITY; STUDENT_DEADLINE/APPLY_DEADLINE/EVENT), `undated`(상시/미정), `needsConfirmation`(적용 불확실), `ambiguousNoticeIds`(중복 충돌)을 구분한다. EVENT를 학생 지원마감으로 표시하지 않고, `seoulDate`/overdue/중복/확정 근거를 검증한다. 화면은 날짜를 독자 계산하지 않는다.
+- **인가/출처 선행:** BETA는 actor/subject/context, 최신 grantVersion/sections, 철회/만료, 공유 학업·경험·관심 원천, 검수된 sourceRevision/rights, `asOf`와 `scopeKey`를 서버에서 검증한다. [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55) 원자적 조회와 [#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35) PG 허가, [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49) 재계산이 연결되기 전에는 부분 공유에 대한 파생 일정이 화면에 나가면 안 된다. REVIEWER는 합성만. API/DB/화면 통합·철회 레이스 및 실제 PG는 아직 검증 전이다.
+- **후속 소비자:** 김채윤 #16은 #44의 `overdue`를 실제 NoticeResult.items[]에 직렬화하고 회귀 테스트; #41은 #47 설명을 실제 카드로 전달하고 관련도=코드 점수이지 합격확률 아님을 유지; #50 계산은 #53 wire를 통과; 이의상 #51은 모바일/스크린리더/NOT_SHARED를 구분. 독립 코드 병합 기준은 비작성자 1명 이상 최신 HEAD 승인+CI+의존/보안 검증([PR_WORKFLOW](PR_WORKFLOW.md)).
 
 ## REVIEWER auth vNext 분리 계약 (Issue #25)
 

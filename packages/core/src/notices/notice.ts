@@ -222,10 +222,7 @@ export interface ComposedNotices {
   /** Wire object validated with NoticeResultSchema. */
   result:NoticeResult;
   evaluations:NoticeEvaluation[];
-  /**
-   * Student deadline passed, scope not NO. Kept outside `result` until the shared contract adds
-   * NoticeItem.overdue (approved in principle, pending a contracts PR by the integration owner).
-   */
+  /** Student deadline passed, scope not NO. Same as `result.items[].overdue === true`, as ids. */
   overdueIds:string[];
   /** Academic or personal-opportunity notices waiting for verification; shown as GENERAL with their verificationState. */
   reviewPendingIds:string[];
@@ -270,6 +267,8 @@ export function composeNotices(student:NoticeStudent, notices:readonly Notice[],
     items:active.map(({notice, ev}) => ({
       noticeId:notice.id, title:notice.title, priority:ev.priority, appliesTo:ev.appliesTo,
       ...(ev.studentDeadline === undefined ? {} : {studentDeadline:ev.studentDeadline}),
+      // Determined for every item: true only for an applicable passed student deadline (contracts #38/#44).
+      overdue:ev.overdue,
       ...(ev.adminReportDeadline === undefined ? {} : {adminReportDeadline:ev.adminReportDeadline}),
       evidenceRefs:[...notice.evidenceRefs],
       verificationState:notice.verificationState,

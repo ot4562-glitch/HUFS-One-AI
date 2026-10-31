@@ -4,13 +4,17 @@
 
 
 
-## 협업 PR·문서 정합성 (2026-10-31)
+## 현재 코드 병합 및 추가된 캘린더 (2026-10-31)
 
-기술 총괄은 **협업자 리뷰·재검토·차단 계약 해결·문서 정비**를 우선한다. 추천/공지 순수 코어는 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15)→[#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)→[#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40)→[#41](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41) 순서로 검토한다. [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)는 overdue 공식 wire, [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)은 추천 설명/마감 분류 공통 계약 PR이다. 두 PR 모두 원격 CI 성공이나 지정 독립 리뷰 및 작성자 소비자 연동/검증 전 병합하지 않는다. 문서는 기술 총괄이 최신 main에 직접 커밋하고, 코드 변경만 PR을 유지한다. 미확인 실제 학생자료·Google OIDC·DB·OCR/NCP 운영을 완료로 표시하지 않는다.
+**새 PR 병합 기준:** 작성자 아닌 **1명 이상이 현재 HEAD 승인(APPROVED)**하고 해당 HEAD 필수 CI 성공·선행 의존·보안 차단 확인을 충족하면 병합한다. 코드와 계약은 PR, 운영 문서는 기존 [문서 직접 정정 예외](docs/PR_WORKFLOW.md)를 유지한다.
+
+**이번에 main에 병합:** [#15 추천](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), [#36 학업 vNext](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), [#44 공지 overdue 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), [#47 설명/상시마감 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), [#53 캘린더 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), [#37 웹/API 통합 어댑터](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), [#48 합성 평가 도구](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48). **코어·계약 병합과 실사용 완성을 구분**한다. #16/#40/#41 추천·공지 연결, #32 인증, #33/#34 Temporal RAG, #35/#55 DB/API 권한, #49 공유범위, #50 계산과 #51/#52 UI·캘린더 API가 아직 남았다.
+
+**당초 계획에 없던 새 기능 — 홈 하단 ‘내 주요 일정’ 미니 캘린더:** 학생별 확정 서류/신청 마감과 시험·행사를 구분하고, 날짜 미정/적용 확인 필요는 다른 목록으로 둔다. [계산 PR #50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50), [UI 이슈 #51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), [Wire/API 이슈 #52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52), **병합된 계약 #53**의 연결이 남아 있으며, 실제 로그인/학생 동의·브라우저 구현은 미완료다. [.ics 내보내기·푸시는 이번 범위 밖](Architecture.md)이다. [제품 설명](Proposal.md) · [기술 계약 A07.3](Architecture.md) · [진행 상태](STATUS.md).
 
 ## 합성 API 구현 상태
 
-심민성이 담당한 Fastify 합성 API 코드가 `main`에 반영됐다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. Google OIDC·영속 DB·NCP 제공자 연동은 출시 전 검증 과제다. 추천·공지 코어 PR #15/#16은 필수 수정과 재검토가 남아 있다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
+심민성이 담당한 Fastify 합성 API 코드가 `main`에 반영됐다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. Google OIDC·영속 DB·NCP 제공자 연동은 출시 전 검증 과제다. 추천 코어 #15는 main 병합 완료, 공지 코어 #16은 overdue 결과 직렬화 수정 및 최신 승인 대기 중이다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
 
 **HUFSAbility의 기존 취업·진로·비교과 정보를 AI로 학생별로 재배치하고, 졸업지원까지 확장하는 한국외대 바이브코딩 공모전 제안.**
 
