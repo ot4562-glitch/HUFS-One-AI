@@ -42,6 +42,31 @@ const ReviewerEnrollmentSchema = z.strictObject({
   role:z.literal('REVIEWER'),accessEndsAt:z.iso.datetime({offset:true}),
   dataMode:z.literal('SYNTHETIC'),readOnly:z.boolean(),sandboxOnly:z.literal(true),
 });
+const TeamSessionSchema = z.strictObject({
+  actorId:z.string().min(1),role:z.enum(['BETA','ADMIN']),
+  schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),
+});
+const ReviewerSessionSchema = z.strictObject({
+  role:z.literal('REVIEWER'),accessEndsAt:z.iso.datetime({offset:true}),
+  dataMode:z.literal('SYNTHETIC'),readOnly:z.literal(false),sandboxOnly:z.literal(true),
+});
+const SessionSchema = z.union([TeamSessionSchema,ReviewerSessionSchema]);
+const SchoolMailChallengeSchema=z.strictObject({
+  challengeId:z.string().regex(/^[A-Za-z0-9_-]{22}$/),
+  expiresAt:z.iso.datetime({offset:true}),
+});
+const SchoolMailVerifiedSchema=z.strictObject({verified:z.literal(true)});
+const SchoolEmail=/^[A-Za-z0-9.!#$%&'*+/=?^_\x60{|}~-]+@hufs\.ac\.kr$/;
+const MailChallengeId=/^[A-Za-z0-9_-]{22}$/;
+const MailCode=/^[0-9]{8}$/;
+
+/** Use normal same-origin browser navigation, never fetch an OAuth redirect or accept a next URL. */
+export function googleSignInPath(intent:'REVIEWER'|'BETA'):string {
+  if(intent!=='REVIEWER'&&intent!=='BETA')
+    throw new HufsApiError('INVALID_INPUT',422);
+  return '/api/auth/google/start?intent='+intent;
+}
+
 const AiJobAcceptedSchema = z.strictObject({
   jobId:z.string().min(1),state:z.literal('NEEDS_REVIEW'),provenance:z.literal('MOCK'),
 });
@@ -104,6 +129,40 @@ export class HufsApiClient {
     const parsed=schema.safeParse(payload);
     if(!parsed.success)throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
     return parsed.data;
+  }
+
+  async getSession(signal?:AbortSignal) {
+    return this.request('/api/auth/session',SessionSchema,{signal});
+  }
+
+  /** Server-issued proof is required on every mutation. Never expose it in URLs. */
+  async getCsrfProof(signal?:AbortSignal) {
+    return this.request('/api/auth/csrf',CsrfSchema,{signal});
+  }
+
+  async requestSchoolMailProof(schoolEmail:string,signal?:AbortSignal) {
+    if(typeof schoolEmail!=='string'||schoolEmail.length>254
+      ||schoolEmail!==schoolEmail.toLowerCase()||!SchoolEmail.test(schoolEmail))
+      throw new HufsApiError('INVALID_INPUT',422);
+    const {csrfToken}=await this.getCsrfProof(signal);
+    return this.request('/api/auth/school-mail/request',SchoolMailChallengeSchema,{
+      method:'POST',csrf:csrfToken,signal,body:{schoolEmail},
+    });
+  }
+
+  async confirmSchoolMailProof(input:{
+    schoolEmail:string;challengeId:string;code:string;
+  },signal?:AbortSignal) {
+    if(!input||typeof input.schoolEmail!=='string'||input.schoolEmail.length>254
+      ||input.schoolEmail!==input.schoolEmail.toLowerCase()
+      ||!SchoolEmail.test(input.schoolEmail)
+      ||typeof input.challengeId!=='string'||!MailChallengeId.test(input.challengeId)
+      ||typeof input.code!=='string'||!MailCode.test(input.code))
+      throw new HufsApiError('INVALID_INPUT',422);
+    const {csrfToken}=await this.getCsrfProof(signal);
+    return this.request('/api/auth/school-mail/confirm',SchoolMailVerifiedSchema,{
+      method:'POST',csrf:csrfToken,signal,body:input,
+    });
   }
 
   async listProfiles(signal?:AbortSignal):Promise<DemoProfileOption[]> {
