@@ -3,6 +3,7 @@
  */
 import {readFileSync} from 'node:fs';
 import {Pool} from 'pg';
+import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {DemoContextSchema} from '@hufs-one/contracts';
 import {PostgresCalendarInputSource} from '../../apps/api/src/modules/calendar-postgres.js';
@@ -29,7 +30,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
       await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
     await admin.query(`CREATE ROLE hufs_test_calendar LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT USAGE ON SCHEMA public TO hufs_test_calendar;
-      GRANT SELECT ON api_sharing_grants,api_calendar_input_projections,api_calendar_source_permissions,
+      GRANT SELECT ON api_sharing_grants,api_demo_snapshot_projections,api_calendar_input_projections,api_calendar_source_permissions,
         source_ingest_heads,source_revisions_vnext,source_conflict_decisions_vnext TO hufs_test_calendar;`);
     // The reviewed helper, when present, grants row locks without UPDATE authority.
     const helper=await admin.query(`SELECT oid::regprocedure::text AS signature FROM pg_proc
@@ -39,6 +40,12 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     reader=new Pool({connectionString:readUrl.toString(),ssl:false,max:4,connectionTimeoutMillis:3000});
     source=new PostgresCalendarInputSource(adapter(reader));
     const at=now(),before=new Date(Date.now()-60_000).toISOString(),expires=new Date(Date.now()+3_600_000).toISOString();
+    const approvedSnapshot=structuredClone(snapshotRaw);
+    approvedSnapshot.contextId='SYN-CCTX';approvedSnapshot.asOf=at;
+    approvedSnapshot.feed.asOf=at;approvedSnapshot.notices.asOf=at;
+    approvedSnapshot.versions.projection='P1';approvedSnapshot.versions.dataset='D1';
+    await admin.query(`INSERT INTO api_demo_snapshot_projections(subject_id,projection_version,dataset_version,snapshot_json,
+      approved_at,approved_by,current) VALUES('S01','P1','D1',$1,$2,'SYN-OP',true)`,[approvedSnapshot,before]);
     const normalized={profile:{interestTopics:[],desiredJobTopics:[],approvedExperienceTopics:['AI_ML'],
       approvedLanguageCodes:[],officialMajorTopics:[],facts:{}},
       noticeStudent:{openRequirementIds:['SYN-REQ'],courseIds:[],interestTopics:[]},provenance:{},opportunities:[],
@@ -88,13 +95,25 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
       expect(await source.readAuthorizedInputs({...request,now:now()})).toBeNull();
     }finally{await admin.query(`UPDATE api_sharing_grants SET revoked_at=NULL,version='G1'`);}
   });
+  it('invalidates receipts when the approved snapshot is withdrawn or its private sections change',async()=>{
+    const bundle=(await source.readAuthorizedInputs({...request,now:now()}))!;
+    try{
+      await admin.query('UPDATE api_demo_snapshot_projections SET current=false');
+      expect(await source.revalidateAuthorization(request,bundle,now())).toBe(false);
+      expect(await source.readAuthorizedInputs({...request,now:now()})).toBeNull();
+      await admin.query('UPDATE api_demo_snapshot_projections SET current=true');
+      await admin.query(`UPDATE api_demo_snapshot_projections
+        SET snapshot_json=jsonb_set(snapshot_json,'{academics}','{"state":"NOT_SHARED"}'::jsonb)`);
+      expect(await source.revalidateAuthorization(request,bundle,now())).toBe(false);
+    }finally{await admin.query('UPDATE api_demo_snapshot_projections SET current=true');}
+  });
   it('prevents approved input mutation in real PostgreSQL',async()=>{
     await expect(admin.query(`UPDATE api_calendar_input_projections SET input_json='{}'::jsonb`))
       .rejects.toThrow('approved calendar inputs require a new projection version');
   });
   it('invalidates source-head receipts and never reuses the previous active revision',async()=>{
     const bundle=(await source.readAuthorizedInputs({...request,now:now()}))!;
-    const at=new Date(Date.parse(bundle.asOf)-1000).toISOString();
+    const at=now();
     await admin.query(`INSERT INTO source_revisions_vnext(revision_id,source_id,supersedes,original_sha256,content_sha256,
       media_kind,source_class,permission_ref,provenance,status,change_kind,fetched_at,last_checked_at)
       VALUES('SYN-REV2','SYN-SOURCE','SYN-REV1',repeat('c',64),repeat('d',64),'TEXT','SYNTHETIC','SYN-PERM',
@@ -102,7 +121,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     await admin.query(`UPDATE source_ingest_heads SET revision_id='SYN-REV2',fetched_at=$1,last_checked_at=$1`,[at]);
     expect(await source.revalidateAuthorization(request,bundle,now())).toBe(false);
     const current=(await source.readAuthorizedInputs({...request,now:now()}))!;
-    // A known-at-cutoff cancellation must shadow the prior ACTIVE evidence.
+    // A cancellation discovered AFTER the stored projection cutoff must also block old ACTIVE dates.
     expect(current.revisions.map(v=>v.revisionId)).toEqual(['SYN-REV1','SYN-REV2']);
     expect(current.sourceVersion).not.toBe(bundle.sourceVersion);
     const result=computeAuthorizedCalendar(current,{...request,now:now()});
