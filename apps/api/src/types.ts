@@ -1,6 +1,7 @@
 import type {FastifyRequest} from 'fastify';
 import type {ReviewerAccessStore,ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
+import type {TemporalResult} from './modules/opportunities/revision-ledger.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -65,4 +66,9 @@ export interface ApiOptions {
   /** This must be explicitly supplied by a private local test harness. */
   syntheticAiProvider?: AiCandidateProvider;
   maxSyntheticAiCallsPerActor?: number;
+  /** Trusted server-only permission resolver. Never accept permissions from browser. */
+  temporalEvidence?: {
+    query(input:{actor:VerifiedTeamActor;query:string;asOf:string;topK:number;now:string}):
+      Promise<TemporalResult>;
+  };
 }

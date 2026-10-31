@@ -37,6 +37,17 @@ npm run start:api:local
 
 브라우저가 actorId/hd/email_verified/sourceTokens를 보내서 권한을 만들 수 없습니다. 사전에 승인된 별도 서버 세션 어댑터/Repository가 필수입니다. 오류 응답에 raw 모델/DB/학생 문장을 담지 않습니다.
 
+## SourceRevision + Temporal RAG vNext API (심민성 TASK-19/21, PR #33 계약 의존)
+
+- **선행 계약:** `@hufs-one/contracts@0.2.0` PR #33에 정의한 SourceRevision/SourceSpan/Claim/RetrievalEnvelope/RevisionInvalidation. 기존 `SourceSnapshot`·REVIEWER/DemoSnapshot API 형태는 변경하지 않는다.
+- `modules/opportunities/revision-ledger.ts`: 합성용 불변 원본 바이트+문단 SHA-256, 시점별 최신 revision, 승인이 빠진 정정·취소가 구버전 ACTIVE 인용을 가리는 규칙, 대상 학번/캠퍼스/전공·출처권한·유효기간 검사, 304 확인일과 인적 검수일 분리, 검색/claim/feed/notice/AI cache invalidation event.
+- `approved-fetch.ts`: 사전 검토된 HTTPS source allowlist만 접근, 임의 리다이렉트·인증정보·사설 IP·비인가 호스트·256KiB 이상 다운로드 거부. ETag/304/동일 SHA는 검증시각을 승격하지 않고, 새 내용은 `NEEDS_REVIEW`로만 추가. 웹 본문은 승인된 서버 추출기에서 텍스트로 파싱하며 원문 HTML 실행/외부 이미지 전송 금지.
+- `temporal-postgres.ts`: SQL `DISTINCT ON(source_id)`에서 **asOf 당시 가장 최신 revision을 먼저 선택**한 후 상태/권리/검수시간/캠퍼스·전공·학번 조건을 적용. 질의는 매개변수 바인딩, 키워드당 position 기반 low-cost lexical, topK≤12. 신규 미검수/취소 버전 뒤에 과거 ACTIVE를 재노출하는 경로 차단.
+- `temporal-writer-postgres.ts`, `infra/sql/20261031_temporal_evidence.sql`: 개별 source head `FOR UPDATE` + 짧은 transaction으로 불변 revision/paragraph/invalidation event를 함께 INSERT; 304 검사는 별도 observation 트랜잭션이며 verifiedAt 갱신 없음. SQL DDL은 **미적용**. 실제 Postgres 역할·migration·인덱스/권한 성능·경쟁 쓰기는 운영에서 별도 검증 필요.
+- `temporal-gateway.ts` + 옵션 API `GET /api/evidence/search?q=...&asOf=...&topK=...`: 신뢰 서버 세션의 BETA/ADMIN만 허용, REVIEWER·익명·미래 asOf·브라우저가 임의 지정하는 permissionRefs/actorId는 차단. Permission set은 요청 시점 서버 전용 `EvidenceRightsResolver`에서 다시 읽으며 철회시 `NO_EVIDENCE`만 반환. 오류/원문·AI token·DB 내부 행을 공개하지 않는다.
+
+**실제 활성화 게이트:** 서비스 `main.ts`는 현재 `temporalEvidence`를 주입하지 않으므로 신규 검색 경로는 미인증 401/인가되었어도 provider 503을 반환한다. 실 PostgreSQL pool/TLS/승인 source rights/수집비용·트랜잭션 E2E/인적 검수 절차와 허용 원본 데이터가 확보되기 전 운영 데이터 검색·외부 크롤링·NCP/CLOVA 호출은 수행하지 않는다.
+
 ## 미구현·병합 후속
 
 1. 실제 Google OIDC 서명·nonce/PKCE, 학교 메일 수신권 OTP/Workspace hd 확인, 베타 계정 allowlist 및 세션 영속 철회/쿠키. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.

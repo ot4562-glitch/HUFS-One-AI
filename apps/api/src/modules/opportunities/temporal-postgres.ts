@@ -1,0 +1,117 @@
+import {z} from 'zod';
+import {RetrievalEnvelopeVNextSchema,SourceSpanVNextSchema} from '@hufs-one/contracts';
+import type {RetrievalEnvelopeVNext} from '@hufs-one/contracts';
+import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
+import type {TemporalPolicy,TemporalResult} from './revision-ledger.js';
+
+const Iso=z.iso.datetime({offset:true});
+const Ref=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
+const Row=z.object({
+  source_id:Ref,
+  revision_id:Ref,
+  paragraph_id:Ref,
+  paragraph_text:z.string().min(1).max(20_000),
+  score:z.coerce.number().int().min(1).max(20),
+});
+function empty(policy:TemporalPolicy):TemporalResult{
+  return {envelope:RetrievalEnvelopeVNextSchema.parse({
+    queryVersion:'query-1',asOf:policy.asOf,
+    sourceRevisionIds:[],permissionPolicyVersion:'server-policy-v1',
+    retrievalConfigVersion:'pg-lexical-v1',
+    retrievalState:'NO_EVIDENCE',evidence:[],
+  }),hits:[]};
+}
+function terms(query:string):string[]{
+  return [...new Set(query.normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}]+/gu)??[])];
+}
+
+/** SQL only: no connections, DDL or network are opened until an operator supplies a pool. */
+export class PostgresTemporalEvidenceReader{
+  constructor(private readonly pool:ReviewerSqlPool){}
+
+  async retrieve(input:TemporalPolicy):Promise<TemporalResult>{
+    const asOf=Iso.parse(input.asOf);
+    const limit=input.topK??12;
+    if(!Number.isInteger(limit)||limit<1||limit>12)
+      throw new Error('topK outside 1..12');
+    if(input.query.length>250||!input.permissionRefs.size)return empty(input);
+    const keywords=terms(input.query);
+    if(!keywords.length||keywords.length>20)return empty(input);
+    const grants=[...input.permissionRefs].map(x=>Ref.parse(x));
+    if(grants.length>100)throw new Error('Permission scope too broad');
+    const sources=input.sourceIds?[...input.sourceIds].map(x=>Ref.parse(x)):null;
+    if(sources&&sources.length>100)throw new Error('Source scope too broad');
+    const cohort=input.cohort;
+    if(cohort!==undefined&&(!Number.isInteger(cohort)||cohort<1950||cohort>2200))
+      throw new Error('Invalid authorized cohort');
+
+    // CRITICAL: latest revision PER SOURCE is selected at asOf BEFORE
+    // state, rights or textual filters. An unreviewed/cancelled new revision
+    // must shadow the previous ACTIVE one. Never use WHERE status='ACTIVE'
+    // in the latest-version CTE.
+    const sql=`WITH latest AS (
+      SELECT DISTINCT ON (r.source_id)
+        r.source_id,r.revision_id,r.permission_ref,r.source_class,
+        r.provenance,r.status,r.last_verified_at,r.valid_from,r.valid_until,
+        r.scope_campuses,r.scope_majors,r.cohort_min,r.cohort_max
+      FROM source_revisions_vnext r
+      WHERE r.fetched_at <= $1::timestamptz
+        AND (r.published_at IS NULL OR r.published_at <= $1::timestamptz)
+      ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
+    )
+    SELECT l.source_id,l.revision_id,p.paragraph_id,
+      p.paragraph_text,score.score
+    FROM latest l
+    INNER JOIN source_paragraphs_vnext p ON p.revision_id=l.revision_id
+    CROSS JOIN LATERAL (
+      SELECT count(*)::integer AS score
+      FROM unnest($7::text[]) AS token(term)
+      WHERE position(token.term IN lower(p.paragraph_text))>0
+    ) AS score
+    WHERE l.permission_ref=ANY($2::text[])
+      AND ($3::text[] IS NULL OR l.source_id=ANY($3::text[]))
+      AND l.source_class!='RESEARCH_REFERENCE_ONLY'
+      AND l.provenance!='RESEARCH_ONLY'
+      AND l.status='ACTIVE' AND l.last_verified_at<=$1::timestamptz
+      AND (l.valid_from IS NULL OR l.valid_from<=$1::timestamptz)
+      AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
+      AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
+      AND (l.scope_majors IS NULL OR $5::text=ANY(l.scope_majors))
+      AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
+      AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
+      AND score.score>0
+    ORDER BY score.score DESC,l.source_id,l.revision_id,p.paragraph_id
+    LIMIT $8::integer`;
+    const connection=await this.pool.connect();
+    try {
+      const result=await connection.query(sql,[
+        asOf,grants,sources,input.campus??null,input.majorCode??null,
+        cohort??null,keywords,limit,
+      ]);
+      if(result.rows.length>limit)throw new Error('Provider violated retrieval topK');
+      const matches=result.rows.map(x=>Row.parse(x));
+      if(!matches.length)return empty(input);
+      const evidence=matches.map(x=>SourceSpanVNextSchema.parse({
+        kind:'TEXT',sourceRevisionId:x.revision_id,
+        paragraphId:x.paragraph_id,startCodePoint:0,
+        endCodePoint:Array.from(x.paragraph_text).length,quote:x.paragraph_text,
+      }));
+      const revisionIds=[...new Set(matches.map(x=>x.revision_id))];
+      const envelope:RetrievalEnvelopeVNext=RetrievalEnvelopeVNextSchema.parse({
+        queryVersion:'query-1',asOf,
+        sourceRevisionIds:revisionIds,
+        permissionPolicyVersion:'server-policy-v1',
+        retrievalConfigVersion:'pg-lexical-v1',
+        retrievalState:'READY',evidence,
+      });
+      return {envelope,hits:matches.map(x=>({
+        sourceId:x.source_id,revisionId:x.revision_id,
+        paragraphId:x.paragraph_id,quote:x.paragraph_text,score:x.score,
+      }))};
+    }catch{
+      // Fail closed on malformed database rows, stale permissions and SQL errors.
+      // The HTTP layer maps this to PROVIDER_UNAVAILABLE, never public raw SQL.
+      throw new Error('Temporal retrieval unavailable');
+    }finally{connection.release();}
+  }
+}
