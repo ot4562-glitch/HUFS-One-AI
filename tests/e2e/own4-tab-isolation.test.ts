@@ -1,0 +1,385 @@
+import {describe,expect,it} from 'vitest';
+import type {DemoContext,DemoSnapshot,DemoProfileOption,SubjectAlias} from '@hufs-one/contracts';
+import {HufsApiError} from '../../apps/web/src/integrations/api-client.js';
+import {DemoController} from '../../apps/web/src/app/demo-controller.js';
+import type {DemoClientPort} from '../../apps/web/src/app/demo-controller.js';
+import {useDemoControllerState} from '../../apps/web/src/app/react-store.js';
+import contextFixture from '../../packages/fixtures/synthetic/demo-context.json';
+import snapshotFixture from '../../packages/fixtures/synthetic/demo-snapshot.json';
+
+const baseContext=contextFixture as DemoContext;
+const baseSnapshot=snapshotFixture as DemoSnapshot;
+const ctx=(subject:SubjectAlias,runId:string):DemoContext=>({
+  ...baseContext,contextId:'CTX-'+subject+'-'+runId,
+  demoSubjectId:subject,demoRunId:runId,
+});
+const snap=(subject:SubjectAlias,runId:string):DemoSnapshot=>({
+  ...baseSnapshot,contextId:'CTX-'+subject+'-'+runId,demoSubjectId:subject,
+});
+
+describe('synthetic transport-level E2E (NOT a real browser test)',()=>{
+  it('drops a late S01 createContext after S02 has become visible',async()=>{
+    let finishFirst!: (value:DemoContext)=>void;
+    const first=new Promise<DemoContext>(resolve=>{finishFirst=resolve;});
+    const runId='RUN-A';
+    const client:DemoClientPort={
+      listProfiles:async()=>[] as DemoProfileOption[],
+      createContext:async(subject)=>subject==='S01'?first:ctx(subject,runId),
+      getSnapshot:async(id)=>id==='CTX-S02-RUN-A'?snap('S02',runId):snap('S01',runId),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,runId);
+    const old=controller.select('S01');
+    const fresh=controller.select('S02');
+    await fresh;
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    finishFirst(ctx('S01',runId));
+    await old;
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    controller.dispose();
+  });
+
+  it('erases a previous student before rejecting an invalid new selector id',async()=>{
+    let calls=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>{calls++;return ctx(subject,runId);},
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S01');
+    await controller.select('S09' as never);
+    expect(controller.getState().status).toBe('INVALID');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(calls).toBe(1);
+    controller.dispose();
+  });
+
+  it('uses context ID and epoch to ignore stale permission errors from a previous student',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>id==='CTX-S02-RUN-A'?snap('S02','RUN-A'):snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const previous=controller.getState();
+    await controller.select('S02');
+    const current=controller.getState();
+    expect(current.snapshot?.demoSubjectId).toBe('S02');
+    expect(controller.applyContextError(previous.context!.contextId,previous.epoch,
+      new HufsApiError('SHARING_REVOKED',403))).toBe(false);
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    expect(controller.applyContextError(current.context!.contextId,current.epoch,
+      new HufsApiError('SHARING_REVOKED',403))).toBe(true);
+    expect(controller.getState().status).toBe('REVOKED');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(controller.getState().profiles).toEqual([]);
+    controller.dispose();
+  });
+
+  it('handles session expiry as a terminal state and prevents replaying old requests',async()=>{
+    let creations=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>{creations++;return ctx(subject,runId);},
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const state=controller.getState();
+    expect(controller.applyContextError(state.context!.contextId,state.epoch,
+      new HufsApiError('UNAUTHENTICATED',401))).toBe(true);
+    expect(controller.getState().status).toBe('SIGNED_OUT');
+    await controller.select('S01');
+    expect(creations).toBe(1); // Requires a new server-authenticated controller
+    expect(controller.getState().snapshot).toBeNull();
+    controller.dispose();
+  });
+
+  it('cannot select another student while server logout revocation is in flight',async()=>{
+    let release!:()=>void;
+    const revoked=new Promise<void>(resolve=>{release=resolve;});
+    let requests=0;
+    let logouts=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>{requests++;return ctx(subject,runId);},
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{logouts++;await revoked;},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const pending=controller.logout();
+    expect(controller.getState().snapshot).toBeNull();
+    await controller.select('S02');
+    expect(requests).toBe(1);
+    release();
+    await pending;
+    expect(controller.getState().status).toBe('SIGNED_OUT');
+    expect(logouts).toBe(1);
+    controller.dispose();
+  });
+
+  it('hides previously rendered data before checking the live grant after focus',async()=>{
+    let revoked=false;
+    let release!:()=>void;
+    const pending=new Promise<void>(resolve=>{release=resolve;});
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>{
+        if(revoked){await pending;throw new HufsApiError('SHARING_REVOKED',403);}
+        return snap('S01','RUN-A');
+      },
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S01');
+    revoked=true;
+    const validating=controller.revalidate();
+    expect(controller.getState().status).toBe('LOADING');
+    expect(controller.getState().snapshot).toBeNull();
+    release();
+    await validating;
+    expect(controller.getState().status).toBe('REVOKED');
+    expect(controller.getState().context).toBeNull();
+    expect(controller.getState().profiles).toEqual([]);
+    controller.dispose();
+  });
+
+  it('returns refreshed data only when it still belongs to the same context and epoch',async()=>{
+    let changed=false;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>{
+        if(changed)return {
+          ...snap('S01','RUN-A'),versions:{
+            ...snap('S01','RUN-A').versions,dataset:'SYNTHETIC-NEW-VERSION',
+          },
+        };
+        return snap('S01','RUN-A');
+      },
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    await controller.revalidate();
+    expect(controller.getState().status).toBe('READY');
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S01');
+    changed=true;
+    await controller.revalidate();
+    expect(controller.getState().status).toBe('CONFLICT');
+    expect(controller.getState().snapshot).toBeNull();
+    controller.dispose();
+  });
+
+  it('never shows a late S01 resume snapshot after S02 has been selected',async()=>{
+    let replay=false;
+    let finish!: (v:DemoSnapshot)=>void;
+    const pending=new Promise<DemoSnapshot>(resolve=>{finish=resolve;});
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>{
+        if(id==='CTX-S01-RUN-A'&&replay)return pending;
+        return id==='CTX-S01-RUN-A'?snap('S01','RUN-A'):snap('S02','RUN-A');
+      },
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    replay=true;
+    const old=controller.revalidate();
+    expect(controller.getState().snapshot).toBeNull();
+    await controller.select('S02');
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    finish(snap('S01','RUN-A'));
+    await old;
+    expect(controller.getState().status).toBe('READY');
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    controller.dispose();
+  });
+
+  it('treats an expired OAuth session during resume as a terminal sign-out',async()=>{
+    let calls=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>{
+        calls++;
+        if(calls>1)throw new HufsApiError('UNAUTHENTICATED',401);
+        return snap('S01','RUN-A');
+      },
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    await controller.revalidate();
+    expect(controller.getState().status).toBe('SIGNED_OUT');
+    await controller.select('S02');
+    await controller.revalidate();
+    expect(controller.getState().status).toBe('SIGNED_OUT');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(calls).toBe(2);
+    controller.dispose();
+  });
+
+  it('returns reviewer actions only while the original context is still READY',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    let requested=false;
+    expect(await controller.runContextOperation(async()=>{
+      requested=true;return 'SHOULD_NOT_RUN';
+    })).toBeNull();
+    expect(requested).toBe(false);
+    await controller.select('S01');
+    expect(await controller.runContextOperation(async(context,signal)=>{
+      expect(signal.aborted).toBe(false);
+      return {subject:context.demoSubjectId,mode:'SYNTHETIC_SANDBOX'};
+    })).toEqual({subject:'S01',mode:'SYNTHETIC_SANDBOX'});
+    controller.dispose();
+  });
+
+  it('aborts stale S01 sandbox work before S02 becomes visible',async()=>{
+    let finish!:(value:string)=>void;
+    const oldResult=new Promise<string>(resolve=>{finish=resolve;});
+    let aborted=false;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>id==='CTX-S01-RUN-A'
+        ?snap('S01','RUN-A'):snap('S02','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const old=controller.runContextOperation(async(context,signal)=>{
+      expect(context.demoSubjectId).toBe('S01');
+      signal.addEventListener('abort',()=>{aborted=true;},{once:true});
+      return oldResult;
+    });
+    await controller.select('S02');
+    expect(aborted).toBe(true);
+    finish('STALE_S01_PRIVATE_ACTION');
+    expect(await old).toBeNull();
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S02');
+    controller.dispose();
+  });
+
+  it('invalidates the current context on a revoked synthetic sandbox action',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const attempted=await controller.runContextOperation(async()=>{
+      throw new HufsApiError('SHARING_REVOKED',403);
+    });
+    expect(attempted).toBeNull();
+    expect(controller.getState().status).toBe('REVOKED');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(controller.getState().context).toBeNull();
+    controller.dispose();
+  });
+
+  it('cancels pending AI work immediately when returning to a tab triggers grant recheck',async()=>{
+    let finish!:(value:string)=>void;
+    const pending=new Promise<string>(resolve=>{finish=resolve;});
+    let wasCancelled=false;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    const task=controller.runContextOperation(async(_ctx,signal)=>{
+      signal.addEventListener('abort',()=>{wasCancelled=true;},{once:true});
+      return pending;
+    });
+    await controller.revalidate();
+    expect(wasCancelled).toBe(true);
+    expect(controller.getState().status).toBe('READY');
+    finish('STALE_AI_RESPONSE');
+    expect(await task).toBeNull();
+    controller.dispose();
+  });
+
+  it('keeps two independent controllers and demoRunId values isolated',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>ctx(subject,runId),
+      getSnapshot:async(id)=>{
+        const parts=/^CTX-(S0[1-5])-(RUN-[AB])$/.exec(id);
+        if(!parts)throw new HufsApiError('FORBIDDEN',403);
+        return snap(parts[1] as SubjectAlias,parts[2]!);
+      },
+      logout:async()=>{},
+    };
+    const tabA=new DemoController(client,'RUN-A');
+    const tabB=new DemoController(client,'RUN-B');
+    await Promise.all([tabA.select('S01'),tabB.select('S02')]);
+    expect(tabA.getState().snapshot?.contextId).toBe('CTX-S01-RUN-A');
+    expect(tabB.getState().snapshot?.contextId).toBe('CTX-S02-RUN-B');
+    tabA.clear();
+    expect(tabA.getState().snapshot).toBeNull();
+    expect(tabB.getState().snapshot?.demoSubjectId).toBe('S02');
+    tabA.dispose();tabB.dispose();
+  });
+
+  it.each([
+    ['UNAUTHENTICATED','SIGNED_OUT'],['SHARING_REVOKED','REVOKED'],
+    ['VERSION_CONFLICT','CONFLICT'],['INVALID_INPUT','INVALID'],
+    ['RATE_LIMITED','UNAVAILABLE'],['PROVIDER_UNAVAILABLE','UNAVAILABLE'],
+  ] as const)('fails closed for %s -> %s',async(code,status)=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async()=>{throw new HufsApiError(code,403);},
+      getSnapshot:async()=>baseSnapshot,
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    expect(controller.getState().status).toBe(status);
+    expect(controller.getState().snapshot).toBeNull();
+    controller.dispose();
+  });
+
+  it('connects the immutable external store to React useSyncExternalStore without modifying UI modules',async()=>{
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async()=>ctx('S01','RUN-A'),
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    let updates=0;
+    const unsubscribe=controller.subscribe(()=>{updates++;});
+    const hook=useDemoControllerState(controller,(subscribe,getSnapshot)=>{
+      expect(subscribe).toBe(controller.subscribe);
+      return getSnapshot();
+    });
+    expect(hook.status).toBe('IDLE');
+    await controller.select('S01');
+    expect(updates).toBeGreaterThan(0);
+    expect(controller.getState().status).toBe('READY');
+    unsubscribe();
+    controller.dispose();
+  });
+});
