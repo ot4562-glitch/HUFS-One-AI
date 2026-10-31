@@ -39,6 +39,30 @@ const snapshot = DemoSnapshotSchema.parse(jsonResponse);
 - **API·CLOVA·NCP (이서연):** `identity`, `errors`, `ai`, `intake`; implement real authentication, grant enforcement, safe provider policy and version conflicts (not part of this schema-only package). Unit reviewer: `tests/consumers/api-contract.test.ts`.
 - **통합 (심민성):** only owner of `packages/contracts` and root package/lockfile. Breaking changes require a new TASK-00 issue/contract PR and all four consumers' re-runs.
 
+## Additive academic feedback contract — PR #13 / #4 follow-up
+
+The reviewed academic member [PR #13 comment](https://github.com/ot4562-glitch/HUFS-One-AI/pull/13#issuecomment-6539679188) requests 6 critical and 6 recommended fields before implementing independent academic/audit/forecast tasks. This follow-up exposes **opt-in** `AcademicRulePackVNextSchema`, `AcademicRequirementVNextSchema`, `AcademicAuditVNextSchema`, `OfferingOutlookVNextSchema` and helpers in `@hufs-one/contracts` via `packages/contracts/src/academics/vnext.ts`. The existing v0.1.0 RulePack/AcademicSummary/ForecastSummary/OfferingOutlook/CourseRecord schemas and synthetic JSON files are **unchanged**; clients must switch by an explicit integration PR, not unilaterally.
+
+| Reviewer requirement | Implemented contract guard |
+| --- | --- |
+| Major role, admission type, school curriculum and cohort range | explicit `majorRole, admissionType, curriculumVersion, cohortFrom/To`, optional second-major identity |
+| CREDIT_TOTAL, CATEGORY_MINIMUM, REQUIRED_COURSE, K_OF_N | discriminated kind-specific fields; positive units, required area/course/candidate list, `1<=k<=n` and unique IDs |
+| Clause omissions and wrong `※` exclusions | complete inventoried clause IDs, sourceSpanRef, reciprocal rule/exception link, two distinct human approvals; approval is denied when `validationReport.blockingIssues` is nonempty, missing, stale or does not match source SHA. `parseApprovedAcademicRulePackVNext` calls `verifyAcademicSourceCoverageVNext` to **compare against separately obtained original inventory** (do not self-certify source completeness) |
+| Effective/rule provenance and stable notices | HTTPS official reference, SHA, published/effective/approval timestamps, supersedes link; `selectAcademicRulePackAsOfVNext` refuses stale/future/forks; `stableAcademicRequirementIdsVNext` & `validateAcademicNoticeRequirementRefsVNext` prohibit ID drift against notice requirements |
+| Academic status / A08.5 result representation | explicit SATISFIED/UNSATISFIED/NEEDS_REVIEW/NOT_APPLICABLE/NOT_CHECKED, earned/in-progress/planned and projected unique credits, area allocations, pending recognition, excluded attempts (opaque reason codes), k-of-n counts, prerequisite/credit cap/timetable conflict codes. `validateAcademicAuditAgainstPackVNext` refuses GPA=SATISFIED without collected evidence |
+| A09 event/temporal data and alternatives | regular `YYYY-1/2` terms, model version, each historical observation's publication+verification timestamps, code-checked k/n/complete coverage; `EVENT_REVIEW` distinguishes research leave from confirmed cancellation, evidence-linked alternatives only |
+| Course/section code | `resolveAcademicCourseCodeVNext` handles 7-character course+2-digit section only after independent source format review; blank/unverified code stays NEEDS_REVIEW |
+
+**Not done by contract:** nine A08.5 numeric graduation computations, actual recognition/grade decisions, source/original inventory extraction correctness, a human's approval, real historical offerings, equivalence/version semantic review, OCR/CLOVA safety or UI/web/API migration. Synthetic tests verify representational and fail-closed constraints **only**. Do not introduce actual student CSV, grades, identity mapping, school documents or model-provider calls.
+
+The contract package remains version 0.1.0 in this standalone feedback PR because concurrent source/media [PR #33](https://github.com/ot4562-glitch/HUFS-One-AI/pull/33) already proposes 0.2.0. Integrator must resolve any package semver/lockfile version bump when the PRs land; do not publish/use this new wire shape in a deployed API before all four consumer reviews. 학업 박준영 owns the downstream pure core; this PR does not modify his implementation.
+
+```sh
+npm run check
+npx vitest run tests/contracts/academics-vnext-feedback.test.ts
+npm run check:privacy
+```
+
 ## The four-file intake contract
 
 The student input target is **four people**, not all five development team members. The code has no real-name/alias mapping. A private runtime caller must explicitly supply a **reviewed filename → opaque subject key mapping** to `validateApprovedIntakeBundle`; `validateFormsCsv` accepts an independent approved Forms display-name mapping. Neither mapping is a grant to use raw data for presentation/NCP/AI.
