@@ -28,6 +28,11 @@ describe('A04/A05/A07 recommendation/notice wire shape',()=>{
     expect(parsed.items[0]?.overdue).toBe(true);
     expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:'true'}]}).success).toBe(false);
     expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:null}]}).success).toBe(false);
+    // An explicit false may not hide an applicable past submission deadline.
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:false}]}).success).toBe(false);
+    // Explicit false is valid for a future deadline or for an inapplicable notice.
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],studentDeadline:'2026-11-01T00:00:00.000Z',overdue:false}]}).success).toBe(true);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],appliesTo:'NO',overdue:false}]}).success).toBe(true);
     expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],studentDeadline:'2026-11-01T00:00:00.000Z'}]}).success).toBe(false);
     expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],appliesTo:'NO'}]}).success).toBe(false);
     expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],studentDeadline:undefined}]}).success).toBe(false);
