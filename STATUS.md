@@ -2,6 +2,8 @@
 
 ## 2026-10-31 승인 기준 변경·실제 PR 병합 및 캘린더 추가 (최신 작업 기록)
 
+> **후속 갱신:** #54는 PR #37 병합 뒤 합성 React–API 테스트와 충돌해 [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)로 대체·미병합 폐쇄됐다. #55에는 김채윤 부분공유 간접노출 리뷰 수정을 적용했고 최신 main에서 [synthetic-contracts SUCCESS](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41208683862)를 확인했다. 타인 승인 및 실 PG 검증 전이라 #55는 **OPEN**이고 아직 병합하지 않았다.
+
 > **최신 사용자 지시:** 코드/계약 PR은 작성자 아닌 **1명 이상**이 현재 HEAD에 APPROVED를 제출하고 필수 CI가 성공하면 병합한다. 여러 명 전원 승인 규칙은 해제. 선행 미병합 스택·권한/개인정보 blocker·명시적 수정 요청은 확인해야 한다. 운영 문서의 main 직접 보정 예외는 유지한다. 아래 수치는 이 확인 시점의 GitHub 스냅샷이며 실서비스 배포 상태가 아니다.
 
 ### 병합 완료 — 실제 GitHub merge 결과 7건
@@ -20,7 +22,7 @@
 
 - **추천·공지:** #16이 #15/#44 후속으로 공식 NoticeResult.items[].overdue를 아직 직렬화하지 않아 수정 필요. 연쇄 #40→#41은 #16 및 Temporal 출처 검증/추천 설명 출력 결합 후 병합 판단. #41 기본 랭크는 rank-v1.0 유지.
 - **개인정보 파생 정보:** [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)는 순수 scopeInputsToGrant 함수만 제안하고 현재 diff에 #16 선행 공지 코어가 포함된다. #35는 부분공유에서 선계산 feed/notices를 전부 차단하는 보수적 방어이며, scope별 재계산·grant/revoke 캐시 연결/실 PG 검증 전 운영 불가.
-- **인증/Temporal:** #32 Google OIDC/외대 이메일, #33 검증 SourceRevision 계약, #34 Temporal Postgres·범위 쿼리, #35 sharing grant DB, #54 HTTP 원자적 읽기는 미병합. #34의 최신 합성 CI는 성공이지만 실제 PostgreSQL에서 마이그레이션·query 실행은 검증하지 않았다. #54는 미연결 저장소에서 BETA를 fail-closed한다.
+- **인증/Temporal:** #32 Google OIDC/외대 이메일, #33 검증 SourceRevision 계약, #34 Temporal Postgres·범위 쿼리, #35 sharing grant DB, #55 HTTP 원자적 읽기는 미병합. #34의 최신 합성 CI는 성공이지만 실제 PostgreSQL에서 마이그레이션·query 실행은 검증하지 않았다. #55는 미연결 저장소에서 BETA를 fail-closed한다.
 - **캘린더(기존 계획 밖 신규 기능):** #53 Wire **병합 완료**. [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) 계산 코어는 #16 스택 포함/최신 HEAD 검토 필요, [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51) 이의상 홈 하단 UI 미구현, [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52) 심민성 인증·공유권한 calendar GET 미구현. 화면·데이터가 실제로 뜬다고 주장하지 않는다. 자세한 계약은 Architecture A07.3·A13, 제품 서술은 Proposal 08 참조.
 - **이슈:** #38은 overdue 계약 PR만 끝나서 출력 연동까지 OPEN, #42는 추천 설명 Wire 결정/계약까지 끝나서 #41 API/UI 출력까지 OPEN, #39/#27은 권한/DB 경로 실 연결 전 OPEN, #51/#52는 캘린더 구현 전 OPEN, #46 학생 CSV/Forms 게시·처리 동의 감사 OPEN. 구현 완료 범위를 넘는 이슈를 닫지 않는다.
 
