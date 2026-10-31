@@ -6,6 +6,7 @@ import {closedRepository} from '../../apps/api/src/repository.js';
 import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
 import {createGoogleAuthFlow} from '../../apps/api/src/modules/auth/google-auth-flow.js';
 import {MemoryGoogleAuthStore} from '../../apps/api/src/modules/auth/google-auth-store.js';
+import {MemoryAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter.js';
 import {createSchoolMailProofService,MemorySchoolMailChallengeStore} from
   '../../apps/api/src/modules/auth/school-mail-proof.js';
 import {createGoogleAuthorizationExchange} from
@@ -96,6 +97,7 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;
     redirectUri:ORIGIN+'/api/auth/google/callback',
     allowedOrigin:ORIGIN,
     store,
+    attemptLimiter:new MemoryAuthAttemptLimiter(),
     now:()=>current,
     exchangeCode:options.fullExchange?exchangeTransport:async(input)=>{
       exchanged++;
@@ -422,6 +424,28 @@ describe('Google OAuth callback, cookie binding and one-time session',()=>{
     expect((await confirm(h.mailCode())).json().verified).toBe(false);
     // OTP alone does not mint BETA nor bypass reviewer enrollment.
     expect((await h.app.inject({url:'/api/auth/session',headers:{cookie:session}})).statusCode).toBe(403);
+  });
+
+  it('rate-limits repeated Google login starts before persisting new OAuth states',async()=>{
+    const h=harness();
+    for(let i=0;i<10;i++){
+      expect((await h.begin()).res.statusCode).toBe(303);
+    }
+    const extra=await h.begin();
+    expect(extra.res.statusCode).toBe(429);
+    expect(extra.res.headers.location).toBeUndefined();
+    expect(h.exchanged()).toBe(0);
+  });
+
+  it('rate-limits malformed callbacks before any token exchange (independent bucket)',async()=>{
+    const h=harness();
+    const b=await h.begin();
+    for(let i=0;i<20;i++){
+      expect((await h.complete('A'.repeat(43),b.binding)).statusCode).toBe(403);
+    }
+    const extra=await h.complete(b.state,b.binding);
+    expect(extra.statusCode).toBe(429);
+    expect(h.exchanged()).toBe(0);
   });
 
   it('finishes personal Google login + preapproved HUFS mail proof + beta recheck',async()=>{

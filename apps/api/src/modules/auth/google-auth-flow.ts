@@ -9,6 +9,8 @@ import {
 } from './google-oidc.js';
 import type {GoogleVerifiedIdentity} from './google-oidc.js';
 import type {BetaAdmissionDecision} from './beta-admission.js';
+import type {AuthAttemptLimiter} from './auth-attempt-limiter.js';
+import {ApiFailure} from './gates.js';
 
 const STATE_COOKIE='__Host-hufs_login';
 const SESSION_COOKIE='__Host-hufs_session';
@@ -26,6 +28,8 @@ export interface GoogleAuthConfig {
   redirectUri:string;
   allowedOrigin:string;
   store:GoogleAuthStore;
+  /** Mandatory durable cross-replica limiter. Memory adapter only in tests. */
+  attemptLimiter:AuthAttemptLimiter;
   now?:()=>Date;
   /** A trusted server code-exchange adapter; never accept browser ID tokens. */
   exchangeCode:(input:{
@@ -80,7 +84,18 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
     ||callback.search||callback.hash||callback.username||callback.password
     ||callback.protocol!=='https:')
     throw new Error('Invalid configured Google callback URL');
+  if(typeof config.attemptLimiter?.consume!=='function')
+    throw new Error('A shared OAuth attempt limiter is required');
   const now=config.now??(()=>new Date());
+  const reserve=async(request:FastifyRequest,kind:'GOOGLE_START'|'GOOGLE_CALLBACK')=>{
+    let allowed=false;
+    try{
+      allowed=await config.attemptLimiter.consume({
+        kind,identifier:'ip:'+request.ip,at:clock(now()).toISOString(),
+      });
+    }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    if(!allowed)throw new ApiFailure('RATE_LIMITED');
+  };
   const verify=config.verifyIdToken??createGoogleIdTokenVerifier({
     clientId:config.clientId,now,
   });
@@ -91,6 +106,7 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
       if(site&&site!=='same-origin'&&site!=='none')throw new GoogleAuthFlowError();
       const {intent}=StartQuery.parse(request.query);
       if(intent==='BETA'&&!config.authorizeBeta)throw new GoogleAuthFlowError();
+      await reserve(request,'GOOGLE_START');
       const created=createGoogleOidcAuthorization({
         clientId:config.clientId,redirectUri:config.redirectUri,now:clock(now()),
       });
@@ -107,6 +123,7 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
     async callback(request:FastifyRequest,reply:FastifyReply):Promise<void>{
       // Clear the one-time binding even on failure. No redirect to user URLs.
       reply.header('Set-Cookie',clearCookie(STATE_COOKIE));
+      await reserve(request,'GOOGLE_CALLBACK');
       try{
         const {state,code}=CallbackQuery.parse(request.query);
         const pending=await config.store.consumeAttempt(digest(state));
