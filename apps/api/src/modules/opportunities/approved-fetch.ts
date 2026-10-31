@@ -18,6 +18,23 @@ export interface ApprovedFetchPolicy {
   provenance:'SYNTHETIC'|'REAL_APPROVED';
   rightsReviewed:boolean;
 }
+export type SourceUsePurpose='COLLECT'|'STORE'|'SEARCH'|'EXTERNAL_TRANSFER';
+export interface ApprovedSourceRights {
+  sourceId:string;
+  canonicalUrl:string;
+  permissionRef:string;
+  policyVersion:string;
+  reviewedBy:string;
+  reviewedAt:string;
+  expiresAt?:string;
+  status:'APPROVED'|'REVOKED';
+  allowedPurposes:ReadonlySet<SourceUsePurpose>;
+}
+/** Server-trusted purpose/expiry registry; never accept browser rights claims. */
+export interface ApprovedSourceRightsResolver {
+  resolve(input:{sourceId:string;permissionRef:string;now:string}):
+    Promise<ApprovedSourceRights|null>;
+}
 export interface SourceContentExtractor {
   /** No HTML execution. Output immutable, reviewed plain-text paragraph candidates. */
   extract(input:{content:Uint8Array;contentType:string;canonicalUrl:string}):
@@ -27,6 +44,8 @@ export interface SourceFetchConfig {
   policy:ApprovedFetchPolicy;
   ledger:MemorySourceRevisionLedger;
   extractor:SourceContentExtractor;
+  /** Mandatory for REAL_APPROVED sources; no self-declared rights authorization. */
+  rightsResolver?:ApprovedSourceRightsResolver;
   /** Mandatory trusted transport: operator must enforce DNS/IP egress policy. */
   transport?:typeof fetch;
   now?:()=>Date;
@@ -79,6 +98,33 @@ async function boundedBody(response:Response):Promise<Uint8Array>{
 function safeHeader(value:string|null):string|undefined {
   return value&&SAFE_HEADER.test(value)?value:undefined;
 }
+/** Real sources need a purpose-scoped, server-reviewed grant before and after IO. */
+async function requireCurrentRights(options:SourceFetchConfig,now:string):Promise<string>{
+  const p=options.policy;
+  if(p.provenance==='SYNTHETIC'&&p.sourceClass==='SYNTHETIC')
+    return 'SYNTHETIC_ONLY';
+  if(!options.rightsResolver)throw new SourceIngestionError();
+  const grant=await options.rightsResolver.resolve({
+    sourceId:p.sourceId,permissionRef:p.permissionRef,now,
+  });
+  const reviewed=grant?.reviewedAt?Date.parse(grant.reviewedAt):NaN;
+  const expires=grant?.expiresAt?Date.parse(grant.expiresAt):Infinity;
+  if(!grant||grant.status!=='APPROVED'
+    ||grant.sourceId!==p.sourceId||grant.canonicalUrl!==p.canonicalUrl
+    ||grant.permissionRef!==p.permissionRef
+    ||!grant.policyVersion||!grant.reviewedBy
+    ||!Number.isFinite(reviewed)||reviewed>Date.parse(now)
+    ||!Number.isFinite(expires)&&expires!==Infinity
+    ||expires<=Date.parse(now)
+    ||!grant.allowedPurposes.has('COLLECT')
+    ||!grant.allowedPurposes.has('STORE'))
+    throw new SourceIngestionError();
+  return JSON.stringify({
+    policyVersion:grant.policyVersion,reviewedBy:grant.reviewedBy,
+    reviewedAt:grant.reviewedAt,expiresAt:grant.expiresAt??null,
+    purposes:[...grant.allowedPurposes].sort(),
+  });
+}
 
 /** Explicit allowlist, no redirect/login, capped bytes, no model/OCR calls. */
 export function createApprovedSourceFetcher(options:SourceFetchConfig){
@@ -102,6 +148,8 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
       if(latest&&etag)headers['If-None-Match']=etag;
       if(latest&&modified)headers['If-Modified-Since']=modified;
       try{
+        // Never send a real HTTP request using only a caller-supplied boolean.
+        const rightsBefore=await requireCurrentRights(options,checkedAt);
         const response=await request(sourceUrl,{
           method:'GET',redirect:'error',
           credentials:'omit',
@@ -109,6 +157,10 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
           signal:AbortSignal.timeout(5000),
         });
         if(response.url&&response.url!==sourceUrl.href)
+          throw new SourceIngestionError();
+        // A permission revoked during the fetch invalidates the whole result.
+        // Check the same policy snapshot even for HTTP 304 observations.
+        if(await requireCurrentRights(options,checkedAt)!==rightsBefore)
           throw new SourceIngestionError();
         if(response.status===304){
           if(!latest)throw new SourceIngestionError();
@@ -129,6 +181,8 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
         // by an approved server extractor. No unreviewed HTML is rendered.
         if(!Array.isArray(paragraphs)||!paragraphs.length
           ||paragraphs.some(p=>!p.id||!p.text||/<script\b/i.test(p.text)))
+          throw new SourceIngestionError();
+        if(await requireCurrentRights(options,checkedAt)!==rightsBefore)
           throw new SourceIngestionError();
         const contentSha256=hashRevisionParagraphs(paragraphs);
         const originalSha256=(await import('node:crypto')).createHash('sha256').update(bytes).digest('hex');
