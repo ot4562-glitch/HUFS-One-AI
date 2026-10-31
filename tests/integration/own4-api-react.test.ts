@@ -19,7 +19,7 @@ const actor={
 };
 const grant=SharingGrantSchema.parse({
   grantId:'SYN-G1',actorId:actor.actorId,demoSubjectId:'S01',
-  allowedSections:['FEED','NOTICES'],displayNameAllowed:true,recordingAllowed:false,
+  allowedSections:['FEED','NOTICES','ACADEMICS','EXPERIENCE'],displayNameAllowed:true,recordingAllowed:false,
   version:'SYN-V1',expiresAt:'2026-11-05T00:00:00.000Z',
 });
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
@@ -89,7 +89,8 @@ describe('integration: real Fastify inject with synthetic browser transport',()=
     const view=controller.getState();
     expect(view.status).toBe('READY');
     expect(view.snapshot?.demoSubjectId).toBe('S01');
-    expect(view.snapshot?.academics).toEqual({state:'NOT_SHARED'});
+    expect(view.snapshot?.academics).toEqual(snapshot.academics);
+    expect(view.snapshot?.forecast).toEqual({state:'NOT_SHARED'});
     expect(requests.every(r=>r.init.credentials==='same-origin'
       &&r.init.cache==='no-store'&&r.init.redirect==='error')).toBe(true);
     expect(requests.every(r=>!String(r.init.body??'').includes('actorId'))).toBe(true);
@@ -113,6 +114,18 @@ describe('integration: real Fastify inject with synthetic browser transport',()=
     expect(controller.getState().status).toBe('REVOKED');
     expect(controller.getState().snapshot).toBeNull();
     controller.dispose();
+  });
+
+  it('clears UI and denies a context if precomputed FEED/NOTICES derive from unshared academic or experience inputs',async()=>{
+    for(const hidden of ['ACADEMICS','EXPERIENCE'] as const){
+      const {client,repository}=harness();
+      repository.setGrant({...grant,allowedSections:grant.allowedSections.filter(section=>section!==hidden)});
+      const controller=new DemoController(client,'SYN-RUN-1');
+      await controller.select('S01');
+      expect(controller.getState().status).toBe('REVOKED');
+      expect(controller.getState().snapshot).toBeNull();
+      controller.dispose();
+    }
   });
 
   it('logout requires a server revocation and invalidates the next browser request',async()=>{

@@ -141,8 +141,18 @@ export function createApi(options:ApiOptions) {
     const grant=await getGrant(actor,context.demoSubjectId);
     if(grant.version!==context.sharingGrantVersion)throw new ApiFailure('VERSION_CONFLICT',id);
     for(const section of sections)mustAllow(grant,actor,context.demoSubjectId,section);
-    const source=await options.repository.readSnapshot(context.demoSubjectId);
-    if(!source)throw new ApiFailure('VERSION_CONFLICT',id);
+    // Do NOT call the subject-only repository method after a detached grant read.
+    // A revoke/scope change between those two awaits would expose a stale
+    // precomputed feed or notice. The adapter must enforce the grant and return
+    // a scoped projection in ONE operation (PR #35 / Issue #39).
+    if(!options.repository.readAuthorizedSnapshot)throw new ApiFailure('FORBIDDEN');
+    const source=await options.repository.readAuthorizedSnapshot({
+      actorId:actor.actorId,subjectId:context.demoSubjectId,
+      grantVersion:context.sharingGrantVersion,
+      requiredSections:[...new Set<Section>(['FEED','NOTICES',...sections])],
+      now:clock(),
+    });
+    if(!source)throw new ApiFailure('FORBIDDEN',id);
     const snapshot=DemoSnapshotSchema.parse(source);
     if(snapshot.demoSubjectId!==context.demoSubjectId
       ||snapshot.versions.dataset!==context.datasetVersion
@@ -342,8 +352,14 @@ export function createApi(options:ApiOptions) {
     const profile=profiles.find(p=>p.demoSubjectId===body.demoSubjectId);
     if(!profile || !['READY','PARTIAL'].includes(profile.readiness))
       throw new ApiFailure('FORBIDDEN');
-    const snapshotValue=await options.repository.readSnapshot(body.demoSubjectId);
-    if(!snapshotValue)throw new ApiFailure('VERSION_CONFLICT');
+    // Context creation must obey the same atomic authorization invariant as
+    // every later read; a grant check followed by a subject-only fetch is unsafe.
+    if(!options.repository.readAuthorizedSnapshot)throw new ApiFailure('FORBIDDEN');
+    const snapshotValue=await options.repository.readAuthorizedSnapshot({
+      actorId:actor.actorId,subjectId:body.demoSubjectId,grantVersion:grant.version,
+      requiredSections:['FEED','NOTICES'],now:clock(),
+    });
+    if(!snapshotValue)throw new ApiFailure('FORBIDDEN');
     const snapshot=DemoSnapshotSchema.parse(snapshotValue);
     if(snapshot.demoSubjectId!==body.demoSubjectId
       ||Date.parse(snapshot.asOf)>nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT');
