@@ -5,10 +5,10 @@
 
 - **기준 현황:** 원래 일반 이슈 17건 중 1건(#29)만 이미 closed, 16건 open; PR 26건 중 16건 merged, 10건 open. 전수 검토 이후 새 후속 [공통 계약 PR #44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)가 열렸으므로 최신 전체 건수는 별도 조회한다. 완료 근거가 없는 이슈는 일괄 닫지 않았다.
 - **협업자 최신 재검토:** #15 미래 게시 누출 수정·총괄 승인 기록은 있지만 독립 UI 리뷰 미완료; #16 미검증 비학업 공지 격리 수정은 제출됐지만 공식 `NoticeItem.overdue` Wire/소비자 리뷰 필요; #40 verified claim 시점/인용 증거 검증 수정 제출·API 연동 남음; #41 기본 rank-v1.0 복원, 설명은 아직 실제 UI 출력에 연결되지 않음. 이 스택은 서로 분리 병합 금지. 별도 API 계약/인증/DB PR #32~#37은 독립 리뷰·실 DB/인증 게이트 확인 전 open.
-- **수정 PR:** #44는 #38의 선택적 `NoticeItem.overdue`·명시적 SOFTWARE_DEV 별칭과 합성 부정 테스트를 제안한다. 독립 리뷰 및 CI, #16 downstream 직렬화·회귀가 남아 완료 처리/자동 병합하지 않는다.
+- **코드 PR 진행(2026-10-31):** [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44) 공지 overdue Wire/별칭 테스트 — 현재 HEAD `aea00080`, 원격 `synthetic-contracts` SUCCESS, 김채윤 승인, 박준영·이의상 독립 리뷰 대기. [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47) 추천 설명/교내외·마감 유형 optional contract — HEAD `50f7f24d`, 원격 `synthetic-contracts` SUCCESS, 김채윤·이의상·박준영 검토 요청, 승인 대기. **#16·#41 작성자 실제 코어/웹 연결과 계약 소비자 재검증 전 병합 금지**.
 - **실제 파일 존재 구조 검사:** Private `csv/`의 수강 CSV 4개는 모두 UTF-8 BOM 없음/공통 6열/데이터 행 61·39·48·28/비정상 열 0. Forms 통합 CSV 1개는 26열·응답 4행/행 열수 오류 0. **소유자·Consent·역사적 게시 근거·학점/학칙·중복 응답 검증은 별도**. 과거 문서의 '3개·Forms 미수령'은 파일 존재 기준으로 정정; 원본 재업로드·데이터 내용 출력은 하지 않음.
-- **문서 정리:** `Proposal.md`는 팀·심사자용 '구현/설계/목표' 구분, `Architecture.md`는 계약·권한·병합 순서로 유지. `README`·`AGENTS`·`STATUS`·`TEAM_SURVEY`·`csv/README`·`docs/WORKSTREAMS`·`docs/PR_WORKFLOW`·`docs/DATA_GOVERNANCE`의 오래된 역할/입력 사실을 정정했다. 나머지 설계·운영 문서는 중복 축약을 강제하지 않고 최신 근거와 비교 검토했다.
-- **실행 구분:** 이 문서 감사 기록은 GitHub 관찰·계약 변경 요청이지 실제 Google OIDC·DB·NCP·OCR/HCX·동의 검증이나 릴리스 완성이 아니다.
+- **문서 직접 커밋:** 사용자 최신 지시에 따라 `Proposal.md`, `Architecture.md`, `README.md`, `STATUS.md`, `AGENTS.md`, `TEAM_SURVEY.md`, `APPLICATION.md`, `csv/README.md`, `docs/` 주요 6문서와 `packages/contracts/README.md`를 **main에 직접 수정**했다. 중복 docs PR [#45](https://github.com/ot4562-glitch/HUFS-One-AI/pull/45)는 내용 동등성을 비교한 뒤 close(not merged). 코드·Zod 계약은 여전히 별도 PR·CI/독립 검수.
+- **미해결 자료 감사:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)으로 Private Git에 추적된 과목 4개/Forms 1개의 과거 게시 승인·당사자 목적별 동의·협업자 접근·Git 이력을 확인해야 한다. **파일 존재·형식 통과는 개인정보 권한 승인이나 실제 학사 검증이 아니다.** 실서비스 OIDC·DB·NCP·OCR/HCX·독립 동의 검증/릴리스는 미완료.
 
 ## 2026-10-31 합성 API 구현·검증 기록
 
