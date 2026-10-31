@@ -3,14 +3,29 @@ import {byCodeUnit} from '../normalization/dedupe.js';
 import {onlyKnownTopics} from '../normalization/topics.js';
 import {evaluateOpportunity, type OpportunityEvaluation, type RecommendationProfile} from './evaluate.js';
 
+export interface RankConfig {
+  readonly version:string;
+  readonly weights:Readonly<{J:number; I:number; S:number; L:number; M:number; F:number}>;
+  readonly freshnessDays:number;
+  readonly maxPerKindOrganization:number;
+  /** Prefer large cards that cover a not-yet-covered student topic before repeating one. */
+  readonly topicDiversity:boolean;
+}
+
 /** A05.2 v1.0 design weights: the team's initial choice, not a validated model. */
-export const RANK_CONFIG_V1 = {
+export const RANK_CONFIG_V1:RankConfig = {
   version:'rank-v1.0',
   weights:{J:35, I:25, S:15, L:10, M:5, F:10},
   freshnessDays:30,
   maxPerKindOrganization:2,
-} as const;
-export type RankConfig = typeof RANK_CONFIG_V1;
+  topicDiversity:false,
+};
+/**
+ * v1.1 = v1.0 weights + topic diversity in the large cards. Opt-in only: promotion to default waits for
+ * A15 golden/diversity regression and UI review (integration decision on PR #41).
+ */
+export const RANK_CONFIG_V1_1:RankConfig = {...RANK_CONFIG_V1, version:'rank-v1.1', topicDiversity:true};
+export const DEFAULT_RANK_CONFIG = RANK_CONFIG_V1;
 
 const DAY_MS = 86_400_000;
 
@@ -51,7 +66,7 @@ const lang = (codes:readonly string[]) => new Set(codes.map(c => c.trim().toLowe
 
 export function scoreOpportunity(profile:RecommendationProfile, opportunity:Opportunity, options:RankOptions)
   :{score:ScoreBreakdown; matched:MatchedTopics; futurePublication:boolean; publication:PublicationState} {
-  const cfg = options.config ?? RANK_CONFIG_V1;
+  const cfg = options.config ?? DEFAULT_RANK_CONFIG;
   const topics = onlyKnownTopics(opportunity.topicCodes);
   const job = onlyKnownTopics(profile.desiredJobTopics);
   const interest = onlyKnownTopics(profile.interestTopics);

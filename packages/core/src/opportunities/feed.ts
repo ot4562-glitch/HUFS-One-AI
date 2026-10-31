@@ -2,7 +2,8 @@ import {FeedResultSchema, type FeedResult, type Opportunity} from '@hufs-one/con
 import {byCodeUnit} from '../normalization/dedupe.js';
 import {canonicalTerm, onlyKnownTopics} from '../normalization/topics.js';
 import type {RecommendationProfile} from './evaluate.js';
-import {RANK_CONFIG_V1, rankOpportunities, type RankOptions, type RankedOpportunity} from './rank.js';
+import {explainRecommendation, type RecommendationExplanation} from './explain.js';
+import {DEFAULT_RANK_CONFIG, rankOpportunities, type RankOptions, type RankedOpportunity} from './rank.js';
 
 export const FEATURED_MAX = 3;
 export const COMPACT_MAX = 6;
@@ -26,6 +27,11 @@ export interface ComposedFeed {
   excludedFuture:RankedOpportunity[];
   /** Full visible list (featured + compact + rest) so the original list is never lost. */
   all:RankedOpportunity[];
+  /**
+   * Code-built reasons for every shown card (featured + compact), in display order. Kept beside the
+   * wire FeedResult because FeedCard is strict; carrying it to the UI needs a contracts decision.
+   */
+  explanations:RecommendationExplanation[];
   rankConfigVersion:string;
 }
 
@@ -49,6 +55,33 @@ function takeDiverse(items:readonly RankedOpportunity[], max:number, cap:number)
   return out;
 }
 
+const matchedTopics = (r:RankedOpportunity) => [...r.matched.job, ...r.matched.interest, ...r.matched.experience];
+
+/**
+ * Large cards with topic diversity: first pass takes, in rank order, only items that add a student
+ * topic not yet covered; the second pass fills the remaining slots in rank order. The kind+organization
+ * cap applies in both passes, so no rule is relaxed and the card count never drops below takeDiverse.
+ * Selected cards are shown in rank order.
+ */
+function takeTopicDiverse(items:readonly RankedOpportunity[], max:number, cap:number):RankedOpportunity[] {
+  const counts = new Map<string, number>();
+  const covered = new Set<string>();
+  const picked = new Set<RankedOpportunity>();
+  const tryPick = (r:RankedOpportunity, requireNewTopic:boolean) => {
+    if (picked.size >= max || picked.has(r)) return;
+    const k = groupKey(r.opportunity);
+    if ((counts.get(k) ?? 0) >= cap) return;
+    const topics = matchedTopics(r);
+    if (requireNewTopic && picked.size > 0 && topics.every(t => covered.has(t))) return;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+    for (const t of topics) covered.add(t);
+    picked.add(r);
+  };
+  for (const r of items) tryPick(r, true);
+  for (const r of items) tryPick(r, false);
+  return items.filter(r => picked.has(r));
+}
+
 /** Diversity first, then the deferred same-group items, preserving rank order inside each pass. */
 function orderDiverse(items:readonly RankedOpportunity[], cap:number):RankedOpportunity[] {
   const first = takeDiverse(items, items.length, cap);
@@ -65,7 +98,7 @@ function latestFirst(items:readonly RankedOpportunity[], options:RankOptions):Ra
   return [...items].sort((a, b) => (at(b) - at(a)) || byCodeUnit(a.opportunity.id, b.opportunity.id));
 }
 
-function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST') {
+function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST', explanation:RecommendationExplanation) {
   return {
     opportunityId:r.opportunity.id,
     displayMode,
@@ -76,6 +109,8 @@ function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST'
     evidenceRefs:r.evaluation.evidenceRefs,
     score:r.score.total,
     dataMode:r.opportunity.dataMode,
+    // Optional FeedCard.explanation wire (contracts #47): same id/score/topics, validated by FeedCardSchema.
+    explanation,
   };
 }
 
@@ -84,7 +119,7 @@ function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST'
  * Equal profiles get equal feeds: nothing here is keyed by student identity.
  */
 export function composeFeed(profile:RecommendationProfile, opportunities:readonly Opportunity[], options:ComposeFeedOptions):ComposedFeed {
-  const cfg = options.config ?? RANK_CONFIG_V1;
+  const cfg = options.config ?? DEFAULT_RANK_CONFIG;
   const hidden = new Set(options.hiddenOpportunityIds ?? []);
   const ranked = rankOpportunities(profile, opportunities.filter(o => !hidden.has(o.id)), options);
   const excludedFuture = ranked.filter(r => r.publication === 'FUTURE');
@@ -96,19 +131,20 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
 
   const personal = hasPersonalSignal(profile);
   const featured = personal
-    ? takeDiverse(visible.filter(r => r.relevant && featurableQuality(r)), FEATURED_MAX, cfg.maxPerKindOrganization)
+    ? (cfg.topicDiversity ? takeTopicDiverse : takeDiverse)(visible.filter(r => r.relevant && featurableQuality(r)), FEATURED_MAX, cfg.maxPerKindOrganization)
     : [];
   const featuredSet = new Set(featured);
   const rest = visible.filter(r => !featuredSet.has(r));
   const ordered = personal ? orderDiverse(rest, cfg.maxPerKindOrganization) : latestFirst(rest, options);
   const compact = ordered.slice(0, COMPACT_MAX);
 
+  const explanations = [...featured, ...compact].map(r => explainRecommendation(r, cfg));
   const feed = FeedResultSchema.parse({
     asOf:options.asOf,
-    featured:featured.map(r => toCard(r, 'FEATURED_LARGE')),
-    compact:compact.map(r => toCard(r, 'COMPACT_LIST')),
+    featured:featured.map((r, i) => toCard(r, 'FEATURED_LARGE', explanations[i]!)),
+    compact:compact.map((r, i) => toCard(r, 'COMPACT_LIST', explanations[featured.length + i]!)),
     hasMore:visible.length > featured.length + compact.length,
     totalCandidates:visible.length,
   });
-  return {feed, ineligible, closed, excludedFuture, all:[...featured, ...ordered], rankConfigVersion:cfg.version};
+  return {feed, ineligible, closed, excludedFuture, all:[...featured, ...ordered], explanations, rankConfigVersion:cfg.version};
 }
