@@ -82,7 +82,9 @@ describe('TASK-19/21 synthetic durable cache outbox (NO live PostgreSQL)',()=>{
     const x=harness({rejectAck:true,rejectRetry:true});
     await expect(x.outbox.runBatch({RETRIEVAL:async()=>{}}))
       .rejects.toThrow(/lease lost/);
-    expect(x.calls.filter(c=>c.sql.includes('UPDATE source_invalidation_deliveries')))
+    // The claim CTE also contains UPDATE; count the standalone ACK/NACK
+    // statements rather than matching the claim's inner UPDATE as well.
+    expect(x.calls.filter(c=>c.sql.startsWith('UPDATE source_invalidation_deliveries')))
       .toHaveLength(2);
   });
   it('does not claim deliveries without an explicitly configured handler',async()=>{
