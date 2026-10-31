@@ -145,7 +145,7 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
         confirm:async()=>true,
       },
     });
-    await expect(service.issue(holder())).rejects.toBeInstanceOf(SchoolMailProofError);
+    await expect(service.issue(holder())).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE'});
     expect(sender).not.toHaveBeenCalled();
   });
 
@@ -263,6 +263,54 @@ describe('shared school OTP attempt limits across API replicas',()=>{
     clock=new Date(START.getTime()+60*60_000);
     await replicas[1]!.issue(holder());
     expect(issues).toBe(5);
+  });
+});
+
+describe('school OTP infrastructure failures are not incorrectly reported as bad codes',()=>{
+  const proof=()=>({
+    ...holder(),challengeId:'A'.repeat(22),code:'12345678',
+  });
+  const make=(
+    check:()=>Promise<boolean>,
+    confirm:()=>Promise<boolean>,
+  )=>createSchoolMailProofService({
+    digestKey:KEY,now:()=>START,attemptLimiter:new MemoryAuthAttemptLimiter(),
+    store:{
+      issue:async()=>true,
+      check:async()=>check(),
+      cancel:async()=>{},
+    },
+    sender:{send:async()=>{}},
+    approver:{mayIssue:async()=>true,confirm:async()=>confirm()},
+  });
+
+  it('fails with 503 when the OTP challenge ledger is unavailable, not verified:false',async()=>{
+    let approvals=0;
+    const service=make(
+      async()=>{throw new Error('synthetic SQL details: no connection');},
+      async()=>{approvals++;return true;},
+    );
+    await expect(service.verify(proof())).rejects.toMatchObject({
+      code:'PROVIDER_UNAVAILABLE',message:'PROVIDER_UNAVAILABLE',
+    });
+    expect(approvals).toBe(0);
+  });
+
+  it('fails with 503 when confirmation cannot reach the administrator ledger',async()=>{
+    let checks=0;
+    const service=make(async()=>{checks++;return true;},
+      async()=>{throw new Error('synthetic private DB failure');});
+    await expect(service.verify(proof())).rejects.toMatchObject({
+      code:'PROVIDER_UNAVAILABLE',message:'PROVIDER_UNAVAILABLE',
+    });
+    expect(checks).toBe(1);
+  });
+
+  it('does not confuse an ordinary wrong code or a revoked approval with an outage',async()=>{
+    const badCode=make(async()=>false,async()=>{throw new Error('should not approve');});
+    await expect(badCode.verify(proof())).resolves.toBe(false);
+    const revoked=make(async()=>true,async()=>false);
+    await expect(revoked.verify(proof())).resolves.toBe(false);
   });
 });
 

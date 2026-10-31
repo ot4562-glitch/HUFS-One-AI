@@ -53,7 +53,8 @@ async function jwt(nonce:string,options:{email?:string;hd?:string;subject?:strin
 }
 function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;
   proofMethod?:'SIGNED_WORKSPACE'|'MAILBOX_OTP';schoolEmail?:string;
-  withMail?:boolean;fullExchange?:boolean;fullAdmission?:boolean}={}){
+  withMail?:boolean;fullExchange?:boolean;fullAdmission?:boolean;
+  mailCheckFails?:boolean;mailConfirmFails?:boolean;mailApprovalLookupFails?:boolean}={}){
   const store=new MemoryGoogleAuthStore();
   const invitations=new MemoryReviewerAccessStore();
   let nonce='';
@@ -84,12 +85,27 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;
       });
     },
   });
+  const mailStore=new MemorySchoolMailChallengeStore();
   const mailService=createSchoolMailProofService({
-    store:new MemorySchoolMailChallengeStore(),digestKey:Buffer.alloc(32,8),
+    store:options.mailCheckFails?{
+      issue:value=>mailStore.issue(value),
+      check:async()=>{throw new Error('private synthetic SQL check details');},
+      cancel:id=>mailStore.cancel(id),
+    }:mailStore,
+    digestKey:Buffer.alloc(32,8),
     attemptLimiter:new MemoryAuthAttemptLimiter(),now:()=>current,
     sender:{send:async item=>{delivered=item.code;}},
     approver:options.fullAdmission?betaStore:{
-      mayIssue:async()=>true,confirm:async()=>true,
+      mayIssue:async()=>{
+        if(options.mailApprovalLookupFails)
+          throw new Error('private synthetic approval lookup failure');
+        return true;
+      },
+      confirm:async()=>{
+        if(options.mailConfirmFails)
+          throw new Error('private synthetic approval commit failure');
+        return true;
+      },
     },
   });
   const flow=createGoogleAuthFlow({
@@ -437,6 +453,63 @@ describe('Google OAuth callback, cookie binding and one-time session',()=>{
     expect((await confirm(h.mailCode())).json().verified).toBe(false);
     // OTP alone does not mint BETA nor bypass reviewer enrollment.
     expect((await h.app.inject({url:'/api/auth/session',headers:{cookie:session}})).statusCode).toBe(403);
+  });
+
+  it('returns 503 when school approval lookup is unavailable and sends no mail',async()=>{
+    const h=harness({withMail:true,mailApprovalLookupFails:true});
+    const start=await h.begin();
+    const login=await h.complete(start.state,start.binding);
+    expect(login.statusCode).toBe(303);
+    const session=cookie(login,'__Host-hufs_session');
+    const csrf=(await h.app.inject({
+      url:'/api/auth/csrf',headers:{cookie:session},
+    })).json().csrfToken as string;
+    const result=await h.app.inject({
+      method:'POST',url:'/api/auth/school-mail/request',
+      headers:{cookie:session,origin:ORIGIN,'x-csrf-token':csrf},
+      payload:{schoolEmail:'student@hufs.ac.kr'},
+    });
+    expect(result.statusCode).toBe(503);
+    expect(result.json().code).toBe('PROVIDER_UNAVAILABLE');
+    expect(h.mailCode()).toBe('');
+    expect(JSON.stringify(result.json())).not.toContain('private synthetic');
+    expect((await h.app.inject({
+      url:'/api/auth/session',headers:{cookie:session},
+    })).statusCode).toBe(403);
+  });
+
+  it('returns 503 (not verified:false) when school OTP check or approval update fails',async()=>{
+    for(const failure of [
+      {mailCheckFails:true},
+      {mailConfirmFails:true},
+    ]){
+      const h=harness({withMail:true,...failure});
+      const start=await h.begin();
+      const login=await h.complete(start.state,start.binding);
+      expect(login.statusCode).toBe(303);
+      const session=cookie(login,'__Host-hufs_session');
+      const csrf=(await h.app.inject({
+        url:'/api/auth/csrf',headers:{cookie:session},
+      })).json().csrfToken as string;
+      const headers={cookie:session,origin:ORIGIN,'x-csrf-token':csrf};
+      const sent=await h.app.inject({
+        method:'POST',url:'/api/auth/school-mail/request',headers,
+        payload:{schoolEmail:'student@hufs.ac.kr'},
+      });
+      expect(sent.statusCode).toBe(202);
+      const response=await h.app.inject({
+        method:'POST',url:'/api/auth/school-mail/confirm',headers,
+        payload:{schoolEmail:'student@hufs.ac.kr',
+          challengeId:sent.json().challengeId,code:h.mailCode()},
+      });
+      expect(response.statusCode).toBe(503);
+      expect(response.json().code).toBe('PROVIDER_UNAVAILABLE');
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(JSON.stringify(response.json())).not.toContain('private synthetic');
+      expect((await h.app.inject({
+        url:'/api/auth/session',headers:{cookie:session},
+      })).statusCode).toBe(403);
+    }
   });
 
   it('returns HTTP 429 after shared school OTP issue/confirm budgets are exhausted',async()=>{

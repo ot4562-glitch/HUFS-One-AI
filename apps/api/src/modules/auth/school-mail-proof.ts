@@ -151,8 +151,11 @@ export function createSchoolMailProofService(options:{
         allowed=await options.approver.mayIssue({
           ...input,at:at.toISOString(),
         });
-      }catch{/* Deny on an unavailable or malformed authorization ledger. */}
-      if(!allowed)throw new SchoolMailProofError();
+      }catch{
+        // A failed admission ledger is not evidence that the mailbox is unapproved.
+        throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      }
+      if(allowed!==true)throw new SchoolMailProofError();
       // Reserve atomically across replicas before persisting or sending a code.
       await reserve('SCHOOL_OTP_ISSUE',input.googleSubject,at);
       const challengeId=randomBytes(16).toString('base64url');
@@ -182,19 +185,29 @@ export function createSchoolMailProofService(options:{
       // No second challenge may reset the per-actor guessing budget.
       // The rate limiter's denial/outage must remain visible as 429/503.
       await reserve('SCHOOL_OTP_CONFIRM',input.googleSubject,at);
+      let accepted=false;
       try{
-        const accepted=await options.store.check({
+        accepted=await options.store.check({
           ...input,proofDigest:digest(
             key,input.challengeId,input.googleSubject,input.schoolEmail,input.code),
           now:at.toISOString(),
         });
-        if(!accepted)return false;
+      }catch{
+        // If the challenge store is unavailable, false would masquerade as a bad OTP.
+        throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      }
+      if(accepted!==true)return false;
+      try{
         return await options.approver.confirm({
           googleSubject:input.googleSubject,schoolEmail:input.schoolEmail,
           verifiedAt:at.toISOString(),
           validUntil:new Date(at.getTime()+ONE_HOUR).toISOString(),
-        });
-      }catch{return false;}
+        })===true;
+      }catch{
+        // A consumed OTP is not silently reported as a wrong code if the
+        // separate administrator admission ledger could not be reached.
+        throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      }
     },
   };
 }
