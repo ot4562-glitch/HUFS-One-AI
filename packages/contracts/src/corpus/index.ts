@@ -30,6 +30,10 @@ export const OpportunitySchema = z.strictObject({
   id:z.string().min(1),version:z.string().min(1),sourceSnapshotId:z.string().min(1),
   title:z.string().min(1),organization:z.string().min(1),
   kind:z.enum(['JOB','INTERNSHIP','CONTEST','EXTRACURRICULAR','SCHOLARSHIP']),
+  /** Only present when source evidence distinguishes campus vs external activities. */
+  programScope:z.enum(['ON_CAMPUS','OFF_CAMPUS','UNKNOWN']).optional(),
+  /** Rolling admission is source-verified; no date inferred from eventSessions. */
+  deadlineKind:z.enum(['FIXED','ROLLING','UNKNOWN']).optional(),
   topicCodes:OpportunityTopicsSchema,languageCodes:z.array(z.string()).max(10),
   applyOpensAt:z.iso.datetime({offset:true}).optional(),applyClosesAt:z.iso.datetime({offset:true}).optional(),
   eventSessions:z.array(z.strictObject({start:z.iso.datetime({offset:true}),end:z.iso.datetime({offset:true})})),
@@ -41,6 +45,72 @@ export const OpportunitySchema = z.strictObject({
 });
 export type Opportunity = z.infer<typeof OpportunitySchema>;
 
+
+/**
+ * Optional, code-derived recommendation explanation wire for TASK-06 issue #42.
+ * This is presentation evidence, not an eligibility decision or employment probability.
+ * The recommendation owner creates it; the API must apply source and SharingGrant gates first.
+ */
+export const RECOMMENDATION_SCORE_DISCLAIMER =
+  '관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요.';
+
+const ExplanationReasonSchema=z.strictObject({
+  code:z.enum(['JOB_MATCH','INTEREST_MATCH','EXPERIENCE_MATCH','LANGUAGE_MATCH','MAJOR_MATCH','RECENT','NO_PERSONAL_MATCH']),
+  text:z.string().min(1).max(400),
+  topics:z.array(TopicCodeSchema).max(5).optional(),
+});
+const ExplanationBreakdownSchema=z.strictObject({
+  key:z.enum(['J','I','S','L','M','F']),
+  label:z.string().min(1).max(40),
+  points:z.number().finite().min(0).max(100),
+  max:z.number().finite().min(0).max(100),
+}).superRefine((part,ctx)=>{
+  if(part.points>part.max)ctx.addIssue({code:'custom',path:['points'],message:'score points exceed configured weight'});
+});
+
+export const RecommendationExplanationSchema=z.strictObject({
+  opportunityId:z.string().min(1).max(200),
+  relevance:z.strictObject({
+    score:z.number().int().min(0).max(100),
+    level:z.enum(['HIGH','MEDIUM','LOW','GENERAL']),
+    label:z.string().min(1).max(40),
+    breakdown:z.array(ExplanationBreakdownSchema).length(6),
+    disclaimer:z.literal(RECOMMENDATION_SCORE_DISCLAIMER),
+  }).superRefine((value,ctx)=>{
+    const expected=['J','I','S','L','M','F'];
+    if(value.breakdown.some((p,i)=>p.key!==expected[i])){
+      ctx.addIssue({code:'custom',path:['breakdown'],message:'score parts must be J/I/S/L/M/F in order'});
+    }
+    const total=value.breakdown.reduce((sum,p)=>sum+p.points,0);
+    if(Math.abs(total-value.score)>1){
+      ctx.addIssue({code:'custom',path:['score'],message:'score differs from the explained points'});
+    }
+  }),
+  reasons:z.array(ExplanationReasonSchema).max(10),
+  eligibility:z.strictObject({
+    state:EligibilitySchema,
+    text:z.string().min(1).max(400),
+    fields:z.array(z.enum(['enrollment','campus','major','cohort','degree','time','teamRole','certification'])).max(8),
+    evidenceRefs:z.array(z.string().min(1).max(200)).max(50),
+  }),
+  deadline:z.strictObject({
+    kind:z.enum(['CONFIRMED','EVENT_ONLY','RECORD_ONLY','UNKNOWN']),
+    text:z.string().min(1).max(300),
+    iso:z.iso.datetime({offset:true}).optional(),
+  }).superRefine((deadline,ctx)=>{
+    if(deadline.kind==='CONFIRMED' && deadline.iso===undefined){
+      ctx.addIssue({code:'custom',path:['iso'],message:'confirmed deadline requires an ISO time'});
+    }
+    if(deadline.kind!=='CONFIRMED' && deadline.iso!==undefined){
+      ctx.addIssue({code:'custom',path:['iso'],message:'unconfirmed deadline must not carry an exact time'});
+    }
+  }),
+  prioritySelectionCount:z.number().int().nonnegative().max(1000),
+  provenance:z.literal('CODE_RULES'),
+  rankConfigVersion:z.string().min(1).max(64),
+});
+export type RecommendationExplanation=z.infer<typeof RecommendationExplanationSchema>;
+
 export const FeedCardSchema = z.strictObject({
   opportunityId:z.string().min(1),
   displayMode:z.enum(['FEATURED_LARGE','COMPACT_LIST']),
@@ -51,6 +121,21 @@ export const FeedCardSchema = z.strictObject({
   evidenceRefs:z.array(z.string().min(1)),
   score:z.number().finite().nonnegative().optional(),
   dataMode:z.enum(['REAL','SYNTHETIC']),
+  explanation:RecommendationExplanationSchema.optional(),
+}).superRefine((card,ctx)=>{
+  const explanation=card.explanation;
+  if(!explanation)return;
+  if(explanation.opportunityId!==card.opportunityId){
+    ctx.addIssue({code:'custom',path:['explanation','opportunityId'],message:'explanation targets a different card'});
+  }
+  if(card.score!==undefined && Math.round(card.score)!==explanation.relevance.score){
+    ctx.addIssue({code:'custom',path:['explanation','relevance','score'],message:'explanation score differs from the card score'});
+  }
+  for(const [i,reason] of explanation.reasons.entries()){
+    if(reason.topics?.some(topic=>!card.topics.includes(topic))){
+      ctx.addIssue({code:'custom',path:['explanation','reasons',i,'topics'],message:'reason topic is not on the card'});
+    }
+  }
 });
 export const FeedResultSchema = z.strictObject({
   asOf:z.iso.datetime({offset:true}),
