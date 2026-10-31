@@ -1,6 +1,6 @@
 # HUFS One AI
 
-> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](${link}) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
+> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 > **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **High Memory-g3 VPC 4 vCPU/32GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
 
