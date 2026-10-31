@@ -86,7 +86,7 @@ interface DecisionAdvice {
 - `sourceVersion`/해시가 달라지면 관련 claim 및 검색 색인 버전도 갱신. 새 `asOf`로 과거를 재생할 때는 `asOf` 이후 발행·취득·검수된 문서의 미래 정보 노출 금지(look-ahead). 현재시각을 호출시 읽는 코어 금지.
 - 외부 AI가 생성한 자유 URL이나 학생/주최자의 공식 승인 주장 거부. 결정 모델의 `confidence`는 사실의 진실확률·지원가능성 %로 사용하거나 사용자에게 표시하지 않는다.
 - 네 가지 제품 AI 작업은 유지. `retrievalEnvelope`, `imageSpanIds`, `sourceVersion`, `permissionVersion`, `mediaExtractorVersion`을 서버 내부 `SafeLlmPacket` 어댑터에 추가한다(별도 계약 PR).
-- 기존 `NoticeResult.overdue` 등 이미 제출된 PR #15/#16에서 검토 중인 스키마 변경과 충돌하지 않도록 독립 계약 PR에서 rebase하고 소비자 리뷰를 받는다.
+- #16에서 요청된 `NoticeItem.overdue?` 공식 Wire(기존 `composeNotices().overdueIds`와 별개)와 source/claim 계약 vNext 변경은 **별도 #44 계약 PR·독립 리뷰/CI 및 작성자 코어 직렬화 연계**로 검증한다. #15→#16→#40→#41 순서와 #33→#34 스택을 우회해 개별 병합하거나 데이터를 실제 서비스에 연결하지 않는다.
 
 ## 5. 검색 계약: 단순·검증 가능·저예산
 
