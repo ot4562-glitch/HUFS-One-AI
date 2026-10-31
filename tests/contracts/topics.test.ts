@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import {TOPIC_CODES,TOPIC_ALIASES_V1,TOPIC_DICTIONARY_VERSION,TopicCodeSchema,InterestTopicsSchema,DesiredJobTopicsSchema,OpportunityTopicsSchema} from '@hufs-one/contracts';
+import {TOPIC_CODES,TOPIC_ALIASES_V1,TOPIC_DICTIONARY_VERSION,TOPIC_ALIAS_VERSION,TopicCodeSchema,InterestTopicsSchema,DesiredJobTopicsSchema,OpportunityTopicsSchema} from '@hufs-one/contracts';
 
 describe('A04 closed topic contract',()=>{
   it('has exactly 24 stable unique literal values',()=>{
