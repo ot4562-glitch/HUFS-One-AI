@@ -42,7 +42,10 @@ afterEach(async()=>{
   await Promise.all(opened.splice(0).map(x=>x.close()));
 });
 
-async function harness(){
+async function harness(installSyntheticAgent1Csrf=true){
+  // This suite CANNOT prove real Google OIDC or PR #32 integration until its
+  // independent review/merge. The optional local route below is exclusively
+  // a test-side stand-in for Agent 1's still-unmerged GET /api/auth/csrf.
   let realReads=0;
   const requestProofs:Array<{method:string;url:string;originOk:boolean;csrfOk:boolean;sessionOk:boolean}>=[];
   const denied=async():Promise<never>=>{
@@ -94,6 +97,14 @@ async function harness(){
     maxSyntheticAiCallsPerActor:6,
     now:()=>NOW,
   });
+  if(installSyntheticAgent1Csrf){
+    app.get('/api/auth/csrf',async(req)=>{
+      // The central onRequest hook has already verified the trusted session.
+      if(req.headers.cookie==='reviewer-one')return {csrfToken:reviewer.csrfToken};
+      if(req.headers.cookie==='reviewer-two')return {csrfToken:second.csrfToken};
+      throw new Error('Unrecognized synthetic session');
+    });
+  }
   opened.push(app);
   function browser(cookie:'reviewer-one'|'reviewer-two'){
     const history:Array<{url:string;method:string;body:string|null}>=[];
@@ -121,6 +132,17 @@ async function harness(){
 }
 
 describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic only)',()=>{
+  it('rejects browser reviewer enrollment until the reviewed Agent1 CSRF route is installed',async()=>{
+    const {invite,browser,getRealReads,requestProofs}=await harness(false);
+    const {client}=browser('reviewer-one');
+    await expect(client.redeemReviewerInvite(invite.enrollmentCode))
+      .rejects.toMatchObject({code:'FORBIDDEN',status:403});
+    expect(requestProofs.some(x=>x.url==='/api/reviewer/invitations/redeem'))
+      .toBe(false);
+    expect(requestProofs.some(x=>x.url==='/api/auth/csrf')).toBe(true);
+    expect(getRealReads()).toBe(0);
+  });
+
   it('authorizes a trusted REVIEWER grant directly when CSRF, Origin and invite match',async()=>{
     const {app,invite}=await harness();
     const direct=await app.inject({
