@@ -55,6 +55,53 @@ describe('scopeInputsToGrant: no leak of unshared sections through feed/notices 
     expect(scoped.feed.featured.map(c => c.opportunityId)).toEqual(['A1']);
   });
 
+  it('(a) ACADEMICS not shared → verified graduation term cannot drive a term-scoped notice (PR #49 review #1)', () => {
+    const graduating:NoticeStudent = {...student, targetGraduationTerm:'2026-2', graduationTermVerified:true, cohort:2022, majors:[{major:'가상전공A', role:'PRIMARY'}]};
+    const termNotice = notice('TERM', {graduationTermScope:['2026-2'], studentDeadline:inDays(2)});
+    expect(composeNotices(graduating, [termNotice], {asOf:ASOF}).result.items[0]).toMatchObject({appliesTo:'YES'});
+    const s = scopeInputsToGrant(profile, graduating, ['FEED', 'NOTICES']);
+    expect(s.noticeStudent).toEqual({openRequirementIds:null, courseIds:[], interestTopics:['AI_ML']});
+    expect(s.withheld).toEqual(expect.arrayContaining(['GRADUATION_TERM', 'NOTICE_SCOPE:majors', 'NOTICE_SCOPE:cohort']));
+    expect(composeNotices(s.noticeStudent!, [termNotice], {asOf:ASOF}).result.items[0]).toMatchObject({appliesTo:'UNKNOWN'});
+    // The other term is not revealed as NO either.
+    expect(composeNotices(s.noticeStudent!, [notice('OTHER', {graduationTermScope:['2028-2']})], {asOf:ASOF}).result.items[0]?.appliesTo).toBe('UNKNOWN');
+  });
+
+  it('(b) FEED not shared → notices cannot reveal interest topics (PR #49 review #2)', () => {
+    const career = notice('CAREER', {category:'CAREER', topicCodes:['AI_ML']});
+    expect(composeNotices(student, [career], {asOf:ASOF}).result.items[0]?.priority).toBe('PERSONAL_OPPORTUNITY');
+    const s = scopeInputsToGrant(profile, student, ['NOTICES', 'ACADEMICS']);
+    expect(s.profile).toBeNull();
+    expect(s.noticeStudent?.interestTopics).toEqual([]);
+    expect(s.withheld).toContain('INTEREST_TOPICS');
+    const scoped = composeNotices(s.noticeStudent!, [career], {asOf:ASOF});
+    expect(scoped.result.items[0]?.priority).toBe('GENERAL');
+    expect(scoped.evaluations[0]?.links.topicCodes).toEqual([]);
+  });
+
+  it('(c) ACADEMICS not shared → no official major M score and no academic facts in eligibility (PR #49 review #3)', () => {
+    const p:RecommendationProfile = {...profile, officialMajorTopics:['AI_ML'], facts:{major:['가상전공A'], cohort:2022, enrollment:'ENROLLED'}};
+    const majorOnly = OpportunitySchema.parse({...opp('M1', ['AI_ML']), conditions:[{field:'major', operator:'IN', value:['가상전공A'], evidenceId:'EV-M'}]});
+    const full = composeFeed(p, [majorOnly], {asOf:ASOF}).all[0]!;
+    expect(full).toMatchObject({score:{M:1}, evaluation:{eligibility:'ELIGIBLE'}});
+    const s = scopeInputsToGrant(p, student, ['FEED', 'NOTICES', 'EXPERIENCE']);
+    expect(s.profile).toMatchObject({officialMajorTopics:[], facts:{}});
+    expect(s.withheld).toEqual(expect.arrayContaining(['OFFICIAL_MAJOR_TOPICS', 'FACT:major', 'FACT:cohort', 'FACT:enrollment']));
+    const scoped = composeFeed(s.profile!, [majorOnly], {asOf:ASOF}).all[0]!;
+    expect(scoped).toMatchObject({score:{M:0}, evaluation:{eligibility:'UNKNOWN'}}); // dropped → UNKNOWN, never ELIGIBLE
+  });
+
+  it('declared provenance keeps a field that came from a shared section, and changes the scope key', () => {
+    const p:RecommendationProfile = {...profile, facts:{campus:'SEOUL', major:['가상전공A']}};
+    const st:NoticeStudent = {...student, campus:'SEOUL', cohort:2022};
+    const s = scopeInputsToGrant(p, st, ['FEED', 'NOTICES'], {noticeScope:{campus:'FEED'}, facts:{campus:'FEED'}});
+    expect(s.profile?.facts).toEqual({campus:'SEOUL'});
+    expect(s.noticeStudent).toMatchObject({campus:'SEOUL'});
+    expect(s.noticeStudent?.cohort).toBeUndefined();
+    expect(s.scopeKey).toBe('FEED,NOTICES;fact.campus=FEED,scope.campus=FEED');
+    expect(scopeInputsToGrant(p, st, ['FEED', 'NOTICES']).scopeKey).toBe('FEED,NOTICES');
+  });
+
   it('FEED / NOTICES not shared → nothing is composed for that section', () => {
     expect(scopeInputsToGrant(profile, student, ['NOTICES']).profile).toBeNull();
     expect(scopeInputsToGrant(profile, student, ['FEED']).noticeStudent).toBeNull();
