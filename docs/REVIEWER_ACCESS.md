@@ -1,12 +1,12 @@
 # HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
 
-> 2026-10-31 최종 설계. 실 Google OIDC·실 PostgreSQL·웹 UI·발송·NCP 배포는 미완료. API 소유: 심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), 심사 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25). 이서연은 NCP/CLOVA Provider 전체만 준비한다. 제안서는 Proposal.md만 정본이다.
+> 합성 REVIEWER API는 `main`에 반영됐다. 실제 Google OIDC·PostgreSQL·웹 화면·NCP 배포는 출시 전 연동·검증 게이트다. **심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** · **이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)** · **이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**. 제안서는 [Proposal.md](../Proposal.md)를 따른다.
 
-## 0. 현재 합성 기능 API와 미완료 UI·운영 구분 (PR #31)
+## 0. 합성 API 범위와 웹 연동 조건
 
-- 신규 `GET /api/reviewer/capabilities`는 **활성 초대가 검증된 REVIEWER에게만** 학생용 10개 화면 범주(TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS)를 반환한다. 이는 웹 전체 UX를 만들 때 사용할 **권한·메뉴 계약**이며 실제 React 페이지가 완성되었다는 뜻이 아니다.
+- 신규 `GET /api/reviewer/capabilities`는 **활성 초대가 검증된 REVIEWER에게만** 학생용 10개 화면 범주(TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS)를 반환한다. 웹 화면과의 실제 연결은 이의상 UI 트랙의 후속 작업으로 관리한다.
 - 기존 BOOKMARK/MARK_READ/CHECKLIST/EXPERIENCE/APPLICATION_DRAFT/SIMULATE_APPLICATION 외에 SET_INTERESTS(공유 24 TopicCode), SET_DESIRED_JOBS, PLAN_COURSE, SET_SEARCH, SET_NOTIFICATIONS, RESET_SANDBOX가 각 reviewer·invite·합성 프로필별 메모리 샌드박스에서만 작동한다. 타 계정/실제 학생 데이터·실제 지원·외부 요금 호출은 차단.
-- session/redeem의 `readOnly:false`는 **실데이터 쓰기 권한이 아닌 합성 sandbox 내 수정 가능**을 뜻하고, `sandboxOnly:true`가 필수다. `actualBrowserUiVerified:false`가 표시되는 한 공개 사용 준비 완료로 판정하지 않는다.
+- session/redeem의 `readOnly:false,sandboxOnly:true`는 **합성 sandbox 안에서만 수정 가능**한 접근을 뜻한다. `actualBrowserUiVerified:false`가 표시되는 한 공개 사용 준비 완료로 판정하지 않는다.
 - 이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)가 웹 프런트 화면/인증 흐름/접근성 담당, 심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)이 OIDC·REST·DB·sandbox/권한 담당, 이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)가 Cloud 및 모든 NCP provider 호출/운영 담당. [운영 요금·시기](NCP_OPERATIONS_2026.md).
 
 ## 1. 심사자 이메일을 사전에 모르는 공용 초대장
@@ -19,7 +19,7 @@
 
 ## 2. 전체 웹사이트 기능을 **합성 시연 모드**에서 직접 체험
 
-심사자는 팀원 5명이나 실제 학생 원장의 구성원이 아니다. **UI의 모든 학생용 탭·상호작용을 재현하되 데이터/효과를 합성 격리**한다. 기능이 현재 구현되지 않은 경우 성공한 것처럼 가짜 응답을 주지 말고 명시적 '시연 준비 중' 안내와 E2E 잔여 항목으로 남긴다.
+심사자는 독립 `REVIEWER` 역할로 접속한다. **UI의 모든 학생용 탭·상호작용을 재현하되 데이터/효과를 합성 격리**한다. 미구현 기능은 '시연 준비 중'으로 표시하고 남은 브라우저 E2E 작업을 추적한다.
 
 | 학생용 기능 | REVIEWER 실제 허용 범위 |
 |---|---|

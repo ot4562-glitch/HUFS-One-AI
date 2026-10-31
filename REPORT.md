@@ -2,8 +2,6 @@
 
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
-
 
 상세 기준은 [Architecture.md](Architecture.md) A2·§8·§13~16이다. 심사용 시연 소개는 [Proposal.md](Proposal.md) §04·§09를 따른다.
 
@@ -17,7 +15,7 @@ Google Forms 응답에서 관심·희망 직무를 읽고, 학생이 승인한 �
 
 ## 수행과 체크의 주체
 
-TASK-00~TASK-12의 체크박스는 담당 구현 에이전트가 실행·증거를 기록하고, 독립 검토 에이전트가 대조하며 통합 에이전트가 완료를 확인한다. 사용자가 매 항목을 수동 검사하는 목록이 아니다. 각 카드의 수행자·검토자·읽을 절을 따른다.
+TASK-00~TASK-12의 체크박스는 담당 구현 에이전트가 실행·증거를 기록하고, 독립 검토 에이전트가 대조하며 통합 에이전트가 완료를 확인한다. 실행·검토 담당자는 항목마다 검증 근거를 남긴다. 각 카드의 수행자·검토자·읽을 절을 따른다.
 
 목표·동의·자료 범위·기관권한·비용·공개는 **사람이 에이전트와 함께** 판단한다. 당사자의 동의나 실제 권한자의 승인을 에이전트가 만들어내지 않는다. 5명 시간·클릭 실험은 별도 필수과제가 아니다.
 

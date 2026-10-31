@@ -1,7 +1,5 @@
 # HUFS One AI | 시간·이미지·근거 검증형 RAG와 Laya 운영 계약
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
-
 
 > **상태: 제안된 설계 계약(미구현·미배포·미결제)** · 2026-10-31
 > 기술 정본: `Architecture.md` A04/A05/A06/A07/A12/A13/A14/A15/A17, 본 문서는 그 절의 구현 세부 조건이다. 계약 변경은 통합 담당 심민성 주관의 별도 PR 및 소비자 교차검토 이후 확정한다. 학생 원본·실제 기관 계정·클라우드 자원 생성 권한은 부여하지 않는다.
@@ -14,7 +12,7 @@
 
 ## 2. 실제 결정한 배치와 활성화 경계
 
-- **NCP 컴퓨트 선택:** 한국 리전 Linux `High Memory-g3` **4 vCPU·32GB RAM·기본 50GB**, 단일 서버(HA 아님), 네트워크 차단·자동 재시작·최소 권한. 공식 가격표의 Classic 일반 서버 50GB 기준 **326원/시간, 약 234,240원/월(VAT 별도)**는 **견적 기준점**일 뿐 실청구액이 아니며 VPC/리전/크레딧 적용·Block Storage·백업·IP·트래픽은 콘솔에서 별도 확인한다.
+- **NCP 컴퓨트 선택:** 한국 리전 Linux `High Memory-g3` **4 vCPU·32GB RAM + 별도 CB SSD 50GB**, 단일 서버(HA 아님), 네트워크 차단·자동 재시작·최소 권한. 공식 한국 리전 VPC 컴퓨트 공개 단가 기준 **326원/시간, 약 234,240원/월(VAT 별도)**는 **견적 기준점**일 뿐 실청구액이 아니며 VPC/리전/크레딧 적용·Block Storage·백업·IP·트래픽은 콘솔에서 별도 확인한다.
 - **같은 VM의 서비스:** 인증된 React 정적 자원 전달/Node Fastify API, PostgreSQL(적은 연결·권한 분리), 제한된 `ingest-worker`, 검색 인덱스, **Laya 멀티링구얼 CPU worker**. DB를 인터넷에 직접 노출하지 않는다. 이미지·원문은 승인 범위에 따라 암호화된 비공개 볼륨 또는 권한 제한 Object Storage에 두며 익명 공개·직접 IP 접근을 차단한다.
 - **Laya:** `convaiinnovations/laya`의 **322M 파라미터 multilingual** checkpoint를 Apache-2.0 라이선스와 정확한 revision/hash로 고정한다. 공개된 **ONNX FP32 CPU** 경로를 우선 비교하고 지원 ONNX Runtime 버전(공개 export 기준 **1.23+**)을 잠근다. 가중치·개인 입력·결정 로그를 GitHub/CI에 올리지 않는다. 사전 탐색이 아닌 **공고 문서종류·검수 필요도·복잡한 이미지의 HCX 우회/호출 결정 후보**에만 사용하며 단독 자격/신청마감 확정 금지.
 - Laya는 실제 사전 측정 전 **의무 실행이 아닌 기본 비활성 feature flag**로 둔다. 모델 설치/실행 선택은 이번 **설계 승인** 범위에 포함하되, 서버 생성·다운로드·실행·개별 모델 비용은 명시적 배포/결제 승인 뒤 수행한다. Laya 비활성/오류/지연이면 항상 확정적인 규칙 기반 분기(필수 OCR·확인 필요 상태)로 돌아간다.
@@ -117,7 +115,7 @@ Laya FP32 raw 가중치 약 1.3GB 추산(322M×4byte) 외에 tokenizer/activatio
 
 ### 6.1. Laya CPU spike 방어 세부 (정본 [LAYA_CPU_SPIKE_PROTECTION.md](LAYA_CPU_SPIKE_PROTECTION.md))
 
-- **1vCPU 절대 상한**: 별도 cgroup의 `CPUQuota=100%`는 **1 vCPU CPU-time 상한**, 이 4vCPU 인스턴스 최대 CPU-time의 **25%**이며 물리 코어 예약은 **아님**. 독립 systemd worker, `CPUWeight=10`/`Nice=10`, ONNX Runtime CPU intra/inter thread=1·spinning OFF·OMP/BLAS thread=1로 API/DB와 경쟁을 줄인다. `MemoryHigh=2500M`, `MemoryMax=3072M`, 총 VM peak<14GiB; 상한이 실제 적용되는지 측정 실패하면 `LAYA_ENABLED=false` 유지.
+- **1vCPU CPU시간 상한**: 별도 cgroup의 `CPUQuota=100%`는 이 4vCPU 인스턴스 최대 CPU시간의 **25%**를 제한한다. API·DB 코어 사용 여유는 부하 시험으로 검증한다. 독립 systemd worker, `CPUWeight=10`/`Nice=10`, ONNX Runtime CPU intra/inter thread=1·spinning OFF·OMP/BLAS thread=1로 API/DB와 경쟁을 줄인다. `MemoryHigh=2500M`, `MemoryMax=3072M`, 총 VM peak<14GiB; 상한이 실제 적용되는지 측정 실패하면 `LAYA_ENABLED=false` 유지.
 - **백그라운드 전용**: 모델 최초 적재/워밍과 장문/동시 추론은 사용자 요청·심사자 반복 조회 경로에서 완전히 제외. queue≤16·동시 실행 1·최대 512 tokens·30초 대기/20초 작업 timeout, hash/version 기준 dedup/cache, 버전 갱신 후 무효화. API는 언제나 검증된 cache 또는 규칙+검수대기 폴백이며 `REVIEWER` 요청으로 Laya worker/유료 HCX가 실행되지 않는다.
 - **스파이크 감시**: host CPU≥70% 20초/VM available RAM<3GiB/GET p95 baseline×1.25 또는 400ms 초과 30초/cpu.pressure 증가 시 PAUSE. OOM·CPU≥90%+API 악화·비정상 p95 반복 시 OFF(수동 재개). 이 값들은 **운영 전 가설**, 인가된 High Memory-g3에서 API p95 기준선 대비 ≤20% 악화, GET p95≤500ms, worker RSS≤3GiB·host peak<28GiB, OOM 0을 실제 확인해야 기능 활성화 가능.
 - **학습 불필요**: 초기 시연에서는 30~50건 합성 라벨로 zero-shot Laya ON/OFF·rule-only F1/false skip/CPU 성능을 비교. 파인튜닝·GPU/추가 VM 조달은 기본 범위 밖이다.

@@ -2,8 +2,6 @@
 
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
-
 
 **팀/심사자용 제안은 [Proposal.md](Proposal.md), 구현 상세 기준은 [Architecture.md](Architecture.md)다.** **첫 목표는 기존 HUFSAbility의 취업·역량·비교과·채용 정보에서 학생별로 관련성 높은 내용을 더 크게·먼저 보이게 하는 AI 개인화**이며, **졸업요건 점검·수강계획은 그 위에 더하는 기능**이다.
 
@@ -19,7 +17,7 @@
 
 **Architecture.md** A0~A3의 P0/P1 우선순위·공고/관심 공통 분류코드·실제 Forms 헤더부터 읽고, §6~7 경험·추천, §9 화면, §10~11 코어/API/DB, §12 AI/운영, §14 TASK 실행·체크, §15 공동 결정, §16 검증을 따른다.
 
-React/TypeScript/Vite·Node/Fastify·PostgreSQL은 기존 설계를 유지한다. 실제 제품 코드·연동·디자인 렌더링은 채택 후 실행 승인 범위에서 진행한다. 현재 변경은 문서·자료·게시 준비이며 구현 완료가 아니다.
+React/TypeScript/Vite·Node/Fastify·PostgreSQL은 기존 설계를 유지한다. 실제 제품 코드·연동·디자인 렌더링은 채택 후 실행 승인 범위에서 진행한다. 실제 서비스 연결과 디자인 렌더링은 후속 개발·검증 단계에서 진행한다.
 
 ## 신규 차별화: 포스터도 읽고 바뀐 공고를 확인하는 HUFS One AI
 
