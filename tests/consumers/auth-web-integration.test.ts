@@ -140,7 +140,7 @@ describe('Google OIDC + school-mail browser consumer contract (synthetic-only)',
       start(controller){
         controller.enqueue(new Uint8Array(131072));
         controller.enqueue(new Uint8Array(131073));
-        controller.close();
+        // Keep the stream open: the client must actively cancel on overflow.
       },
       cancel(){cancelled=true;},
     });
