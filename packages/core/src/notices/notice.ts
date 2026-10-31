@@ -42,6 +42,8 @@ export interface Notice {
   adminReportDeadline?:string;
   publishedAt?:string;
   validUntil?:string;
+  /** Exam / session dates (e.g. 졸업시험). Events, never deadlines: they are not used for priority. */
+  eventSessions?:readonly {start:string; end?:string}[];
   verificationState:VerificationState;
   evidenceRefs:readonly string[];
 }
@@ -120,7 +122,8 @@ export function openRequirementIds(summary:AcademicSummary):string[] {
 
 /** Per-notice input check so one malformed notice never fails the whole list. */
 export function validateNotice(notice:Notice):NoticeExclusionReason|undefined {
-  for (const v of [notice.studentDeadline, notice.adminReportDeadline, notice.publishedAt, notice.validUntil]) {
+  const sessionTimes = (notice.eventSessions ?? []).flatMap(e => [e.start, e.end]);
+  for (const v of [notice.studentDeadline, notice.adminReportDeadline, notice.publishedAt, notice.validUntil, ...sessionTimes]) {
     if (v !== undefined && !ISODateTimeSchema.safeParse(v).success) return 'INVALID_DATETIME';
   }
   const r = notice.cohortRange;
