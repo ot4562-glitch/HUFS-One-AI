@@ -1,5 +1,10 @@
 import {z} from 'zod';
 import {
+  ReviewerSandboxClientActionSchema, ReviewerSandboxClientResultSchema,
+} from './reviewer-sandbox-contract.js';
+import type {ReviewerSandboxClientAction,ReviewerSandboxClientResult}
+  from './reviewer-sandbox-contract.js';
+import {
   AiTaskPathSchema, ApiErrorSchema, DemoContextSchema, DemoProfilesResponseSchema,
   DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
 } from '@hufs-one/contracts';
@@ -236,6 +241,46 @@ export class HufsApiClient {
     return this.request('/api/reviewer/invitations/redeem',ReviewerEnrollmentSchema,{
       method:'POST',body:{enrollmentCode},csrf:csrfToken,signal,
     });
+  }
+
+  private checkedReviewerContext(context:DemoContext):DemoContext {
+    const parsed=DemoContextSchema.safeParse(context);
+    if(!parsed.success || !/^[A-Za-z0-9_-]{1,100}$/.test(parsed.data.contextId))
+      throw new HufsApiError('INVALID_INPUT',422);
+    return parsed.data;
+  }
+
+  /**
+   * Synthetic REVIEWER activity is scoped to an independently verified
+   * server-issued actor/session/context and never writes real records.
+   */
+  async readReviewerActions(
+    context:DemoContext,signal?:AbortSignal,
+  ):Promise<ReviewerSandboxClientResult> {
+    const verified=this.checkedReviewerContext(context);
+    const result=await this.request(
+      '/api/reviewer/demo/contexts/'+verified.contextId+'/actions',
+      ReviewerSandboxClientResultSchema,{signal});
+    if(result.subjectId!==verified.demoSubjectId)
+      throw new HufsApiError('FORBIDDEN',403);
+    return result;
+  }
+
+  async saveReviewerAction(
+    context:DemoContext,action:ReviewerSandboxClientAction,signal?:AbortSignal,
+  ):Promise<ReviewerSandboxClientResult> {
+    const verified=this.checkedReviewerContext(context);
+    const valid=ReviewerSandboxClientActionSchema.safeParse(action);
+    if(!valid.success)throw new HufsApiError('INVALID_INPUT',422);
+    const {csrfToken}=await this.getCsrfProof(signal);
+    const result=await this.request(
+      '/api/reviewer/demo/contexts/'+verified.contextId+'/actions',
+      ReviewerSandboxClientResultSchema,{
+        method:'POST',body:valid.data,csrf:csrfToken,signal,
+      });
+    if(result.subjectId!==verified.demoSubjectId)
+      throw new HufsApiError('FORBIDDEN',403);
+    return result;
   }
 
   /**
