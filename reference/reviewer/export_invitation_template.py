@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Build either an INACTIVE Git-safe PDF invitation or a PRIVATE personalized PDF.
-Personalized input/output MUST remain in local_only/reviewer_invitations; never
-commit active access codes, recipient details or a private invitation PDF.
+"""Build either an INACTIVE Git-safe PDF invitation or a PRIVATE shared-judge PDF.
+Active shared-link inputs/outputs MUST remain in local_only/reviewer_invitations;
+never commit an active access code or a private invitation PDF.
 """
 import argparse
 import hashlib
@@ -31,19 +31,19 @@ def format_kst(raw:str)->str:
     return value.astimezone(ZoneInfo("Asia/Seoul")).strftime("%Y.%m.%d %H:%M")
 
 def private_html(payload:dict, source:str)->str:
-    required={"recipientEmail","accessUrl","startsAt","endsAt","invitationId","label"}
+    required={"maxAccounts","accessUrl","startsAt","endsAt","invitationId","label"}
     if set(payload)!=required:raise ValueError("Private invitation JSON does not match expected schema")
-    email=payload["recipientEmail"]
+    seats=payload["maxAccounts"]
     url=payload["accessUrl"]
-    if not isinstance(email,str) or not isinstance(url,str):raise ValueError("Invalid invitation")
+    if not isinstance(seats,int) or isinstance(seats,bool) or not 1<=seats<=50 or not isinstance(url,str):
+        raise ValueError("Invalid invitation")
     parts=urlsplit(url)
     if parts.scheme!="https" or not parts.netloc or parts.username or parts.password or parts.path!="/reviewer/invite" or parts.query or not re.fullmatch(r"code=[A-Za-z0-9_-]{43}",parts.fragment):
         raise ValueError("Invalid invitation URL")
     code=parts.fragment.split("=",1)[1]
     if len(code)!=43:raise ValueError("Missing enrollment code")
     # Safely escape all externally provided values before injecting into markup.
-    title=html.escape(payload["label"])
-    safe_email=html.escape(email)
+    title=html.escape(str(payload["label"]))
     safe_url=html.escape(url,quote=True)
     s=source
     if s.count("[YYYY.MM.DD HH:MM]") != 2:raise ValueError("Expected two date placeholders")
@@ -53,21 +53,20 @@ def private_html(payload:dict, source:str)->str:
     if datetime.fromisoformat(payload["endsAt"].replace("Z","+00:00")) <= datetime.fromisoformat(payload["startsAt"].replace("Z","+00:00")):
         raise ValueError("End of review must be after start")
     repl={
-      "[심사 담당자 성함]":title,
-      "[개별 승인 이메일]":safe_email,
-      "개인별 승인 후 입력":"개인별 승인 완료",
-      "개별 접속 링크는 이메일 확인 후 발송됩니다.":"심사자 개인 접속 링크",
-      "현재 양식에는 활성 초대 코드가 없습니다. 실제 평가 URL은 승인된 심사자에게만<br>비공개로 발급하며, Google 계정과 이메일이 일치해야 등록할 수 있습니다.":
-        "아래 링크를 열고 본인 Google 계정으로 로그인한 다음 초대를 등록하세요.<br>"
+      "[등록 가능 Google 계정 수]":str(seats)+"명 (최초 등록 상한)",
+      "본선 진출 후 확정":"공용 링크 승인 후 발급",
+      "공용 심사 초대 링크는 본선 진출 후 활성화됩니다.":"심사자 공용 접속 링크",
+      "제출 자료에 첨부된 보안 링크를 통해 개별 Google 계정을 등록합니다.<br>현재 이 문서는 비활성 서식이며 심사 기간과 접속 주소는 확정 전입니다.":
+        "아래 링크를 열고 본인의 Google 계정을 등록하세요.<br>"
         "<a href=\""+safe_url+"\" style=\"color:#095c68;font-weight:800;text-decoration:underline;\">"
-        "심사 전용 접속 페이지 열기</a> · 링크는 다른 사람에게 전달하지 마세요.",
-      "TEMPLATE · NOT ACTIVE":"PERSONAL INVITATION · CONFIDENTIAL",
+        "심사 전용 접속 페이지 열기</a> · 링크를 외부에 재공유하지 마세요.",
+      "TEMPLATE · NOT ACTIVE":"SHARED INVITE · CONFIDENTIAL",
     }
     for old,new in repl.items():
         if old not in s:raise ValueError("Template marker missing")
         s=s.replace(old,new)
     # Ensure no placeholder metadata was accidentally left behind.
-    if "[개별 승인 이메일]" in s or "TEMPLATE · NOT ACTIVE" in s:
+    if "[등록 가능 Google 계정 수]" in s or "TEMPLATE · NOT ACTIVE" in s:
         raise ValueError("Personalization incomplete")
     return s
 
@@ -120,7 +119,7 @@ def main():
     if dest.exists():raise FileExistsError("Private invitation PDF already exists")
     stats=export(source,dest)
     print("PRIVATE_INVITATION_PDF_OK",{"pages":stats["pages"],"bytes":stats["bytes"]})
-    # Never print a token, recipient email, link, or filename in stdout.
+    # Never print a token, shared link, or private filename in stdout.
 
 if __name__=="__main__":
     main()

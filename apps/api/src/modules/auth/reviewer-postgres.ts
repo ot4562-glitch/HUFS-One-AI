@@ -1,122 +1,120 @@
-import {ReviewerRecordSchema,normalizeReviewerEmail} from './reviewer.js';
+import {ReviewerRecordSchema,ReviewerEnrollmentSchema,normalizeReviewerEmail} from './reviewer.js';
 import type {ReviewerAccessStore,ReviewerGrant,ReviewerRecord} from './reviewer.js';
 
-/**
- * Database-neutral PostgreSQL pool boundary. Pass a real pool that executes all
- * statements on the same transaction connection. The API does not connect to
- * NCP nor instantiate a database by itself.
- */
+/** PostgreSQL adapter. No DB connection, NCP resource, or migration is created here. */
 export interface SqlResult {rows:Array<Record<string,unknown>>}
 export interface ReviewerSqlConnection {
   query(sql:string,params?:readonly unknown[]):Promise<SqlResult>;
   release():void;
 }
-export interface ReviewerSqlPool {
-  connect():Promise<ReviewerSqlConnection>;
-}
-const utc=(v:unknown):string=>{
+export interface ReviewerSqlPool {connect():Promise<ReviewerSqlConnection>}
+const date=(v:unknown):string=>{
   if(v instanceof Date)return v.toISOString();
-  if(typeof v==='string') {
-    const parsed=new Date(v);
-    if(Number.isFinite(parsed.getTime()))return parsed.toISOString();
-  }
+  if(typeof v==='string'&&!Number.isNaN(Date.parse(v)))return new Date(v).toISOString();
   throw new Error('Invalid database timestamp');
 };
 const str=(v:unknown):string=>{
-  if(typeof v!=='string')throw new Error('Invalid database string');
+  if(typeof v!=='string')throw new Error('Invalid database text');
   return v;
 };
-function parsedRow(row:Record<string,unknown>):ReviewerRecord {
-  const r=ReviewerRecordSchema.parse({
-    id:str(row.id),recipientEmail:str(row.recipient_email),
-    startsAt:utc(row.starts_at),endsAt:utc(row.ends_at),
-    label:str(row.label),tokenDigest:str(row.token_digest),
-    issuedAt:utc(row.issued_at),
-    ...(row.enrolled_actor_id?{enrolledActorId:str(row.enrolled_actor_id)}:{}),
-    ...(row.enrolled_at?{enrolledAt:utc(row.enrolled_at)}:{}),
-    ...(row.revoked_at?{revokedAt:utc(row.revoked_at)}:{}),
+const num=(v:unknown):number=>{
+  const n=Number(v);
+  if(!Number.isSafeInteger(n))throw new Error('Invalid database integer');
+  return n;
+};
+function record(row:Record<string,unknown>):ReviewerRecord{
+  return ReviewerRecordSchema.parse({
+    id:str(row.id),startsAt:date(row.starts_at),endsAt:date(row.ends_at),
+    label:str(row.label),maxAccounts:num(row.max_accounts),
+    tokenDigest:str(row.token_digest),issuedAt:date(row.issued_at),
+    ...(row.revoked_at?{revokedAt:date(row.revoked_at)}:{}),
   });
-  return r;
 }
-const grant=(r:ReviewerRecord):ReviewerGrant=>({
-  inviteId:r.id,actorId:r.enrolledActorId!,
-  recipientEmail:r.recipientEmail,startsAt:r.startsAt,endsAt:r.endsAt,label:r.label,
+const grant=(r:ReviewerRecord,actorId:string,email:string):ReviewerGrant=>({
+  inviteId:r.id,actorId,verifiedEmail:email,
+  startsAt:r.startsAt,endsAt:r.endsAt,label:r.label,
 });
-const within=(r:ReviewerRecord,now:string)=>
-  !r.revokedAt&&Date.parse(r.startsAt)<=Date.parse(now)&&Date.parse(now)<Date.parse(r.endsAt);
+const isActive=(r:ReviewerRecord,now:string)=>!r.revokedAt
+  &&Date.parse(r.startsAt)<=Date.parse(now)&&Date.parse(now)<Date.parse(r.endsAt);
 
-/** Durable, account-bound reviewer grant adapter for a trusted PostgreSQL pool. */
 export class PostgresReviewerAccessStore implements ReviewerAccessStore {
   constructor(private readonly pool:ReviewerSqlPool){}
-  async saveIssued(value:ReviewerRecord):Promise<void> {
+  async saveIssued(value:ReviewerRecord):Promise<void>{
     const v=ReviewerRecordSchema.parse(value);
     const c=await this.pool.connect();
-    try {
+    try{
       await c.query(`INSERT INTO reviewer_invitations
-        (id,recipient_email,starts_at,ends_at,label,token_digest,issued_at,
-         enrolled_actor_id,enrolled_at,revoked_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-        [v.id,v.recipientEmail,v.startsAt,v.endsAt,v.label,v.tokenDigest,v.issuedAt,
-         v.enrolledActorId??null,v.enrolledAt??null,v.revokedAt??null]);
-    } finally {c.release();}
+        (id,starts_at,ends_at,label,max_accounts,token_digest,issued_at,revoked_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [v.id,v.startsAt,v.endsAt,v.label,v.maxAccounts,v.tokenDigest,v.issuedAt,v.revokedAt??null]);
+    }finally{c.release();}
   }
-  async redeem(input:{tokenDigest:string;actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null> {
+  async redeem(input:{tokenDigest:string;actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>{
     const email=normalizeReviewerEmail(input.verifiedEmail);
     const c=await this.pool.connect();
-    let begun=false;
-    try {
-      await c.query('BEGIN');
-      begun=true;
-      const found=await c.query(`SELECT id,recipient_email,starts_at,ends_at,
-         label,token_digest,issued_at,enrolled_actor_id,enrolled_at,revoked_at
-         FROM reviewer_invitations WHERE token_digest=$1 FOR UPDATE`,[input.tokenDigest]);
+    let open=false;
+    try{
+      await c.query('BEGIN');open=true;
+      // This row lock SERIALIZES all new enrollments for a shared invitation;
+      // otherwise two first-time judges could exceed max_accounts concurrently.
+      const found=await c.query(`SELECT id,starts_at,ends_at,label,max_accounts,
+        token_digest,issued_at,revoked_at FROM reviewer_invitations
+        WHERE token_digest=$1 FOR UPDATE`,[input.tokenDigest]);
       const raw=found.rows[0];
-      if(!raw){
-        await c.query('COMMIT');begun=false;return null;
+      if(!raw){await c.query('COMMIT');open=false;return null;}
+      const invite=record(raw);
+      if(!isActive(invite,input.now)){await c.query('COMMIT');open=false;return null;}
+      const existing=await c.query(`SELECT invite_id,actor_id,verified_email,enrolled_at
+        FROM reviewer_enrollments WHERE invite_id=$1 AND actor_id=$2`,
+        [invite.id,input.actorId]);
+      if(existing.rows[0]){
+        const old=ReviewerEnrollmentSchema.parse({
+          inviteId:str(existing.rows[0].invite_id),
+          actorId:str(existing.rows[0].actor_id),
+          verifiedEmail:str(existing.rows[0].verified_email),
+          enrolledAt:date(existing.rows[0].enrolled_at),
+        });
+        await c.query('COMMIT');open=false;
+        return old.verifiedEmail===email?grant(invite,input.actorId,email):null;
       }
-      let v=parsedRow(raw);
-      if(!within(v,input.now)||v.recipientEmail!==email||
-         (v.enrolledActorId && v.enrolledActorId!==input.actorId)){
-        await c.query('COMMIT');begun=false;return null;
+      const count=await c.query(`SELECT count(*)::integer AS seats
+        FROM reviewer_enrollments WHERE invite_id=$1`,[invite.id]);
+      if(num(count.rows[0]?.seats)>=invite.maxAccounts){
+        await c.query('COMMIT');open=false;return null;
       }
-      if(!v.enrolledActorId){
-        const updated=await c.query(`UPDATE reviewer_invitations
-          SET enrolled_actor_id=$2,enrolled_at=$3 WHERE id=$1
-          RETURNING id,recipient_email,starts_at,ends_at,label,token_digest,
-            issued_at,enrolled_actor_id,enrolled_at,revoked_at`,
-          [v.id,input.actorId,input.now]);
-        if(updated.rows.length!==1)throw new Error('Failed enrollment transaction');
-        v=parsedRow(updated.rows[0]!);
-      }
-      await c.query('COMMIT');begun=false;
-      return grant(v);
-    } catch(e) {
-      if(begun) {
-        try {await c.query('ROLLBACK');}catch{ /* DB failure: never approve grant */ }
-      }
+      const inserted=await c.query(`INSERT INTO reviewer_enrollments
+        (invite_id,actor_id,verified_email,enrolled_at)
+        VALUES ($1,$2,$3,$4) RETURNING invite_id`,
+        [invite.id,input.actorId,email,input.now]);
+      if(inserted.rows.length!==1)throw new Error('Enrollment insert failed');
+      await c.query('COMMIT');open=false;
+      return grant(invite,input.actorId,email);
+    }catch(e){
+      if(open){try{await c.query('ROLLBACK');}catch{/* do not approve on DB failure */}}
       throw e;
-    } finally {c.release();}
+    }finally{c.release();}
   }
-  async readActive(input:{actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null> {
+  async readActive(input:{actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>{
     const email=normalizeReviewerEmail(input.verifiedEmail);
     const c=await this.pool.connect();
-    try {
-      const r=await c.query(`SELECT id,recipient_email,starts_at,ends_at,
-        label,token_digest,issued_at,enrolled_actor_id,enrolled_at,revoked_at
-        FROM reviewer_invitations
-        WHERE enrolled_actor_id=$1 AND recipient_email=$2
-          AND starts_at<=$3 AND ends_at>$3 AND revoked_at IS NULL
-        ORDER BY ends_at DESC LIMIT 1`,
+    try{
+      const res=await c.query(`SELECT i.id,i.starts_at,i.ends_at,i.label,i.max_accounts,
+        i.token_digest,i.issued_at,i.revoked_at
+        FROM reviewer_invitations i
+        JOIN reviewer_enrollments e ON e.invite_id=i.id
+        WHERE e.actor_id=$1 AND e.verified_email=$2
+          AND i.starts_at<=$3 AND i.ends_at>$3 AND i.revoked_at IS NULL
+        ORDER BY i.ends_at DESC LIMIT 1`,
         [input.actorId,email,input.now]);
-      return r.rows[0]?grant(parsedRow(r.rows[0])):null;
-    } finally {c.release();}
+      return res.rows[0]?grant(record(res.rows[0]),input.actorId,email):null;
+    }finally{c.release();}
   }
-  async revoke(inviteId:string,now:string):Promise<boolean> {
+  async revoke(inviteId:string,now:string):Promise<boolean>{
     const c=await this.pool.connect();
-    try {
+    try{
       const r=await c.query(`UPDATE reviewer_invitations
         SET revoked_at=COALESCE(revoked_at,$2) WHERE id=$1 RETURNING id`,[inviteId,now]);
       return r.rows.length>0;
-    } finally {c.release();}
+    }finally{c.release();}
   }
 }

@@ -39,10 +39,10 @@ async function run():Promise<void>{
       ||parsed.hash||parsed.origin!==origin)
       throw new Error('REVIEWER_ORIGIN must be an exact HTTPS origin');
     const issued=await issueReviewerInvitation(access,{
-      recipientEmail:value('REVIEWER_RECIPIENT_EMAIL'),
       startsAt:value('REVIEWER_START_UTC'),
       endsAt:value('REVIEWER_END_UTC'),
       label:value('REVIEWER_LABEL'),
+      maxAccounts:Number(value('REVIEWER_MAX_ACCOUNTS')),
     },{now:new Date().toISOString()});
     // Protected by the repository's local_only gitignore, but files must
     // ALSO be excluded from cloud sync/backups and protected with OS ACLs.
@@ -51,11 +51,11 @@ async function run():Promise<void>{
     const output=join(privateDir,issued.invitationId+'.json');
     const payload={
       invitationId:issued.invitationId,
-      recipientEmail:issued.recipientEmail,
       startsAt:issued.startsAt,
       endsAt:issued.endsAt,
       accessUrl:origin+'/reviewer/invite#code='+issued.enrollmentCode,
       label:value('REVIEWER_LABEL'),
+      maxAccounts:issued.maxAccounts,
     };
     try{
       await mkdir(privateDir,{recursive:true,mode:0o700});

@@ -1,8 +1,11 @@
 # HUFS One AI
 
+> **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **Standard-g3 VPC 4 vCPU/16GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
+
+
 ## 2026-10-31 API 로컬 구현 브랜치 (NCP/실인증 미연결)
 
-기술 총괄이 이서연 담당 API 코드를 대신 작성한 **별도 feature PR 단계**다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. DB·OCR·HCX·Laya·NCP·실학생 자료는 연결하지 않았으며 공통 SourceRevision vNext 계약 #18 및 추천/공지 PR #15/#16 변경요청 해결 뒤 별도 통합한다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
+기술 총괄 심민성이 직접 소유·작성한 **별도 feature PR 단계**다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. DB·OCR·HCX·Laya·NCP·실학생 자료는 연결하지 않았으며 공통 SourceRevision vNext 계약 #18 및 추천/공지 PR #15/#16 변경요청 해결 뒤 별도 통합한다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
 
 **HUFSAbility의 기존 취업·진로·비교과 정보를 AI로 학생별로 재배치하고, 졸업지원까지 확장하는 한국외대 바이브코딩 공모전 제안.**
 
@@ -11,7 +14,6 @@
 | 문서 | 독자와 역할 | 바꾸어야 할 때 |
 | --- | --- | --- |
 | **[Proposal.md](Proposal.md)** | **팀원·심사자용**: 1쪽 요약, 학교 문제와 실제 근거, 개인화 핵심 기능, 60초 시연, 구현계획, 공식 심사배점·예상 효과의 측정법, 학내 도입안 | 아이디어·기능 우선순위·심사 메시지가 바뀔 때 |
-| **[Proposal.pdf](Proposal.pdf)** | **Google OAuth·외대 메일 확인 정책을 반영한 16쪽 A4 제안서 PDF.** `Proposal.md`에서 재생성하고 16/16쪽 렌더링 검수 완료. 실제 서비스 구현 증거는 아님 | 원문 변경 시 [출력기](reference/export_proposal_pdf.py)로 재생성·검수 |
 | **[Architecture.md](Architecture.md)** | **다중 AI 개발·검증 에이전트용**: 공고-관심 공통 분류코드 24개, 실제 Forms 26열 입력 계약, CSV·규칙팩, 화면·API·AI·DB·NCP·동의·시험·TASK-00~17 | 구현 계약·데이터·테스트·에이전트 실행순서가 바뀔 때 |
 | **[AGENTS.md](AGENTS.md)** | 에이전트의 지속 안전·권한 규칙. 최신 지시와 자료 사용·동의 경계가 우선 | 실행·보안 정책이 바뀔 때 |
 | **[STATUS.md](STATUS.md)** | 현재 확인된 사실·미완료·검증 결과 | 실제 수행/검증 직후 |
@@ -43,7 +45,7 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 
 ## 독립 개발 준비 (공통 계약 코드는 구현, 웹·API는 미구현)
 
-- **확정 5인 분담:** 심민성(GPT, 기술 총괄·TASK-00/통합), 이의상(Claude·Gemini, UI/모바일), 김채윤(GPT·Claude·Gemini, 추천/공지), 박준영(GPT·Claude, 졸업·전망), **이서연(Gemini 사용 확인, 팀 결성·기획 리드 + API/CLOVA/NCP)**. [작업/구독/경계](docs/WORKSTREAMS.md) · [팀원 구조지도](docs/TEAM_GUIDE.md).
+- **확정 5인 분담:** 심민성(GPT, 기술 총괄·TASK-00/통합), 이의상(Claude·Gemini, UI/모바일), 김채윤(GPT·Claude·Gemini, 추천/공지), 박준영(GPT·Claude, 졸업·전망), **이서연(Gemini 사용 확인, 팀 결성·기획 리드 + NCP·CLOVA·OCR/Vision·Laya 모델/Provider 전담)**. [작업/구독/경계](docs/WORKSTREAMS.md) · [팀원 구조지도](docs/TEAM_GUIDE.md).
 - **TASK-00 공통 계약:** [TypeScript/Zod 패키지 사용법](packages/contracts/README.md)과 [계약 경계](docs/CONTRACT_BOUNDARIES.md). 24 TopicCode·DemoSnapshot/SharingGrant·4인 CSV/Forms 입력·오류/AI 스키마와 **합성 자동 소비자 검증**을 구현했다. `npm ci --ignore-scripts` → `npm run check`로 재현하고 네 트랙이 같은 계약을 사용한다. **실제 팀원 리뷰와 전용 PR/CI 병합 여부는 별도 게이트**다. 심민성이 공유 계약·lockfile을 조정한다.
 - **독립 브랜치/PR:** [docs/PR_WORKFLOW.md](docs/PR_WORKFLOW.md)와 각 폴더의 AGENTS.md. main은 통합 담당자가 검토 후 병합.
 - **실제 CSV 예외:** 기존 Private PR #1 두 파일과 2026-10-30 사용자 지정 추가 파일 한 개만 한정 포함. [자료 취급·동의 규칙](docs/DATA_GOVERNANCE.md). Google Forms 원본·비밀키·성적·기타 학생자료는 제외하며 컨테이너/AI/CI에서 사용하지 않는다.
@@ -52,12 +54,11 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 
 - 1차 공식 배점: **한국외대 현안 관련성 40 / 독창성 30 / AI 활용 30**. 2차: **구현 30 / 학내 적용 30 / 파급효과 25 / 발표 15**, NCP 실제 활용 최대 +5점. 공식 페이지: https://contest.hufs.ac.kr/
 - 기존 HUFSAbility 근거: [2026-10-29 스냅샷](reference/hufsability/snapshots/2026-10-29/README.md) · [후속 공개자료 색인](reference/hufsability/snapshots/2026-10-29-followup/README.md). 자료 권한: [DATA_PERMISSION_GATE.md](reference/hufsability/DATA_PERMISSION_GATE.md).
-- PDF 재출력: WSL `python3 reference/export_proposal_pdf.py --replace`. [Architecture.md](Architecture.md)의 구현은 채택 후 별도 실행 승인 전까지 계획 단계다.
 - **검증:** `python.exe tools/verify_release_boundary.py`와 기존 출처 검증 도구를 사용한다. Private GitHub 저장소 생성과 안전한 초기 커밋·푸시는 사용자 최신 지시로 승인됐다. 현재 Private 저장소의 기존 3개 과목 CSV 예외는 **추가 학생 파일/통합 Forms의 GitHub 게시 또는 외부 AI/NCP 전송 허가가 아니다**. 학생별 접근·GitHub 저장소 public 전환·실학생 데이터 외부 전송·서비스 개통은 서로 별도 동의·승인 및 검증이 필요하다.
 
 ## 신규 신뢰형 AI·이미지 수집 설계 (2026-10-31, 아직 미구현)
 
-- **서버:** NCP `Standard-g2` Linux 2 vCPU·8GB·50GB 단일 호스트를 설계 SKU로 선택. 오픈 가중치 **Laya multilingual 322M**은 CPU 비동기 문서 라우팅(검수 우선도) 전용이며 장애·부하 시 확정 코드로 폴백한다. 실제 서버 생성/배포/모델 설치/실측은 미완료다.
+- **서버:** NCP `Standard-g3` Linux 4 vCPU·16GB + 별도 CB 50GB 단일 호스트를 설계 SKU로 선택. 오픈 가중치 **Laya multilingual 322M**은 CPU 비동기 문서 라우팅(검수 우선도) 전용이며 장애·부하 시 확정 코드로 폴백한다. 실제 서버 생성/배포/모델 설치/실측은 미완료다.
 - **포스터:** 권리 확인된 HTML·이미지·PDF만 수집, 변경된 포스터에 General OCR, 누락/충돌/표 등 복잡 사례에 조건부 **HCX-005 Vision**, 안전한 문장 구조화에 기존 HCX-007. 이미지 원문 위치와 인용을 보존한다.
 - **RAG:** 인용 가능한 근거를 문서버전/게시·수집·확인·적용기간/`asOf`로 선필터하는 **Temporal RAG**. 직접 만든 PostgreSQL lexical 검색부터 시작하고 벡터DB·managed RAG는 필수가 아니다.
 - **지원금:** 본선팀 개발비 50만원과 **별도 NCP 크레딧 50만원 상당**은 수령·사용가능성 미검증; 실제 지출은 승인 전 0원. OCR·Vision·CPU 작업에도 비용·메모리 하드 게이트를 둔다.
@@ -65,8 +66,8 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 
 ## 담당자 심사 시연: `REVIEWER`(2026-10-31 개발 브랜치)
 
-학교 담당자는 팀원 5명 계정으로 위장하지 않고 **개별 초대장 + Google OIDC 이메일/계정 검증**을 거쳐 `REVIEWER`로 접근한다. 등록 후 심사 기간 중 반복 방문 제한은 없지만 **실학생 자료·일반 API·유료 모델 호출은 불가**하며 합성 전용 S01~S05 슬롯/리플레이만 조회한다. 자동 종료는 UTC `endsAt` 배타 경계를 매 요청 서버/DB가 검사하고, 관리자 즉시 철회도 지원한다. 실제 이메일·기한·유효한 코드는 **미발급**, PDF는 비활성 양식. API는 기존 [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24) 의존 별도 브랜치이며 OIDC/DB/도메인 운영 E2E는 아직 미완료. [정본](docs/REVIEWER_ACCESS.md) · [Issue #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+학교 담당자는 팀원 5명 계정으로 위장하지 않고 **공용 초대장 + Google OIDC 이메일/계정 검증**을 거쳐 `REVIEWER`로 접근한다. 등록 후 심사 기간 중 반복 방문 제한은 없지만 **실학생 자료·실외부 신청·유료 모델 호출은 불가**하며 합성 전용 S01~S05 슬롯/리플레이만 조회한다. 자동 종료는 UTC `endsAt` 배타 경계를 매 요청 서버/DB가 검사하고, 관리자 즉시 철회도 지원한다. 실제 이메일·기한·유효한 코드는 **미발급**, PDF는 비활성 양식. API는 기존 [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24) 의존 별도 브랜치이며 OIDC/DB/도메인 운영 E2E는 아직 미완료. [정본](docs/REVIEWER_ACCESS.md) · [Issue #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
 
 ## CPU 보호형 Laya 운영 설계 (2026-10-31 추가)
 
-Laya multilingual 322M은 파인튜닝 없이 합성 30~50개 공고로 우선 검증하며, **기본 OFF**. 향후 Standard-g2 2vCPU/8GB에서 사용한다면 **별도 worker/CPUQuota 50%(0.5vCPU)/ONNX 1 thread/MemoryMax 3GiB**를 강제하고 API·REVIEWER 요청에서는 Laya를 직접 실행하지 않는다. host CPU/API p95/RAM이 불안정하면 즉시 폴백·자동 재활성화 금지. 현재 CPU/NCP 실측·모델 설치 완료가 아니라 설계다. [상세 운영 게이트](docs/LAYA_CPU_SPIKE_PROTECTION.md), [Issue #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22).
+Laya multilingual 322M은 파인튜닝 없이 합성 30~50개 공고로 우선 검증하며, **기본 OFF**. 향후 Standard-g3 4vCPU/16GB에서 사용한다면 **별도 worker/CPUQuota 100%(1vCPU)/ONNX 1 thread/MemoryMax 3GiB**를 강제하고 API·REVIEWER 요청에서는 Laya를 직접 실행하지 않는다. host CPU/API p95/RAM이 불안정하면 즉시 폴백·자동 재활성화 금지. 현재 CPU/NCP 실측·모델 설치 완료가 아니라 설계다. [상세 운영 게이트](docs/LAYA_CPU_SPIKE_PROTECTION.md), [Issue #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22).

@@ -1,6 +1,9 @@
 # HUFS One AI API — 로컬 합성 구현 (2026-10-31)
 
-이서연의 담당 API 영역을 기술 총괄 요청으로 로컬에서 대신 구현한 첫 단계입니다. **Google OAuth·외대 메일 인증, NCP·CLOVA·OCR·Vision 실제 호출, 실학생 데이터/DB 연동, 배포는 전부 미실행**입니다. 구현/테스트 결과를 실서비스 준비 완료로 표현하지 않습니다.
+> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP Standard-g3 4vCPU·16GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
+
+
+심민성 소유 API 영역을 기술 총괄이 직접 구현한 첫 단계입니다. **Google OAuth·외대 메일 인증, NCP·CLOVA·OCR·Vision 실제 호출, 실학생 데이터/DB 연동, 배포는 전부 미실행**입니다. 구현/테스트 결과를 실서비스 준비 완료로 표현하지 않습니다.
 
 ## 구현한 코드
 
@@ -49,19 +52,19 @@ npm run start:api:local
 ## 신규 REVIEWER 초대·기간제 권한 API (별도 stacked PR, 미배포)
 
 - `POST /api/reviewer/invitations/redeem` — OIDC trusted `role=REVIEWER` / verifiedEmail/identityProofExpiresAt가 유효한 세션 + CSRF/Origin + 43자 초대 코드로 이메일·Google sub에 등록. 같은 인증 주체가 등록 코드를 재시도해도 멱등 성공하지만 다른 sub/email은 403. 등록 시도 5회/15분, 합성 자동 테스트 전용 메모리 구현.
-- `GET /api/reviewer/demo/profiles` — 별도 reviewer synthetic demo source의 5개 슬롯, `dataMode=SYNTHETIC`만 허용.
+- `GET /api/reviewer/demo/profiles` — 합성 전용 독립 demo source의 5개 슬롯, `dataMode=SYNTHETIC`만 허용.
 - `GET /api/reviewer/demo/subjects/:id/snapshot` — 공유 없는 실데이터 접근 차단, 개별 synthetic snapshot과 카드 데이터 모드 재검증. `PENDING`/실제/혼합/유료-live는 403.
 - 매 요청 `ReviewerAccessStore.readActive`로 `startsAt <= now < endsAt`, 이메일/sub 바인딩·철회 검사. 만료된 세션도 403; 반복 방문 횟수 제한 없음. REVIEWER는 기존 `/api/demo`, `/api/ai` 경로에 접근 불가.
 - `PostgresReviewerAccessStore` 트랜잭션+DDL `infra/sql/20261031_reviewer_invitations.sql`을 준비했으나 실제 DB pool/Google verifier/개별 이메일 발송은 미구현. 운영 전 데이터 영속성·리브래시·rate-limit 보안 테스트가 추가로 필요하다.
-- PDF 초대장 **비활성 양식**: `reference/reviewer/ReviewerInvitation.TEMPLATE.pdf`. 실제 개인별 초대 코드는 배포/권한 승인 시 운영자가 별도 비공개 발급해야 함. 정본 [docs/REVIEWER_ACCESS.md](../../docs/REVIEWER_ACCESS.md).
+- PDF 초대장 **비활성 양식**: `reference/reviewer/ReviewerInvitation.TEMPLATE.pdf`. 실제 공용 초대 코드는 본선 선정·운영 승인 이후 비공개 발급해야 함. 정본 [docs/REVIEWER_ACCESS.md](../../docs/REVIEWER_ACCESS.md).
 
 ### 운영용 심사자 초대 CLI (실 DB 연결 및 승인 전 **실행 금지**)
 
-- `npm run admin:reviewer -- issue`: PostgreSQL 저장과 개인별 링크의 비공개 JSON 생성. `REVIEWER_DATABASE_URL`, `REVIEWER_ORIGIN`(HTTPS), `REVIEWER_RECIPIENT_EMAIL`, `REVIEWER_START_UTC`, `REVIEWER_END_UTC`, `REVIEWER_LABEL`, `REVIEWER_OPERATOR_APPROVED=yes` 필요. 원격 DB는 검증된 TLS. 실제 코드/이메일·DB URL을 로그에 찍지 않는다.
+- `npm run admin:reviewer -- issue`: PostgreSQL 저장과 공용 링크의 비공개 JSON 생성. `REVIEWER_DATABASE_URL`, `REVIEWER_ORIGIN`(HTTPS), `REVIEWER_MAX_ACCOUNTS`, `REVIEWER_START_UTC`, `REVIEWER_END_UTC`, `REVIEWER_LABEL`, `REVIEWER_OPERATOR_APPROVED=yes` 필요. 원격 DB는 검증된 TLS. 실제 코드/이메일·DB URL을 로그에 찍지 않는다.
 - `python3 reference/reviewer/export_invitation_template.py --private-json local_only/reviewer_invitations/<uuid>.json`: 활성 초대장을 **로컬만** PDF로 출력. 자료 비공개/메일 개인 발송.
 - `npm run admin:reviewer -- revoke`: `REVIEWER_INVITE_ID`를 사용해 기한 전 revoke. DB 행은 즉시 철회되며 서버 다음 요청이 거부해야 한다.
 - 이 기능은 **독립 서버 인증/DB 연결이 완료되기 전에는 실행하지 않는다**. 사용 가능한 PDF와 템플릿을 혼동하지 않는다.
 
 ## Laya CPU 스파이크로부터 API 보호 (설계, 미구현·미배포)
 
-Laya는 Fastify HTTP handler/REVIEWER GET/일반 데모의 동기 의존성이 **아니다**. 나중에 승인된 ingestion에서만 권한 있는 sourceRevision별 저우선순위 비동기 작업으로 예약. OS cgroup `CPUQuota=50%` (**0.5vCPU**), 단일 worker, queue 16, ONNX threads=1/spin OFF, `MemoryMax=3072M`로 CPU/메모리 급증을 가둔다. CPU/pressure/API p95/RAM 경계 초과 시 pause/off 및 `UNKNOWN/NEEDS_REVIEW`+규칙 폴백. 실제 queue/worker/systemd/model download/NCP 부하 실측은 **이 PR에서 구현하지 않았다**. 게이트·샘플: [docs/LAYA_CPU_SPIKE_PROTECTION.md](../../docs/LAYA_CPU_SPIKE_PROTECTION.md).
+Laya는 Fastify HTTP handler/REVIEWER GET/일반 데모의 동기 의존성이 **아니다**. 나중에 승인된 ingestion에서만 권한 있는 sourceRevision별 저우선순위 비동기 작업으로 예약. OS cgroup `CPUQuota=100%` (**1vCPU**), 단일 worker, queue 16, ONNX threads=1/spin OFF, `MemoryMax=3072M`로 CPU/메모리 급증을 가둔다. CPU/pressure/API p95/RAM 경계 초과 시 pause/off 및 `UNKNOWN/NEEDS_REVIEW`+규칙 폴백. 실제 queue/worker/systemd/model download/NCP 부하 실측은 **이 PR에서 구현하지 않았다**. 게이트·샘플: [docs/LAYA_CPU_SPIKE_PROTECTION.md](../../docs/LAYA_CPU_SPIKE_PROTECTION.md).

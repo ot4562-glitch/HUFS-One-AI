@@ -1,5 +1,6 @@
 import type {FastifyRequest} from 'fastify';
 import type {ReviewerAccessStore,ReviewerDemoRepository} from './modules/auth/reviewer.js';
+import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -53,6 +54,8 @@ export interface ApiOptions {
   /** A separate grant store and synthetic-only projection repository for REVIEWER. */
   reviewerAccess?: ReviewerAccessStore;
   reviewerDemo?: ReviewerDemoRepository;
+  /** Only an isolated synthetic/replay workspace; never production actions. */
+  reviewerSandbox?: ReviewerSandboxStore;
   verifySession?: VerifySession;
   /** Actual session invalidator must revoke server-side session, not just clear a cookie. */
   revokeSession?: (actor: VerifiedActor) => Promise<void>;

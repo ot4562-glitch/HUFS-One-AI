@@ -1,137 +1,128 @@
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {z} from 'zod';
-import type {DemoProfileOption, DemoSnapshot, SubjectAlias} from '@hufs-one/contracts';
+import type {AiTask,DemoProfileOption,DemoSnapshot,SafeLlmPacket,SubjectAlias} from '@hufs-one/contracts';
 
 /**
- * Enrollment is one-time PER ACCOUNT, not one-time website access.
- * The person may sign in repeatedly with the same authenticated identity until endsAt.
- * No raw token is persisted; a leaked invitation cannot grant access to another email/sub.
+ * ONE shared high-entropy invitation may enroll up to maxAccounts independently
+ * verified Google identities. Visits remain unlimited until the UTC deadline.
+ * IMPORTANT: bearer-code possession cannot prove someone is a school judge.
+ * Therefore the only data accessible to this role is isolated SYNTHETIC content.
  */
 const Iso=z.iso.datetime({offset:true});
 const Email=z.email().max(254).transform(v=>v.trim().toLowerCase());
 export const ReviewerInviteSpecSchema=z.strictObject({
-  recipientEmail:Email,
   startsAt:Iso,
   endsAt:Iso,
   label:z.string().trim().min(1).max(100),
+  maxAccounts:z.number().int().min(1).max(50).default(20),
 });
 export type ReviewerInviteSpec=z.input<typeof ReviewerInviteSpecSchema>;
 export const ReviewerRecordSchema=z.strictObject({
   id:z.string().min(1),
-  recipientEmail:Email,
-  startsAt:Iso,
-  endsAt:Iso,
-  label:z.string().min(1),
+  startsAt:Iso,endsAt:Iso,label:z.string().min(1),
+  maxAccounts:z.number().int().min(1).max(50),
   tokenDigest:z.string().regex(/^[0-9a-f]{64}$/),
-  issuedAt:Iso,
-  enrolledActorId:z.string().min(1).optional(),
-  enrolledAt:Iso.optional(),
-  revokedAt:Iso.optional(),
+  issuedAt:Iso,revokedAt:Iso.optional(),
 });
 export type ReviewerRecord=z.output<typeof ReviewerRecordSchema>;
+export const ReviewerEnrollmentSchema=z.strictObject({
+  inviteId:z.string().min(1),actorId:z.string().min(1),
+  verifiedEmail:Email,enrolledAt:Iso,
+});
+export type ReviewerEnrollment=z.output<typeof ReviewerEnrollmentSchema>;
 export interface ReviewerGrant {
-  inviteId:string;
-  actorId:string;
-  recipientEmail:string;
-  startsAt:string;
-  endsAt:string;
-  label:string;
+  inviteId:string;actorId:string;verifiedEmail:string;
+  startsAt:string;endsAt:string;label:string;
 }
+/** Separate synthetic fixtures ONLY; production/student repositories never injected. */
 export interface ReviewerDemoRepository {
   listProfiles():Promise<DemoProfileOption[]>;
   readSnapshot(subject:SubjectAlias):Promise<DemoSnapshot|null>;
+  readSafePacket?(subject:SubjectAlias,task:AiTask,ref:string):Promise<SafeLlmPacket|null>;
 }
 export interface ReviewerAccessStore {
-  /**
-   * The issuance API is admin-only and is NOT exposed by a public web route.
-   * In production, implement atomic database transactions with unique digest and grants.
-   */
   saveIssued(record:ReviewerRecord):Promise<void>;
   redeem(input:{tokenDigest:string;actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>;
   readActive(input:{actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>;
   revoke(inviteId:string,now:string):Promise<boolean>;
 }
-const toEpoch=(value:string)=>Date.parse(value);
-export const normalizeReviewerEmail=(value:string):string=>Email.parse(value);
+const epoch=(value:string)=>Date.parse(value);
+export const normalizeReviewerEmail=(value:string)=>Email.parse(value);
 export const digestInviteToken=(token:string):string=>
   createHash('sha256').update(token,'utf8').digest('hex');
-
-const toGrant=(v:ReviewerRecord):ReviewerGrant=>({
-  inviteId:v.id,actorId:v.enrolledActorId!,
-  recipientEmail:v.recipientEmail,startsAt:v.startsAt,endsAt:v.endsAt,label:v.label,
+const granted=(record:ReviewerRecord,enrollment:ReviewerEnrollment):ReviewerGrant=>({
+  inviteId:record.id,actorId:enrollment.actorId,verifiedEmail:enrollment.verifiedEmail,
+  startsAt:record.startsAt,endsAt:record.endsAt,label:record.label,
 });
-const validWindow=(v:ReviewerRecord,now:string)=>!v.revokedAt
-  && toEpoch(v.startsAt)<=toEpoch(now)&&toEpoch(now)<toEpoch(v.endsAt);
+const inWindow=(record:ReviewerRecord,now:string)=>!record.revokedAt
+  &&epoch(record.startsAt)<=epoch(now)&&epoch(now)<epoch(record.endsAt);
 
-/**
- * Call from a restricted operator script after verifying the recipient/email/window.
- * Treat the returned token as a secret. Never publish it in GitHub, CI, logs or query strings.
- * The invitation PDF in the repo is an INACTIVE TEMPLATE with NO token.
- */
+/** Operator-only, no public HTTP issuance endpoint. 32 random bytes, SHA-256 at rest. */
 export async function issueReviewerInvitation(
   store:ReviewerAccessStore,
   spec:ReviewerInviteSpec,
   options:{now:string;id?:string;randomToken?:()=>string},
-):Promise<{invitationId:string;enrollmentCode:string;startsAt:string;endsAt:string;recipientEmail:string}> {
+):Promise<{invitationId:string;enrollmentCode:string;startsAt:string;endsAt:string;maxAccounts:number}> {
   const parsed=ReviewerInviteSpecSchema.parse(spec);
   const now=Iso.parse(options.now);
-  const start=toEpoch(parsed.startsAt),end=toEpoch(parsed.endsAt),created=toEpoch(now);
-  if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end ||end<=created)
+  const start=epoch(parsed.startsAt),end=epoch(parsed.endsAt),created=epoch(now);
+  if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end||end<=created)
     throw new Error('Invalid review period');
-  if(end-start>45*24*60*60*1000)throw new Error('Review window exceeds 45 days');
+  if(end-start>45*24*3600_000)throw new Error('Review window exceeds 45 days');
   const enrollmentCode=(options.randomToken??(()=>randomBytes(32).toString('base64url')))();
   if(!/^[A-Za-z0-9_-]{43}$/.test(enrollmentCode))throw new Error('Secure token shape required');
   const invitationId=options.id??randomUUID();
   await store.saveIssued({
-    id:invitationId,recipientEmail:parsed.recipientEmail,
-    startsAt:parsed.startsAt,endsAt:parsed.endsAt,label:parsed.label,
+    id:invitationId,startsAt:parsed.startsAt,endsAt:parsed.endsAt,
+    label:parsed.label,maxAccounts:parsed.maxAccounts,
     tokenDigest:digestInviteToken(enrollmentCode),issuedAt:now,
   });
   return {invitationId,enrollmentCode,startsAt:parsed.startsAt,
-    endsAt:parsed.endsAt,recipientEmail:parsed.recipientEmail};
+    endsAt:parsed.endsAt,maxAccounts:parsed.maxAccounts};
 }
 
-/**
- * Purely local in-memory reference implementation. Never instantiate this as the
- * production access store: production must use durable atomic persistence and
- * distributed request throttling; restart must not erase revocations.
- */
+/** Local-only fake. The PostgreSQL implementation locks the invitation row. */
 export class MemoryReviewerAccessStore implements ReviewerAccessStore {
-  private readonly byId=new Map<string,ReviewerRecord>();
-  private readonly byDigest=new Map<string,string>();
-
-  async saveIssued(value:ReviewerRecord):Promise<void> {
-    const r=ReviewerRecordSchema.parse(value);
-    if(this.byId.has(r.id)||this.byDigest.has(r.tokenDigest))
+  private readonly invitations=new Map<string,ReviewerRecord>();
+  private readonly digests=new Map<string,string>();
+  private readonly members=new Map<string,Map<string,ReviewerEnrollment>>();
+  async saveIssued(input:ReviewerRecord):Promise<void>{
+    const r=ReviewerRecordSchema.parse(input);
+    if(this.invitations.has(r.id)||this.digests.has(r.tokenDigest))
       throw new Error('Duplicate invitation');
-    this.byId.set(r.id,structuredClone(r));
-    this.byDigest.set(r.tokenDigest,r.id);
+    this.invitations.set(r.id,structuredClone(r));
+    this.digests.set(r.tokenDigest,r.id);
+    this.members.set(r.id,new Map());
   }
-  async redeem(input:{tokenDigest:string;actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null> {
-    const id=this.byDigest.get(input.tokenDigest);
-    const r=id?this.byId.get(id):undefined;
-    if(!r||!validWindow(r,input.now)||r.recipientEmail!==normalizeReviewerEmail(input.verifiedEmail))
-      return null;
-    if(r.enrolledActorId && r.enrolledActorId!==input.actorId)return null;
-    // The token can be reused by its enrolled, email-verified owner; no visit quota.
-    if(!r.enrolledActorId){
-      r.enrolledActorId=input.actorId;
-      r.enrolledAt=input.now;
-    }
-    return toGrant(r);
-  }
-  async readActive(input:{actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null> {
+  async redeem(input:{tokenDigest:string;actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>{
     const email=normalizeReviewerEmail(input.verifiedEmail);
-    for(const r of this.byId.values()) {
-      if(r.enrolledActorId===input.actorId&&r.recipientEmail===email&&validWindow(r,input.now))
-        return toGrant(r);
+    const id=this.digests.get(input.tokenDigest);
+    const record=id?this.invitations.get(id):null;
+    if(!record||!inWindow(record,input.now))return null;
+    const members=this.members.get(record.id)!;
+    const existing=members.get(input.actorId);
+    if(existing)return existing.verifiedEmail===email?granted(record,existing):null;
+    if(members.size>=record.maxAccounts)return null;
+    const member=ReviewerEnrollmentSchema.parse({
+      inviteId:record.id,actorId:input.actorId,verifiedEmail:email,enrolledAt:input.now,
+    });
+    members.set(input.actorId,member);
+    return granted(record,member);
+  }
+  async readActive(input:{actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>{
+    const email=normalizeReviewerEmail(input.verifiedEmail);
+    for(const [id,members] of this.members){
+      const record=this.invitations.get(id)!;
+      const member=members.get(input.actorId);
+      if(member&&member.verifiedEmail===email&&inWindow(record,input.now))
+        return granted(record,member);
     }
     return null;
   }
-  async revoke(inviteId:string,now:string):Promise<boolean> {
-    const r=this.byId.get(inviteId);
-    if(!r)return false;
-    r.revokedAt=Iso.parse(now);
+  async revoke(inviteId:string,now:string):Promise<boolean>{
+    const item=this.invitations.get(inviteId);
+    if(!item)return false;
+    item.revokedAt=Iso.parse(now);
     return true;
   }
 }
