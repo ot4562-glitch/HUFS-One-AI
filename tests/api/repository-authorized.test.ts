@@ -85,7 +85,7 @@ describe('TASK-27 atomic subject projection and independent purpose grants (SQL 
       actorId:actor,subjectId:'S01',grantVersion:'v1',requiredSections:['FEED','NOTICES','FORECAST'],
     });
     expect(full?.forecast).toEqual(snapshot.forecast);
-    expect(await h.repo.readAuthorizedSnapshot({
+    await expect(h.repo.readAuthorizedSnapshot({
       actorId:actor,subjectId:'S01',grantVersion:'v1',requiredSections:['RAW_COURSES'],
     })).rejects.toThrow();
   });
