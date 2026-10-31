@@ -64,6 +64,10 @@ export class PostgresGoogleAuthStore implements GoogleAuthStore{
   }
 
   async createSession(value:GoogleAuthSession):Promise<void>{
+    // Google OIDC can issue only REVIEWER or BETA sessions. ADMIN requires
+    // an independent privileged admission flow and never shares this store.
+    if(value.actor.role!=='BETA'&&value.actor.role!=='REVIEWER')
+      throw new Error('Google OIDC administrative role forbidden');
     if(!digest.test(value.tokenDigest)
       ||value.tokenDigest!==value.actor.sessionIdHash)
       throw new Error('Invalid session digest');
@@ -89,6 +93,7 @@ export class PostgresGoogleAuthStore implements GoogleAuthStore{
       const row=read.rows[0];
       if(!row)return null;
       const actor=authorizeSession(row.actor_payload,now);
+      if(actor.role!=='REVIEWER'&&actor.role!=='BETA')return null;
       if(actor.sessionIdHash!==tokenDigest||row.token_digest!==tokenDigest)return null;
       return {tokenDigest,actor,createdAt:date(row.created_at)};
     }catch{return null;}finally{c.release();}

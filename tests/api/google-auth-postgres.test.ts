@@ -5,6 +5,7 @@ import type {ReviewerSqlPool,ReviewerSqlConnection} from
   '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import type {GoogleAuthSession,GoogleLoginAttempt} from
   '../../apps/api/src/modules/auth/google-auth-store.js';
+import {MemoryGoogleAuthStore} from '../../apps/api/src/modules/auth/google-auth-store.js';
 
 const NOW='2026-10-31T12:00:00.000Z';
 const LATER='2026-10-31T12:05:00.000Z';
@@ -69,6 +70,34 @@ describe('Postgres OIDC persistence: SQL atomicity and fail-closed reads',()=>{
     expect(released).toHaveLength(7);
     expect(statements.some(s=>s.sql.includes('UPDATE google_app_sessions')
       &&s.sql.includes('revoked_at'))).toBe(true);
+  });
+
+  it('forbids any ADMIN identity from the Google OIDC session store',async()=>{
+    const admin:GoogleAuthSession={
+      tokenDigest:DIGEST,createdAt:NOW,
+      actor:{
+        actorId:'google:unapproved-admin',role:'ADMIN',
+        sessionIdHash:DIGEST,sessionExpiresAt:LATER,
+        schoolMailProofExpiresAt:LATER,betaAllowed:true,
+        csrfToken:'C'.repeat(43),
+      },
+    };
+    let writes=0;
+    const db:ReviewerSqlConnection={
+      query:async sql=>{
+        if(sql.includes('INSERT INTO google_app_sessions'))writes++;
+        return {rows:sql.includes('SELECT token_digest')?[{
+          token_digest:DIGEST,actor_payload:admin.actor,created_at:NOW,
+        }]:[]};
+      },
+      release:()=>{},
+    };
+    const store=new PostgresGoogleAuthStore({connect:async()=>db});
+    await expect(new MemoryGoogleAuthStore().createSession(admin))
+      .rejects.toThrow(/role|admin/i);
+    await expect(store.createSession(admin)).rejects.toThrow(/role|admin/i);
+    expect(writes).toBe(0);
+    expect(await store.readSession(DIGEST,NOW)).toBeNull();
   });
 
   it('does not return malformed, spoofed or stale actor data on DB reads',async()=>{

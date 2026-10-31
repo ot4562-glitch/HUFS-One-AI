@@ -41,13 +41,16 @@ export class MemoryGoogleAuthStore implements GoogleAuthStore {
     return value?structuredClone(value):null;
   }
   async createSession(value:GoogleAuthSession):Promise<void>{
+    if(value.actor.role!=='REVIEWER'&&value.actor.role!=='BETA')
+      throw new Error('Google OIDC administrative role forbidden');
     if(this.sessions.size>=512||this.sessions.has(value.tokenDigest))
       throw new Error('Unable to create session');
     this.sessions.set(value.tokenDigest,structuredClone(value));
   }
   async readSession(key:string,now:string):Promise<GoogleAuthSession|null>{
     const value=this.sessions.get(key);
-    if(!value||Date.parse(value.actor.sessionExpiresAt)<=Date.parse(now))return null;
+    if(!value||!['REVIEWER','BETA'].includes(value.actor.role)
+      ||Date.parse(value.actor.sessionExpiresAt)<=Date.parse(now))return null;
     return structuredClone(value);
   }
   async revokeSession(key:string):Promise<void>{this.sessions.delete(key);}
