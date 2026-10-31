@@ -30,7 +30,7 @@
 ## 2026-10-31 신규 추가 기능: ‘내 주요 일정’ 캘린더 협업 지도
 
 - **김채윤 `qamarrchae` — 계산 코어:** [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)에서 확정 학생 서류마감·공고 신청마감·행사/시험을 구분해 `buildCalendar`를 계산한다. [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 공식 `NoticeResult.items[].overdue` 직렬화와 선행 병합·최신 승인이 먼저다. [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)의 일부 미공유 입력 차단도 계산 전 적용한다.
-- **심민성 `ot4562-glitch` — 공통 계약·권한/API:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) `CalendarResultSchema`는 2026-10-31 main에 병합됨. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 `GET /api/demo/contexts/:contextId/calendar`는 아직 미구현. 서버 인증 actor·subject·SharingGrant·source rights·`asOf`·`scopeKey`와 철회/동시성/partial sharing 검증 뒤 안전한 결과만 전달한다. 관련 #35/#39/#54.
+- **심민성 `ot4562-glitch` — 공통 계약·권한/API:** [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) `CalendarResultSchema`는 2026-10-31 main에 병합됨. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 `GET /api/demo/contexts/:contextId/calendar`는 아직 미구현. 서버 인증 actor·subject·SharingGrant·source rights·`asOf`·`scopeKey`와 철회/동시성/partial sharing 검증 뒤 안전한 결과만 전달한다. 관련 #35/#39/#55.
 - **이의상 `uisang2004-maker` — 웹 UI:** [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), 오늘 탭 하단 2주/월간 보기·날짜 미정/적용 확인 필요 별도 목록·360px 모바일·키보드/스크린리더·텍스트+아이콘 보장. 컨텍스트 교체·철회 후 이전 학생 일정이 잠시도 남지 않게 한다.
 - **박준영 `taewangim-alt` — 학사 검토:** 실제 학생 대상 졸업시험·인증 서류 마감, 적용 전공/입학학기·학적/졸업예정기간의 공식 근거를 독립 검토한다. 자기기재 목표학기를 공식 검증으로 승격하지 않는다.
 - **이서연 `lhh42001`:** 제공자·NCP 환경 책임만 유지하며 캘린더 API/React 코어를 대신하지 않는다. 개인정보·실자료 전송/유료 호출은 별도 승인 전 금지.
