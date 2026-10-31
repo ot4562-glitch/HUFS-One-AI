@@ -253,6 +253,18 @@ export class DemoController {
       context:null,snapshot:null,error:null});
   }
 
+  /**
+   * Clear a tab after observing a same-origin session-close broadcast.
+   * This never revokes a different account or authorizes a new request;
+   * it only removes potentially stale on-screen material locally.
+   */
+  invalidateLocalSession():void {
+    if(this.disposed)return;
+    this.endingSession=true;
+    this.clear();
+    this.emit({...this.state,status:'SIGNED_OUT',error:null});
+  }
+
   /** On logout, prevent all new requests until a NEW verified controller is created. */
   async logout():Promise<void> {
     if(this.disposed||this.endingSession)return;
