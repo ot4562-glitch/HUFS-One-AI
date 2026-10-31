@@ -1,5 +1,8 @@
 # HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
+> **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **Standard-g3 VPC 4 vCPU/16GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
+
+
 기술 계약 정본: [Architecture.md](Architecture.md) A02·A13·A14.1a·A15·A18. 아래는 **예정 아키텍처**로, DNS·Google OAuth·NCP가 설정/배포됐다는 뜻이 아니다.
 
 ## 공개 주소와 접근 제한
@@ -40,3 +43,20 @@ Google 토큰의 `email_verified` 또는 요청의 `hd` 힌트 단독으로 **�
 Google ID token 위조/만료, Gmail 단독, `hd` 요청값 변조, 외대 이메일 미소유, OTP 만료/재사용/다른 Google `sub` 가로채기, 미초대 actor, 동의 철회, 익명 HTML·API·저장소·직접 IP·preview·캐시·로그아웃 후 접근을 모두 막는지 검증한다. DNS/TLS·Google OAuth·OTP 메일 발송·인가·부정 E2E 중 하나라도 미검증/실패면 **인터넷 서비스 배포 BLOCKED**다. 학교 **공식 SSO 허가 부재만으로는 차단하지 않는다**.
 
 검증 근거: [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect) · [Google 서버 로그인 검증](https://developers.google.com/identity/sign-in/web/backend-auth).
+
+## 2026-10-31 Standard-g3·Laya·OCR/Vision·Temporal RAG 설계 (미구현)
+
+- **NCP 단일 VPC 서버(본선 선정·크레딧 확인 후):** 한국 Linux Standard-g3 4vCPU·16GB 237원/시간(기본 디스크 없음), CB1/CB2 50GB 별도 0.16원/GB·시간. 11/6~12/9 최대 816시간(200,000원 이내, VAT 별도); 학교 공고 본선 발표 11/16 이후 576시간 가정 141,120원. 공인 IP·egress·OCR/HCX·백업·VAT는 별도. 2번째 VM/GPU·유료 서비스 자동 개통 없음.
+- **Laya:** Apache-2.0 `laya-multilingual` 322M, ONNX FP32 CPU pinned revision, 워커 1개·최대 RSS 3GiB 가설. peak/지연/한국어 분류 성능 검증 실패면 `LAYA_ENABLED=false`로 폴백. 실제 weight 다운로드/프로세스 가동은 별도 승인.
+- **이미지:** General OCR을 허용된 새 이미지/변경 이미지에 1차 실행. 좌표·원본 해시 보존 후 필요한 경우에만 HCX-005 Vision 후보 호출, HCX-007은 허용 근거 텍스트 구조화. 인증·자료권한을 우회하거나 학생 raw를 AI로 전송하지 않음.
+- **시간 기반 RAG:** 동일 NCP 서버 PostgreSQL의 승인 문서 revision·인용좌표·적용기간/`asOf` 선필터 + 경량 lexical 검색, 변경/취소 시 검색 인덱스·검증캐시 무효화. 별도 vector DB는 검증 후 opt-in.
+- **크레딧:** 학교 공고 본선팀 NCP 50만원 상당/개발비 50만원은 별도·미발급. 예산 초기 상한 서버/CB 최대 200k, HCX 100k, OCR/Gateway 35k, IP/백업/트래픽 40k, 위험예비비 125k. 실제 발급·적용 SKU·과금/잔액/지원기간 확인 후 사용자 승인 없이 개통 금지.
+- **릴리스:** `AI_ENABLED`, `MEDIA_INGEST_ENABLED`, `VISION_ENABLED`, `RAG_ENABLED`, `LAYA_ENABLED` 기본 false; 예산 미설정/권한 실패/자료 stale/모델 장애는 fail closed. 상세 게이트: [docs/TRUSTED_RAG_MEDIA_VERSIONING.md](docs/TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 심사자 기간제 REVIEWER 접근: 별도 VM 없이 (계획)
+
+심사자도 기존 한 서버·독립 HTTPS origin에서 로그인하되, 학교 공식 SSO/IdP를 사용한 척하지 않고 Google OIDC + 이메일 proof + 영속 REVIEWER 초대 원장으로 인가한다. 새 VM/유료 서비스 자동 생성은 필요하지 않다. SHA-256 digest만 PostgreSQL `reviewer_invitations`에 보관, `endsAt` 종료/철회는 매 요청 권한 검사(별도 Cron/JS 타이머 없이 403)로 적용. reviewer synthetic repository/route는 팀원·실학생 DB/AI API와 분리. 외부 IP/preview/CDN/static 번들, 키/메일·DB 계정·HTTPS 설정과 E2E가 모두 준비되기 전 **실제 외부 접속 불가**. 새 설계: [docs/REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md).
+
+## Laya CPU 스파이크·Standard-g3 보호 계약 (2026-10-31)
+
+NCP 단일 4vCPU·16GB에서 API/DB를 우선 보호한다. Laya는 `LAYA_ENABLED=false`가 기본이며 별도 cgroup `CPUQuota=100%`(**1vCPU 상한**, 4vCPU 전체 CPU 시간의 25%), ORT 단일스레드/spin OFF, MemoryMax 3072M, queue≤16/worker=1. API p95/CPU pressure/RAM 악화 시 PAUSE/OFF하고 확정 코드로 폴백. 실제 Standard-g3 부하 실측 전 모델 실행 금지. [CPU 방어](docs/LAYA_CPU_SPIKE_PROTECTION.md).
