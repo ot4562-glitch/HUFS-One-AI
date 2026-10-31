@@ -112,6 +112,20 @@ async function harness(){
 }
 
 describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic only)',()=>{
+  it('authorizes a trusted REVIEWER grant directly when CSRF, Origin and invite match',async()=>{
+    const {app,invite}=await harness();
+    const direct=await app.inject({
+      method:'POST',url:'/api/reviewer/invitations/redeem',
+      headers:{
+        origin:ORIGIN,cookie:'reviewer-one',
+        'x-csrf-token':reviewer.csrfToken,
+      },
+      payload:{enrollmentCode:invite.enrollmentCode},
+    });
+    expect(direct.statusCode).toBe(200);
+    expect(direct.json().role).toBe('REVIEWER');
+  });
+
   it('redeems an invitation and operates one fake student end-to-end without real reads',async()=>{
     const {access,invite,browser,getRealReads}=await harness();
     const {client,history}=browser('reviewer-one');
