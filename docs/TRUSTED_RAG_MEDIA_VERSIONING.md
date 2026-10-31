@@ -1,6 +1,6 @@
 # HUFS One AI | 시간·이미지·근거 검증형 RAG와 Laya 운영 계약
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
 
 
 > **상태: 제안된 설계 계약(미구현·미배포·미결제)** · 2026-10-31
@@ -14,7 +14,7 @@
 
 ## 2. 실제 결정한 배치와 활성화 경계
 
-- **NCP 컴퓨트 선택:** 한국 리전 Linux `Standard-g3` **4 vCPU·16GB RAM·기본 50GB**, 단일 서버(HA 아님), 네트워크 차단·자동 재시작·최소 권한. 공식 가격표의 Classic 일반 서버 50GB 기준 **237원/시간, 약 170,240원/월(VAT 별도)**는 **견적 기준점**일 뿐 실청구액이 아니며 VPC/리전/크레딧 적용·Block Storage·백업·IP·트래픽은 콘솔에서 별도 확인한다.
+- **NCP 컴퓨트 선택:** 한국 리전 Linux `High Memory-g3` **4 vCPU·32GB RAM·기본 50GB**, 단일 서버(HA 아님), 네트워크 차단·자동 재시작·최소 권한. 공식 가격표의 Classic 일반 서버 50GB 기준 **326원/시간, 약 234,240원/월(VAT 별도)**는 **견적 기준점**일 뿐 실청구액이 아니며 VPC/리전/크레딧 적용·Block Storage·백업·IP·트래픽은 콘솔에서 별도 확인한다.
 - **같은 VM의 서비스:** 인증된 React 정적 자원 전달/Node Fastify API, PostgreSQL(적은 연결·권한 분리), 제한된 `ingest-worker`, 검색 인덱스, **Laya 멀티링구얼 CPU worker**. DB를 인터넷에 직접 노출하지 않는다. 이미지·원문은 승인 범위에 따라 암호화된 비공개 볼륨 또는 권한 제한 Object Storage에 두며 익명 공개·직접 IP 접근을 차단한다.
 - **Laya:** `convaiinnovations/laya`의 **322M 파라미터 multilingual** checkpoint를 Apache-2.0 라이선스와 정확한 revision/hash로 고정한다. 공개된 **ONNX FP32 CPU** 경로를 우선 비교하고 지원 ONNX Runtime 버전(공개 export 기준 **1.23+**)을 잠근다. 가중치·개인 입력·결정 로그를 GitHub/CI에 올리지 않는다. 사전 탐색이 아닌 **공고 문서종류·검수 필요도·복잡한 이미지의 HCX 우회/호출 결정 후보**에만 사용하며 단독 자격/신청마감 확정 금지.
 - Laya는 실제 사전 측정 전 **의무 실행이 아닌 기본 비활성 feature flag**로 둔다. 모델 설치/실행 선택은 이번 **설계 승인** 범위에 포함하되, 서버 생성·다운로드·실행·개별 모델 비용은 명시적 배포/결제 승인 뒤 수행한다. Laya 비활성/오류/지연이면 항상 확정적인 규칙 기반 분기(필수 OCR·확인 필요 상태)로 돌아간다.
@@ -98,28 +98,28 @@ interface DecisionAdvice {
 - 임베딩/pgvector, 외부 유료 Reranker/managed RAG는 필수 의존성이 아니다. 실험 승인이 있다면 비용/latency/Recall@k 개선 시에만 옵트인. 검색 결과가 없어도 모델이 지식을 지어내지 않도록 `NO_EVIDENCE`와 제한된 안내를 반환.
 - 정정/취소 문서 충돌시 단일 문장을 임의로 최신 진실로 삼지 않는다. 원문 기관, 공식 업데이트 날짜, revision chain을 보존하고 `CONFLICT`/review route 표시. 검색 결과가 정확히 정렬됐다는 사실은 진실성 보증이 아니다.
 
-## 6. CPU·메모리·시간 예산 (Standard-g3 2 vCPU/8GB; 가설→실측)
+## 6. CPU·메모리·시간 예산 (High Memory-g3 4 vCPU/32GB; 가설→실측)
 
-| 구성 | RSS 설계 예산(초안) | 가드 |
+서버 크기/운영 시기/원장 정본은 [NCP 공식 비용·운영](NCP_OPERATIONS_2026.md) 참조. Linux VPC High Memory-g3 4vCPU/32GB는 **코어 4개**, CPU 밀집형 추론은 API 지연과 경합 가능하다. 모델은 기본 OFF이며 cgroup CPU-time 최대 1vCPU로 제한한다.
+
+| 구성 | 32GiB 설계 RAM 상한·예산 (가정) | 미검증 가드 |
 |---|---:|---|
-| OS·reverse proxy·보안/모니터링 | 1.0GiB | 외부 공개 경로 최소화 |
-| Node API + 웹 제공 | 0.8GiB | Node memory limit, 1 process |
-| PostgreSQL + 소형 검색 인덱스 | 1.2GiB | pool 5, shared_buffers 절제 |
-| Laya multilingual ONNX CPU | 최대 3.0GiB | worker 1, 모델 하나만 로드, 긴 문서 입력 금지 |
-| ingest/OCR 결과 처리 | 0.7GiB | worker 1, 이미지 크기/큐 길이 제한 |
-| 여유·페이지 캐시·일시적 피크 | 1.3GiB | OOM 경고·kill switch |
-| **합계** | **8.0GiB** | 측정 전 보장 아닌 **가정상 용량 배분** |
+| OS/reverse proxy/보안/관측 | 2GiB | 공개 포트/프로세스 최소화 |
+| Node/API 및 정적 웹 | 2GiB | Node RSS·GC/p95 |
+| PostgreSQL 및 임시 작업 | 6GiB | pool 제한·인덱스/정정 부하 |
+| 수집/OCR 입력 검사 워커 | 3GiB | 1 worker·image 상한 |
+| Laya ONNX 선택 워커 | 3GiB | MemoryMax=3072M, 기본 OFF |
+| OS 페이지캐시·PostgreSQL 검색 여유 | 12GiB | 사용중인 메모리와 별도 실제 측정 |
+| 장애 복구 및 기타 headroom | 4GiB | MemAvailable·OOM |
+| **합계** | **32GiB** | 고정 예약이 아닌 **사전 성능 배분 가설** |
 
-- Laya 멀티링구얼 **322M FP32 raw weight만 대략 1.3GB**(322M×4byte)이고 tokenizer/activation/ONNX session 포함 RSS는 더 커진다. 실제 배포 전에 입력 512/1024토큰, 1·5·10판단, 한국어 공고 후보 세트를 통해 **메모리 peak ≤ 3GiB, 서버 전체 peak ≤ 7GiB, API p95 회귀 미발생**, OOM·CPU 포화 여부를 측정한다.
-- 위 게이트 실패 또는 p95 사용자 조회 지연 악화 시 Laya **비활성화/별도 일회성 배치**로 강등하고 CPU 서버 증설을 자동 실행하지 않는다. 선택형 Laya 결과는 캐시/비동기 큐에서만 사용한다. Laya는 요청별 직접 사용자 화면 경로의 필수 의존성이 아니다.
-- 인덱싱·이미지 전처리는 bounded queue, 최대 1건 동시 진행. 외부 모델 호출 concurrency 1, job idempotency, 재시도 최대 1회. 급격한 수집 폭증은 허용 목록에서 분할 처리.
-- Laya 모델 가중치는 허용된 다운로드 경로·라이선스·revision·sha256 확인 뒤 **서버 비공개 저장**. 다운로드→모델 적재→초기 warm-up은 검증 전 비용·메모리 확인 대상; CI나 배포 파이프라인의 무제한 다운로드 금지.
+Laya FP32 raw 가중치 약 1.3GB 추산(322M×4byte) 외에 tokenizer/activation/ORT 메모리가 추가로 필요하다. 실제 NCP에서 API p95 baseline 대비 20% 내 지연·P0 GET 500ms 이하, Laya RSS≤3GiB, 서버 전체 peak<28GiB, MemAvailable>3GiB 및 OOM 0을 **부하 시험으로 증명하기 전 모델 ON 불가**. 실패 시 Laya OFF/규칙 폴백, 자동 VM 증설·GPU 추가 금지.
 
 ### 6.1. Laya CPU spike 방어 세부 (정본 [LAYA_CPU_SPIKE_PROTECTION.md](LAYA_CPU_SPIKE_PROTECTION.md))
 
-- **1vCPU 절대 상한**: 별도 cgroup의 `CPUQuota=100%`는 1코어 시간의 절반이고 4vCPU 전체 절반이 **아님**. 독립 systemd worker, `CPUWeight=10`/`Nice=10`, ONNX Runtime CPU intra/inter thread=1·spinning OFF·OMP/BLAS thread=1로 API/DB와 경쟁을 줄인다. `MemoryHigh=2500M`, `MemoryMax=3072M`, 총 VM peak<14GiB; 상한이 실제 적용되는지 측정 실패하면 `LAYA_ENABLED=false` 유지.
+- **1vCPU 절대 상한**: 별도 cgroup의 `CPUQuota=100%`는 **1 vCPU CPU-time 상한**, 이 4vCPU 인스턴스 최대 CPU-time의 **25%**이며 물리 코어 예약은 **아님**. 독립 systemd worker, `CPUWeight=10`/`Nice=10`, ONNX Runtime CPU intra/inter thread=1·spinning OFF·OMP/BLAS thread=1로 API/DB와 경쟁을 줄인다. `MemoryHigh=2500M`, `MemoryMax=3072M`, 총 VM peak<14GiB; 상한이 실제 적용되는지 측정 실패하면 `LAYA_ENABLED=false` 유지.
 - **백그라운드 전용**: 모델 최초 적재/워밍과 장문/동시 추론은 사용자 요청·심사자 반복 조회 경로에서 완전히 제외. queue≤16·동시 실행 1·최대 512 tokens·30초 대기/20초 작업 timeout, hash/version 기준 dedup/cache, 버전 갱신 후 무효화. API는 언제나 검증된 cache 또는 규칙+검수대기 폴백이며 `REVIEWER` 요청으로 Laya worker/유료 HCX가 실행되지 않는다.
-- **스파이크 감시**: host CPU≥70% 20초/VM available RAM<1.2GiB/GET p95 baseline×1.25 또는 400ms 초과 30초/cpu.pressure 증가 시 PAUSE. OOM·CPU≥90%+API 악화·비정상 p95 반복 시 OFF(수동 재개). 이 값들은 **운영 전 가설**, 인가된 Standard-g3에서 API p95 기준선 대비 ≤20% 악화, GET p95≤500ms, worker RSS≤3GiB·host peak<14GiB, OOM 0을 실제 확인해야 기능 활성화 가능.
+- **스파이크 감시**: host CPU≥70% 20초/VM available RAM<3GiB/GET p95 baseline×1.25 또는 400ms 초과 30초/cpu.pressure 증가 시 PAUSE. OOM·CPU≥90%+API 악화·비정상 p95 반복 시 OFF(수동 재개). 이 값들은 **운영 전 가설**, 인가된 High Memory-g3에서 API p95 기준선 대비 ≤20% 악화, GET p95≤500ms, worker RSS≤3GiB·host peak<28GiB, OOM 0을 실제 확인해야 기능 활성화 가능.
 - **학습 불필요**: 초기 시연에서는 30~50건 합성 라벨로 zero-shot Laya ON/OFF·rule-only F1/false skip/CPU 성능을 비교. 파인튜닝·GPU/추가 VM 조달은 기본 범위 밖이다.
 - **실제 클라우드/모델 실행 없음**. 실행 서비스 유닛·관측 지표·롤백/runbook 세부는 [Laya CPU 급증 방어 설계](LAYA_CPU_SPIKE_PROTECTION.md)와 [이슈 #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)를 우선한다.
 
@@ -129,14 +129,14 @@ interface DecisionAdvice {
 
 | 크레딧 50만 원 중 가상의 운영 상한(제안) | 한도 |
 |---|---:|
-| Standard-g3 서버 가동 최대 약 2개월 + 기본 컴퓨트 | 190,000원 |
-| HCX-005·HCX-007 및 검증 호출 | 110,000원 |
-| General OCR·API Gateway | 20,000원 |
-| 보안·스토리지·네트워크·백업 등 미정 서비스 | 50,000원 |
-| 긴급 reserve(기본 잠금, 자동 소진 불가) | 130,000원 |
+| **816h 상한 서버+CB+IP 및 부가세 단순 추산** | **305,000원** |
+| HCX-005·HCX-007 등 검증된 유료 호출 상한 | 80,000원 |
+| General OCR 사용량 상한 | 20,000원 |
+| 네트워크·백업·기타 부대비 | 25,000원 |
+| 긴급 reserve(승인 없이 사용 금지) | 70,000원 |
 | **상한 합계(크레딧 기준)** | **500,000원** |
 
-- 실제 서버 50GB·계정 리전 공개 요금표 기준 `237원/시간`, 한 달 `85,120원(VAT 별도)`; 약 60일 **171,360원(119×24×60)**. **확정 견적이 아닌 근사치**다. 인스턴스 실행·정지·디스크와 월 구분을 실제 콘솔에서 확인한다.
+- 실제 한국 리전 VPC Linux High Memory-g3 4vCPU/32GB **326원/h**, 별도 KVM SSD CB 50GB **0.16원/GB·h = 8원/h**, 공인 IP 1개 **5.6원/h(선택)**. 11/6~12/9 전체 816h (서버+CB+IP 277,113.6원), 본선 발표 11/16 이후 최대 576h (195,609.6원). VAT/이외 상품과 실제 콘솔 청구는 별도. [산식/근거](NCP_OPERATIONS_2026.md).
 - OCR General 글자 추출 **3원/건, 월 무료 100건**, 표 추출 추가요금 및 API Gateway 별도. 1,000개 **순수 글자** 요청이 모두 같은 월에 발생하면 가정상 (1,000-100)×3 = **2,700원(VAT/게이트웨이 제외)**. OCR의 저렴함이 Vision의 토큰 사용료까지 포함하지는 않는다.
 - HCX-005/007 **정확한 토큰 단가, image 토큰 수, 크레딧 차감 가능 여부, API Gateway·네트워크·스토리지 비용은 출시 전 공식 콘솔에서 견적 확인**. 수치를 임의 고정하지 않는다. 실서비스 예산승인 전에 `AI_ENABLED=false`, `VISION_ENABLED=false`, `LAYA_ENABLED=false`.
 - **비용 호출 순서:** 캐시 hit → OCR 필요 → 정규식/필드검증 → Laya(옵트인) → HCX-005(불확실할 때) → HCX-007(사용자에게 필요한 해석만). 각 호출 전 `worstCaseTokens * officialRate`로 예산 원자 예약; 실측 사용량으로 정산. 비용미확정이면 `BLOCKED_BUDGET`.
@@ -157,7 +157,7 @@ interface DecisionAdvice {
 | 소유 | 인계 |
 |---|---|
 | **심민성 / 통합** | 본 계약, contracts vNext, schema/evidence/asOf, budget gates, CI·릴리스 부정 테스트, PR 교차검토 |
-| **이서연 / NCP·CLOVA·OCR/Vision·Laya 모델/Provider 전담** | Standard-g3 인프라/CPU Laya service/worker, 인증·allowlist, OCR/HCX API, 스토리지·사용량 원장 |
+| **이서연 / NCP·CLOVA·OCR/Vision·Laya 모델/Provider 전담** | High Memory-g3 인프라/CPU Laya service/worker, NCP IAM·TLS/인프라·provider SDK, OCR/HCX API, 스토리지·사용량 원장 |
 | **김채윤 / 추천·공지** | 승인된 SourceRevision/VerifiedClaim만 소비, 구본 추천 제외, score/공지 캐시 무효화 |
 | **박준영 / 학업·전망** | RulePack·공지 근거 범위, 적용학번/졸업학기·각주 누락·출처 버전 검토 |
 | **이의상 / 화면·모바일** | 원본 이미지 근거 확대 표시, LAST_VERIFIED·불확실·STALE·SYNTHETIC 배지, 권한철회 차단 |
@@ -169,7 +169,7 @@ interface DecisionAdvice {
 ## 10. 검증할 공인 자료
 
 - [한국외대 2026 바이브코딩 경진대회 공식 비교과 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089) — 본선 50만원 개발비 + 별도 NCP 크레딧 50만원, 상세 일정
-- [NAVER Cloud 서버 요금표](https://www.ncloud.com/charge/region/ko) — Standard-g3 4vCPU/16GB, 237원/시간/170,240원/월, VAT 별도(실제 SKU 확인)
+- [NAVER Cloud 서버 요금표](https://www.ncloud.com/charge/region/ko) — High Memory-g3 4vCPU/32GB, 326원/시간/234,240원/월, VAT 별도(실제 SKU 확인)
 - [NAVER Cloud General OCR 사용법](https://guide.ncloud-docs.com/docs/clovaocr-general) — 이미지/해상도/페이지 조건, OCR 좌표
 - [NAVER Cloud OCR 요금표](https://www.ncloud.com/charge/price/ko) — 글자 OCR 3원/건, 월 100건 무료, Gateway 별도
 - [NAVER Cloud CLOVA Studio 모델](https://guide.ncloud-docs.com/docs/clovastudio-model) — HCX-005 Vision, HCX-007 텍스트 추출 모델별 지원 기능
