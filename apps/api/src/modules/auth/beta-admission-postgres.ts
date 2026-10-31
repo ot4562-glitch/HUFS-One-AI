@@ -13,6 +13,18 @@ function text(raw:unknown):string{
   return raw;
 }
 
+function proof(row:Record<string,unknown>):BetaAdmissionProof{
+  return BetaAdmissionProofSchema.parse({
+    googleSubject:text(row.google_subject),
+    schoolEmail:text(row.school_email),
+    method:text(row.method),
+    proofVerifiedAt:timestamp(row.proof_verified_at),
+    proofExpiresAt:timestamp(row.proof_expires_at),
+    approvedUntil:timestamp(row.approved_until),
+    revokedAt:row.revoked_at?timestamp(row.revoked_at):null,
+  });
+}
+
 export class PostgresBetaAdmissionStore implements BetaAdmissionStore {
   constructor(private readonly pool:ReviewerSqlPool){}
   async readApproved(input:{
@@ -27,17 +39,22 @@ export class PostgresBetaAdmissionStore implements BetaAdmissionStore {
           AND proof_verified_at<=$3 AND proof_expires_at>$3
           AND approved_until>$3 AND revoked_at IS NULL
         LIMIT 1`,[input.googleSubject,input.schoolEmail,input.at]);
-      const x=r.rows[0];
-      if(!x)return null;
-      return BetaAdmissionProofSchema.parse({
-        googleSubject:text(x.google_subject),
-        schoolEmail:text(x.school_email),
-        method:text(x.method),
-        proofVerifiedAt:timestamp(x.proof_verified_at),
-        proofExpiresAt:timestamp(x.proof_expires_at),
-        approvedUntil:timestamp(x.approved_until),
-        revokedAt:x.revoked_at?timestamp(x.revoked_at):null,
-      });
+      return r.rows[0]?proof(r.rows[0]):null;
+    }finally{c.release();}
+  }
+  async readApprovedForGoogleSubject(input:{
+    googleSubject:string;at:string;
+  }):Promise<BetaAdmissionProof|null>{
+    const c=await this.pool.connect();
+    try{
+      const found=await c.query(`SELECT google_subject,school_email,method,
+        proof_verified_at,proof_expires_at,approved_until,revoked_at
+        FROM beta_school_proofs
+        WHERE google_subject=$1 AND method='MAILBOX_OTP'
+          AND proof_verified_at<=$2 AND proof_expires_at>$2
+          AND approved_until>$2 AND revoked_at IS NULL
+        LIMIT 1`,[input.googleSubject,input.at]);
+      return found.rows[0]?proof(found.rows[0]):null;
     }finally{c.release();}
   }
 }

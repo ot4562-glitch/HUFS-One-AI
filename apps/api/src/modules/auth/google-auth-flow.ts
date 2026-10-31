@@ -133,19 +133,22 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
           actor={...common,role:'REVIEWER',verifiedEmail:identity.verifiedEmail,
             identityProofExpiresAt:new Date(until).toISOString()};
         }else{
-          if(!identity.verifiedEmail.endsWith('@hufs.ac.kr')||!config.authorizeBeta)
-            throw new GoogleAuthFlowError();
+          if(!config.authorizeBeta)throw new GoogleAuthFlowError();
           const admission=await config.authorizeBeta(identity);
           if(!admission||admission.googleSubject!==identity.googleSubject
             ||admission.verifiedEmail!==identity.verifiedEmail
+            ||!/^[^\s@]+@hufs\.ac\.kr$/.test(admission.schoolEmail)
+            ||admission.schoolEmail!==admission.schoolEmail.toLowerCase()
             ||(admission.proofMethod!=='MAILBOX_OTP'
               &&admission.proofMethod!=='SIGNED_WORKSPACE')
             ||(admission.proofMethod==='SIGNED_WORKSPACE'
-              &&!identity.schoolWorkspaceVerified))throw new GoogleAuthFlowError();
+              &&(!identity.schoolWorkspaceVerified
+                ||identity.verifiedEmail!==admission.schoolEmail)))
+            throw new GoogleAuthFlowError();
           const proof=utc(admission.schoolMailProofExpiresAt);
           if(proof<=at)throw new GoogleAuthFlowError();
           actor={...common,role:'BETA',betaAllowed:true,
-            verifiedSchoolEmail:identity.verifiedEmail,
+            verifiedSchoolEmail:admission.schoolEmail,
             schoolProofMethod:admission.proofMethod,
             schoolMailProofExpiresAt:new Date(Math.min(proof,until)).toISOString()};
         }

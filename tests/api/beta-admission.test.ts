@@ -41,6 +41,7 @@ describe('HUFS beta admission must bind Google sub, verified school email, indep
     await expect(authorize(example)).resolves.toEqual({
       googleSubject:example.googleSubject,
       verifiedEmail:example.verifiedEmail,
+      schoolEmail:example.verifiedEmail,
       proofMethod:'SIGNED_WORKSPACE',
       schoolMailProofExpiresAt:approval.proofExpiresAt,
     });
@@ -49,6 +50,27 @@ describe('HUFS beta admission must bind Google sub, verified school email, indep
     const {authorize}=harness({...approval,method:'MAILBOX_OTP'});
     expect(await authorize({...example,hostedDomain:null,schoolWorkspaceVerified:false}))
       .toMatchObject({proofMethod:'MAILBOX_OTP',verifiedEmail:example.verifiedEmail});
+  });
+  it('binds a personal Google login to an independently approved school OTP',async()=>{
+    const {store,authorize}=harness({
+      ...approval,method:'MAILBOX_OTP',proofVerifiedAt:null,proofExpiresAt:null,
+    });
+    const personal={...example,verifiedEmail:'student@gmail.com',
+      hostedDomain:null,schoolWorkspaceVerified:false};
+    expect(await authorize(personal)).toBeNull();
+    expect(await store.confirm({
+      googleSubject:example.googleSubject,schoolEmail:example.verifiedEmail,
+      verifiedAt:'2026-10-31T11:55:00.000Z',
+      validUntil:'2026-10-31T12:55:00.000Z',
+    })).toBe(true);
+    expect(await authorize(personal)).toEqual({
+      googleSubject:example.googleSubject,verifiedEmail:'student@gmail.com',
+      schoolEmail:example.verifiedEmail,proofMethod:'MAILBOX_OTP',
+      schoolMailProofExpiresAt:'2026-10-31T12:55:00.000Z',
+    });
+    store.setApproved({...approval,method:'MAILBOX_OTP',
+      revokedAt:'2026-10-31T11:59:00.000Z'});
+    expect(await authorize(personal)).toBeNull();
   });
   it('rejects Gmail, spoofed domain, mismatched Google sub, and altered email',async()=>{
     const {authorize}=harness();
@@ -88,7 +110,7 @@ describe('HUFS beta admission must bind Google sub, verified school email, indep
     const actor={
       actorId:'google:'+example.googleSubject,role:'BETA' as const,
       sessionIdHash:'S'.repeat(64),sessionExpiresAt:example.identityProofExpiresAt,
-      csrfToken:'C'.repeat(43),schoolMailProofExpiresAt:approval.proofExpiresAt,
+      csrfToken:'C'.repeat(43),schoolMailProofExpiresAt:approval.proofExpiresAt!,
       betaAllowed:true,verifiedSchoolEmail:example.verifiedEmail,
       schoolProofMethod:'SIGNED_WORKSPACE' as const,
     };
@@ -146,5 +168,31 @@ describe('PostgreSQL beta grant reads',()=>{
       connect:async()=>sql,
     }).readApproved({googleSubject:'x',schoolEmail:'x@hufs.ac.kr',at:NOW.toISOString()}))
       .toBeNull();
+  });
+  it('looks up a personal Google identity by immutable subject with OTP-only proof',async()=>{
+    const calls:Array<{sql:string;params:readonly unknown[]}>=[],released:number[]=[];
+    const row={google_subject:example.googleSubject,
+      school_email:example.verifiedEmail,method:'MAILBOX_OTP',
+      proof_verified_at:'2026-10-31T11:59:00.000Z',
+      proof_expires_at:'2026-10-31T12:59:00.000Z',
+      approved_until:'2026-11-07T00:00:00.000Z',revoked_at:null};
+    const sql:ReviewerSqlConnection={
+      query:async(statement,params=[])=>{
+        calls.push({sql:statement,params});
+        return {rows:[row]};
+      },
+      release:()=>{released.push(1);},
+    };
+    const store=new PostgresBetaAdmissionStore({connect:async()=>sql});
+    const personal={...example,verifiedEmail:'student@gmail.com',
+      hostedDomain:null,schoolWorkspaceVerified:false};
+    const decision=await createBetaAdmissionPolicy(store,{now})(personal);
+    expect(decision).toMatchObject({schoolEmail:example.verifiedEmail,
+      verifiedEmail:'student@gmail.com',proofMethod:'MAILBOX_OTP'});
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.params).toEqual([example.googleSubject,NOW.toISOString()]);
+    expect(calls[0]?.sql).toContain("method='MAILBOX_OTP'");
+    expect(calls[0]?.sql).toContain('revoked_at IS NULL');
+    expect(released).toHaveLength(1);
   });
 });

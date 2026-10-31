@@ -14,6 +14,7 @@ import {ReviewerSandboxActionSchema} from './modules/auth/reviewer-sandbox.js';
 import type {ReviewerGrant} from './modules/auth/reviewer.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/auth/gates.js';
 import {GoogleAuthFlowError} from './modules/auth/google-auth-flow.js';
+import {SchoolMailProofError} from './modules/auth/school-mail-proof.js';
 import {validateModelCandidate} from './modules/ai/candidate.js';
 
 const SelectBody=z.strictObject({
@@ -26,6 +27,12 @@ const ContextParams=z.strictObject({id:z.string().min(1).max(100)});
 const AiPathParams=z.strictObject({task:AiTaskPathSchema});
 const JobParams=z.strictObject({id:z.string().min(1).max(100)});
 const ReviewerInviteBody=z.strictObject({enrollmentCode:z.string().regex(/^[A-Za-z0-9_-]{43}$/)});
+const SchoolMailRequest=z.strictObject({schoolEmail:z.email().max(254)});
+const SchoolMailConfirm=z.strictObject({
+  schoolEmail:z.email().max(254),
+  challengeId:z.string().regex(/^[A-Za-z0-9_-]{22}$/),
+  code:z.string().regex(/^\d{8}$/),
+});
 const ReviewerSubject=z.strictObject({id:SubjectAliasSchema});
 const AiRequest=z.strictObject({
   packetRef:z.string().regex(/^[a-zA-Z0-9_-]{1,90}$/),
@@ -48,6 +55,8 @@ export function createApi(options:ApiOptions) {
     throw new Error('Exact allowedOrigin required');
   if(options.googleAuth&&(options.verifySession||options.revokeSession))
     throw new Error('Google auth flow must exclusively own session verification and revocation');
+  if(options.schoolMailProof&&!options.googleAuth)
+    throw new Error('Verified Google browser identity required for school mail proof');
   const app=Fastify({logger:false,trustProxy:false,bodyLimit:65536,requestIdHeader:false});
   const clock=options.now??(()=>new Date().toISOString());
   const newId=options.newId??randomUUID;
@@ -93,11 +102,14 @@ export function createApi(options:ApiOptions) {
         ||/^\/api\/reviewer\/demo\/contexts\/[^/]+\/actions$/.test(path??'')
         ||/^\/api\/ai\/[^/]+$/.test(path??'')
       );
+      const schoolMail=request.method==='POST'&&!!options.schoolMailProof&&(
+        path==='/api/auth/school-mail/request'
+        ||path==='/api/auth/school-mail/confirm');
       const logout=request.method==='POST'&&path==='/api/auth/logout';
-      if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout)
+      if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail)
         throw new ApiFailure('FORBIDDEN');
       // A new reviewer needs CSRF proof in order to redeem the invitation.
-      if(!enrollment&&path!=='/api/auth/csrf'){
+      if(!enrollment&&!schoolMail&&path!=='/api/auth/csrf'){
         const grant=await options.reviewerAccess.readActive({
           actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
         });
@@ -166,7 +178,8 @@ export function createApi(options:ApiOptions) {
   };
 
   app.setErrorHandler((err,req,reply)=>{
-    const code=err instanceof GoogleAuthFlowError?'FORBIDDEN':
+    const code=err instanceof GoogleAuthFlowError||err instanceof SchoolMailProofError
+      ?'FORBIDDEN':
       err instanceof ApiFailure?err.code:
       (err instanceof z.ZodError || (typeof err==='object'&&err!==null&&'statusCode' in err
         &&(err.statusCode===400||err.statusCode===413)))
@@ -186,6 +199,30 @@ export function createApi(options:ApiOptions) {
     app.get('/api/auth/google/callback',async(req,reply)=>options.googleAuth!.callback(req,reply));
   }
   app.get('/api/auth/csrf',async(req)=>({csrfToken:principal(req).csrfToken}));
+  if(options.schoolMailProof){
+    const googleSubject=(req:FastifyRequest):string=>{
+      const actor=principal(req);
+      if(actor.role!=='REVIEWER'||!actor.actorId.startsWith('google:'))
+        throw new ApiFailure('FORBIDDEN');
+      const value=actor.actorId.slice('google:'.length);
+      if(!value)throw new ApiFailure('FORBIDDEN');
+      return value;
+    };
+    app.post('/api/auth/school-mail/request',async(req,reply)=>{
+      const schoolEmail=SchoolMailRequest.parse(req.body).schoolEmail;
+      const response=await options.schoolMailProof!.issue({
+        googleSubject:googleSubject(req),schoolEmail,
+      });
+      reply.code(202).send(response);
+    });
+    app.post('/api/auth/school-mail/confirm',async(req)=>{
+      const body=SchoolMailConfirm.parse(req.body);
+      const verified=await options.schoolMailProof!.verify({
+        googleSubject:googleSubject(req),...body,
+      });
+      return {verified};
+    });
+  }
   app.get('/api/health',async()=>({
     mode:'LOCAL_ONLY',releaseReady:false,oidcConnected:false,schoolMailOtpConnected:false,
     ncpConnected:false,aiProviderConnected:false,
