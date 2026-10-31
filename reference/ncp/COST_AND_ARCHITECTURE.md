@@ -1,15 +1,18 @@
 # 네이버클라우드 실제 적용·비공개/공개 배포·요금 조사 (2026-10-28)
 
-> **2026-10-31 변경 공지 — 아래 문서는 10월 28일 당시 예비 비교 이력이며 현재 배포/비용 결정이 아니다.** 이후 제품은 Google OAuth(베타는 HUFS 메일 확인) + 공용 REVIEWER 합성 체험이 가능한 공개 HTTPS 웹이며, 5인 VPN 전용만을 전제로 하지 않는다. **최종 NCP 서버는 VPC Standard-g3 Linux 4 vCPU·16GB(공식 237원/h) + 별도 CB 50GB(0.16원/GB·h)**. 11/6~12/9 최대 816h 예상 서버 193,392원 + CB 6,528원 = 199,920원(VAT/IP/egress/스냅샷/CLOVA/OCR 제외). 공식 공고 본선 발표일은 **11월16일**이므로 진출·크레딧 확인/사용자 승인 이전에 NCP 자원을 생성하지 않는다. 실제 선정 후 11/16~12/9 최대 576h라면 서버+CB 141,120원. 모든 수치는 시간 요금 단순 산술, 콘솔 실제 청구·지원금 적용 확인 필요. 공식 [NCP 가격](https://www.ncloud.com/charge/price/ko)·[CB](https://www.ncloud.com/api-cms/service-product/static/blockStorage)·[공모전](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089) 근거.
+> **2026-10-31 최종 선택:** 아래 2026-10-28 조사 본문은 **초기 구성 비교 자료**다. 현재 운영/가격/개통 확정은 [NCP_OPERATIONS_2026.md](../../docs/NCP_OPERATIONS_2026.md) 우선. **한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB KVM CB SSD 8원/h**, 공인 IP 1개 필요 시 5.6원/h. 사용자 계획 11/6~12/9 816h 서버+CB **272,544원**, 공인 IP 포함 **277,113.6원**(VAT/트래픽/AI 등 제외). 공식 11/16 본선 발표·크레딧·사용자 승인을 받기 전 생성·과금 금지. 11/16 00시~12/10 00시 상한 576h 서버+CB **192,384원**, IP 포함 **195,609.6원**. [서버 공식 가격](https://www.ncloud.com/charge/price/ko) · [CB 공식 가격](https://www.ncloud.com/api-cms/service-product/static/blockStorage) · [공식 본선 발표](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089).
 >
-> **업무 책임:** 이서연은 NCP 구성·비용·CLOVA General OCR/HCX-005/HCX-007 SDK·API/모델 호출·Laya ONNX/CPU worker 등 **NCP 관련 모든 코드 및 운영**을 맡는다. 심민성은 클라우드 비종속 **웹/외부 REST API·Google 인증·일반 DB·조회·권한/근거 DTO**만 담당한다. 이서연 GitHub ID 미확인으로 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)는 담당자로 표시하되 GitHub assignee는 비워둔다. 심민성 API [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27). **최신 정본은 [CLOUD.md](../../CLOUD.md), [Laya CPU 설계](../../docs/LAYA_CPU_SPIKE_PROTECTION.md)**이며, 이 이력의 과거 g2 단가·OCR 제외·VPN/5인만 접근 정책은 현재안으로 적용하지 않는다.
+> **업무 책임:** 이서연은 NCP 구성·비용·CLOVA General OCR/HCX-005/HCX-007 SDK·API/모델 호출·Laya ONNX/CPU worker 등 **NCP 관련 모든 코드 및 운영**을 맡는다. 심민성은 클라우드 비종속 **웹/외부 REST API·Google 인증·일반 DB·조회·권한/근거 DTO**만 담당한다. 이서연 GitHub ID 미확인으로 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)는 담당자로 표시하되 GitHub assignee는 비워둔다. 심민성 API [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27). **최신 정본은 [NCP 2026 운영/비용](../../docs/NCP_OPERATIONS_2026.md), [CLOUD.md](../../CLOUD.md), [Laya CPU 설계](../../docs/LAYA_CPU_SPIKE_PROTECTION.md)**.
 
 
 **우선 적용: 학교 자료 사용 허가 없음.** 이 문서의 NCP Server/자체 PostgreSQL·Object Storage·CLOVA 설계와 비용은 **학교 실제 공고/강의/학사/수강 자료를 수집하거나 AI에 전송할 권한을 전제하지 않는다**. 현재 비공개 5인 PoC에서는 **합성 A/B 학생·합성 학교 비슷한 프로그램·합성 교외채용·합성 강의/규칙 데이터만** NCP/CLOVA에 넣는다. 학교 공식 PDF/HTML/CSS·공고 표본 30건/학생 개인정보 원본은 **RESEARCH_REFERENCE_ONLY**이며 DB·버킷·서버·AI 입력에서 제외한다. 학교로부터 실제 이용 허가를 받은 사실이 없고, 향후 서면으로 범위가 정해지기 전까지 소스 어댑터 OFF. 권한 자세히: [DATA_PERMISSION_GATE.md](../hufsability/DATA_PERMISSION_GATE.md).
 
 **프로젝트 상태:** HUFS One AI는 11월 6일 아이디어 선정 전에 작성된 개인 제안 후보. **팀 아이디어 선정 → 문서 예선 채택 → 실제 구현**. 이 문서는 *실제 사용·계약·지급금 확인 결과가 아닌* 공식 공개 요금 및 기술 타당성 조사다. [전체 상품 114개 전수 검토표](SERVICE_CATALOG.md)와 구분해 본 문서는 기술·예산만 상세히 설명한다.
 
-## 1. 먼저 결론: 꼭 필요한 네이버클라우드 구성
+## 1. 2026-10-28 초기 VPN 중심 구성안 (비교 기록)
+
+> 이 절은 초기 VPN 중심 설계 기록이다. 현재 온라인 HTTPS·Google OIDC·합성 REVIEWER 운영 기준은 [NCP_OPERATIONS_2026.md](../../docs/NCP_OPERATIONS_2026.md)를 따른다.
+
 
 **5인 비공개 NCP P0(예선 채택 후의 후보안):** **NCP Server(VPC) + VM 내부 PostgreSQL 또는 별도 Cloud DB for PostgreSQL(비용 검증 후 선택) + 비공개 Object Storage + CLOVA Studio + VPN/ACG + 5인 앱 인증 + 비용 통제**. **공개 웹/회원가입/공개 API 엔드포인트는 만들지 않는다.**
 - Server는 **VPN 내부에서만 접속 가능한 HTTPS 웹사이트/API**를 호스팅한다. Node/TypeScript 공용 규칙 엔진을 실행하고, **클라이언트·서버 두 곳에 같은 판정 함수**를 적용한다. 공인 인터넷에서 직접 80/443으로 웹서버 접속할 수 없게 차단한다.
@@ -107,7 +110,7 @@
 
 ## 6. 팀원 5명 전용 비공개 배포 — 외부인 웹/AI 접근 차단(2026-10-28 최종 결정)
 
-**현재 확정된 사용자 요구:** 공개 서비스/회원가입/검색엔진 노출/공개 AI API를 **하지 않는다**. 사용자는 허용된 팀원 **정확히 5명**이다. 외부인이 사이트/AI API에 접근하여 크레딧을 소진하지 못하게 웹 네트워크 계층과 애플리케이션 계층을 **이중 차단**한다. **아래는 예선 문서 채택 뒤 구현할 설계안이며 현재 서버나 보안장치를 실제 구축한 것은 아니다.**
+**2026-10-28 초기 PoC 가정:** 허용된 팀원 5명이 VPN을 이용하는 단기 시험안을 검토했다. 외부인이 사이트/AI API에 접근하여 크레딧을 소진하지 못하게 웹 네트워크 계층과 애플리케이션 계층을 **이중 차단**한다. **아래는 예선 문서 채택 뒤 구현할 설계안이며 현재 서버나 보안장치를 실제 구축한 것은 아니다.**
 
 ### 6.1 추천 구성: NCP Server(VPC) + 팀원 전용 VPN + 비공개 웹 + 서버 측 CLOVA
 
@@ -130,7 +133,7 @@
 
 ### 6.3 5명 비공개 운영 시 예상 비용 — 외부 공개 웹 없음
 
-**중요:** '비공개'는 **네트워크 접근 제한**이지 NCP의 서버·스토리지·DB 과금을 없애는 무료 요금제가 아니다. 요금은 한국 리전 공개표에서 선택한 예시 사양·30일 환산이며, VAT·VPN UDP 용 공인 IP/트래픽·NAT·관리형 DB 백업/디스크·AI 입출력 토큰·암호화/보안·크레딧 적용 여부 제외. **정식 견적 아님**.
+**중요:** '비공개'는 **네트워크 접근 제한**이지 NCP의 서버·스토리지·DB 과금을 없애는 무료 요금제가 아니다. 요금은 한국 리전 공개표에서 선택한 예시 사양·30일 환산이며, VAT·VPN UDP 용 공인 IP/트래픽·NAT·관리형 DB 백업/디스크·AI 입출력 토큰·암호화/보안·크레딧 적용 여부 제외. **실제 콘솔 견적 확인 필요**.
 
 | 시나리오(30일) | 팀원 5명 접근 경로 | 기본비 예시(VAT/AI/네트워크 제외) | 판단 |
 | --- | --- | ---: | --- |
