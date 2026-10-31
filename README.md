@@ -4,17 +4,18 @@
 
 
 
-## 현재 코드 병합 및 추가된 캘린더 (2026-10-31)
+## 2026-10-31 PR 병합 현황·추가된 캘린더
 
-**새 PR 병합 기준:** 작성자 아닌 **1명 이상이 현재 HEAD 승인(APPROVED)**하고 해당 HEAD 필수 CI 성공·선행 의존·보안 차단 확인을 충족하면 병합한다. 코드와 계약은 PR, 운영 문서는 기존 [문서 직접 정정 예외](docs/PR_WORKFLOW.md)를 유지한다.
+**병합 규칙:** PR 작성자가 아닌 **최신 HEAD 승인 1명 이상 + 필수 CI 성공 + 선행 의존/보안 차단 해결**이면 병합한다. 팀원 전원 리뷰는 필수 아님. 코드/공통계약은 PR, 문서는 [총괄의 main 직접 정정 예외](docs/PR_WORKFLOW.md)를 적용한다.
 
-**이번에 main에 병합:** [#15 추천](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), [#36 학업 vNext](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), [#44 공지 overdue 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), [#47 설명/상시마감 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), [#53 캘린더 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), [#37 웹/API 통합 어댑터](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), [#48 합성 평가 도구](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48). **코어·계약 병합과 실사용 완성을 구분**한다. #16/#40/#41 추천·공지 연결, #32 인증, #33/#34 Temporal RAG, #35/#55 DB/API 권한, #49 공유범위, #50 계산과 #51/#52 UI·캘린더 API가 아직 남았다.
+**확인된 main 병합:** 추천 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), 학업 vNext [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), 공지 overdue/alias 계약 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), 설명·상시마감 계약 [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), 신규 캘린더 Wire [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), 합성 Fastify/React [#37](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), 추천 평가 [#48](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48), 중요공지 overdue 실제 출력 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16), 부분공유 입력 [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49), 시간·정정/검증 원장 코어 [#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40), 캘린더 계산 [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) **11건**.
 
-**당초 계획에 없던 새 기능 — 홈 하단 ‘내 주요 일정’ 미니 캘린더:** 학생별 확정 서류/신청 마감과 시험·행사를 구분하고, 날짜 미정/적용 확인 필요는 다른 목록으로 둔다. [계산 PR #50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50), [UI 이슈 #51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), [Wire/API 이슈 #52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52), **병합된 계약 #53**의 연결이 남아 있으며, 실제 로그인/학생 동의·브라우저 구현은 미완료다. [.ics 내보내기·푸시는 이번 범위 밖](Architecture.md)이다. [제품 설명](Proposal.md) · [기술 계약 A07.3](Architecture.md) · [진행 상태](STATUS.md).
+**계획 외 신규 홈 기능 — ‘내 주요 일정’:** 학생 본인에게 적용이 확정된 서류 제출·실제 신청 마감과 시험/행사를 별도 기호·문구로 표시한다. UNKNOWN 적용/중복은 확인 대기, ROLLING/날짜 미정은 달력 바깥. **#53 결과 계약과 #50 순수 계산은 main 구현 완료**, [#52 인증·SharingGrant 기반 GET API](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)와 [#51 UI/모바일/접근성](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)은 아직 미구현이다. [제품 설명](Proposal.md) · [설계 A07.3](Architecture.md) · [진행 상태](STATUS.md). 캘린더 내보내기(ICS)/푸시는 이번 기능 범위 밖.
 
+**남은 PR:** 추천 이유 #41(최신 main 충돌/CI 0건), Google 인증 #32(독립 승인·충돌), EvidenceScope #33→Temporal PG #34(독립 승인·충돌), DB sharing #35(기존 변경요청 재검토), 원자적 HTTP 스냅샷 [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)(합성 CI 통과·타인 승인 대기). 기존 #54는 미병합 폐쇄 후 #55로 대체됐다. 실 학생 동의·PG·Google/OIDC·NCP/실출처 권한·브라우저 E2E는 출시 전 미검증.
 ## 합성 API 구현 상태
 
-심민성이 담당한 Fastify 합성 API 코드가 `main`에 반영됐다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. Google OIDC·영속 DB·NCP 제공자 연동은 출시 전 검증 과제다. 추천 코어 #15는 main 병합 완료, 공지 코어 #16은 overdue 결과 직렬화 수정 및 최신 승인 대기 중이다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
+심민성이 담당한 Fastify 합성 API 코드가 `main`에 반영됐다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. Google OIDC·영속 DB·NCP 제공자 연동은 출시 전 검증 과제다. 추천·공지 core #15/#16은 main 병합 완료이며 공식 `NoticeResult.items[].overdue`도 연결됐다. 단, 실제 actor/grant/실학생 인증 API와 출처 권한·시연 브라우저 통합은 별도 출시 검증 전이다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
 
 **HUFSAbility의 기존 취업·진로·비교과 정보를 AI로 학생별로 재배치하고, 졸업지원까지 확장하는 한국외대 바이브코딩 공모전 제안.**
 
