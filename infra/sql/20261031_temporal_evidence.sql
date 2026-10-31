@@ -43,7 +43,10 @@ CREATE TABLE IF NOT EXISTS source_revisions_vnext (
     OR (change_kind!='NEW' AND supersedes IS NOT NULL)),
   CONSTRAINT source_revision_no_self CHECK (
     supersedes IS NULL OR supersedes<>revision_id),
-  UNIQUE(source_id,fetched_at)
+  UNIQUE(source_id,fetched_at),
+  UNIQUE(source_id,revision_id),
+  CONSTRAINT revision_same_source FOREIGN KEY(source_id,supersedes)
+    REFERENCES source_revisions_vnext(source_id,revision_id)
 );
 CREATE TABLE IF NOT EXISTS source_paragraphs_vnext (
   revision_id text NOT NULL REFERENCES source_revisions_vnext(revision_id),
@@ -52,6 +55,23 @@ CREATE TABLE IF NOT EXISTS source_paragraphs_vnext (
     char_length(paragraph_text)>0 AND char_length(paragraph_text)<=20000),
   PRIMARY KEY(revision_id,paragraph_id)
 );
+-- Evidence is append-only: no updates/deletes to previous revision or quote.
+-- New approvals, corrections and revocations must create a successor revision.
+CREATE OR REPLACE FUNCTION deny_source_history_mutation()
+RETURNS trigger LANGUAGE plpgsql AS $
+BEGIN
+  RAISE EXCEPTION 'immutable evidence history';
+END;
+$;
+REVOKE ALL ON FUNCTION deny_source_history_mutation() FROM PUBLIC;
+DROP TRIGGER IF EXISTS immutable_source_revision ON source_revisions_vnext;
+CREATE TRIGGER immutable_source_revision
+  BEFORE UPDATE OR DELETE ON source_revisions_vnext
+  FOR EACH ROW EXECUTE FUNCTION deny_source_history_mutation();
+DROP TRIGGER IF EXISTS immutable_source_paragraph ON source_paragraphs_vnext;
+CREATE TRIGGER immutable_source_paragraph
+  BEFORE UPDATE OR DELETE ON source_paragraphs_vnext
+  FOR EACH ROW EXECUTE FUNCTION deny_source_history_mutation();
 -- A HEAD row must be locked before every insert/update in a short transaction.
 CREATE TABLE IF NOT EXISTS source_ingest_heads (
   source_id text PRIMARY KEY,

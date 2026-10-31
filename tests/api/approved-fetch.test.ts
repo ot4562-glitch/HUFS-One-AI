@@ -37,6 +37,15 @@ function harness(responses:Response[],policy=POLICY){
   }};
 }
 describe('TASK-19 approved-source ingestion, fail-closed HTTP and immutable drafts',()=>{
+  it('never falls back to global fetch when a trusted transport is unconfigured',async()=>{
+    const ledger=new MemorySourceRevisionLedger();
+    const service=createApprovedSourceFetcher({
+      policy:POLICY,ledger,extractor,
+      now:()=>new Date('2026-10-20T00:00:00.000Z'),
+    });
+    await expect(service.check()).rejects.toBeInstanceOf(SourceIngestionError);
+    expect(ledger.size()).toBe(0);
+  });
   it('fetches only the configured HTTPS origin with zero credentials and no redirects',async()=>{
     const h=harness([reply('가상 공고 모집')]);
     const outcome=await h.fetcher.check();

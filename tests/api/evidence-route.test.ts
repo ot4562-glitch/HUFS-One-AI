@@ -105,7 +105,10 @@ describe('TASK-21 live permission resolver binds current rights to past replay',
   it('returns NO_EVIDENCE after revoke, never calls SQL with a stale grant',async()=>{
     let enabled=true;
     const reader={retrieve:vi.fn(async()=>{
-      return {envelope:envelope(NOW),hits:[]};
+      return {envelope:envelope(NOW),hits:[{
+        sourceId:'source-1',revisionId:'rev-01',
+        paragraphId:'p1',quote:'합성공고',score:2,
+      }]};
     })};
     const gateway=createPostgresTemporalGateway(reader,{
       resolveFor:async()=>enabled?{
@@ -122,6 +125,62 @@ describe('TASK-21 live permission resolver binds current rights to past replay',
     expect(revoked.envelope.retrievalState).toBe('NO_EVIDENCE');
     expect(revoked.envelope.evidence).toEqual([]);
     expect(reader.retrieve).toHaveBeenCalledOnce();
+  });
+  it('drops quotes if permissions are revoked during an in-flight SQL query',async()=>{
+    const rights=new Set(['P-1']);
+    const reader={retrieve:vi.fn(async()=>{
+      rights.clear();
+      return {envelope:envelope(NOW),hits:[{
+        sourceId:'source-1',revisionId:'rev-01',
+        paragraphId:'p1',quote:'합성공고',score:2,
+      }]};
+    })};
+    const resolveFor=vi.fn(async()=>({
+      permissionRefs:rights,policyVersion:'policy-v1',
+    }));
+    const gateway=createPostgresTemporalGateway(reader,{resolveFor});
+    const value=await gateway.query({
+      actor:ACTOR,query:'abc',asOf:NOW,topK:12,now:NOW,
+    });
+    expect(value.envelope.retrievalState).toBe('NO_EVIDENCE');
+    expect(value.hits).toEqual([]);
+    expect(resolveFor).toHaveBeenCalledTimes(2);
+  });
+  it('drops results if the source scope changes during an in-flight query',async()=>{
+    const sourceIds=new Set(['source-1']);
+    const reader={retrieve:vi.fn(async()=>{
+      sourceIds.clear();
+      return {envelope:envelope(NOW),hits:[{
+        sourceId:'source-1',revisionId:'rev-01',
+        paragraphId:'p1',quote:'합성공고',score:2,
+      }]};
+    })};
+    const gateway=createPostgresTemporalGateway(reader,{
+      resolveFor:async()=>({
+        permissionRefs:new Set(['P-1']),sourceIds,policyVersion:'policy-v1',
+      }),
+    });
+    const result=await gateway.query({
+      actor:ACTOR,query:'abc',asOf:NOW,topK:12,now:NOW,
+    });
+    expect(result.envelope.retrievalState).toBe('NO_EVIDENCE');
+    expect(result.envelope.evidence).toEqual([]);
+  });
+  it('rejects a reader that returns different quotes than its validated spans',async()=>{
+    const reader={retrieve:vi.fn(async()=>({
+      envelope:envelope(NOW),hits:[{
+        sourceId:'source-1',revisionId:'rev-01',
+        paragraphId:'p1',quote:'forged quote',score:2,
+      }],
+    }))};
+    const gateway=createPostgresTemporalGateway(reader,{
+      resolveFor:async()=>({
+        permissionRefs:new Set(['P-1']),policyVersion:'policy-v1',
+      }),
+    });
+    await expect(gateway.query({
+      actor:ACTOR,query:'abc',asOf:NOW,topK:12,now:NOW,
+    })).rejects.toThrow(/mismatch/);
   });
   it('does not accept future asOf even if a caller bypassed Fastify',async()=>{
     const reader={retrieve:vi.fn()};

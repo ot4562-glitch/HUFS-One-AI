@@ -27,7 +27,7 @@ export interface SourceFetchConfig {
   policy:ApprovedFetchPolicy;
   ledger:MemorySourceRevisionLedger;
   extractor:SourceContentExtractor;
-  /** Injected synthetic HTTP transport for offline tests. */
+  /** Mandatory trusted transport: operator must enforce DNS/IP egress policy. */
   transport?:typeof fetch;
   now?:()=>Date;
 }
@@ -86,7 +86,10 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
   const clock=options.now??(()=>new Date());
   let etag:string|undefined;
   let modified:string|undefined;
-  const request=options.transport??fetch;
+  // There is deliberately NO implicit global fetch. A production caller must
+  // supply an independently approved egress transport with DNS/IP pinning,
+  // private-range rejection, and request-level allowlist enforcement.
+  const request=options.transport;
   return {
     async check():Promise<SourceFetchOutcome>{
       const now=clock();
@@ -94,6 +97,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
         throw new SourceIngestionError();
       const checkedAt=now.toISOString();
       const latest=options.ledger.latest(options.policy.sourceId);
+      if(!request)throw new SourceIngestionError();
       const headers:Record<string,string>={Accept:'text/plain, text/html;q=0.9, application/rss+xml;q=0.8'};
       if(latest&&etag)headers['If-None-Match']=etag;
       if(latest&&modified)headers['If-Modified-Since']=modified;

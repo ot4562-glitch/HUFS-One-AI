@@ -65,7 +65,8 @@ export class PostgresSourceRevisionWriter {
         r.mediaKind,r.sourceClass,r.permissionRef,r.provenance,r.status,r.changeKind,
         r.publishedAt??null,r.fetchedAt,r.lastCheckedAt,r.lastVerifiedAt??null,
         r.validFrom??null,r.validUntil??null,
-        r.applicableScope?.campuses??null,r.applicableScope?.majorCodes??null,
+        r.applicableScope?.campuses?.length?r.applicableScope.campuses:null,
+        r.applicableScope?.majorCodes?.length?r.applicableScope.majorCodes:null,
         r.applicableScope?.cohortRange?.[0]??null,
         r.applicableScope?.cohortRange?.[1]??null,
       ]);
