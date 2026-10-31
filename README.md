@@ -6,7 +6,7 @@
 
 ## 협업 PR·문서 정합성 (2026-10-31)
 
-기술 총괄의 직접 기능 추가보다 **협업자 리뷰·재검토·계약 차단 해결·문서 정비**를 우선한다. 추천/공지 순수 코어는 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15)→[#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)→[#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40)→[#41](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41) 순이며, [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)는 공지 기한경과 공통 계약 검토 PR이다. 모든 요청된 독립 리뷰·현재 CI·연동 테스트 전 병합하지 않고, 최신 이슈·PR의 상태가 이 문서의 스냅샷보다 우선한다. 미확인 실제 학생자료·Google OIDC·DB·OCR/NCP 운영을 완료로 표시하지 않는다.
+기술 총괄은 **협업자 리뷰·재검토·차단 계약 해결·문서 정비**를 우선한다. 추천/공지 순수 코어는 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15)→[#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)→[#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40)→[#41](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41) 순서로 검토한다. [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)는 overdue 공식 wire, [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)은 추천 설명/마감 분류 공통 계약 PR이다. 두 PR 모두 원격 CI 성공이나 지정 독립 리뷰 및 작성자 소비자 연동/검증 전 병합하지 않는다. 문서는 기술 총괄이 최신 main에 직접 커밋하고, 코드 변경만 PR을 유지한다. 미확인 실제 학생자료·Google OIDC·DB·OCR/NCP 운영을 완료로 표시하지 않는다.
 
 ## 합성 API 구현 상태
 
