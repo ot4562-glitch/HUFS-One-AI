@@ -1,6 +1,6 @@
 # TASK-00 | 네 트랙이 공유할 계약의 잠금 기준
 
-> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP Standard-g3 4vCPU·16GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
+> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP High Memory-g3 4vCPU·32GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
 
 
 **정본:** [Architecture.md](../Architecture.md) A02~A09·A13. 기술 총괄 심민성(`ot4562-glitch`)이 `packages/contracts`·TopicCode·공통 설정/lockfile·DB migration을 조정한다. **TypeScript/Zod v0.1.0의 합성 계약 코드는 `packages/contracts/`에 구현되어 있으며, 최종 잠금은 전용 PR의 CI 및 4명 실제 소비자 검토 이후다.** 자동 소비 테스트와 실제 사람의 리뷰를 혼동하지 않는다. [사용법](../packages/contracts/README.md).
@@ -50,3 +50,10 @@
 ## REVIEWER auth vNext 분리 계약 (Issue #25)
 
 `VerifiedActor`는 기존 `BETA|ADMIN`(학교 메일 proof + 베타 allowlist)과 `REVIEWER`(OIDC의 검증된 `sub`·현재 이메일 소유 증거 + 공용 초대 DB grant)로 **구별된 타입**을 사용한다. REVIEWER는 이메일만으로 자동 승인되지 않으며 `reviewer_invitation` 등록 전에는 페이지 접근 403. 기존 `SharingGrant`와 팀원 5명 시연 선택 문맥을 우회하거나 계약 속에 암묵적으로 포함시키지 않는다. 오직 `ReviewerGrant`과 독립 `ReviewerDemoRepository`에서 SYNTHETIC 재현 데이터만 취득한다. 초대 32바이트 원문은 DB·Git·CI 저장 금지; SHA-256 digest와 Google sub·email, 심사 기간/철회만 원장으로 남긴다. `startsAt <= now < endsAt` 및 철회는 매 요청 서버 권한 검사와 트랜잭션 적용. 신규 역할을 공통 UI/웹 Zod auth contract로 확장할 때는 vNext 소비자 승인·UI 마이그레이션을 별도 PR로 추진한다. 전체: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).
+
+## 2026-10-31 기능·인프라 경계 재확인 (PR #31)
+
+- 심민성 `ot4562-glitch`(#18/#19/#21/#25/#27): 웹·외부 REST/Fastify API, Google OIDC/초대/CSRF/세션, 일반 PostgreSQL·SourceRevision/Temporal RAG·정책/근거 DTO, synthetic REVIEWER actions, CI/통합.
+- 이서연(#12/#20/#22; GitHub ID 미확인): NCP VPC/VM·DB 호스팅·HTTPS ingress/IAM/키/비용/부하/워크플로, CLOVA Studio/OCR/HCX/Vision/NCP SDK와 실제 provider API·Laya ONNX worker 전부. 일반 웹 API/Google 앱 인증 라우트는 소유하지 않는다.
+- 이의상 UI #9, 김채윤 추천/공지 #10, 박준영 학사 #11 역할/assignee 변경 없음. 공통 API↔provider 경계는 공급자 비종속 DTO만 공유한다.
+- [공식 SKU/816h 견적](NCP_OPERATIONS_2026.md): KR Linux High Memory-g3 4vCPU/32GB 326원/h, CB 50GB 8원/h, 공인 IP 선택 5.6원/h, 본선 발표 11/16 이후 승인 시 실제 개통.
