@@ -15,6 +15,10 @@ function stub(rows:Record<string,unknown>[]){
   const calls:Array<{sql:string;args:readonly unknown[]}>=[],releases:number[]=[];
   const connection:ReviewerSqlConnection={
     query:async(sql,args=[])=>{
+      // Transaction statements are covered in temporal-snapshot.test.ts;
+      // keep existing query-only expectations focused on data SELECTs.
+      if(sql.startsWith('BEGIN TRANSACTION ')||sql==='COMMIT'||sql==='ROLLBACK')
+        return {rows:[]};
       calls.push({sql,args});
       if(sql.includes('AS confirmed_conflict'))
         return {rows:[{confirmed_conflict:false}]};
