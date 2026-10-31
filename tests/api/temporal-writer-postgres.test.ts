@@ -74,6 +74,11 @@ describe('TASK-19 SQL append-only revisions and atomic cross-instance invalidati
     expect(result?.invalidates).toContain('AI_CACHE');
     const event=x.calls.find(q=>q.sql.includes('INSERT INTO source_invalidation_events'));
     expect(event?.params[2]).toBe('rev-1');
+    const deliveries=x.calls.find(q=>q.sql.includes('INSERT INTO source_invalidation_deliveries'));
+    expect(deliveries?.params[0]).toBe('revision:rev-2');
+    expect(deliveries?.params[1]).toEqual([
+      'RETRIEVAL','CLAIMS','FEED','NOTICES','AI_CACHE',
+    ]);
     expect(x.calls.at(-1)?.sql.trim()).toBe('COMMIT');
     expect(x.released).toHaveLength(1);
   });
