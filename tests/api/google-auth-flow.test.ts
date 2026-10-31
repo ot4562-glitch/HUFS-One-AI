@@ -161,6 +161,19 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;
 }
 
 describe('Google OAuth callback, cookie binding and one-time session',()=>{
+  it('rejects BETA configuration without a paired per-request revocation verifier',()=>{
+    const base={
+      clientId:CLIENT,redirectUri:ORIGIN+'/api/auth/google/callback',
+      allowedOrigin:ORIGIN,store:new MemoryGoogleAuthStore(),
+      attemptLimiter:new MemoryAuthAttemptLimiter(),exchangeCode:async()=>'',
+    };
+    expect(()=>createGoogleAuthFlow({
+      ...base,authorizeBeta:async()=>null,
+    })).toThrow(/recheck|revocation/i);
+    expect(()=>createGoogleAuthFlow({
+      ...base,recheckBeta:async()=>true,
+    })).toThrow(/admission|authorize/i);
+  });
   it('only exposes public auth endpoints with an explicitly injected adapter',async()=>{
     const sealed=createApi({repository:closedRepository,allowedOrigin:ORIGIN});
     opened.push(sealed);

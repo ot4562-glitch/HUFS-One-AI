@@ -86,6 +86,14 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
     throw new Error('Invalid configured Google callback URL');
   if(typeof config.attemptLimiter?.consume!=='function')
     throw new Error('A shared OAuth attempt limiter is required');
+  // BETA login must never mint a seemingly valid session that cannot
+  // recheck the administrator approval and mailbox proof on each request.
+  if(config.authorizeBeta!==undefined||config.recheckBeta!==undefined){
+    if(typeof config.authorizeBeta!=='function')
+      throw new Error('BETA admission policy is required');
+    if(typeof config.recheckBeta!=='function')
+      throw new Error('BETA revocation rechecker is required');
+  }
   const now=config.now??(()=>new Date());
   const reserve=async(request:FastifyRequest,kind:'GOOGLE_START'|'GOOGLE_CALLBACK')=>{
     let allowed=false;
