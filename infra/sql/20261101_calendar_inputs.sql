@@ -69,7 +69,41 @@ CREATE TRIGGER api_calendar_approved_input_immutable BEFORE UPDATE ON api_calend
   FOR EACH ROW EXECUTE FUNCTION api_calendar_protect_approved_inputs();
 REVOKE ALL ON TABLE api_calendar_input_projections FROM PUBLIC;
 REVOKE ALL ON TABLE api_calendar_source_permissions FROM PUBLIC;
+-- FOR SHARE needs UPDATE privilege in PostgreSQL. Keep locks in this constrained definer
+-- function owned by the NOLOGIN migration owner; the runtime API keeps SELECT-only tables.
+-- Bind the approved projection to current actor/subject/grant/consent and versions before
+-- locking its source heads/rights. Locks last until the adapter's surrounding COMMIT.
+CREATE OR REPLACE FUNCTION api_lock_authorized_calendar_inputs(
+  p_actor text,p_subject char(3),p_grant text,p_dataset text,p_projection text,p_now timestamptz
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE v_sources text[];
+BEGIN
+  SELECT p.source_ids INTO v_sources
+  FROM public.api_sharing_grants g
+  JOIN public.api_calendar_input_projections p ON p.actor_id=g.actor_id AND p.subject_id=g.subject_id
+  JOIN public.api_demo_snapshot_projections s ON s.subject_id=p.subject_id
+    AND s.dataset_version=p.dataset_version AND s.projection_version=p.projection_version
+  WHERE g.actor_id=p_actor AND g.subject_id=p_subject AND g.version=p_grant
+    AND g.revoked_at IS NULL AND g.allowed_sections @> ARRAY['FEED','NOTICES']::text[]
+    AND g.approved_at<=LEAST(p_now,clock_timestamp()) AND g.expires_at>GREATEST(p_now,clock_timestamp())
+    AND p.dataset_version=p_dataset AND p.projection_version=p_projection AND p.current=true
+    AND p.approval_state='APPROVED' AND p.revoked_at IS NULL AND p.consent_ref=g.consent_ref
+    AND p.approved_by<>p_actor AND p.approved_at<=LEAST(p.as_of,p_now,clock_timestamp())
+    AND p.as_of<=LEAST(p_now,clock_timestamp()) AND p.expires_at>GREATEST(p_now,clock_timestamp())
+    AND s.current=true AND length(s.approved_by)>0 AND s.approved_by<>p_actor AND s.approved_at<=p.as_of
+    AND (s.snapshot_json->>'asOf')::timestamptz=p.as_of
+  FOR SHARE OF g,p,s;
+  IF NOT FOUND THEN RETURN false; END IF;
+  PERFORM 1 FROM public.source_ingest_heads WHERE source_id=ANY(v_sources) ORDER BY source_id FOR SHARE;
+  PERFORM 1 FROM public.api_calendar_source_permissions
+    WHERE actor_id=p_actor AND subject_id=p_subject AND source_id=ANY(v_sources)
+    ORDER BY source_id,permission_ref FOR SHARE;
+  RETURN true;
+END;
+$$;
+REVOKE ALL ON FUNCTION api_lock_authorized_calendar_inputs(text,char,text,text,text,timestamptz) FROM PUBLIC;
 -- Separate operator-owned approval writer and API SELECT-only roles are required.
+-- After role review grant EXECUTE on api_lock_authorized_calendar_inputs only to the API role.
 -- Source revision ingestion continues to lock source_ingest_heads before immutable inserts.
 -- No public/browser writer or automatic import of existing CSV/Forms is authorized.
 COMMIT;

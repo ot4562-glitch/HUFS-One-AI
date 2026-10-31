@@ -3,6 +3,8 @@ import {DemoContextSchema} from '@hufs-one/contracts';
 import {PostgresCalendarInputSource} from '../../apps/api/src/modules/calendar-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import type {CalendarReadRequest} from '../../apps/api/src/modules/calendar.js';
+import {computeAuthorizedCalendar} from '../../apps/api/src/modules/calendar.js';
+import snapshotFixture from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
 const now='2026-11-01T00:00:00.000Z';
 const request:CalendarReadRequest={actorId:'SYN-ACTOR',now,context:DemoContextSchema.parse({
@@ -19,6 +21,10 @@ function fakeDatabase(){
     input_json:{profile:{interestTopics:['DATA_ANALYTICS'],desiredJobTopics:[],approvedExperienceTopics:['AI_ML'],
       approvedLanguageCodes:[],officialMajorTopics:[],facts:{}},noticeStudent:{openRequirementIds:['SYN-REQ'],courseIds:[],interestTopics:[]},
       provenance:{},opportunities:[],notices:[]}};
+  const snapshotRow:Record<string,unknown>={subject_id:'S01',dataset_version:'D1',projection_version:'P1',
+    approved_by:'SYN-REVIEWER',approved_at:'2026-10-30T00:00:00Z',current:true,
+    snapshot_json:{...structuredClone(snapshotFixture),asOf:now,versions:{...snapshotFixture.versions,projection:'P1'},
+      feed:{...snapshotFixture.feed,asOf:now},notices:{...snapshotFixture.notices,asOf:now}}};
   const revisions:Record<string,unknown>[]=[{revision_id:'REV1',source_id:'SOURCE1',supersedes:null,status:'ACTIVE',change_kind:'NEW',
     provenance:'SYNTHETIC',permission_ref:'PERM1',published_at:'2026-10-29T00:00:00Z',
     fetched_at:'2026-10-29T00:00:00Z',last_verified_at:'2026-10-30T00:00:00Z',valid_from:null,valid_until:null}];
@@ -32,9 +38,11 @@ function fakeDatabase(){
   const pool:ReviewerSqlPool={connect:async()=>({
     query:async(sql,params=[])=>{
       log.push({sql,params});
+      if(sql.includes('api_lock_authorized_calendar_inputs'))return {rows:[{authorized:true}]};
       if(fail&&sql.includes('api_calendar_input_projections'))throw Error('private DB diagnostic must not leak');
       if(sql.includes('FROM api_sharing_grants'))return {rows:[structuredClone(grant)]};
       if(sql.includes('FROM api_calendar_input_projections'))return {rows:[structuredClone(projection)]};
+      if(sql.includes('FROM api_demo_snapshot_projections'))return {rows:[structuredClone(snapshotRow)]};
       if(sql.includes('FROM source_ingest_heads'))return {rows:structuredClone(heads)};
       if(sql.includes('FROM source_revisions_vnext'))return {rows:structuredClone(revisions)};
       if(sql.includes('FROM api_calendar_source_permissions'))return {rows:structuredClone(rights)};
@@ -42,10 +50,15 @@ function fakeDatabase(){
       return {rows:[]};
     },release:()=>{releases++;},
   })};
-  return {grant,projection,revisions,heads,rights,conflicts,log,pool,get releases(){return releases;},fail:()=>{fail=true;}};
+  return {grant,projection,snapshotRow,revisions,heads,rights,conflicts,log,pool,get releases(){return releases;},fail:()=>{fail=true;}};
 }
 
 describe('PostgresCalendarInputSource: server-reviewed raw inputs and current grants/rights',()=>{
+  it('uses a narrow definer helper so the API connection retains SELECT-only table privileges',async()=>{
+    const db=fakeDatabase();await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(db.log.some(x=>x.sql.includes('api_lock_authorized_calendar_inputs'))).toBe(true);
+    expect(db.log.filter(x=>x.sql.includes('FOR SHARE'))).toEqual([]);
+  });
   it('locks grants/projections/source heads/rights and derives scope from current authority',async()=>{
     const db=fakeDatabase(),source=new PostgresCalendarInputSource(db.pool),bundle=await source.readAuthorizedInputs(request);
     expect(bundle?.grant?.allowedSections).toEqual(['FEED','NOTICES']);
@@ -54,7 +67,7 @@ describe('PostgresCalendarInputSource: server-reviewed raw inputs and current gr
     expect(bundle?.context).toEqual(request.context);
     expect(bundle?.authorizationToken).toMatch(/^[0-9a-f]{64}$/);
     for(const table of ['api_sharing_grants','api_calendar_input_projections','source_ingest_heads','api_calendar_source_permissions'])
-      expect(db.log.some(x=>x.sql.includes(`FROM ${table}`)&&x.sql.includes('FOR SHARE'))).toBe(true);
+      expect(db.log.some(x=>x.sql.includes(`FROM ${table}`))).toBe(true);
     expect(db.log.find(x=>x.sql.includes('FROM api_sharing_grants'))?.params.slice(0,3)).toEqual(['SYN-ACTOR','S01','G1']);
     expect(db.log.some(x=>x.sql==='COMMIT')).toBe(true);
     expect(db.releases).toBe(1);
@@ -86,7 +99,7 @@ describe('PostgresCalendarInputSource: server-reviewed raw inputs and current gr
       expect(bundle?.authorizedRevisionIds).toEqual([]);
     }
   });
-  it.each(['grant','scope','input','permission','head','revision','conflict'])
+  it.each(['grant','scope','input','permission','head','revision','conflict','snapshotWithdrawal','snapshotContent'])
     ('invalidates an in-flight receipt on changed %s',async fault=>{
       const db=fakeDatabase(),source=new PostgresCalendarInputSource(db.pool),bundle=await source.readAuthorizedInputs(request);
       if(fault==='grant')db.grant.revoked_at=now;
@@ -96,6 +109,8 @@ describe('PostgresCalendarInputSource: server-reviewed raw inputs and current gr
       if(fault==='head')db.heads[0]!.revision_id='REV2';
       if(fault==='revision')db.revisions[0]!.status='STALE';
       if(fault==='conflict')db.conflicts.push({left_revision_id:'REV1',right_revision_id:'REV2',disposition:'CONFLICT',reviewed_at:now});
+      if(fault==='snapshotWithdrawal')db.snapshotRow.current=false;
+      if(fault==='snapshotContent')(db.snapshotRow.snapshot_json as {academics:unknown}).academics={state:'NOT_SHARED'};
       expect(await source.revalidateAuthorization(request,bundle!,now)).toBe(false);
     });
   it('retains cancelled/draft heads while refusing historical active fallback and confirmed conflicts',async()=>{
@@ -103,9 +118,41 @@ describe('PostgresCalendarInputSource: server-reviewed raw inputs and current gr
     db.heads[0]!.revision_id='REV2';
     const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
     expect(bundle?.revisions.map(r=>r.revisionId)).toEqual(['REV1','REV2']);
-    expect(bundle?.authorizedRevisionIds).toEqual(['REV1','REV2']);
+    expect(bundle?.authorizedRevisionIds).toEqual(['REV2']);
     db.conflicts.push({left_revision_id:'REV1',right_revision_id:'REV2',disposition:'CONFLICT',reviewed_at:now});
     expect((await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request))?.authorizedRevisionIds).toEqual([]);
+  });
+  it.each(['CANCELLED','UNKNOWN'] as const)('withholds old dates when current %s head is newer than the frozen projection asOf',async changeKind=>{
+    const db=fakeDatabase();db.projection.as_of='2026-10-31T00:00:00Z';
+    const snapshot=db.snapshotRow.snapshot_json as {asOf:string;feed:{asOf:string};notices:{asOf:string}};
+    snapshot.asOf=String(db.projection.as_of);snapshot.feed.asOf=snapshot.asOf;snapshot.notices.asOf=snapshot.asOf;
+    const input=db.projection.input_json as {notices:unknown[]};
+    input.notices.push({id:'NOTICE1',sourceSnapshotId:'REV1',title:'Synthetic scholarship',issuer:'Synthetic office',
+      category:'SCHOLARSHIP',verificationState:'VERIFIED',studentDeadline:'2026-11-02T00:00:00Z',evidenceRefs:['EV1']});
+    db.revisions.push({...db.revisions[0],revision_id:'REV2',supersedes:'REV1',change_kind:changeKind,
+      status:'NEEDS_REVIEW',fetched_at:'2026-10-31T12:00:00Z',last_verified_at:null});
+    db.heads[0]!.revision_id='REV2';
+    const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(bundle).not.toBeNull();
+    expect(computeAuthorizedCalendar(bundle!,request).entries).toEqual([]);
+    expect(bundle?.authorizedRevisionIds).not.toContain('REV1');
+  });
+  it('checks current conflicts reviewed after projection asOf and at or before the request',async()=>{
+    const db=fakeDatabase();db.projection.as_of='2026-10-31T00:00:00Z';
+    const snapshot=db.snapshotRow.snapshot_json as {asOf:string;feed:{asOf:string};notices:{asOf:string}};
+    snapshot.asOf=String(db.projection.as_of);snapshot.feed.asOf=snapshot.asOf;snapshot.notices.asOf=snapshot.asOf;
+    db.conflicts.push({left_revision_id:'REV1',right_revision_id:'REV2',disposition:'CONFLICT',reviewed_at:'2026-10-31T12:00:00Z'});
+    const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(bundle?.authorizedRevisionIds).toEqual([]);
+    expect(db.log.find(x=>x.sql.includes('FROM source_conflict_decisions_vnext'))?.params[1]).toBe(now);
+  });
+  it.each(['asOf','dataset','subject','unapproved'])('refuses an unbound approved snapshot: %s',async fault=>{
+    const db=fakeDatabase(),snapshot=db.snapshotRow.snapshot_json as typeof snapshotFixture;
+    if(fault==='asOf')snapshot.asOf='2026-10-31T12:00:00Z';
+    if(fault==='dataset')snapshot.versions.dataset='OTHER';
+    if(fault==='subject')snapshot.demoSubjectId='S02';
+    if(fault==='unapproved')db.snapshotRow.approved_by='';
+    expect(await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request)).toBeNull();
   });
   it('rejects REVIEWER on the production adapter before querying any student table',async()=>{
     const db=fakeDatabase();

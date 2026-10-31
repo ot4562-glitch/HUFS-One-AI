@@ -1,11 +1,12 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {canReadSharedSection,DatasetModeSchema,DemoContextSchema,EligibilityConditionSchema,
+import {canReadSharedSection,DatasetModeSchema,DemoContextSchema,DemoSnapshotSchema,EligibilityConditionSchema,
   ISODateTimeSchema,OpportunitySchema,SharedSectionSchema,SharingGrantSchema,TopicCodeSchema} from '@hufs-one/contracts';
 import {scopeInputsToGrant} from '../../../../packages/core/src/opportunities/scope.js';
 import type {RevisionRecord} from '../../../../packages/core/src/normalization/revisions.js';
 import type {ReviewerSqlConnection,ReviewerSqlPool} from './auth/reviewer-postgres.js';
 import type {CalendarAuthorizationReceipt,CalendarInputBundle,CalendarInputSource,CalendarReadRequest} from './calendar.js';
+import type {DemoSnapshot} from '@hufs-one/contracts';
 
 const Ref=z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:@-]+$/);
 const Label=z.string().min(1).max(500);
@@ -65,7 +66,7 @@ function revision(row:Record<string,unknown>):RevisionRecord {
 export class PostgresCalendarInputSource implements CalendarInputSource {
   constructor(private readonly pool:ReviewerSqlPool){}
 
-  async readAuthorizedInputs(input:CalendarReadRequest):Promise<CalendarInputBundle|null>{
+  async readAuthorizedInputs(input:CalendarReadRequest):Promise<(CalendarInputBundle&{approvedSnapshot:DemoSnapshot})|null>{
     if(input.reviewerInviteId!==undefined)return null;
     const context=DemoContextSchema.parse(input.context),actor=Ref.parse(input.actorId),now=iso(input.now);
     if(context.actorId!==actor||Date.parse(context.expiresAt)<=Date.parse(now))return null;
@@ -75,11 +76,17 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
       await client.query('BEGIN');transaction=true;
       await client.query("SET LOCAL statement_timeout = '5s'");
       await client.query("SET LOCAL lock_timeout = '3s'");
+      // PostgreSQL row-locking SELECTs require UPDATE privilege. Keep that privilege with the
+      // NOLOGIN owner of a narrowly scoped definer helper, never with this API connection.
+      const lock=await this.rows(client,`SELECT public.api_lock_authorized_calendar_inputs(
+        $1::text,$2::char(3),$3::text,$4::text,$5::text,$6::timestamptz) AS authorized`,
+      [actor,context.demoSubjectId,context.sharingGrantVersion,context.datasetVersion,context.projectionVersion,now]);
+      if(lock.length!==1||lock[0]!.authorized!==true)return null;
       const grantRows=await this.rows(client,`SELECT grant_id,actor_id,subject_id,version,allowed_sections,
         expires_at,revoked_at,approved_at,consent_ref FROM api_sharing_grants
         WHERE actor_id=$1 AND subject_id=$2 AND version=$3 AND revoked_at IS NULL
           AND approved_at<=LEAST($4::timestamptz,clock_timestamp())
-          AND expires_at>GREATEST($4::timestamptz,clock_timestamp()) LIMIT 2 FOR SHARE`,
+          AND expires_at>GREATEST($4::timestamptz,clock_timestamp()) LIMIT 2`,
       [actor,context.demoSubjectId,context.sharingGrantVersion,now]);
       if(grantRows.length!==1)return null;
       const g=grantRows[0]!;
@@ -95,7 +102,7 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
           AND dataset_version=$3 AND projection_version=$4 AND current=true
           AND approval_state='APPROVED' AND revoked_at IS NULL
           AND approved_at<=LEAST(as_of,$5::timestamptz,clock_timestamp())
-          AND expires_at>GREATEST($5::timestamptz,clock_timestamp()) LIMIT 2 FOR SHARE`,
+          AND expires_at>GREATEST($5::timestamptz,clock_timestamp()) LIMIT 2`,
       [actor,context.demoSubjectId,context.datasetVersion,context.projectionVersion,now]);
       if(projections.length!==1)return null;
       const p=projections[0]!;
@@ -103,6 +110,25 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
       if(p.actor_id!==actor||p.subject_id!==context.demoSubjectId||p.dataset_version!==context.datasetVersion
         ||p.projection_version!==context.projectionVersion||p.consent_ref!==g.consent_ref
         ||!active(p,now)||Date.parse(asOf)>Date.parse(now)||Date.parse(iso(p.approved_at))>Date.parse(asOf))return null;
+      // Academic/forecast summaries may only come from the current approved snapshot locked by
+      // the same helper and included in this receipt. Never relabel an older summary to a new asOf.
+      const snapshots=await this.rows(client,`SELECT subject_id,dataset_version,projection_version,snapshot_json,
+        approved_at,approved_by,current FROM api_demo_snapshot_projections
+        WHERE subject_id=$1 AND dataset_version=$2 AND projection_version=$3 AND current=true
+          AND approved_at<=$4::timestamptz LIMIT 2`,
+      [context.demoSubjectId,context.datasetVersion,context.projectionVersion,asOf]);
+      if(snapshots.length!==1)return null;
+      const s=snapshots[0]!;
+      if(s.subject_id!==context.demoSubjectId||s.dataset_version!==context.datasetVersion
+        ||s.projection_version!==context.projectionVersion||s.current!==true
+        ||typeof s.approved_by!=='string'||!s.approved_by.length||s.approved_by===actor
+        ||Date.parse(iso(s.approved_at))>Date.parse(asOf))return null;
+      if(Buffer.byteLength(JSON.stringify(s.snapshot_json),'utf8')>65536)throw Error('Oversized approved snapshot');
+      const approvedSnapshot=DemoSnapshotSchema.parse(s.snapshot_json);
+      if(approvedSnapshot.demoSubjectId!==context.demoSubjectId||approvedSnapshot.versions.dataset!==context.datasetVersion
+        ||approvedSnapshot.versions.projection!==context.projectionVersion||approvedSnapshot.datasetMode!==p.dataset_mode
+        ||[approvedSnapshot.asOf,approvedSnapshot.feed.asOf,approvedSnapshot.notices.asOf]
+          .some(value=>Date.parse(value)!==Date.parse(asOf)))return null;
       const text=JSON.stringify(p.input_json);
       if(!text||Buffer.byteLength(text,'utf8')>262144)throw Error('Oversized normalized projection');
       // PostgreSQL JSON cannot contain undefined. Serializing after validation removes optional
@@ -114,7 +140,7 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
       // Writers in #34 lock these same HEAD rows before inserting a successor revision. Do not
       // filter status/permission here: a blocked/cancelled head must shadow old active evidence.
       const heads=await this.rows(client,`SELECT source_id,revision_id,last_checked_at FROM source_ingest_heads
-        WHERE source_id=ANY($1::text[]) ORDER BY source_id LIMIT 101 FOR SHARE`,[sourceIds]);
+        WHERE source_id=ANY($1::text[]) ORDER BY source_id LIMIT 101`,[sourceIds]);
       if(heads.length!==sourceIds.length||heads.some(h=>!sourceIds.includes(String(h.source_id))))return null;
       const rawRevisions=await this.rows(client,`SELECT revision_id,source_id,supersedes,status,change_kind,provenance,
         permission_ref,published_at,fetched_at,last_verified_at,valid_from,valid_until FROM source_revisions_vnext
@@ -129,7 +155,7 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
           AND approved_at<=LEAST($3::timestamptz,clock_timestamp())
           AND expires_at>GREATEST($3::timestamptz,clock_timestamp())) AS active
         FROM api_calendar_source_permissions WHERE actor_id=$1 AND subject_id=$2
-          AND source_id=ANY($4::text[]) ORDER BY source_id,permission_ref LIMIT 1001 FOR SHARE`,
+          AND source_id=ANY($4::text[]) ORDER BY source_id,permission_ref LIMIT 1001`,
       [actor,context.demoSubjectId,now,sourceIds]);
       if(rights.length>1000)throw Error('Source authorization scope too broad');
       const conflicts=await this.rows(client,`SELECT DISTINCT ON (left_revision_id,right_revision_id)
@@ -137,18 +163,24 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         WHERE (left_revision_id=ANY($1::text[]) OR right_revision_id=ANY($1::text[]))
           AND reviewed_at<=$2::timestamptz
         ORDER BY left_revision_id,right_revision_id,reviewed_at DESC,decision_id DESC LIMIT 1001`,
-      [revisions.map(r=>r.revisionId),asOf]);
+      [revisions.map(r=>r.revisionId),now]);
       if(conflicts.length>1000)throw Error('Conflict history scope too broad');
       const blocked=new Set(conflicts.filter(c=>c.disposition==='CONFLICT').flatMap(c=>[c.left_revision_id,c.right_revision_id]));
-      const authorizedRevisionIds=revisions.filter(r=>!blocked.has(r.revisionId)&&rights.some(right=>right.actor_id===actor
+      // Calendar is a current authenticated view, not a historical replay endpoint. A new draft,
+      // cancellation or rights denial must shadow the frozen projection's older active revision,
+      // even when fetched after projection.asOf. The core then quarantines a current head newer
+      // than asOf rather than reusing an old deadline while the approved projection is refreshed.
+      const currentHeads=new Set(heads.map(h=>h.revision_id));
+      const authorizedRevisionIds=revisions.filter(r=>currentHeads.has(r.revisionId)&&Date.parse(r.fetchedAt)<=Date.parse(now)
+        &&r.changeKind!=='UNKNOWN'&&!blocked.has(r.revisionId)&&rights.some(right=>right.actor_id===actor
         &&right.subject_id===context.demoSubjectId&&right.source_id===r.sourceId&&right.permission_ref===r.permissionRef
         &&right.active===true&&active(right,now))).map(r=>r.revisionId);
       const scopeKey=scopeInputsToGrant(normalized.profile,normalized.noticeStudent,grant.allowedSections,normalized.provenance).scopeKey;
       const sourceVersion=hash([heads,rawRevisions,rights,conflicts]);
-      const authorizationToken=hash([context,grant,g.consent_ref,p,sourceVersion,scopeKey]);
+      const authorizationToken=hash([context,grant,g.consent_ref,p,s,sourceVersion,scopeKey]);
       await client.query('COMMIT');transaction=false;
       return {actorId:actor,context,grant,asOf,datasetMode:DatasetModeSchema.parse(p.dataset_mode),
-        ...normalized,revisions,authorizedRevisionIds,scopeKey,sourceVersion,authorizationToken};
+        ...normalized,revisions,authorizedRevisionIds,scopeKey,sourceVersion,authorizationToken,approvedSnapshot};
     }catch{
       throw new Error('Calendar input source unavailable');
     }finally{
