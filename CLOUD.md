@@ -1,7 +1,5 @@
 # HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
-> **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **High Memory-g3 VPC 4 vCPU/32GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
-
 
 **NCP 새 운영 정본:** [NCP_OPERATIONS_2026.md](docs/NCP_OPERATIONS_2026.md) — 2026-11-06~12-09(816h 예산 상한), 실제 본선 발표 11/16 및 크레딧·사용자 승인 이후 개통. 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB SSD 8원/h(선택 공인 IP 5.6원/h); 816h 서버+CB 272,544원, IP 포함 277,113.6원(VAT 등 제외).
 

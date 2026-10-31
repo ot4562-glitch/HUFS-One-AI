@@ -1,9 +1,7 @@
 # 코딩을 몰라도 알 수 있는 전체 흐름
 
-> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP High Memory-g3 4vCPU·32GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
 
-
-**담당 GitHub 작업 계정(이슈 배정 확인):** 심민성 `ot4562-glitch`(계약·통합), 이의상 `uisang2004-maker`(UI), 김채윤 `qamarrchae`(추천·공지), 박준영 `taewangim-alt`(학업). **심민성(API) 계정은 `ot4562-glitch`로 확인되어 직접 소유**하며 이서연이 일반 앱/API를 대행하는 구조가 아니다. 역할/근거: [WORKSTREAMS.md](WORKSTREAMS.md). **NCP/실인증·실모델 연결은 아직 하지 않는다.**
+**담당 GitHub 작업 계정(이슈 배정 확인):** 심민성 `ot4562-glitch`(계약·통합), 이의상 `uisang2004-maker`(UI), 김채윤 `qamarrchae`(추천·공지), 박준영 `taewangim-alt`(학업). **웹·외부 API는 심민성(`ot4562-glitch`), NCP·CLOVA 실행 환경은 이서연**이 담당한다. 역할/근거: [WORKSTREAMS.md](WORKSTREAMS.md). **NCP/실인증·실모델 연결은 아직 하지 않는다.**
 
 **접속 전:** 주소는 `https://외대.온라인.한국`으로 계획한다(아직 DNS/TLS·배포 확인 전). 학교의 공식 로그인 연결 없이도 **Google 계정 로그인 → 외대 이메일 수신함 확인 → 베타 초대 승인**을 거치게 한다. 학교가 실제 Google Workspace를 운영한다면 검증된 조직 정보로 메일 소유를 확인할 수 있고, 그렇지 않으면 외대 이메일로 보낸 인증코드를 입력한다. **개인 Gmail로만 로그인하거나 `example@hufs.ac.kr`을 입력했다고 해서 접속되는 것은 아니다.** 로그인 후에도 타인의 데이터는 별도 공유 허용 범위를 확인한다. 학교 공식 서비스가 아닌 독립 팀 프로젝트다.
 
@@ -31,4 +29,4 @@
 
 심사자가 자주 접속해도 Laya가 새로 추론하지 않고, **이미 검증된 시연 결과만 조회**한다. Laya는 나중에 승인될 백그라운드 분류 작업에만 사용하며 4vCPU 서버에서 CPU 상한 1vCPU·동시 1건·메모리 상한을 둔다. 문제가 생기면 자동으로 Laya를 끄고 규칙 코드로 처리한다. 현재 이 기능은 [운영 설계](LAYA_CPU_SPIKE_PROTECTION.md)이며 실제 클라우드 서버에서 시험한 것은 아니다.
 
-**최신 운영·예산:** 11/06~12/09은 816h 비용 산정 상한, 학교 본선 발표는 11/16. 실제 VM/NCP 리소스 생성은 진출·크레딧·사용자 승인 이후. KR VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB 8원/h, 전체 기간 서버+CB 272,544원(그 밖의 공인 IP/VAT/AI 별도). [정본](NCP_OPERATIONS_2026.md). **심사자의 실 홈페이지 전체 이용**은 Google OAuth/DB/프런트 E2E가 남아 있으며 합성 API 구현만으로 오픈 완료로 표시하지 않는다.
+**최신 운영·예산:** 11/06~12/09은 816h 비용 산정 상한, 학교 본선 발표는 11/16. 실제 VM/NCP 리소스 생성은 진출·크레딧·사용자 승인 이후. KR VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB 8원/h, 전체 기간 서버+CB 272,544원(그 밖의 공인 IP/VAT/AI 별도). [정본](NCP_OPERATIONS_2026.md). **심사자 웹 체험의 출시 조건**은 Google OAuth·DB·프런트엔드 E2E 통과다.

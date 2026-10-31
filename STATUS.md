@@ -1,13 +1,11 @@
 # HUFS One AI | 현재 작업 상태
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
 
-
-## 2026-10-31 로컬 API·담당 계정 정리 (별도 PR 브랜치, 아직 main 미병합)
+## 2026-10-31 합성 API 구현·검증 기록
 
 - **로컬 코드 작성:** Fastify route·strict Zod·공통 오류, 익명 401/초대·메일증빙 403/Origin·CSRF·SharingGrant·session-bound DemoContext·snapshot/version/철회, 4종 AI 작업의 mock packet·인용 대조·idempotency/quota, immutable time/asOf·rights 기반 **LocalTemporalEvidenceIndex**. 세부 [apps/api/README.md](apps/api/README.md).
 - **자동 테스트:** 2026-10-31 로컬 결과로 기존 공통계약 87건 + 소비자 20건 + 신규 API 21건 = **128/128 PASS**. npm typecheck 및 build:api PASS. 이 수치는 실제 Google OIDC/OTP·DB·NCP·CLOVA/OCR/Vision/Laya 검증을 뜻하지 않는다. 원격 CI 결과와 PR/QA는 별도 확인한다.
-- **출시 차단 유지:** 실제 verifier/메일 OTP/Google PKCE·DB·영속 revoke·인증 우회 E2E·실학생 동의·NCP 승인 없이 배포 불가. 로컬 harness는 모든 HTTP 요청 401, 합성 Fastify inject에서만 DI 테스트. 이전 본문의 과거 API 미구현 문구는 이 브랜치 이전 시점의 이력이다.
+- **출시 차단 유지:** 실제 verifier/메일 OTP/Google PKCE·DB·영속 revoke·인증 우회 E2E·실학생 동의·NCP 승인 없이 배포 불가. 로컬 harness는 모든 HTTP 요청 401, 합성 Fastify inject에서만 DI 테스트. 
 - **GitHub 역할 ID:** 심민성 ot4562-glitch, 이의상 uisang2004-maker, 김채윤 qamarrchae, 박준영 taewangim-alt — 각 담당 이슈 assignee 확인. **이서연 ID는 미확인**. [docs/WORKSTREAMS.md](docs/WORKSTREAMS.md).
 
 
@@ -109,7 +107,7 @@
 - **문서 산출물:** `Proposal.md`만 제안서 정본으로 유지하며 더 이상 제안서 PDF 자동 출력을 수행하지 않음. 공용 심사 초대장 `reference/reviewer/ReviewerInvitation.TEMPLATE.pdf`(A4 1쪽·비활성)만 유지. 10/29의 공식자료 무결성 검증 스냅샷은 과거 시점의 역사 자료로 변경하지 않음.
 - **NCP 가격/기간(공식 확인):** KR VPC Linux High Memory-g3 **4vCPU/32GB 326원/h** + CB 50GB **0.16원/GB·h**. 11/6~12/9 816h 최대 서버+CB 272,544원, 공인 IP 포함 277,113.6원(VAT/egress/CLOVA/OCR 제외). 공식 본선 진출팀 발표 **11/16**, 실제 개통/비용은 선정·크레딧·사용자 승인 후. 세부 [예산 정본](docs/NCP_OPERATIONS_2026.md).
 
-## 2026-10-31 신규 PR #31 — 실사용 게이트 명시
+## 2026-10-31 병합 현황과 실사용 게이트
 
 - 기존 [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24)가 먼저 main에 병합, 원본 #26의 코드는 [복구 PR #30](https://github.com/ot4562-glitch/HUFS-One-AI/pull/30)으로 이후 반영됨. 이전의 'stacked PR 대기' 문구는 과거 기록.
 - REVIEWER는 합성 전용 모든 학생 탭 및 관심·직무·검색·수강계획·알림 설정·기존 북마크/경험/가상 지원의 API 액션을 제공하나 실제 React 화면/Google 로그인/영속 DB E2E는 **미완료**. '실제 홈페이지 전체 기능 접속 완료'로 보고 금지.

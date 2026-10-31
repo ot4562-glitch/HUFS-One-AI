@@ -3,12 +3,10 @@
 **NCP 새 운영 정본:** [NCP_OPERATIONS_2026.md](docs/NCP_OPERATIONS_2026.md) — 2026-11-06~12-09(816h 예산 상한), 실제 본선 발표 11/16 및 크레딧·사용자 승인 이후 개통. 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB SSD 8원/h(선택 공인 IP 5.6원/h); 816h 서버+CB 272,544원, IP 포함 277,113.6원(VAT 등 제외).
 
 
-> **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **High Memory-g3 VPC 4 vCPU/32GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
 
+## 합성 API 구현 상태
 
-## 2026-10-31 API 로컬 구현 브랜치 (NCP/실인증 미연결)
-
-기술 총괄 심민성이 직접 소유·작성한 **별도 feature PR 단계**다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. DB·OCR·HCX·Laya·NCP·실학생 자료는 연결하지 않았으며 공통 SourceRevision vNext 계약 #18 및 추천/공지 PR #15/#16 변경요청 해결 뒤 별도 통합한다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
+심민성이 담당한 Fastify 합성 API 코드가 `main`에 반영됐다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. Google OIDC·영속 DB·NCP 제공자 연동은 출시 전 검증 과제다. 추천·공지 코어 PR #15/#16은 필수 수정과 재검토가 남아 있다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
 
 **HUFSAbility의 기존 취업·진로·비교과 정보를 AI로 학생별로 재배치하고, 졸업지원까지 확장하는 한국외대 바이브코딩 공모전 제안.**
 
@@ -69,7 +67,7 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 
 ## 담당자 심사 시연: `REVIEWER`(2026-10-31 개발 브랜치)
 
-학교 담당자는 팀원 5명 계정으로 위장하지 않고 **공용 초대장 + Google OIDC 이메일/계정 검증**을 거쳐 `REVIEWER`로 접근한다. 등록 후 심사 기간 중 반복 방문 제한은 없지만 **실학생 자료·실외부 신청·유료 모델 호출은 불가**하며 합성 전용 S01~S05 슬롯/리플레이만 조회한다. 자동 종료는 UTC `endsAt` 배타 경계를 매 요청 서버/DB가 검사하고, 관리자 즉시 철회도 지원한다. 실제 이메일·기한·유효한 코드는 **미발급**, PDF는 비활성 양식. API는 기존 [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24) 의존 별도 브랜치이며 OIDC/DB/도메인 운영 E2E는 아직 미완료. [정본](docs/REVIEWER_ACCESS.md) · [Issue #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+학교 담당자는 팀원 5명 계정으로 위장하지 않고 **공용 초대장 + Google OIDC 이메일/계정 검증**을 거쳐 `REVIEWER`로 접근한다. 등록 후 심사 기간 중 반복 방문 제한은 없지만 **실학생 자료·실외부 신청·유료 모델 호출은 불가**하며 합성 전용 S01~S05 슬롯/리플레이만 조회한다. 자동 종료는 UTC `endsAt` 배타 경계를 매 요청 서버/DB가 검사하고, 관리자 즉시 철회도 지원한다. 실제 이메일·기한·유효한 코드는 **미발급**, PDF는 비활성 양식. 합성 API는 `main`에 반영됐으며 OIDC/DB/도메인 운영 E2E는 후속 검증 과제다. [정본](docs/REVIEWER_ACCESS.md) · [Issue #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
 
 ## CPU 보호형 Laya 운영 설계 (2026-10-31 추가)
 

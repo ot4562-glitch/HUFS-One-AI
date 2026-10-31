@@ -1,7 +1,5 @@
 # PR 운영과 파일 충돌 예방
 
-> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP High Memory-g3 4vCPU·32GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
-
 
 - **한 TASK = 한 브랜치 = 한 주 편집자 = 한 PR**. main 직접 푸시하지 않는다.
 - 브랜치 예시: feat/ui-, feat/recommendation-, feat/academics-, feat/platform-, chore/contracts-, docs/.
@@ -19,7 +17,7 @@
 
 ## 통합 PR 의존 및 공유 CI 경계 (#15/#16/#28/#29/#31)
 
-[PR #31](https://github.com/ot4562-glitch/HUFS-One-AI/pull/31)은 루트 `package.json`/`tsconfig.json`/`vitest.config.ts`/`.github/workflows/task00-contracts.yml`의 API·추천/공지 core·UI 합성 테스트 **union**을 준비한다. #15는 같은 공통 4파일의 변경을 가진다. #16은 #15 기반이므로 **#15 리뷰/수정→병합→#16 rebase/검사** 순서를 유지해야 한다. #28은 자체 UI 트랙 tsconfig/vitest만 소유하며 메인 CI 경로는 #29 통합 담당 심민성이 조정한다. 충돌·이력 정리는 각 작성자 PR을 승인 없이 덮어쓰거나 병합하는 조치가 아니다. 실제 CI 및 독립 리뷰 미완료 상태에서 merge 하지 않는다. 모든 CI는 실제 학생 CSV·Forms·local_only·원시자료를 checkout하지 않는다.
+[PR #31](https://github.com/ot4562-glitch/HUFS-One-AI/pull/31) 병합으로 루트 `package.json`/`tsconfig.json`/`vitest.config.ts`/`.github/workflows/task00-contracts.yml`에 API·추천/공지 core·UI 합성 테스트가 통합됐다. #15는 같은 공통 4파일의 변경을 가진다. #16은 #15 기반이므로 **#15 리뷰/수정→병합→#16 rebase/검사** 순서를 유지해야 한다. #28 UI 상태관리 코드도 `main`에 병합됐으며 공통 CI는 #29 통합 담당 심민성이 관리한다. 충돌·이력 정리는 각 작성자 PR을 승인 없이 덮어쓰거나 병합하는 조치가 아니다. 실제 CI 및 독립 리뷰 미완료 상태에서 merge 하지 않는다. 모든 CI는 실제 학생 CSV·Forms·local_only·원시자료를 checkout하지 않는다.
 
 ## 신규 OCR·RAG·Laya 설계와 기존 TASK/PR 충돌 방지
 

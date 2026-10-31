@@ -2,15 +2,13 @@
 
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
-
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
 버전: `2026-10-31.trusted-rag-laya-media-design-r9` · 상태: 설계 승인 검토용 (Google OAuth·학교 메일 검증·도메인 가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
 
 ## A00. 정본·최신 결정·용어
 
-이 문서는 기존 Architecture의 계약을 최신 요청에 맞게 재구성한 정본이다. 아래 규범과 충돌하는 과거의 ‘계정당 본인 자료만 시연’, ‘학생 단말 VPN/내부 CA 기본’, ‘NCP 선택’, ‘오프라인 PWA 완주가 선행’, ‘새 CSV 템플릿 필요’는 현재 구현 방향이 아니다. 단, 개인정보 원본의 소유권과 실제 권한자의 동의는 그대로 보호한다.
+이 문서는 구현 계약의 기준이다. 온라인 HTTPS·Google OIDC·외대 메일 확인·합성 REVIEWER 시연·NCP 배포를 기본 구조로 삼고, 실제 학생자료는 목적별 동의와 권한에 따라 보호한다.
 
 ### A00.1 제품 순서와 구현 경계
 
@@ -148,7 +146,7 @@ private raw → approved derived projection → per-actor overlay라는 3층 구
 - **접근 횟수와 기간:** 최초 등록 이후 **동일 인증 주체가 심사기간 중 횟수 제한 없이 재로그인** 가능. 초대 코드 재사용은 동일 계정에만 멱등 허용. `startsAt <= now < endsAt`(UTC 서버, KST 화면), 최대 45일 설계. 초대 철회·기간만료는 **매 요청마다 서버의 영속 상태를 재조회해 403**으로 자동 차단한다. 자동 차단은 JS 타이머/cron에 의존하지 않는다.
 - **권한 분리:** `/api/reviewer/demo/*`의 GET과 초대 등록/자신의 로그아웃만 최소 허용하며 일반 `/api/demo`·AI 작업·팀원 섹션·실제 학생 데이터·관리/수정/내보내기/유료 LLM 호출 금지. 리뷰 데모의 `datasetMode`와 공고 card는 `SYNTHETIC`, `aiProvenance`는 mock/cache로만 제한한다. 초대 코드를 가진 익명인/다른 email/sub는 접근 불가.
 - **보안 운영:** Origin/CSRF + 등록시도 5회/15분/actor(실서비스 분산/IP 방어 추가), no-store·정확한 허용 origin, 영속 DB `SELECT ... FOR UPDATE` 등록·revoke, 세션 재검증, 클릭/방문 횟수 자체에는 제한을 두지 않되 폭주·유료 API에는 별도 방어 정책을 유지한다.
-- **현재 상태:** API/합성 테스트와 SQL adapter는 PR #24와 원본 #26을 재적용한 #30이 main에 반영됨. 후속 안전한 합성 REVIEWER 액션 및 CI는 PR #31 진행 중이다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+- **현재 상태:** API/합성 테스트와 SQL adapter는 PR #24와 원본 #26을 재적용한 #30이 main에 반영됨. 합성 REVIEWER 액션과 통합 CI는 PR #31을 통해 `main`에 반영됐다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
 
 ### A02.3 상단 selector 화면 동작
 
