@@ -1,5 +1,12 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-10-31 로컬 API·담당 계정 정리 (별도 PR 브랜치, 아직 main 미병합)
+
+- **로컬 코드 작성:** Fastify route·strict Zod·공통 오류, 익명 401/초대·메일증빙 403/Origin·CSRF·SharingGrant·session-bound DemoContext·snapshot/version/철회, 4종 AI 작업의 mock packet·인용 대조·idempotency/quota, immutable time/asOf·rights 기반 **LocalTemporalEvidenceIndex**. 세부 [apps/api/README.md](apps/api/README.md).
+- **자동 테스트:** 2026-10-31 로컬 결과로 기존 공통계약 87건 + 소비자 20건 + 신규 API 21건 = **128/128 PASS**. npm typecheck 및 build:api PASS. 이 수치는 실제 Google OIDC/OTP·DB·NCP·CLOVA/OCR/Vision/Laya 검증을 뜻하지 않는다. 원격 CI 결과와 PR/QA는 별도 확인한다.
+- **출시 차단 유지:** 실제 verifier/메일 OTP/Google PKCE·DB·영속 revoke·인증 우회 E2E·실학생 동의·NCP 승인 없이 배포 불가. 로컬 harness는 모든 HTTP 요청 401, 합성 Fastify inject에서만 DI 테스트. 이전 본문의 과거 API 미구현 문구는 이 브랜치 이전 시점의 이력이다.
+- **GitHub 역할 ID:** 심민성 ot4562-glitch, 이의상 uisang2004-glitch, 김채윤 qamarrchae, 박준영 taewangim-alt — 각 담당 이슈 assignee 확인. **이서연 ID는 미확인**. [docs/WORKSTREAMS.md](docs/WORKSTREAMS.md).
+
 **기준일: 2026-10-30.** TASK-00 공통 TypeScript/Zod 계약과 합성 검증 코드를 로컬에서 구현했다. **실제 학생용 웹·API·CLOVA·NCP·학교 연동은 구현/승인 전**이며, 유료 호출·서비스 배포·개인자료 외부 이전은 별도 승인 대상이다. 사용자 확보 신고 도메인 `외대.온라인.한국`은 독립 서비스의 예정 주소이며, **공식 학교 SSO 미승인을 전제로 Google OAuth + 외대 메일 현재 수신권 증명 + 베타 allowlist**를 P0 출시 설계로 채택했다. DNS/TLS·Google/OTP/배포 구현은 미확인이다.
 
 ## 현재 정본과 독자

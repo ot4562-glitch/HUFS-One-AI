@@ -10,7 +10,17 @@
 | **박준영** | 졸업요건·학점·수강계획·미래 개설 전망 | GPT, Claude | `packages/core/src/academics`, `forecast` | 01·02·03·17 |
 | **이서연** | 팀 결성·기획 리드 + API·CLOVA·NCP 기술 책임 | **Gemini (2026-10-30 사용자 확인)** | `apps/api`, `packages/ai`, `packages/core/src/privacy`, `infra` | 07·08·11 및 05·10·15의 서버 |
 
-**GitHub ID 확인 필요:** 현재 저장소 소유자 `ot4562-glitch` 외 팀원별 GitHub 계정의 실명 대응은 검증되지 않았다. PR 닉네임만으로 사람을 연결하거나 자동 리뷰어/권한을 지정하지 않는다. **이서연의 Gemini 사용은 사용자가 확인했으며**, 다른 AI 구독·결제 상태는 추정하지 않는다.
+### 이슈 배정으로 확인한 GitHub 작업 계정 (2026-10-31)
+
+| 담당 | GitHub 계정 | 연결 근거 |
+|---|---|---|
+| **심민성** | [`ot4562-glitch`](https://github.com/ot4562-glitch) | 저장소 소유자·[#8](https://github.com/ot4562-glitch/HUFS-One-AI/issues/8), [#18](https://github.com/ot4562-glitch/HUFS-One-AI/issues/18) 할당 |
+| **이의상** | [`uisang2004-glitch`](https://github.com/uisang2004-glitch) | [UI 이슈 #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) 담당자 지정 |
+| **김채윤** | [`qamarrchae`](https://github.com/qamarrchae) | [추천·공지 이슈 #10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 담당자 지정 |
+| **박준영** | [`taewangim-alt`](https://github.com/taewangim-alt) | [학업 이슈 #11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) 담당자 지정 |
+| **이서연** | **미확인·자동 할당 금지** | [플랫폼 이슈 #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)에는 GitHub assignee가 없음; Gemini 사용은 사용자 확인 |
+
+**정확성 경계:** 위 네 계정의 대응은 사용자가 지정한 이슈 담당자·GitHub assignee 기록에 근거한다. 이는 사람의 신분증 검증이나 새로운 학생자료 공유 동의가 아니다. 이서연 계정은 임의 유추하지 않으며, 다른 사람의 계정에 대신 배정하지 않는다.
 
 - **공개 웹 도메인/Google 인증 P0 협업:** 이서연(API·NCP, Gemini 사용)은 독립 Google OAuth OIDC·외대 메일 OTP 발송/검증·세션·ingress/스토리지 경계를 담당한다. 이의상(UI)은 Google 로그인·학교 메일 코드·403·재인증 UX와 민감 캐시 차단을 담당한다. 심민성은 공용 auth contract, `외대.온라인.한국` origin, `hd`/메일 OTP 우회 부정시험, CI/PR 통합 게이트를 맡는다. **공식 학교 SSO 허가는 전제하지 않으며** Google OAuth 클라이언트·메일 발송 서비스·NCP 비용·학생자료 공유는 별도 승인한다. 인증 전 앱 번들/API·directIP·preview 접근을 허용하는 PR은 병합 금지(Architecture A14.1a).
 
