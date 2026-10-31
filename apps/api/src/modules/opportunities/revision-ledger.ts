@@ -146,7 +146,7 @@ export class MemorySourceRevisionLedger {
     if(!words.length||words.length>20||input.query.length>250)
       return this.empty(input,'NO_EVIDENCE');
     const hits:TemporalResult['hits']=[];
-    let stale=false;
+    let stale=false,blockedRights=false,unknown=false;
     for(const [sourceId,chain] of this.sources){
       if(input.sourceIds&&!input.sourceIds.has(sourceId))continue;
       const historical=chain.map(id=>this.entries.get(id)!)
@@ -164,7 +164,17 @@ export class MemorySourceRevisionLedger {
       if(r.status!=='ACTIVE'||!r.lastVerifiedAt||time(r.lastVerifiedAt)>at
         ||(r.validFrom&&time(r.validFrom)>at)
         ||(r.validUntil&&time(r.validUntil)<=at)){
-        stale=true;
+        // Only report a negative state if THIS query matched a paragraph in
+        // the visible source's history. Never reveal unrelated source states.
+        const relevant=historical.some(v=>v.paragraphs.some(p=>{
+          const text=p.text.normalize('NFKC').toLocaleLowerCase('ko-KR');
+          return words.some(term=>text.includes(term));
+        }));
+        if(relevant){
+          if(r.status==='BLOCKED_RIGHTS')blockedRights=true;
+          else if(r.changeKind==='UNKNOWN')unknown=true;
+          else stale=true;
+        }
         continue;
       }
       for(const p of latest.paragraphs){
@@ -178,7 +188,8 @@ export class MemorySourceRevisionLedger {
     hits.sort((x,y)=>y.score-x.score||x.sourceId.localeCompare(y.sourceId)
       ||x.paragraphId.localeCompare(y.paragraphId));
     const results=hits.slice(0,limit);
-    if(!results.length)return this.empty(input,stale?'STALE':'NO_EVIDENCE');
+    if(!results.length)return this.empty(input,blockedRights?'BLOCKED_RIGHTS'
+      :unknown?'UNKNOWN':stale?'STALE':'NO_EVIDENCE');
     const evidence=results.map(x=>SourceSpanVNextSchema.parse({
       kind:'TEXT',sourceRevisionId:x.revisionId,paragraphId:x.paragraphId,
       startCodePoint:0,endCodePoint:Array.from(x.quote).length,
@@ -200,7 +211,8 @@ export class MemorySourceRevisionLedger {
     return {envelope,hits:results};
   }
 
-  private empty(input:TemporalPolicy,state:'NO_EVIDENCE'|'STALE'):TemporalResult {
+  private empty(input:TemporalPolicy,
+    state:'NO_EVIDENCE'|'STALE'|'BLOCKED_RIGHTS'|'UNKNOWN'):TemporalResult {
     return {envelope:RetrievalEnvelopeVNextSchema.parse({
       queryVersion:'query-1',asOf:input.asOf,sourceRevisionIds:[],
       permissionPolicyVersion:'server-policy-v1',
