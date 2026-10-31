@@ -1,6 +1,6 @@
 import {canReadSharedSection,DatasetModeSchema,DemoContextSchema,ISODateTimeSchema,
   OpportunitySchema,SharingGrantSchema,validateCalendarWire} from '@hufs-one/contracts';
-import type {CalendarResult,DemoContext,DemoSnapshot,Opportunity,SharingGrant} from '@hufs-one/contracts';
+import type {CalendarResult,DemoContext,DemoSnapshot,FeedResult,NoticeResult,Opportunity,SharingGrant} from '@hufs-one/contracts';
 import {buildCalendar} from '../../../../packages/core/src/opportunities/calendar.js';
 import {composeFeed} from '../../../../packages/core/src/opportunities/feed.js';
 import {scopeInputsToGrant} from '../../../../packages/core/src/opportunities/scope.js';
@@ -69,6 +69,13 @@ const syntheticSections=['FEED','NOTICES','ACADEMICS','FORECAST','EXPERIENCE'] a
 
 /** Recompute from scoped inputs; a precomputed calendar or full-share feed is never reused. */
 export function computeAuthorizedCalendar(bundle:CalendarInputBundle,input:CalendarReadRequest):CalendarResult {
+  return computeAuthorizedSections(bundle,input).calendar;
+}
+
+/** All three outputs use exactly the same grant, rights and input provenance. */
+export function computeAuthorizedSections(bundle:CalendarInputBundle,input:CalendarReadRequest):{
+  calendar:CalendarResult;feed:FeedResult;notices:NoticeResult;
+} {
   const context=DemoContextSchema.parse(bundle.context);
   if(bundle.actorId!==input.actorId)throw new ApiFailure('FORBIDDEN');
   for(const key of Object.keys(input.context) as (keyof DemoContext)[])
@@ -109,7 +116,8 @@ export function computeAuthorizedCalendar(bundle:CalendarInputBundle,input:Calen
   const publishedAtBySnapshotId=Object.fromEntries([...current.values()].map(r=>[r.revisionId,r.publishedAt]));
   const feed=composeFeed(scoped.profile,opportunities,{asOf,publishedAtBySnapshotId});
   const evaluated=composeNotices(scoped.noticeStudent,notices,{asOf});
-  return validateCalendarWire(buildCalendar(feed,evaluated,notices,{asOf,
+  const calendar=validateCalendarWire(buildCalendar(feed,evaluated,notices,{asOf,
     ...(bundle.savedOpportunityIds===undefined?{}:{savedOpportunityIds:bundle.savedOpportunityIds}),
   }),asOf);
+  return {calendar,feed:feed.feed,notices:evaluated.result};
 }

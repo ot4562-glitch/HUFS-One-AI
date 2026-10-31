@@ -41,6 +41,10 @@ interface SharedDependencies {
   syntheticAiProvider?:AiCandidateProvider;
   now?:()=>string;
   maxSyntheticAiCallsPerActor?:number;
+  /** Server-owned, current source rights. Never supplied by a browser. */
+  temporalEvidence?:ApiOptions['temporalEvidence'];
+  calendarSource?:ApiOptions['calendarSource'];
+  personalState?:ApiOptions['personalState'];
 }
 
 /**
@@ -121,6 +125,9 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.maxSyntheticAiCallsPerActor!==undefined
       ?{maxSyntheticAiCallsPerActor:deps.maxSyntheticAiCallsPerActor}:{}),
     ...(deps.now?{now:deps.now}:{}),
+    ...(deps.temporalEvidence?{temporalEvidence:deps.temporalEvidence}:{}),
+    ...(deps.calendarSource?{calendarSource:deps.calendarSource}:{}),
+    ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options);
   if(deps.googleAuth) {
