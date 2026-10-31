@@ -6,6 +6,12 @@ import type {
 } from '@hufs-one/contracts';
 import type {ApiRepository} from './types.js';
 
+/** Precomputed feed/notices may depend on private academic and experience inputs.
+ * Until an independently verified per-grant projection exists, never return
+ * these potentially derived results to a partially scoped viewer.
+ */
+const PRECOMPUTED_DERIVED_INPUTS=['FEED','NOTICES','ACADEMICS','EXPERIENCE'] as const;
+
 /** In-memory, intentionally non-durable test adapter. Not a live database/identity provider. */
 export class MemoryApiRepository implements ApiRepository {
   private readonly profiles: DemoProfileOption[];
@@ -57,6 +63,7 @@ export class MemoryApiRepository implements ApiRepository {
       ||granted.revokedAt!==undefined||Date.parse(granted.expiresAt)<=now
       ||!required.length||new Set(required).size!==required.length
       ||required.some(s=>!granted.allowedSections.includes(s))
+      ||PRECOMPUTED_DERIVED_INPUTS.some(section=>!granted.allowedSections.includes(section))
       ||Date.parse(source.asOf)>now
       ||source.feed.asOf!==source.asOf||source.notices.asOf!==source.asOf)
       return null;
