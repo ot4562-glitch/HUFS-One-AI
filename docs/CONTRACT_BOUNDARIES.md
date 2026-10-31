@@ -9,8 +9,8 @@
 | DemoSnapshot, VersionEnvelope | A02·A04·A13 | API 심민성 → UI/추천/학업 | 원자적 봉투, 지연 응답·다중 탭 격리 |
 | TopicCode 24개·alias | A04.1~3 | 추천 김채윤 → 통합 심민성 → UI/AI | 24개 enum 단일 출처, UNKNOWN 보존 |
 | FeedResult·적격성 | A04~05 | 추천 김채윤 → UI/API | 큰 카드 최대3, 작은 목록 최대6, 전체 목록 |
-| NoticeResult | A07 | 김채윤 → UI/학업/API | 학년/학과/마감/근거 분리; #44 overdue 공식 계약 병합·#16 출력 연결 전 |
-| CalendarResult (신규, #53 main 병합) | A07.3·A13 | 김채윤 계산 #50 → 심민성 권한 API #52 → 이의상 UI #51 | asOf/서울 날짜·확정/미정/적용 미확인·rights/grant·철회, API 미연결 |
+| NoticeResult | A07 | 김채윤 → UI/학업/API | #44 overdue Wire 및 #16 실제 items[].overdue 출력·합성 부정 테스트 **main 병합**; 서버/화면 권한 소비는 별도 |
+| CalendarResult (신규, #53 Wire + #50 계산 main 병합) | A07.3·A13 | 김채윤 계산 완료 #50 → 심민성 인증 API 예정 #52 → 이의상 UI 예정 #51 | asOf/서울 날짜·확정/미정/적용 미확인·rights/grant·철회, 실제 API/UI 아직 미구현 |
 | RulePack, AcademicSummary, Outlook | A08~09 | 학업 박준영 → UI/API | 3원장, 정수학점, 검수/미확정, asOf |
 | SafeLlmPacket·증거 | A06 | 심민성(웹 API/DTO·증거 검증) ↔ 이서연(NCP Provider SDK/실제 호출) → 추천·UI | 네 AI 작업, 안전 입력과 quote ID, NCP 외부 호출은 이서연 전담 |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
@@ -48,10 +48,10 @@
 
 ## 2026-10-31 합병된 선택적 계약 및 신규 캘린더 데이터 경계
 
-- **main 병합 계약:** [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36) 학업 검수 vNext, [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44) NoticeResult.items[].overdue optional 검증·명시 TopicCode alias, [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47) FeedCard.explanation?/programScope/deadlineKind, [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) CalendarResultSchema/validateCalendarWire. 각각 합성 CI/승인 뒤 병합됐지만 소비자가 응답에 실제 필드를 넣는 연결은 별개다.
+- **main 병합 계약 및 실제 순수 소비:** [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36) 학업 검수 vNext, [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44) NoticeResult.items[].overdue optional·TopicCode alias, [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47) FeedCard.explanation?/programScope/deadlineKind, [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) CalendarResult Wire. 여기에 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 실제 overdue 직렬화, [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49) 부분공유 입력, [#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40) 시점 gate, [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) 캘린더 계산 코어도 main 병합. 각각 합성 CI/승인 뒤 병합됐지만 소비자가 응답에 실제 필드를 넣는 연결은 별개다.
 - **캘린더 요청·응답:** 기존 DemoSnapshot을 무단 확장하지 않고 인증된 GET /api/demo/contexts/:contextId/calendar (**계약상 예정, 아직 미구현**)이 CalendarResult를 반환하도록 한다. `asOf/from/to`, `entries`(NOTICE/OPPORTUNITY; STUDENT_DEADLINE/APPLY_DEADLINE/EVENT), `undated`(상시/미정), `needsConfirmation`(적용 불확실), `ambiguousNoticeIds`(중복 충돌)을 구분한다. EVENT를 학생 지원마감으로 표시하지 않고, `seoulDate`/overdue/중복/확정 근거를 검증한다. 화면은 날짜를 독자 계산하지 않는다.
 - **인가/출처 선행:** BETA는 actor/subject/context, 최신 grantVersion/sections, 철회/만료, 공유 학업·경험·관심 원천, 검수된 sourceRevision/rights, `asOf`와 `scopeKey`를 서버에서 검증한다. [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55) 원자적 조회와 [#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35) PG 허가, [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49) 재계산이 연결되기 전에는 부분 공유에 대한 파생 일정이 화면에 나가면 안 된다. REVIEWER는 합성만. API/DB/화면 통합·철회 레이스 및 실제 PG는 아직 검증 전이다.
-- **후속 소비자:** 김채윤 #16은 #44의 `overdue`를 실제 NoticeResult.items[]에 직렬화하고 회귀 테스트; #41은 #47 설명을 실제 카드로 전달하고 관련도=코드 점수이지 합격확률 아님을 유지; #50 계산은 #53 wire를 통과; 이의상 #51은 모바일/스크린리더/NOT_SHARED를 구분. 독립 코드 병합 기준은 비작성자 1명 이상 최신 HEAD 승인+CI+의존/보안 검증([PR_WORKFLOW](PR_WORKFLOW.md)).
+- **후속 소비자:** 김채윤 #16은 #44의 `overdue`를 실제 NoticeResult.items[]에 직렬화 완료했고 #50 계산은 #53 wire 합성 검증 통과·main 병합. **#41**은 #47 설명을 카드에 직렬화하는 코드/공유 음성 테스트를 준비했지만 fresh main 충돌·CI/승인 대기. 이의상 **#51**은 캘린더 모바일/스크린리더/NOT_SHARED, 심민성 **#52**는 인증된 GET + scopeKey/source rights·철회 E2E가 남는다. 독립 코드 병합 기준은 비작성자 1명 이상 최신 HEAD 승인+CI+의존/보안 검증([PR_WORKFLOW](PR_WORKFLOW.md)).
 
 ## REVIEWER auth vNext 분리 계약 (Issue #25)
 
