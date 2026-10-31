@@ -13,12 +13,16 @@ const Row=z.object({
   paragraph_text:z.string().min(1).max(20_000),
   score:z.coerce.number().int().min(1).max(20),
 });
-function empty(policy:TemporalPolicy):TemporalResult{
+type EmptyReason='NO_EVIDENCE'|'STALE'|'BLOCKED_RIGHTS'|'UNKNOWN';
+const EmptyFlags=z.object({
+  blocked_rights:z.boolean(),unknown:z.boolean(),stale:z.boolean(),
+});
+function empty(policy:TemporalPolicy,state:EmptyReason='NO_EVIDENCE'):TemporalResult{
   return {envelope:RetrievalEnvelopeVNextSchema.parse({
     queryVersion:'query-1',asOf:policy.asOf,
     sourceRevisionIds:[],permissionPolicyVersion:'server-policy-v1',
     retrievalConfigVersion:'pg-lexical-v1',
-    retrievalState:'NO_EVIDENCE',evidence:[],
+    retrievalState:state,evidence:[],
   }),hits:[]};
 }
 function terms(query:string):string[]{
@@ -52,7 +56,7 @@ export class PostgresTemporalEvidenceReader{
     const sql=`WITH latest AS (
       SELECT DISTINCT ON (r.source_id)
         r.source_id,r.revision_id,r.permission_ref,r.source_class,
-        r.provenance,r.status,r.last_verified_at,r.valid_from,r.valid_until,
+        r.provenance,r.status,r.change_kind,r.last_verified_at,r.valid_from,r.valid_until,
         r.scope_campuses,r.scope_majors,r.cohort_min,r.cohort_max
       FROM source_revisions_vnext r
       WHERE r.fetched_at <= $1::timestamptz
@@ -72,7 +76,8 @@ export class PostgresTemporalEvidenceReader{
       AND ($3::text[] IS NULL OR l.source_id=ANY($3::text[]))
       AND l.source_class!='RESEARCH_REFERENCE_ONLY'
       AND l.provenance!='RESEARCH_ONLY'
-      AND l.status='ACTIVE' AND l.last_verified_at<=$1::timestamptz
+      AND l.status='ACTIVE' AND l.change_kind!='UNKNOWN'
+      AND l.last_verified_at<=$1::timestamptz
       AND (l.valid_from IS NULL OR l.valid_from<=$1::timestamptz)
       AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
       AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
@@ -82,15 +87,70 @@ export class PostgresTemporalEvidenceReader{
       AND score.score>0
     ORDER BY score.score DESC,l.source_id,l.revision_id,p.paragraph_id
     LIMIT $8::integer`;
+    // No untrusted SQL/error details may be returned in an empty envelope.
+    // State detection repeats ALL actor-grant and applicability predicates.
+    // Matching a historical text phrase is used solely to classify its latest
+    // revision; no historical quote is ever selected into the response.
+    // CONFLICT requires an independently reviewed conflict record. This
+    // schema has no such registry, so it must never be inferred from keywords.
+    const classifySql=`WITH latest AS (
+      SELECT DISTINCT ON (r.source_id)
+        r.source_id,r.revision_id,r.permission_ref,r.source_class,
+        r.provenance,r.status,r.change_kind,r.fetched_at,r.last_verified_at,
+        r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,
+        r.cohort_min,r.cohort_max
+      FROM source_revisions_vnext r
+      WHERE r.fetched_at<=$1::timestamptz
+        AND (r.published_at IS NULL OR r.published_at<=$1::timestamptz)
+      ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
+    ), scoped AS (
+      SELECT l.status,l.change_kind,l.last_verified_at,l.valid_from,l.valid_until
+      FROM latest l
+      WHERE l.permission_ref=ANY($2::text[])
+        AND ($3::text[] IS NULL OR l.source_id=ANY($3::text[]))
+        AND l.source_class!='RESEARCH_REFERENCE_ONLY'
+        AND l.provenance!='RESEARCH_ONLY'
+        AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
+        AND (l.scope_majors IS NULL OR $5::text=ANY(l.scope_majors))
+        AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
+        AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
+        AND EXISTS (
+          SELECT 1 FROM source_revisions_vnext h
+          JOIN source_paragraphs_vnext p ON p.revision_id=h.revision_id
+          WHERE h.source_id=l.source_id
+            AND h.fetched_at<=$1::timestamptz
+            AND (h.published_at IS NULL OR h.published_at<=$1::timestamptz)
+            AND EXISTS (
+              SELECT 1 FROM unnest($7::text[]) AS token(term)
+              WHERE position(token.term IN lower(p.paragraph_text))>0
+            )
+        )
+    )
+    SELECT COALESCE(bool_or(status='BLOCKED_RIGHTS'),false) AS blocked_rights,
+      COALESCE(bool_or(change_kind='UNKNOWN'),false) AS unknown,
+      COALESCE(bool_or(status!='ACTIVE'
+        OR last_verified_at IS NULL OR last_verified_at>$1::timestamptz
+        OR (valid_from IS NOT NULL AND valid_from>$1::timestamptz)
+        OR (valid_until IS NOT NULL AND valid_until<=$1::timestamptz)),false)
+        AS stale
+    FROM scoped`;
     const connection=await this.pool.connect();
     try {
-      const result=await connection.query(sql,[
+      const params=[
         asOf,grants,sources,input.campus??null,input.majorCode??null,
         cohort??null,keywords,limit,
-      ]);
+      ] as const;
+      const result=await connection.query(sql,params);
       if(result.rows.length>limit)throw new Error('Provider violated retrieval topK');
       const matches=result.rows.map(x=>Row.parse(x));
-      if(!matches.length)return empty(input);
+      if(!matches.length){
+        const stateRows=await connection.query(classifySql,params.slice(0,7));
+        if(stateRows.rows.length>1)throw new Error('Invalid retrieval state provider');
+        if(!stateRows.rows.length)return empty(input);
+        const flags=EmptyFlags.parse(stateRows.rows[0]);
+        return empty(input,flags.blocked_rights?'BLOCKED_RIGHTS'
+          :flags.unknown?'UNKNOWN':flags.stale?'STALE':'NO_EVIDENCE');
+      }
       const evidence=matches.map(x=>SourceSpanVNextSchema.parse({
         kind:'TEXT',sourceRevisionId:x.revision_id,
         paragraphId:x.paragraph_id,startCodePoint:0,
