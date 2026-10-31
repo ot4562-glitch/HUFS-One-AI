@@ -38,7 +38,9 @@ describe('reviewer API consumer (isolated synthetic HTTP responses)',()=>{
   it('rejects any reviewer manifest with external submission or NCP enabled',async()=>{
     for(const patch of [{ncpCalls:true},{externalSubmission:true},
       {dataMode:'REAL_CONSENTED'},{sandboxOnly:false},{aiProvenance:'LIVE_NCP'},
-      {studentRecord:'unreviewed'}]){
+      {studentRecord:'unreviewed'},
+      {sections:['ADMIN']},{actions:['EXPORT_PRIVATE_RECORDS']},
+      {sections:['TODAY','TODAY']},{actions:['BOOKMARK','BOOKMARK']}]){
       const client=new HufsApiClient(async()=>respond({...reviewerCapabilities,...patch}));
       await expect(client.loadReviewerCapabilities()).rejects.toMatchObject({
         code:'PROVIDER_UNAVAILABLE',
@@ -105,6 +107,8 @@ describe('reviewer API consumer (isolated synthetic HTTP responses)',()=>{
     expect((calls[1]!.init.headers as Record<string,string>)['x-csrf-token']).toBe(csrfToken);
     expect(JSON.parse(calls[1]!.init.body as string)).toEqual({enrollmentCode});
     expect(calls.every(x=>!x.url.includes(enrollmentCode))).toBe(true);
+    await expect(client.createContext('S09' as never,'RUN-1')).rejects
+      .toMatchObject({code:'INVALID_INPUT'});
     await expect(client.redeemReviewerInvite('not-valid')).rejects.toMatchObject({
       code:'INVALID_INPUT',
     });

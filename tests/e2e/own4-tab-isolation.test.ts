@@ -39,6 +39,24 @@ describe('synthetic transport-level E2E (NOT a real browser test)',()=>{
     controller.dispose();
   });
 
+  it('erases a previous student before rejecting an invalid new selector id',async()=>{
+    let calls=0;
+    const client:DemoClientPort={
+      listProfiles:async()=>[],
+      createContext:async(subject,runId)=>{calls++;return ctx(subject,runId);},
+      getSnapshot:async()=>snap('S01','RUN-A'),
+      logout:async()=>{},
+    };
+    const controller=new DemoController(client,'RUN-A');
+    await controller.select('S01');
+    expect(controller.getState().snapshot?.demoSubjectId).toBe('S01');
+    await controller.select('S09' as never);
+    expect(controller.getState().status).toBe('INVALID');
+    expect(controller.getState().snapshot).toBeNull();
+    expect(calls).toBe(1);
+    controller.dispose();
+  });
+
   it('keeps two independent controllers and demoRunId values isolated',async()=>{
     const client:DemoClientPort={
       listProfiles:async()=>[],

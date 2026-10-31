@@ -93,7 +93,11 @@ describe('integration: real Fastify inject with synthetic browser transport',()=
     const controller=new DemoController(client,'SYN-RUN-1');
     await controller.select('S01');
     expect(controller.getState().status).toBe('READY');
+    const oldContext=controller.getState().context!;
     repository.setGrant({...grant,version:'SYN-V2'});
+    await expect(client.getSnapshot(oldContext.contextId)).rejects.toMatchObject({
+      code:'VERSION_CONFLICT',status:409,
+    });
     await controller.select('S01');
     expect(controller.getState().status).toBe('READY'); // new context uses current grant
     repository.revokeGrant(actor.actorId,'S01',now);
@@ -126,6 +130,11 @@ describe('integration: real Fastify inject with synthetic browser transport',()=
     expect(()=>createIntegratedApi({
       allowedOrigin:'http://insecure.invalid',repository:{} as never,auth:{} as never,
     })).toThrow();
+    expect(()=>createIntegratedApi({
+      allowedOrigin:origin,repository:new MemoryApiRepository({profiles:[]}),
+      auth:{verifySession:async()=>actor,revokeSession:async()=>{}},
+      reviewer:{} as never,
+    })).toThrow('REVIEWER sandbox');
   });
 
   it('drops malformed error envelopes and rejects third-party URL inputs',async()=>{
