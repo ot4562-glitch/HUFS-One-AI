@@ -34,6 +34,40 @@ export class MemoryApiRepository implements ApiRepository {
   async readSnapshot(subject: SubjectAlias): Promise<DemoSnapshot|null> {
     return structuredClone(this.projections.get(subject) ?? null);
   }
+  /**
+   * Synchronous in-memory proof used by synthetic tests ONLY. Checking the
+   * grant and taking the snapshot happens without any await/interleaving.
+   * Real or mixed snapshots are never exposed by this memory-only method:
+   * PostgreSQL MUST implement readAuthorizedSnapshot with a locked live grant
+   * and a reviewed grant-scoped projection (or fail closed).
+   */
+  async readAuthorizedSnapshot(input:{
+    actorId:string;subjectId:SubjectAlias;grantVersion:string;
+    requiredSections?:Array<'FEED'|'NOTICES'|'ACADEMICS'|'FORECAST'|'EXPERIENCE'>;
+    now?:string;
+  }):Promise<DemoSnapshot|null>{
+    const granted=this.grants.get(`${input.actorId}\0${input.subjectId}`);
+    const source=this.projections.get(input.subjectId);
+    const now=Date.parse(input.now??new Date().toISOString());
+    const required=input.requiredSections??['FEED','NOTICES'];
+    if(!granted||!source||source.datasetMode!=='SYNTHETIC'
+      ||!Number.isFinite(now)
+      ||granted.version!==input.grantVersion
+      ||granted.actorId!==input.actorId||granted.demoSubjectId!==input.subjectId
+      ||granted.revokedAt!==undefined||Date.parse(granted.expiresAt)<=now
+      ||!required.length||new Set(required).size!==required.length
+      ||required.some(s=>!granted.allowedSections.includes(s))
+      ||Date.parse(source.asOf)>now
+      ||source.feed.asOf!==source.asOf||source.notices.asOf!==source.asOf)
+      return null;
+    return structuredClone(DemoSnapshotSchema.parse({
+      ...source,
+      academics:granted.allowedSections.includes('ACADEMICS')
+        ?source.academics:{state:'NOT_SHARED'},
+      forecast:granted.allowedSections.includes('FORECAST')
+        ?source.forecast:{state:'NOT_SHARED'},
+    }));
+  }
   async readSafePacket(actorId: string, task: AiTask, ref: string): Promise<SafeLlmPacket|null> {
     const item=this.packets.get(`${actorId}\0${ref}`);
     return item?.task===task ? structuredClone(item) : null;
