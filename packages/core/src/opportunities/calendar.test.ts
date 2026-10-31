@@ -105,6 +105,18 @@ describe('mini calendar "내 주요 일정"', () => {
     }
   });
 
+  it('refuses to combine feed / notices computed for a different asOf (PR #50 re-review)', () => {
+    const notices = composeNotices({...student, campus:'SEOUL'}, noticeInputs, {asOf:ASOF});
+    const feed = composeFeed(profile, opportunities, {asOf:ASOF});
+    const staleFeed = composeFeed(profile, opportunities, {asOf:D(-1)});
+    const futureNotices = composeNotices({...student, campus:'SEOUL'}, noticeInputs, {asOf:D(1)});
+    expect(() => buildCalendar(staleFeed, notices, noticeInputs, {asOf:ASOF})).toThrow(RangeError);
+    expect(() => buildCalendar(feed, futureNotices, noticeInputs, {asOf:ASOF})).toThrow(RangeError);
+    expect(() => buildCalendar(feed, notices, noticeInputs, {asOf:D(1)})).toThrow(RangeError);
+    // Same instant written differently is accepted.
+    expect(() => buildCalendar(feed, notices, noticeInputs, {asOf:'2026-11-20T09:00:00+09:00'})).not.toThrow();
+  });
+
   it('respects the look-ahead window and includes saved opportunities only while visible', () => {
     expect(build().entries.some(e => e.refId === 'FAR')).toBe(false);
     expect(build({daysAhead:120}).entries.some(e => e.refId === 'FAR')).toBe(true);

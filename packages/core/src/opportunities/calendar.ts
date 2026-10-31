@@ -88,6 +88,10 @@ export function buildCalendar(
 ):CalendarResult {
   const now = Date.parse(options.asOf);
   if (!Number.isFinite(now)) throw new RangeError('asOf must be an ISO datetime');
+  // Only results computed for the same instant may be combined (no stale or future data in one view).
+  if (Date.parse(feed.feed.asOf) !== now || Date.parse(notices.result.asOf) !== now) {
+    throw new RangeError('feed, notices and calendar asOf must be identical');
+  }
   const ahead = options.daysAhead ?? 60, back = options.overdueDays ?? 7;
   if (!Number.isInteger(ahead) || ahead < 0 || !Number.isInteger(back) || back < 0) throw new RangeError('day ranges must be non-negative integers');
   const from = now - back * DAY_MS, to = now + ahead * DAY_MS;
