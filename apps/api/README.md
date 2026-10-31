@@ -37,9 +37,17 @@ npm run start:api:local
 
 브라우저가 actorId/hd/email_verified/sourceTokens를 보내서 권한을 만들 수 없습니다. 사전에 승인된 별도 서버 세션 어댑터/Repository가 필수입니다. 오류 응답에 raw 모델/DB/학생 문장을 담지 않습니다.
 
+## Google OIDC 신원 검증 코어 (심민성 TASK-07/08 · #27)
+
+- `apps/api/src/modules/auth/google-oidc.ts`는 서버 생성 `state`·`nonce`·PKCE S256 인증 요청, 5분 만료 callback state digest 검사, 서명된 Google ID 토큰의 JWKS/RS256·issuer·앱 audience·nonce·iat/exp·email_verified·Google `sub` 검증을 제공한다.
+- 운영 JWKS 주소는 Google의 고정 공개키 엔드포인트이고, 테스트는 **로컬 RSA 키와 합성 JWT만** 사용한다. 검증에 성공해도 역할·베타 허용·세션이 자동 생성되지 않는다.
+- `schoolWorkspaceVerified`는 검증된 `hd=hufs.ac.kr` **및** 확인된 `@hufs.ac.kr` 주소가 동시에 있을 때만 true이다. 일반 Gmail 심사자에게는 별도 공용 초대 등록 권한이 필요하고, 그 밖의 학생/베타 계정은 학교 메일 OTP·베타 allowlist를 추가 검증한다.
+- **출시 전 필수**: 신뢰된 서버가 OAuth callback state를 원자적으로 1회 소비하고 Google token endpoint에서 authorization code + PKCE verifier를 교환한 뒤, 이 모듈로 ID 토큰을 확인한다. 이후 서버측 세션(httpOnly Secure 쿠키, CSRF, 만료·철회, 다중 프로세스 DB)과 리뷰어 invitation/학생 OTP gate를 연결해야 한다. `apps/api/src/main.ts`의 로컬 401 전면 차단 및 운영 차단은 유지한다.
+- 검증: `npm run test:api`, `npm run typecheck`; 실제 Google 자격증명·유료 NCP 호출·사용자 원자료는 사용하지 않는다.
+
 ## 미구현·병합 후속
 
-1. 실제 Google OIDC 서명·nonce/PKCE, 학교 메일 수신권 OTP/Workspace hd 확인, 베타 계정 allowlist 및 세션 영속 철회/쿠키. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.
+1. Google OAuth callback 상태의 영속·원자적 1회 소비, authorization code+PKCE 토큰 교환을 실제 인증 경로에 연결하고, 학교 메일 OTP·베타 allowlist·세션 영속 철회/쿠키를 구현한다. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.
 2. PostgreSQL 저장/거래·공유 철회·동시성 검증 및 UI와 온전한 API E2E. 지금 MemoryApiRepository는 영속 데이터베이스가 아닙니다.
 3. 추천 PR #15 / 공지 PR #16은 기존 CHANGES_REQUESTED 해결·병합 후 공통 API 데이터 생성에 연결합니다.
 4. 이 PR의 LocalTemporalEvidenceIndex는 설계형 로컬 계산 모듈일 뿐 Postgres/RAG API/이미지 OCR이 아닙니다. 공통계약 #18, 수집 #19, OCR/Vision #20, Temporal RAG #21에 따라 별도 구현합니다.
@@ -72,5 +80,5 @@ Laya 워커는 Fastify HTTP handler·REVIEWER GET·일반 데모 요청 경로�
 - `GET /api/reviewer/capabilities`: 매 요청 active grant 검사 후 REVIEWER가 체험할 학생용 TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS 메뉴 목록과 지원 action을 반환한다. 이 manifest는 실제 React 라우터 구현 완료를 보증하지 않는다(`actualBrowserUiVerified:false`).
 - 기존 action에 `SET_INTERESTS`(공용 24 TopicCode), `SET_DESIRED_JOBS`, `PLAN_COURSE`, `SET_SEARCH`, `SET_NOTIFICATIONS`, `RESET_SANDBOX` 추가. 오직 synthetic ID/validator를 받고 invite+actor+subject마다 격리. 일반/외부 학생·학교 실자료, 지원 제출, 외부 유료 NCP 호출은 불가.
 - `GET /api/auth/session`과 초대 redeem이 `readOnly:false,sandboxOnly:true`를 반환해 합성 수정 허용과 실제 원장 읽기/쓰기를 명확히 구분한다. 인증되지 않은 local main.ts는 여전히 401 전부 차단.
-- 루트 `npm run check`는 API/공통 계약/추천 core/웹 UI synthetic 테스트 **전체**를 실행하도록 확장; PR #28 UI 코드가 merge되기 전 해당 테스트의 실 실행은 별도 확인 필요. 실제 브라우저 Google OAuth/JWKS/PKCE/OTP·PostgreSQL E2E가 없으면 외부 심사자에게 배포하지 않는다.
+- 루트 `npm run check`는 API/공통 계약/추천 core/웹 UI 합성 테스트 전체를 실행한다. PR #28 UI 상태관리 테스트도 `main`에 병합됐다. 실제 브라우저 Google OAuth/JWKS/PKCE/OTP·PostgreSQL E2E가 없으면 외부 심사자에게 배포하지 않는다.
 - [NCP 추천 SKU/공식 비용·기간](../../docs/NCP_OPERATIONS_2026.md), API 담당 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), UI [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), NCP [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
