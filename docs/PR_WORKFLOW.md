@@ -19,7 +19,7 @@
 ## 2026-10-31 협업 지원·재검토 필수 절차
 
 1. **전수 조회:** 이슈·PR 전체(open/closed/merged), 최신 커밋 SHA, base/head 스택, `CHANGES_REQUESTED` 이후 신규 커밋, CI/배포 미검증을 구별한다. 과거 리뷰 상태만으로 최신 HEAD을 합격 처리하지 않는다.
-2. **선행 순서:** 추천/공지 스택 `#15 → #16 → #40 → #41`, 공통 데이터 근거 `#33 → #34`. #16 `NoticeResult.overdue` 계약 후속은 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)에서 합성 검증·독립 소비자 리뷰 후 병합하고, **김채윤 담당 PR #16**에 실제 출력·UI 회귀를 연결한다. #41 `rank-v1.1`은 기본 승격 전 A15/UX 검토를 요구한다.
+2. **선행 순서 최신:** 추천·공지 **#15→#16→#40**, 부분공유 #49, 캘린더 계산 #50과 Wire #53은 모두 **main 병합 완료**(현재 CI/HEAD 승인 확인). 추천 설명 #41은 #40/#49/#50 최신 main과의 충돌·CI 0건이 해결되어야 별도 병합 가능. Temporal RAG는 **#33 계약→#34 SQL** 순서로 독립 승인·충돌 해소 필요. `rank-v1.1`은 A15/UX 검증 전 opt-in으로 유지한다.
 3. **병합 기준(최신 사용자 지시):** (a) 비작성자 **1명 이상이 현재 HEAD SHA에 `APPROVED`**, (b) 동일 HEAD 필수 GitHub Actions 성공, (c) draft 아님/mergeable, (d) 스택 안에 아직 미승인·미병합 선행 변경이 잠입하지 않음, (e) 유효한 `CHANGES_REQUESTED`/보안·권한 차단이 해결됨을 확인한다. `COMMENTED`, 과거 HEAD 승인, 본인 PR 자기 승인, 합성 CI만으로 실배포 승인을 대신하지 못한다. 선행 PR 병합 후 base 동기화로 HEAD가 달라지면 최신 변경을 검토하고 다시 승인받는다. GitHub가 리뷰 수를 기술적으로 강제하지 않는 경우도 총괄이 수동으로 지킨다.
 4. **파일·권한:** 팀원 소유 모듈을 총괄자가 덮어쓰지 않는다. 문제는 재현·근거 링크를 적은 리뷰/이슈로 남기고 작성자가 수정하도록 요청한다. 공통 타입은 독립 리뷰 PR로 수정하고 문서는 총괄자가 main에 직접 커밋한다. 실제 과목 CSV·Forms 원문이 이미 Private Git에 추적된 이력은 [DATA_GOVERNANCE](DATA_GOVERNANCE.md)에 기록하고 목적별 승인 없이 코드·CI·모델·배포로 옮기지 않는다.
 
@@ -28,12 +28,12 @@
 - **PR 대체/재기반:** #54 → [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)처럼 main 선행 변경과 테스트 충돌이 있을 때 기존 PR을 미병합 폐쇄하고 최신 main 기반 successor에서 해결한다. CI가 실패한 PR을 예전 승인만으로 병합하지 않는다.
 
 - 계획에 없던 사용자 기능(예: 홈 하단 **'내 주요 일정' 미니 캘린더**)이 제안되면 담당 이슈·기술 계약·UI 소비자·권한/검증 테스트를 함께 정의하고 **Proposal.md, Architecture.md, STATUS.md, README.md, docs/WORKSTREAMS.md**에 설계/구현/미구현을 구별해 반영한다. 단순 리뷰나 타입 PR 병합을 기능 출시로 기록하지 않는다.
-- 캘린더: 추천/공지 계산 **#50**, UI **#51**(이의상), 공통 결과 Wire/API **#52·#53**(심민성), 부분공유/원자적 인증 **#39·#49·#55·#35**를 연결한다. `GET /api/demo/contexts/:contextId/calendar`는 계약 결정으로, 서버 라우트/DB/React 연결 전에는 실제 API가 제공된다고 쓰지 않는다. 날짜 미정·UNKNOWN·중복 공지는 별도 처리, 부서 행정 마감은 학생 마감이 아니다. `.ics` export와 푸시는 이번 mini-calendar 범위 밖.
+- 캘린더: 추천/공지 계산 **#50 + 결과 계약 #53 main 병합 완료**, UI **#51**(이의상) 및 인증된 API **#52**(심민성)는 **미구현**, 부분공유 순수 코어 #49 main 병합·원자적 DB/HTTP #35/#55는 타인 승인 및 실제 PG 검증 대기. #39 인가 게이트와 서버 출처 rights/provenance를 종단 연결해야 한다. `GET /api/demo/contexts/:contextId/calendar`는 계약 결정으로, 서버 라우트/DB/React 연결 전에는 실제 API가 제공된다고 쓰지 않는다. 날짜 미정·UNKNOWN·중복 공지는 별도 처리, 부서 행정 마감은 학생 마감이 아니다. `.ics` export와 푸시는 이번 mini-calendar 범위 밖.
 - 문서 정정은 위의 운영 문서 예외에 따라 총괄이 최신 SHA 확인 후 `main`에 바로 기록할 수 있다. 코드/공통 계약은 항상 리뷰 PR을 거친다.
 
 ## 통합 PR 의존 및 공유 CI 경계 (#15/#16/#28/#29/#31)
 
-[PR #31](https://github.com/ot4562-glitch/HUFS-One-AI/pull/31) 병합으로 루트 `package.json`/`tsconfig.json`/`vitest.config.ts`/`.github/workflows/task00-contracts.yml`에 API·추천/공지 core·UI 합성 테스트가 통합됐다. #15는 같은 공통 4파일의 변경을 가진다. #16은 #15 기반이므로 **#15 리뷰/수정→병합→#16 rebase/검사** 순서를 유지해야 한다. #28 UI 상태관리 코드도 `main`에 병합됐으며 공통 CI는 #29 통합 담당 심민성이 관리한다. 충돌·이력 정리는 각 작성자 PR을 승인 없이 덮어쓰거나 병합하는 조치가 아니다. 실제 CI 및 독립 리뷰 미완료 상태에서 merge 하지 않는다. 모든 CI는 실제 학생 CSV·Forms·local_only·원시자료를 checkout하지 않는다.
+[PR #31](https://github.com/ot4562-glitch/HUFS-One-AI/pull/31) 병합으로 루트 `package.json`/`tsconfig.json`/`vitest.config.ts`/`.github/workflows/task00-contracts.yml`에 API·추천/공지 core·UI 합성 테스트가 통합됐다. 추천 #15→공지 #16은 **후속 overdue 수정·최신 검토·CI 뒤 순서대로 모두 main 병합됐으며**, 신뢰형 출처 #40, 공유범위 #49, 캘린더 #50도 개별 승인/CI 후 main 병합됐다. #28 UI 상태관리 코드도 `main`에 병합됐으며 공통 CI는 #29 통합 담당 심민성이 관리한다. 충돌·이력 정리는 각 작성자 PR을 승인 없이 덮어쓰거나 병합하는 조치가 아니다. 실제 CI 및 독립 리뷰 미완료 상태에서 merge 하지 않는다. 모든 CI는 실제 학생 CSV·Forms·local_only·원시자료를 checkout하지 않는다.
 
 ## 신규 OCR·RAG·Laya 설계와 기존 TASK/PR 충돌 방지
 
