@@ -4,6 +4,10 @@
 
 
 
+## 협업 PR·문서 정합성 (2026-10-31)
+
+기술 총괄의 직접 기능 추가보다 **협업자 리뷰·재검토·계약 차단 해결·문서 정비**를 우선한다. 추천/공지 순수 코어는 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15)→[#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)→[#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40)→[#41](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41) 순이며, [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)는 공지 기한경과 공통 계약 검토 PR이다. 모든 요청된 독립 리뷰·현재 CI·연동 테스트 전 병합하지 않고, 최신 이슈·PR의 상태가 이 문서의 스냅샷보다 우선한다. 미확인 실제 학생자료·Google OIDC·DB·OCR/NCP 운영을 완료로 표시하지 않는다.
+
 ## 합성 API 구현 상태
 
 심민성이 담당한 Fastify 합성 API 코드가 `main`에 반영됐다. Fastify 서버·권한/SharingGrant/버전 검사·합성 AI 작업·로컬 시의성 근거 인덱스가 [API README](apps/api/README.md)에 정리되어 있다. **127.0.0.1 전용 local harness는 신뢰된 Google OIDC/외대메일 인증 어댑터가 없어 모든 실제 요청을 401로 차단**한다. Google OIDC·영속 DB·NCP 제공자 연동은 출시 전 검증 과제다. 추천·공지 코어 PR #15/#16은 필수 수정과 재검토가 남아 있다. 담당 GitHub 계정은 [WORKSTREAMS.md](docs/WORKSTREAMS.md)의 이슈 assignee 기반 표를 참고한다.
@@ -38,7 +42,7 @@
 
 ## 현재 자료와 개인정보 경계
 
-Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인됐다. 실제 제출 대상은 **김채윤·이의상·심민성·이서연 4명**이다(박준영은 CSV/Forms 제출 제외). Forms **26열짜리 통합 CSV 1개**는 아직 완성되지 않았고 이서연은 미제출이다. 수강 CSV 목표는 4개(6열)이며, 현재 Private 파일 **3개는 김채윤(제출 별명 `까마르`)·심민성·이의상**의 제출물이다(사용자 확인). 이서연 파일과 Forms 통합본은 미확인이고, **제출은 팀 공유 동의/공식 학사 검증 완료가 아니다**. 학번·전공별 공식 학사 규칙과 공유 동의 검수는 미완료다. **Private PR #1의 두 학생 CSV(48/39행)와 PR #5의 추가 학생 CSV(28행)가 병합됐다. 공유 동의와 공식 학사 검증은 별도다.** 별도 학생 프로필 CSV 템플릿을 만들지 않는다. 수강과목은 학생별 **`학기,학수번호,과목명,학점,이수구분,이수상태` 6열 CSV**를 한 번 검수하며, 사용자는 파일명으로 팀원을 식별한다. 내부/공개 결과는 **S01~S05 가명 코드**로 별도 매핑한다.
+**2026-10-31 Private `main` 구조 검사:** 수강 CSV 4개(61/39/48/28 데이터 행, 공통 6열), Forms 통합 CSV 1개(26열·응답 4행)가 **BOM 없는 UTF-8**로 존재한다. 이는 과거 문서의 '과목 3개·Forms 미완료'와 달리 **파일이 있다**는 사실만 확인한 결과다. 개별 인물/표시이름 연결, 학칙·내용 오류, 최초 Git 게시 승인, 목적별 공유/NCP/AI 처리 동의는 **미검증**이며 원본을 시연/합성 CI/외부 AI에 쓰면 안 된다. 제출 목표 4명(김채윤·이의상·심민성·이서연), 박준영은 자료 제출 대상 아님. 과거 3개 수강 파일의 명시 허가와 추가 파일의 게시 근거는 구별한다. [데이터 거버넌스](docs/DATA_GOVERNANCE.md).
 
 **외부 AI 전사 전에는 과목표 외 이름·학번·성적 등이 보이지 않도록 분리하고 별도 동의를 확인**한다. 동의가 없으면 사람이 전사한다. 성적/GPA·전체 학번·사진·원본 성적증명서를 시연 데이터에 수집하지 않는다.
 
@@ -49,13 +53,13 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 - **확정 5인 분담:** 심민성(GPT, 기술 총괄·TASK-00/통합), 이의상(Claude·Gemini, UI/모바일), 김채윤(GPT·Claude·Gemini, 추천/공지), 박준영(GPT·Claude, 졸업·전망), **이서연(Gemini 사용 확인, 팀 결성·기획 리드 + NCP·CLOVA·OCR/Vision·Laya 모델/Provider 전담)**. [작업/구독/경계](docs/WORKSTREAMS.md) · [팀원 구조지도](docs/TEAM_GUIDE.md).
 - **TASK-00 공통 계약:** [TypeScript/Zod 패키지 사용법](packages/contracts/README.md)과 [계약 경계](docs/CONTRACT_BOUNDARIES.md). 24 TopicCode·DemoSnapshot/SharingGrant·4인 CSV/Forms 입력·오류/AI 스키마와 **합성 자동 소비자 검증**을 구현했다. `npm ci --ignore-scripts` → `npm run check`로 재현하고 네 트랙이 같은 계약을 사용한다. **실제 팀원 리뷰와 전용 PR/CI 병합 여부는 별도 게이트**다. 심민성이 공유 계약·lockfile을 조정한다.
 - **독립 브랜치/PR:** [docs/PR_WORKFLOW.md](docs/PR_WORKFLOW.md)와 각 폴더의 AGENTS.md. main은 통합 담당자가 검토 후 병합.
-- **실제 CSV 예외:** 기존 Private PR #1 두 파일과 2026-10-30 사용자 지정 추가 파일 한 개만 한정 포함. [자료 취급·동의 규칙](docs/DATA_GOVERNANCE.md). Google Forms 원본·비밀키·성적·기타 학생자료는 제외하며 컨테이너/AI/CI에서 사용하지 않는다.
+- **실자료 접근:** 과거 승인된 Private 수강 파일 3개 외에도 현재 `main`에 추가 수강/Forms 파일이 있으므로, Git 추적 이력·당사자 동의·협업자 접근을 별도 감사해야 한다. 형식 검사는 게시·열람·외부 AI/NCP 처리 승인이 아니다. [DATA_GOVERNANCE](docs/DATA_GOVERNANCE.md).
 
 ## 일정·도구와 근거
 
 - 1차 공식 배점: **한국외대 현안 관련성 40 / 독창성 30 / AI 활용 30**. 2차: **구현 30 / 학내 적용 30 / 파급효과 25 / 발표 15**, NCP 실제 활용 최대 +5점. 공식 페이지: https://contest.hufs.ac.kr/
 - 기존 HUFSAbility 근거: [2026-10-29 스냅샷](reference/hufsability/snapshots/2026-10-29/README.md) · [후속 공개자료 색인](reference/hufsability/snapshots/2026-10-29-followup/README.md). 자료 권한: [DATA_PERMISSION_GATE.md](reference/hufsability/DATA_PERMISSION_GATE.md).
-- **검증:** `python.exe tools/verify_release_boundary.py`와 기존 출처 검증 도구를 사용한다. Private GitHub 저장소 생성과 안전한 초기 커밋·푸시는 사용자 최신 지시로 승인됐다. 현재 Private 저장소의 기존 3개 과목 CSV 예외는 **추가 학생 파일/통합 Forms의 GitHub 게시 또는 외부 AI/NCP 전송 허가가 아니다**. 학생별 접근·GitHub 저장소 public 전환·실학생 데이터 외부 전송·서비스 개통은 서로 별도 동의·승인 및 검증이 필요하다.
+- **검증:** `python.exe tools/verify_release_boundary.py` 및 관련 정적 경계 검사는 원본 권한·개인정보 동의를 입증하지 않는다. 현재 Private Git 이력에서 수강/Forms 실제 파일이 관찰되므로 자료별 승인 근거와 배포 제외를 확인하기 전에는 외부·CI·웹 정적 번들로 재배포하지 않는다. GitHub 공개 전환·실학생 데이터 외부 전송·서비스 개통은 서로 별도 승인 사항이다.
 
 ## 신규 신뢰형 AI·이미지 수집 설계 (2026-10-31, 아직 미구현)
 
