@@ -1,5 +1,8 @@
 # HUFS One AI | 예선 제출 항목·근거 확인표
 
+> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+
+
 **문서 역할:** 제출본이나 11월 6일 회의 진행안이 아니다. 실제 제출 양식·분량·마감은 주최 측의 최신 안내를 확인한다. 제품 가치·심사 설득은 [Proposal.md](Proposal.md), 실제 구현 계약은 [Architecture.md](Architecture.md)를 따른다.
 
 ## 제안의 핵심 논거
@@ -39,3 +42,7 @@
 - [ ] 실제 구현/호출/측정하지 않은 항목을 완료 실적으로 쓰지 않음
 
 **관련 문서:** 프로포절(제품·구현·시연), `TEAM_SURVEY.md`(최소자료·동의), `STATUS.md`(실행 전 상태).
+
+## 2026-10-31 추가 설계: 최신 공고·포스터·근거 검증형 개인화
+
+예선 제안은 학교 HUFSAbility의 기존 공고를 **이미지 포스터까지 읽고 날짜·자격·우선선발을 분리**하는 문제에서 출발한다. 공식 출처의 정정/취소·확인 시각을 추적하는 **Temporal RAG**와 OCR·필요시 HCX-005 Vision, 기존 HCX-007 추출 및 코드 검증을 결합한다. CPU 오픈모델 **Laya**는 검수 우선순위 보조로 제한하고 NCP **Standard-g3 4 vCPU·16GB** 내 동작 가능성은 본선에 실측한다. 본선팀 개발비 50만원과 **별도 NCP 크레딧 50만원 상당**은 공식 공고의 조건부 지원으로, 실제 크레딧·사전 승인·배포 실적은 아직 없다. 이 문서는 적용 기술의 **설계 제안**이며 심사효과·환각 개선률의 실증을 주장하지 않는다. 정본 `Architecture.md`, `Proposal.md`, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`.

@@ -1,19 +1,22 @@
 # TASK-00 | 네 트랙이 공유할 계약의 잠금 기준
 
+> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP Standard-g3 4vCPU·16GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
+
+
 **정본:** [Architecture.md](../Architecture.md) A02~A09·A13. 기술 총괄 심민성(`ot4562-glitch`)이 `packages/contracts`·TopicCode·공통 설정/lockfile·DB migration을 조정한다. **TypeScript/Zod v0.1.0의 합성 계약 코드는 `packages/contracts/`에 구현되어 있으며, 최종 잠금은 전용 PR의 CI 및 4명 실제 소비자 검토 이후다.** 자동 소비 테스트와 실제 사람의 리뷰를 혼동하지 않는다. [사용법](../packages/contracts/README.md).
 
 | 계약 | 정본 | 제공자 → 소비자 | 반드시 확인 |
 | --- | --- | --- | --- |
-| Actor, DemoContext, SharingGrant | A02 | API 이서연 → UI 이의상·QA 심민성 | 인증 actor와 선택 subject 분리; grant/만료/철회 |
-| DemoSnapshot, VersionEnvelope | A02·A04·A13 | API 이서연 → UI/추천/학업 | 원자적 봉투, 지연 응답·다중 탭 격리 |
+| Actor, DemoContext, SharingGrant | A02 | API 심민성 → UI 이의상·QA 심민성 | 인증 actor와 선택 subject 분리; grant/만료/철회 |
+| DemoSnapshot, VersionEnvelope | A02·A04·A13 | API 심민성 → UI/추천/학업 | 원자적 봉투, 지연 응답·다중 탭 격리 |
 | TopicCode 24개·alias | A04.1~3 | 추천 김채윤 → 통합 심민성 → UI/AI | 24개 enum 단일 출처, UNKNOWN 보존 |
 | FeedResult·적격성 | A04~05 | 추천 김채윤 → UI/API | 큰 카드 최대3, 작은 목록 최대6, 전체 목록 |
 | NoticeResult | A07 | 김채윤 → UI/학업/API | 학년/학과/마감/근거 분리 |
 | RulePack, AcademicSummary, Outlook | A08~09 | 학업 박준영 → UI/API | 3원장, 정수학점, 검수/미확정, asOf |
-| SafeLlmPacket·증거 | A06 | 이서연 → 추천·UI | 네 AI 작업, 안전 입력과 quote ID |
+| SafeLlmPacket·증거 | A06 | 심민성(웹 API/DTO·증거 검증) ↔ 이서연(NCP Provider SDK/실제 호출) → 추천·UI | 네 AI 작업, 안전 입력과 quote ID, NCP 외부 호출은 이서연 전담 |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
-| 인증·오류 enum·API v1 | A02·A13 | 이서연 → 모든 팀 | 401/403/409/422/429/503, requestId |
-| **외대 이메일 확인·Google 로그인 공개 접속 게이트 (P0, 미구현)** | A14.1a·A13 | 이서연 API/NCP(Gemini) → 이의상 UI → 심민성 통합/QA | `외대.온라인.한국`, Google OIDC 토큰의 `sub`/`iss`/`aud`/nonce/PKCE, 검증된 Workspace `hd` 또는 외대 메일 OTP, beta allowlist, 익명 HTML/API·directIP/CDN 차단, 401/403·철회 E2E |
+| 인증·오류 enum·API v1 | A02·A13 | 심민성(API) → 모든 팀 | 401/403/409/422/429/503, requestId |
+| **외대 이메일 확인·Google 로그인 공개 접속 게이트 (P0, 미구현)** | A14.1a·A13 | 심민성 인증 API → 이의상 UI → 이서연 NCP ingress/TLS(환경만) | `외대.온라인.한국`, Google OIDC 토큰의 `sub`/`iss`/`aud`/nonce/PKCE, 검증된 Workspace `hd` 또는 외대 메일 OTP, beta allowlist, 익명 HTML/API·directIP/CDN 차단, 401/403·철회 E2E |
 
 ## 구현한 TypeScript/Zod v0.1.0 타입·동작 (A02/A04/A06/A13과 동일 의미)
 
@@ -36,6 +39,14 @@
 - [x] **합성 wire-level:** 정상 snapshot·403 철회·409 버전충돌·422 형식·429 제한·503 장애 응답, 20개 유향 cross-subject 거부, 선택 epoch·2탭 문맥 격리를 자동 검증. **실제 UI/API 동시성·DB 캐시 철회 E2E는 미구현**이며 별도 TASK-07/09/15 게이트다.
 - [ ] A08 학점 9개·예외 누락 4개 독립 기준, A09 UNKNOWN/0/n·시간누출 차단을 소유 트랙의 소비 계약에 연결.
 - [x] **로컬 계약 실행:** 학생 응답/키·외부 AI 호출 없이 TypeScript+Zod 자동 테스트 **107/107** 통과(계약 87·UI/추천/학업/API 소비 20). GitHub Action은 Private CSV/Forms/원문을 checkout에서 제외하는 sparse-checkout으로 구성. **GitHub Actions 원격 실행 성공 여부는 별도 확인 필요**.
-- [ ] **실제 사람의 승인:** 이의상(UI), 김채윤(추천), 박준영(학업), 이서연(API)의 코드 검토와 심민성 최종 승인·PR merge SHA를 남긴다. **자동화된 4트랙 소비 테스트 20/20은 통과했지만 본인의 검토 서명이 아니다.**
+- [ ] **실제 사람의 승인:** 이의상(UI), 김채윤(추천), 박준영(학업), 심민성(API)의 코드 검토와 심민성 최종 승인·PR merge SHA를 남긴다. **자동화된 4트랙 소비 테스트 20/20은 통과했지만 본인의 검토 서명이 아니다.**
 
 **변경 순서:** TASK-00 이슈 → 이 문서/A02~A13 기준 합성 fixture → `chore/contracts-...` 전용 PR → 네 소비자 교차검토 → 통합 담당 최종 병합 → 각 기능 브랜치 재동기화. 소비자가 공통 타입을 독자 생성하거나 실제 CSV를 fixture로 업로드하는 것은 금지한다.
+
+## 시간·이미지·RAG 계약 vNext 제안(구현·승인 별도)
+
+이번 2026-10-31 설계 변경은 기존 TASK-00 Zod 스키마를 자동으로 변경하지 않는다. 기술 총괄 심민성이 `SourceRevision`(hash·게시/확인/검수/효력 시각·정정 상태), `SourceSpan`(TEXT 문자범위 | IMAGE bbox/ocrLine/page), `VerifiedClaim`(근거·검수·허용 scope), `RetrievalEnvelope`(권한·asOf·retrieval 정책/결과), `DecisionAdvice`(Laya 모델판본·선택·폴백)를 **별도 contracts vNext PR**로 제출한다. `Opportunity`·`NoticeResult`·`SafeLlmPacket`에 바뀐 `sourceVersion` 및 이미지 근거를 호환 가능한 optional 필드로 연결하며 미래 자료를 과거 시점에 노출하지 않는다. 4트랙 소비 테스트/독립 이미지·시간 fixture·API 게이트·OCR/Vision budget·CPU 메모리 조건이 잠금 조건이다. 상세: [TRUSTED_RAG_MEDIA_VERSIONING.md](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## REVIEWER auth vNext 분리 계약 (Issue #25)
+
+`VerifiedActor`는 기존 `BETA|ADMIN`(학교 메일 proof + 베타 allowlist)과 `REVIEWER`(OIDC의 검증된 `sub`·현재 이메일 소유 증거 + 공용 초대 DB grant)로 **구별된 타입**을 사용한다. REVIEWER는 이메일만으로 자동 승인되지 않으며 `reviewer_invitation` 등록 전에는 페이지 접근 403. 기존 `SharingGrant`와 팀원 5명 시연 선택 문맥을 우회하거나 계약 속에 암묵적으로 포함시키지 않는다. 오직 `ReviewerGrant`과 독립 `ReviewerDemoRepository`에서 SYNTHETIC 재현 데이터만 취득한다. 초대 32바이트 원문은 DB·Git·CI 저장 금지; SHA-256 digest와 Google sub·email, 심사 기간/철회만 원장으로 남긴다. `startsAt <= now < endsAt` 및 철회는 매 요청 서버 권한 검사와 트랜잭션 적용. 신규 역할을 공통 UI/웹 Zod auth contract로 확장할 때는 vNext 소비자 승인·UI 마이그레이션을 별도 PR로 추진한다. 전체: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).
