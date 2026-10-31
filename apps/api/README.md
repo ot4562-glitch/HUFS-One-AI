@@ -64,6 +64,16 @@ npm run start:api:local
 3. **학교 메일 베타 등록**은 Google 신원 세션에서 CSRF를 받은 뒤 `POST /api/auth/school-mail/request` (`schoolEmail`)로 8자리 코드를 메일에 발송한다. 서버는 발송 전 이 Google `sub`와 학교 메일 주소가 관리자 승인 명단에 있는지 확인하며, 승인 정보가 없으면 메일을 보내지 않고 거부한다. `POST /api/auth/school-mail/confirm` (`schoolEmail`, `challengeId`, `code`)으로 검증 완료한 후 `GET /api/auth/google/start?intent=BETA`를 다시 시작한다. 베타 승인은 별도 관리자 명단과 일치해야 한다. 합성 테스트에서는 개인 Gmail + 외대 OTP도 처리한다.
 4. 심사 초대 코드가 URL fragment로 전달되면 최초 화면 진입 시 **메모리에만 추출하고 URL에서 즉시 제거**한다. 코드/ID 토큰/세션 쿠키를 로컬 저장소나 React 번들에 기록하지 않는다. 상태 변경은 같은 출처 + `x-csrf-token` 요청만 사용한다.
 5. 401/403/409/철회/초대 만료 시 렌더링된 합성 프로필·캐시·진행중 요청을 지우고, 타 탭·타 계정 응답을 섞지 않는다. 실제 React 페이지·모바일 접근성·브라우저 E2E는 UI #9에서 확인한다.
+## SourceRevision + Temporal RAG vNext API (심민성 TASK-19/21, PR #33 계약 의존)
+
+- **선행 계약:** `@hufs-one/contracts@0.2.0` PR #33에 정의한 SourceRevision/SourceSpan/Claim/RetrievalEnvelope/RevisionInvalidation. 기존 `SourceSnapshot`·REVIEWER/DemoSnapshot API 형태는 변경하지 않는다.
+- `modules/opportunities/revision-ledger.ts`: 합성용 불변 원본 바이트+문단 SHA-256, 시점별 최신 revision, 승인이 빠진 정정·취소가 구버전 ACTIVE 인용을 가리는 규칙, 대상 학번/캠퍼스/전공·출처권한·유효기간 검사, 304 확인일과 인적 검수일 분리, 검색/claim/feed/notice/AI cache invalidation event.
+- `approved-fetch.ts`: HTTPS 고정 source allowlist이며 **신뢰된 `transport`가 주입되지 않으면 네트워크 요청 자체를 시작하지 않는다.** 실제 연결 전송기는 DNS 재검증/사설·링크로컬 IP 거부/네트워크 egress allowlist를 별도 구현·검증해야 한다. 리디렉트·인증정보·256KiB 이상 응답은 거부. ETag/304/동일 SHA는 검증시각을 승격하지 않고, 새 내용은 `NEEDS_REVIEW`로만 추가. 서버 추출기는 허용 원문만 텍스트로 반환하며 HTML 스크립트를 실행하지 않는다.
+- `temporal-postgres.ts`: SQL `DISTINCT ON(source_id)`에서 **asOf 당시 가장 최신 revision을 먼저 선택**한 후 상태/권리/검수시간/캠퍼스·전공·학번 조건을 적용. 질의는 매개변수 바인딩, 키워드당 position 기반 low-cost lexical, topK≤12. 신규 미검수/취소 버전 뒤에 과거 ACTIVE를 재노출하는 경로 차단.
+- `temporal-writer-postgres.ts`, `infra/sql/20261031_temporal_evidence.sql`: 개별 source head `FOR UPDATE` + 짧은 transaction으로 revision/paragraph/invalidation event를 함께 INSERT; 304 검사는 별도 observation 트랜잭션이며 verifiedAt 갱신 없음. 마이그레이션 초안은 동일 source 버전만 supersede하는 FK 및 원문·문단 UPDATE/DELETE 차단 trigger를 포함한다. **실 DB 미적용**. DB owner/writer/reader 역할 분리·실제 동시성/인덱스/권한 성능 검증 필요.
+- `temporal-gateway.ts` + 옵션 API `GET /api/evidence/search?q=...&asOf=...&topK=...`: BETA/ADMIN의 서버 세션만 허용, REVIEWER·익명·미래 asOf·브라우저가 임의 지정하는 permissionRefs/actorId는 거부. `EvidenceRightsResolver`를 **SQL 조회 전후** 호출하고 정책 세트/버전 변화 시 응답 근거 전체를 폐기한다. SQL hits와 인용 span의 revision/paragraph/quote 일치 검증; 다른 계정의 cache 공유 금지. 운영의 동시 철회는 별도 DB 트랜잭션/RLS·배포 E2E가 필요하다.
+
+**실제 활성화 게이트:** 서비스 `main.ts`는 현재 `temporalEvidence`를 주입하지 않으므로 신규 검색 경로는 미인증 401/인가되었어도 provider 503을 반환한다. 실 PostgreSQL pool/TLS/승인 source rights/수집비용·트랜잭션 E2E/인적 검수 절차와 허용 원본 데이터가 확보되기 전 운영 데이터 검색·외부 크롤링·NCP/CLOVA 호출은 수행하지 않는다.
 
 ## 미구현·병합 후속
 

@@ -3,6 +3,7 @@ import type {ReviewerAccessStore,ReviewerDemoRepository} from './modules/auth/re
 import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
 import type {GoogleAuthFlow} from './modules/auth/google-auth-flow.js';
 import type {createSchoolMailProofService} from './modules/auth/school-mail-proof.js';
+import type {TemporalResult} from './modules/opportunities/revision-ledger.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -87,4 +88,9 @@ export interface ApiOptions {
   /** This must be explicitly supplied by a private local test harness. */
   syntheticAiProvider?: AiCandidateProvider;
   maxSyntheticAiCallsPerActor?: number;
+  /** Trusted server-only permission resolver. Never accept permissions from browser. */
+  temporalEvidence?: {
+    query(input:{actor:VerifiedTeamActor;query:string;asOf:string;topK:number;now:string}):
+      Promise<TemporalResult>;
+  };
 }

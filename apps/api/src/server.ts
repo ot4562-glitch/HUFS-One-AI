@@ -5,6 +5,7 @@ import {
   AI_TASK_PATHS, AiTaskPathSchema, DemoContextSchema, DemoProfilesResponseSchema,
   DemoSnapshotSchema, httpStatusForError, makeApiError, SharingGrantSchema,
   canReadSharedSection, SubjectAliasSchema, SafeLlmPacketSchema,
+  RetrievalEnvelopeVNextSchema,
 } from '@hufs-one/contracts';
 import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectionSchema} from '@hufs-one/contracts';
 import type {FastifyRequest} from 'fastify';
@@ -32,6 +33,11 @@ const SchoolMailConfirm=z.strictObject({
   schoolEmail:z.email().max(254),
   challengeId:z.string().regex(/^[A-Za-z0-9_-]{22}$/),
   code:z.string().regex(/^\d{8}$/),
+});
+const EvidenceSearchQuery=z.strictObject({
+  q:z.string().trim().min(2).max(200),
+  asOf:z.iso.datetime({offset:true}).optional(),
+  topK:z.coerce.number().int().min(1).max(12).optional(),
 });
 const ReviewerSubject=z.strictObject({id:SubjectAliasSchema});
 const AiRequest=z.strictObject({
@@ -235,6 +241,22 @@ export function createApi(options:ApiOptions) {
       return {verified};
     });
   }
+  // Optional permission-first Temporal RAG endpoint. REVIEWER is explicitly
+  // excluded by the auth hook; no browser-provided grants/source IDs accepted.
+  app.get('/api/evidence/search',async(req)=>{
+    const actor=principal(req);
+    if(actor.role!=='BETA'&&actor.role!=='ADMIN')throw new ApiFailure('FORBIDDEN');
+    if(!options.temporalEvidence)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const q=EvidenceSearchQuery.parse(req.query);
+    const at=q.asOf??clock();
+    if(nowEpoch(at)>nowEpoch(clock()))throw new ApiFailure('INVALID_INPUT');
+    const result=await options.temporalEvidence.query({
+      actor,query:q.q,asOf:at,topK:q.topK??12,now:clock(),
+    });
+    const validated=RetrievalEnvelopeVNextSchema.parse(result.envelope);
+    if(validated.asOf!==at)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    return validated;
+  });
   app.get('/api/health',async()=>({
     mode:'LOCAL_ONLY',releaseReady:false,oidcConnected:false,schoolMailOtpConnected:false,
     ncpConnected:false,aiProviderConnected:false,
