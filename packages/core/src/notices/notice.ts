@@ -82,7 +82,7 @@ export interface NoticeEvaluation {
   unknownScope:ScopeField[];
   /** Student deadline passed (scope not NO): "해결 필요/담당부서 확인", sorted last in its tier, never pinned. */
   overdue:boolean;
-  /** Academic link exists but the notice is not VERIFIED: review queue, shown as GENERAL. */
+  /** Would be ACADEMIC/PERSONAL but the notice is not VERIFIED: review queue, shown as GENERAL. */
   reviewPending:boolean;
   links:NoticeLinks;
   studentDeadline?:string;
@@ -194,14 +194,16 @@ export function evaluateNotice(student:NoticeStudent, notice:Notice, asOf:string
   const academic = academicLink || academicUnknown;
   const due = time(notice.studentDeadline);
   const overdue = appliesTo !== 'NO' && due !== undefined && due <= now;
-  const reviewPending = appliesTo !== 'NO' && academic && !verified;
+  const personal = notice.category === 'SCHOLARSHIP' || notice.category === 'EXCHANGE' || links.topicCodes.length > 0;
+  // Any notice that would be raised above GENERAL needs VERIFIED; otherwise it waits in the review queue.
+  const reviewPending = appliesTo !== 'NO' && (academic || personal) && !verified;
 
   let priority:Priority;
   if (appliesTo === 'NO' || reviewPending) priority = 'GENERAL';
   else if (academicLink && appliesTo === 'YES' && !overdue && due !== undefined && due - now <= CRITICAL_DUE_DAYS * DAY_MS) priority = 'CRITICAL_DUE';
   // Verified required notice is kept even with an UNKNOWN scope (저학년 필수공지); the badge says what to confirm.
   else if (academic) priority = 'ACADEMIC_REQUIRED';
-  else if (notice.category === 'SCHOLARSHIP' || notice.category === 'EXCHANGE' || links.topicCodes.length > 0) priority = 'PERSONAL_OPPORTUNITY';
+  else if (personal) priority = 'PERSONAL_OPPORTUNITY';
   else priority = 'GENERAL';
 
   return {
@@ -222,7 +224,7 @@ export interface ComposedNotices {
    * NoticeItem.overdue (approved in principle, pending a contracts PR by the integration owner).
    */
   overdueIds:string[];
-  /** Academic notices waiting for verification; shown as GENERAL with their verificationState. */
+  /** Academic or personal-opportunity notices waiting for verification; shown as GENERAL with their verificationState. */
   reviewPendingIds:string[];
   /** Not shown: rejected, expired, published after asOf, or malformed input. */
   excluded:NoticeExclusion[];

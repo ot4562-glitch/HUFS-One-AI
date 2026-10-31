@@ -100,6 +100,17 @@ describe('TASK-14 priority (A07.2-2…5, A15.2 공지)', () => {
     }
   });
 
+  it('unverified scholarship / exchange / topic-matched career notices are review-pending GENERAL, not PERSONAL_OPPORTUNITY (#16 re-review #2)', () => {
+    for (const verificationState of ['CANDIDATE', 'NEEDS_REVIEW'] as const) {
+      expect(evaluateNotice(student, notice('S', {category:'SCHOLARSHIP', verificationState}), ASOF)).toMatchObject({priority:'GENERAL', appliesTo:'YES', reviewPending:true});
+      expect(evaluateNotice(student, notice('E', {category:'EXCHANGE', verificationState}), ASOF)).toMatchObject({priority:'GENERAL', reviewPending:true});
+      expect(evaluateNotice(student, notice('C', {category:'CAREER', topicCodes:['DATA_ANALYTICS'], verificationState}), ASOF)).toMatchObject({priority:'GENERAL', reviewPending:true});
+    }
+    // An unverified plain GENERAL notice is not queued (nothing would be raised), and VERIFIED keeps PERSONAL_OPPORTUNITY.
+    expect(evaluateNotice(student, notice('G', {verificationState:'CANDIDATE'}), ASOF)).toMatchObject({priority:'GENERAL', reviewPending:false});
+    expect(evaluateNotice(student, notice('S', {category:'SCHOLARSHIP'}), ASOF).priority).toBe('PERSONAL_OPPORTUNITY');
+  });
+
   it('academics not shared (null) keeps a requirement notice as ACADEMIC_REQUIRED + UNKNOWN, not GENERAL (P1)', () => {
     const pending = {...student, openRequirementIds:null};
     const ev = evaluateNotice(pending, notice('X', {requirementRefs:['REQ-EXAM'], studentDeadline:inDays(3)}), ASOF);
@@ -141,6 +152,7 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
     notice('CRIT-1', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(2)}),
     notice('OVERDUE', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-2)}),
     notice('CAND', {verificationState:'CANDIDATE', requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(1)}),
+    notice('SCH-CAND', {category:'SCHOLARSHIP', verificationState:'CANDIDATE', studentDeadline:inDays(4)}),
     notice('REJ', {verificationState:'REJECTED', requirementRefs:['REQ-GRAD-CERT']}),
     notice('EXPIRED', {validUntil:inDays(-1)}),
     notice('FUTURE', {requirementRefs:['REQ-GRAD-CERT'], publishedAt:inDays(5), studentDeadline:inDays(6)}),
@@ -150,7 +162,7 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
   it('returns a schema-valid NoticeResult in tier → overdue last → deadline → published → id order', () => {
     const {result} = composeNotices(student, list, {asOf:ASOF});
     expect(NoticeResultSchema.safeParse(result).success).toBe(true);
-    expect(result.items.map(i => i.noticeId)).toEqual(['CRIT-1', 'CRIT-2', 'REQ-LATE', 'OVERDUE', 'SCH', 'SCH-OLD', 'CAND', 'GEN']);
+    expect(result.items.map(i => i.noticeId)).toEqual(['CRIT-1', 'CRIT-2', 'REQ-LATE', 'OVERDUE', 'SCH', 'SCH-OLD', 'CAND', 'SCH-CAND', 'GEN']);
   });
 
   it('pins at most 2, never overdue or unverified ones', () => {
@@ -163,7 +175,7 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
   it('separates overdue, review-pending and excluded notices instead of hiding them silently', () => {
     const r = composeNotices(student, list, {asOf:ASOF});
     expect(r.overdueIds).toEqual(['OVERDUE', 'SCH-OLD']);
-    expect(r.reviewPendingIds).toEqual(['CAND']);
+    expect(r.reviewPendingIds).toEqual(['CAND', 'SCH-CAND']);
     expect(r.excluded).toEqual([
       {noticeId:'DATEONLY', reason:'INVALID_DATETIME'},
       {noticeId:'EXPIRED', reason:'EXPIRED'},
