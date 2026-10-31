@@ -141,6 +141,35 @@ describe('TASK-19/21 deterministic source ledger and permission-first temporal r
     expect(ledger.retrieve(query(22,{campus:'SEOUL',majorCode:'ECONOMICS',cohort:2024}))
       .hits).toHaveLength(1);
   });
+  it('never returns a quote for the wrong verified graduation term, admission, major role or one-ended cohort',()=>{
+    const ledger=new MemorySourceRevisionLedger();
+    add(ledger,{applicableScope:{
+      campuses:['SEOUL'],majorCodes:['ECONOMICS'],majorRoles:['PRIMARY'],
+      admissionTypes:['FOREIGN'],graduationTermScope:['2026-2'],cohortMax:2014,
+    }});
+    const valid={
+      campus:'SEOUL',majorCode:'ECONOMICS',cohort:2014,
+      majors:[{code:'ECONOMICS',role:'PRIMARY'}],
+      admissionType:'FOREIGN',graduationTerm:'2026-2',
+      graduationTermVerified:true,
+    };
+    expect(ledger.retrieve(query(22,valid)).hits).toHaveLength(1);
+    for(const invalid of [
+      {admissionType:'DOMESTIC'},
+      {graduationTerm:'2027-1'},
+      {graduationTermVerified:false},
+      {graduationTermVerified:undefined},
+      {cohort:2015},
+      {cohort:undefined},
+      {majors:[{code:'ECONOMICS',role:'DOUBLE'}]},
+      {majors:[{code:'OTHER',role:'PRIMARY'},{code:'ECONOMICS',role:'DOUBLE'}]},
+      {majors:undefined},
+    ]){
+      const x=ledger.retrieve(query(22,{...valid,...invalid}));
+      expect(x.hits).toEqual([]);
+      expect(x.envelope.evidence).toEqual([]);
+    }
+  });
   it('handles expired effective periods without returning old facts',()=>{
     const ledger=new MemorySourceRevisionLedger();add(ledger,{validUntil:T(22)});
     expect(ledger.retrieve(query(22)).envelope.retrievalState).toBe('STALE');
