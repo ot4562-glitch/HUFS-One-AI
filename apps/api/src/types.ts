@@ -1,6 +1,8 @@
 import type {FastifyRequest} from 'fastify';
 import type {ReviewerAccessStore,ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
+import type {GoogleAuthFlow} from './modules/auth/google-auth-flow.js';
+import type {createSchoolMailProofService} from './modules/auth/school-mail-proof.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -20,6 +22,9 @@ interface ActorSessionBase {
 export interface VerifiedTeamActor extends ActorSessionBase {
   schoolMailProofExpiresAt:string;
   betaAllowed:boolean;
+  /** Populated by real Google auth flow; required for per-request beta recheck. */
+  verifiedSchoolEmail?:string|undefined;
+  schoolProofMethod?:'SIGNED_WORKSPACE'|'MAILBOX_OTP'|undefined;
   role:'BETA'|'ADMIN';
 }
 export interface VerifiedReviewerActor extends ActorSessionBase {
@@ -70,6 +75,10 @@ export interface ApiOptions {
   /** Only an isolated synthetic/replay workspace; never production actions. */
   reviewerSandbox?: ReviewerSandboxStore;
   verifySession?: VerifySession;
+  /** Optional browser OAuth flow; local main intentionally does not configure it. */
+  googleAuth?: GoogleAuthFlow;
+  /** Explicitly injected verified-school-mail flow. Disabled by default. */
+  schoolMailProof?: ReturnType<typeof createSchoolMailProofService>;
   /** Actual session invalidator must revoke server-side session, not just clear a cookie. */
   revokeSession?: (actor: VerifiedActor) => Promise<void>;
   allowedOrigin: string;

@@ -3,6 +3,7 @@ import {PostgresReviewerAccessStore} from '../../apps/api/src/modules/auth/revie
 import type {ReviewerSqlConnection,ReviewerSqlPool,SqlResult} from
   '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import {issueReviewerInvitation,digestInviteToken} from '../../apps/api/src/modules/auth/reviewer.js';
+import {MemoryAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter.js';
 
 const NOW='2026-11-10T00:00:00.000Z';
 const BEGIN='2026-11-05T15:00:00.000Z';
@@ -58,9 +59,47 @@ function fakeDatabase(){
 }
 
 describe('PostgreSQL shared invite adapter - local transactional fake',()=>{
-  it('serializes seat acquisition, allows separate verified sub identities and expires both',async()=>{
+  it('fails closed when shared reviewer enrollment throttling is not configured',async()=>{
     const db=fakeDatabase();
     const store=new PostgresReviewerAccessStore(db.pool);
+    await expect(store.redeem({
+      tokenDigest:'f'.repeat(64),actorId:'GOOGLE-SUB-1',
+      verifiedEmail:'judge@example.org',now:NOW,
+    })).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE'});
+    expect(db.log).toHaveLength(0);
+  });
+
+  it('blocks the sixth redemption on the shared limiter even if a valid invite exists',async()=>{
+    const db=fakeDatabase();
+    const limiter=new MemoryAuthAttemptLimiter();
+    const store=new PostgresReviewerAccessStore(db.pool,limiter);
+    const invite=await issueReviewerInvitation(store,{
+      startsAt:BEGIN,endsAt:END,label:'Shared evaluation',maxAccounts:20,
+    },{now:'2026-10-31T00:00:00.000Z'});
+    for(let i=0;i<5;i++){
+      expect(await store.redeem({
+        tokenDigest:'f'.repeat(64),actorId:'GOOGLE-SUB-1',
+        verifiedEmail:'first@example.org',now:NOW,
+      })).toBeNull();
+    }
+    const before=db.log.length;
+    await expect(store.redeem({
+      tokenDigest:digestInviteToken(invite.enrollmentCode),actorId:'GOOGLE-SUB-1',
+      verifiedEmail:'first@example.org',now:NOW,
+    })).rejects.toMatchObject({code:'RATE_LIMITED'});
+    expect(db.log.length).toBe(before);
+    // Changing the Google subject has a separate cap, not a shared guest login.
+    expect((await store.redeem({
+      tokenDigest:digestInviteToken(invite.enrollmentCode),actorId:'GOOGLE-SUB-2',
+      verifiedEmail:'second@example.org',now:NOW,
+    }))?.actorId).toBe('GOOGLE-SUB-2');
+    expect((await store.readActive({actorId:'GOOGLE-SUB-2',
+      verifiedEmail:'second@example.org',now:NOW}))?.actorId).toBe('GOOGLE-SUB-2');
+  });
+
+  it('serializes seat acquisition, allows separate verified sub identities and expires both',async()=>{
+    const db=fakeDatabase();
+    const store=new PostgresReviewerAccessStore(db.pool,new MemoryAuthAttemptLimiter());
     const invite=await issueReviewerInvitation(store,{
       startsAt:BEGIN,endsAt:END,label:'Shared evaluation',maxAccounts:2,
     },{now:'2026-10-31T00:00:00.000Z'});
