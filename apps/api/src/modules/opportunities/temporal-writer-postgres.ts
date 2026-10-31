@@ -58,17 +58,24 @@ export class PostgresSourceRevisionWriter {
         revision_id,source_id,supersedes,original_sha256,content_sha256,
         media_kind,source_class,permission_ref,provenance,status,change_kind,
         published_at,fetched_at,last_checked_at,last_verified_at,
-        valid_from,valid_until,scope_campuses,scope_majors,cohort_min,cohort_max)
+        valid_from,valid_until,scope_campuses,scope_majors,
+        scope_colleges,scope_major_roles,scope_admission_types,scope_enrollment_states,
+        scope_graduation_terms,cohort_min,cohort_max)
         VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,
-          $16,$17,$18,$19,$20,$21)`,[
+          $16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)`,[
         r.revisionId,r.sourceId,r.supersedes??null,r.originalSha256,r.contentSha256,
         r.mediaKind,r.sourceClass,r.permissionRef,r.provenance,r.status,r.changeKind,
         r.publishedAt??null,r.fetchedAt,r.lastCheckedAt,r.lastVerifiedAt??null,
         r.validFrom??null,r.validUntil??null,
         r.applicableScope?.campuses?.length?r.applicableScope.campuses:null,
         r.applicableScope?.majorCodes?.length?r.applicableScope.majorCodes:null,
-        r.applicableScope?.cohortRange?.[0]??null,
-        r.applicableScope?.cohortRange?.[1]??null,
+        r.applicableScope?.colleges?.length?r.applicableScope.colleges:null,
+        r.applicableScope?.majorRoles?.length?r.applicableScope.majorRoles:null,
+        r.applicableScope?.admissionTypes?.length?r.applicableScope.admissionTypes:null,
+        r.applicableScope?.enrollmentStates?.length?r.applicableScope.enrollmentStates:null,
+        r.applicableScope?.graduationTermScope?.length?r.applicableScope.graduationTermScope:null,
+        r.applicableScope?.cohortRange?.[0]??r.applicableScope?.cohortMin??null,
+        r.applicableScope?.cohortRange?.[1]??r.applicableScope?.cohortMax??null,
       ]);
       await c.query(`INSERT INTO source_paragraphs_vnext(
         revision_id,paragraph_id,paragraph_text)
