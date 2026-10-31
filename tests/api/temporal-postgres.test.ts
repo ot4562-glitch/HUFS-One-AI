@@ -69,8 +69,9 @@ describe('TASK-21 PostgreSQL permission-first historical retrieval (SQL stub)',(
   });
   it('binds every verified academic constraint into ALL retrieval/classification SQL paths',async()=>{
     const x=stub([]);
+    const {majorCode:_legacyMajorCode,...withoutLegacyMajorCode}=policy;
     await x.reader.retrieve({
-      ...policy,majorCode:undefined,
+      ...withoutLegacyMajorCode,
       majors:[{code:'ECONOMICS',role:'PRIMARY'},{code:'DATA_SCIENCE',role:'DOUBLE'}],
       college:'COLLEGE_A',enrollmentState:'ENROLLED',
       admissionType:'FOREIGN',graduationTerm:'2026-2',
