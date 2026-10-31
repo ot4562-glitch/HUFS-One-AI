@@ -3,7 +3,6 @@ import {RetrievalEnvelopeVNextSchema,SourceSpanVNextSchema} from '@hufs-one/cont
 import type {RetrievalEnvelopeVNext} from '@hufs-one/contracts';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import type {TemporalPolicy,TemporalResult} from './revision-ledger.js';
-
 const Iso=z.iso.datetime({offset:true});
 const Ref=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const Row=z.object({
@@ -29,11 +28,9 @@ function empty(policy:TemporalPolicy,state:EmptyReason='NO_EVIDENCE'):TemporalRe
 function terms(query:string):string[]{
   return [...new Set(query.normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}]+/gu)??[])];
 }
-
 /** SQL only: no connections, DDL or network are opened until an operator supplies a pool. */
 export class PostgresTemporalEvidenceReader{
   constructor(private readonly pool:ReviewerSqlPool){}
-
   async retrieve(input:TemporalPolicy):Promise<TemporalResult>{
     const asOf=Iso.parse(input.asOf);
     const limit=input.topK??12;
@@ -58,7 +55,6 @@ export class PostgresTemporalEvidenceReader{
     const admission=input.admissionType===undefined?null:Ref.parse(input.admissionType);
     const gradTerm=input.graduationTerm===undefined?null:
       z.string().regex(/^(19|20|21|22)\d{2}-[12]$/).parse(input.graduationTerm);
-
     // CRITICAL: latest revision PER SOURCE is selected at asOf BEFORE
     // state, rights or textual filters. An unreviewed/cancelled new revision
     // must shadow the previous ACTIVE one. Never use WHERE status='ACTIVE'
@@ -94,33 +90,19 @@ export class PostgresTemporalEvidenceReader{
       AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
       AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
       AND (
-
         (l.scope_majors IS NULL AND l.scope_major_roles IS NULL)
-
         OR EXISTS (
-
           SELECT 1 FROM jsonb_to_recordset($12::jsonb) AS academic_major(code text,role text)
-
           WHERE (l.scope_majors IS NULL OR academic_major.code=ANY(l.scope_majors))
-
             AND (l.scope_major_roles IS NULL OR academic_major.role=ANY(l.scope_major_roles))
-
         )
-
         OR (l.scope_major_roles IS NULL AND l.scope_majors IS NOT NULL
-
           AND $5::text=ANY(l.scope_majors))
-
       )
-
       AND (l.scope_colleges IS NULL OR $7::text=ANY(l.scope_colleges))
-
       AND (l.scope_enrollment_states IS NULL OR $8::text=ANY(l.scope_enrollment_states))
-
       AND (l.scope_admission_types IS NULL OR $9::text=ANY(l.scope_admission_types))
-
       AND (l.scope_graduation_terms IS NULL OR (
-
         $11::boolean IS TRUE AND $10::text=ANY(l.scope_graduation_terms)))
       AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
       AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
@@ -153,33 +135,19 @@ export class PostgresTemporalEvidenceReader{
         AND l.provenance!='RESEARCH_ONLY'
         AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
         AND (
-
           (l.scope_majors IS NULL AND l.scope_major_roles IS NULL)
-
           OR EXISTS (
-
             SELECT 1 FROM jsonb_to_recordset($12::jsonb) AS academic_major(code text,role text)
-
             WHERE (l.scope_majors IS NULL OR academic_major.code=ANY(l.scope_majors))
-
               AND (l.scope_major_roles IS NULL OR academic_major.role=ANY(l.scope_major_roles))
-
           )
-
           OR (l.scope_major_roles IS NULL AND l.scope_majors IS NOT NULL
-
             AND $5::text=ANY(l.scope_majors))
-
         )
-
         AND (l.scope_colleges IS NULL OR $7::text=ANY(l.scope_colleges))
-
         AND (l.scope_enrollment_states IS NULL OR $8::text=ANY(l.scope_enrollment_states))
-
         AND (l.scope_admission_types IS NULL OR $9::text=ANY(l.scope_admission_types))
-
         AND (l.scope_graduation_terms IS NULL OR (
-
           $11::boolean IS TRUE AND $10::text=ANY(l.scope_graduation_terms)))
         AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
         AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
@@ -231,33 +199,19 @@ export class PostgresTemporalEvidenceReader{
         AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
         AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
         AND (
-
           (l.scope_majors IS NULL AND l.scope_major_roles IS NULL)
-
           OR EXISTS (
-
             SELECT 1 FROM jsonb_to_recordset($12::jsonb) AS academic_major(code text,role text)
-
             WHERE (l.scope_majors IS NULL OR academic_major.code=ANY(l.scope_majors))
-
               AND (l.scope_major_roles IS NULL OR academic_major.role=ANY(l.scope_major_roles))
-
           )
-
           OR (l.scope_major_roles IS NULL AND l.scope_majors IS NOT NULL
-
             AND $5::text=ANY(l.scope_majors))
-
         )
-
         AND (l.scope_colleges IS NULL OR $7::text=ANY(l.scope_colleges))
-
         AND (l.scope_enrollment_states IS NULL OR $8::text=ANY(l.scope_enrollment_states))
-
         AND (l.scope_admission_types IS NULL OR $9::text=ANY(l.scope_admission_types))
-
         AND (l.scope_graduation_terms IS NULL OR (
-
           $11::boolean IS TRUE AND $10::text=ANY(l.scope_graduation_terms)))
         AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
         AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
