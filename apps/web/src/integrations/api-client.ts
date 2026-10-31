@@ -18,13 +18,26 @@ export class HufsApiError extends Error {
 }
 
 const CsrfSchema = z.strictObject({csrfToken:z.string().min(16)});
+const ReviewerSectionSchema=z.enum([
+  'TODAY','OPPORTUNITIES','NOTICES','EXPERIENCE','GRADUATION','COURSE_PLANNER',
+  'OUTLOOK','SAVED','APPLICATIONS','SETTINGS',
+]);
+const ReviewerActionSchema=z.enum([
+  'BOOKMARK','MARK_READ','CHECKLIST','EXPERIENCE','APPLICATION_DRAFT',
+  'SIMULATE_APPLICATION','SET_INTERESTS','SET_DESIRED_JOBS','PLAN_COURSE',
+  'SET_SEARCH','SET_NOTIFICATIONS','RESET_SANDBOX',
+]);
 const ReviewerCapabilitiesSchema = z.strictObject({
   role:z.literal('REVIEWER'), dataMode:z.literal('SYNTHETIC'),
   sandboxOnly:z.literal(true), ncpCalls:z.literal(false),
   externalSubmission:z.literal(false),
-  sections:z.array(z.string()).max(20), actions:z.array(z.string()).max(30),
+  sections:z.array(ReviewerSectionSchema).max(10),
+  actions:z.array(ReviewerActionSchema).max(12),
   aiProvenance:z.literal('MOCK'),actualBrowserUiVerified:z.boolean(),
-});
+}).refine(v=>new Set(v.sections).size===v.sections.length
+  &&new Set(v.actions).size===v.actions.length,
+  {message:'Duplicate REVIEWER capability'});
+
 const ReviewerEnrollmentSchema = z.strictObject({
   role:z.literal('REVIEWER'),accessEndsAt:z.iso.datetime({offset:true}),
   dataMode:z.literal('SYNTHETIC'),readOnly:z.boolean(),sandboxOnly:z.literal(true),
@@ -101,6 +114,9 @@ export class HufsApiClient {
   async createContext(
     subject:SubjectAlias,runId:string,signal?:AbortSignal,
   ):Promise<DemoContext> {
+    if(!SubjectAliasSchema.safeParse(subject).success
+      || !/^[A-Za-z0-9_-]{1,64}$/.test(runId))
+      throw new HufsApiError('INVALID_INPUT',422);
     const csrf=await this.request('/api/auth/csrf',CsrfSchema,{signal});
     const context=await this.request('/api/demo/contexts',DemoContextSchema,{
       method:'POST',body:{demoSubjectId:subject,demoRunId:runId},
