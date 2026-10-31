@@ -49,6 +49,15 @@ export class PostgresTemporalEvidenceReader{
     const cohort=input.cohort;
     if(cohort!==undefined&&(!Number.isInteger(cohort)||cohort<1950||cohort>2200))
       throw new Error('Invalid authorized cohort');
+    const majors=input.majors??(input.majorCode?[{code:input.majorCode,role:'' as const}]:[]);
+    if(majors.length>16||majors.some(m=>!Ref.safeParse(m.code).success
+      ||!['PRIMARY','DOUBLE','MINOR',''].includes(m.role)))
+      throw new Error('Invalid trusted major/role scope');
+    const college=input.college===undefined?null:Ref.parse(input.college);
+    const enrollment=input.enrollmentState===undefined?null:Ref.parse(input.enrollmentState);
+    const admission=input.admissionType===undefined?null:Ref.parse(input.admissionType);
+    const gradTerm=input.graduationTerm===undefined?null:
+      z.string().regex(/^(19|20|21|22)\d{2}-[12]$/).parse(input.graduationTerm);
 
     // CRITICAL: latest revision PER SOURCE is selected at asOf BEFORE
     // state, rights or textual filters. An unreviewed/cancelled new revision
@@ -58,7 +67,9 @@ export class PostgresTemporalEvidenceReader{
       SELECT DISTINCT ON (r.source_id)
         r.source_id,r.revision_id,r.permission_ref,r.source_class,
         r.provenance,r.status,r.change_kind,r.last_verified_at,r.valid_from,r.valid_until,
-        r.scope_campuses,r.scope_majors,r.cohort_min,r.cohort_max
+        r.scope_campuses,r.scope_majors,r.scope_colleges,
+        r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
+        r.scope_graduation_terms,r.cohort_min,r.cohort_max
       FROM source_revisions_vnext r
       WHERE r.fetched_at <= $1::timestamptz
         AND (r.published_at IS NULL OR r.published_at <= $1::timestamptz)
@@ -70,7 +81,7 @@ export class PostgresTemporalEvidenceReader{
     INNER JOIN source_paragraphs_vnext p ON p.revision_id=l.revision_id
     CROSS JOIN LATERAL (
       SELECT count(*)::integer AS score
-      FROM unnest($7::text[]) AS token(term)
+      FROM unnest($13::text[]) AS token(term)
       WHERE position(token.term IN lower(p.paragraph_text))>0
     ) AS score
     WHERE l.permission_ref=ANY($2::text[])
@@ -82,12 +93,40 @@ export class PostgresTemporalEvidenceReader{
       AND (l.valid_from IS NULL OR l.valid_from<=$1::timestamptz)
       AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
       AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
-      AND (l.scope_majors IS NULL OR $5::text=ANY(l.scope_majors))
+      AND (
+
+        (l.scope_majors IS NULL AND l.scope_major_roles IS NULL)
+
+        OR EXISTS (
+
+          SELECT 1 FROM jsonb_to_recordset($12::jsonb) AS academic_major(code text,role text)
+
+          WHERE (l.scope_majors IS NULL OR academic_major.code=ANY(l.scope_majors))
+
+            AND (l.scope_major_roles IS NULL OR academic_major.role=ANY(l.scope_major_roles))
+
+        )
+
+        OR (l.scope_major_roles IS NULL AND l.scope_majors IS NOT NULL
+
+          AND $5::text=ANY(l.scope_majors))
+
+      )
+
+      AND (l.scope_colleges IS NULL OR $7::text=ANY(l.scope_colleges))
+
+      AND (l.scope_enrollment_states IS NULL OR $8::text=ANY(l.scope_enrollment_states))
+
+      AND (l.scope_admission_types IS NULL OR $9::text=ANY(l.scope_admission_types))
+
+      AND (l.scope_graduation_terms IS NULL OR (
+
+        $11::boolean IS TRUE AND $10::text=ANY(l.scope_graduation_terms)))
       AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
       AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
       AND score.score>0
     ORDER BY score.score DESC,l.source_id,l.revision_id,p.paragraph_id
-    LIMIT $8::integer`;
+    LIMIT $14::integer`;
     // No untrusted SQL/error details may be returned in an empty envelope.
     // State detection repeats ALL actor-grant and applicability predicates.
     // Matching a historical text phrase is used solely to classify its latest
@@ -98,8 +137,9 @@ export class PostgresTemporalEvidenceReader{
       SELECT DISTINCT ON (r.source_id)
         r.source_id,r.revision_id,r.permission_ref,r.source_class,
         r.provenance,r.status,r.change_kind,r.fetched_at,r.last_verified_at,
-        r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,
-        r.cohort_min,r.cohort_max
+        r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,r.scope_colleges,
+        r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
+        r.scope_graduation_terms,r.cohort_min,r.cohort_max
       FROM source_revisions_vnext r
       WHERE r.fetched_at<=$1::timestamptz
         AND (r.published_at IS NULL OR r.published_at<=$1::timestamptz)
@@ -112,7 +152,35 @@ export class PostgresTemporalEvidenceReader{
         AND l.source_class!='RESEARCH_REFERENCE_ONLY'
         AND l.provenance!='RESEARCH_ONLY'
         AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
-        AND (l.scope_majors IS NULL OR $5::text=ANY(l.scope_majors))
+        AND (
+
+          (l.scope_majors IS NULL AND l.scope_major_roles IS NULL)
+
+          OR EXISTS (
+
+            SELECT 1 FROM jsonb_to_recordset($12::jsonb) AS academic_major(code text,role text)
+
+            WHERE (l.scope_majors IS NULL OR academic_major.code=ANY(l.scope_majors))
+
+              AND (l.scope_major_roles IS NULL OR academic_major.role=ANY(l.scope_major_roles))
+
+          )
+
+          OR (l.scope_major_roles IS NULL AND l.scope_majors IS NOT NULL
+
+            AND $5::text=ANY(l.scope_majors))
+
+        )
+
+        AND (l.scope_colleges IS NULL OR $7::text=ANY(l.scope_colleges))
+
+        AND (l.scope_enrollment_states IS NULL OR $8::text=ANY(l.scope_enrollment_states))
+
+        AND (l.scope_admission_types IS NULL OR $9::text=ANY(l.scope_admission_types))
+
+        AND (l.scope_graduation_terms IS NULL OR (
+
+          $11::boolean IS TRUE AND $10::text=ANY(l.scope_graduation_terms)))
         AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
         AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
         AND EXISTS (
@@ -122,7 +190,7 @@ export class PostgresTemporalEvidenceReader{
             AND h.fetched_at<=$1::timestamptz
             AND (h.published_at IS NULL OR h.published_at<=$1::timestamptz)
             AND EXISTS (
-              SELECT 1 FROM unnest($7::text[]) AS token(term)
+              SELECT 1 FROM unnest($13::text[]) AS token(term)
               WHERE position(token.term IN lower(p.paragraph_text))>0
             )
         )
@@ -143,8 +211,9 @@ export class PostgresTemporalEvidenceReader{
       SELECT DISTINCT ON (r.source_id)
         r.source_id,r.revision_id,r.permission_ref,r.source_class,
         r.provenance,r.status,r.change_kind,r.last_verified_at,
-        r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,
-        r.cohort_min,r.cohort_max
+        r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,r.scope_colleges,
+        r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
+        r.scope_graduation_terms,r.cohort_min,r.cohort_max
       FROM source_revisions_vnext r
       WHERE r.fetched_at<=$1::timestamptz
         AND (r.published_at IS NULL OR r.published_at<=$1::timestamptz)
@@ -161,13 +230,41 @@ export class PostgresTemporalEvidenceReader{
         AND (l.valid_from IS NULL OR l.valid_from<=$1::timestamptz)
         AND (l.valid_until IS NULL OR l.valid_until>$1::timestamptz)
         AND (l.scope_campuses IS NULL OR $4::text=ANY(l.scope_campuses))
-        AND (l.scope_majors IS NULL OR $5::text=ANY(l.scope_majors))
+        AND (
+
+          (l.scope_majors IS NULL AND l.scope_major_roles IS NULL)
+
+          OR EXISTS (
+
+            SELECT 1 FROM jsonb_to_recordset($12::jsonb) AS academic_major(code text,role text)
+
+            WHERE (l.scope_majors IS NULL OR academic_major.code=ANY(l.scope_majors))
+
+              AND (l.scope_major_roles IS NULL OR academic_major.role=ANY(l.scope_major_roles))
+
+          )
+
+          OR (l.scope_major_roles IS NULL AND l.scope_majors IS NOT NULL
+
+            AND $5::text=ANY(l.scope_majors))
+
+        )
+
+        AND (l.scope_colleges IS NULL OR $7::text=ANY(l.scope_colleges))
+
+        AND (l.scope_enrollment_states IS NULL OR $8::text=ANY(l.scope_enrollment_states))
+
+        AND (l.scope_admission_types IS NULL OR $9::text=ANY(l.scope_admission_types))
+
+        AND (l.scope_graduation_terms IS NULL OR (
+
+          $11::boolean IS TRUE AND $10::text=ANY(l.scope_graduation_terms)))
         AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
         AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
         AND EXISTS (
           SELECT 1 FROM source_paragraphs_vnext p
           WHERE p.revision_id=l.revision_id AND EXISTS (
-            SELECT 1 FROM unnest($7::text[]) AS token(term)
+            SELECT 1 FROM unnest($13::text[]) AS token(term)
             WHERE position(token.term IN lower(p.paragraph_text))>0
           )
         )
@@ -197,20 +294,21 @@ export class PostgresTemporalEvidenceReader{
       const retrieval:TemporalResult=await (async()=>{
       const params=[
         asOf,grants,sources,input.campus??null,input.majorCode??null,
-        cohort??null,keywords,limit,
+        cohort??null,college,enrollment,admission,gradTerm,
+        input.graduationTermVerified===true,JSON.stringify(majors),keywords,limit,
       ] as const;
       const result=await connection.query(sql,params);
       if(result.rows.length>limit)throw new Error('Provider violated retrieval topK');
       const matches=result.rows.map(x=>Row.parse(x));
       if(!matches.length){
-        const stateRows=await connection.query(classifySql,params.slice(0,7));
+        const stateRows=await connection.query(classifySql,params.slice(0,13));
         if(stateRows.rows.length>1)throw new Error('Invalid retrieval state provider');
         if(!stateRows.rows.length)return empty(input);
         const flags=EmptyFlags.parse(stateRows.rows[0]);
         return empty(input,flags.blocked_rights?'BLOCKED_RIGHTS'
           :flags.unknown?'UNKNOWN':flags.stale?'STALE':'NO_EVIDENCE');
       }
-      const checkedConflicts=await connection.query(conflictSql,params.slice(0,7));
+      const checkedConflicts=await connection.query(conflictSql,params.slice(0,13));
       if(checkedConflicts.rows.length!==1)
         throw new Error('Invalid reviewed conflict provider');
       const dispute=ConflictResult.parse(checkedConflicts.rows[0]);
