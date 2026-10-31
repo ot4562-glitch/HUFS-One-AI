@@ -51,6 +51,13 @@ describe('A04/A05/A07 recommendation/notice wire shape',()=>{
     expect(invalid({reasons:[{...explanation.reasons[0],topics:[TOPIC_CODES.find(t=>!base.topics.includes(t))!]}]})).toBe(false);
     expect(invalid({deadline:{kind:'CONFIRMED',text:'검증됨'}})).toBe(false);
     expect(invalid({deadline:{kind:'EVENT_ONLY',text:'행사 기간',iso:'2026-11-10T09:00:00.000Z'}})).toBe(false);
+    // Source-verified rolling admission is a distinct machine-readable state,
+    // not an UNKNOWN deadline with only a free-text hint. It carries no ISO date.
+    const rolling={...feed,featured:[{...card,explanation:{
+      ...explanation,deadline:{kind:'ROLLING',text:'상시 모집'},
+    }}]};
+    expect(FeedResultSchema.safeParse(rolling).success).toBe(true);
+    expect(invalid({deadline:{kind:'ROLLING',text:'상시 모집',iso:'2026-11-10T09:00:00.000Z'}})).toBe(false);
     expect(FeedResultSchema.safeParse({...feed,featured:[{...card,score:54}]}).success).toBe(false);
   });
   it('accepts Notices with actual applicability/priority and max 2 pinned',()=>{
