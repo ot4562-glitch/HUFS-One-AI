@@ -80,11 +80,11 @@ CREATE TABLE IF NOT EXISTS api_grant_events (
 CREATE INDEX IF NOT EXISTS api_grant_events_actor
   ON api_grant_events(actor_id,subject_id,event_at DESC);
 CREATE OR REPLACE FUNCTION api_deny_grant_audit_mutation()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   RAISE EXCEPTION 'immutable grant audit';
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION api_deny_grant_audit_mutation() FROM PUBLIC;
 DROP TRIGGER IF EXISTS api_grant_audit_append_only ON api_grant_events;
 CREATE TRIGGER api_grant_audit_append_only

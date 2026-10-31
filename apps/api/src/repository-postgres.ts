@@ -33,6 +33,14 @@ function parsedJson(value:unknown):unknown{
     throw new Error('Oversized projection payload');
   return value;
 }
+export interface PurposeConsentVerifier {
+  isActive(input:{
+    actorId:string;subjectId:SubjectAlias;
+    purpose:'DISPLAY_NAME'|'RECORDING';consentRef:string;now:string;
+  }):Promise<boolean>;
+}
+const SHARED_SECTIONS_ARRAY=[...SHARED_SECTIONS];
+
 async function queryOnce(
   pool:ReviewerSqlPool,sql:string,params:readonly unknown[],
 ):Promise<ReadonlyArray<Record<string,unknown>>>{
@@ -53,6 +61,7 @@ export class PostgresApiProjectionRepository implements ApiRepository {
   constructor(
     private readonly pool:ReviewerSqlPool,
     private readonly now:()=>string=()=>new Date().toISOString(),
+    private readonly consentVerifier?:PurposeConsentVerifier,
   ){}
   async listProfiles():Promise<DemoProfileOption[]>{
     const rows=await queryOnce(this.pool,`
@@ -73,7 +82,8 @@ export class PostgresApiProjectionRepository implements ApiRepository {
     const id=SubjectAliasSchema.parse(subject),now=parseTime(this.now());
     const rows=await queryOnce(this.pool,`
       SELECT grant_id,actor_id,subject_id,allowed_sections,display_name_allowed,
-        recording_allowed,version,expires_at,revoked_at
+        recording_allowed,display_name_consent_ref,recording_consent_ref,
+        version,expires_at,revoked_at
       FROM api_sharing_grants
       WHERE actor_id=$1 AND subject_id=$2 AND revoked_at IS NULL
         AND expires_at>$3::timestamptz LIMIT 2`,
@@ -96,21 +106,89 @@ export class PostgresApiProjectionRepository implements ApiRepository {
     if(result.actorId!==actorId||result.demoSubjectId!==id
       ||Date.parse(result.expiresAt)<=Date.parse(now)||result.revokedAt)
       throw new Error('Stale or cross-account grant');
-    return result;
+    // Sharing a section is NOT evidence of consent for a display name or a recording.
+    // On missing/expired/revoked consent or a ledger outage, hide that purpose only.
+    const purpose=async(enabled:boolean,ref:unknown,
+      name:'DISPLAY_NAME'|'RECORDING'):Promise<boolean>=>{
+      if(!enabled||typeof ref!=='string'||!OPAQUE_REFERENCE.test(ref)
+        ||!this.consentVerifier)return false;
+      try{
+        return await this.consentVerifier.isActive({
+          actorId,subjectId:id,purpose:name,consentRef:ref,now,
+        })===true;
+      }catch{return false;}
+    };
+    return {
+      ...result,
+      displayNameAllowed:await purpose(
+        result.displayNameAllowed,row.display_name_consent_ref,'DISPLAY_NAME'),
+      recordingAllowed:await purpose(
+        result.recordingAllowed,row.recording_consent_ref,'RECORDING'),
+    };
   }
 
+  private checkSnapshot(
+    rows:ReadonlyArray<Record<string,unknown>>,id:SubjectAlias,
+  ):DemoSnapshot|null{
+    if(!rows.length)return null;
+    if(rows.length!==1)throw new Error('Ambiguous projection');
+    const snap=DemoSnapshotSchema.parse(parsedJson(rows[0]?.snapshot_json));
+    if(rows[0]?.subject_id!==id
+      ||snap.demoSubjectId!==id||Date.parse(snap.asOf)>Date.parse(this.now())
+      ||snap.feed.asOf!==snap.asOf||snap.notices.asOf!==snap.asOf)
+      throw new Error('Cross-subject or future/contradictory snapshot');
+    return snap;
+  }
   async readSnapshot(subject:SubjectAlias):Promise<DemoSnapshot|null>{
     const id=SubjectAliasSchema.parse(subject);
     const rows=await queryOnce(this.pool,`
       SELECT subject_id,snapshot_json FROM api_demo_snapshot_projections
       WHERE subject_id=$1 AND current=true LIMIT 2`,[id]);
-    if(!rows.length)return null;
-    if(rows.length!==1)throw new Error('Ambiguous projection');
-    const snap=DemoSnapshotSchema.parse(parsedJson(rows[0]?.snapshot_json));
-    if(snap.demoSubjectId!==id||Date.parse(snap.asOf)>Date.parse(this.now())
-      ||snap.feed.asOf!==snap.asOf||snap.notices.asOf!==snap.asOf)
-      throw new Error('Cross-subject or future/contradictory snapshot');
-    return snap;
+    return this.checkSnapshot(rows,id);
+  }
+
+  /**
+   * Agent 4 should prefer this atomic authorization+projection read over
+   * calling readGrant() then readSnapshot() in separate PG connections.
+   * Locks the live grant row against concurrent revoke until the projection
+   * has been read; always redacts unshared academic/forecast projections.
+   */
+  async readAuthorizedSnapshot(input:{
+    actorId:string;subjectId:SubjectAlias;grantVersion:string;
+    requiredSections?:string[];
+  }):Promise<DemoSnapshot|null>{
+    validateActor(input.actorId);
+    const id=SubjectAliasSchema.parse(input.subjectId);
+    if(!/^[A-Za-z0-9_.:-]{1,100}$/.test(input.grantVersion))
+      throw new Error('Invalid grant version');
+    const required=input.requiredSections??['FEED','NOTICES'];
+    if(!required.length||new Set(required).size!==required.length
+      ||required.some(v=>!SHARED_SECTIONS_ARRAY.includes(v)))
+      throw new Error('Invalid section request');
+    const rows=await queryOnce(this.pool,`
+      SELECT p.subject_id,p.snapshot_json,g.actor_id,g.version,g.allowed_sections
+      FROM api_demo_snapshot_projections p
+      JOIN api_sharing_grants g ON g.subject_id=p.subject_id
+      WHERE g.actor_id=$1 AND p.subject_id=$2 AND g.version=$3
+        AND g.revoked_at IS NULL AND g.expires_at>clock_timestamp()
+        AND g.allowed_sections @> $4::text[] AND p.current=true
+      LIMIT 2 FOR SHARE OF g`,[
+      input.actorId,id,input.grantVersion,required,
+    ]);
+    const snap=this.checkSnapshot(rows,id);
+    if(!snap)return null;
+    const row=rows[0]!;
+    if(row.actor_id!==input.actorId||row.version!==input.grantVersion
+      ||!Array.isArray(row.allowed_sections)
+      ||required.some(v=>!(row.allowed_sections as unknown[]).includes(v))
+      ||(row.allowed_sections as unknown[]).some(v=>!SHARED_SECTIONS.has(v as string)))
+      throw new Error('Stale or cross-account projection');
+    const sections=new Set(row.allowed_sections as string[]);
+    return DemoSnapshotSchema.parse({
+      ...snap,
+      academics:sections.has('ACADEMICS')?snap.academics:{state:'NOT_SHARED'},
+      forecast:sections.has('FORECAST')?snap.forecast:{state:'NOT_SHARED'},
+    });
   }
 
   async readSafePacket(actorId:string,task:AiTask,ref:string):Promise<SafeLlmPacket|null>{
