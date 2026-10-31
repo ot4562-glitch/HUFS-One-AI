@@ -21,6 +21,22 @@ describe('A04/A05/A07 recommendation/notice wire shape',()=>{
     expect(NoticeResultSchema.safeParse({...original.notices,pinnedIds:['A','B','C']}).success).toBe(false);
     expect(NoticeResultSchema.safeParse({...original.notices,pinnedIds:['UNKNOWN']}).success).toBe(false);
   });
+  it('preserves optional overdue boolean through the strict notice wire without breaking legacy payloads',()=>{
+    expect(NoticeResultSchema.safeParse(original.notices).success).toBe(true);
+    const candidate={...original.notices,items:original.notices.items.map((item:any)=>({...item,studentDeadline:'2026-10-29T09:00:00.000Z',overdue:true}))};
+    const parsed=NoticeResultSchema.parse(candidate);
+    expect(parsed.items[0]?.overdue).toBe(true);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:'true'}]}).success).toBe(false);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:null}]}).success).toBe(false);
+    // An explicit false may not hide an applicable past submission deadline.
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],overdue:false}]}).success).toBe(false);
+    // Explicit false is valid for a future deadline or for an inapplicable notice.
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],studentDeadline:'2026-11-01T00:00:00.000Z',overdue:false}]}).success).toBe(true);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],appliesTo:'NO',overdue:false}]}).success).toBe(true);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],studentDeadline:'2026-11-01T00:00:00.000Z'}]}).success).toBe(false);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],appliesTo:'NO'}]}).success).toBe(false);
+    expect(NoticeResultSchema.safeParse({...candidate,items:[{...candidate.items[0],studentDeadline:undefined}]}).success).toBe(false);
+  });
   it('rejects unsafe eligibility predicate field and invalid evidence offsets',()=>{
     expect(EligibilityConditionSchema.safeParse({field:'customJs',operator:'EQ',value:'x',evidenceId:'EV-1'}).success).toBe(false);
     expect(EvidenceSpanSchema.safeParse({evidenceId:'EV-1',sourceId:'SRC-1',snapshotVersion:'v1',paragraphId:'p1',quote:'test',startCodePoint:4,endCodePoint:2}).success).toBe(false);
