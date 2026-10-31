@@ -75,6 +75,7 @@ export function createApi(options:ApiOptions) {
       const reviewerRead=request.method==='GET'&&(
         path==='/api/auth/session'
         ||path==='/api/reviewer/demo/profiles'
+        ||path==='/api/reviewer/capabilities'
         ||path==='/api/demo/profiles'
         ||/^\/api\/reviewer\/demo\/subjects\/S0[1-5]\/snapshot$/.test(path??'')
         ||/^\/api\/demo\/contexts\/[^/]+\/(snapshot|notices|graduation|outlook)$/.test(path??'')
@@ -180,7 +181,8 @@ export function createApi(options:ApiOptions) {
     if(actor.role==='REVIEWER'){
       const grant=reviewerGrants.get(req);
       if(!grant)throw new ApiFailure('FORBIDDEN');
-      return {role:'REVIEWER',accessEndsAt:grant.endsAt,dataMode:'SYNTHETIC',readOnly:true};
+      return {role:'REVIEWER',accessEndsAt:grant.endsAt,dataMode:'SYNTHETIC',
+        readOnly:false,sandboxOnly:true};
     }
     return {actorId:actor.actorId,role:actor.role,schoolMailProofValid:true,betaAllowed:true};
   });
@@ -214,7 +216,8 @@ export function createApi(options:ApiOptions) {
     });
     if(!grant)throw new ApiFailure('FORBIDDEN');
     reply.code(200);
-    return {role:'REVIEWER',accessEndsAt:grant.endsAt,dataMode:'SYNTHETIC',readOnly:true};
+    return {role:'REVIEWER',accessEndsAt:grant.endsAt,dataMode:'SYNTHETIC',
+      readOnly:false,sandboxOnly:true};
   });
 
   const reviewerDemo=()=>{
@@ -235,6 +238,19 @@ export function createApi(options:ApiOptions) {
       throw new ApiFailure('FORBIDDEN');
     return snap;
   };
+  // UI can expose the full student navigation without granting any real-world side effects.
+  // This manifest is served only after active enrollment has been rechecked.
+  app.get('/api/reviewer/capabilities',async()=>({
+    role:'REVIEWER',dataMode:'SYNTHETIC',sandboxOnly:true,
+    sections:['TODAY','OPPORTUNITIES','NOTICES','EXPERIENCE','GRADUATION',
+      'COURSE_PLANNER','OUTLOOK','SAVED','APPLICATIONS','SETTINGS'],
+    actions:['BOOKMARK','MARK_READ','CHECKLIST','EXPERIENCE',
+      'APPLICATION_DRAFT','SIMULATE_APPLICATION','SET_INTERESTS',
+      'SET_DESIRED_JOBS','PLAN_COURSE','SET_SEARCH','SET_NOTIFICATIONS',
+      'RESET_SANDBOX'],
+    aiProvenance:'MOCK',externalSubmission:false,ncpCalls:false,
+    actualBrowserUiVerified:false,
+  }));
   app.get('/api/reviewer/demo/profiles',async()=>{
     const list=DemoProfilesResponseSchema.parse({profiles:await reviewerDemo().listProfiles()});
     // Separate curated fixture source. Never reuse the team-member repository or grants.
