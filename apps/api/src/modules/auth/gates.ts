@@ -9,7 +9,9 @@ const Base={
 };
 const VerifiedActorSchema=z.discriminatedUnion('role',[
   z.strictObject({...Base,role:z.enum(['BETA','ADMIN']),
-    schoolMailProofExpiresAt:z.iso.datetime({offset:true}),betaAllowed:z.boolean()}),
+    schoolMailProofExpiresAt:z.iso.datetime({offset:true}),betaAllowed:z.boolean(),
+    verifiedSchoolEmail:z.email().max(254).optional(),
+    schoolProofMethod:z.enum(['SIGNED_WORKSPACE','MAILBOX_OTP']).optional()}),
   z.strictObject({...Base,role:z.literal('REVIEWER'),
     verifiedEmail:z.email().max(254),identityProofExpiresAt:z.iso.datetime({offset:true})}),
 ]);

@@ -44,12 +44,13 @@ async function jwt(nonce:string,options:{email?:string;hd?:string;subject?:strin
     .setAudience(CLIENT).setIssuedAt(sec-10).setExpirationTime(sec+1800)
     .sign(signingKey);
 }
-function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string}={}){
+function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;proofMethod?:'SIGNED_WORKSPACE'|'MAILBOX_OTP'}={}){
   const store=new MemoryGoogleAuthStore();
   const invitations=new MemoryReviewerAccessStore();
   let nonce='';
   let exchanged=0;
   let verifierCalls=0;
+  let betaApproved=true;
   const verify=createGoogleIdTokenVerifier({clientId:CLIENT,jwks,now:()=>current});
   const flow=createGoogleAuthFlow({
     clientId:CLIENT,
@@ -69,9 +70,12 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string}={}){
       verifierCalls++;
       return verify(id,expectedNonce);
     },
-    ...(options.authorizeBeta?{authorizeBeta:async()=>{
-      return {schoolMailProofExpiresAt:new Date(current.getTime()+1000*600).toISOString()};
-    }}:{}),
+    ...(options.authorizeBeta?{authorizeBeta:async(identity)=>({
+      googleSubject:identity.googleSubject,
+      verifiedEmail:identity.verifiedEmail,
+      proofMethod:options.proofMethod??'SIGNED_WORKSPACE' as const,
+      schoolMailProofExpiresAt:new Date(current.getTime()+1000*600).toISOString(),
+    }),recheckBeta:async()=>betaApproved}:{}),
   });
   const app=createApi({
     allowedOrigin:ORIGIN,
@@ -99,7 +103,8 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string}={}){
     });
   };
   return {app,store,invitations,flow,begin,complete,
-    exchanged:()=>exchanged,verified:()=>verifierCalls};
+    exchanged:()=>exchanged,verified:()=>verifierCalls,
+    revokeBeta:()=>{betaApproved=false;}};
 }
 
 describe('Google OAuth callback, cookie binding and one-time session',()=>{
@@ -212,6 +217,14 @@ describe('Google OAuth callback, cookie binding and one-time session',()=>{
     const who=await ok.app.inject({url:'/api/auth/session',headers:{cookie:session}});
     expect(who.statusCode).toBe(200);
     expect(who.json().role).toBe('BETA');
+    ok.revokeBeta();
+    expect((await ok.app.inject({url:'/api/auth/session',headers:{cookie:session}})).statusCode).toBe(401);
+    const otp=harness({authorizeBeta:true,email:'sample@hufs.ac.kr',proofMethod:'MAILBOX_OTP'});
+    const otpBegin=await otp.begin('BETA');
+    const otpCallback=await otp.complete(otpBegin.state,otpBegin.binding);
+    expect(otpCallback.statusCode).toBe(303);
+    const otpCookie=cookie(otpCallback,'__Host-hufs_session');
+    expect((await otp.app.inject({url:'/api/auth/session',headers:{cookie:otpCookie}})).statusCode).toBe(200);
   });
 
   it('rejects duplicated cookies, forged sessions, expired proofs and non-CSRF logout',async()=>{

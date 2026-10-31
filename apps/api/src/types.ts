@@ -21,6 +21,9 @@ interface ActorSessionBase {
 export interface VerifiedTeamActor extends ActorSessionBase {
   schoolMailProofExpiresAt:string;
   betaAllowed:boolean;
+  /** Populated by real Google auth flow; required for per-request beta recheck. */
+  verifiedSchoolEmail?:string|undefined;
+  schoolProofMethod?:'SIGNED_WORKSPACE'|'MAILBOX_OTP'|undefined;
   role:'BETA'|'ADMIN';
 }
 export interface VerifiedReviewerActor extends ActorSessionBase {

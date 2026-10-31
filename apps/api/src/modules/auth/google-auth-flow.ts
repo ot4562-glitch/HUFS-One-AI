@@ -1,13 +1,14 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {z} from 'zod';
 import type {FastifyReply,FastifyRequest} from 'fastify';
-import type {VerifiedActor} from '../../types.js';
+import type {VerifiedActor,VerifiedTeamActor} from '../../types.js';
 import type {GoogleAuthStore,GoogleLoginIntent} from './google-auth-store.js';
 import {
   createGoogleIdTokenVerifier,createGoogleOidcAuthorization,
   verifyGoogleCallbackState,
 } from './google-oidc.js';
 import type {GoogleVerifiedIdentity} from './google-oidc.js';
+import type {BetaAdmissionDecision} from './beta-admission.js';
 
 const STATE_COOKIE='__Host-hufs_login';
 const SESSION_COOKIE='__Host-hufs_session';
@@ -32,7 +33,9 @@ export interface GoogleAuthConfig {
   })=>Promise<string>;
   verifyIdToken?:ReturnType<typeof createGoogleIdTokenVerifier>;
   /** External approved HUFS mail proof and beta allowlist verifier. */
-  authorizeBeta?:(identity:GoogleVerifiedIdentity)=>Promise<{schoolMailProofExpiresAt:string}|null>;
+  authorizeBeta?:(identity:GoogleVerifiedIdentity)=>Promise<BetaAdmissionDecision|null>;
+  /** Re-read revocation and proof status on EVERY BETA request. */
+  recheckBeta?:(actor:VerifiedTeamActor)=>Promise<boolean>;
 }
 export class GoogleAuthFlowError extends Error {
   constructor(){super('Google sign-in verification failed');}
@@ -130,13 +133,20 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
           actor={...common,role:'REVIEWER',verifiedEmail:identity.verifiedEmail,
             identityProofExpiresAt:new Date(until).toISOString()};
         }else{
-          if(!identity.schoolWorkspaceVerified||!config.authorizeBeta)
+          if(!identity.verifiedEmail.endsWith('@hufs.ac.kr')||!config.authorizeBeta)
             throw new GoogleAuthFlowError();
           const admission=await config.authorizeBeta(identity);
-          if(!admission)throw new GoogleAuthFlowError();
+          if(!admission||admission.googleSubject!==identity.googleSubject
+            ||admission.verifiedEmail!==identity.verifiedEmail
+            ||(admission.proofMethod!=='MAILBOX_OTP'
+              &&admission.proofMethod!=='SIGNED_WORKSPACE')
+            ||(admission.proofMethod==='SIGNED_WORKSPACE'
+              &&!identity.schoolWorkspaceVerified))throw new GoogleAuthFlowError();
           const proof=utc(admission.schoolMailProofExpiresAt);
           if(proof<=at)throw new GoogleAuthFlowError();
           actor={...common,role:'BETA',betaAllowed:true,
+            verifiedSchoolEmail:identity.verifiedEmail,
+            schoolProofMethod:admission.proofMethod,
             schoolMailProofExpiresAt:new Date(Math.min(proof,until)).toISOString()};
         }
         const bearer=randomToken();
@@ -160,6 +170,9 @@ export function createGoogleAuthFlow(config:GoogleAuthConfig){
         const key=digest(bearer);
         const data=await config.store.readSession(key,clock(now()).toISOString());
         if(!data||data.tokenDigest!==key||data.actor.sessionIdHash!==key)return null;
+        if(data.actor.role==='BETA'){
+          if(!config.recheckBeta||!await config.recheckBeta(data.actor))return null;
+        }
         return data.actor;
       }catch{return null;}
     },

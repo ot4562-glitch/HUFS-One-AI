@@ -44,12 +44,22 @@ npm run start:api:local
 - `schoolWorkspaceVerified`는 검증된 `hd=hufs.ac.kr` **및** 확인된 `@hufs.ac.kr` 주소가 동시에 있을 때만 true이다. 일반 Gmail 심사자에게는 별도 공용 초대 등록 권한이 필요하고, 그 밖의 학생/베타 계정은 학교 메일 OTP·베타 allowlist를 추가 검증한다.
 - `google-auth-flow.ts`는 **옵션으로만 활성화되는** `/api/auth/google/start` → `/api/auth/google/callback`과 서버 발급 `__Host-` HttpOnly/Secure/SameSite 쿠키, 5분 만료 상태의 원자적 소비, 로그인 후 CSRF 수령 `GET /api/auth/csrf` 및 서버 세션 철회를 구현한다. 등록 전 REVIEWER는 CSRF 증명을 얻고 초대 등록만 시도할 수 있으며, 등록 후에도 요청마다 초대 기간/철회를 검사한다.
 - `google-auth-store.ts`는 합성 메모리 저장소, `google-auth-postgres.ts`는 `DELETE ... RETURNING` 기반 영속 1회 콜백/세션/철회 어댑터, `infra/sql/20261031_google_auth.sql`은 미적용 migration이다.
+- `beta-admission.ts`·`beta-admission-postgres.ts`·`infra/sql/20261031_beta_admission.sql`은 **Google sub + `@hufs.ac.kr` 메일 + 관리자가 승인한 베타 명단 + 24시간 이내의 증명**을 함께 검증한다. 증명 방식은 Google의 서명된 `hd` 정보 또는 별도 학교 메일 OTP 인증 결과 중 하나이며, 관련 DB 자료는 서버에서만 조회한다. 세션마다 `createBetaSessionRechecker`로 승인·증명 유효성을 재검사해 중간 철회를 즉시 적용한다. OTP 발송·코드 검증·명단 승인 자체는 후속 운영 구성에서 구현한다.
 - **출시 전 필수**: 외부 Google 토큰 엔드포인트의 서버측 authorization code+PKCE 교환 어댑터를 운영 자격증명으로 연결하고, 실제 PG pool/분산 rate-limit·비밀관리·Beta 메일 OTP/allowlist·브라우저 E2E를 통과해야 한다. 현재 `apps/api/src/main.ts`는 OAuth/PG를 주입하지 않아 로컬 401/운영 시작 차단을 유지한다.
 - 검증: `npm run test:api`, `npm run check`, `npm run build:api`, `npm run check:privacy`; 합성 JWT/SQL stub으로 검증하며 실제 Google 자격증명·유료 NCP 호출·사용자 원자료는 사용하지 않는다.
 
+### React UI 연결 계약 (#9 이의상과 교차 검토)
+
+로그인/심사 초대 화면은 이의상 UI 트랙에서 연결한다. 현재 API 경계는 다음과 같다.
+
+1. **브라우저 최상위 탐색**으로 `/api/auth/google/start?intent=REVIEWER` 또는 `intent=BETA`를 요청한다. 서버가 Google 로그인으로 리다이렉트하고, OAuth 상태·PKCE·세션 쿠키는 브라우저 JavaScript에 공개하지 않는다.
+2. 콜백 후 같은 출처의 `/reviewer` 또는 `/`로 이동한다. React 앱은 `credentials: 'include'`로 `GET /api/auth/csrf` 및 `GET /api/auth/session`을 호출한다. 심사자 초대 미등록이면 `/api/auth/session`이 403일 수 있으나, CSRF를 받은 후 `/api/reviewer/invitations/redeem`으로 등록한다.
+3. 심사 초대 코드가 URL fragment로 전달되면 최초 화면 진입 시 **메모리에만 추출하고 URL에서 즉시 제거**한다. 코드/ID 토큰/세션 쿠키를 로컬 저장소나 React 번들에 기록하지 않는다. 상태 변경은 같은 출처 + `x-csrf-token` 요청만 사용한다.
+4. 401/403/409/철회/초대 만료 시 렌더링된 합성 프로필·캐시·진행중 요청을 지우고, 타 탭·타 계정 응답을 섞지 않는다. 실제 React 페이지·모바일 접근성·브라우저 E2E는 UI #9에서 확인한다.
+
 ## 미구현·병합 후속
 
-1. OAuth/PG 어댑터를 실제 운영 앱 인스턴스에 주입하기 전 Google code+PKCE 토큰 교환·외대 메일 OTP/베타 allowlist·다중 인스턴스 세션 철회·인증 rate limit을 연결하고, 익명 HTML/API/storage/preview/직접IP 우회 부정시험을 통과해야 한다. 현재 합성 전용 구현으로 외부 배포 금지.
+1. OAuth/PG 어댑터의 실제 운영 연결 이전에 Google code+PKCE 토큰 교환, 학교 메일 OTP 발송/검증·계정별 승인 자료 입력, 베타 자격 철회 시 세션 무효화, 다중 인스턴스 세션 철회·로그인 rate limit을 연결하고 익명 HTML/API/storage/preview/직접IP 우회 부정시험을 통과한다. 현재 합성 전용 구현으로 외부 배포 금지.
 2. PostgreSQL 저장/거래·공유 철회·동시성 검증 및 UI와 온전한 API E2E. 지금 MemoryApiRepository는 영속 데이터베이스가 아닙니다.
 3. 추천 PR #15 / 공지 PR #16은 기존 CHANGES_REQUESTED 해결·병합 후 공통 API 데이터 생성에 연결합니다.
 4. 이 PR의 LocalTemporalEvidenceIndex는 설계형 로컬 계산 모듈일 뿐 Postgres/RAG API/이미지 OCR이 아닙니다. 공통계약 #18, 수집 #19, OCR/Vision #20, Temporal RAG #21에 따라 별도 구현합니다.
