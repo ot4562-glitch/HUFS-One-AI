@@ -5,3 +5,4 @@ export * from './identity/index.js';
 export * from './ai/index.js';
 export * from './errors/index.js';
 export * from './intake/index.js';
+export * from './evidence/index.js';
