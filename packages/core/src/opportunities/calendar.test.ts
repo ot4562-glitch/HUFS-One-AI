@@ -73,6 +73,38 @@ describe('mini calendar "내 주요 일정"', () => {
     expect(build().undated.map(u => [u.refId, u.reason])).toEqual([['NODATE', 'DEADLINE_UNKNOWN'], ['DATA2', 'DEADLINE_UNKNOWN']]);
   });
 
+  it('(a) academics not shared → UNKNOWN required notices are not calendar entries (PR #50 review)', () => {
+    // Same effect as scopeInputsToGrant(..., ['FEED','NOTICES']) from #49: openRequirementIds = null.
+    const hidden = {...student, campus:'SEOUL', openRequirementIds:null};
+    const c = buildCalendar(composeFeed(profile, [], {asOf:ASOF}), composeNotices(hidden, noticeInputs, {asOf:ASOF}), noticeInputs, {asOf:ASOF});
+    expect(c.entries.filter(e => e.source === 'NOTICE').map(e => e.refId)).toEqual(['SCH']); // only the applicable scholarship
+    expect(c.needsConfirmation.map(x => x.refId)).toEqual(['CERT', 'EXAM', 'LATE', 'NODATE']);
+    expect(c.needsConfirmation.find(x => x.refId === 'EXAM')?.unknownScope).toEqual(['academicStatus']);
+    expect(c.entries.some(e => e.kind === 'EVENT' && e.source === 'NOTICE')).toBe(false); // no exam date revealed
+  });
+
+  it('(b) scholarship with unknown conditions is "needs confirmation", not a PERSONAL entry', () => {
+    const sch = [notice('SCH-GPA', {category:'SCHOLARSHIP', studentDeadline:D(5), scholarshipConditions:['직전학기 평점 3.5 이상']})];
+    const c = build({}, sch, []);
+    expect(c.entries).toEqual([]);
+    expect(c.needsConfirmation).toEqual([{refId:'SCH-GPA', title:'가상 공지 SCH-GPA', unknownScope:['scholarshipConditions']}]);
+  });
+
+  it('(c) applicable (YES) exam and student deadlines stay on the calendar', () => {
+    const c = build();
+    expect(c.entries.filter(e => e.refId === 'EXAM').map(e => e.kind)).toEqual(['STUDENT_DEADLINE', 'EVENT']);
+    expect(c.needsConfirmation).toEqual([]);
+  });
+
+  it('a duplicated notice id is excluded entirely (fail closed), regardless of order', () => {
+    const dup = [notice('DUP', {requirementRefs:['REQ-EXAM'], studentDeadline:D(4)}), notice('DUP', {title:'다른 판', requirementRefs:['REQ-EXAM'], studentDeadline:D(9)})];
+    for (const list of [dup, [...dup].reverse()]) {
+      const c = build({}, [...noticeInputs, ...list], []);
+      expect(c.entries.some(e => e.refId === 'DUP')).toBe(false);
+      expect(c.ambiguousNoticeIds).toEqual(['DUP']);
+    }
+  });
+
   it('respects the look-ahead window and includes saved opportunities only while visible', () => {
     expect(build().entries.some(e => e.refId === 'FAR')).toBe(false);
     expect(build({daysAhead:120}).entries.some(e => e.refId === 'FAR')).toBe(true);

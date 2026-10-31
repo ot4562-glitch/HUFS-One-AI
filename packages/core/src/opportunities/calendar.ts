@@ -10,8 +10,11 @@ import type {RankedOpportunity} from './rank.js';
  *   entries and are never presented as deadlines.
  * - Admin report deadlines are never shown (not a student task). Unconfirmed / rolling dates are listed
  *   in `undated` instead of being placed on a day.
- * - Only notices that are shown as important (not GENERAL, not review-pending, scope not NO) and
- *   opportunities visible in the feed (or explicitly saved and still visible) are included.
+ * - Only notices that are important AND confirmed to apply (`appliesTo === 'YES'`, not GENERAL, not
+ *   review-pending) become calendar entries. A notice whose applicability is UNKNOWN (e.g. academics not
+ *   shared, scholarship conditions unknown) is listed in `needsConfirmation` with no date and no badge.
+ * - Opportunities visible in the feed (or explicitly saved and still visible) are included.
+ * - A notice id that appears more than once (inputs or evaluations) is ambiguous and excluded entirely.
  */
 export type CalendarImportance = 'CRITICAL'|'REQUIRED'|'PERSONAL'|'RECOMMENDED'|'SAVED';
 export type CalendarEntryKind = 'STUDENT_DEADLINE'|'APPLY_DEADLINE'|'EVENT';
@@ -43,6 +46,14 @@ export interface UndatedItem {
   importance:CalendarImportance;
 }
 
+/** Important notice whose applicability to this student is not confirmed: no date, no importance badge. */
+export interface NeedsConfirmationItem {
+  refId:string;
+  title:string;
+  /** Which student facts are missing (e.g. 'academicStatus', 'scholarshipConditions', 'graduationTerm'). */
+  unknownScope:string[];
+}
+
 export interface CalendarOptions {
   asOf:string;
   /** Days ahead to include (default 60). */
@@ -59,6 +70,9 @@ export interface CalendarResult {
   to:string;
   entries:CalendarEntry[];
   undated:UndatedItem[];
+  needsConfirmation:NeedsConfirmationItem[];
+  /** Notice ids seen more than once in inputs or evaluations; excluded (fail closed). */
+  ambiguousNoticeIds:string[];
 }
 
 const DAY_MS = 86_400_000;
@@ -90,12 +104,22 @@ export function buildCalendar(
     entries.push({...e, id:`${e.source}:${e.refId}:${e.kind}:${n}`, seoulDate:seoulDate(e.at), overdue});
   };
 
-  // Notices: only those shown as important to this student.
-  const inputById = new Map(noticeInputs.map(n => [n.id, n]));
+  // Notices: ids must be unique across inputs and evaluations, otherwise title/dates could mix revisions.
+  const count = (ids:readonly string[]) => ids.reduce((m, id) => m.set(id, (m.get(id) ?? 0) + 1), new Map<string, number>());
+  const inputCount = count(noticeInputs.map(n => n.id));
+  const evalCount = count(notices.evaluations.map(e => e.noticeId));
+  const ambiguous = new Set([...inputCount, ...evalCount].filter(([, c]) => c > 1).map(([id]) => id));
+  const inputById = new Map(noticeInputs.filter(n => !ambiguous.has(n.id)).map(n => [n.id, n]));
+  const needsConfirmation:NeedsConfirmationItem[] = [];
   for (const ev of notices.evaluations) {
+    if (ambiguous.has(ev.noticeId)) continue;
     if (ev.appliesTo === 'NO' || ev.reviewPending || ev.priority === 'GENERAL') continue;
     const n = inputById.get(ev.noticeId);
     if (!n) continue;
+    if (ev.appliesTo !== 'YES') {
+      needsConfirmation.push({refId:n.id, title:n.title, unknownScope:[...ev.unknownScope]});
+      continue;
+    }
     const importance:CalendarImportance = ev.priority === 'CRITICAL_DUE' ? 'CRITICAL' : ev.priority === 'ACADEMIC_REQUIRED' ? 'REQUIRED' : 'PERSONAL';
     const base = {source:'NOTICE' as const, refId:n.id, title:n.title, importance, evidenceRefs:[...n.evidenceRefs]};
     if (n.studentDeadline !== undefined) push({...base, kind:'STUDENT_DEADLINE', at:n.studentDeadline}, 0);
@@ -121,5 +145,9 @@ export function buildCalendar(
 
   entries.sort((a, b) => (Date.parse(a.at) - Date.parse(b.at)) || (IMPORTANCE_RANK[a.importance] - IMPORTANCE_RANK[b.importance]) || byCodeUnit(a.id, b.id));
   undated.sort((a, b) => (IMPORTANCE_RANK[a.importance] - IMPORTANCE_RANK[b.importance]) || byCodeUnit(`${a.source}:${a.refId}`, `${b.source}:${b.refId}`));
-  return {asOf:options.asOf, from:new Date(from).toISOString(), to:new Date(to).toISOString(), entries, undated};
+  needsConfirmation.sort((a, b) => byCodeUnit(a.refId, b.refId));
+  return {
+    asOf:options.asOf, from:new Date(from).toISOString(), to:new Date(to).toISOString(),
+    entries, undated, needsConfirmation, ambiguousNoticeIds:[...ambiguous].sort(byCodeUnit),
+  };
 }
