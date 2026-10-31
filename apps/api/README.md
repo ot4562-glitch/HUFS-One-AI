@@ -41,7 +41,7 @@ npm run start:api:local
 
 1. 실제 Google OIDC 서명·nonce/PKCE, 학교 메일 수신권 OTP/Workspace hd 확인, 베타 계정 allowlist 및 세션 영속 철회/쿠키. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.
 2. PostgreSQL 저장/거래·공유 철회·동시성 검증 및 UI와 온전한 API E2E. 지금 MemoryApiRepository는 영속 데이터베이스가 아닙니다.
-3. 추천 PR #15 / 공지 PR #16은 기존 CHANGES_REQUESTED 해결·병합 후 공통 API 데이터 생성에 연결합니다.
+3. 추천 PR #15는 미래 게시 차단 수정 후 기술 총괄 코어 승인 기록이 있지만 UI 독립 리뷰가 남아 있습니다. 공지 PR #16의 비학업 후보 격리는 수정됐지만 `overdue` 공식 wire와 [공통 계약 #44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)·독립 리뷰가 선행돼야 합니다. 신뢰형 출처 #40 및 추천 설명 #41은 의존 스택으로 별도 검증하며, [설명 wire #47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)도 실제 API/UI 소비 연동 전 기능 완료가 아닙니다. 합성 코드 통과만으로 실제 실학생 데이터나 운영 API 연결을 허용하지 않습니다.
 4. 이 PR의 LocalTemporalEvidenceIndex는 설계형 로컬 계산 모듈일 뿐 Postgres/RAG API/이미지 OCR이 아닙니다. 공통계약 #18, 수집 #19, OCR/Vision #20, Temporal RAG #21에 따라 별도 구현합니다.
 5. 실제 NCP·Laya·CLOVA/OCR 비용은 #22에서 승인·실측 전까지 사용하지 않습니다. 실제 개인정보와 외부 공식 포스터 사용권한도 별도 확인합니다.
 
