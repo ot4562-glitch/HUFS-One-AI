@@ -5,7 +5,7 @@ import {
 import type {ReviewerSandboxClientAction,ReviewerSandboxClientResult}
   from './reviewer-sandbox-contract.js';
 import {
-  AiTaskPathSchema, ApiErrorSchema, DemoContextSchema, DemoProfilesResponseSchema,
+  AiTaskPathSchema, AiTaskSchema, TopicCodeSchema, ApiErrorSchema, DemoContextSchema, DemoProfilesResponseSchema,
   DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
 } from '@hufs-one/contracts';
 import type {
@@ -74,6 +74,23 @@ export function googleSignInPath(intent:'REVIEWER'|'BETA'):string {
 
 const AiJobAcceptedSchema = z.strictObject({
   jobId:z.string().min(1),state:z.literal('NEEDS_REVIEW'),provenance:z.literal('MOCK'),
+});
+const AiJobCandidateSchema=z.strictObject({
+  task:AiTaskSchema,reviewState:z.literal('NEEDS_REVIEW'),
+  provenance:z.literal('MOCK'),
+  citations:z.array(z.strictObject({
+    sourceToken:z.string().min(1).max(128),
+    paragraphId:z.string().min(1).max(128),
+    quote:z.string().min(1).max(600),
+    topicCode:TopicCodeSchema.optional(),
+  })).max(6),
+});
+const AiJobResponseSchema=z.strictObject({
+  jobId:z.string().min(1).max(100),state:z.literal('NEEDS_REVIEW'),
+  task:AiTaskSchema,createdAt:z.iso.datetime({offset:true}),
+  candidate:AiJobCandidateSchema,
+}).refine(v=>v.task===v.candidate.task,{
+  message:'Cross-task model candidate cannot be rendered',
 });
 
 const MAX_RESPONSE_BYTES=256*1024;
@@ -332,6 +349,14 @@ export class HufsApiClient {
       method:'POST',csrf:csrf.csrfToken,signal,
       body:{packetRef,idempotencyKey,...(contextId?{contextId}:{})},
     });
+  }
+
+  async getSyntheticAiJob(jobId:string,signal?:AbortSignal) {
+    if(typeof jobId!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(jobId))
+      throw new HufsApiError('INVALID_INPUT',422);
+    // This wire DTO can ONLY represent a mock NEEDS_REVIEW candidate.
+    // A model response never becomes official eligibility or graduation truth.
+    return this.request('/api/ai/jobs/'+jobId,AiJobResponseSchema,{signal});
   }
 
   async logout(signal?:AbortSignal):Promise<void> {
