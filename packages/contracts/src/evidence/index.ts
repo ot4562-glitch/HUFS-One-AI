@@ -46,11 +46,17 @@ const ScopeSchema=z.strictObject({
 export type EvidenceScope=z.infer<typeof ScopeSchema>;
 export const EvidenceScopeSchema=ScopeSchema;
 export interface EvidenceActorScope {
-  campus?:string;college?:string;enrollmentState?:string;admissionType?:string;
-  majorCode?:string; // legacy single official major, only when no majorRoles restriction
-  majors?:readonly {code:string;role:'PRIMARY'|'DOUBLE'|'MINOR'}[];
-  cohort?:number;
-  graduationTerm?:string;graduationTermVerified?:boolean;
+  // Explicit undefined is accepted at this server-only boundary to represent
+  // unverified/withheld facts; the matcher treats them as missing, never YES.
+  campus?:string|undefined;
+  college?:string|undefined;
+  enrollmentState?:string|undefined;
+  admissionType?:string|undefined;
+  majorCode?:string|undefined; // legacy single official major, only without a role restriction
+  majors?:readonly {code:string;role:'PRIMARY'|'DOUBLE'|'MINOR'}[]|undefined;
+  cohort?:number|undefined;
+  graduationTerm?:string|undefined;
+  graduationTermVerified?:boolean|undefined;
 }
 
 /** Permission is independent. This checks ONLY trusted, reviewed academic scope.
