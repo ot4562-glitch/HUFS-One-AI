@@ -40,7 +40,7 @@ export class HufsApiClient {
 
   private async request<T>(
     path: string, schema: z.ZodType<T>,
-    options: {method?: 'GET'|'POST'; body?: unknown; signal?: AbortSignal; csrf?: string} = {},
+    options: {method?: 'GET'|'POST'; body?: unknown; signal?: AbortSignal|undefined; csrf?: string|undefined} = {},
   ): Promise<T> {
     if (!validApiPath(path)) throw new HufsApiError('INVALID_INPUT',422);
     const method=options.method ?? 'GET';
@@ -117,12 +117,13 @@ export class HufsApiClient {
     return this.request('/api/reviewer/capabilities',ReviewerCapabilitiesSchema,{signal});
   }
 
-  searchEvidence(query:string,asOf?:string,signal?:AbortSignal) {
-    if(query.length<1||query.length>200)throw new HufsApiError('INVALID_INPUT',422);
-    const params=new URLSearchParams({q:query});
-    if(asOf)params.set('asOf',asOf);
-    // The browser cannot supply actorId, permissionRef or sourceId.
-    return this.request('/api/evidence/search?'+params.toString(),z.unknown(),{signal});
+  /**
+   * Fail closed until PR #33's authoritative RetrievalEnvelopeVNextSchema
+   * and PR #34's permission-first route are merged and reviewed.
+   * Never expose unvalidated evidence as JSON in the browser.
+   */
+  async searchEvidence(_query:string,_asOf?:string,_signal?:AbortSignal):Promise<never> {
+    throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
   }
 
   async submitSyntheticAi(
