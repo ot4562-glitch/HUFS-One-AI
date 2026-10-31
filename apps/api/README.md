@@ -42,12 +42,14 @@ npm run start:api:local
 - `apps/api/src/modules/auth/google-oidc.ts`는 서버 생성 `state`·`nonce`·PKCE S256 인증 요청, 5분 만료 callback state digest 검사, 서명된 Google ID 토큰의 JWKS/RS256·issuer·앱 audience·nonce·iat/exp·email_verified·Google `sub` 검증을 제공한다.
 - 운영 JWKS 주소는 Google의 고정 공개키 엔드포인트이고, 테스트는 **로컬 RSA 키와 합성 JWT만** 사용한다. 검증에 성공해도 역할·베타 허용·세션이 자동 생성되지 않는다.
 - `schoolWorkspaceVerified`는 검증된 `hd=hufs.ac.kr` **및** 확인된 `@hufs.ac.kr` 주소가 동시에 있을 때만 true이다. 일반 Gmail 심사자에게는 별도 공용 초대 등록 권한이 필요하고, 그 밖의 학생/베타 계정은 학교 메일 OTP·베타 allowlist를 추가 검증한다.
-- **출시 전 필수**: 신뢰된 서버가 OAuth callback state를 원자적으로 1회 소비하고 Google token endpoint에서 authorization code + PKCE verifier를 교환한 뒤, 이 모듈로 ID 토큰을 확인한다. 이후 서버측 세션(httpOnly Secure 쿠키, CSRF, 만료·철회, 다중 프로세스 DB)과 리뷰어 invitation/학생 OTP gate를 연결해야 한다. `apps/api/src/main.ts`의 로컬 401 전면 차단 및 운영 차단은 유지한다.
-- 검증: `npm run test:api`, `npm run typecheck`; 실제 Google 자격증명·유료 NCP 호출·사용자 원자료는 사용하지 않는다.
+- `google-auth-flow.ts`는 **옵션으로만 활성화되는** `/api/auth/google/start` → `/api/auth/google/callback`과 서버 발급 `__Host-` HttpOnly/Secure/SameSite 쿠키, 5분 만료 상태의 원자적 소비, 로그인 후 CSRF 수령 `GET /api/auth/csrf` 및 서버 세션 철회를 구현한다. 등록 전 REVIEWER는 CSRF 증명을 얻고 초대 등록만 시도할 수 있으며, 등록 후에도 요청마다 초대 기간/철회를 검사한다.
+- `google-auth-store.ts`는 합성 메모리 저장소, `google-auth-postgres.ts`는 `DELETE ... RETURNING` 기반 영속 1회 콜백/세션/철회 어댑터, `infra/sql/20261031_google_auth.sql`은 미적용 migration이다.
+- **출시 전 필수**: 외부 Google 토큰 엔드포인트의 서버측 authorization code+PKCE 교환 어댑터를 운영 자격증명으로 연결하고, 실제 PG pool/분산 rate-limit·비밀관리·Beta 메일 OTP/allowlist·브라우저 E2E를 통과해야 한다. 현재 `apps/api/src/main.ts`는 OAuth/PG를 주입하지 않아 로컬 401/운영 시작 차단을 유지한다.
+- 검증: `npm run test:api`, `npm run check`, `npm run build:api`, `npm run check:privacy`; 합성 JWT/SQL stub으로 검증하며 실제 Google 자격증명·유료 NCP 호출·사용자 원자료는 사용하지 않는다.
 
 ## 미구현·병합 후속
 
-1. Google OAuth callback 상태의 영속·원자적 1회 소비, authorization code+PKCE 토큰 교환을 실제 인증 경로에 연결하고, 학교 메일 OTP·베타 allowlist·세션 영속 철회/쿠키를 구현한다. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.
+1. OAuth/PG 어댑터를 실제 운영 앱 인스턴스에 주입하기 전 Google code+PKCE 토큰 교환·외대 메일 OTP/베타 allowlist·다중 인스턴스 세션 철회·인증 rate limit을 연결하고, 익명 HTML/API/storage/preview/직접IP 우회 부정시험을 통과해야 한다. 현재 합성 전용 구현으로 외부 배포 금지.
 2. PostgreSQL 저장/거래·공유 철회·동시성 검증 및 UI와 온전한 API E2E. 지금 MemoryApiRepository는 영속 데이터베이스가 아닙니다.
 3. 추천 PR #15 / 공지 PR #16은 기존 CHANGES_REQUESTED 해결·병합 후 공통 API 데이터 생성에 연결합니다.
 4. 이 PR의 LocalTemporalEvidenceIndex는 설계형 로컬 계산 모듈일 뿐 Postgres/RAG API/이미지 OCR이 아닙니다. 공통계약 #18, 수집 #19, OCR/Vision #20, Temporal RAG #21에 따라 별도 구현합니다.
