@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {OpportunitySchema, type Opportunity} from '@hufs-one/contracts';
+import {CalendarResultSchema, OpportunitySchema, type Opportunity} from '@hufs-one/contracts';
 import {buildCalendar, composeFeed, seoulDate, type RecommendationProfile} from './index.js';
 import {composeNotices, type Notice, type NoticeStudent} from '../notices/index.js';
 
@@ -148,8 +148,7 @@ describe('mini calendar "내 주요 일정"', () => {
 });
 
 describe('calendar output vs contracts CalendarResultSchema (#53)', () => {
-  it('passes the wire schema for normal, hidden-academics and duplicate-evidence inputs', async () => {
-    const {CalendarResultSchema} = await import('@hufs-one/contracts');
+  it('passes the wire schema for normal, hidden-academics and duplicate-evidence inputs', () => {
     expect(CalendarResultSchema.safeParse(build()).success).toBe(true);
     const hidden = {...student, campus:'SEOUL', openRequirementIds:null};
     expect(CalendarResultSchema.safeParse(buildCalendar(composeFeed(profile, opportunities, {asOf:ASOF}), composeNotices(hidden, noticeInputs, {asOf:ASOF}), noticeInputs, {asOf:ASOF})).success).toBe(true);
