@@ -54,6 +54,7 @@ export class DemoController {
   private current:AbortController|null=null;
   private readonly listeners=new Set<()=>void>();
   private disposed=false;
+  private endingSession=false;
   private profileGeneration=0;
 
   constructor(private readonly api:DemoClientPort,private readonly runId:string) {
@@ -76,11 +77,11 @@ export class DemoController {
   }
 
   async loadProfiles():Promise<void> {
-    if(this.disposed)return;
+    if(this.disposed||this.endingSession)return;
     const generation=++this.profileGeneration;
     try {
       const profiles=await this.api.listProfiles();
-      if(this.disposed||generation!==this.profileGeneration)return;
+      if(this.disposed||this.endingSession||generation!==this.profileGeneration)return;
       // The injected transport may be replaced: validate its data independently.
       const parsed=DemoProfilesResponseSchema.safeParse({profiles});
       if(!parsed.success)throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
@@ -88,6 +89,7 @@ export class DemoController {
     } catch(error) {
       if(this.disposed||generation!==this.profileGeneration)return;
       const failure=statusForError(error);
+      if(failure.status==='SIGNED_OUT')this.endingSession=true;
       this.emit({...this.state,profiles:[],context:null,snapshot:null,
         status:failure.status,error:failure.code});
     }
@@ -95,7 +97,7 @@ export class DemoController {
 
   /** Abort the old request and erase the previous subject BEFORE any new network call. */
   async select(subject:SubjectAlias):Promise<void> {
-    if(this.disposed)return;
+    if(this.disposed||this.endingSession)return;
     this.abort();
     const epoch=this.state.epoch+1;
     const abort=new AbortController();
@@ -112,7 +114,7 @@ export class DemoController {
       this.emit({...this.state,status:'REVOKED',error:'FORBIDDEN'});
       return;
     }
-    const current=()=>!this.disposed && !abort.signal.aborted
+    const current=()=>!this.disposed && !this.endingSession && !abort.signal.aborted
       && this.current===abort && this.state.epoch===epoch;
     try {
       const rawContext=await this.api.createContext(subject,this.runId,abort.signal);
@@ -134,12 +136,36 @@ export class DemoController {
     } catch(error) {
       if(!current())return;
       const failure=statusForError(error);
+      if(failure.status==='SIGNED_OUT')this.endingSession=true;
       this.emit({...this.state,status:failure.status,
         snapshot:null,context:null,error:failure.code});
     }
   }
 
+  /**
+   * Report a failed section or REVIEWER sandbox call only for the exact
+   * epoch+context that issued it. A delayed 403 from an old student may not
+   * erase a different student's newer screen. 401 always requires a fresh
+   * authenticated app/controller; no in-memory session reuse is permitted.
+   */
+  applyContextError(contextId:string,requestEpoch:number,error:unknown):boolean {
+    if(this.disposed||this.endingSession||this.state.context?.contextId!==contextId
+      ||this.state.epoch!==requestEpoch)return false;
+    const failure=statusForError(error);
+    this.abort();
+    this.profileGeneration++;
+    if(failure.status==='SIGNED_OUT')this.endingSession=true;
+    this.emit({
+      ...this.state,epoch:this.state.epoch+1,
+      status:failure.status,context:null,snapshot:null,error:failure.code,
+      profiles:failure.status==='SIGNED_OUT'||failure.status==='REVOKED'
+        ?[]:this.state.profiles,
+    });
+    return true;
+  }
+
   retry():Promise<void> {
+    if(this.endingSession)return Promise.resolve();
     return this.state.selected && ['CONFLICT','UNAVAILABLE','INVALID'].includes(this.state.status)
       ?this.select(this.state.selected):Promise.resolve();
   }
@@ -151,8 +177,10 @@ export class DemoController {
       context:null,snapshot:null,error:null});
   }
 
-  /** On logout we clear on-screen data immediately, then require real server revocation. */
+  /** On logout, prevent all new requests until a NEW verified controller is created. */
   async logout():Promise<void> {
+    if(this.disposed||this.endingSession)return;
+    this.endingSession=true;
     this.clear();
     try {
       await this.api.logout();
