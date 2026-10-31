@@ -1,4 +1,6 @@
 import {createHmac,randomBytes,randomInt,timingSafeEqual} from 'node:crypto';
+import type {AuthAttemptLimiter} from './auth-attempt-limiter.js';
+import {ApiFailure} from './gates.js';
 
 const SCHOOL_MAIL=/^[^\s@]{1,64}@hufs\.ac\.kr$/;
 const GOOGLE_SUB=/^[\x21-\x7e]{1,255}$/;
@@ -110,14 +112,28 @@ export function createSchoolMailProofService(options:{
   store:SchoolMailChallengeStore;
   sender:SchoolMailSender;
   approver:SchoolProofApprover;
+  /** Mandatory distributed per-Google-account limits, shared by all API replicas. */
+  attemptLimiter:AuthAttemptLimiter;
   /** 32+ random bytes kept in a protected server runtime only. */
   digestKey:Buffer;
   now?:()=>Date;
 }){
   if(!Buffer.isBuffer(options.digestKey)||options.digestKey.length<32)
     throw new Error('School mail digest key must be server-owned');
+  if(typeof options.attemptLimiter?.consume!=='function')
+    throw new Error('A shared school mail attempt limiter is required');
   const key=Buffer.from(options.digestKey);
   const now=options.now??(()=>new Date());
+  const reserve=async(kind:'SCHOOL_OTP_ISSUE'|'SCHOOL_OTP_CONFIRM',
+    googleSubject:string,at:Date):Promise<void>=>{
+    let permitted=false;
+    try{
+      permitted=await options.attemptLimiter.consume({
+        kind,identifier:'google:'+googleSubject,at:at.toISOString(),
+      });
+    }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    if(!permitted)throw new ApiFailure('RATE_LIMITED');
+  };
   const current=()=>{
     const value=now();
     if(!(value instanceof Date)||!Number.isFinite(value.getTime()))
@@ -137,6 +153,8 @@ export function createSchoolMailProofService(options:{
         });
       }catch{/* Deny on an unavailable or malformed authorization ledger. */}
       if(!allowed)throw new SchoolMailProofError();
+      // Reserve atomically across replicas before persisting or sending a code.
+      await reserve('SCHOOL_OTP_ISSUE',input.googleSubject,at);
       const challengeId=randomBytes(16).toString('base64url');
       const code=String(randomInt(0,100_000_000)).padStart(8,'0');
       const expiresAt=new Date(at.getTime()+TEN_MINUTES).toISOString();
@@ -160,8 +178,11 @@ export function createSchoolMailProofService(options:{
     }):Promise<boolean>{
       if(!ID.test(input.challengeId)||!validate(input.googleSubject,input.schoolEmail)
         ||!CODE.test(input.code))return false;
+      const at=current();
+      // No second challenge may reset the per-actor guessing budget.
+      // The rate limiter's denial/outage must remain visible as 429/503.
+      await reserve('SCHOOL_OTP_CONFIRM',input.googleSubject,at);
       try{
-        const at=current();
         const accepted=await options.store.check({
           ...input,proofDigest:digest(
             key,input.challengeId,input.googleSubject,input.schoolEmail,input.code),

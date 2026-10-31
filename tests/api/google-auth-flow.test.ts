@@ -86,7 +86,7 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;
   });
   const mailService=createSchoolMailProofService({
     store:new MemorySchoolMailChallengeStore(),digestKey:Buffer.alloc(32,8),
-    now:()=>current,
+    attemptLimiter:new MemoryAuthAttemptLimiter(),now:()=>current,
     sender:{send:async item=>{delivered=item.code;}},
     approver:options.fullAdmission?betaStore:{
       mayIssue:async()=>true,confirm:async()=>true,
@@ -437,6 +437,44 @@ describe('Google OAuth callback, cookie binding and one-time session',()=>{
     expect((await confirm(h.mailCode())).json().verified).toBe(false);
     // OTP alone does not mint BETA nor bypass reviewer enrollment.
     expect((await h.app.inject({url:'/api/auth/session',headers:{cookie:session}})).statusCode).toBe(403);
+  });
+
+  it('returns HTTP 429 after shared school OTP issue/confirm budgets are exhausted',async()=>{
+    const h=harness({withMail:true});
+    const loginAttempt=await h.begin();
+    const login=await h.complete(loginAttempt.state,loginAttempt.binding);
+    expect(login.statusCode).toBe(303);
+    const session=cookie(login,'__Host-hufs_session');
+    const csrf=(await h.app.inject({
+      url:'/api/auth/csrf',headers:{cookie:session},
+    })).json().csrfToken as string;
+    const headers={cookie:session,origin:ORIGIN,'x-csrf-token':csrf};
+    const request=()=>h.app.inject({
+      method:'POST',url:'/api/auth/school-mail/request',headers,
+      payload:{schoolEmail:'student@hufs.ac.kr'},
+    });
+    const first=await request();
+    expect(first.statusCode).toBe(202);
+    const bad=h.mailCode()==='99999999'?'88888888':'99999999';
+    const confirm=()=>h.app.inject({
+      method:'POST',url:'/api/auth/school-mail/confirm',headers,
+      payload:{schoolEmail:'student@hufs.ac.kr',
+        challengeId:first.json().challengeId,code:bad},
+    });
+    for(let attempt=0;attempt<10;attempt++){
+      const response=await confirm();
+      expect(response.statusCode).toBe(200);
+      expect(response.json().verified).toBe(false);
+    }
+    const blockedConfirm=await confirm();
+    expect(blockedConfirm.statusCode).toBe(429);
+    expect(blockedConfirm.json().code).toBe('RATE_LIMITED');
+    expect(blockedConfirm.headers['cache-control']).toBe('no-store');
+    expect((await request()).statusCode).toBe(202);
+    expect((await request()).statusCode).toBe(202);
+    const blockedIssue=await request();
+    expect(blockedIssue.statusCode).toBe(429);
+    expect(blockedIssue.json().code).toBe('RATE_LIMITED');
   });
 
   it('rate-limits repeated Google login starts before persisting new OAuth states',async()=>{

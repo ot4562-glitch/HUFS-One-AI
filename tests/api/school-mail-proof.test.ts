@@ -1,4 +1,6 @@
 import {describe,expect,it,vi} from 'vitest';
+import {MemoryAuthAttemptLimiter} from
+  '../../apps/api/src/modules/auth/auth-attempt-limiter.js';
 import {
   createSchoolMailProofService,MemorySchoolMailChallengeStore,SchoolMailProofError,
 } from '../../apps/api/src/modules/auth/school-mail-proof.js';
@@ -26,6 +28,7 @@ function harness(options:{approved?:boolean;deliveryFails?:boolean}={}){
   });
   const service=createSchoolMailProofService({
     store,sender:{send:sender},digestKey:KEY,now:()=>clock,
+    attemptLimiter:new MemoryAuthAttemptLimiter(),
     approver:{
       mayIssue:async(input)=>options.approved!==false
         &&input.googleSubject===SUBJECT&&input.schoolEmail===SCHOOL,
@@ -95,7 +98,7 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
     const issued=[] as Array<{challengeId:string}>;
     for(let i=0;i<3;i++)issued.push(await h.service.issue(holder()));
     expect(new Set(issued.map(x=>x.challengeId)).size).toBe(3);
-    await expect(h.service.issue(holder())).rejects.toBeInstanceOf(SchoolMailProofError);
+    await expect(h.service.issue(holder())).rejects.toMatchObject({code:'RATE_LIMITED'});
     expect(h.sender).toHaveBeenCalledTimes(3);
     await expect(h.service.issue({...holder(),schoolEmail:'other@hufs.ac.kr'}))
       .rejects.toBeInstanceOf(SchoolMailProofError);
@@ -115,6 +118,7 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
     expect(h.sender).not.toHaveBeenCalled();
     expect(()=>createSchoolMailProofService({
       store:h.store,sender:{send:async()=>{}},
+      attemptLimiter:new MemoryAuthAttemptLimiter(),
       approver:{mayIssue:async()=>true,confirm:async()=>true},digestKey:Buffer.alloc(8),
     })).toThrow();
   });
@@ -135,6 +139,7 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
     const sender=vi.fn(async()=>{});
     const service=createSchoolMailProofService({
       store,sender:{send:sender},digestKey:KEY,now:()=>START,
+      attemptLimiter:new MemoryAuthAttemptLimiter(),
       approver:{
         mayIssue:async()=>{throw new Error('Approval store disconnected');},
         confirm:async()=>true,
@@ -168,12 +173,96 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
       },
       sender:{send:async item=>{delivered=item.code;}},
       approver:{mayIssue:async()=>true,confirm:async()=>true},digestKey:KEY,now:()=>START,
+      attemptLimiter:new MemoryAuthAttemptLimiter(),
     });
     const result=await service.issue(holder());
     expect(collected[0]?.proofDigest).toMatch(/^[a-f0-9]{64}$/);
     expect(JSON.stringify(collected)).not.toContain(delivered);
     expect(await service.verify({...holder(),challengeId:result.challengeId,
       code:delivered})).toBe(true);
+  });
+});
+
+describe('shared school OTP attempt limits across API replicas',()=>{
+  it('refuses startup without an injected shared limiter',()=>{
+    const missing={
+      store:new MemorySchoolMailChallengeStore(),
+      sender:{send:async()=>{}},digestKey:KEY,now:()=>START,
+      approver:{mayIssue:async()=>true,confirm:async()=>true},
+    };
+    expect(()=>createSchoolMailProofService(
+      missing as unknown as Parameters<typeof createSchoolMailProofService>[0],
+    )).toThrow(/limiter/i);
+  });
+
+  it('denies limiter failure before storing, sending or checking a school OTP',async()=>{
+    let accessed=0,sent=0;
+    const service=createSchoolMailProofService({
+      digestKey:KEY,now:()=>START,
+      store:{
+        issue:async()=>{accessed++;return true;},
+        check:async()=>{accessed++;return false;},
+        cancel:async()=>{},
+      },
+      sender:{send:async()=>{sent++;}},
+      approver:{mayIssue:async()=>true,confirm:async()=>true},
+      attemptLimiter:{consume:async()=>{throw new Error('distributed store unavailable');}},
+    });
+    await expect(service.issue(holder())).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE'});
+    await expect(service.verify({
+      ...holder(),challengeId:'A'.repeat(22),code:'12345678',
+    })).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE'});
+    expect(accessed).toBe(0);
+    expect(sent).toBe(0);
+  });
+
+  it('caps ten valid-format OTP guesses across changed challenges and two services',async()=>{
+    const limiter=new MemoryAuthAttemptLimiter();
+    let checks=0,clock=new Date(START);
+    const make=()=>createSchoolMailProofService({
+      digestKey:KEY,now:()=>clock,attemptLimiter:limiter,
+      store:{issue:async()=>true,check:async()=>{checks++;return false;},cancel:async()=>{}},
+      sender:{send:async()=>{}},
+      approver:{mayIssue:async()=>true,confirm:async()=>true},
+    });
+    const replicas=[make(),make()];
+    const input=(n:number,subject=SUBJECT)=>({
+      googleSubject:subject,schoolEmail:SCHOOL,
+      challengeId:String.fromCharCode(65+n%3).repeat(22),code:'12345678',
+    });
+    for(let n=0;n<10;n++)
+      expect(await replicas[n%2]!.verify(input(n))).toBe(false);
+    expect(checks).toBe(10);
+    await expect(replicas[0]!.verify(input(10)))
+      .rejects.toMatchObject({code:'RATE_LIMITED'});
+    expect(checks).toBe(10);
+    expect(await replicas[1]!.verify(input(10,'another-subject'))).toBe(false);
+    clock=new Date(START.getTime()+10*60_000);
+    expect(await replicas[0]!.verify(input(10))).toBe(false);
+    expect(checks).toBe(12);
+  });
+
+  it('caps three OTP issues before challenge insert or email across two services',async()=>{
+    const limiter=new MemoryAuthAttemptLimiter();
+    let issues=0,sends=0,clock=new Date(START);
+    const make=()=>createSchoolMailProofService({
+      digestKey:KEY,now:()=>clock,attemptLimiter:limiter,
+      store:{issue:async()=>{issues++;return true;},check:async()=>false,cancel:async()=>{}},
+      sender:{send:async()=>{sends++;}},
+      approver:{mayIssue:async()=>true,confirm:async()=>true},
+    });
+    const replicas=[make(),make()];
+    for(let n=0;n<3;n++)
+      await expect(replicas[n%2]!.issue(holder())).resolves.toHaveProperty('challengeId');
+    await expect(replicas[1]!.issue(holder()))
+      .rejects.toMatchObject({code:'RATE_LIMITED'});
+    expect(issues).toBe(3);
+    expect(sends).toBe(3);
+    await replicas[0]!.issue({googleSubject:'another-subject',schoolEmail:SCHOOL});
+    expect(issues).toBe(4);
+    clock=new Date(START.getTime()+60*60_000);
+    await replicas[1]!.issue(holder());
+    expect(issues).toBe(5);
   });
 });
 
