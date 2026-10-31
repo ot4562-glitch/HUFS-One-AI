@@ -82,6 +82,15 @@ describe('TASK-19 SQL append-only revisions and atomic cross-instance invalidati
     expect(x.calls.at(-1)?.sql.trim()).toBe('COMMIT');
     expect(x.released).toHaveLength(1);
   });
+  it('rolls back a revision when its outbox deliveries cannot be inserted',async()=>{
+    const x=db({head:'rev-1',headAt:T(20),failAt:'source_invalidation_deliveries'});
+    await expect(x.store.append(record({
+      revisionId:'rev-2',date:25,supersedes:'rev-1',changeKind:'CORRECTED',
+    }))).rejects.toThrow(/synthetic SQL/);
+    expect(x.calls.some(q=>q.sql.trim()==='ROLLBACK')).toBe(true);
+    expect(x.calls.every(q=>q.sql.trim()!=='COMMIT')).toBe(true);
+    expect(x.released).toHaveLength(1);
+  });
   it('refuses a concurrent stale supersedes link and rolls back',async()=>{
     const x=db({head:'rev-NEW',headAt:T(24)});
     await expect(x.store.append(record({
