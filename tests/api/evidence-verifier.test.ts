@@ -46,7 +46,7 @@ function scenario(span:object,originals:readonly (TrustedTextOrigin|TrustedImage
     retrieval:envelope(span),trustedOriginals:originals,
     latestRevisionBySource:new Map([['s1','r1']]),
     permissionRefs:new Set(['P-1']),
-    permissionPolicyVersion:'policy-1',asOf:ASOF,
+    permissionPolicyVersion:'policy-1',asOf:ASOF,now:ASOF,
   };
 }
 describe('TASK-21 original- and rights-bound provider evidence (synthetic only)',()=>{
@@ -91,6 +91,30 @@ describe('TASK-21 original- and rights-bound provider evidence (synthetic only)'
       {...text,fetchedAt:'2026-11-01T00:00:00.000Z'},
       {...text,validUntil:'2026-10-30T00:00:00.000Z'},
     ])expect(verifyRetrievalForAi(scenario(textSpan,[original]))).toBeNull();
+  });
+  it('never sends evidence based on an asOf later than trusted server time',()=>{
+    const x=scenario(textSpan,[text]);
+    x.now='2026-10-20T00:00:00.000Z';
+    expect(verifyRetrievalForAi(x)).toBeNull();
+  });
+  it('rechecks campus, major and cohort against trusted original applicability',()=>{
+    const scoped:TrustedTextOrigin={
+      ...text,applicableScope:{
+        campuses:['SEOUL'],majorCodes:['ECONOMICS'],cohortRange:[2022,2026],
+      },
+    };
+    const x=scenario(textSpan,[scoped]);
+    expect(verifyRetrievalForAi(x)).toBeNull();
+    const allowed={...x,actorScope:{
+      campus:'SEOUL',majorCode:'ECONOMICS',cohort:2024,
+    }};
+    expect(verifyRetrievalForAi(allowed)?.retrievalState).toBe('READY');
+    expect(verifyRetrievalForAi({...allowed,actorScope:{
+      campus:'GLOBAL',majorCode:'ECONOMICS',cohort:2024,
+    }})).toBeNull();
+    expect(verifyRetrievalForAi({...allowed,actorScope:{
+      campus:'SEOUL',majorCode:'ECONOMICS',cohort:2021,
+    }})).toBeNull();
   });
   it('never allows failure-state evidence or unlisted extra revision IDs',()=>{
     const x=scenario(textSpan,[text]);
