@@ -33,14 +33,16 @@ function setup(){
         if(!active||params[0]!==ACTOR||params[1]!=='S01')return {rows:[]};
         return {rows:[{
           grant_id:'G1',actor_id:ACTOR,subject_id:'S01',
-          allowed_sections:['FEED','NOTICES'],
+          allowed_sections:['FEED','NOTICES','ACADEMICS','EXPERIENCE'],
           display_name_allowed:false,recording_allowed:false,
           version:grantVersion,expires_at:'2026-11-05T00:00:00.000Z',
           revoked_at:null,
         }]};
       }
       if(sql.includes('FROM api_demo_snapshot_projections'))
-        return {rows:[{subject_id:'S01',snapshot_json:snapshot}]};
+        return {rows:active&&params[0]===ACTOR&&params[1]==='S01'&&params[2]===grantVersion
+          ?[{subject_id:'S01',snapshot_json:snapshot,actor_id:ACTOR,version:grantVersion,
+            allowed_sections:['FEED','NOTICES','ACADEMICS','EXPERIENCE']}]:[]};
       return {rows:[]};
     },
     release:()=>{releases.push(1);},
@@ -90,7 +92,7 @@ describe('TASK-27 Fastify → Postgres projection adapter (SQL fake only)',()=>{
     });
     expect(res.statusCode).toBe(200);
     expect(res.json().contextId).toBe(id);
-    expect(res.json().academics).toEqual({state:'NOT_SHARED'});
+    expect(res.json().academics).toEqual(snapshot.academics);
     expect(res.json().forecast).toEqual({state:'NOT_SHARED'});
   });
   it('blocks old context immediately after grant revocation',async()=>{
