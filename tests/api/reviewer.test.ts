@@ -154,6 +154,40 @@ describe('SHARED REVIEWER invitation (identity-bound, max new seats, unlimited v
       expect(direct.statusCode).toBe(200);
     }
   });
+  it('exposes every synthetic student tab and lets each judge edit interests, plan and filters only in sandbox',async()=>{
+    const {app,invite}=await harness();
+    expect((await enroll(app,invite.enrollmentCode)).statusCode).toBe(200);
+    const cap=await get(app,'/api/reviewer/capabilities');
+    expect(cap.statusCode).toBe(200);
+    expect(cap.json()).toMatchObject({sandboxOnly:true,externalSubmission:false,
+      ncpCalls:false,actualBrowserUiVerified:false});
+    expect(cap.json().sections).toEqual(expect.arrayContaining([
+      'TODAY','OPPORTUNITIES','NOTICES','EXPERIENCE','GRADUATION',
+      'COURSE_PLANNER','OUTLOOK','SAVED','APPLICATIONS','SETTINGS']));
+    const ctx=await app.inject({method:'POST',url:'/api/demo/contexts',headers:h,
+      payload:{demoSubjectId:'S01',demoRunId:'REVIEW-FULL'}});
+    expect(ctx.statusCode).toBe(201);
+    const url='/api/reviewer/demo/contexts/'+ctx.json().contextId+'/actions';
+    for(const action of [
+      {kind:'SET_INTERESTS',topics:['ECONOMIC_RESEARCH','FINANCE_INVESTMENT']},
+      {kind:'SET_DESIRED_JOBS',topics:['DATA_ANALYTICS']},
+      {kind:'PLAN_COURSE',courseId:'SYN-COURSE-001',planned:true},
+      {kind:'SET_SEARCH',query:'경제'},
+      {kind:'SET_NOTIFICATIONS',enabled:false},
+    ])expect((await app.inject({method:'POST',url,headers:h,payload:action})).statusCode).toBe(200);
+    expect((await get(app,url)).json().actions).toHaveLength(5);
+    expect((await get(app,url,'reviewer-other')).statusCode).toBe(403);
+    for(const action of [
+      {kind:'PLAN_COURSE',courseId:'REAL-123',planned:true},
+      {kind:'SET_INTERESTS',topics:['FAKE_TOPIC']},
+      {kind:'SET_SEARCH',query:'x'.repeat(101)},
+    ])expect((await app.inject({method:'POST',url,headers:h,payload:action})).statusCode).toBe(422);
+    expect((await app.inject({method:'POST',url,headers:h,
+      payload:{kind:'RESET_SANDBOX'}})).statusCode).toBe(200);
+    expect((await get(app,url)).json().actions).toHaveLength(0);
+    current=END;
+    expect((await get(app,'/api/reviewer/capabilities')).statusCode).toBe(403);
+  });
   it('runs isolated interactive bookmark, checklist, experience, draft and fake application actions',async()=>{
     const {app,invite}=await harness();
     expect((await enroll(app,invite.enrollmentCode)).statusCode).toBe(200);
