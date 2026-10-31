@@ -39,6 +39,10 @@ function pg(flags:unknown,fail=false){
   const queries:Array<{sql:string;params:readonly unknown[]}>=[],releases:number[]=[];
   const c:ReviewerSqlConnection={
     query:async(sql,params=[])=>{
+      // Transaction statements are covered in temporal-snapshot.test.ts;
+      // keep existing query-only expectations focused on data SELECTs.
+      if(sql.startsWith('BEGIN TRANSACTION ')||sql==='COMMIT'||sql==='ROLLBACK')
+        return {rows:[]};
       queries.push({sql,params});
       if(fail&&sql.includes('FROM scoped'))throw new Error('synthetic DB failure');
       if(sql.includes('FROM scoped'))return {rows:[flags as Record<string,unknown>]};
