@@ -212,3 +212,41 @@ describe('TASK-06 composeFeed (A05.2 steps 1, 7–9)', () => {
     expect(r[0]?.score.I).toBe(0);
   });
 });
+
+describe('TASK-06 no time leakage: publishedAt > asOf (review on PR #15)', () => {
+  // Exactly matching topic, COMPLETE, valid deadline — only the publication time is in the future.
+  const future = opp('FUT', {topicCodes:['DATA_ANALYTICS'], conditions:[enrolledOnly]});
+  const past = opp('PAST', {topicCodes:['DATA_ANALYTICS'], conditions:[enrolledOnly]});
+  const unknownTime = opp('NOTIME', {topicCodes:['DATA_ANALYTICS'], conditions:[enrolledOnly]});
+  const published = {'SNAP-FUT':'2026-12-01T00:00:00.000Z', 'SNAP-PAST':'2026-11-10T00:00:00.000Z'};
+  const opts = {asOf:ASOF, publishedAtBySnapshotId:published};
+
+  it('keeps a future-published item out of featured, compact and all, and queues it for review', () => {
+    const r = composeFeed(dataStudent, [future, past, unknownTime], opts);
+    const shown = [...r.feed.featured, ...r.feed.compact].map(c => c.opportunityId);
+    expect(shown).not.toContain('FUT');
+    expect(r.all.map(x => x.opportunity.id)).not.toContain('FUT');
+    expect(r.excludedFuture.map(x => x.opportunity.id)).toEqual(['FUT']);
+    expect(r.feed.totalCandidates).toBe(2);
+  });
+
+  it('shows confirmed-past items normally and keeps unknown-time items as UNKNOWN with F=0', () => {
+    const r = composeFeed(dataStudent, [future, past, unknownTime], opts);
+    expect(r.feed.featured.map(c => c.opportunityId)).toEqual(['PAST', 'NOTIME']);
+    const byId = new Map(r.all.map(x => [x.opportunity.id, x]));
+    expect(byId.get('PAST')?.publication).toBe('CONFIRMED');
+    expect(byId.get('NOTIME')).toMatchObject({publication:'UNKNOWN', score:{F:0}});
+  });
+
+  it('a future item is excluded even when it would otherwise rank first', () => {
+    const r = composeFeed(dataStudent, [future], opts);
+    expect(r.feed).toMatchObject({featured:[], compact:[], totalCandidates:0, hasMore:false});
+  });
+
+  it('is byte-stable for reversed input including the excluded queue', () => {
+    const a = composeFeed(dataStudent, [future, past, unknownTime], opts);
+    const b = composeFeed(dataStudent, [unknownTime, past, future], opts);
+    expect(JSON.stringify(b.feed)).toBe(JSON.stringify(a.feed));
+    expect(b.excludedFuture.map(x => x.opportunity.id)).toEqual(a.excludedFuture.map(x => x.opportunity.id));
+  });
+});

@@ -19,6 +19,11 @@ export interface ComposedFeed {
   ineligible:RankedOpportunity[];
   /** Expired items: only for the history / expired filter. */
   closed:RankedOpportunity[];
+  /**
+   * Published after asOf: never shown in featured/compact/all (no time leakage into a past view).
+   * Review queue only. Items with an UNKNOWN publication time stay visible with F=0.
+   */
+  excludedFuture:RankedOpportunity[];
   /** Full visible list (featured + compact + rest) so the original list is never lost. */
   all:RankedOpportunity[];
   rankConfigVersion:string;
@@ -53,7 +58,6 @@ function orderDiverse(items:readonly RankedOpportunity[], cap:number):RankedOppo
 
 function latestFirst(items:readonly RankedOpportunity[], options:RankOptions):RankedOpportunity[] {
   const at = (r:RankedOpportunity) => {
-    if (r.futurePublication) return Number.NEGATIVE_INFINITY;
     const raw = options.publishedAtBySnapshotId?.[r.opportunity.sourceSnapshotId];
     const t = raw === undefined ? NaN : Date.parse(raw);
     return Number.isFinite(t) ? t : Number.NEGATIVE_INFINITY;
@@ -83,8 +87,10 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
   const cfg = options.config ?? RANK_CONFIG_V1;
   const hidden = new Set(options.hiddenOpportunityIds ?? []);
   const ranked = rankOpportunities(profile, opportunities.filter(o => !hidden.has(o.id)), options);
-  const closed = ranked.filter(r => r.evaluation.lifecycle === 'CLOSED');
-  const open = ranked.filter(r => r.evaluation.lifecycle !== 'CLOSED');
+  const excludedFuture = ranked.filter(r => r.publication === 'FUTURE');
+  const known = ranked.filter(r => r.publication !== 'FUTURE');
+  const closed = known.filter(r => r.evaluation.lifecycle === 'CLOSED');
+  const open = known.filter(r => r.evaluation.lifecycle !== 'CLOSED');
   const ineligible = open.filter(r => r.evaluation.eligibility === 'INELIGIBLE');
   const visible = open.filter(r => r.evaluation.eligibility !== 'INELIGIBLE');
 
@@ -104,5 +110,5 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
     hasMore:visible.length > featured.length + compact.length,
     totalCandidates:visible.length,
   });
-  return {feed, ineligible, closed, all:[...featured, ...ordered], rankConfigVersion:cfg.version};
+  return {feed, ineligible, closed, excludedFuture, all:[...featured, ...ordered], rankConfigVersion:cfg.version};
 }

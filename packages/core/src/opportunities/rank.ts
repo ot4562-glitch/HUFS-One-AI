@@ -33,7 +33,11 @@ export interface RankedOpportunity {
   relevant:boolean;
   /** Publication time was after asOf: freshness forced to 0 and flagged for review. */
   futurePublication:boolean;
+  /** CONFIRMED ≤ asOf, FUTURE > asOf (excluded from the feed), UNKNOWN when not confirmed. */
+  publication:PublicationState;
 }
+
+export type PublicationState = 'CONFIRMED'|'FUTURE'|'UNKNOWN';
 
 export interface RankOptions {
   asOf:string;
@@ -46,7 +50,7 @@ const round6 = (x:number) => Math.round(x * 1e6) / 1e6;
 const lang = (codes:readonly string[]) => new Set(codes.map(c => c.trim().toLowerCase()).filter(Boolean));
 
 export function scoreOpportunity(profile:RecommendationProfile, opportunity:Opportunity, options:RankOptions)
-  :{score:ScoreBreakdown; matched:MatchedTopics; futurePublication:boolean} {
+  :{score:ScoreBreakdown; matched:MatchedTopics; futurePublication:boolean; publication:PublicationState} {
   const cfg = options.config ?? RANK_CONFIG_V1;
   const topics = onlyKnownTopics(opportunity.topicCodes);
   const job = onlyKnownTopics(profile.desiredJobTopics);
@@ -74,6 +78,7 @@ export function scoreOpportunity(profile:RecommendationProfile, opportunity:Oppo
       experience:experience.filter(t => topics.includes(t)),
     },
     futurePublication,
+    publication:!Number.isFinite(published) ? 'UNKNOWN' : futurePublication ? 'FUTURE' : 'CONFIRMED',
   };
 }
 
@@ -90,11 +95,11 @@ export function compareRanked(a:RankedOpportunity, b:RankedOpportunity):number {
 export function rankOpportunities(profile:RecommendationProfile, opportunities:readonly Opportunity[], options:RankOptions):RankedOpportunity[] {
   if (!Number.isFinite(Date.parse(options.asOf))) throw new RangeError('asOf must be an ISO datetime');
   return opportunities.map(opportunity => {
-    const {score, matched, futurePublication} = scoreOpportunity(profile, opportunity, options);
+    const {score, matched, futurePublication, publication} = scoreOpportunity(profile, opportunity, options);
     return {
       opportunity,
       evaluation:evaluateOpportunity(profile, opportunity, options.asOf),
-      score, matched, futurePublication,
+      score, matched, futurePublication, publication,
       relevant:score.J > 0 || score.I > 0 || score.S > 0,
     };
   }).sort(compareRanked);
