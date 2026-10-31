@@ -1,36 +1,33 @@
 # HUFS One AI | 현재 작업 상태
 
-## 2026-10-31 승인 기준 변경·실제 PR 병합 및 캘린더 추가 (최신 작업 기록)
+## 2026-10-31 협업 피드백 → 수정 → 재승인 → 병합 결과 (최신)
 
-> **후속 갱신:** #54는 PR #37 병합 뒤 합성 React–API 테스트와 충돌해 [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)로 대체·미병합 폐쇄됐다. #55에는 김채윤 부분공유 간접노출 리뷰 수정을 적용했고 최신 main에서 [synthetic-contracts SUCCESS](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41208683862)를 확인했다. 타인 승인 및 실 PG 검증 전이라 #55는 **OPEN**이고 아직 병합하지 않았다.
+> 작성자 아닌 1명 이상의 **현재 HEAD APPROVED**, 같은 SHA 필수 CI 성공, 스택/보안 blocker 해소 후 병합한다. 여러 협업자의 승인 전부는 필수 요건이 아니지만 본인 PR에 자기 승인은 인정하지 않는다. 수정·리뷰·코드 병합과 실서비스 배포·학생 권한·실 PG/NCP/Google 검증은 엄격히 구분한다. 이 절을 최신 상태로 보고 아래 이전 기록은 해당 시점의 이력이다.
 
-> **최신 사용자 지시:** 코드/계약 PR은 작성자 아닌 **1명 이상**이 현재 HEAD에 APPROVED를 제출하고 필수 CI가 성공하면 병합한다. 여러 명 전원 승인 규칙은 해제. 선행 미병합 스택·권한/개인정보 blocker·명시적 수정 요청은 확인해야 한다. 운영 문서의 main 직접 보정 예외는 유지한다. 아래 수치는 이 확인 시점의 GitHub 스냅샷이며 실서비스 배포 상태가 아니다.
+### main 병합 완료: 이번 두 차례 검토로 총 11 PR
 
-### 병합 완료 — 실제 GitHub merge 결과 7건
+- [#15 추천 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), [#36 학업 vNext](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), [#44 overdue/alias Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), [#47 추천 설명 Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), [#53 캘린더 Wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), [#37 Fastify–React 합성 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), [#48 추천 순위 평가](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48): 첫 배치 **7건** 병합.
+- [#16 중요공지 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16): #44 선택적 NoticeItem.overdue를 composeNotices().result.items[]에 직접 직렬화하고 부정 합성 테스트·비작성자 최신 승인 후 병합됨. 기존 'overdue Wire 미연결' 결함 **해소**.
+- [#49 공유범위별 입력](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49): 승인 경험/공식 졸업학기·전공/학업 facts/관심 주제의 부분공유 간접 노출 차단 합성 회귀; 최신 HEAD `027d6dd`를 재승인·CI 성공 후 병합, merge `503760ca`.
+- [#40 신뢰형 출처 시점 검증](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40): asOf 이전에 알 수 없는 revision·미래 검증 claim·과거 TEXT 인용/취소 구판을 코어에서 격리; 최신 HEAD `10d21eb` 재승인·CI 후 병합, merge `35a155f7`.
+- [#50 신규 '내 주요 일정' 계산](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50): UNKNOWN·학업 미공유→needsConfirmation, 중복 notice 제외, verified deadline vs EVENT/행정기한, 서울 날짜·시점·CalendarResultSchema 합성 검증; #16/#49 최신 main 재동기화 후 HEAD `7df0ec9` 재승인·CI 성공·병합, merge `fb87fdaa`.
 
-- [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15) 추천 결정론 코어 (merge `533ac676`)
-- [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36) 학업 RulePack vNext/독립 검수 계약 (merge `771f4f28`)
-- [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44) 중요공지 overdue·명시 주제 alias 계약 (merge `49feb6b1`)
-- [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47) 추천 이유/관련도·교내/교외·상시마감 Zod 계약 (merge `887f475e`)
-- [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53) 신규 캘린더 CalendarResultSchema·validateCalendarWire (merge `54e74b36`)
-- [#37](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37) fail-closed Fastify 조립·탭 격리 React 전송 어댑터 (merge `bb040dcd`)
-- [#48](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48) A15 합성 nDCG/P@k 및 macro·micro 독립 평가 도구 (#15 병합 후 최신 HEAD 재승인, merge `27a81697`)
+### 현재 미병합 PR 6건과 정확한 차단 이유
 
-위 7건은 최신 HEAD 별 synthetic-contracts GitHub Actions 성공을 확인하고 병합했다. **통합된 main 전체 E2E/실 DB/실학생/실 NCP 검사 완료를 뜻하지 않는다.** #37의 독립 전송 어댑터 자체는 main에 있으나 실제 OAuth/PG 권한 연결은 별도 이슈다.
+- **#41 추천 설명/관련도 직렬화(김채윤):** #47·#49에 맞춘 FeedCard.explanation 및 경험·전공 미공유 부정 테스트 `explain-scope.test.ts` 반영. 하지만 HEAD `10beffb`가 최신 main과 충돌, check-runs 0건, fresh HEAD APPROVED 없음. 작성자에게 #40/#49/#50 main 재동기화·CI 및 재검토 요청. rank-v1.1은 선택, 기본 rank-v1.0 유지.
+- **#55 HTTP 원자적 권한 조회(심민성):** 기존 #54를 **미병합 폐쇄 후 최신 main에서 대체**. BETA readAuthorizedSnapshot 필수, FEED/NOTICES/ACADEMICS/EXPERIENCE가 모두 공유되지 않은 선계산 출력은 403 fail-closed, 합성 API+React CI [SUCCESS](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41208683862). 단, 작성자 본인 PR이어서 김채윤 또는 이의상의 **실제 HEAD APPROVED 미수신**, 미병합.
+- **#35 PostgreSQL grant/projection(심민성):** 김채윤 기존 CHANGES_REQUESTED가 지적한 미공유 학업/경험의 FEED/NOTICES 간접 노출에 대해 전부 공유가 아니면 precomputed 조회 403으로 임시 방어·합성 CI 통과. 리뷰어의 최신 해결 승인 없음·main conflict, 실 PG/migration/원자성 실험 미실시. 부분공유 scope별 재계산과 provenance는 후속.
+- **#32 Google OIDC/메일 OTP(심민성):** 합성 CI 성공이지만 UI 소비자의 현재 HEAD APPROVED 없음·최신 main 충돌. 실제 Google/메일 전송/브라우저/도메인 보안 검증은 별도.
+- **#33 EvidenceScope vNext → #34 Temporal RAG PG(심민성):** #33은 공식 졸업학기·입학유형·전공역할·cohort 범위 계약 합성 성공이지만 독립 승인 없음·main 충돌. #34는 코어/SQL/AI/범위 확장 후 합성 CI 성공이나 김채윤 APPROVED는 **옛 HEAD**, main 충돌·#33 미병합. 두 PR 모두 실 Postgres 권한·migration·성능/revoke 검증 전.
 
-### 진행 중·차단 (당시 OPEN PR 10건, 일반 이슈 19건)
+### 이슈와 계획에 새로 추가된 캘린더
 
-- **추천·공지:** #16이 #15/#44 후속으로 공식 NoticeResult.items[].overdue를 아직 직렬화하지 않아 수정 필요. 연쇄 #40→#41은 #16 및 Temporal 출처 검증/추천 설명 출력 결합 후 병합 판단. #41 기본 랭크는 rank-v1.0 유지.
-- **개인정보 파생 정보:** [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)는 순수 scopeInputsToGrant 함수만 제안하고 현재 diff에 #16 선행 공지 코어가 포함된다. #35는 부분공유에서 선계산 feed/notices를 전부 차단하는 보수적 방어이며, scope별 재계산·grant/revoke 캐시 연결/실 PG 검증 전 운영 불가.
-- **인증/Temporal:** #32 Google OIDC/외대 이메일, #33 검증 SourceRevision 계약, #34 Temporal Postgres·범위 쿼리, #35 sharing grant DB, #55 HTTP 원자적 읽기는 미병합. #34의 최신 합성 CI는 성공이지만 실제 PostgreSQL에서 마이그레이션·query 실행은 검증하지 않았다. #55는 미연결 저장소에서 BETA를 fail-closed한다.
-- **캘린더(기존 계획 밖 신규 기능):** #53 Wire **병합 완료**. [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50) 계산 코어는 #16 스택 포함/최신 HEAD 검토 필요, [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51) 이의상 홈 하단 UI 미구현, [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52) 심민성 인증·공유권한 calendar GET 미구현. 화면·데이터가 실제로 뜬다고 주장하지 않는다. 자세한 계약은 Architecture A07.3·A13, 제품 서술은 Proposal 08 참조.
-- **이슈:** #38은 overdue 계약 PR만 끝나서 출력 연동까지 OPEN, #42는 추천 설명 Wire 결정/계약까지 끝나서 #41 API/UI 출력까지 OPEN, #39/#27은 권한/DB 경로 실 연결 전 OPEN, #51/#52는 캘린더 구현 전 OPEN, #46 학생 CSV/Forms 게시·처리 동의 감사 OPEN. 구현 완료 범위를 넘는 이슈를 닫지 않는다.
+- 최초 계획에 없던 기능을 [Architecture A07.3](Architecture.md)·A11·A13·A17 TASK-14C와 [Proposal 08](Proposal.md), [WORKSTREAMS](docs/WORKSTREAMS.md)·[CONTRACT_BOUNDARIES](docs/CONTRACT_BOUNDARIES.md)에 추가했다. 캘린더 **계산 #50와 Wire #53은 main 완료**. [#52 actor/grant-scoped GET API](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52), [#51 이의상 모바일/접근성 위젯](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)은 **미구현**. 권한 없이 달력에 학업/경험 사실을 추정 표시하거나 .ics/푸시를 기정사실화하지 않는다.
+- 이슈 #8/#10/#18/#19/#21/#23/#27/#39/#42/#51/#52는 최신 병합·차단 근거로 갱신했고, 공지 overdue 계약/소비 완료 [#38](https://github.com/ot4562-glitch/HUFS-One-AI/issues/38)은 CLOSED 확인. 캘린더 API/학업 실검수·출처/실 학생 동의 등 큰 이슈는 OPEN 유지.
 
-### 여전히 남은 출시·증명 게이트
+**배포 제한:** 네 계정 원본·Forms/CSV 권한 감사 #46, 실제 Google OIDC·외대 메일 proof·세션 철회, 실 PG SharingGrant/트랜잭션·source rights/asOf/provenance, 모바일/브라우저·다중탭·권한 축소 E2E, 승인된 NCP 개통/비용·모델 실측이 미완료다. 이번 결과는 합성 코드와 문서·issue 정리이며 공개 서비스 인증·실사용이 아니다.
 
-Google OIDC 실제 클라이언트/학교메일 수신권, 학생별 동의·SharingGrant 원장·원본권한, 인증된 PG 스냅샷과 scope별 파생 결과, 철회/다중탭 E2E, 브라우저·모바일·접근성, 실제 출처 시의성/근거 검수, 승인된 NCP 환경·비용·CPU 실측이 미완료다. 신원/동의가 미확정인 수강 CSV·Forms 원본을 CI·PR·외부 AI/클라우드로 복제하지 않는다.
-
-
+---
 ## 2026-10-31 협업 리뷰/문서·CSV 구조 감사 (관찰과 승인을 구별)
 
 - **기준 현황:** 원래 일반 이슈 17건 중 1건(#29)만 이미 closed, 16건 open; PR 26건 중 16건 merged, 10건 open. 전수 검토 이후 새 후속 [공통 계약 PR #44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)가 열렸으므로 최신 전체 건수는 별도 조회한다. 완료 근거가 없는 이슈는 일괄 닫지 않았다.
