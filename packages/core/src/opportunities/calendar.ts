@@ -125,7 +125,7 @@ export function buildCalendar(
       continue;
     }
     const importance:CalendarImportance = ev.priority === 'CRITICAL_DUE' ? 'CRITICAL' : ev.priority === 'ACADEMIC_REQUIRED' ? 'REQUIRED' : 'PERSONAL';
-    const base = {source:'NOTICE' as const, refId:n.id, title:n.title, importance, evidenceRefs:[...n.evidenceRefs]};
+    const base = {source:'NOTICE' as const, refId:n.id, title:n.title, importance, evidenceRefs:[...new Set(n.evidenceRefs)]};
     if (n.studentDeadline !== undefined) push({...base, kind:'STUDENT_DEADLINE', at:n.studentDeadline}, 0);
     (n.eventSessions ?? []).forEach((s, i) => push({...base, kind:'EVENT', at:s.start, ...(s.end === undefined ? {} : {end:s.end})}, i));
     if (n.studentDeadline === undefined && (n.eventSessions ?? []).length === 0) {

@@ -141,3 +141,15 @@ describe('mini calendar "내 주요 일정"', () => {
     expect(() => build({daysAhead:-1})).toThrow(RangeError);
   });
 });
+
+describe('calendar output vs contracts CalendarResultSchema (#53)', () => {
+  it('passes the wire schema for normal, hidden-academics and duplicate-evidence inputs', async () => {
+    const {CalendarResultSchema} = await import('@hufs-one/contracts');
+    expect(CalendarResultSchema.safeParse(build()).success).toBe(true);
+    const hidden = {...student, campus:'SEOUL', openRequirementIds:null};
+    expect(CalendarResultSchema.safeParse(buildCalendar(composeFeed(profile, opportunities, {asOf:ASOF}), composeNotices(hidden, noticeInputs, {asOf:ASOF}), noticeInputs, {asOf:ASOF})).success).toBe(true);
+    const dupEv = [notice('DUPEV', {requirementRefs:['REQ-EXAM'], studentDeadline:D(4), evidenceRefs:['EV-1', 'EV-1']})];
+    const r = CalendarResultSchema.safeParse(build({}, dupEv, []));
+    expect(r.success).toBe(true);
+  });
+});
