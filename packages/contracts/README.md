@@ -1,4 +1,4 @@
-# @hufs-one/contracts — TASK-00 v0.1.0
+# @hufs-one/contracts — TASK-00 v0.1 + evidence vNext v0.2.0
 
 **Purpose:** shared source of truth for **all four independent development tracks**. The package is implemented as TypeScript + Zod strict runtime schemas. It **does not** implement real authentication, academic rulings, database migrations, NCP networking, CLOVA live calls, actual UI, or final student consent. Use it to agree on the wire shape **before** editing other teams' files.
 
@@ -63,6 +63,48 @@ npm run check
 npx vitest run tests/contracts/academics-vnext-feedback.test.ts
 npm run check:privacy
 ```
+
+## Evidence vNext (TASK-18, package v0.2.0) — additive and offline-only
+
+`@hufs-one/contracts/evidence` and root exports add the following **strict Zod**
+contracts without changing v0.1.0 `SourceSnapshot`, `EvidenceSpan`, `NoticeResult`,
+`FeedResult` or `SafeLlmPacket` input/output shapes:
+
+| Contract | Important safety rules |
+| --- | --- |
+| `SourceRevisionVNextSchema` | Immutable source/content SHA-256, explicit permission and provenance, independent published/fetched/checked/verified timestamps, correction chain, scope, active-review prohibition |
+| `SourceSpanVNextSchema` | Exact Unicode codepoint offsets for text; IMAGE original hash, page, normalized bbox, OCR line IDs and coordinate transform version required |
+| `matchesTextSpan` / `matchesImageSpan` | Checks a supplied span against trusted original text or image/OCR metadata; cannot establish legal permission or real-world truth by itself |
+| `VerifiedClaimVNextSchema` | Evidence and reviewer/check timestamp mandatory for VERIFIED, no cross-revision citations, student/admin/event date kinds separate |
+| `RetrievalEnvelopeVNextSchema` | Explicit READY/NO_EVIDENCE/STALE/CONFLICT/BLOCKED_RIGHTS/UNKNOWN, revision refs and policy/retrieval versions; failure envelopes never leak evidence |
+| `RevisionInvalidationVNextSchema` | Correction/extension/cancellation/revocation event invalidates retrieval and claims; cancellation also invalidates feed |
+| `EvidenceBoundPacketVNextSchema` | Dedicated AI input adapter requires READY evidence, ALLOWED provider transfer, current permission/source version; image proof needs extractor version |
+| `DecisionAdviceVNextSchema` | Laya model output is a routing **candidate only**, not the verification authority |
+
+`SourceRevisionVNextSchema` is **not** an HTTP crawler, permission grant,
+actual historical ledger, database schema, human reviewer, provider call or
+source-of-truth. The server must independently verify actual content hashes,
+revision supersession, access/rights and target scope, current provider
+approval, past/asOf chronology, source page availability, and all claimed
+dates/eligibility. `matchesImageSpan` verifies OCR text/coordinate **references**
+only; it does not prove OCR content or quote semantics are accurate.
+
+The contract test commands are:
+
+```bash
+npm run build:contracts
+npx vitest run tests/contracts/evidence-vnext.test.ts tests/consumers/evidence-consumers.test.ts
+npm run check
+npm run check:privacy
+```
+
+Implementation and review boundary: #18 contract vNext is a separate PR from
+#19 ingestion, #21 permission-first Temporal RAG and pending recommendation
+PR #15 / notices PR #16. Four consumer tests use synthetic data; **automated
+contract compatibility is not independent human review or UI/DB/Google E2E**.
+Check the actual main and open PRs before merging/rebasing.
+No student/Forms originals, images, tokens, real Google identity, paid NCP or
+cloud connection are included.
 
 ## The four-file intake contract
 
