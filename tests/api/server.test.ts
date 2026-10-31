@@ -15,7 +15,7 @@ const actor={
 };
 const grant=SharingGrantSchema.parse({
   grantId:'G1',actorId:actor.actorId,demoSubjectId:'S01',
-  allowedSections:['FEED','NOTICES'],displayNameAllowed:true,recordingAllowed:false,
+  allowedSections:['FEED','NOTICES','ACADEMICS','EXPERIENCE'],displayNameAllowed:true,recordingAllowed:false,
   version:'G1',expiresAt:'2026-11-05T00:00:00.000Z',
 });
 const postHeaders={cookie:'a',origin,'x-csrf-token':actor.csrfToken};
@@ -90,18 +90,18 @@ describe('API initial fail-closed boundary',()=>{
     expect(res.statusCode).toBe(200);
     const projection=DemoSnapshotSchema.parse(res.json());
     expect(projection.contextId).toBe(id);
-    expect(projection.academics).toEqual({state:'NOT_SHARED'});
+    expect(projection.academics).toEqual(snapshot.academics);
     expect(projection.forecast).toEqual({state:'NOT_SHARED'});
     const other=await app.inject({url:'/api/demo/contexts/'+id+'/snapshot',headers:{cookie:'b'}});
     expect(other.statusCode).toBe(401);
   });
-  it('revokes contexts on consent changes and blocks direct academic access',async()=>{
+  it('revokes contexts on consent changes and blocks ungranted forecast access',async()=>{
     const {app,repo}=fixture();opened.push(app);
     const created=await app.inject({method:'POST',url:'/api/demo/contexts',headers:postHeaders,
       payload:{demoSubjectId:'S01',demoRunId:'RUN1'}});
     const id=created.json().contextId;
-    const academics=await app.inject({url:'/api/demo/contexts/'+id+'/graduation',headers:getHeaders});
-    expect(academics.statusCode).toBe(403);
+    const forecast=await app.inject({url:'/api/demo/contexts/'+id+'/outlook',headers:getHeaders});
+    expect(forecast.statusCode).toBe(403);
     repo.setGrant({...grant,version:'G2'});
     expect((await app.inject({url:'/api/demo/contexts/'+id+'/snapshot',headers:getHeaders})).statusCode).toBe(409);
     repo.revokeGrant(actor.actorId,'S01',now);
