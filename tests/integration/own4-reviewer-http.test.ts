@@ -137,12 +137,15 @@ describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic onl
 
   it('compares the browser POST proof with the exact server-authorized admission route',async()=>{
     const {invite,browser,requestProofs}=await harness();
-    const {client}=browser('reviewer-one');
+    const {client,history}=browser('reviewer-one');
     const response=await client.redeemReviewerInvite(invite.enrollmentCode)
       .then(()=>200,(_error:unknown)=>403);
     const proof=requestProofs.filter(x=>x.url==='/api/reviewer/invitations/redeem');
-    expect({response,proof}).toEqual({
-      response:200,
+    const submitted=history.find(x=>x.url==='/api/reviewer/invitations/redeem');
+    const bodyMatches=submitted?.body
+      ?JSON.parse(submitted.body).enrollmentCode===invite.enrollmentCode:false;
+    expect({response,proof,bodyMatches}).toEqual({
+      response:200,bodyMatches:true,
       proof:[{
         method:'POST',url:'/api/reviewer/invitations/redeem',
         originOk:true,csrfOk:true,sessionOk:true,
