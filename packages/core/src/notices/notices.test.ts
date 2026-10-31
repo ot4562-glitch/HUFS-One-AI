@@ -195,6 +195,19 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
     expect(parsed.pinnedIds.some(id => overdue[id])).toBe(false);
   });
 
+  it('overdue on the wire: future false, passed true, admin-report-only false (PR #16 / #44 review)', () => {
+    const items = [
+      notice('FUTURE-DL', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(5)}),
+      notice('PASSED-DL', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-1)}),
+      notice('ADMIN-ONLY', {requirementRefs:['REQ-GRAD-CERT'], adminReportDeadline:inDays(-3)}),
+      notice('OTHER-DEPT', {college:'다른대학', requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-1)}),
+    ];
+    const r = NoticeResultSchema.parse(composeNotices(student, items, {asOf:ASOF}).result);
+    expect(Object.fromEntries(r.items.map(i => [i.noticeId, i.overdue]))).toEqual({
+      'FUTURE-DL':false, 'PASSED-DL':true, 'ADMIN-ONLY':false, 'OTHER-DEPT':false,
+    });
+  });
+
   it('an out-of-scope (NO) notice with a passed deadline is serialized overdue:false and accepted by the wire', () => {
     const r = composeNotices(student, [notice('OUT', {campus:'GLOBAL', studentDeadline:inDays(-1)})], {asOf:ASOF});
     expect(r.result.items[0]).toMatchObject({appliesTo:'NO', overdue:false});
