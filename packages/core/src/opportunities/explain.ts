@@ -23,7 +23,7 @@ export interface EligibilityNote {
   evidenceRefs:string[];
 }
 export interface DeadlineNote {
-  kind:'CONFIRMED'|'EVENT_ONLY'|'RECORD_ONLY'|'UNKNOWN';
+  kind:'CONFIRMED'|'EVENT_ONLY'|'RECORD_ONLY'|'ROLLING'|'UNKNOWN';
   text:string;
   iso?:string;
 }
@@ -109,7 +109,7 @@ function deadlineNote(r:RankedOpportunity):DeadlineNote {
     return {kind:'CONFIRMED', iso:r.evaluation.deadline, text:`${seoulText(r.evaluation.deadline)}까지 신청`};
   }
   if (o.actualApplicationRoute === 'RECORD_ONLY') return {kind:'RECORD_ONLY', text:'기록용 페이지예요. 실제 모집 마감은 원문에서 확인하세요.'};
-  if (o.deadlineKind === 'ROLLING') return {kind:'UNKNOWN', text:'상시 모집이에요. 정해진 마감일이 없으니 원문에서 확인하세요.'};
+  if (o.deadlineKind === 'ROLLING') return {kind:'ROLLING', text:'상시 모집이에요. 정해진 마감일이 없으니 원문에서 확인하세요.'};
   if (o.eventSessions.length > 0) return {kind:'EVENT_ONLY', text:'행사 기간만 공개돼 있어요. 신청 마감은 원문에서 확인하세요.'};
   return {kind:'UNKNOWN', text:'마감일이 확인되지 않았어요(상시·채용 시 마감 포함). 원문을 확인하세요.'};
 }

@@ -354,7 +354,7 @@ describe('TASK-06 recommendation reasons and relevance score (code-built, no AI)
   });
 
   it('says "상시 모집" for a source-verified rolling deadline instead of inventing a date', () => {
-    expect(explainOne(opp('A', {applyClosesAt:undefined as never, deadlineKind:'ROLLING'})).deadline).toEqual({kind:'UNKNOWN', text:'상시 모집이에요. 정해진 마감일이 없으니 원문에서 확인하세요.'});
+    expect(explainOne(opp('A', {applyClosesAt:undefined as never, deadlineKind:'ROLLING'})).deadline).toEqual({kind:'ROLLING', text:'상시 모집이에요. 정해진 마감일이 없으니 원문에서 확인하세요.'});
   });
 
   it('composeFeed returns one explanation per shown card in display order', () => {
