@@ -52,6 +52,6 @@
 ## 2026-10-31 기능·인프라 경계 재확인 (PR #31)
 
 - 심민성 `ot4562-glitch`(#18/#19/#21/#25/#27): 웹·외부 REST/Fastify API, Google OIDC/초대/CSRF/세션, 일반 PostgreSQL·SourceRevision/Temporal RAG·정책/근거 DTO, synthetic REVIEWER actions, CI/통합.
-- 이서연(#12/#20/#22; GitHub ID 미확인): NCP VPC/VM·DB 호스팅·HTTPS ingress/IAM/키/비용/부하/워크플로, CLOVA Studio/OCR/HCX/Vision/NCP SDK와 실제 provider API·Laya ONNX worker 전부. 일반 웹 API/Google 앱 인증 라우트는 소유하지 않는다.
+- 이서연(`lhh42001`, #12/#20/#22; GitHub 이슈 assignee 확인): NCP VPC/VM·DB 호스팅·HTTPS ingress/IAM/키/비용/부하/워크플로, CLOVA Studio/OCR/HCX/Vision/NCP SDK 및 실제 provider API·Laya ONNX worker. 일반 웹 API/Google 애플리케이션 인증 라우트는 소유하지 않는다. 이 배정은 별도의 실제 원본/클라우드 권한 허가를 의미하지 않는다.
 - 이의상 UI #9, 김채윤 추천/공지 #10, 박준영 학사 #11 역할/assignee 변경 없음. 공통 API↔provider 경계는 공급자 비종속 DTO만 공유한다.
 - [공식 SKU/816h 견적](NCP_OPERATIONS_2026.md): KR Linux High Memory-g3 4vCPU/32GB 326원/h, CB 50GB 8원/h, 공인 IP 선택 5.6원/h, 본선 발표 11/16 이후 승인 시 실제 개통.
