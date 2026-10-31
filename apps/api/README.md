@@ -41,7 +41,7 @@ npm run start:api:local
 
 - `GET /api/demo/contexts/:contextId/calendar`는 [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 **예정 엔드포인트로 현재 서버 라우트는 미구현**이다. 결과 `CalendarResultSchema`/[#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)은 main 병합됐지만 계산 [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)과 UI [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)는 미연결이다.
 - 실제 구현은 인증 actor/context/subject, 현재 SharingGrant/grantVersion, 만료/철회, FEED/NOTICES/ACADEMICS/EXPERIENCE 섹션 및 신뢰된 원천 provenance를 원자 검증한 후 `asOf`·출처권리·정정/충돌·sourceRevision·scopeKey가 일치한 결과만 `no-store`로 제공한다. 미확인 적용여부·상시/미정은 확정 날짜에 승격하지 않는다. REVIEWER는 합성만 허용하고, 부분공유 데이터/철회/시점/경쟁 부정 E2E가 필요하다.
-- `readAuthorizedSnapshot` 강제 [#54](https://github.com/ot4562-glitch/HUFS-One-AI/pull/54), PostgreSQL 허가 [#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35)와 추천·공지 `scopeInputsToGrant` [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)는 아직 미병합/미연결이다. 기존 분리 조회가 실제 BETA를 보호한다고 간주하지 않는다.
+- `readAuthorizedSnapshot` 강제 [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55), PostgreSQL 허가 [#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35)와 추천·공지 `scopeInputsToGrant` [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)는 아직 미병합/미연결이다. 기존 분리 조회가 실제 BETA를 보호한다고 간주하지 않는다.
 
 ## 미구현·병합 후속
 
