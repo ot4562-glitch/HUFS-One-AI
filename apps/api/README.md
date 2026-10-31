@@ -37,6 +37,58 @@ npm run start:api:local
 
 브라우저가 actorId/hd/email_verified/sourceTokens를 보내서 권한을 만들 수 없습니다. 사전에 승인된 별도 서버 세션 어댑터/Repository가 필수입니다. 오류 응답에 raw 모델/DB/학생 문장을 담지 않습니다.
 
+## PostgreSQL projection repository and SharingGrant transactions (TASK-27)
+
+`repository-postgres.ts` replaces the **synthetic** `MemoryApiRepository` contract
+with a SQL-backed, read-only `ApiRepository` that can be injected by a trusted
+server runtime after DB/TLS/security approval. No live connection is created
+by importing this module. Queries always bind parameters for the independently
+authenticated Google actor ID, exact S01–S05 subject ID, packet task/reference
+and trusted server time. No browser-provided actor ID or grant scope is accepted.
+
+- `listProfiles`: requires exactly five approved public display projections,
+  with Zod validation and subject binding; missing/malformed or ambiguous data
+  fails closed. Unshared names/sections remain redacted in `server.ts`.
+- `readGrant`: reads only active non-revoked SharingGrant rows for exactly one
+  OIDC actor + subject; verifies allowed sections, expiry, actor/subject and
+  version before any section-specific API projection is returned.
+- `readSnapshot`: reads only current, size-bounded Zod `DemoSnapshot` JSON
+  (not raw course/Forms data); rejects another subject, future `asOf` and
+  internally inconsistent feed/notices timing. Fastify still rechecks sharing
+  grants, actor/session and version on every context fetch.
+- `readSafePacket`: fetches only curator-approved, unexpired, non-revoked
+  `SYNTHETIC_CLEARED` records for the actor/task/reference pair. Real NCP
+  provider inputs remain disabled until separate rights/worker approval.
+- `modules/auth/sharing-grant-postgres.ts`: privileged **operator-only**
+  ShareGrant issuance/revocation; an independently injected consent authority
+  must approve each operation. Display-name and recording visibility require
+  separately verified consent references. Grant issuance uses insert-only
+  `ON CONFLICT DO NOTHING`, revocation uses version CAS with `RETURNING`.
+  Both operations atomically write an append-only audit event; SQL failure
+  rolls the entire transaction back.
+
+`infra/sql/20261031_api_projections.sql` is a **review-only migration** for
+display projections, scoped grants, synthetic packet storage and audit events,
+with PUBLIC access revoked. Do not import raw CSV, Forms, identity-alias
+mapping or student source documents into these tables. The migration/role
+grants, actual DB transport, consent administration and parallel transaction
+tests have **not** been executed. All tests use fake SQL connections and
+synthetic fixture data.
+
+Run locally:
+
+```sh
+npm run check
+npx vitest run tests/api/repository-postgres.test.ts tests/api/sharing-grant-postgres.test.ts tests/api/pg-api-integration.test.ts
+npm run build:api
+npm run check:privacy
+```
+
+The current `main.ts` intentionally injects `closedRepository` and refuses
+production startup. PR #32 OIDC and PR #33/#34 evidence features are
+**separate** review gates. Nothing here turns on Google, external NCP requests
+or an unaudited student-data upload.
+
 ## 미구현·병합 후속
 
 1. 실제 Google OIDC 서명·nonce/PKCE, 학교 메일 수신권 OTP/Workspace hd 확인, 베타 계정 allowlist 및 세션 영속 철회/쿠키. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.
