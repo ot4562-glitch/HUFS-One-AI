@@ -123,6 +123,36 @@ describe('Google OIDC + school-mail browser consumer contract (synthetic-only)',
     expect(calls).toBe(0);
   });
 
+  it('refuses HTML, invalid length metadata and oversized streamed JSON without buffering it all',async()=>{
+    const badHtml=new HufsApiClient(async()=>new Response('<html>private</html>',{
+      status:200,headers:{'content-type':'text/html'},
+    }));
+    await expect(badHtml.getSession()).rejects.toMatchObject({
+      code:'PROVIDER_UNAVAILABLE',status:503,
+    });
+    const badLength=new HufsApiClient(async()=>new Response('{}',{
+      status:200,headers:{'content-type':'application/json',
+        'content-length':'not-a-number'},
+    }));
+    await expect(badLength.getSession()).rejects.toMatchObject({status:503});
+    let cancelled=false;
+    const stream=new ReadableStream<Uint8Array>({
+      start(controller){
+        controller.enqueue(new Uint8Array(131072));
+        controller.enqueue(new Uint8Array(131073));
+        controller.close();
+      },
+      cancel(){cancelled=true;},
+    });
+    const client=new HufsApiClient(async()=>new Response(stream,{
+      status:200,headers:{'content-type':'application/json'},
+    }));
+    await expect(client.getSession()).rejects.toMatchObject({
+      code:'PROVIDER_UNAVAILABLE',status:503,
+    });
+    expect(cancelled).toBe(true);
+  });
+
   it('maps absent sessions and untrusted transport errors without leaking server detail',async()=>{
     const unauthorized=new HufsApiClient(async()=>respond({
       code:'UNAUTHENTICATED',message:'로그인이 필요합니다.',
