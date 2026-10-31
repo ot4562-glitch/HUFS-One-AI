@@ -30,7 +30,7 @@ describe('TASK-19/21 offline PostgreSQL DDL safety review (NOT executed on a DB)
   });
   it('requires reviewed, immutable and private conflict decisions with historical resolution',()=>{
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS source_conflict_decisions_vnext');
-    expect(sql).toMatch(/disposition IN \\('CONFLICT','RESOLVED'\\)/i);
+    expect(sql).toMatch(/disposition IN \('CONFLICT','RESOLVED'\)/i);
     expect(sql).toContain('reviewed_at timestamptz NOT NULL');
     expect(sql).toContain('reviewer_id text NOT NULL');
     expect(sql).toContain('CHECK(left_revision_id<right_revision_id)');
