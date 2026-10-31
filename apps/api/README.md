@@ -37,11 +37,17 @@ npm run start:api:local
 
 브라우저가 actorId/hd/email_verified/sourceTokens를 보내서 권한을 만들 수 없습니다. 사전에 승인된 별도 서버 세션 어댑터/Repository가 필수입니다. 오류 응답에 raw 모델/DB/학생 문장을 담지 않습니다.
 
+## 추가 기획: 캘린더 권한 API (2026-10-31)
+
+- `GET /api/demo/contexts/:contextId/calendar`는 [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)의 **예정 엔드포인트로 현재 서버 라우트는 미구현**이다. 결과 `CalendarResultSchema`/[#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)은 main 병합됐지만 계산 [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)과 UI [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)는 미연결이다.
+- 실제 구현은 인증 actor/context/subject, 현재 SharingGrant/grantVersion, 만료/철회, FEED/NOTICES/ACADEMICS/EXPERIENCE 섹션 및 신뢰된 원천 provenance를 원자 검증한 후 `asOf`·출처권리·정정/충돌·sourceRevision·scopeKey가 일치한 결과만 `no-store`로 제공한다. 미확인 적용여부·상시/미정은 확정 날짜에 승격하지 않는다. REVIEWER는 합성만 허용하고, 부분공유 데이터/철회/시점/경쟁 부정 E2E가 필요하다.
+- `readAuthorizedSnapshot` 강제 [#54](https://github.com/ot4562-glitch/HUFS-One-AI/pull/54), PostgreSQL 허가 [#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35)와 추천·공지 `scopeInputsToGrant` [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)는 아직 미병합/미연결이다. 기존 분리 조회가 실제 BETA를 보호한다고 간주하지 않는다.
+
 ## 미구현·병합 후속
 
 1. 실제 Google OIDC 서명·nonce/PKCE, 학교 메일 수신권 OTP/Workspace hd 확인, 베타 계정 allowlist 및 세션 영속 철회/쿠키. 인증·익명 HTML/API/storage/preview/직접IP 우회 부정시험 전 공개 배포 금지.
 2. PostgreSQL 저장/거래·공유 철회·동시성 검증 및 UI와 온전한 API E2E. 지금 MemoryApiRepository는 영속 데이터베이스가 아닙니다.
-3. 추천 PR #15는 미래 게시 차단 수정 후 기술 총괄 코어 승인 기록이 있지만 UI 독립 리뷰가 남아 있습니다. 공지 PR #16의 비학업 후보 격리는 수정됐지만 `overdue` 공식 wire와 [공통 계약 #44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)·독립 리뷰가 선행돼야 합니다. 신뢰형 출처 #40 및 추천 설명 #41은 의존 스택으로 별도 검증하며, [설명 wire #47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)도 실제 API/UI 소비 연동 전 기능 완료가 아닙니다. 합성 코드 통과만으로 실제 실학생 데이터나 운영 API 연결을 허용하지 않습니다.
+3. 추천 PR #15는 main 병합 완료. 공지 PR #16의 비학업 후보 격리는 수정됐지만 [계약 #44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44)의 `overdue`를 실제 `NoticeResult.items[]`에 직렬화하지 않아 재검토가 필요합니다. 신뢰형 출처 #40 및 추천 설명 #41은 의존 스택으로 별도 검증하며, [병합된 설명 wire #47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47)도 실제 API/UI 소비 연동 전 기능 완료가 아닙니다. 합성 코드 통과만으로 실제 실학생 데이터나 운영 API 연결을 허용하지 않습니다.
 4. 이 PR의 LocalTemporalEvidenceIndex는 설계형 로컬 계산 모듈일 뿐 Postgres/RAG API/이미지 OCR이 아닙니다. 공통계약 #18, 수집 #19, OCR/Vision #20, Temporal RAG #21에 따라 별도 구현합니다.
 5. 실제 NCP·Laya·CLOVA/OCR 비용은 #22에서 승인·실측 전까지 사용하지 않습니다. 실제 개인정보와 외부 공식 포스터 사용권한도 별도 확인합니다.
 
