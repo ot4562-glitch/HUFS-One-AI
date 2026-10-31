@@ -77,6 +77,8 @@ export const NoticeItemSchema = z.strictObject({
   priority:z.enum(['CRITICAL_DUE','ACADEMIC_REQUIRED','PERSONAL_OPPORTUNITY','GENERAL']),
   appliesTo:z.enum(['YES','NO','UNKNOWN']),
   studentDeadline:z.iso.datetime({offset:true}).optional(),
+  /** True means the student's submission deadline is past asOf; absent means legacy/undetermined. */
+  overdue:z.boolean().optional(),
   adminReportDeadline:z.iso.datetime({offset:true}).optional(),
   evidenceRefs:z.array(z.string().min(1)),
   verificationState:VerificationStateSchema,
@@ -86,6 +88,12 @@ export const NoticeResultSchema = z.strictObject({
   pinnedIds:z.array(z.string()).max(2),
 }).superRefine((v,ctx)=>{
   const ids=new Set(v.items.map(x=>x.noticeId));
+  // A07.2: a past student deadline can only be called overdue when it applies to this viewer.
+  for(const [index,item] of v.items.entries()){
+    if(item.overdue === true && (item.studentDeadline === undefined || Date.parse(item.studentDeadline) > Date.parse(v.asOf) || item.appliesTo === 'NO')){
+      ctx.addIssue({code:'custom',path:['items',index,'overdue'],message:'overdue must have an applicable passed student deadline'});
+    }
+  }
   if(new Set(v.pinnedIds).size!==v.pinnedIds.length||v.pinnedIds.some(x=>!ids.has(x))){
     ctx.addIssue({code:'custom',path:['pinnedIds'],message:'pinned id not in items or duplicate'});
   }

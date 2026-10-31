@@ -1,7 +1,7 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
-> **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **Standard-g3 VPC 4 vCPU/16GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
 
+**SKU·기간·비용 공식 확인:** [NCP 2026 운영 정본](NCP_OPERATIONS_2026.md). 11/6~12/9 816h 계획 상한, 본선 발표 11/16 이후 개통 승인. 4vCPU/32GB High Memory-g3 326원/h, CB 50GB 8원/h, 서버+CB 272,544원(최대).
 
 기준: **2026-10-30 사용자가 직접 알려준 팀 구성**. 이서연은 **팀 결성·기획을 이끈 리드**, 심민성은 **기술 총괄·GitHub 저장소 소유자·공통 계약과 최종 통합 담당자**다. 사람의 구독 현황은 보고 당시 기준이며, GPT·Claude·Gemini 개발도구와 **제품이 사용하는 CLOVA**를 혼동하지 않는다.
 
@@ -53,7 +53,7 @@
 ## 신뢰형 RAG·이미지 공고·Laya 교차 책임 (2026-10-31 설계)
 
 - **심민성 / 웹·외부 API·통합:** `SourceRevision`·`SourceSpan(TEXT|IMAGE)`·`VerifiedClaim`·`RetrievalEnvelope`의 provider-neutral Zod/권한·asOf 검증/REST 출력과 계약·QA·PR 통합. **NCP·CLOVA·Laya SDK/실제 호출·모델 worker·비용 원장은 이서연**.
-- **이서연 / NCP·CLOVA/모델 Provider 전체:** Standard-g3 4vCPU·16GB VM/보안·키·스토리지·크레딧·비용, Laya 모델/ONNX worker, General OCR·HCX-005 Vision·HCX-007 SDK/HTTP provider 연동·전송권한/원문 검수·비용 중단/worker와 NCP 비공개 스토리지. 실제 모델 다운로드/유료 호출/서버 개통은 승인 전 금지.
+- **이서연 / NCP·CLOVA/모델 Provider 전체:** High Memory-g3 4vCPU·32GB VM/보안·키·스토리지·크레딧·비용, Laya 모델/ONNX worker, General OCR·HCX-005 Vision·HCX-007 SDK/HTTP provider 연동·전송권한/원문 검수·비용 중단/worker와 NCP 비공개 스토리지. 실제 모델 다운로드/유료 호출/서버 개통은 승인 전 금지.
 - **김채윤 / 추천·공지:** 유효한 source revision과 APPROVED claim만 사용하고 연장/취소/정정에 따른 개인화 피드·공지 버전 및 캐시 무효화, 미래 자료 누출/구본 활성화 부정시험.
 - **박준영 / 학사:** OCR/이미지로 수집된 학사 규칙의 표·각주·졸업예정학기·적용학번/RulePack 요구사항 독립 검수; LLM 추출을 공식 졸업 확정으로 승격 금지.
 - **이의상 / UI:** 공식 출처 링크·원본 포스터 박스 하이라이트·최종 확인 시각·OCR 오독/UNKNOWN/STALE/REPLAY 배지와 접근·모바일·캐시 철회.
@@ -66,7 +66,7 @@
 - **이의상 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9):** 포스터 bbox 근거 확대·latest verified / STALE / UNKNOWN / synthetic 표시, 권한철회/캐시·모바일.
 - **김채윤 [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10):** 최신 승인 공고/정정·취소만 추천·공지 소비, [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15) 미래 `asOf` 노출 및 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16) 학기범위/미검증 필수공지/overdue **변경요청 먼저 해결**.
 - **박준영 [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11):** OCR 표·각주/예외/졸업예정학기·Requirement ID/룰팩 검증, 학사·공지 독립 교차리뷰.
-- **이서연 NCP [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12):** API 수집 연계 심민성 [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), NCP OCR·HCX-005 이서연 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), 웹 API Temporal RAG 심민성 [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), Laya CPU·Standard-g3·비용 하드 게이트 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). 실제 GitHub ID 매핑 확인 전 자동 assign/mention 금지.
+- **이서연 NCP [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12):** API 수집 연계 심민성 [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), NCP OCR·HCX-005 이서연 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), 웹 API Temporal RAG 심민성 [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), Laya CPU·High Memory-g3·비용 하드 게이트 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). 실제 GitHub ID 매핑 확인 전 자동 assign/mention 금지.
 - **모든 에이전트:** 다음 세션 시작 즉시 원격 최신 main/이슈/PR과 이전 이슈 댓글을 확인하고 담당 이슈만 분기·PR·테스트로 진행한다. 이슈와 문서 작성은 자동 실행 아님. NCP/이미지/개인원본 전송·실배포는 별도 명시 승인 전 금지.
 
 ## REVIEWER 보안 접근 추가: 심사자를 팀원 5명에 추가하지 않음 (#25)
@@ -79,4 +79,4 @@
 
 ## Laya CPU 스파이크 보호 후속 소유 (#22)
 
-**이서연 NCP/모델 실행 전담 (심민성 API와 분리)**: 승인된 VM에서 systemd cgroup `CPUQuota=100%`가 정확히 **1vCPU**로 적용되는지 확인, ORT single-thread/spin OFF, 별도 ingest queue·cache/중복 방지·과부하 PAUSE/OFF, Laya 기본 비활성/백업 코드 폴백을 구현한다. **심민성**은 NCP 요금/모델 license·RSS/latency 실측 및 계정·개통·한도 변경을 별도로 승인. **이의상 UI**는 심사자 재접속이 워커 호출을 일으키지 않고 SYNTHETIC REPLAY 표시가 명확하도록 검수. Laya ON/OFF 비교와 실측 없이 완성 체크 금지. 정본 [LAYA_CPU_SPIKE_PROTECTION.md](LAYA_CPU_SPIKE_PROTECTION.md).
+이서연 NCP/모델 실행 전담 (심민성 API와 분리)**: 승인된 VM에서 systemd cgroup `CPUQuota=100%`가 정확히 **1vCPU**로 적용되는지 확인, ORT single-thread/spin OFF, 별도 ingest queue·cache/중복 방지·과부하 PAUSE/OFF, Laya 기본 비활성/백업 코드 폴백을 구현한다. **심민성**은 NCP 요금/모델 license·RSS/latency 실측 및 계정·개통·한도 변경을 별도로 승인. **이의상 UI**는 심사자 재접속이 워커 호출을 일으키지 않고 SYNTHETIC REPLAY 표시가 명확하도록 검수. Laya ON/OFF 비교와 실측 없이 완성 체크 금지. 정본 [LAYA_CPU_SPIKE_PROTECTION.md](LAYA_CPU_SPIKE_PROTECTION.md).

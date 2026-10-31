@@ -1,6 +1,6 @@
 # HUFS One AI | 에이전트 작업 기준
 
-> **2026-10-31 최신 담당/서버 계약 (GitHub 이슈 확인):** 심민성([API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27))은 `apps/api`·인증/DB/SourceRevision/RAG/OCR/provider-neutral AI 입력·결과 API 검증 **코드 전담**. 이서연([NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12))은 NCP·CLOVA·OCR/Vision·Laya **클라우드 환경·provider SDK/연동·비용/worker 구현 전담** 담당. 이의상(UI #9)·김채윤(추천/공지 #10)·박준영(학업 #11)의 이슈 담당은 변경하지 않았다. 서버는 한국 리전 **Standard-g3 VPC 4 vCPU/16GB + 별도 CB 50GB**(미개통); 11/6~12/9은 비용 상한 기간이며 [공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 이후 크레딧 확인 전 개통 금지. 심사자는 이메일 사전등록 없는 **공용 초대장**으로 검증된 Google 계정을 등록해 기간 내 전체 **합성 시연 기능**을 체험하며 실제 학생/외부 전송은 차단. 제안서는 `Proposal.md`만 유지.
+> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
 상위 C:\AIProjects\AGENTS.md와 사용자 최신 지시를 따른다. **README.md → Architecture.md(A0~A3) → STATUS.md**를 먼저 읽는다. `Proposal.md`는 팀원·심사자용 가치·범위·평가 메시지이며, **스키마·화면·알고리즘·API·시연·검증·에이전트 작업의 단일 계약은 `Architecture.md`**다.
@@ -46,11 +46,11 @@
 
 ## 2026-10-31 신뢰형 RAG·멀티모달·Laya 설계 분리
 
-**신규 정본:** `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 NCP Standard-g3 4vCPU·16GB, Laya multilingual 322M CPU(선택 비동기), General OCR + 조건부 HCX-005 Vision, HCX-007, 시간·권한 기반 PostgreSQL RAG/SourceRevision의 새 **설계 계약**이다. 기존 AI 네 작업과 개인정보/인증·CLOVA 정책을 유지한다. 후속 contracts Zod·DB·API 변경은 기술 총괄 심민성 전용 PR과 소비자 리뷰 후에만 병합한다. 검증/요금/권리/CPU RSS/클라우드 크레딧 확인 및 명시적 승인 전에는 모델 다운로드·NCP 생성·유료 호출·개통 금지. 설계 변경과 코드 구현 완료를 혼동하지 않는다.
+**신규 정본:** `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 NCP High Memory-g3 4vCPU·32GB, Laya multilingual 322M CPU(선택 비동기), General OCR + 조건부 HCX-005 Vision, HCX-007, 시간·권한 기반 PostgreSQL RAG/SourceRevision의 새 **설계 계약**이다. 기존 AI 네 작업과 개인정보/인증·CLOVA 정책을 유지한다. 후속 contracts Zod·DB·API 변경은 기술 총괄 심민성 전용 PR과 소비자 리뷰 후에만 병합한다. 검증/요금/권리/CPU RSS/클라우드 크레딧 확인 및 명시적 승인 전에는 모델 다운로드·NCP 생성·유료 호출·개통 금지. 설계 변경과 코드 구현 완료를 혼동하지 않는다.
 
 ## 2026-10-31 RAG·OCR/Vision·Laya 운영 이슈 추적 (개발 에이전트 필독)
 - **매 세션 최신 GitHub 이슈부터 확인:** [통합 EPIC #23](https://github.com/ot4562-glitch/HUFS-One-AI/issues/23), 본인 담당 이슈 **심민성 #8/#18, 이의상 #9, 김채윤 #10, 박준영 #11, 이서연 #12 및 #19~#22**, 설계 [PR #17](https://github.com/ot4562-glitch/HUFS-One-AI/pull/17). 이 번호들은 작업 추적이며 자동 실행·구현 완료가 아니다.
-- **의존 순서:** #17 설계 리뷰 → #18 공통 계약/소비자 승인 → #19 출처 버전·권한 수집 → #20 General OCR·조건부 HCX-005 → #21 asOf·권한 기반 RAG/근거검증 → #22 Laya CPU Standard-g3 자원·비용 실측(실제 과금/모델 다운로드/배포는 추가 승인). UI/추천/학업은 각 소유 이슈를 합성 테스트와 연결한다.
+- **의존 순서:** #17 설계 리뷰 → #18 공통 계약/소비자 승인 → #19 출처 버전·권한 수집 → #20 General OCR·조건부 HCX-005 → #21 asOf·권한 기반 RAG/근거검증 → #22 Laya CPU High Memory-g3 자원·비용 실측(실제 과금/모델 다운로드/배포는 추가 승인). UI/추천/학업은 각 소유 이슈를 합성 테스트와 연결한다.
 - **먼저 남은 코드 차단 해결:** 추천 [PR #15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), 중요공지 [PR #16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)는 독립 변경요청이 남아 있으므로 해소+리뷰 전 병합 금지. #16은 #15 기반이므로 병합 순서를 지킨다.
 - 이슈 체크는 **합격한 CI만이 아니라 변경 PR·재현 테스트·권한·출처 라이선스·비용·모델 RSS/latency·실제 독립 리뷰/미실행 항목**을 기록한 뒤 수행한다. 모델 confidence/JSON을 자격·학칙·마감 확정으로 사용하지 않는다. 자동 배포·main 병합 금지.
 
@@ -58,5 +58,5 @@
 
 심사자는 팀원 5명이 아니며 별도 `REVIEWER`로 **합성 전용 시연**을 허용한다. 인증은 Google OIDC의 verified `sub`/이메일 소유 증거 + 비공개 개인 초대 코드 결속이며, `startsAt<=now<endsAt`·revoke를 **매 요청 서버/영속 DB에서 검사**한다. 최초 등록 뒤 같은 계정의 반복 로그인·열람 횟수는 제한하지 않되 코드 추측·과금 등은 제한한다. 초대 PDF 실코드·심사자 이메일·원본 학생자료를 Git/PR/CI에 게시하면 안 된다. 현재 실제 OAuth·UI·DB·도메인·NCP 미구현, `reference/reviewer` PDF는 **비활성 TEMPLATE**. 원문: `docs/REVIEWER_ACCESS.md`, 작업 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), 기본 API [#24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24).
 
-## 2026-10-31 Laya CPU 스파이크 격리 (Standard-g3 4vCPU/16GiB)
+## 2026-10-31 Laya CPU 스파이크 격리 (High Memory-g3 4vCPU/32GiB)
 Laya는 **기본 OFF**이고 Fastify/PG의 동기 경로에서 실행·모델 warm-up 금지. 승인 후 별도 cgroup worker(동시 실행 1, 큐 최대16)에서 `CPUQuota=100%`=**1vCPU**(4vCPU 전체의 25% CPU 시간 상한), ORT intra/inter thread=1/spin OFF, `MemoryMax=3072M` 초기 제한을 검증한다. host CPU/pressure·API p95/RAM 악화 시 PAUSE/OFF·검증 규칙 fallback; GPU/VM 자동 증설/즉시 HCX 우회·파인튜닝 금지. 상세 게이트·측정 전 가설: [docs/LAYA_CPU_SPIKE_PROTECTION.md](docs/LAYA_CPU_SPIKE_PROTECTION.md), [Issue #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). **NCP 실측/설치/프로세스 시작은 이 PR에 포함되지 않는다.**

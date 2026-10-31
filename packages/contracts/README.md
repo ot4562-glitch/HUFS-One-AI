@@ -36,7 +36,8 @@ const snapshot = DemoSnapshotSchema.parse(jsonResponse);
 - **UI (이의상):** `identity`, `corpus`, `errors`; mock snapshot in `packages/fixtures/synthetic/demo-snapshot.json`. Server still must enforce grants. Unit reviewer: `tests/consumers/ui-contract.test.ts`.
 - **추천·공지 (김채윤):** `topics`, `corpus`, `ai`; return evidence-linked eligibility separately from relevance. Unit reviewer: `tests/consumers/recommendation-contract.test.ts`.
 - **학업·전망 (박준영):** `academics`, `intake`, `identity`; keep EARNED/IN_PROGRESS/PLANNED, manual RulePack approvals and asOf. Unit reviewer: `tests/consumers/academics-contract.test.ts`. He **does not submit a student CSV**.
-- **API·CLOVA·NCP (이서연):** `identity`, `errors`, `ai`, `intake`; implement real authentication, grant enforcement, safe provider policy and version conflicts (not part of this schema-only package). Unit reviewer: `tests/consumers/api-contract.test.ts`.
+- **일반 웹 API·인증·DB·Temporal RAG (심민성):** `identity`, `errors`, `ai`, `intake`; actual HTTP login, grants, version conflicts and source permission enforcement are separate API implementations. Unit reviewer: `tests/consumers/api-contract.test.ts`.
+- **NCP/CLOVA/OCR/HCX/Laya 제공자·운영 환경 (이서연, GitHub `lhh42001`):** cloud provider adapters, keys, worker limits and infrastructure. Provider configuration cannot bypass the shared authorization and evidence contracts.
 - **통합 (심민성):** only owner of `packages/contracts` and root package/lockfile. Breaking changes require a new TASK-00 issue/contract PR and all four consumers' re-runs.
 
 ## The four-file intake contract
@@ -59,6 +60,12 @@ if (!report.ready) {
 ```
 
 The documented owner-confirmed alias for one existing uploaded CSV is recorded only in the restricted data governance documentation; **do not hard-code real-name mappings** in TypeScript, mocks or CI. Missing Forms response, duplicate/unknown alias, bad header, extra GPA column, unapproved filename, ambiguous consent or malformed CSV blocks structural readiness. A valid refusal is preserved as DENIED, not overridden. Independent official-rule validation and section-specific SharingGrant remain separate.
+
+## Follow-up handoff for TASK-00 issue #38 (pending review)
+
+- The optional `NoticeItem.overdue?: boolean` preserves a student-deadline-passed signal in the strict `NoticeResult` wire. Omitted remains valid for legacy clients; `true` is only valid with a student deadline on/before `NoticeResult.asOf` and applicability other than `NO`. The recommendation/notice owner must *separately* wire the computed value into PR #16 after this contract PR is reviewed and merged; this schema change alone does not alter `composeNotices()`.
+- `TOPIC_ALIAS_VERSION='aliases-v1.1'` distinguishes the explicitly approved `소프트웨어/개발` alias from the unchanged closed `TOPIC_DICTIONARY_VERSION='topics-v1'` set of 24 topics. No fuzzy matching was introduced. Consumers needing cache invalidation must include the alias revision where relevant.
+- These changes are synthetic-only. Approval of the shared contract does not authorize live API use, personal CSV distribution, or real NCP/CLOVA calls.
 
 ## Contract status and failures
 
