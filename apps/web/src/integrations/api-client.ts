@@ -76,6 +76,37 @@ const AiJobAcceptedSchema = z.strictObject({
   jobId:z.string().min(1),state:z.literal('NEEDS_REVIEW'),provenance:z.literal('MOCK'),
 });
 
+const MAX_RESPONSE_BYTES=256*1024;
+async function readBoundedJson(response:Response):Promise<unknown> {
+  const contentType=response.headers.get('content-type')?.toLowerCase()??'';
+  if(!contentType.startsWith('application/json'))
+    throw new Error('Unexpected API content type');
+  const header=response.headers.get('content-length');
+  if(header!==null&&(!/^[0-9]+$/.test(header)
+    ||Number(header)>MAX_RESPONSE_BYTES))
+    throw new Error('Invalid or oversized API response');
+  if(!response.body)throw new Error('Empty API JSON');
+  const reader=response.body.getReader();
+  let size=0;
+  const chunks:Uint8Array[]=[];
+  try{
+    while(true){
+      const step=await reader.read();
+      if(step.done)break;
+      size+=step.value.byteLength;
+      if(size>MAX_RESPONSE_BYTES){
+        await reader.cancel();
+        throw new Error('Oversized streamed API response');
+      }
+      chunks.push(step.value);
+    }
+  }finally{reader.releaseLock();}
+  const buffer=new Uint8Array(size);
+  let pos=0;
+  for(const chunk of chunks){buffer.set(chunk,pos);pos+=chunk.byteLength;}
+  return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(buffer));
+}
+
 function validApiPath(path: string): boolean {
   return path.startsWith('/api/') && !path.startsWith('//')
     && !/[\\#\u0000-\u001f]/.test(path);
@@ -114,11 +145,7 @@ export class HufsApiClient {
     }
     let payload:unknown;
     try {
-      const declared=Number(response.headers.get('content-length') ?? '0');
-      if(declared>262144)throw new Error('oversize');
-      const text=await response.text();
-      if(text.length>262144)throw new Error('oversize');
-      payload=JSON.parse(text);
+      payload=await readBoundedJson(response);
     } catch {
       // Do not echo a malformed response or its body into the UI.
       throw new HufsApiError(response.status===401?'UNAUTHENTICATED':'PROVIDER_UNAVAILABLE',
