@@ -138,13 +138,13 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
   const ordered = personal ? orderDiverse(rest, cfg.maxPerKindOrganization) : latestFirst(rest, options);
   const compact = ordered.slice(0, COMPACT_MAX);
 
+  const explanations = [...featured, ...compact].map(r => explainRecommendation(r, cfg));
   const feed = FeedResultSchema.parse({
     asOf:options.asOf,
-    featured:featured.map(r => toCard(r, 'FEATURED_LARGE', explainRecommendation(r, cfg))),
-    compact:compact.map(r => toCard(r, 'COMPACT_LIST', explainRecommendation(r, cfg))),
+    featured:featured.map((r, i) => toCard(r, 'FEATURED_LARGE', explanations[i]!)),
+    compact:compact.map((r, i) => toCard(r, 'COMPACT_LIST', explanations[featured.length + i]!)),
     hasMore:visible.length > featured.length + compact.length,
     totalCandidates:visible.length,
   });
-  const explanations = [...featured, ...compact].map(r => explainRecommendation(r, cfg));
   return {feed, ineligible, closed, excludedFuture, all:[...featured, ...ordered], explanations, rankConfigVersion:cfg.version};
 }
