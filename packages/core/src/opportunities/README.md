@@ -21,3 +21,13 @@
 - `CONFLICT`·`PARTIAL`·`STALE` 자료는 ELIGIBLE을 주지 않음, `CLOSED`·`INELIGIBLE`은 별도 목록.
 
 `FeedCard.score`는 디버그용 분해 총점입니다. 취업 확률이나 적격성 %로 표시하지 않습니다.
+
+## 신뢰형 출처 게이트 (#10 vNext, contracts #18/PR #33 구조 호환)
+
+API는 아래 순서로 코어를 부릅니다. 코어 입력 타입(`RevisionRecord`, `ClaimRecord`)은 vNext `SourceRevisionVNext`/`VerifiedClaimVNext`의 **구조적 부분집합**이라 PR #33 병합 후 그대로 넘길 수 있습니다.
+
+1. `selectCurrentRevisions(revisions, asOf)` — 출처별로 asOf에 알 수 있었던 최신 revision만 고르고, `ACTIVE`·검증됨(`lastVerifiedAt ≤ asOf`)·취소 아님·유효기간 안일 때만 사용. 미래 수집/게시, 대체됨(SUPERSEDED), 분기(FORKED_CHAIN), RETRACTED/STALE/BLOCKED_RIGHTS, RESEARCH_ONLY는 `quarantined`.
+2. `gateBySourceRevision(items, selection)` — `Opportunity`/`Notice`의 `sourceSnapshotId`가 사용 가능한 revisionId일 때만 통과. 모르는 revision은 `UNKNOWN_REVISION`으로 격리(현재판으로 가정하지 않음).
+3. `resolveDeadlineClaims(claims, {currentRevisionId, asOf, paragraphs})` — 마감은 **asOf 이전(`claimCheckedAt ≤ asOf`)에 검증자(`reviewerId`)가 VERIFIED로 확정한 현재 revision의 claim + 맞는 dateKind**(APPLY/STUDENT/ADMIN) + **현재 revision 문단과 정확히 일치하는 TEXT 근거**만. 늦게 끝난 검증은 과거 조회에 쓰지 않음(`CHECKED_AFTER_ASOF`). EVENT 날짜·후보·이전판·모호한 문구·IMAGE 근거(API가 contracts `matchesImageSpan`으로 검증해야 함)는 사유와 함께 `ignored`. 서로 다른 VERIFIED 값은 `conflicts`로 비워 둠. 검증자 권한 자체는 API가 확인. Laya/HCX confidence는 입력이 아님.
+4. `checkTopicCandidates(candidates, allowed, paragraphs)` — AI 주제 후보는 24 enum·패킷 허용목록·원문 문단의 실제 인용일 때만 CANDIDATE로 통과(자동 확정·자격 부여 없음).
+5. `composeFeed` / `composeNotices`, 결과는 `resultCacheKey(...)`로 저장 — source revision·claim·retrieval config·projection·asOf 등 하나라도 바뀌면 키가 달라져 이전 결과를 재사용하지 않음. 학생별 projection이 키에 들어가 타 학생 캐시와 섞이지 않음.
