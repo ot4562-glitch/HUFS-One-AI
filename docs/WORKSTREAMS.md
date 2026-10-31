@@ -11,7 +11,7 @@
 | **이의상** | UI·모바일·UX·접근성 | Claude, Gemini | `apps/web`, `packages/ui`, `assets/synthetic` | 04 및 05·09·15의 화면 |
 | **김채윤** | 개인화 추천·중요공지 | GPT, Claude, Gemini | `packages/core/src/normalization`, `opportunities`, `notices` | 06·14 |
 | **박준영** | 졸업요건·학점·수강계획·미래 개설 전망 | GPT, Claude | `packages/core/src/academics`, `forecast` | 01·02·03·17 |
-| **이서연** | 팀 결성·기획 리드 + NCP·CLOVA·OCR/Vision·Laya 모델/Provider 구현 및 운영 전체 전담 | **Gemini (2026-10-30 사용자 확인)** | `packages/ai`(NCP/CLOVA/OCR/HCX/Laya provider 구현), `infra`(NCP VPC·OS·TLS·클라우드 IaC·키·과금/worker), 일반 `apps/api` 제외 | 11·20·22, NCP/CLOVA/OCR/Vision/Laya Provider·환경만 |
+| **이서연** | 팀 결성·기획 리드 + NCP·CLOVA·OCR/Vision·Laya 모델/Provider 구현 및 운영 전체 전담 | **Gemini (2026-10-30 사용자 확인)** | `packages/ai`(NCP/CLOVA/OCR/HCX/Laya provider 구현), `infra`(NCP VPC·OS·TLS·클라우드 IaC·키·과금/worker), 일반 `apps/api` 제외 | **#12·#20·#22**, NCP/CLOVA/OCR/Vision/Laya Provider·환경만 |
 
 ### 이슈 배정으로 확인한 GitHub 작업 계정 (2026-10-31)
 
@@ -21,9 +21,9 @@
 | **이의상** | [`uisang2004-maker`](https://github.com/uisang2004-maker) | [UI 이슈 #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) 담당자 지정 |
 | **김채윤** | [`qamarrchae`](https://github.com/qamarrchae) | [추천·공지 이슈 #10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 담당자 지정 |
 | **박준영** | [`taewangim-alt`](https://github.com/taewangim-alt) | [학업 이슈 #11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) 담당자 지정 |
-| **이서연** | **미확인·자동 할당 금지** | [플랫폼 이슈 #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)에는 GitHub assignee가 없음; Gemini 사용은 사용자 확인 |
+| **이서연** | [`lhh42001`](https://github.com/lhh42001) | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) GitHub assignee로 현재 확인. 이는 GitHub 업무 계정 배정 근거이지 신분/개인자료 동의 증명은 아님 |
 
-**정확성 경계:** 위 네 계정의 대응은 사용자가 지정한 이슈 담당자·GitHub assignee 기록에 근거한다. 이는 사람의 신분증 검증이나 새로운 학생자료 공유 동의가 아니다. 이서연 계정은 임의 유추하지 않으며, 다른 사람의 계정에 대신 배정하지 않는다.
+**정확성 경계:** 위 다섯 계정은 프로젝트 GitHub 이슈의 **현재 assignee 기록**에 근거한다. 신분증 수준의 실제 인물 확인이나 실학생 데이터 공유·외부 처리 동의와 다르며, 계정 할당으로 신규 권한을 만들지 않는다.
 
 - **공개 웹 도메인/Google 인증 P0 협업:** 심민성(API)은 독립 Google OAuth OIDC·외대 메일 OTP 발송/검증·세션/권한 코드를 담당한다. 이서연(NCP/Gemini 사용)은 ingress·TLS·스토리지·CLOVA SDK/HTTP 요청, 모델/OCR/Vision·Laya worker와 클라우드 비용/안전 운영을 모두 담당한다. 이의상(UI)은 Google 로그인·학교 메일 코드·403·재인증 UX와 민감 캐시 차단을 담당한다. 심민성은 공용 auth contract, `외대.온라인.한국` origin, `hd`/메일 OTP 우회 부정시험, CI/PR 통합 게이트를 맡는다. **공식 학교 SSO 허가는 전제하지 않으며** Google OAuth 클라이언트·메일 발송 서비스·NCP 비용·학생자료 공유는 별도 승인한다. 인증 전 앱 번들/API·directIP·preview 접근을 허용하는 PR은 병합 금지(Architecture A14.1a).
 
@@ -38,7 +38,7 @@
 ## 5명 개발팀 ≠ 5명 실학생 입력
 
 - **학생 과목 CSV 4명 + Google Forms 통합 CSV 4명:** 김채윤·이의상·이서연·심민성. **박준영은 CSV/Forms 제출 대상이 아니다.**
-- **사용자가 직접 확인:** `이수과목_까마르.csv`는 김채윤의 제출 파일이다. 현재 과목 CSV **3/4명(김채윤·이의상·심민성)의 파일 소유자가 확인**됐으며, 이서연 파일은 미확인이고 Forms 응답도 아직 미제출이다. 별명 대응을 private 입력 단계에서만 사용하고, 제출은 팀 공유/공식 졸업판정/AI 전송 동의와 구분한다.
+- **파일 형식 관찰(2026-10-31):** Private `main`에 수강 CSV 4개(6열), 통합 Forms 1개(26열·응답 4행)가 존재한다. 수강 CSV 네 파일 모두 BOM 없는 UTF-8이다. `까마르`의 기존 제출자 대응은 사용자가 확인했으나, 네 번째 파일/Forms 개별 응답의 원본 게시 권한·개별 동의·인물 대조는 아직 검증하지 않았다. 데이터 연결은 `PENDING`/별도 동의 승인까지 차단한다.
 - 5개 `S01`~`S05` 시연 슬롯을 유지하더라도 실제 자료 대상은 최대4명이다. 한 슬롯은 `PENDING` 또는 명시적 `SYNTHETIC`으로만 표현한다. 사람별 원본과 공유 projection은 별도의 동의를 요구한다.
 
 ## 독립 개발 시작 순서
