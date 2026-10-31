@@ -15,6 +15,7 @@ describe('A04 closed topic contract',()=>{
     expect(TopicCodeSchema.safeParse('UNDECLARED_TOPIC').success).toBe(false);
     expect(TopicCodeSchema.safeParse('데이터분석').success).toBe(false);
     expect(TOPIC_ALIASES_V1['데이터분석']).toBe('DATA_ANALYTICS');
+    expect(TOPIC_ALIASES_V1['소프트웨어/개발']).toBe('SOFTWARE_DEV');
   });
   it('enforces interest/job/opportunity topic quotas',()=>{
     expect(InterestTopicsSchema.safeParse(TOPIC_CODES.slice(0,6)).success).toBe(false);
