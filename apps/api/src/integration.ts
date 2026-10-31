@@ -1,0 +1,147 @@
+import {createApi} from './server.js';
+import type {FastifyRequest, FastifyReply} from 'fastify';
+import type {
+  AiCandidateProvider, ApiRepository, ApiOptions, VerifySession, VerifiedActor,
+} from './types.js';
+import type {ReviewerAccessStore, ReviewerDemoRepository} from './modules/auth/reviewer.js';
+import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
+
+type RevokeSession=(actor:VerifiedActor)=>Promise<void>;
+interface TrustedSessionAdapter {
+  verifySession:VerifySession;
+  revokeSession:RevokeSession;
+}
+
+/**
+ * Structural consumer port for Agent 1's createGoogleAuthFlow (#32).
+ * Does not implement OIDC, issue OTP, copy keys or accept a browser identity.
+ * When #32 is absent the integrated API explicitly refuses this mode.
+ */
+export interface TrustedGoogleAuthPort extends TrustedSessionAdapter {
+  start(request:FastifyRequest,reply:FastifyReply):Promise<void>;
+  callback(request:FastifyRequest,reply:FastifyReply):Promise<void>;
+  clearSession(reply:FastifyReply):void;
+}
+export interface TrustedSchoolMailPort {
+  issue(input:{googleSubject:string;schoolEmail:string}):
+    Promise<{challengeId:string;expiresAt:string}>;
+  verify(input:{challengeId:string;googleSubject:string;schoolEmail:string;code:string}):
+    Promise<boolean>;
+}
+
+interface SharedDependencies {
+  allowedOrigin:string;
+  repository:ApiRepository;
+  reviewer?:{
+    access:ReviewerAccessStore;
+    demo:ReviewerDemoRepository;
+    sandbox:ReviewerSandboxStore;
+  };
+  /** Local synthetic model ONLY. A real paid NCP provider cannot use this port. */
+  syntheticAiProvider?:AiCandidateProvider;
+  now?:()=>string;
+  maxSyntheticAiCallsPerActor?:number;
+}
+
+/**
+ * The integration must use exactly one session authority:
+ * - Direct trusted verifier + revoker, for offline tests and legacy middleware.
+ * - Agent-1 Google adapter, with optional verified HUFS-mail proof service.
+ * Never combine both: doing so could silently bypass Google session revocation.
+ */
+export type IntegrationDependencies=SharedDependencies&(
+  | {auth:TrustedSessionAdapter;googleAuth?:never;schoolMailProof?:never}
+  | {auth?:never;googleAuth:TrustedGoogleAuthPort;schoolMailProof?:TrustedSchoolMailPort}
+);
+
+type ApiOptionsWithAgent1=ApiOptions&{
+  googleAuth?:TrustedGoogleAuthPort;
+  schoolMailProof?:TrustedSchoolMailPort;
+};
+
+export function createIntegratedApi(deps:IntegrationDependencies) {
+  if(!deps || !deps.repository || typeof deps.repository.readGrant!=='function'
+    || typeof deps.repository.readSnapshot!=='function'
+    || typeof deps.repository.listProfiles!=='function'
+    || typeof deps.repository.readSafePacket!=='function')
+    throw new Error('Missing verified auth, revocation or repository: fail closed');
+  const auth=deps.googleAuth??deps.auth;
+  if(!auth || typeof auth.verifySession!=='function'
+    ||typeof auth.revokeSession!=='function'
+    || Boolean(deps.googleAuth&&deps.auth)
+    ||Boolean(deps.schoolMailProof&&!deps.googleAuth))
+    throw new Error('Exactly one trusted session and revocation authority required');
+  if(deps.googleAuth && (typeof deps.googleAuth.start!=='function'
+    ||typeof deps.googleAuth.callback!=='function'
+    ||typeof deps.googleAuth.clearSession!=='function'))
+    throw new Error('Incomplete Google OIDC adapter: fail closed');
+  if(deps.schoolMailProof && (typeof deps.schoolMailProof.issue!=='function'
+    ||typeof deps.schoolMailProof.verify!=='function'))
+    throw new Error('Incomplete school-mail proof service: fail closed');
+  if(deps.reviewer && (typeof deps.reviewer.access?.readActive!=='function'
+    || typeof deps.reviewer.access?.redeem!=='function'
+    || typeof deps.reviewer.demo?.listProfiles!=='function'
+    || typeof deps.reviewer.demo?.readSnapshot!=='function'
+    || typeof deps.reviewer.sandbox?.read!=='function'
+    || typeof deps.reviewer.sandbox?.save!=='function'))
+    throw new Error('Incomplete REVIEWER sandbox: fail closed');
+  // The approved deployment assembly does not yet exist. This prevents an
+  // alternate launcher from bypassing main.ts's existing production block.
+  // NODE_ENV is the standard deployment marker. APP_ENV alone is not a
+  // reliable production gate: an alternate launcher can omit it. Default
+  // deny unknown staging/preview modes until a reviewed release assembly exists.
+  const appEnv=process.env.APP_ENV;
+  const nodeEnv=process.env.NODE_ENV;
+  if((appEnv!==undefined && !['test','development','local','synthetic'].includes(appEnv))
+    ||(nodeEnv!==undefined && !['test','development'].includes(nodeEnv)))
+    throw new Error('Production integration disabled pending audited OAuth/PG/ingress gates');
+  if(!deps.allowedOrigin || new URL(deps.allowedOrigin).origin!==deps.allowedOrigin
+    || !deps.allowedOrigin.startsWith('https://'))
+    throw new Error('Exactly one HTTPS origin is required');
+  if(deps.maxSyntheticAiCallsPerActor!==undefined
+    && (!Number.isSafeInteger(deps.maxSyntheticAiCallsPerActor)
+      || deps.maxSyntheticAiCallsPerActor<1 || deps.maxSyntheticAiCallsPerActor>10))
+    throw new Error('Synthetic AI quota outside safe bounds');
+
+  const options:ApiOptionsWithAgent1={
+    allowedOrigin:deps.allowedOrigin,repository:deps.repository,
+    ...(deps.googleAuth?{
+      googleAuth:deps.googleAuth,
+      ...(deps.schoolMailProof?{schoolMailProof:deps.schoolMailProof}:{}),
+    }:{
+      verifySession:auth.verifySession,
+      revokeSession:auth.revokeSession,
+    }),
+    ...(deps.reviewer?{
+      reviewerAccess:deps.reviewer.access,
+      reviewerDemo:deps.reviewer.demo,
+      reviewerSandbox:deps.reviewer.sandbox,
+    }:{}),
+    ...(deps.syntheticAiProvider?{syntheticAiProvider:deps.syntheticAiProvider}:{}),
+    ...(deps.maxSyntheticAiCallsPerActor!==undefined
+      ?{maxSyntheticAiCallsPerActor:deps.maxSyntheticAiCallsPerActor}:{}),
+    ...(deps.now?{now:deps.now}:{}),
+  };
+  const app=createApi(options);
+  if(deps.googleAuth) {
+    // Until Agent 1 #32 is included, main's createApi has no such routes.
+    // Do NOT pretend that passing a port automatically enables OIDC.
+    const googleRoutes=[
+      {method:'GET' as const,url:'/api/auth/google/start'},
+      {method:'GET' as const,url:'/api/auth/google/callback'},
+      {method:'GET' as const,url:'/api/auth/csrf'},
+    ];
+    const proofRoutes=[
+      {method:'POST' as const,url:'/api/auth/school-mail/request'},
+      {method:'POST' as const,url:'/api/auth/school-mail/confirm'},
+    ];
+    if(!googleRoutes.every(route=>app.hasRoute(route))
+      || (deps.schoolMailProof&&!proofRoutes.every(route=>app.hasRoute(route)))) {
+      void app.close();
+      throw new Error('Agent-1 OIDC/mail routes not installed: fail closed');
+    }
+  }
+  // Fail-closed local main.ts remains untouched. Real PG, OAuth keys, shared
+  // session revocation, rate limits, browser E2E and deployment require approval.
+  return app;
+}
