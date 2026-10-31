@@ -11,6 +11,8 @@ export interface CurrentEvidenceGrants {
   majorCode?:string;
   cohort?:number;
   policyVersion:string;
+  /** Monotonic server-side source-head epoch, if the resolver supports it. */
+  sourceHeadVersion?:string;
 }
 export interface EvidenceRightsResolver {
   resolveFor(input:{actor:VerifiedTeamActor;now:string}):
@@ -19,6 +21,7 @@ export interface EvidenceRightsResolver {
 function policyFingerprint(scope:CurrentEvidenceGrants):string{
   return JSON.stringify({
     policyVersion:scope.policyVersion,
+    sourceHeadVersion:scope.sourceHeadVersion??null,
     permissions:[...scope.permissionRefs].sort(),
     sources:scope.sourceIds?[...scope.sourceIds].sort():null,
     campus:scope.campus??null,majorCode:scope.majorCode??null,
@@ -70,12 +73,17 @@ export function createPostgresTemporalGateway(
       const envelope=RetrievalEnvelopeVNextSchema.parse({
         ...result.envelope,permissionPolicyVersion:rechecked.policyVersion,
       });
+      const resultRevisionIds=[...new Set(result.hits.map(hit=>hit.revisionId))];
       if(envelope.asOf!==asOf||result.hits.length!==envelope.evidence.length
         ||result.hits.length>topK
+        ||resultRevisionIds.length!==envelope.sourceRevisionIds.length
+        ||resultRevisionIds.some(id=>!envelope.sourceRevisionIds.includes(id))
         ||result.hits.some((hit,i)=>{
           const span=envelope.evidence[i];
           return !span||span.kind!=='TEXT'||span.sourceRevisionId!==hit.revisionId
-            ||span.paragraphId!==hit.paragraphId||span.quote!==hit.quote;
+            ||span.paragraphId!==hit.paragraphId||span.quote!==hit.quote
+            ||span.startCodePoint!==0
+            ||span.endCodePoint!==Array.from(hit.quote).length;
         }))throw new Error('Untrusted retrieval evidence mismatch');
       // Never persist permission snapshots or reuse a previous actor's result.
       return {envelope,hits:result.hits};
