@@ -5,6 +5,7 @@ import type {GoogleAuthFlow} from './modules/auth/google-auth-flow.js';
 import type {createSchoolMailProofService} from './modules/auth/school-mail-proof.js';
 import type {TemporalResult} from './modules/opportunities/revision-ledger.js';
 import type {CalendarInputSource} from './modules/calendar.js';
+import type {PersonalStatePort} from './modules/personal-state.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -73,6 +74,8 @@ export interface ApiOptions {
   repository: ApiRepository;
   /** Atomic current grant/source/projection reader; absent means calendar is unavailable. */
   calendarSource?:CalendarInputSource;
+  /** Actor-owned durable state; independent consent/provenance remains mandatory. */
+  personalState?:PersonalStatePort;
   /** A separate grant store and synthetic-only projection repository for REVIEWER. */
   reviewerAccess?: ReviewerAccessStore;
   reviewerDemo?: ReviewerDemoRepository;

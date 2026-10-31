@@ -19,6 +19,7 @@ import {SchoolMailProofError} from './modules/auth/school-mail-proof.js';
 import {validateModelCandidate} from './modules/ai/candidate.js';
 import {computeAuthorizedCalendar} from './modules/calendar.js';
 import type {CalendarReadRequest} from './modules/calendar.js';
+import {registerPersonalStateRoutes} from './modules/personal-state.js';
 
 const SelectBody=z.strictObject({
   demoSubjectId:SubjectAliasSchema,
@@ -609,6 +610,15 @@ export function createApi(options:ApiOptions) {
     if(!job||job.actorId!==actor.actorId||job.sessionIdHash!==actor.sessionIdHash)
       throw new ApiFailure('FORBIDDEN');
     return {jobId:job.jobId,state:job.state,task:job.task,createdAt:job.createdAt,candidate:job.candidate};
+  });
+  registerPersonalStateRoutes(app,{
+    store:options.personalState,
+    authorize:async(request,id,section)=>{
+      if(principal(request).role==='REVIEWER')throw new ApiFailure('FORBIDDEN');
+      const {actor,context}=await checkedContext(request,id,[section]);
+      return {actorId:actor.actorId,subjectId:context.demoSubjectId,
+        grantVersion:context.sharingGrantVersion};
+    },
   });
   return app;
 }
