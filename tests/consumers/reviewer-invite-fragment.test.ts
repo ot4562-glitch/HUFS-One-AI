@@ -13,8 +13,7 @@ function browser(config:Partial<InviteBrowserPort['location']>={}) {
   const calls:unknown[][]=[];
   const port:InviteBrowserPort={
     location:{
-      origin,pathName:'/reviewer/invite',
-      pathname:'/reviewer/invite',search:'',hash:'#code='+code,...config,
+      origin,pathname:'/reviewer/invite',search:'',hash:'#code='+code,...config,
     } as InviteBrowserPort['location'],
     history:{replaceState:(...args:unknown[])=>{calls.push(args);}},
   };
