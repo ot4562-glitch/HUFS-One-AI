@@ -33,7 +33,20 @@ export type VerifySession = (request: FastifyRequest) => Promise<VerifiedActor|n
 export interface ApiRepository {
   listProfiles(): Promise<DemoProfileOption[]>;
   readGrant(actorId: string, subject: SubjectAlias): Promise<SharingGrant|null>;
+  /** Unsafe subject-only read: internal REVIEWER/synthetic legacy use only.
+   * BETA HTTP routes must call readAuthorizedSnapshot instead. */
   readSnapshot(subject: SubjectAlias): Promise<DemoSnapshot|null>;
+  /**
+   * One repository operation must validate current actor+subject+grant version,
+   * requested sections, revoke/expiry and return only a scope-safe projection.
+   * Optional while DB adapters migrate; absence MUST deny BETA reads.
+   * Never accept actorId or grantVersion from a browser payload.
+   */
+  readAuthorizedSnapshot?(input:{
+    actorId:string;subjectId:SubjectAlias;grantVersion:string;
+    requiredSections?:Array<'FEED'|'NOTICES'|'ACADEMICS'|'FORECAST'|'EXPERIENCE'>;
+    now?:string;
+  }):Promise<DemoSnapshot|null>;
   /** Server-approved packet reference. A browser must NEVER send raw model text. */
   readSafePacket(actorId: string, task: AiTask, ref: string): Promise<SafeLlmPacket|null>;
 }
