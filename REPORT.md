@@ -1,5 +1,8 @@
 # HUFS One AI | 시연·에이전트 검증 기준
 
+> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+
+
 상세 기준은 [Architecture.md](Architecture.md) A2·§8·§13~16이다. 심사용 시연 소개는 [Proposal.md](Proposal.md) §04·§09를 따른다.
 
 ## 5개 데모 슬롯 주시연과 합성 회귀시험
@@ -24,4 +27,4 @@ TASK-00~TASK-12의 체크박스는 담당 구현 에이전트가 실행·증거�
 
 ## 신규 신뢰성·시의성·이미지 증거 게이트 (2026-10-31 설계, 미실행)
 
-기존 추천 40건×5프로필 평가와 **별도로** 합성 포스터 20건 및 정정/취소/기간/이력 12건을 목표로 한다. (1) HTML-only vs OCR vs OCR+HCX-005 이미지 필드·날짜·좌표 정확도, (2) core-only vs temporal RAG+HCX-007 evidence groundedness/환각·허위 자격, (3) Laya on/off Korean 문서 라우팅 F1·Standard-g2 CPU/RSS/p95·비용을 독립 평가한다. 중요한 오판·미래 `asOf` 누출·권한 위반·취소 후 구본 활성화 **0건 목표**이며 실제 테스트 전에 실적이라고 쓰지 않는다. OCR/LLM 비용뿐 아니라 서버·gateway·storage·VAT·크레딧 적용을 구분하고 예산 초과 시 서비스 내 안전한 폴백을 검증한다. 수행 조건·실패 사례: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md` §8.
+기존 추천 40건×5프로필 평가와 **별도로** 합성 포스터 20건 및 정정/취소/기간/이력 12건을 목표로 한다. (1) HTML-only vs OCR vs OCR+HCX-005 이미지 필드·날짜·좌표 정확도, (2) core-only vs temporal RAG+HCX-007 evidence groundedness/환각·허위 자격, (3) Laya on/off Korean 문서 라우팅 F1·Standard-g3 CPU/RSS/p95·비용을 독립 평가한다. 중요한 오판·미래 `asOf` 누출·권한 위반·취소 후 구본 활성화 **0건 목표**이며 실제 테스트 전에 실적이라고 쓰지 않는다. OCR/LLM 비용뿐 아니라 서버·gateway·storage·VAT·크레딧 적용을 구분하고 예산 초과 시 서비스 내 안전한 폴백을 검증한다. 수행 조건·실패 사례: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md` §8.

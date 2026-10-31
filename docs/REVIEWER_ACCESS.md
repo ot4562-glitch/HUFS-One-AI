@@ -1,0 +1,52 @@
+# HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
+
+> 2026-10-31 최종 설계. 실 Google OIDC·실 PostgreSQL·웹 UI·발송·NCP 배포는 미완료. API 소유: 심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), 심사 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25). 이서연은 NCP/CLOVA Provider 전체만 준비한다. 제안서는 Proposal.md만 정본이다.
+
+## 1. 심사자 이메일을 사전에 모르는 공용 초대장
+
+- 제출 자료에는 공용 초대장을 첨부한다. 심사자의 이름·이메일 주소 목록은 **필요하지 않다**. 32바이트 CSPRNG 원문 코드는 비공개 발급 후 초대장이나 제한된 제출 문서에 넣고, 서버는 SHA-256 digest만 보관한다. GitHub에 공유하는 양식 PDF는 **비활성**, 활성 토큰이 없다.
+- 검증된 Google OIDC 인증(sub, 발급자, 서명, aud, nonce, state, PKCE) 및 현재 이메일 확인을 마친 뒤 초대 코드를 등록한다. 첫 등록 시 Google sub·verified email을 **계정별로 저장**하고, 다른 사람이 해당 계정으로 가장할 수 없게 서버 세션을 검증한다. 초대 링크만으로 학교 심사위원 신분을 확인할 수 있는 것은 아니다.
+- **공용 코드 하나로 여러 명이 별도 계정을 최초 등록**한다. 기본 상한 20계정(허용 1~50), 등록은 5회/15분/actor 이상 시 429; 실서비스에서는 중앙/분산·IP 제한·코드 회수·이상 접근 모니터링을 추가한다. 심사자 명단을 모르므로 링크가 유출되어 비심사자가 선등록할 위험은 남는다. 반드시 실제 학생 자료가 없는 합성 환경만 허용한다.
+- 등록 후 같은 검증된 Google 계정은 기간 안에서 브라우저를 닫거나 세션을 재로그인해도 무제한 접속한다. 새 등록 인원만 상한을 둔다. 최초 등록된 Google sub/email에 다른 이메일·sub로 접근하는 것은 실패한다.
+- 초대 URL은 예정 origin의 `/reviewer/invite#code=...`처럼 fragment로 전달, 브라우저가 메모리에서 추출해 즉시 주소에서 제거한 뒤 exact Origin·CSRF로 등록 POST 전송한다. 접근 로그/리퍼러/query/analytics/Sentry에 raw token 기록 금지.
+
+## 2. 전체 웹사이트 기능을 **합성 시연 모드**에서 직접 체험
+
+심사자는 팀원 5명이나 실제 학생 원장의 구성원이 아니다. **UI의 모든 학생용 탭·상호작용을 재현하되 데이터/효과를 합성 격리**한다. 기능이 현재 구현되지 않은 경우 성공한 것처럼 가짜 응답을 주지 말고 명시적 '시연 준비 중' 안내와 E2E 잔여 항목으로 남긴다.
+
+| 학생용 기능 | REVIEWER 실제 허용 범위 |
+|---|---|
+| 시연 프로필 전환 | 가상 S01~S05 모두 준비된 합성 사본만 전환. 팀원 실제 SharedGrant/CSV/Forms 접근 불허 |
+| 추천·검색·공지·마감 | 미리 검증한 합성 피드/공지/근거 시점, 원문 근거·수정/취소 상태 배지 탐색 |
+| 졸업지원·학점·개설 전망 | 가상 학점 원장과 `NEEDS_REVIEW` RulePack·불확실한 전망의 전체 UX 체험. 공식 판정인 척하지 않음 |
+| 경험·관심 수정·북마크·읽음·체크리스트 | 계정·컨텍스트별 합성 sandbox 상태만 변경. 실제 Forms/학생 원본 및 외부 저장소 미변경 |
+| 지원서 작성·지원 버튼 | 합성 `APPLICATION_DRAFT`·`SIMULATE_APPLICATION`까지만. 실제 기업/학교로 신청·메일 발송·자격 확정 불가 |
+| AI 기능 네 작업 | 서버 승인 synthetic SafeLlmPacket과 **로컬 MOCK+NEEDS_REVIEW** 출처 인용. NCP·HCX·Laya·OCR 실제 유료 호출 0 |
+
+공통 API UI 재사용: `GET /api/demo/profiles`, `POST /api/demo/contexts`, `GET /api/demo/contexts/:id/{snapshot,notices,graduation,outlook}`는 REVIEWER에게 합성 사본으로만 응답한다. 작업모의 API는 `/api/reviewer/demo/contexts/:id/actions` GET/POST. 네 작업 `/api/ai/:task`는 REVIEWER일 때 합성 packet + contextId로만 실행해 MOCK 후보를 돌려준다. 모든 요청은 관리자 아닌 REVIEWER role, 현재 초대·시간·계정 확인 후 허용. 원본 수집, 실제 관리/다른 팀원 데이터·재학 확인 API는 금지.
+
+**코드 현재 상태:** Fastify API, 초대 등록·만료, 메모리 sandbox 및 합성 리포지토리 DI 경계 구현·테스트 가능. 웹의 실제 모든 화면, 5명 전용 합성 콘텐츠·DB 영속 sandbox, 실제 OIDC 연동은 별도 작업이다. '모든 기능이 실운영 준비 완료'와 혼동하지 않는다.
+
+## 3. 기간·철회
+
+- 사용자 요청 최대 계획: 2026-11-06 00:00~12-10 00:00 KST (12월9일 종료까지). 그러나 [학교 공식 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표는 **11월16일**이므로 실제 활성 초대는 본선 진출·배포 준비·심사 일정 확인 **이후** 발급한다. 예상 11월16일~12월9일이지만 운영자가 정확한 시각을 확정해야 한다.
+- 서버의 UTC `startsAt <= now < endsAt`가 정본; KST는 사용자 표시일 뿐. 모든 GET/POST마다 PostgreSQL `readActive`로 만료·철회·sub/email 검증. 종료시각/철회 후 기존 session cookie가 있어도 403. 앱 캐시/Service Worker·로그에서 합성 정보라도 오래 열린 화면을 정리하도록 UI 처리.
+- 운영자만 `revoke`해 공용 초대 전체를 즉시 중단. 유출 시 코드 회수·새 코드 발급·등록계정 감사. 등록 성공을 **무제한 유료 추론·트래픽** 권한으로 해석하지 않는다.
+- PostgreSQL의 초대 row를 `SELECT ... FOR UPDATE`로 잠가 신규 등록 경쟁 상태에서도 최대 계정 수 준수. 이메일·Google sub/서버 세션/등록 기록은 비공개이며 직접 접근 가능한 DB 권한은 API 서비스로 제한한다.
+
+## 4. 초대장·관리도구
+
+- 공개 저장소의 `reference/reviewer/ReviewerInvitation.TEMPLATE.pdf`는 **단일 A4 비활성 공용 양식**, 개인별 이메일 입력은 필요 없음.
+- 서버와 Google OIDC/DB/TLS 연결이 끝나고 운영 승인을 받은 뒤 `npm run admin:reviewer -- issue`에서 HTTPS origin, UTC 유효기간, 등록 최대 계정 수, 별칭·DB URL을 설정한다. 원문 링크 JSON은 `local_only/reviewer_invitations/<uuid>.json`에만 저장하고, 해당 JSON에서 활성 공용 PDF를 별도로 비공개 출력한다. Git, PR, CI, issue body에 활성 URL 금지.
+- 운영자 파기·종료 도구는 `npm run admin:reviewer -- revoke`; DB 철회가 모든 세션에 즉시 적용되는지 테스트.
+
+## 5. 병합·실서비스 준비 게이트
+
+- [x] 로컬 합성 테스트: 공용 초대 두 Google 계정 등록, 20명 상한, 70회 반복, 종료 경계, 철회, CSRF, 실제 학생 저장소를 쓰지 않는지, UI 호환 demo context·학업·공지, 합성 북마크·가상 신청 및 AI 네 작업.
+- [ ] 실제 Google OAuth OIDC/메일 검증·실 PG transaction/migration·분산 rate limiting·세션 revoke 및 보안 E2E·초대장 발행/전달 테스트.
+- [ ] 이의상 UI #9: `/reviewer/invite` fragment 처리, 프로필/모든 화면 연결, 합성/REPLAY 배지, 기한 종료 시 화면 삭제, 모바일·접근성·다중 탭·실 데이터 미노출 E2E.
+- [ ] 심민성 API #27: 현재 `MemoryReviewerSandboxStore`는 테스트용; 영속/격리/복원과 실제 Google 인증 및 API 연동이 완료되어야 출시 가능.
+- [ ] 이서연 NCP #12: Standard-g3 4vCPU16GB·CB 50GB·CLOVA/보안/크레딧 운영환경. 본선 확정 전 NCP 개통 없음.
+- [ ] PR #24 기초 API → 이 PR #26 stacked를 최신 main에 병합·재검증. 추천/공지 #15/#16 공유 설정 충돌 여부 확인. 교차 코드 리뷰와 원격 CI 및 실제 시연 화면 시험 전 자동 병합 금지.
+
+관련: [API 개발 #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), [심사자 #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), [기술 계약](../Architecture.md), [Laya CPU](LAYA_CPU_SPIKE_PROTECTION.md).

@@ -3,12 +3,16 @@ import type {FastifyRequest} from 'fastify';
 import type {ApiErrorCode} from '@hufs-one/contracts';
 import type {VerifiedActor} from '../../types.js';
 
-const VerifiedActorSchema=z.strictObject({
+const Base={
   actorId:z.string().trim().min(1),sessionIdHash:z.string().min(8),
-  sessionExpiresAt:z.iso.datetime({offset:true}),
-  schoolMailProofExpiresAt:z.iso.datetime({offset:true}),
-  betaAllowed:z.boolean(),role:z.enum(['BETA','ADMIN']),csrfToken:z.string().min(16),
-});
+  sessionExpiresAt:z.iso.datetime({offset:true}),csrfToken:z.string().min(16),
+};
+const VerifiedActorSchema=z.discriminatedUnion('role',[
+  z.strictObject({...Base,role:z.enum(['BETA','ADMIN']),
+    schoolMailProofExpiresAt:z.iso.datetime({offset:true}),betaAllowed:z.boolean()}),
+  z.strictObject({...Base,role:z.literal('REVIEWER'),
+    verifiedEmail:z.email().max(254),identityProofExpiresAt:z.iso.datetime({offset:true})}),
+]);
 export class ApiFailure extends Error {
   constructor(readonly code: ApiErrorCode, readonly contextId?:string) {
     super(code);
@@ -20,7 +24,11 @@ export function authorizeSession(value:unknown,now:string):VerifiedActor {
   if(!actor.success)throw new ApiFailure('UNAUTHENTICATED');
   const at=Date.parse(now);
   if(!Number.isFinite(at)||Date.parse(actor.data.sessionExpiresAt)<=at)throw new ApiFailure('UNAUTHENTICATED');
-  if(!actor.data.betaAllowed||Date.parse(actor.data.schoolMailProofExpiresAt)<=at)throw new ApiFailure('FORBIDDEN');
+  if(actor.data.role==='REVIEWER') {
+    if(Date.parse(actor.data.identityProofExpiresAt)<=at)throw new ApiFailure('FORBIDDEN');
+  } else if(!actor.data.betaAllowed||Date.parse(actor.data.schoolMailProofExpiresAt)<=at) {
+    throw new ApiFailure('FORBIDDEN');
+  }
   return actor.data;
 }
 
