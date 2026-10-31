@@ -77,6 +77,8 @@ export const NoticeItemSchema = z.strictObject({
   priority:z.enum(['CRITICAL_DUE','ACADEMIC_REQUIRED','PERSONAL_OPPORTUNITY','GENERAL']),
   appliesTo:z.enum(['YES','NO','UNKNOWN']),
   studentDeadline:z.iso.datetime({offset:true}).optional(),
+  /** True means the student's submission deadline is past asOf; absent means legacy/undetermined. */
+  overdue:z.boolean().optional(),
   adminReportDeadline:z.iso.datetime({offset:true}).optional(),
   evidenceRefs:z.array(z.string().min(1)),
   verificationState:VerificationStateSchema,
