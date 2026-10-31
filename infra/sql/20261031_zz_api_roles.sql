@@ -40,6 +40,28 @@ GRANT SELECT ON
 GRANT EXECUTE ON FUNCTION
   api_lock_authorized_personal_grant(text,char(3),text,text[])
   TO hufs_api_personal_writer,hufs_api_projection_reader;
+-- Row-level isolation complements actor/subject SQL predicates.
+-- The transaction-local settings are injected only by the authenticated API.
+-- They are not a substitute for verified actor identity or trusted DB logins.
+ALTER TABLE api_personal_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE api_personal_records FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS api_personal_scoped_rw ON api_personal_records;
+CREATE POLICY api_personal_scoped_rw ON api_personal_records
+  FOR ALL TO hufs_api_personal_writer
+  USING (
+    actor_id=current_setting('hufs.actor_id',true)
+    AND subject_id=current_setting('hufs.subject_id',true))
+  WITH CHECK (
+    actor_id=current_setting('hufs.actor_id',true)
+    AND subject_id=current_setting('hufs.subject_id',true));
+ALTER TABLE api_personal_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE api_personal_events FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS api_personal_scoped_audit ON api_personal_events;
+CREATE POLICY api_personal_scoped_audit ON api_personal_events
+  FOR INSERT TO hufs_api_personal_writer
+  WITH CHECK (
+    actor_id=current_setting('hufs.actor_id',true)
+    AND subject_id=current_setting('hufs.subject_id',true));
 GRANT SELECT,INSERT,UPDATE ON api_personal_records TO hufs_api_personal_writer;
 GRANT INSERT ON api_personal_events TO hufs_api_personal_writer;
 GRANT SELECT,INSERT,UPDATE ON api_sharing_grants TO hufs_api_grant_admin;

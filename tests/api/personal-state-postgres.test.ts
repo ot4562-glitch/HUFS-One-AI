@@ -21,6 +21,7 @@ function fake(){
   let rows=new Map<string,Row>(),events:Row[]=[];
   let snapshot:Map<string,Row>|null=null,eventSnapshot:Row[]=[];
   let grantActive=true,grantVersion='v1',failAudit=false,otherActor=false;
+  let syntheticAllowed=true,ownerAllowed=false;
   const calls:Array<{sql:string;params:readonly unknown[]}>=[],releases:number[]=[];
   const identity=(v:readonly unknown[])=>v.slice(0,4).join('|');
   const clone=(r:Row):Row=>structuredClone(r);
@@ -92,11 +93,17 @@ function fake(){
   };
   const pool:ReviewerSqlPool={connect:async()=>c};
   return {
-    store:new PostgresPersonalStateStore(pool),pool,calls,releases,
+    store:new PostgresPersonalStateStore(
+      pool,
+      {mayProcess:async()=>ownerAllowed},
+      {isApproved:async()=>syntheticAllowed},
+    ),pool,calls,releases,
     getRows:()=>rows,getEvents:()=>events,
     setGrant:(active:boolean,version='v1')=>{grantActive=active;grantVersion=version;},
     otherActor:(active:boolean)=>{otherActor=active;},
     failAudit:(active:boolean)=>{failAudit=active;},
+    synthetic:(allowed:boolean)=>{syntheticAllowed=allowed;},
+    owner:(allowed:boolean)=>{ownerAllowed=allowed;},
   };
 }
 describe('TASK-27 personal PostgreSQL CRUD (SQL stub, not a real DB)',()=>{
@@ -207,7 +214,39 @@ describe('TASK-27 personal PostgreSQL CRUD (SQL stub, not a real DB)',()=>{
     })).rejects.toBeInstanceOf(PersonalStateDenied);
     await expect(h.store.list({scope:baseScope,kind:'EXPERIENCE',limit:0})).rejects.toThrow();
     await expect(h.store.list({scope:baseScope,kind:'EXPERIENCE',limit:101})).rejects.toThrow();
-    expect(h.calls).toHaveLength(0);
+    expect(h.calls.some(x=>x.sql.trim()==='ROLLBACK')).toBe(true);
+  });
+  it('fails closed if synthetic data is unverified despite the browser label',async()=>{
+    const h=fake();
+    h.synthetic(false);
+    await expect(h.store.create({
+      scope:baseScope,itemId:'exp-unverified',value:experience,
+    })).rejects.toBeInstanceOf(PersonalStateDenied);
+    expect(h.getRows().size).toBe(0);
+    expect(h.getEvents()).toHaveLength(0);
+  });
+  it('cannot downgrade old owner-consented data to synthetic after consent withdrawal',async()=>{
+    const h=fake();
+    h.owner(true);
+    await h.store.create({
+      scope:baseScope,itemId:'exp-owner',
+      value:{...experience,dataMode:'OWNER_CONSENTED'},
+    });
+    h.owner(false);
+    await expect(h.store.read({
+      scope:baseScope,kind:'EXPERIENCE',itemId:'exp-owner',
+    })).rejects.toBeInstanceOf(PersonalStateDenied);
+    await expect(h.store.update({
+      scope:baseScope,itemId:'exp-owner',expectedVersion:1,value:experience,
+    })).rejects.toBeInstanceOf(PersonalStateDenied);
+    const [stored]=[...h.getRows().values()];
+    expect(stored?.data_mode).toBe('OWNER_CONSENTED');
+    expect(stored?.version).toBe(1);
+    // Erasure is still permitted without renewal of processing consent.
+    expect((await h.store.delete({
+      scope:baseScope,kind:'EXPERIENCE',itemId:'exp-owner',expectedVersion:1,
+    })).version).toBe(2);
+    expect([...h.getRows().values()][0]?.value_json).toEqual({});
   });
 });
 describe('TASK-27 PG configuration and migration gate (offline static only)',()=>{
@@ -226,6 +265,9 @@ describe('TASK-27 PG configuration and migration gate (offline static only)',()=
       ...config,connectionString:config.connectionString+'?sslmode=disable',
     })).toThrow();
     expect(()=>createPostgresDataPool({...config,maxConnections:21})).toThrow();
+    expect(()=>createPostgresDataPool({
+      ...config,connectionString:'postgres://tester:secret@localhost/hufs_one_production',
+    })).toThrow();
   });
   it('does not create local network connections just by constructing a pool',async()=>{
     const local=createPostgresDataPool({
@@ -246,6 +288,10 @@ describe('TASK-27 PG configuration and migration gate (offline static only)',()=
     expect(personal).toContain('SECURITY DEFINER');
     expect(personal).toContain('FOR SHARE;');
     expect(roles).toContain('GRANT EXECUTE ON FUNCTION');
+    expect(roles).toContain('ENABLE ROW LEVEL SECURITY');
+    expect(roles).toContain('FORCE ROW LEVEL SECURITY');
+    expect(roles).toContain("current_setting('hufs.actor_id',true)");
+    expect(roles).toContain("current_setting('hufs.subject_id',true)");
     expect(roles).not.toMatch(/GRANT ALL PRIVILEGES/);
     expect(roles).not.toMatch(/GRANT DELETE ON/);
   });

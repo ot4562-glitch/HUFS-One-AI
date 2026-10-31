@@ -38,7 +38,9 @@ export function createPostgresDataPool(settings:DataPoolSettings):ManagedDataPoo
     throw new Error('Invalid PostgreSQL connection settings');
   let ssl:false|{rejectUnauthorized:true;ca:string};
   if(settings.environment==='local-test'){
-    if(!Loopback.has(url.hostname))throw new Error('Local DB must use loopback');
+    if(!Loopback.has(url.hostname)
+      ||!['/hufs_one_test','/hufs_one_a2_test'].includes(url.pathname))
+      throw new Error('Local PG requires a disposable, named test database');
     ssl=false;
   }else if(settings.environment==='production'){
     if(Loopback.has(url.hostname)
@@ -61,11 +63,14 @@ export function createPostgresDataPool(settings:DataPoolSettings):ManagedDataPoo
       const c=await pool.connect();
       try{
         const check=await c.query(`
-          SELECT current_user AS db_role, rolsuper, rolbypassrls
+          SELECT current_user AS db_role, rolsuper, rolbypassrls,
+                 rolcreaterole, rolcreatedb, rolreplication
           FROM pg_roles WHERE rolname=current_user`);
         const row=check.rows[0];
         if(check.rows.length!==1||row?.db_role!==settings.expectedRole
-          ||row?.rolsuper!==false||row?.rolbypassrls!==false)
+          ||row?.rolsuper!==false||row?.rolbypassrls!==false
+          ||row?.rolcreaterole!==false||row?.rolcreatedb!==false
+          ||row?.rolreplication!==false)
           throw new Error('Database role verification failed');
         return c;
       }catch{

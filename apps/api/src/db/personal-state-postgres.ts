@@ -65,6 +65,18 @@ export interface PersonalDataConsentVerifier {
     operation:'READ'|'WRITE';
   }):Promise<boolean>;
 }
+
+/**
+ * The browser's dataMode=SYNTHETIC is not evidence of safe provenance.
+ * Only independently approved synthetic fixtures can bypass owner consent.
+ * The verifier is supplied by trusted server wiring; default is deny.
+ */
+export interface SyntheticPersonalFixtureAuthority {
+  isApproved(input:{
+    actorId:string;subjectId:SubjectAlias;itemId:string;
+    value:PersonalRecordValue;operation:'READ'|'WRITE';
+  }):Promise<boolean>;
+}
 export class PersonalStateDenied extends Error {
   constructor(){super('Personal state access denied');}
 }
@@ -123,6 +135,7 @@ export class PostgresPersonalStateStore {
   constructor(
     private readonly pool:ReviewerSqlPool,
     private readonly consent?:PersonalDataConsentVerifier,
+    private readonly syntheticAuthority?:SyntheticPersonalFixtureAuthority,
   ){}
 
   private async withGrant<T>(
@@ -144,6 +157,12 @@ export class PostgresPersonalStateStore {
       [actor,subject,version,Section[k]]);
       if(grant.rows.length!==1||grant.rows[0]?.allowed!==true)
         throw new PersonalStateDenied();
+      // Transaction-local RLS context is defense in depth against accidental
+      // unscoped SQL; never derived from HTTP request headers.
+      await c.query(`
+        SELECT set_config('hufs.actor_id',$1::text,true) AS actor_id,
+               set_config('hufs.subject_id',$2::text,true) AS subject_id`,
+      [actor,subject]);
       const result=await work(c);
       await c.query('COMMIT');started=false;
       return result;
@@ -153,16 +172,24 @@ export class PostgresPersonalStateStore {
     }finally{c.release();}
   }
 
-  private async verifyPrivate(
-    scope:TrustedPersonalScope,value:PersonalRecordValue,
+  private async verifyDataApproval(
+    scope:TrustedPersonalScope,itemId:string,value:PersonalRecordValue,
     operation:'READ'|'WRITE',
   ):Promise<void>{
-    if(value.dataMode==='SYNTHETIC')return;
     let permitted=false;
-    try{permitted=await this.consent?.mayProcess({
-      actorId:scope.actorId,subjectId:scope.subjectId,
-      kind:value.kind,operation,
-    })??false;}catch{/* deny on consent ledger outage */}
+    try{
+      if(value.dataMode==='SYNTHETIC'){
+        permitted=await this.syntheticAuthority?.isApproved({
+          actorId:scope.actorId,subjectId:scope.subjectId,
+          itemId,value,operation,
+        })===true;
+      }else{
+        permitted=await this.consent?.mayProcess({
+          actorId:scope.actorId,subjectId:scope.subjectId,
+          kind:value.kind,operation,
+        })===true;
+      }
+    }catch{/* independent consent/fixture registry unavailable -> deny */}
     if(!permitted)throw new PersonalStateDenied();
   }
 
@@ -170,8 +197,8 @@ export class PostgresPersonalStateStore {
     scope:TrustedPersonalScope;itemId:string;value:unknown;
   }):Promise<StoredPersonalRecord>{
     const id=Ref.parse(input.itemId),value=validateValue(input.value);
-    await this.verifyPrivate(input.scope,value,'WRITE');
     return this.withGrant(input.scope,value.kind,async c=>{
+      await this.verifyDataApproval(input.scope,id,value,'WRITE');
       const at=new Date().toISOString();
       const inserted=await c.query(`
         INSERT INTO api_personal_records
@@ -202,7 +229,7 @@ export class PostgresPersonalStateStore {
       if(found.rows.length>1)throw new PersonalStateDenied();
       if(!found.rows.length)return null;
       const rec=parseRow(found.rows[0]!,input.scope,kind);
-      await this.verifyPrivate(input.scope,rec.value,'READ');
+      await this.verifyDataApproval(input.scope,id,rec.value,'READ');
       return rec;
     });
   }
@@ -226,7 +253,7 @@ export class PostgresPersonalStateStore {
       if(found.rows.length>limit)throw new PersonalStateDenied();
       const records=found.rows.map(row=>parseRow(row,input.scope,kind));
       for(const record of records)
-        await this.verifyPrivate(input.scope,record.value,'READ');
+        await this.verifyDataApproval(input.scope,record.itemId,record.value,'READ');
       return records;
     });
   }
@@ -237,8 +264,20 @@ export class PostgresPersonalStateStore {
   }):Promise<StoredPersonalRecord>{
     const id=Ref.parse(input.itemId),value=validateValue(input.value);
     const expected=this.expected(input.expectedVersion);
-    await this.verifyPrivate(input.scope,value,'WRITE');
     return this.withGrant(input.scope,value.kind,async c=>{
+      // Prevent unconsented OWNER_CONSENTED -> SYNTHETIC downgrade, or
+      // overwriting someone else's approved personal record.
+      const existing=await c.query(`
+        SELECT actor_id,subject_id,kind,item_id,value_json,data_mode,version,updated_at
+        FROM api_personal_records WHERE actor_id=$1 AND subject_id=$2
+          AND kind=$3 AND item_id=$4 AND version=$5 AND deleted_at IS NULL
+        FOR UPDATE`,[
+        input.scope.actorId,input.scope.subjectId,value.kind,id,expected,
+      ]);
+      if(existing.rows.length!==1)throw new PersonalStateConflict();
+      const old=parseRow(existing.rows[0]!,input.scope,value.kind);
+      await this.verifyDataApproval(input.scope,id,old.value,'WRITE');
+      await this.verifyDataApproval(input.scope,id,value,'WRITE');
       const at=new Date().toISOString();
       const updated=await c.query(`
         UPDATE api_personal_records
@@ -272,7 +311,9 @@ export class PostgresPersonalStateStore {
         FOR UPDATE`,[input.scope.actorId,input.scope.subjectId,kind,id,expected]);
       if(existing.rows.length!==1)throw new PersonalStateConflict();
       const old=parseRow(existing.rows[0]!,input.scope,kind);
-      await this.verifyPrivate(input.scope,old.value,'WRITE');
+      // Erasure of the verified actor's own record must remain possible
+      // even after the owner's processing consent has been withdrawn.
+      // Reading the erased content is still denied by read/list checks.
       const at=new Date().toISOString();
       const changed=await c.query(`
         UPDATE api_personal_records
