@@ -43,3 +43,7 @@
 ## 시간·이미지·RAG 계약 vNext 제안(구현·승인 별도)
 
 이번 2026-10-31 설계 변경은 기존 TASK-00 Zod 스키마를 자동으로 변경하지 않는다. 기술 총괄 심민성이 `SourceRevision`(hash·게시/확인/검수/효력 시각·정정 상태), `SourceSpan`(TEXT 문자범위 | IMAGE bbox/ocrLine/page), `VerifiedClaim`(근거·검수·허용 scope), `RetrievalEnvelope`(권한·asOf·retrieval 정책/결과), `DecisionAdvice`(Laya 모델판본·선택·폴백)를 **별도 contracts vNext PR**로 제출한다. `Opportunity`·`NoticeResult`·`SafeLlmPacket`에 바뀐 `sourceVersion` 및 이미지 근거를 호환 가능한 optional 필드로 연결하며 미래 자료를 과거 시점에 노출하지 않는다. 4트랙 소비 테스트/독립 이미지·시간 fixture·API 게이트·OCR/Vision budget·CPU 메모리 조건이 잠금 조건이다. 상세: [TRUSTED_RAG_MEDIA_VERSIONING.md](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## REVIEWER auth vNext 분리 계약 (Issue #25)
+
+`VerifiedActor`는 기존 `BETA|ADMIN`(학교 메일 proof + 베타 allowlist)과 `REVIEWER`(OIDC의 검증된 `sub`·현재 이메일 소유 증거 + 개별 초대 DB grant)로 **구별된 타입**을 사용한다. REVIEWER는 이메일만으로 자동 승인되지 않으며 `reviewer_invitation` 등록 전에는 페이지 접근 403. 기존 `SharingGrant`와 팀원 5명 시연 선택 문맥을 우회하거나 계약 속에 암묵적으로 포함시키지 않는다. 오직 `ReviewerGrant`과 독립 `ReviewerDemoRepository`에서 SYNTHETIC 재현 데이터만 취득한다. 초대 32바이트 원문은 DB·Git·CI 저장 금지; SHA-256 digest와 Google sub·email, 심사 기간/철회만 원장으로 남긴다. `startsAt <= now < endsAt` 및 철회는 매 요청 서버 권한 검사와 트랜잭션 적용. 신규 역할을 공통 UI/웹 Zod auth contract로 확장할 때는 vNext 소비자 승인·UI 마이그레이션을 별도 PR로 추진한다. 전체: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).

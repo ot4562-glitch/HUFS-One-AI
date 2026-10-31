@@ -35,7 +35,7 @@ CSS = """
 :root { --ink: #1F2933; --navy: #002D56; --primary: #146E7A; --muted: #52606D; --line: #DADAD3; }
 * { box-sizing: border-box; }
 html, body { padding: 0; margin: 0; }
-html { color: var(--ink); background: #fff; font: 9.55pt/1.54 "Malgun Gothic", "맑은 고딕", "Noto Sans CJK KR", "Apple SD Gothic Neo", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+html { color: var(--ink); background: #fff; font: 9.55pt/1.49 "Malgun Gothic", "맑은 고딕", "Noto Sans CJK KR", "Apple SD Gothic Neo", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { overflow-wrap: break-word; }
 a { color: #146E7A; text-decoration: none; overflow-wrap: anywhere; }
 a:hover { text-decoration: underline; }
@@ -71,7 +71,7 @@ li { margin: 2px 0; }
 li > p { margin: 2px 0; }
 blockquote {margin:12px 0 14px;padding:9px 13px;border-left:3px solid #146E7A;background:#F7F8F6;color:#374d6c;break-inside:avoid;}
 hr {border:0;border-top:1px solid var(--line);margin:20px 0;}
-table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:8.4pt; line-height:1.4; margin:10px 0 14px; border-top:1.5px solid #146E7A; }
+table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:8.4pt; line-height:1.4; margin:8px 0 12px; border-top:1.5px solid #146E7A; }
 thead {display:table-header-group;}
 tr {break-inside:avoid;page-break-inside:avoid;}
 th,td {padding:7px 7px; border-bottom:1px solid #e2e8f0; border-right:1px solid #eaf0f5; vertical-align:middle; overflow-wrap:anywhere; word-break:normal; white-space:normal;}
@@ -89,7 +89,8 @@ table p {margin:0;}
 /* Dense reference tables can continue to the next page; never cram source URLs into a tiny font. */
 h2#chapter-19 + table, h2#chapter-20 + table {font-size:7.3pt;line-height:1.34;table-layout:auto;}
 h2#chapter-19 + table th, h2#chapter-19 + table td,
-h2#chapter-20 + table th, h2#chapter-20 + table td {padding:5px 6px;}
+h2#chapter-20 + table th, h2#chapter-20 + table td {padding:3px 5px;}
+h2#chapter-20 + table {font-size:7.12pt;line-height:1.27;}
 h2#chapter-19 + table td:first-child, h2#chapter-20 + table td:first-child {width:42px;min-width:42px;font-weight:700;color:var(--primary);}
 .figure {margin:15px 0 21px;padding:13px 12px 9px;border:1px solid #dbe5ea;background:#f9fcfc;border-radius:12px;break-inside:avoid;page-break-inside:avoid;}
 .figure svg {display:block;width:100%;max-height:280px;}

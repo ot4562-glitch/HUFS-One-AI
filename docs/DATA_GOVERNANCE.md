@@ -31,3 +31,7 @@
 ## 2026-10-31 외부 포스터·RAG·OCR/HCX·Laya의 권리와 정보 보호
 
 공개 게시물이라는 이유만으로 **이미지 다운로드·재배포·OCR 결과 보관·NCP 전송·CLOVA 입력**이 자동 허용되는 것은 아니다. 출처별 허용된 **수집/보존/변환/외부 AI 제공/전시** 범위를 확인하고, `RESEARCH_REFERENCE_ONLY`나 비승인 학생 원본을 제품 RAG 색인·HCX-005/007·OCR·Laya 입력·CI fixture에 사용하지 않는다. 학생 가명만 제거한다고 비식별화됐다고 단정하지 않는다. `SourceSpan IMAGE`는 원본 구역 좌표를 보관하되 이미지 원본은 비공개 권한 별도 검증으로 열람한다. 정정·취소된 자료의 hash/revision 기록도 보존기간·권리 검토에 따른다. 로그에 개인정보·이미지 원문·OCR 전문·모델 safe packet을 찍지 않는다. [세부 수집·권한 규칙](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 심사자 REVIEWER 합성자료 전용 접근 (Issue #25)
+
+심사자가 담당자라는 이유로 Forms/과목 CSV/학번·성적/비동의 원본의 열람·외부 AI 제출 권한이 생기지 않는다. 심사자는 전용 합성 리플레이만 접근하며, `dataMode=SYNTHETIC` 검증은 API와 UI 양쪽에서 하고 실제/혼합 자료가 섞이면 전부 차단한다. 시연 슬롯 S01~S05는 사람 계정이 아니며 5번째 미준비 슬롯을 허위 실제 자료로 채우지 않는다. PDF 개인별 초대 코드·심사자 이메일·Google sub·IP는 공개 GitHub/CI/analytics/log에 남기지 않는다. 평가 종료 `endsAt`(UTC exclusive)에 모든 API 열람을 차단하고 브라우저/SW/cache에 남은 민감 내용을 정리한다. 개발·테스트는 합성만 사용. 정확한 접근정책: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).

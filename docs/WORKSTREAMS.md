@@ -65,3 +65,15 @@
 - **박준영 [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11):** OCR 표·각주/예외/졸업예정학기·Requirement ID/룰팩 검증, 학사·공지 독립 교차리뷰.
 - **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12):** 출처 변경감지 [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), OCR·HCX-005 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), Temporal RAG [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), Laya CPU·Standard-g2·비용 하드 게이트 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). 실제 GitHub ID 매핑 확인 전 자동 assign/mention 금지.
 - **모든 에이전트:** 다음 세션 시작 즉시 원격 최신 main/이슈/PR과 이전 이슈 댓글을 확인하고 담당 이슈만 분기·PR·테스트로 진행한다. 이슈와 문서 작성은 자동 실행 아님. NCP/이미지/개인원본 전송·실배포는 별도 명시 승인 전 금지.
+
+## REVIEWER 보안 접근 추가: 심사자를 팀원 5명에 추가하지 않음 (#25)
+
+- **심민성 / 인증·계약:** 개인 이메일 bound 초대 난수/hash·PostgreSQL grant·role vNext·자동 만료/철회 API/테스트, 권한 감사와 최종 병합.
+- **이의상 `uisang2004-glitch` / UI:** `/reviewer/invite` Google 로그인→개인 초대 등록→S01~S05 합성 시연 선택, 만료 안내/캐시 정리·시각적 SYNTHETIC·REPLAY/NO_REAL_DATA 표시, 접근성·모바일 검증.
+- **이서연 기술 책임(API 대행 작업):** 실제 Google OIDC+메일 증명·지속 세션·실 Postgres 인프라 결합은 별도 보안·배포 승인 이후. 이번 로컬 구현은 기술 총괄이 대행했으나 실제 이서연의 작업·검수로 표시하지 않는다.
+- **김채윤/박준영:** 심사 시연 데이터는 각 트랙의 **별도 합성 fixture**, 실학생 권한 공유나 공인 학칙·공고 live 상태로 보이게 하지 않는다.
+- 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), 정본 [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md). 이 새 역할은 학교 공식 교직원 인증·개인정보 공유 동의를 대신하지 않는다.
+
+## Laya CPU 스파이크 보호 후속 소유 (#22)
+
+**이서연 담당 플랫폼/API 영역(기술 총괄 대행 가능)**: 승인된 VM에서 systemd cgroup `CPUQuota=50%`가 정확히 **0.5vCPU**로 적용되는지 확인, ORT single-thread/spin OFF, 별도 ingest queue·cache/중복 방지·과부하 PAUSE/OFF, Laya 기본 비활성/백업 코드 폴백을 구현한다. **심민성**은 NCP 요금/모델 license·RSS/latency 실측 및 계정·개통·한도 변경을 별도로 승인. **이의상 UI**는 심사자 재접속이 워커 호출을 일으키지 않고 SYNTHETIC REPLAY 표시가 명확하도록 검수. Laya ON/OFF 비교와 실측 없이 완성 체크 금지. 정본 [LAYA_CPU_SPIKE_PROTECTION.md](LAYA_CPU_SPIKE_PROTECTION.md).

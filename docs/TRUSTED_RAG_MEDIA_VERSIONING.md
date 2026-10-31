@@ -112,6 +112,14 @@ interface DecisionAdvice {
 - 인덱싱·이미지 전처리는 bounded queue, 최대 1건 동시 진행. 외부 모델 호출 concurrency 1, job idempotency, 재시도 최대 1회. 급격한 수집 폭증은 허용 목록에서 분할 처리.
 - Laya 모델 가중치는 허용된 다운로드 경로·라이선스·revision·sha256 확인 뒤 **서버 비공개 저장**. 다운로드→모델 적재→초기 warm-up은 검증 전 비용·메모리 확인 대상; CI나 배포 파이프라인의 무제한 다운로드 금지.
 
+### 6.1. Laya CPU spike 방어 세부 (정본 [LAYA_CPU_SPIKE_PROTECTION.md](LAYA_CPU_SPIKE_PROTECTION.md))
+
+- **0.5vCPU 절대 상한**: 별도 cgroup의 `CPUQuota=50%`는 1코어 시간의 절반이고 2vCPU 전체 절반이 **아님**. 독립 systemd worker, `CPUWeight=10`/`Nice=10`, ONNX Runtime CPU intra/inter thread=1·spinning OFF·OMP/BLAS thread=1로 API/DB와 경쟁을 줄인다. `MemoryHigh=2500M`, `MemoryMax=3072M`, 총 VM peak<7GiB; 상한이 실제 적용되는지 측정 실패하면 `LAYA_ENABLED=false` 유지.
+- **백그라운드 전용**: 모델 최초 적재/워밍과 장문/동시 추론은 사용자 요청·심사자 반복 조회 경로에서 완전히 제외. queue≤16·동시 실행 1·최대 512 tokens·30초 대기/20초 작업 timeout, hash/version 기준 dedup/cache, 버전 갱신 후 무효화. API는 언제나 검증된 cache 또는 규칙+검수대기 폴백이며 `REVIEWER` 요청으로 Laya worker/유료 HCX가 실행되지 않는다.
+- **스파이크 감시**: host CPU≥70% 20초/VM available RAM<1.2GiB/GET p95 baseline×1.25 또는 400ms 초과 30초/cpu.pressure 증가 시 PAUSE. OOM·CPU≥90%+API 악화·비정상 p95 반복 시 OFF(수동 재개). 이 값들은 **운영 전 가설**, 인가된 Standard-g2에서 API p95 기준선 대비 ≤20% 악화, GET p95≤500ms, worker RSS≤3GiB·host peak<7GiB, OOM 0을 실제 확인해야 기능 활성화 가능.
+- **학습 불필요**: 초기 시연에서는 30~50건 합성 라벨로 zero-shot Laya ON/OFF·rule-only F1/false skip/CPU 성능을 비교. 파인튜닝·GPU/추가 VM 조달은 기본 범위 밖이다.
+- **실제 클라우드/모델 실행 없음**. 실행 서비스 유닛·관측 지표·롤백/runbook 세부는 [Laya CPU 급증 방어 설계](LAYA_CPU_SPIKE_PROTECTION.md)와 [이슈 #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)를 우선한다.
+
 ## 7. 예산 계약: 돈이 없으면 기능을 안전하게 낮춘다
 
 공모전 공식 2026 안내(https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089): **본선 진출팀**에만 별도 개발비 **50만 원** 및 **NCP 크레딧 50만 원 상당** 지원 계획. 두 자금을 합산해 크레딧 100만 원으로 해석하지 않는다. 현재 **수령/서비스별 크레딧 적용/세금 처리 미검증**.
@@ -166,3 +174,7 @@ interface DecisionAdvice {
 - [Laya ONNX 배포 및 upstream 고정 정보](https://huggingface.co/ollaya-dev/laya/blob/main/README.md) — fp32 CPU/ONNX Runtime, SHA pin 필요
 
 각 링크의 당시 확인 내용과 **향후 변경 가능성이 있는 요금·모델 계약**을 분리한다.
+
+## 외부 학교 심사자 접근에서 AI 호출·실학생 자료 차단
+
+[REVIEWER_ACCESS.md](REVIEWER_ACCESS.md)의 기간제 `REVIEWER`는 별도 합성 read-only 시연만 가능하며, `/api/ai/*`·실학생 sourceRevision·과금 발생 HCX/OCR/Laya·학생 원본 문단 검색을 절대 허용하지 않는다. 심사 중 RAG UI는 미리 생성·검수한 SYNTHETIC/REPLAY 근거만 보여주며 실시간 크롤링·유료 모델 호출 성공인 것처럼 표현하지 않는다. 심사자가 여러 번 접속해도 추가 과금을 유발하지 않으며 기간 종료·철회는 모든 조회에 서버 시간으로 적용한다. 상세 이슈 #25.

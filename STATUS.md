@@ -85,3 +85,18 @@
 - **신규 계약 대상:** `SourceSpan IMAGE`·`SourceRevision`·`VerifiedClaim`·`RetrievalEnvelope`·`DecisionAdvice`는 별도 Zod contracts PR/4트랙 리뷰 후 구현. 이 PR은 문서와 제안서 PDF만 수정하고 기존 #15/#16 코드를 변경하지 않는다.
 - **공모전 예산:** 본선팀 **별도 개발비 50만원 + NCP 크레딧 50만원 상당**; 지급·클라우드 적용·VAT/실청구 미확인, **유료 리소스 배포 없음**. 상세 기준: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`.
 - **제안서 PDF 완료:** GitHub PR 브랜치에서 새로 내려받은 `Proposal.md`(SHA-256 `797684a363a4428966b6bf7fb5e0882ec97e8b488a8a907cc5ae7d561986acf9`)를 기준으로 SVG 벡터 구조도·새 표지·목차·테이블을 포함한 **A4 17쪽 `Proposal.pdf`**를 제작했다. Windows.Data.Pdf 렌더러 **17/17페이지 출력**과 2개 전체 contact sheet 시각 검수를 마쳤다. PDF SHA-256 `f3d387a005f2792a47fb70ae373182c33e104fe5a1284000878329dfbb988518`, 722,163바이트. 이번 설계 PR에 업로드하며, 원문 변경 시 재출력·전체 페이지 재검증이 필요하다.
+
+## 2026-10-31 심사자 기간제 초대·합성 시연 로컬 구현 (#25)
+
+- **구현·실행 경계:** 기존 API PR #24를 기반으로 `REVIEWER` 분리 인증/기간제 초대 등록·반복 로그인, 독립 합성 시연 GET, 매 요청 DB grant·revoke 확인을 로컬 코드/테스트로 추가했다. 등록 코드는 32바이트 보안 난수, 실제 Git에는 digest만 저장하는 설계. PostgreSQL SQL migration과 adapter는 **작성**했지만 **실제 Google OIDC·학교 담당자 인증·실 DB 연결/개통/발송은 미실행**이다.
+- **초대장 PDF:** `reference/reviewer/ReviewerInvitation.TEMPLATE.pdf`는 비활성 제출용 양식이다. 실제 심사자 이메일·접속 기간·활성 코드가 담긴 개인별 초대는 아직 만들지 않았고, GitHub 저장소에도 올리지 않는다.
+- **접근 정책:** 인증 계정에 귀속, 심사기간 재로그인 횟수 제한 없음(코드 추측은 제한), `endsAt` KST 안내·UTC 서버 자동 종료, 즉시 철회, 합성 전용 `S01~S05` UI 컨텐츠 별도 준비 필요, 실학생/일반 API/유료 AI 차단.
+- **남은 작업:** 실제 OIDC+메일 증빙·영속 세션/DB·UI 등록·프런트 만료·브라우저 캐시/CDN/직접IP 보안 E2E·심사기간/담당자 이메일 확인·개인별 초대 발송. 정본 `docs/REVIEWER_ACCESS.md`, 담당 Issue #25. **이 설계가 병합되어도 사이트 접속 가능이라고 표기하지 않는다.**
+
+## 2026-10-31 Laya CPU spike 대응 문서 개정 (실행 전)
+
+- 단일 Standard-g2 2vCPU·8GB의 API 보호를 위해 [Laya CPU 방어 설계](docs/LAYA_CPU_SPIKE_PROTECTION.md)를 추가. **CPUQuota=50%→0.5vCPU**, ORT single-thread/no-spin, 별도 worker+cgroup, `MemoryMax=3072M`, 큐 16개, 검증캐시 우선, 20초 추론 timeout, host CPU/pressure·API p95·RAM 기준 PAUSE/OFF 및 확정 규칙 fallback을 정의했다.
+- 작은 시연 데이터에서 **파인튜닝은 제외**, Laya ON/OFF 품질/시스템 부하 비교 후 의미 없으면 꺼둔다. 심사자 반복 열람은 worker를 유발하지 않는다.
+- **NCP 실서버/모델 실행·cpu.max/실측·예산 적용은 0건**: 수치는 운영 시작값과 통과 목표이며 검증된 성능이 아니다. 이슈 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) 후속 실측/별도 승인 필요.
+
+**REVIEWER+CPU 설계 변경 로컬 최종 검증 (2026-10-31):** `npm run check` = **144/144 PASS** (contracts 87, consumers 20, API 37), `npm run build:api` PASS, `npm run check:privacy` = **113/113 PASS** (새 문서/코드/PDF 모두 staged 상태 검사). `Proposal.pdf`는 A4 **17/17쪽** 렌더·시각 검수, `ReviewerInvitation.TEMPLATE.pdf`는 **1/1쪽** 렌더·시각 검수. 샘플 개인초대 URL의 서로 다른 시작/종료 **KST 시간 치환 로컬 시험** 통과. 원격 CI/실 Google OIDC/DB/NCP 부하 시험은 아직 별도 게이트다.

@@ -17,3 +17,9 @@
 ## 신규 OCR·RAG·Laya 설계와 기존 TASK/PR 충돌 방지
 
 2026-10-31 설계 PR은 **문서/제안서 PDF만 변경**한다. `SourceRevision`, 이미지 좌표 `SourceSpan`, `VerifiedClaim`, `RetrievalEnvelope`, CPU Laya 판단 어댑터 등 공통 타입과 DB·API 시그니처는 **후속 독립 contracts PR**에서 도입한다. 이미 열려 있는 TASK-06/14 PR과 임의 혼합/rebase·자동 병합하지 않는다. 신규 계약 PR은 추천·공지, 학업, UI, API 소비자 리뷰와 합성 이미지/정정·`asOf` 부정시험, 최신 요금·CPU/RSS 확인을 요구한다. 문서 변경 자체는 NCP 사용/실학생 데이터 외부 전송·OCR/HCX 호출 승인이 아니다. [세부 계약](TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 심사자 초대·기간제 접근 PR 리뷰 게이트 (#25)
+
+- 외부 REVIEWER가 일반 팀원 API나 실학생 projection/Forms, 관리자·유료 AI API로 들어갈 수 있는 경로가 없는지 독립 **UI·API 보안 교차검토**한다. `/api/reviewer`의 인가 구현은 base API [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24)에 스택으로 작성한다.
+- [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md)의 이메일/Google sub 바인딩·초대 digest·기간 끝 경계·철회·다중 세션·CSRF·RATE 제한/재시작 후 DB 지속성·민감 화면 접근 거부 합성 테스트를 요구한다. 초대 링크/실제 수신 이메일을 GitHub/PR/테스트 출력에 공개하지 않는다.
+- 실제 Google 로그인/메일 검증·지속 DB·배포·초대 발송은 별도 운영 승인 없이 동작했다고 표시하지 않는다. 현재 PDF는 **비활성 양식**만 공유한다. 초대장이 있다고 해서 공식 학교 SSO/학교 승인이 부여되는 것은 아니다.

@@ -49,3 +49,11 @@ Google ID token 위조/만료, Gmail 단독, `hd` 요청값 변조, 외대 이�
 - **시간 기반 RAG:** 동일 NCP 서버 PostgreSQL의 승인 문서 revision·인용좌표·적용기간/`asOf` 선필터 + 경량 lexical 검색, 변경/취소 시 검색 인덱스·검증캐시 무효화. 별도 vector DB는 검증 후 opt-in.
 - **NCP 크레딧 50만원**(본선 수령 및 적용 미확인) 가상 상한: 컴퓨트 19만, HCX 11만, OCR/Gateway 2만, 기타 5만, 잠금 예비 13만. 별도 개발비 50만원은 클라우드 크레딧이 아님. 새 유료 자원·토큰 사용·DNS 공개는 **별도 승인과 콘솔 최신 견적** 전 금지.
 - **릴리스:** `AI_ENABLED`, `MEDIA_INGEST_ENABLED`, `VISION_ENABLED`, `RAG_ENABLED`, `LAYA_ENABLED` 기본 false; 예산 미설정/권한 실패/자료 stale/모델 장애는 fail closed. 상세 게이트: [docs/TRUSTED_RAG_MEDIA_VERSIONING.md](docs/TRUSTED_RAG_MEDIA_VERSIONING.md).
+
+## 심사자 기간제 REVIEWER 접근: 별도 VM 없이 (계획)
+
+심사자도 기존 한 서버·독립 HTTPS origin에서 로그인하되, 학교 공식 SSO/IdP를 사용한 척하지 않고 Google OIDC + 이메일 proof + 영속 REVIEWER 초대 원장으로 인가한다. 새 VM/유료 서비스 자동 생성은 필요하지 않다. SHA-256 digest만 PostgreSQL `reviewer_invitations`에 보관, `endsAt` 종료/철회는 매 요청 권한 검사(별도 Cron/JS 타이머 없이 403)로 적용. reviewer synthetic repository/route는 팀원·실학생 DB/AI API와 분리. 외부 IP/preview/CDN/static 번들, 키/메일·DB 계정·HTTPS 설정과 E2E가 모두 준비되기 전 **실제 외부 접속 불가**. 새 설계: [docs/REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md).
+
+## Laya CPU 스파이크·Standard-g2 보호 계약 (2026-10-31)
+
+NCP 단일 2vCPU·8GB에서 API/DB가 우선이며 Laya는 `LAYA_ENABLED=false`가 기본. 별도 백그라운드 서비스 cgroup `CPUQuota=50%`(1vCPU가 아닌 **0.5vCPU 상한**), ONNX intra/inter threads=1·spin OFF, MemoryHigh 2500M·MemoryMax 3072M, queue≤16/worker=1, cache+revision dedup으로 사용자/심사자 요청에서는 추론을 실행하지 않는다. host CPU/p95/RAM pressure 때 PAUSE/OFF하고 검증 코드로 fallback, cgroup 적용 미검증/peak 7GiB↑/OOM/latency 악화면 ON 금지. 상세 threshold·systemd 샘플·실측 플랜: [CPU 방어 설계](docs/LAYA_CPU_SPIKE_PROTECTION.md). **아직 NCP 실행·모델 다운로드/실측 없음.**

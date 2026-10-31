@@ -50,3 +50,10 @@
 - **의존 순서:** #17 설계 리뷰 → #18 공통 계약/소비자 승인 → #19 출처 버전·권한 수집 → #20 General OCR·조건부 HCX-005 → #21 asOf·권한 기반 RAG/근거검증 → #22 Laya CPU Standard-g2 자원·비용 실측(실제 과금/모델 다운로드/배포는 추가 승인). UI/추천/학업은 각 소유 이슈를 합성 테스트와 연결한다.
 - **먼저 남은 코드 차단 해결:** 추천 [PR #15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), 중요공지 [PR #16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)는 독립 변경요청이 남아 있으므로 해소+리뷰 전 병합 금지. #16은 #15 기반이므로 병합 순서를 지킨다.
 - 이슈 체크는 **합격한 CI만이 아니라 변경 PR·재현 테스트·권한·출처 라이선스·비용·모델 RSS/latency·실제 독립 리뷰/미실행 항목**을 기록한 뒤 수행한다. 모델 confidence/JSON을 자격·학칙·마감 확정으로 사용하지 않는다. 자동 배포·main 병합 금지.
+
+## REVIEWER 초대·심사 자동 종료 새 계약 (#25)
+
+심사자는 팀원 5명이 아니며 별도 `REVIEWER`로 **합성 전용 시연**을 허용한다. 인증은 Google OIDC의 verified `sub`/이메일 소유 증거 + 비공개 개인 초대 코드 결속이며, `startsAt<=now<endsAt`·revoke를 **매 요청 서버/영속 DB에서 검사**한다. 최초 등록 뒤 같은 계정의 반복 로그인·열람 횟수는 제한하지 않되 코드 추측·과금 등은 제한한다. 초대 PDF 실코드·심사자 이메일·원본 학생자료를 Git/PR/CI에 게시하면 안 된다. 현재 실제 OAuth·UI·DB·도메인·NCP 미구현, `reference/reviewer` PDF는 **비활성 TEMPLATE**. 원문: `docs/REVIEWER_ACCESS.md`, 작업 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), 기본 API [#24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24).
+
+## 2026-10-31 Laya CPU 스파이크 격리 (Standard-g2 2vCPU/8GiB)
+Laya는 **기본 OFF**이고 Fastify/PG의 동기 경로에서 실행·모델 warm-up 금지. 승인 후 별도 cgroup worker(동시 실행 1, 큐 최대16)에서 `CPUQuota=50%`=**0.5vCPU**(2vCPU의 50% 아님), ORT intra/inter thread=1/spin OFF, `MemoryMax=3072M` 초기 제한을 검증한다. host CPU/pressure·API p95/RAM 악화 시 PAUSE/OFF·검증 규칙 fallback; GPU/VM 자동 증설/즉시 HCX 우회·파인튜닝 금지. 상세 게이트·측정 전 가설: [docs/LAYA_CPU_SPIKE_PROTECTION.md](docs/LAYA_CPU_SPIKE_PROTECTION.md), [Issue #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22). **NCP 실측/설치/프로세스 시작은 이 PR에 포함되지 않는다.**

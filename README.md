@@ -62,3 +62,11 @@ Google Forms는 **구성 완료**됐고 **26열 응답 예시 1건**이 확인�
 - **RAG:** 인용 가능한 근거를 문서버전/게시·수집·확인·적용기간/`asOf`로 선필터하는 **Temporal RAG**. 직접 만든 PostgreSQL lexical 검색부터 시작하고 벡터DB·managed RAG는 필수가 아니다.
 - **지원금:** 본선팀 개발비 50만원과 **별도 NCP 크레딧 50만원 상당**은 수령·사용가능성 미검증; 실제 지출은 승인 전 0원. OCR·Vision·CPU 작업에도 비용·메모리 하드 게이트를 둔다.
 - **정본:** [기술 계약](Architecture.md) A04/A06/A12~A15, [세부 신뢰형 RAG·멀티모달·버전·비용 설계](docs/TRUSTED_RAG_MEDIA_VERSIONING.md), [갱신 제안서](Proposal.md). 기존 공통 `packages/contracts`는 이번 설계 PR에서 수정하지 않는다.
+
+## 담당자 심사 시연: `REVIEWER`(2026-10-31 개발 브랜치)
+
+학교 담당자는 팀원 5명 계정으로 위장하지 않고 **개별 초대장 + Google OIDC 이메일/계정 검증**을 거쳐 `REVIEWER`로 접근한다. 등록 후 심사 기간 중 반복 방문 제한은 없지만 **실학생 자료·일반 API·유료 모델 호출은 불가**하며 합성 전용 S01~S05 슬롯/리플레이만 조회한다. 자동 종료는 UTC `endsAt` 배타 경계를 매 요청 서버/DB가 검사하고, 관리자 즉시 철회도 지원한다. 실제 이메일·기한·유효한 코드는 **미발급**, PDF는 비활성 양식. API는 기존 [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24) 의존 별도 브랜치이며 OIDC/DB/도메인 운영 E2E는 아직 미완료. [정본](docs/REVIEWER_ACCESS.md) · [Issue #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+
+## CPU 보호형 Laya 운영 설계 (2026-10-31 추가)
+
+Laya multilingual 322M은 파인튜닝 없이 합성 30~50개 공고로 우선 검증하며, **기본 OFF**. 향후 Standard-g2 2vCPU/8GB에서 사용한다면 **별도 worker/CPUQuota 50%(0.5vCPU)/ONNX 1 thread/MemoryMax 3GiB**를 강제하고 API·REVIEWER 요청에서는 Laya를 직접 실행하지 않는다. host CPU/API p95/RAM이 불안정하면 즉시 폴백·자동 재활성화 금지. 현재 CPU/NCP 실측·모델 설치 완료가 아니라 설계다. [상세 운영 게이트](docs/LAYA_CPU_SPIKE_PROTECTION.md), [Issue #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22).

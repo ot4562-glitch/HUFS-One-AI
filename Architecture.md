@@ -136,6 +136,15 @@ MUST 별도 `SharingGrant`로 팀 데모 공유, 표시이름, 외부 발표/녹
 
 private raw → approved derived projection → per-actor overlay라는 3층 구조를 기본으로 한다. 공유 졸업 화면은 요약·미이수 목록부터 허용하며 개별 과목 행 공개는 별도 선택이다. 서버가 승인된 원장으로 계산하더라도 API는 projection 범위를 넘는 원본을 반환하지 않는다. NCP 저장에 미동의한 원장은 업로드하지 않는다. 그 슬롯은 승인된 결과 요약 또는 합성 사례로 운영한다.
 
+### A02.2a. 학교 심사자 `REVIEWER` — 기간제 초대장과 합성 전용 시연 (2026-10-31 신규)
+
+- **팀원과 별도 역할:** `REVIEWER`는 BETA/ADMIN·S01~S05 학생 슬롯이 아니라 외부 심사 담당자의 **읽기 전용 인증 주체**다. 실제 Forms/원장/학사·개인 프로필을 볼 수 없고 5개 슬롯은 별도 SYNTHETIC 리플레이로만 보여준다. 시연 프로필이 미준비라면 `PENDING` 표시 후 실제 자료로 채우지 않는다.
+- **개인 초대:** 운영자가 실제 심사자 수신 이메일마다 암호학적 32바이트(43자 base64url) 코드를 생성하고 SHA-256만 PostgreSQL에 저장한다. PDF는 개인별로 비공개 발송하며 **공유·Git 커밋된 PDF에는 활성 코드가 없어야 한다**. 로그인은 Google OIDC/현재 이메일 소유 확인이 선행되고, 최초 등록 시 이메일과 Google `sub`에 결속한다. 코드는 안전한 URL fragment로 전달해 POST body로 1회 등록하고 URL 기록에서 제거한다.
+- **접근 횟수와 기간:** 최초 등록 이후 **동일 인증 주체가 심사기간 중 횟수 제한 없이 재로그인** 가능. 초대 코드 재사용은 동일 계정에만 멱등 허용. `startsAt <= now < endsAt`(UTC 서버, KST 화면), 최대 45일 설계. 초대 철회·기간만료는 **매 요청마다 서버의 영속 상태를 재조회해 403**으로 자동 차단한다. 자동 차단은 JS 타이머/cron에 의존하지 않는다.
+- **권한 분리:** `/api/reviewer/demo/*`의 GET과 초대 등록/자신의 로그아웃만 최소 허용하며 일반 `/api/demo`·AI 작업·팀원 섹션·실제 학생 데이터·관리/수정/내보내기/유료 LLM 호출 금지. 리뷰 데모의 `datasetMode`와 공고 card는 `SYNTHETIC`, `aiProvenance`는 mock/cache로만 제한한다. 초대 코드를 가진 익명인/다른 email/sub는 접근 불가.
+- **보안 운영:** Origin/CSRF + 등록시도 5회/15분/actor(실서비스 분산/IP 방어 추가), no-store·정확한 허용 origin, 영속 DB `SELECT ... FOR UPDATE` 등록·revoke, 세션 재검증, 클릭/방문 횟수 자체에는 제한을 두지 않되 폭주·유료 API에는 별도 방어 정책을 유지한다.
+- **현재 상태:** API/합성 테스트와 SQL adapter를 작성하는 **PR #24 기반 별도 스택 작업**이다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+
 ### A02.3 상단 selector 화면 동작
 
 작은 단일 버튼 `시연 대상: {displayLabel} ▾` → 아래 다섯 행이 펼쳐짐 → 현재 행 체크표시 → 다른 이름 선택 → 닫힘 → 같은 route의 결과가 전환된다. W3C Disclosure 패턴, `button`, `aria-expanded`, `aria-controls`, Enter/Space 지원. 목록은 일반 button 5개로 시작하며 임의 `role=menu`를 붙이지 않는다. Esc/바깥 클릭 시 닫고 focus는 selector로 복귀한다. 선택 완료는 aria-live polite로 “B의 시연 화면으로 전환” 안내한다.[R15][R17]
@@ -522,6 +531,16 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 3. **시간 기반 RAG:** 권한/sourceClass/적용학년도·전공·기관·valid interval/`asOf`를 먼저 필터링하고 exact field+keyword/한국어 토큰 검색 `topK≤12`, 변경 전후 revision 충돌검사. `pg_trgm`/임베딩은 Recall@k 비교 후 선택. 검색 근거가 없으면 `NO_EVIDENCE`; LLM 추측 금지. 학생 원본·CLOVA 전송금지 자료는 인덱싱하지 않는다.
 4. **결정·추출·검증:** CPU Laya는 문서/이미지의 처리 우선순위·OCR_ONLY/ESCALATE_VISION/HUMAN_REVIEW 제안에만 사용하고, API 사용자 응답의 필수 의존이 아니다. 호출 비용·RSS·latency 한도를 어기면 룰기반으로 자동 폴백. HCX-007은 안전한 문단+OCR 인용으로 네 작업 후보를 만들고, 원문 인용·날짜 종류·예외/범위·모순·sourceVersion/consentVersion을 독립 코드와 사람 검수로 확인한다.
 5. **계약 변경은 분리:** `SourceRevision`, `SourceSpan(TEXT|IMAGE)`, `VerifiedClaim`, `RetrievalEnvelope`, `DecisionAdvice`와 추출기/모델/retrieval 정책 버전, 실패 상태, Zod 확장은 심민성의 전용 `contracts` PR에서 API/UI/추천/학업 검토 후 병합한다. 자세한 필드·가드·성능·롤백은 [검증형 RAG 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md)을 따른다.
+
+### A06.9a Laya CPU 스파이크 억제: 웹/API 우선 (2vCPU/8GB, 2026-10-31 추가)
+
+**실행 책임은 API가 아니라 독립 백그라운드 워커**에 있다. `LAYA_ENABLED=false`가 기본이고 CPU·품질 실측/승인 전 모델 적재를 금지한다. 사용자 HTTP 요청/심사자 반복 열람은 Laya를 호출·warm-up하지 않고, 검증된 캐시 또는 코드 기반 분류로 응답한다.
+
+1. **커널 상한**: systemd cgroup v2 분리, `CPUQuota=50%`(한 코어 기준 **0.5vCPU**, **전체 2vCPU의 50% 아님**), `CPUQuotaPeriodSec=100ms`, `CPUWeight=10`, `Nice=10`; ORT CPU intra/inter threads=1, sequential execution, spinning OFF, OMP/BLAS threads=1. `MemoryHigh=2500M`, `MemoryMax=3072M`(worker 단독), 전체 VM peak <7GiB 목표. cgroup 한도 적용을 실제 확인할 수 없으면 ON 금지.
+2. **스파이크 격리**: API Fastify/event loop·Postgres와 다른 프로세스; 모델 하나, worker 1, bounded queue 16, 입력 512토큰, 작업 중복 제거(sourceRevision+modelRevision+config), 최초 모델 적재/워밍은 심사자와 분리된 작업시간. 실패/30초 초과 대기/실행 20초 timeout/메모리 압박 때 `UNKNOWN/NEEDS_REVIEW`+확정 룰 fallback; **동기 API나 유료 HCX로 자동 우회 금지**.
+3. **감지·중지(초기 제안값)**: VM CPU≥70% 20초, memory available<1.2GiB, API GET p95 baseline×1.25 또는 400ms 초과 30초, cpu.pressure 일부 정체 증가 시 PAUSE. VM CPU≥90% 10초+API 악화, OOM/available<0.8GiB, p95×1.5, 반복 worker 실패 시 `LAYA_ENABLED=false`로 OFF. PAUSE 복구는 60초 이상 CPU<50%/memory>1.5GiB/API p95 회복이 모두 확인된 경우에만, OFF는 사람 승인 전 재활성화하지 않는다.
+4. **실측·배포 차단**: 동일 5계정 합성 시연+신규 수집/OCR burst에 Laya ON/OFF 비교. API p95 악화≤20%이면서 GET p95≤500ms·worker RSS≤3GiB·VM peak<7GiB·OOM 0·허위 자격/마감 확정 0을 목표로 검증한다. 모델 설치·런타임 cgroup 적용·NCP 배포는 이 문서 변경 범위 밖이며 실측 후 별도 승인.
+5. **파인튜닝 제외**: 소규모 시연에는 규칙+zero-shot Laya를 비교하고 의미 있는 한국어 분류/검수 누락 개선이 없으면 모델 비활성 유지. 하드 기준/측정/원본권한/비용 문서: [Laya CPU 방어 설계](docs/LAYA_CPU_SPIKE_PROTECTION.md), [RAG 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §6.
 
 ## A07. 개인별 단과대·학과 중요공지
 
