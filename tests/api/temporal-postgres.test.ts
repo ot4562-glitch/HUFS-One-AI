@@ -16,6 +16,8 @@ function stub(rows:Record<string,unknown>[]){
   const connection:ReviewerSqlConnection={
     query:async(sql,args=[])=>{
       calls.push({sql,args});
+      if(sql.includes('AS confirmed_conflict'))
+        return {rows:[{confirmed_conflict:false}]};
       return {rows};
     },
     release:()=>{releases.push(1);},
