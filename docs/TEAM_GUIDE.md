@@ -21,7 +21,7 @@
 
 오늘 화면 하단에 **서류 제출 마감**, **공고 신청 마감**, **시험·행사 날짜**를 구분해 보여주는 작은 달력을 추가한다. 날짜가 없는 상시/미정 공고는 별도 목록, 내게 적용되는지 불확실한 학업 일정은 **'적용 확인 필요'**로 두고 중요한 확정 마감인 것처럼 알리지 않는다. 학생이 공유하지 않은 전공·졸업 상황·경험 정보도 일정으로 짐작할 수 없도록 서버에서 권한을 확인한다. 색뿐 아니라 아이콘·텍스트/스크린리더를 지원한다.
 
-**현재 실제 구현 상태:** [#53 캘린더 결과 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)만 main 병합 완료. 김채윤 [계산 #50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50), 이의상 [화면 #51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), 심민성 [인증된 API #52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)는 연결 전이다. ICS 내보내기/휴대폰 푸시는 새 기능 범위 밖이다. [기술 규칙](../Architecture.md) A07.3 참조.
+**현재 실제 구현 상태:** [#53 캘린더 결과 계약](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)과 김채윤 [계산 코어 #50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)은 **main 병합 완료**. 단, 이의상 [화면 #51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51), 심민성 [인증된 API #52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)는 실제 연결 전이다. ICS 내보내기/휴대폰 푸시는 새 기능 범위 밖이다. [기술 규칙](../Architecture.md) A07.3 참조.
 
 ## 새 신뢰형 AI를 쉽게 설명하기 (설계 단계)
 
