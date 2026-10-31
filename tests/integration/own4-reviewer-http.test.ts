@@ -99,7 +99,7 @@ async function harness(){
           origin:ORIGIN,cookie,
           ...(init.headers as Record<string,string>),
         },
-        ...(method==='POST'?{payload:init.body as string}:{}),
+        ...(method==='POST'?{payload:JSON.parse(init.body as string)}:{}),
       });
       return new Response(response.statusCode===204?null:response.body,{
         status:response.statusCode,
