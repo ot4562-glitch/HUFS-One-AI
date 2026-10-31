@@ -1,6 +1,9 @@
 import {describe, it, expect} from 'vitest';
 import {AcademicSummarySchema, NoticeResultSchema} from '@hufs-one/contracts';
-import {composeNotices, evaluateNotice, noticeAppliesTo, openRequirementIds, type Notice, type NoticeStudent} from './index.js';
+import {
+  composeNotices, endOfSeoulDay, evaluateNotice, noticeAppliesTo, openRequirementIds, validateNotice,
+  type Notice, type NoticeStudent,
+} from './index.js';
 
 // Synthetic only (A12.2 SYN-NOT style). No real student, department or deadline.
 const ASOF = '2026-11-20T00:00:00.000Z';
@@ -14,11 +17,12 @@ function notice(id:string, over:Partial<Notice> = {}):Notice {
 }
 
 const student:NoticeStudent = {
-  campus:'SEOUL', college:'가상대학', majors:['가상전공A'], cohort:2023, enrollmentState:'ENROLLED',
+  campus:'SEOUL', college:'가상대학', majors:[{major:'가상전공A', role:'PRIMARY'}], cohort:2023, enrollmentState:'ENROLLED',
+  admissionType:'REGULAR', targetGraduationTerm:'2028-2',
   openRequirementIds:['REQ-GRAD-CERT', 'REQ-MAJOR-CORE'], courseIds:['SYN-C-101'], interestTopics:['DATA_ANALYTICS'],
 };
 
-function without(key:'cohort'|'college'):NoticeStudent {
+function without(key:'cohort'|'college'|'targetGraduationTerm'):NoticeStudent {
   const copy = {...student};
   delete copy[key];
   return copy;
@@ -34,6 +38,32 @@ describe('TASK-14 scope (A07.2-1)', () => {
 
   it('a definite mismatch wins over an unknown field', () => {
     expect(noticeAppliesTo(without('college'), notice('A', {college:'다른대학', campus:'GLOBAL'})).appliesTo).toBe('NO');
+  });
+
+  it('graduationTermScope: other term → NO, missing → UNKNOWN, self-reported match → UNKNOWN, verified match → YES', () => {
+    const only20262 = notice('G', {graduationTermScope:['2026-2']});
+    expect(noticeAppliesTo(student, only20262).appliesTo).toBe('NO');
+    expect(noticeAppliesTo(without('targetGraduationTerm'), only20262)).toEqual({appliesTo:'UNKNOWN', unknownScope:['graduationTerm']});
+    const candidate = {...student, targetGraduationTerm:'2026-2'};
+    expect(noticeAppliesTo(candidate, only20262)).toEqual({appliesTo:'UNKNOWN', unknownScope:['graduationTerm']});
+    expect(noticeAppliesTo({...candidate, graduationTermVerified:true}, only20262).appliesTo).toBe('YES');
+  });
+
+  it('admission type: "외국인 학생만" does not apply to a regular student (review P-graduation exam)', () => {
+    expect(noticeAppliesTo(student, notice('F', {admissionTypes:['FOREIGN']})).appliesTo).toBe('NO');
+  });
+
+  it('major roles: "A 1전공자만" does not apply to a student whose A is a double major (P4)', () => {
+    const s = {...student, majors:[{major:'가상전공B', role:'PRIMARY' as const}, {major:'가상전공A', role:'DOUBLE' as const}]};
+    expect(noticeAppliesTo(s, notice('M', {majors:['가상전공A'], majorRoles:['PRIMARY']})).appliesTo).toBe('NO');
+    expect(noticeAppliesTo(s, notice('M', {majors:['가상전공A'], majorRoles:['PRIMARY', 'DOUBLE']})).appliesTo).toBe('YES');
+    expect(noticeAppliesTo(s, notice('M', {majorRoles:['MINOR']})).appliesTo).toBe('NO');
+  });
+
+  it('cohort is a four-digit year: a two-digit notice range is rejected, a two-digit student value is unknown (P6)', () => {
+    expect(validateNotice(notice('C', {cohortRange:{max:14}}))).toBe('INVALID_COHORT');
+    expect(validateNotice(notice('C', {cohortRange:{max:2014}}))).toBeUndefined();
+    expect(noticeAppliesTo({...student, cohort:14}, notice('C', {cohortRange:{max:2014}})).appliesTo).toBe('UNKNOWN');
   });
 });
 
@@ -52,10 +82,30 @@ describe('TASK-14 priority (A07.2-2…5, A15.2 공지)', () => {
     expect(ev).toMatchObject({studentDeadline:inDays(20), adminReportDeadline:inDays(2)});
   });
 
-  it('a junior still gets a required notice when the scope is unknown — kept with the UNKNOWN badge', () => {
-    const junior = without('cohort');
-    const ev = evaluateNotice(junior, notice('A', {category:'ACADEMIC', courseRefs:['SYN-C-101'], cohortRange:{min:2020}, studentDeadline:inDays(2)}), ASOF);
-    expect(ev).toMatchObject({priority:'ACADEMIC_REQUIRED', appliesTo:'UNKNOWN'}); // not CRITICAL_DUE until scope is confirmed
+  it('2026-2-only notice with a 3-day deadline is not CRITICAL_DUE for a 2028-2 target student (review #1)', () => {
+    const n = notice('G', {category:'ACADEMIC', graduationTermScope:['2026-2'], requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(3)});
+    expect(evaluateNotice(student, n, ASOF)).toMatchObject({priority:'GENERAL', appliesTo:'NO'});
+    expect(evaluateNotice(without('targetGraduationTerm'), n, ASOF)).toMatchObject({priority:'ACADEMIC_REQUIRED', appliesTo:'UNKNOWN'});
+  });
+
+  it('a junior still gets a verified required notice when the scope is unknown — kept with the UNKNOWN badge', () => {
+    const ev = evaluateNotice(without('cohort'), notice('A', {category:'ACADEMIC', courseRefs:['SYN-C-101'], cohortRange:{min:2020}, studentDeadline:inDays(2)}), ASOF);
+    expect(ev).toMatchObject({priority:'ACADEMIC_REQUIRED', appliesTo:'UNKNOWN'});
+  });
+
+  it('unverified academic notices are review-pending GENERAL, never ACADEMIC_REQUIRED (review #2, P7)', () => {
+    for (const verificationState of ['CANDIDATE', 'NEEDS_REVIEW'] as const) {
+      const ev = evaluateNotice(student, notice('A', {verificationState, requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(1)}), ASOF);
+      expect(ev).toMatchObject({priority:'GENERAL', reviewPending:true});
+    }
+  });
+
+  it('academics not shared (null) keeps a requirement notice as ACADEMIC_REQUIRED + UNKNOWN, not GENERAL (P1)', () => {
+    const pending = {...student, openRequirementIds:null};
+    const ev = evaluateNotice(pending, notice('X', {requirementRefs:['REQ-EXAM'], studentDeadline:inDays(3)}), ASOF);
+    expect(ev).toMatchObject({priority:'ACADEMIC_REQUIRED', appliesTo:'UNKNOWN', unknownScope:['academicStatus']});
+    // An empty list is a known "no open requirement" and is different from null.
+    expect(evaluateNotice({...student, openRequirementIds:[]}, notice('X', {requirementRefs:['REQ-EXAM']}), ASOF).priority).toBe('GENERAL');
   });
 
   it('a senior keeps scholarship notices; uncollected GPA makes it UNKNOWN, not auto-satisfied', () => {
@@ -69,18 +119,15 @@ describe('TASK-14 priority (A07.2-2…5, A15.2 공지)', () => {
     expect(evaluateNotice(student, notice('B', {category:'CAREER', topicCodes:['CULTURE_TOURISM']}), ASOF).priority).toBe('GENERAL');
   });
 
-  it('an unverified notice is never CRITICAL_DUE', () => {
-    const ev = evaluateNotice(student, notice('A', {verificationState:'CANDIDATE', requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(1)}), ASOF);
-    expect(ev.priority).toBe('ACADEMIC_REQUIRED');
+  it('an out-of-scope notice is GENERAL and never overdue, even if it names an open requirement (review #3)', () => {
+    const ev = evaluateNotice(student, notice('A', {campus:'GLOBAL', requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-1)}), ASOF);
+    expect(ev).toMatchObject({priority:'GENERAL', overdue:false});
   });
 
-  it('an out-of-scope notice is GENERAL even if it names an open requirement', () => {
-    expect(evaluateNotice(student, notice('A', {campus:'GLOBAL', requirementRefs:['REQ-GRAD-CERT']}), ASOF).priority).toBe('GENERAL');
-  });
-
-  it('a passed student deadline is overdue (해결 필요), not CRITICAL_DUE', () => {
-    const ev = evaluateNotice(student, notice('A', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-1)}), ASOF);
-    expect(ev).toMatchObject({priority:'ACADEMIC_REQUIRED', overdue:true});
+  it('any passed student deadline is overdue (해결 필요), not CRITICAL_DUE — including non-academic notices (P5)', () => {
+    expect(evaluateNotice(student, notice('A', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-1)}), ASOF))
+      .toMatchObject({priority:'ACADEMIC_REQUIRED', overdue:true});
+    expect(evaluateNotice(student, notice('S', {category:'SCHOLARSHIP', studentDeadline:inDays(-1)}), ASOF).overdue).toBe(true);
   });
 });
 
@@ -88,18 +135,22 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
   const list = [
     notice('GEN', {publishedAt:inDays(-1)}),
     notice('SCH', {category:'SCHOLARSHIP', studentDeadline:inDays(10)}),
+    notice('SCH-OLD', {category:'SCHOLARSHIP', studentDeadline:inDays(-3)}),
     notice('REQ-LATE', {requirementRefs:['REQ-MAJOR-CORE'], studentDeadline:inDays(25)}),
     notice('CRIT-2', {requirementRefs:['REQ-MAJOR-CORE'], studentDeadline:inDays(5)}),
     notice('CRIT-1', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(2)}),
     notice('OVERDUE', {requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(-2)}),
+    notice('CAND', {verificationState:'CANDIDATE', requirementRefs:['REQ-GRAD-CERT'], studentDeadline:inDays(1)}),
     notice('REJ', {verificationState:'REJECTED', requirementRefs:['REQ-GRAD-CERT']}),
     notice('EXPIRED', {validUntil:inDays(-1)}),
+    notice('FUTURE', {requirementRefs:['REQ-GRAD-CERT'], publishedAt:inDays(5), studentDeadline:inDays(6)}),
+    notice('DATEONLY', {studentDeadline:'2026-11-25'}),
   ];
 
-  it('returns a schema-valid NoticeResult in tier → student deadline → published → id order', () => {
+  it('returns a schema-valid NoticeResult in tier → overdue last → deadline → published → id order', () => {
     const {result} = composeNotices(student, list, {asOf:ASOF});
     expect(NoticeResultSchema.safeParse(result).success).toBe(true);
-    expect(result.items.map(i => i.noticeId)).toEqual(['CRIT-1', 'CRIT-2', 'REQ-LATE', 'OVERDUE', 'SCH', 'GEN']);
+    expect(result.items.map(i => i.noticeId)).toEqual(['CRIT-1', 'CRIT-2', 'REQ-LATE', 'OVERDUE', 'SCH', 'SCH-OLD', 'CAND', 'GEN']);
   });
 
   it('pins at most 2, never overdue or unverified ones', () => {
@@ -109,10 +160,27 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
     expect(onlyLater.result.pinnedIds).toEqual(['REQ-LATE']);
   });
 
-  it('separates overdue and excluded notices instead of hiding them silently', () => {
+  it('separates overdue, review-pending and excluded notices instead of hiding them silently', () => {
     const r = composeNotices(student, list, {asOf:ASOF});
-    expect(r.overdueIds).toEqual(['OVERDUE']);
-    expect(r.excludedIds).toEqual(['EXPIRED', 'REJ']);
+    expect(r.overdueIds).toEqual(['OVERDUE', 'SCH-OLD']);
+    expect(r.reviewPendingIds).toEqual(['CAND']);
+    expect(r.excluded).toEqual([
+      {noticeId:'DATEONLY', reason:'INVALID_DATETIME'},
+      {noticeId:'EXPIRED', reason:'EXPIRED'},
+      {noticeId:'FUTURE', reason:'FUTURE_PUBLICATION'},
+      {noticeId:'REJ', reason:'REJECTED'},
+    ]);
+  });
+
+  it('a malformed date excludes only that notice; the rest of the list still renders (P3)', () => {
+    const r = composeNotices(student, [notice('OK'), notice('BAD', {studentDeadline:'2026-11-25'})], {asOf:ASOF});
+    expect(r.result.items.map(i => i.noticeId)).toEqual(['OK']);
+  });
+
+  it('a notice published after asOf never appears in a past view (review #4, P2)', () => {
+    const r = composeNotices(student, list, {asOf:ASOF});
+    expect(r.result.items.map(i => i.noticeId)).not.toContain('FUTURE');
+    expect(composeNotices(student, list, {asOf:inDays(5)}).result.items.map(i => i.noticeId)).toContain('FUTURE');
   });
 
   it('is byte-stable regardless of input order', () => {
@@ -122,6 +190,15 @@ describe('TASK-14 composeNotices (A07.2-5…6)', () => {
 
   it('rejects an invalid asOf instead of reading the clock', () => {
     expect(() => composeNotices(student, list, {asOf:'now'})).toThrow(RangeError);
+  });
+});
+
+describe('TASK-14 date normalization', () => {
+  it('"~까지" date-only deadlines become the end of the Seoul day', () => {
+    expect(endOfSeoulDay('2026-11-25')).toBe('2026-11-25T23:59:59+09:00');
+    expect(validateNotice(notice('D', {studentDeadline:endOfSeoulDay('2026-11-25')}))).toBeUndefined();
+    expect(() => endOfSeoulDay('2026-02-30')).toThrow(RangeError);
+    expect(() => endOfSeoulDay('2026/11/25')).toThrow(RangeError);
   });
 });
 
