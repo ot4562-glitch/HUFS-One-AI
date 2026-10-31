@@ -20,7 +20,7 @@ export interface SchoolMailChallenge {
 }
 export interface SchoolMailChallengeStore {
   /**
-   * Atomic cross-process rate limit: at most 3 issues per subject+mail/hour.
+   * Atomic cross-process rate limit: at most 3 issues per Google subject/hour.
    * Return false on quota exceeded, never save a raw mail code.
    */
   issue(challenge:SchoolMailChallenge):Promise<boolean>;
@@ -39,6 +39,11 @@ export interface SchoolMailSender {
   send(input:{schoolEmail:string;code:string;expiresAt:string}):Promise<void>;
 }
 export interface SchoolProofApprover {
+  /**
+   * Check this specific approved Google subject + school email BEFORE email
+   * delivery, without relying on the browser's school-mail claim.
+   */
+  mayIssue(input:{googleSubject:string;schoolEmail:string;at:string}):Promise<boolean>;
   /**
    * Update a PRE-APPROVED matching account only. Never INSERT an approval.
    * false is returned when administrator admission is absent/revoked.
@@ -125,6 +130,13 @@ export function createSchoolMailProofService(options:{
       if(!validate(input.googleSubject,input.schoolEmail))
         throw new SchoolMailProofError();
       const at=current();
+      let allowed=false;
+      try{
+        allowed=await options.approver.mayIssue({
+          ...input,at:at.toISOString(),
+        });
+      }catch{/* Deny on an unavailable or malformed authorization ledger. */}
+      if(!allowed)throw new SchoolMailProofError();
       const challengeId=randomBytes(16).toString('base64url');
       const code=String(randomInt(0,100_000_000)).padStart(8,'0');
       const expiresAt=new Date(at.getTime()+TEN_MINUTES).toISOString();

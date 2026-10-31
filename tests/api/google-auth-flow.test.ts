@@ -87,7 +87,9 @@ function harness(options:{authorizeBeta?:boolean;email?:string;hd?:string;
     store:new MemorySchoolMailChallengeStore(),digestKey:Buffer.alloc(32,8),
     now:()=>current,
     sender:{send:async item=>{delivered=item.code;}},
-    approver:options.fullAdmission?betaStore:{confirm:async()=>true},
+    approver:options.fullAdmission?betaStore:{
+      mayIssue:async()=>true,confirm:async()=>true,
+    },
   });
   const flow=createGoogleAuthFlow({
     clientId:CLIENT,
@@ -165,6 +167,76 @@ describe('Google OAuth callback, cookie binding and one-time session',()=>{
     expect((await sealed.inject('/api/auth/csrf')).statusCode).toBe(401);
   });
 
+  it('allows safe logout with no reviewer grant and after an invitation revocation',async()=>{
+    const fresh=harness();
+    const first=await fresh.begin();
+    const callback=await fresh.complete(first.state,first.binding);
+    const session=cookie(callback,'__Host-hufs_session');
+    const csrf=(await fresh.app.inject({url:'/api/auth/csrf',
+      headers:{cookie:session}})).json().csrfToken as string;
+    const h={cookie:session,origin:ORIGIN,'x-csrf-token':csrf};
+    expect((await fresh.app.inject({
+      method:'POST',url:'/api/auth/logout',headers:h,payload:{},
+    })).statusCode).toBe(204);
+    expect((await fresh.app.inject({
+      url:'/api/auth/csrf',headers:{cookie:session},
+    })).statusCode).toBe(401);
+
+    const enrolled=harness();
+    const b=await enrolled.begin();
+    const logged=await enrolled.complete(b.state,b.binding);
+    const enrolledCookie=cookie(logged,'__Host-hufs_session');
+    const token=(await enrolled.app.inject({url:'/api/auth/csrf',
+      headers:{cookie:enrolledCookie}})).json().csrfToken as string;
+    const headers={cookie:enrolledCookie,origin:ORIGIN,'x-csrf-token':token};
+    const invite=await issueReviewerInvitation(enrolled.invitations,{
+      startsAt:'2026-10-31T11:00:00.000Z',endsAt:'2026-11-02T00:00:00.000Z',
+      label:'Revocation regression',maxAccounts:2,
+    },{now:'2026-10-31T10:00:00.000Z'});
+    expect((await enrolled.app.inject({
+      method:'POST',url:'/api/reviewer/invitations/redeem',headers,
+      payload:{enrollmentCode:invite.enrollmentCode},
+    })).statusCode).toBe(200);
+    await enrolled.invitations.revoke(invite.invitationId,current.toISOString());
+    expect((await enrolled.app.inject({
+      url:'/api/auth/session',headers:{cookie:enrolledCookie},
+    })).statusCode).toBe(403);
+    const logout=await enrolled.app.inject({
+      method:'POST',url:'/api/auth/logout',headers,payload:{},
+    });
+    expect(logout.statusCode).toBe(204);
+    expect(String(logout.headers['set-cookie'])).toContain('__Host-hufs_session=;');
+
+    // A signed-in reviewer remains free to log out after the invite deadline,
+    // while the same session cannot read any expired review capabilities.
+    const expiring=harness();
+    const expiringInvite=await issueReviewerInvitation(expiring.invitations,{
+      startsAt:'2026-10-31T11:00:00.000Z',
+      endsAt:'2026-10-31T12:10:00.000Z',
+      label:'Short synthetic review',maxAccounts:1,
+    },{now:'2026-10-31T10:00:00.000Z'});
+    const started=await expiring.begin();
+    const confirmed=await expiring.complete(started.state,started.binding);
+    const expiringCookie=cookie(confirmed,'__Host-hufs_session');
+    const expiryCsrf=(await expiring.app.inject({url:'/api/auth/csrf',
+      headers:{cookie:expiringCookie}})).json().csrfToken as string;
+    const expiryHeaders={cookie:expiringCookie,origin:ORIGIN,'x-csrf-token':expiryCsrf};
+    expect((await expiring.app.inject({method:'POST',
+      url:'/api/reviewer/invitations/redeem',headers:expiryHeaders,
+      payload:{enrollmentCode:expiringInvite.enrollmentCode},
+    })).statusCode).toBe(200);
+    current=new Date('2026-10-31T12:10:00.000Z');
+    expect((await expiring.app.inject({url:'/api/auth/session',
+      headers:{cookie:expiringCookie}})).statusCode).toBe(403);
+    expect((await expiring.app.inject({method:'POST',url:'/api/auth/logout',
+      headers:{cookie:expiringCookie,origin:ORIGIN,'x-csrf-token':'invalid'},payload:{},
+    })).statusCode).toBe(403);
+    expect((await expiring.app.inject({method:'POST',url:'/api/auth/logout',
+      headers:expiryHeaders,payload:{},
+    })).statusCode).toBe(204);
+    expect((await expiring.app.inject({url:'/api/auth/csrf',
+      headers:{cookie:expiringCookie}})).statusCode).toBe(401);
+  });
   it('issues strict HttpOnly cookies, opaque one-hour-capped sessions, and CSRF proof',async()=>{
     const h=harness();
     const begun=await h.begin();
@@ -363,6 +435,14 @@ describe('Google OAuth callback, cookie binding and one-time session',()=>{
     const csrf=(await h.app.inject({url:'/api/auth/csrf',
       headers:{cookie:identityCookie}})).json().csrfToken as string;
     const headers={cookie:identityCookie,origin:ORIGIN,'x-csrf-token':csrf};
+    // No school mailbox may be sent an OTP unless this exact account/address
+    // pair already has independent administrator approval.
+    const unapproved=await h.app.inject({
+      method:'POST',url:'/api/auth/school-mail/request',
+      headers,payload:{schoolEmail:'unapproved@hufs.ac.kr'},
+    });
+    expect(unapproved.statusCode).toBe(403);
+    expect(h.mailCode()).toBe('');
     const issue=await h.app.inject({
       method:'POST',url:'/api/auth/school-mail/request',
       headers,payload:{schoolEmail:'student@hufs.ac.kr'},

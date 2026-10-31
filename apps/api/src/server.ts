@@ -109,7 +109,9 @@ export function createApi(options:ApiOptions) {
       if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail)
         throw new ApiFailure('FORBIDDEN');
       // A new reviewer needs CSRF proof in order to redeem the invitation.
-      if(!enrollment&&!schoolMail&&path!=='/api/auth/csrf'){
+      // Logout must remain available when a reviewer invitation has expired
+      // or been revoked; data access still requires a live grant.
+      if(!enrollment&&!schoolMail&&!logout&&path!=='/api/auth/csrf'){
         const grant=await options.reviewerAccess.readActive({
           actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
         });

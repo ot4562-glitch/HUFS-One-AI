@@ -144,6 +144,13 @@ export class MemoryBetaAdmissionStore implements BetaAdmissionStore,SchoolProofA
     const existing=this.approved.get(googleSubject);
     return existing?structuredClone(existing):null;
   }
+  async mayIssue(input:{googleSubject:string;schoolEmail:string;at:string}):Promise<boolean>{
+    const record=this.approved.get(input.googleSubject);
+    const at=Date.parse(input.at);
+    return !!record&&record.schoolEmail===input.schoolEmail
+      &&record.revokedAt===null&&Number.isFinite(at)
+      &&Date.parse(record.approvedUntil)>at;
+  }
   /** Test/admin-only: change proof on an EXISTING authorized row. */
   async confirm(input:{
     googleSubject:string;schoolEmail:string;verifiedAt:string;validUntil:string;

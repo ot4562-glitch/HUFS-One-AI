@@ -42,11 +42,11 @@ npm run start:api:local
 - `apps/api/src/modules/auth/google-oidc.ts`는 서버 생성 `state`·`nonce`·PKCE S256 인증 요청, 5분 만료 callback state digest 검사, 서명된 Google ID 토큰의 JWKS/RS256·issuer·앱 audience·nonce·iat/exp·email_verified·Google `sub` 검증을 제공한다.
 - 운영 JWKS 주소는 Google의 고정 공개키 엔드포인트이고, 테스트는 **로컬 RSA 키와 합성 JWT만** 사용한다. 검증에 성공해도 역할·베타 허용·세션이 자동 생성되지 않는다.
 - `schoolWorkspaceVerified`는 검증된 `hd=hufs.ac.kr` **및** 확인된 `@hufs.ac.kr` 주소가 동시에 있을 때만 true이다. 일반 Gmail 심사자에게는 별도 공용 초대 등록 권한이 필요하고, 그 밖의 학생/베타 계정은 학교 메일 OTP·베타 allowlist를 추가 검증한다.
-- `google-auth-flow.ts`는 **옵션으로만 활성화되는** `/api/auth/google/start` → `/api/auth/google/callback`과 서버 발급 `__Host-` HttpOnly/Secure/SameSite 쿠키, 5분 만료 상태의 원자적 소비, 로그인 후 CSRF 수령 `GET /api/auth/csrf` 및 서버 세션 철회를 구현한다. 등록 전 REVIEWER는 CSRF 증명을 얻고 초대 등록만 시도할 수 있으며, 등록 후에도 요청마다 초대 기간/철회를 검사한다.
+- `google-auth-flow.ts`는 **옵션으로만 활성화되는** `/api/auth/google/start` → `/api/auth/google/callback`과 서버 발급 `__Host-` HttpOnly/Secure/SameSite 쿠키, 5분 만료 상태의 원자적 소비, 로그인 후 CSRF 수령 `GET /api/auth/csrf` 및 서버 세션 철회를 구현한다. 등록 전 REVIEWER는 CSRF 증명 획득·초대 등록 및 별도 승인된 학교 메일 인증만 시도할 수 있고, 합성 데이터 접근은 유효한 초대 기간에만 허용한다. 초대 만료·철회 뒤에도 CSRF 검증을 통과한 로그아웃은 가능하다.
 - `google-auth-store.ts`는 합성 메모리 저장소, `google-auth-postgres.ts`는 `DELETE ... RETURNING` 기반 영속 1회 콜백/세션/철회 어댑터, `infra/sql/20261031_google_auth.sql`은 미적용 migration이다.
 - `beta-admission.ts`·`beta-admission-postgres.ts`·`infra/sql/20261031_beta_admission.sql`은 Google `sub`+사전 승인된 `@hufs.ac.kr` 메일+유효한 학교 증명을 결합한다. Google 로그인이 일반 Gmail이어도 **관리자 승인과 실제 외대 메일 OTP 검증이 완료된 같은 Google `sub`**인 경우에만 베타 자격을 얻는다. 서명된 Workspace `hd` 경로는 OIDC 메일과 학교 주소가 정확히 같아야 한다. `createBetaSessionRechecker`는 매 요청 승인·증명 철회를 검사한다.
 - `google-authorization.ts`는 고정 Google 토큰 엔드포인트의 authorization-code+PKCE POST를 구현한다. OAuth 앱 클라이언트 인증은 서버의 `createGoogleClientAuthenticator` 또는 보호된 런타임 어댑터로만 주입한다. 다른 리다이렉트/앱 ID·입력 위변조·과대한 제공자 응답은 거부하며, 반환된 ID 토큰은 기존 `google-oidc.ts`에서 서명을 검증한다.
-- `school-mail-proof.ts`·`school-mail-postgres.ts`·`infra/sql/20261031_school_mail.sql`은 8자리 메일 인증(10분 만료·코드당 5회 검증·Google 계정당 시간당 3회 발송 제한), HMAC digest 저장, PostgreSQL 원자적 발급/소모와 **관리자가 미리 승인한 행의 UPDATE 전용 증명 반영**을 제공한다. 메일 발송/런타임 HMAC 키는 외부 서버 어댑터가 필요하다. 검증 완료만으로 새 허용 명단을 만들지 않는다.
+- `school-mail-proof.ts`·`school-mail-postgres.ts`·`infra/sql/20261031_school_mail.sql`은 8자리 메일 인증(10분 만료·코드당 5회 검증·Google 계정당 시간당 3회 발송 제한), HMAC digest 저장, PostgreSQL 원자적 발급/소모와 **관리자가 미리 승인한 행의 UPDATE 전용 증명 반영**을 제공한다. 발송 전에 `SchoolProofApprover.mayIssue`로 **Google 계정과 정확한 학교 주소의 사전 승인·철회 여부**를 검사하고, 승인 데이터 조회 오류·미승인 주소에는 메일을 발송하지 않는다. 메일 발송/런타임 HMAC 키는 외부 서버 어댑터가 필요하다. 검증 완료만으로 새 허용 명단을 만들지 않는다.
 - **출시 전 필수**: 승인된 실제 Google OAuth 클라이언트·검증된 PostgreSQL pool/마이그레이션·외대 메일 발신 권한·관리자 승인 명단과 인증서/키 공급·분산/IP 발송 차단·실브라우저 E2E를 연결한다. `apps/api/src/main.ts`는 여전히 OAuth/PG/메일을 주입하지 않고, 로컬 401/운영 시작 차단을 유지한다.
 - 검증: `npm run test:api`, `npm run check`, `npm run build:api`, `npm run check:privacy`; 합성 JWT/SQL stub으로 검증하며 실제 Google 자격증명·유료 NCP 호출·사용자 원자료는 사용하지 않는다.
 
@@ -56,7 +56,7 @@ npm run start:api:local
 
 1. **브라우저 최상위 탐색**으로 `/api/auth/google/start?intent=REVIEWER` 또는 `intent=BETA`를 요청한다. 서버가 Google 로그인으로 리다이렉트하고, OAuth 상태·PKCE·세션 쿠키는 브라우저 JavaScript에 공개하지 않는다.
 2. 콜백 후 같은 출처의 `/reviewer` 또는 `/`로 이동한다. React 앱은 `credentials: 'include'`로 `GET /api/auth/csrf` 및 `GET /api/auth/session`을 호출한다. 심사자 초대 미등록이면 `/api/auth/session`이 403일 수 있으나, CSRF를 받은 후 `/api/reviewer/invitations/redeem`으로 등록한다.
-3. **학교 메일 베타 등록**은 Google 신원 세션에서 CSRF를 받은 뒤 `POST /api/auth/school-mail/request` (`schoolEmail`)로 8자리 코드를 메일에 발송한다. `POST /api/auth/school-mail/confirm` (`schoolEmail`, `challengeId`, `code`)으로 검증 완료한 후 `GET /api/auth/google/start?intent=BETA`를 다시 시작한다. 베타 승인은 별도 관리자 명단과 일치해야 한다. 합성 테스트에서는 개인 Gmail + 외대 OTP도 처리한다.
+3. **학교 메일 베타 등록**은 Google 신원 세션에서 CSRF를 받은 뒤 `POST /api/auth/school-mail/request` (`schoolEmail`)로 8자리 코드를 메일에 발송한다. 서버는 발송 전 이 Google `sub`와 학교 메일 주소가 관리자 승인 명단에 있는지 확인하며, 승인 정보가 없으면 메일을 보내지 않고 거부한다. `POST /api/auth/school-mail/confirm` (`schoolEmail`, `challengeId`, `code`)으로 검증 완료한 후 `GET /api/auth/google/start?intent=BETA`를 다시 시작한다. 베타 승인은 별도 관리자 명단과 일치해야 한다. 합성 테스트에서는 개인 Gmail + 외대 OTP도 처리한다.
 4. 심사 초대 코드가 URL fragment로 전달되면 최초 화면 진입 시 **메모리에만 추출하고 URL에서 즉시 제거**한다. 코드/ID 토큰/세션 쿠키를 로컬 저장소나 React 번들에 기록하지 않는다. 상태 변경은 같은 출처 + `x-csrf-token` 요청만 사용한다.
 5. 401/403/409/철회/초대 만료 시 렌더링된 합성 프로필·캐시·진행중 요청을 지우고, 타 탭·타 계정 응답을 섞지 않는다. 실제 React 페이지·모바일 접근성·브라우저 E2E는 UI #9에서 확인한다.
 

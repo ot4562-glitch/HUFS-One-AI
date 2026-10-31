@@ -26,10 +26,14 @@ function harness(options:{approved?:boolean;deliveryFails?:boolean}={}){
   });
   const service=createSchoolMailProofService({
     store,sender:{send:sender},digestKey:KEY,now:()=>clock,
-    approver:{confirm:async(value)=>{
-      updates.push(value);
-      return options.approved!==false;
-    }},
+    approver:{
+      mayIssue:async(input)=>options.approved!==false
+        &&input.googleSubject===SUBJECT&&input.schoolEmail===SCHOOL,
+      confirm:async(value)=>{
+        updates.push(value);
+        return options.approved!==false;
+      },
+    },
   });
   return {service,store,sender,updates,
     code:()=>outbound?.code??'',
@@ -111,8 +115,33 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
     expect(h.sender).not.toHaveBeenCalled();
     expect(()=>createSchoolMailProofService({
       store:h.store,sender:{send:async()=>{}},
-      approver:{confirm:async()=>true},digestKey:Buffer.alloc(8),
+      approver:{mayIssue:async()=>true,confirm:async()=>true},digestKey:Buffer.alloc(8),
     })).toThrow();
+  });
+
+  it('rejects an unapproved school address before reserving or sending a code',async()=>{
+    const h=harness();
+    await expect(h.service.issue({
+      ...holder(),schoolEmail:'unlisted@hufs.ac.kr',
+    })).rejects.toBeInstanceOf(SchoolMailProofError);
+    expect(h.sender).not.toHaveBeenCalled();
+    // A refused request should not consume quota for the approved address.
+    expect((await h.service.issue(holder())).challengeId).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect(h.sender).toHaveBeenCalledOnce();
+  });
+
+  it('fails closed on an unavailable administrator approval store, before email',async()=>{
+    const store=new MemorySchoolMailChallengeStore();
+    const sender=vi.fn(async()=>{});
+    const service=createSchoolMailProofService({
+      store,sender:{send:sender},digestKey:KEY,now:()=>START,
+      approver:{
+        mayIssue:async()=>{throw new Error('Approval store disconnected');},
+        confirm:async()=>true,
+      },
+    });
+    await expect(service.issue(holder())).rejects.toBeInstanceOf(SchoolMailProofError);
+    expect(sender).not.toHaveBeenCalled();
   });
 
   it('cancels an unsent challenge; delivery failure never grants school privileges',async()=>{
@@ -121,13 +150,11 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
     expect(h.updates).toHaveLength(0);
   });
 
-  it('cannot mint beta approval when an administrator has not pre-approved the account',async()=>{
+  it('refuses to send any email before an administrator approves the account/address',async()=>{
     const h=harness({approved:false});
-    const meta=await h.service.issue(holder());
-    const proof={...holder(),challengeId:meta.challengeId,code:h.code()};
-    expect(await h.service.verify(proof)).toBe(false);
-    expect(await h.service.verify(proof)).toBe(false);
-    expect(h.updates).toHaveLength(1);
+    await expect(h.service.issue(holder())).rejects.toBeInstanceOf(SchoolMailProofError);
+    expect(h.sender).not.toHaveBeenCalled();
+    expect(h.updates).toHaveLength(0);
   });
 
   it('stores a keyed code digest rather than raw code in the challenge record',async()=>{
@@ -140,7 +167,7 @@ describe('school mailbox challenge: issuer, delivery and 8-digit HMAC proof',()=
         check:x=>real.check(x),cancel:id=>real.cancel(id),
       },
       sender:{send:async item=>{delivered=item.code;}},
-      approver:{confirm:async()=>true},digestKey:KEY,now:()=>START,
+      approver:{mayIssue:async()=>true,confirm:async()=>true},digestKey:KEY,now:()=>START,
     });
     const result=await service.issue(holder());
     expect(collected[0]?.proofDigest).toMatch(/^[a-f0-9]{64}$/);
@@ -164,6 +191,8 @@ describe('Postgres school email proof: atomic SQL and admin-owned approval',()=>
           return {rows:[{accepted:true}]};
         if(sql.includes('UPDATE beta_school_proofs'))
           return {rows:[{google_subject:SUBJECT}]};
+        if(sql.includes('SELECT 1 FROM beta_school_proofs'))
+          return {rows:[{'?column?':1}]};
         return {rows:[]};
       },
       release:()=>{released.push(1);},
@@ -187,6 +216,10 @@ describe('Postgres school email proof: atomic SQL and admin-owned approval',()=>
       .toContain('used_at IS NULL');
     await store.cancel(attempt.challengeId);
     const approver=new PostgresSchoolProofApprover(pool);
+    expect(await approver.mayIssue({...holder(),at:START.toISOString()})).toBe(true);
+    const permission=calls.find(x=>x.sql.includes('SELECT 1 FROM beta_school_proofs'));
+    expect(permission?.sql).toContain('revoked_at IS NULL');
+    expect(permission?.params).toEqual([SUBJECT,SCHOOL,START.toISOString()]);
     expect(await approver.confirm({
       ...holder(),verifiedAt:START.toISOString(),
       validUntil:'2026-10-31T13:00:00.000Z',
@@ -195,7 +228,7 @@ describe('Postgres school email proof: atomic SQL and admin-owned approval',()=>
     expect(statement?.sql).toContain('revoked_at IS NULL');
     expect(statement?.sql).toContain('RETURNING');
     expect(statement?.sql).not.toContain('INSERT');
-    expect(released).toHaveLength(4);
+    expect(released).toHaveLength(5);
   });
 
   it('refuses exhausted quotas and nonexistent approvals',async()=>{
@@ -207,6 +240,9 @@ describe('Postgres school email proof: atomic SQL and admin-owned approval',()=>
     expect(await store.issue({
       challengeId:'A'.repeat(22),...holder(),proofDigest:'b'.repeat(64),
       createdAt:START.toISOString(),expiresAt:'2026-10-31T12:10:00.000Z',
+    })).toBe(false);
+    expect(await new PostgresSchoolProofApprover(pool).mayIssue({
+      ...holder(),at:START.toISOString(),
     })).toBe(false);
     expect(await new PostgresSchoolProofApprover(pool).confirm({
       ...holder(),verifiedAt:START.toISOString(),

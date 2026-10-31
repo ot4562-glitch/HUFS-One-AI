@@ -79,6 +79,17 @@ export class PostgresSchoolMailChallengeStore implements SchoolMailChallengeStor
 export class PostgresSchoolProofApprover implements SchoolProofApprover {
   constructor(private readonly pool:ReviewerSqlPool){}
 
+  async mayIssue(input:{googleSubject:string;schoolEmail:string;at:string}):Promise<boolean>{
+    const connection=await this.pool.connect();
+    try{
+      const result=await connection.query(`SELECT 1 FROM beta_school_proofs
+        WHERE google_subject=$1 AND school_email=$2
+          AND approved_until>$3 AND revoked_at IS NULL
+        LIMIT 1`,[input.googleSubject,input.schoolEmail,input.at]);
+      return result.rows.length===1;
+    }finally{connection.release();}
+  }
+
   async confirm(input:{
     googleSubject:string;schoolEmail:string;verifiedAt:string;validUntil:string;
   }):Promise<boolean>{
