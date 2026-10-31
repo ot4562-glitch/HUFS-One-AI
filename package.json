@@ -10,7 +10,7 @@
     "packages/contracts"
   ],
   "scripts": {
-    "check": "npm run typecheck && npm run test:contracts && npm run test:consumers && npm run test:api",
+    "check": "npm run typecheck && npm run test",
     "typecheck": "npm run build:contracts && tsc --noEmit -p tsconfig.json",
     "test": "npm run build:contracts && vitest run",
     "test:contracts": "npm run build:contracts && vitest run tests/contracts",
@@ -25,7 +25,9 @@
     "admin:reviewer": "npm run build:api && node apps/api/dist/admin/reviewer-invite.js",
     "start:api:local": "npm run build:api && node apps/api/dist/main.js",
     "check:privacy": "python3 tools/verify_release_boundary.py",
-    "build:contracts": "npm run build -w @hufs-one/contracts"
+    "build:contracts": "npm run build -w @hufs-one/contracts",
+    "test:core": "npm run build:contracts && vitest run packages/core/src",
+    "test:web": "npm run build:contracts && vitest run apps/web/src"
   },
   "devDependencies": {
     "@types/node": "22.19.15",

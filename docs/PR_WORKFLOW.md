@@ -1,6 +1,6 @@
 # PR 운영과 파일 충돌 예방
 
-> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP Standard-g3 4vCPU·16GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
+> **2026-10-31 확정 최신 배정·운영:** API/인증/DB/AI검증/수집/RAG/테스트 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)**, NCP/CLOVA/OCR/Vision/Laya **Provider 구현·운영 환경 전체**은 **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**만 준비. 이의상(UI #9), 김채윤(추천 #10), 박준영(학업 #11) 책임 불변. 공용 초대장 REVIEWER는 합성 전체 시연 기능을 평가 기간 동안 사용하며 실제 학생·유료 작업은 금지. NCP High Memory-g3 4vCPU·32GB + 별도 CB 50GB, 공식 본선 발표 11/16 이후 조건부 개통. 제안서 정본은 Proposal.md(제안서 PDF/출력기 폐기).
 
 
 - **한 TASK = 한 브랜치 = 한 주 편집자 = 한 PR**. main 직접 푸시하지 않는다.
@@ -17,9 +17,13 @@
 - **실제 학생자료 주의:** 개발팀 5인과 Forms/과목 CSV 제출 4인은 다르다. 박준영은 제출하지 않는다. 사용자가 `까마르` 파일의 소유자가 **김채윤**임을 확인했지만, **매핑 확인=팀 공유/외부 AI/NCP 동의가 아니다**. 파일명 대응은 제한된 import registry에서만 주입하고 CI/mock/PR에는 합성 fixture만 사용한다.
 - **계약 변경:** API·TopicCode·응답·오류·DB 스키마·lockfile 수정은 영향·마이그레이션·합성 검증과 소비자 리뷰를 첨부해 심민성에게 별도 계약 PR로 요청한다.
 
+## 통합 PR 의존 및 공유 CI 경계 (#15/#16/#28/#29/#31)
+
+[PR #31](https://github.com/ot4562-glitch/HUFS-One-AI/pull/31)은 루트 `package.json`/`tsconfig.json`/`vitest.config.ts`/`.github/workflows/task00-contracts.yml`의 API·추천/공지 core·UI 합성 테스트 **union**을 준비한다. #15는 같은 공통 4파일의 변경을 가진다. #16은 #15 기반이므로 **#15 리뷰/수정→병합→#16 rebase/검사** 순서를 유지해야 한다. #28은 자체 UI 트랙 tsconfig/vitest만 소유하며 메인 CI 경로는 #29 통합 담당 심민성이 조정한다. 충돌·이력 정리는 각 작성자 PR을 승인 없이 덮어쓰거나 병합하는 조치가 아니다. 실제 CI 및 독립 리뷰 미완료 상태에서 merge 하지 않는다. 모든 CI는 실제 학생 CSV·Forms·local_only·원시자료를 checkout하지 않는다.
+
 ## 신규 OCR·RAG·Laya 설계와 기존 TASK/PR 충돌 방지
 
-2026-10-31 설계 PR은 **문서/제안서 PDF만 변경**한다. `SourceRevision`, 이미지 좌표 `SourceSpan`, `VerifiedClaim`, `RetrievalEnvelope`, CPU Laya 판단 어댑터 등 공통 타입과 DB·API 시그니처는 **후속 독립 contracts PR**에서 도입한다. 이미 열려 있는 TASK-06/14 PR과 임의 혼합/rebase·자동 병합하지 않는다. 신규 계약 PR은 추천·공지, 학업, UI, API 소비자 리뷰와 합성 이미지/정정·`asOf` 부정시험, 최신 요금·CPU/RSS 확인을 요구한다. 문서 변경 자체는 NCP 사용/실학생 데이터 외부 전송·OCR/HCX 호출 승인이 아니다. [세부 계약](TRUSTED_RAG_MEDIA_VERSIONING.md).
+2026-10-31 설계 변경은 **문서와 합성 계약만 변경**하며 제안서 산출물은 `Proposal.md`만 유지한다. `SourceRevision`, 이미지 좌표 `SourceSpan`, `VerifiedClaim`, `RetrievalEnvelope`, CPU Laya 판단 어댑터 등 공통 타입과 DB·API 시그니처는 **후속 독립 contracts PR**에서 도입한다. 이미 열려 있는 TASK-06/14 PR과 임의 혼합/rebase·자동 병합하지 않는다. 신규 계약 PR은 추천·공지, 학업, UI, API 소비자 리뷰와 합성 이미지/정정·`asOf` 부정시험, 최신 요금·CPU/RSS 확인을 요구한다. 문서 변경 자체는 NCP 사용/실학생 데이터 외부 전송·OCR/HCX 호출 승인이 아니다. [세부 계약](TRUSTED_RAG_MEDIA_VERSIONING.md).
 
 ## 심사자 초대·기간제 접근 PR 리뷰 게이트 (#25)
 

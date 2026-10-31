@@ -1,6 +1,8 @@
 # HUFS One AI | Architecture.md
 
-> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **Standard-g3 Linux 4vCPU·16GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
+> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
+
+> **2026-10-31 최신 담당/서버 계약:** API·인증·DB·SourceRevision/RAG 및 provider-neutral API 결과 검증 코드는 **심민성 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** 전담. **이서연 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**은 NCP·CLOVA·OCR/Vision·Laya 클라우드 **환경 준비만** 담당. UI 이의상 #9·추천/공지 김채윤 #10·학사 박준영 #11 담당 변경 없음. NCP 설계는 **High Memory-g3 Linux 4vCPU·32GB + 별도 50GB CB**, 11/6~12/9은 최대 예산 가정이며 [공식 학교 공고](https://job.hufs.ac.kr/job/imng/icmpNsbjtPgm/findIcmpNsbjtPgmInfo.do?encSddpbSeq=1006089)상 본선 발표 11/16 및 크레딧 발급 이후에만 개통. 공용 심사 초대장은 이메일 사전등록 불필요, 합성 전체 시연, 기간 내 반복 접속; 실학생 자료/유료 호출 차단. `Proposal.md`만 제안서 정본.
 
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
@@ -146,7 +148,7 @@ private raw → approved derived projection → per-actor overlay라는 3층 구
 - **접근 횟수와 기간:** 최초 등록 이후 **동일 인증 주체가 심사기간 중 횟수 제한 없이 재로그인** 가능. 초대 코드 재사용은 동일 계정에만 멱등 허용. `startsAt <= now < endsAt`(UTC 서버, KST 화면), 최대 45일 설계. 초대 철회·기간만료는 **매 요청마다 서버의 영속 상태를 재조회해 403**으로 자동 차단한다. 자동 차단은 JS 타이머/cron에 의존하지 않는다.
 - **권한 분리:** `/api/reviewer/demo/*`의 GET과 초대 등록/자신의 로그아웃만 최소 허용하며 일반 `/api/demo`·AI 작업·팀원 섹션·실제 학생 데이터·관리/수정/내보내기/유료 LLM 호출 금지. 리뷰 데모의 `datasetMode`와 공고 card는 `SYNTHETIC`, `aiProvenance`는 mock/cache로만 제한한다. 초대 코드를 가진 익명인/다른 email/sub는 접근 불가.
 - **보안 운영:** Origin/CSRF + 등록시도 5회/15분/actor(실서비스 분산/IP 방어 추가), no-store·정확한 허용 origin, 영속 DB `SELECT ... FOR UPDATE` 등록·revoke, 세션 재검증, 클릭/방문 횟수 자체에는 제한을 두지 않되 폭주·유료 API에는 별도 방어 정책을 유지한다.
-- **현재 상태:** API/합성 테스트와 SQL adapter를 작성하는 **PR #24 기반 별도 스택 작업**이다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+- **현재 상태:** API/합성 테스트와 SQL adapter는 PR #24와 원본 #26을 재적용한 #30이 main에 반영됨. 후속 안전한 합성 REVIEWER 액션 및 CI는 PR #31 진행 중이다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
 
 ### A02.3 상단 selector 화면 동작
 
@@ -527,7 +529,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 
 ### A06.9 이미지 공고·Temporal RAG·선택형 Laya 결정 모델 (신규 설계, 미구현)
 
-**설계 확정 후보:** NCP `Standard-g3 4vCPU/16GB + 별도 CB 50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
+**설계 확정 후보:** NCP `High Memory-g3 4vCPU/32GB + 별도 CB 50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
 
 1. **발견·버전:** 이용 권리가 확인된 allowlist 공식 출처/RSS/API부터 변경 탐색. HTTP validator(`ETag`/`Last-Modified`) + HTML/image/PDF의 개별 SHA-256와 정정·취소 연결. 스냅샷은 불변, current pointer만 승인 후 이동. 크롤러가 로그인/CAPTCHA를 우회하지 않는다.
 2. **OCR+Vision:** 최초 새 포스터는 CLOVA General OCR(라인/좌표/원본변환 기록). 날짜 누락·작은 글자·복잡한 표 등 규칙상 필요할 때만 HCX-005 Vision을 **병행**해 의미 후보를 얻는다. Vision 결과가 OCR 원문과 일치하지 않거나 근거 좌표가 없으면 NEEDS_REVIEW. HCX-005 Structured Outputs 지원을 전제하지 않으며 검증된 스키마로 후검사한다.
@@ -535,7 +537,7 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 4. **결정·추출·검증:** CPU Laya는 문서/이미지의 처리 우선순위·OCR_ONLY/ESCALATE_VISION/HUMAN_REVIEW 제안에만 사용하고, API 사용자 응답의 필수 의존이 아니다. 호출 비용·RSS·latency 한도를 어기면 룰기반으로 자동 폴백. HCX-007은 안전한 문단+OCR 인용으로 네 작업 후보를 만들고, 원문 인용·날짜 종류·예외/범위·모순·sourceVersion/consentVersion을 독립 코드와 사람 검수로 확인한다.
 5. **계약 변경은 분리:** `SourceRevision`, `SourceSpan(TEXT|IMAGE)`, `VerifiedClaim`, `RetrievalEnvelope`, `DecisionAdvice`와 추출기/모델/retrieval 정책 버전, 실패 상태, Zod 확장은 심민성의 전용 `contracts` PR에서 API/UI/추천/학업 검토 후 병합한다. 자세한 필드·가드·성능·롤백은 [검증형 RAG 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md)을 따른다.
 
-### A06.9a Laya CPU 스파이크 억제: 웹/API 우선 (4vCPU/16GB, 2026-10-31 추가)
+### A06.9a Laya CPU 스파이크 억제: 웹/API 우선 (4vCPU/32GB, 2026-10-31 추가)
 
 **실행 책임은 API가 아니라 독립 백그라운드 워커**에 있다. `LAYA_ENABLED=false`가 기본이고 CPU·품질 실측/승인 전 모델 적재를 금지한다. 사용자 HTTP 요청/심사자 반복 열람은 Laya를 호출·warm-up하지 않고, 검증된 캐시 또는 코드 기반 분류로 응답한다.
 
@@ -909,9 +911,9 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 
 접속 예정 `https://외대.온라인.한국` → DNS/TLS ingress → **익명 기본 거부 인증 게이트** → 권한 있는 React 및 같은 origin `/api` → Fastify/worker → 비공개 PostgreSQL·CLOVA HTTPS 순서다. 별도 인증 redirect/callback과 최소 로그인 shell 이외에는 유효 세션 없이 앱 HTML/JS·API·파일을 내려주지 않는다. Object Storage의 합성/개인 자산도 로그인 전 공개 URL에 배포하지 않으며 백업·개인자료는 비공개 bucket/prefix로 분리한다. 공인 DB5432·Node3000 직접 노출은 금지한다.
 
-**신규 설계 SKU는 NCP Standard-g3 Linux 4vCPU·16GB + 별도 CB 50GB 한 대다.** 국내 Classic 50GB 공개표는 **237원/시간·170,240원/월(VAT 별도)**이며, 실제 콘솔에서 리전·VPC/Classic·크레딧 적용, IP/스토리지/네트워크/백업·OCR/API Gateway·HCX-005/007 토큰 요금을 별도 확인한다. GPU/두 번째 VM/상시 관리형 RAG는 예산상 자동 생성하지 않는다. 16GiB 안에 OS1.5/Node1.5/Postgres2.5/Laya3.0/worker1.0/여유6.5GiB(예상 RSS 상한)를 놓고 **실측 peak≤14GiB·OOM 0·API 지연 악화 없음**을 전제조건으로 삼는다. 측정 실패시 Laya 비활성화하고 확정 코드로 폴백한다. 예산 근거·메모리 표·하드킬 스위치는 [RAG 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §6~7.
+**신규 설계 SKU는 한국 VPC Linux NCP High Memory-g3 4vCPU·32GB + 별도 CB SSD 50GB 한 대다.** 공식 한국 리전 VPC Linux 컴퓨트 가격은 **326원/h·234,240원/720h(VAT 별도)**이며 CB 50GB는 8원/h 별도이다. 11/06~12/09 전체 816h 서버+CB 272,544원, IP 선택 시 총 277,113.6원(VAT 등 제외)이고, 실제 콘솔에서 리전·VPC/Classic·크레딧 적용, IP/스토리지/네트워크/백업·OCR/API Gateway·HCX-005/007 토큰 요금을 별도 확인한다. GPU/두 번째 VM/상시 관리형 RAG는 예산상 자동 생성하지 않는다. 32GiB 안에 OS1.5/Node1.5/Postgres2.5/Laya3.0/worker1.0/여유6.5GiB(예상 RSS 상한)를 놓고 **실측 peak≤14GiB·OOM 0·API 지연 악화 없음**을 전제조건으로 삼는다. 측정 실패시 Laya 비활성화하고 확정 코드로 폴백한다. 예산 근거·메모리 표·하드킬 스위치는 [RAG 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) §6~7.
 
-VM 4vCPU/16GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
+VM 4vCPU/32GB 한 대는 초기 후보이지 확정 견적·성능 증명이 아니다. 부하·리전·지급 크레딧·개인자료 처리 조건을 확인해 정한다. 관리형 DB는 비용과 운영부담을 비교한 뒤 같은 데이터 계약으로 교체할 수 있다. Kubernetes·GPU·다중 VM은 다섯 명 시연의 필수 요소가 아니다.
 
 팀원은 HTTPS와 **Google OAuth + 외대 메일 소유 검증 + 베타 초대 권한**으로 접속한다. 학생 단말마다 WireGuard·사설 인증서를 설치하지 않는다. 관리자 SSH는 승인한 경로로 제한하고 ACG·OS 방화벽·컨테이너 포트 공개를 함께 검사한다. **도메인은 사용자 확보 신고 상태**지만 DNS 레코드·인증서·Google OAuth·학교 메일 OTP 발송·실서비스 가동은 확인되지 않았다. 유효 TLS, Google 인증·메일 검증 및 모든 우회 경로 검사 전에는 온라인 ready가 아니다.
 
