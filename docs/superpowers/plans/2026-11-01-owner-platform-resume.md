@@ -15,14 +15,14 @@ Continue the owner's API/contracts/browser integration work from PR #83, retaini
 ## Tasks
 - [x] Preserve existing dirty checkout in an ignored independent worktree; install pinned lockfile; merge latest main.
 - [x] Reproduce baseline: npm run check => 1178 passed, 30 opt-in PostgreSQL skipped. Upstream #83 GitHub Actions 41280935002: synthetic-contracts and postgres-integration SUCCESS.
-- [ ] Finish complete tracked Markdown/document inventory and reconcile architecture endpoints with actual handlers and dependency boundaries. Read history as evidence, not execution authority.
-- [ ] TDD: finish the pending overlay/tag-approval browser client; shared overlay response contract, request body verbs, before-network validation, context/subject/dataset/projection/consent/asOf and CAS checks. Invalid, stale or cancelled responses must not reach UI.
-- [ ] TDD: expose all existing owner profile/consent/workspace/catalog endpoints through a typed browser client, including correct per-kind and item bindings, bounded paging, deletion receipts and error handling. No private caller identity in requests.
-- [ ] TDD: integrate returned overlays and private owner operations with epoch/context/session invalidation; demonstrate actual Fastify-to-browser transport with synthetic data, not only fixtures of success.
+- [x] Finish complete tracked Markdown/document inventory and reconcile architecture endpoints with actual handlers and dependency boundaries. Read history as evidence, not execution authority.
+- [x] TDD: finish the pending overlay/tag-approval browser client; shared overlay response contract, request body verbs, before-network validation, context/subject/dataset/projection/consent/asOf and CAS checks. Invalid, stale or cancelled responses must not reach UI.
+- [x] TDD: expose all existing owner profile/consent/workspace/catalog endpoints through a typed browser client, including correct per-kind and item bindings, bounded paging, deletion receipts and error handling. No private caller identity in requests.
+- [x] TDD: integrate returned overlays and private owner operations with epoch/context/session invalidation; demonstrate actual Fastify-to-browser transport with synthetic data, not only fixtures of success.
 - [ ] Audit remaining owner-side handlers and public metadata/readiness boundaries for missing post-await authorization and current contract gaps. Implement unblocked defects; record specific required source/provider/collaborator inputs rather than returning fabricated success.
-- [ ] Full verification: check, build:api, build:web, fixtures:check, privacy boundary, diff whitespace, remote disposable PostgreSQL CI after publishing. Preserve skipped and untested gates explicitly.
-- [ ] Self-review actual diff and test results; publish a scoped non-draft follow-up PR, requesting actual non-author reviews. Never self-approve or auto-merge code.
-- [ ] Publish concrete nonduplicate improvement proposals as GitHub issues, with actual current collaborator assignees, acceptance tests, scoped ownership, dependencies and privacy gates.
+- [x] Full verification: check, build:api, build:web, fixtures:check, privacy boundary, diff whitespace, remote disposable PostgreSQL CI after publishing. Preserve skipped and untested gates explicitly.
+- [x] Self-review actual diff and test results; publish a scoped non-draft follow-up PR, requesting actual non-author reviews. Never self-approve or auto-merge code.
+- [x] Publish concrete nonduplicate improvement proposals as GitHub issues, with actual current collaborator assignees, acceptance tests, scoped ownership, dependencies and privacy gates.
 
 ## Review focus
 1. Optional input must never coerce undefined/null/object into a valid path ID.
@@ -33,4 +33,6 @@ Continue the owner's API/contracts/browser integration work from PR #83, retaini
 
 ## Execution ledger
 - Baseline: PASS 111 files / 1178 tests, 3 files / 30 PostgreSQL opt-in tests skipped locally. Existing #83 remote PostgreSQL job succeeded; this is prior-head evidence only.
-- New tests, implementation outcomes, review findings and final SHA/CI will be recorded after execution, not prefilled as passing.
+- Latest integration after merging main `f2ff5ea`: 120 files / 1265 PASS, 3 files / 30 local disposable PG SKIP; `build:api`, `build:web`, `fixtures:check`, `check:privacy` 151/151 PASS. Separate GitHub Actions run 41284948605 on HEAD `8a06f85`: synthetic-contracts and postgres-integration both SUCCESS.
+- Reviewed scoped non-draft PR #83; `qamarrchae`/`uisang2004-maker` requested, no current-HEAD non-author APPROVED yet. Five new issues #85-#89 have named collaborator assignees and acceptance tests.
+- Remaining owner-side release gate: actual Google/mail/rights/permission/production database verification and independent human review; collaborator UI and NCP implementation remain separately owned. Those cannot be replaced by synthetic fixtures.

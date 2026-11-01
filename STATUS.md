@@ -3,8 +3,10 @@
 ## 2026-11-01 플랫폼 #83 후속 브라우저 연결 — 최신 로컬 검증
 
 - [x] 심민성 담당 owner API 브라우저 소비자, 경험 태그 승인, BETA overlay 일괄 갱신, 탭/계정 전환·철회·비동기 취소 보호를 기존 #83에 추가했다. 이의상 UI 화면과 학업/추천 코어/NCP 제공자는 수정하지 않았다.
-- [x] 로컬 Node 24.15.0 **1,265 PASS / 실제 disposable PostgreSQL opt-in 30 SKIP**, API·웹 프로덕션 빌드 및 합성 생성물 검증 PASS, 게시·개인정보 경계 **146/146 PASS**. 새 합성 테스트는 총 75건이며, 그중 3건은 Fastify→브라우저 HTTP 호출이다.
-- [ ] 현재 HEAD GitHub Actions 두 job·비작성자 독립 APPROVED와 PR #83 main 병합은 별도 확인 전이다. 실제 학생 자료권리·목적별 동의·Google/SMTP/TLS/PG 운영 환경·NCP 실호출 및 실브라우저 접근성 시험도 미완료다.
+- [x] 로컬 Node 24.15.0 **1,265 PASS / 실제 disposable PostgreSQL opt-in 30 SKIP**, API·웹 프로덕션 빌드 및 합성 생성물 검증 PASS, 게시·개인정보 경계 **151/151 PASS**. 새 합성 테스트는 총 75건이며, 그중 3건은 Fastify→브라우저 HTTP 호출이다.
+- [x] PR #83 코드 변경 HEAD `8a06f85`의 [GitHub Actions 41284948605](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41284948605) `synthetic-contracts`·일회용 `postgres-integration` **두 작업 SUCCESS**. main 최신 UI와의 충돌 해결 후 확인했으며 이 결과는 운영 PG 검증이 아니다.
+- [ ] **작성자 외 현재 HEAD APPROVED가 없어 PR #83 OPEN/NOT MERGED.** 실제 학생 자료권리·목적별 동의·Google/SMTP/TLS/운영 PG·NCP 실호출 및 실브라우저 접근성 시험도 미완료다.
+- [x] 발전 제안서 [#85 UI 개인화 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/85)·[#86 추천 제외 근거](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86)·[#87 학칙 개정 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/87)·[#88 NCP 장애 실험](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)·[#89 릴리스 보안 게이트](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)를 실제 담당 협업자에게 할당.
 - [설계/실행/DB migration/남은 의존성](docs/PLATFORM_COMPLETION_PR.md). 아래 이전 PR HEAD·테스트 숫자는 해당 시점의 이력이다.
 
 ## 2026-11-01 최신 확인 — PR/이슈 검증·운영 분리
