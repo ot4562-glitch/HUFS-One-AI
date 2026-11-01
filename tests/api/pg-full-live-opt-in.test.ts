@@ -11,6 +11,7 @@ import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-pos
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
 import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
+import {PostgresSourceRevisionHistory} from '../../apps/api/src/modules/opportunities/source-history-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
@@ -67,7 +68,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
       GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter;
-      GRANT SELECT ON source_revisions_vnext,source_paragraphs_vnext,
+      GRANT SELECT ON source_ingest_heads,source_revisions_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
     `);
@@ -170,6 +171,40 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect(await queue.runOne()).toEqual({state:'IDLE'});
     expect((await admin.query('SELECT state,last_error_code FROM source_ingest_jobs WHERE job_id=$1',
       [task.jobId])).rows[0]).toEqual({state:'NEEDS_REVIEW',last_error_code:'UNKNOWN_COMPLETION'});
+  });
+  it('reads only current rights-scoped SourceRevision metadata from real SELECT-only PostgreSQL',async()=>{
+    const old=new Date(Date.now()-60_000).toISOString(),fresh=new Date(Date.now()-30_000).toISOString();
+    await admin.query(`INSERT INTO source_revisions_vnext (
+      revision_id,source_id,supersedes,original_sha256,content_sha256,media_kind,source_class,
+      permission_ref,provenance,status,change_kind,fetched_at,last_checked_at,last_verified_at)
+      VALUES('SYN-HIST-R1','SYN-HIST-S1',NULL,repeat('a',64),repeat('b',64),'TEXT','SYNTHETIC',
+        'SYN-HIST-PERM','SYNTHETIC','ACTIVE','NEW',$1,$1,$1),
+        ('SYN-HIST-R2','SYN-HIST-S1','SYN-HIST-R1',repeat('c',64),repeat('d',64),'TEXT',
+        'SYNTHETIC','SYN-HIST-PERM','SYNTHETIC','NEEDS_REVIEW','CORRECTED',$2,$2,NULL)`,[old,fresh]);
+    await admin.query(`INSERT INTO source_ingest_heads(source_id,revision_id,fetched_at,last_checked_at)
+      VALUES('SYN-HIST-S1','SYN-HIST-R2',$1,$1)`,[fresh]);
+    const actor={
+      role:'BETA' as const,actorId:'SYN-HIST-ACTOR',sessionIdHash:'H'.repeat(32),
+      csrfToken:'C'.repeat(32),sessionExpiresAt:new Date(Date.now()+3_600_000).toISOString(),
+      schoolMailProofExpiresAt:new Date(Date.now()+3_600_000).toISOString(),betaAllowed:true,
+    };
+    let allowed=true;
+    const history=new PostgresSourceRevisionHistory(adapter(temporal),{
+      resolveFor:async()=>({
+        permissionRefs:new Set(allowed?['SYN-HIST-PERM']:[]),
+        sourceIds:new Set(['SYN-HIST-S1']),policyVersion:allowed?'policy-v1':'revoked-v2',
+      }),
+    });
+    const valid=await history.read({actor,sourceId:'SYN-HIST-S1',now:now()});
+    expect(valid).toMatchObject({sourceId:'SYN-HIST-S1',currentRevisionId:'SYN-HIST-R2',
+      revisions:[
+        {revisionId:'SYN-HIST-R2',status:'NEEDS_REVIEW'},
+        {revisionId:'SYN-HIST-R1',status:'ACTIVE'},
+      ]});
+    expect(JSON.stringify(valid)).not.toContain('paragraph_text');
+    allowed=false;
+    expect(await history.read({actor,sourceId:'SYN-HIST-S1',now:now()})).toBeNull();
+    expect(await history.read({actor,sourceId:'SYN-HIST-OTHER',now:now()})).toBeNull();
   });
   it('executes permission/asOf/academic-scope SQL and never revives a retracted source',async()=>{
     const old=new Date(Date.now()-60_000).toISOString();
