@@ -86,6 +86,12 @@ def audit_publication_artifacts(root: Path) -> dict:
             ):
                 report("UNREVIEWED_PUBLIC_SOURCE_OR_HIDDEN_FILE", relative)
                 continue
+            # API/server bundles can also be copied into Docker layers or
+            # uploaded accidentally. A source map there exposes the original
+            # TypeScript even if the React bundle itself has no sourcemaps.
+            if name.endswith((".map", ".js.map", ".css.map")):
+                report("UNREVIEWED_API_OR_SERVER_SOURCEMAP", relative)
+                continue
             if path.suffix.casefold() not in TEXT_EXTENSIONS:
                 continue
             if path.stat().st_size > MAX_SCAN_BYTES:
@@ -97,6 +103,9 @@ def audit_publication_artifacts(root: Path) -> dict:
                 report("TEXT_ARTIFACT_UNREADABLE", relative)
                 continue
             scanned += 1
+            if re.search(r"(?m)//[#@]\s*sourceMappingURL=|/\*[#@]\s*sourceMappingURL=", data):
+                # Includes inline data: maps, or references to external maps.
+                report("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", relative)
             if any(pattern.search(data) for pattern in SIGNATURES):
                 report("CREDENTIAL_SIGNATURE_IN_BUILD", relative)
 
@@ -110,6 +119,21 @@ def audit_publication_artifacts(root: Path) -> dict:
         }
         if not DOCKER_EXCLUSIONS.issubset(lines):
             report("DOCKER_CONTEXT_PRIVATE_EXCLUSION_MISSING")
+        # .dockerignore uses last-match-wins semantics: a later !csv/** or
+        # !local_only/** makes the mere presence of required exclusions
+        # insufficient. No re-inclusion is approved for private builds.
+        if any(line.startswith("!") for line in lines):
+            report("DOCKER_CONTEXT_UNREVIEWED_REINCLUSION")
+        # Dockerfile-specific ignores can override the root policy. Only
+        # inspect filenames under the already reviewed synthetic checkout
+        # roots; never recurse into raw student, local_only, or dist data.
+        for safe_root in ("apps", "infra/compose", "packages"):
+            safe_dir = root / safe_root
+            if safe_dir.is_dir() and not safe_dir.is_symlink():
+                for override in safe_dir.rglob("*.dockerignore"):
+                    if override.is_file() or override.is_symlink():
+                        report("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED",
+                               override.relative_to(root).as_posix())
 
     workflow = root / ".github/workflows/task00-contracts.yml"
     if not workflow.is_file() or workflow.is_symlink():
