@@ -7,6 +7,7 @@ export type {
   LedgerSlot,
   RulePackGate,
 } from './ledger.js';
+export {openRequirementIdsFromAudit} from './notice-links.js';
 export {decideRulePackActivation} from './rule-approval.js';
 export type {
   RulePackActivationRequest,
