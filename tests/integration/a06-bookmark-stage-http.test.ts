@@ -23,7 +23,7 @@ afterEach(async()=>{await Promise.all(apps.splice(0).map(x=>x.close()));});
 
 function harness(){
   const rows=new Map<string,OwnerWorkspaceRecord>();
-  let allowed=true,writeCount=0;
+  let allowed=true,writeCount=0,activeActor=actor;
   const verify=()=>{if(!allowed)throw new WorkspaceDenied();};
   const key=(who:string,id:string)=>who+':'+id;
   const store:OwnerWorkspacePort={
@@ -49,7 +49,7 @@ function harness(){
   };
   const app=createIntegratedApi({
     allowedOrigin:ORIGIN,repository:new MemoryApiRepository({profiles:[]}),
-    auth:{verifySession:async(req)=>req.headers.cookie==='sid=synthetic'?actor:null,
+    auth:{verifySession:async(req)=>req.headers.cookie==='sid=synthetic'?activeActor:null,
       revokeSession:async()=>{}},
     now:()=>NOW,ownerWorkspace:store,
   });
@@ -65,7 +65,8 @@ function harness(){
       headers:{'content-type':'application/json','cache-control':cache}});
   };
   return {client:new HufsApiClient(transport),requestLog,rows,
-    revoke:()=>{allowed=false;},writes:()=>writeCount};
+    revoke:()=>{allowed=false;},writes:()=>writeCount,
+    switchActor:(actorId:string)=>{activeActor={...actor,actorId};}};
 }
 
 describe('A06 owner bookmark-stage true Fastify -> same-origin browser -> session guard',()=>{
@@ -109,6 +110,25 @@ describe('A06 owner bookmark-stage true Fastify -> same-origin browser -> sessio
     expect(await controller.runMutation(signal=>h.client.owner.listWorkspace('BOOKMARK',{},signal)))
       .toBeNull();
     expect(controller.getState().status).not.toBe('READY');
+    controller.dispose();
+  },90_000);
+
+  it('does not transmit a stage PATCH when the original owner identity switched',async()=>{
+    const h=harness(),controller=new OwnerSessionController(h.client);
+    const created=await h.client.owner.createWorkspace({itemId:'SYN-BM-1',value:saved});
+    await controller.initialize();
+    expect(controller.getState().status).toBe('READY');
+    h.switchActor('SYN-DIFFERENT-OWNER');
+    const start=h.requestLog.length;
+    const result=await controller.runMutation(signal=>
+      h.client.owner.advanceBookmarkStage(created.item,{stage:'PREPARING'},signal));
+    expect(result).toBeNull();
+    expect(controller.getState()).toMatchObject({
+      status:'SIGNED_OUT',error:'UNAUTHENTICATED',
+    });
+    expect(h.requestLog.slice(start).map(x=>x.url)).toEqual(['/api/auth/session']);
+    expect(h.writes()).toBe(0);
+    expect(h.rows.get('SYN-A06-OWNER:SYN-BM-1')?.version).toBe(1);
     controller.dispose();
   },90_000);
 });

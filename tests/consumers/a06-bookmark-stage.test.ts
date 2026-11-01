@@ -117,6 +117,35 @@ describe('A06 #80 owner bookmark-stage browser consumer: CAS and trust boundary'
     ctrl.dispose();
   });
 
+  it('does not surface a late successful PATCH after a cross-tab session close',async()=>{
+    let complete!:(reply:Response)=>void,started!:()=>void;
+    const queued=new Promise<Response>(resolve=>{complete=resolve;});
+    const entered=new Promise<void>(resolve=>{started=resolve;});
+    const urls:string[]=[];
+    const api=new HufsApiClient(async url=>{
+      urls.push(url);
+      if(url==='/api/auth/session')return response({
+        actorId:'SYN-ACTOR',role:'BETA',schoolMailProofValid:true,betaAllowed:true,
+      });
+      if(url==='/api/auth/csrf')return response({csrfToken:csrf});
+      started();
+      return queued; // Network transport deliberately ignores AbortSignal.
+    });
+    const ctrl=new OwnerSessionController(api);
+    await ctrl.initialize();
+    const pending=ctrl.runMutation(signal=>
+      api.owner.advanceBookmarkStage(legacy,{stage:'PREPARING'},signal));
+    await entered;
+    ctrl.invalidateLocalSession();
+    complete(response({item:advanced(legacy,'PREPARING')}));
+    expect(await pending).toBeNull();
+    expect(ctrl.getState()).toMatchObject({status:'SIGNED_OUT',error:null});
+    expect(urls.filter(url=>url==='/api/saved-items/SYN-BM-1')).toHaveLength(1);
+    expect(await ctrl.runMutation(signal=>
+      api.owner.advanceBookmarkStage(legacy,{stage:'PREPARING'},signal))).toBeNull();
+    ctrl.dispose();
+  });
+
   it('does not issue PATCH if the caller aborts during CSRF fetch',async()=>{
     const stop=new AbortController(),urls:string[]=[];
     const owner=new HufsApiClient(async(url)=>{
