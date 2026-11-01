@@ -46,7 +46,7 @@ function fixture(options?:{source?:boolean}){
     ...(options?.source?{source}:{}),
   });
   apps.push(app);
-  const post=(body:unknown={term:'2026-2'})=>app.inject({
+  const post=(body:Record<string,unknown>={term:'2026-2'})=>app.inject({
     method:'POST',url:'/api/study-plans/check',headers:HEADERS,payload:body,
   });
   return {app,post,seen,setCheck:(v:unknown)=>{check=v;},
