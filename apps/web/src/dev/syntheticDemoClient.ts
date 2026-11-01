@@ -1,5 +1,5 @@
 import {
-  DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema,
+  DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, RECOMMENDATION_SCORE_DISCLAIMER,
   type ApiErrorCode, type DemoContext, type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
 } from '@hufs-one/contracts';
 import {HufsApiError} from '../integrations/api-client.js';
@@ -26,6 +26,26 @@ export interface SyntheticClientOptions {
   /** Force an error for a subject's snapshot (e.g. S03 → SHARING_REVOKED) to demo failure states. */
   readonly snapshotErrors?: Partial<Record<SubjectAlias, ApiErrorCode>>;
 }
+
+/** Code-rule explanation (#47) on one synthetic card so the relevance disclaimer is exercised. */
+const SYN_EXPLANATION = {
+  opportunityId: 'SYN-OPP-001',
+  relevance: {
+    score: 50, level: 'MEDIUM', label: '보통',
+    breakdown: [
+      {key: 'J', label: '희망 직무', points: 0, max: 35}, {key: 'I', label: '관심 분야', points: 25, max: 25},
+      {key: 'S', label: '승인 경험', points: 15, max: 15}, {key: 'L', label: '언어', points: 0, max: 10},
+      {key: 'M', label: '전공', points: 0, max: 5}, {key: 'F', label: '최신성', points: 10, max: 10},
+    ],
+    disclaimer: RECOMMENDATION_SCORE_DISCLAIMER,
+  },
+  reasons: [{code: 'INTEREST_MATCH', text: '관심 분야(데이터 분석)와 겹쳐요.', topics: ['DATA_ANALYTICS']}],
+  eligibility: {state: 'UNKNOWN', text: '재학 여부 확인이 필요해요.', fields: ['enrollment'], evidenceRefs: ['EV-SYN-OPP-001']},
+  deadline: {kind: 'UNKNOWN', text: '마감일 확인 필요'},
+  prioritySelectionCount: 0,
+  provenance: 'CODE_RULES',
+  rankConfigVersion: 'RC1',
+} as const;
 
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -64,7 +84,11 @@ export class SyntheticDemoClient implements DemoClientPort {
     if (!subject) throw new HufsApiError('FORBIDDEN', 403);
     const forced = this.snapshotErrors[subject];
     if (forced) throw new HufsApiError(forced, ERROR_STATUS[forced]);
-    return DemoSnapshotSchema.parse({...snapshotJson, contextId, demoSubjectId: subject});
+    const feed = {
+      ...snapshotJson.feed,
+      featured: snapshotJson.feed.featured.map(c => c.opportunityId === 'SYN-OPP-001' ? {...c, explanation: SYN_EXPLANATION} : c),
+    };
+    return DemoSnapshotSchema.parse({...snapshotJson, feed, contextId, demoSubjectId: subject});
   }
 
   async logout(): Promise<void> {

@@ -43,7 +43,7 @@ class ControlledClient implements DemoClientPort {
   logout(): Promise<void> { return Promise.resolve(); }
 }
 
-const flush = () => act(async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); await new Promise(r => setTimeout(r, 0)); });
+const flush = () => act(async () => { for (let i = 0; i < 5; i++) await new Promise(r => setTimeout(r, 0)); });
 
 async function setup(client: DemoClientPort = new SyntheticDemoClient({delayMs: 0}), start = '/') {
   const controller = new DemoController(client, 'TEST-RUN-1');

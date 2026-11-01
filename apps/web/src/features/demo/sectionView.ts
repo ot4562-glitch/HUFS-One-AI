@@ -1,4 +1,5 @@
 import type {AcademicSummary, DemoProfileOption, DemoSnapshot, FeedResult, ForecastSummary} from '@hufs-one/contracts';
+import {TOPIC_TEXT} from './topicText.js';
 
 type SharedSection = DemoProfileOption['allowedSections'][number];
 type FeedCard = FeedResult['featured'][number];
@@ -18,6 +19,11 @@ export interface FeedCardView {
   readonly lifecycleText: string;
   readonly badges: readonly string[];
   readonly evidenceRefs: readonly string[];
+  readonly topicTexts: readonly string[];
+  /** Present only when the server sent a code-derived explanation (#47). Never a pass probability. */
+  readonly relevance: {readonly text: string; readonly disclaimer: string} | null;
+  readonly reasons: readonly string[];
+  readonly deadlineText: string | null;
 }
 
 export interface FeedView {
@@ -57,6 +63,7 @@ const PROVENANCE_BADGE: Record<DemoSnapshot['aiProvenance'], string | null> = {
 const PENDING_TEXT = {NOT_SHARED: '공유되지 않은 정보입니다.', PENDING: '아직 준비 중인 정보입니다.'} as const;
 
 function cardView(card: FeedCard): FeedCardView {
+  const ex = card.explanation;
   return {
     opportunityId: card.opportunityId,
     title: card.title,
@@ -64,6 +71,10 @@ function cardView(card: FeedCard): FeedCardView {
     lifecycleText: LIFECYCLE_TEXT[card.lifecycle],
     badges: card.dataMode === 'SYNTHETIC' ? ['합성 공고'] : [],
     evidenceRefs: card.evidenceRefs,
+    topicTexts: card.topics.map(t => TOPIC_TEXT[t]),
+    relevance: ex ? {text: `관련도 ${ex.relevance.score} · ${ex.relevance.label}`, disclaimer: ex.relevance.disclaimer} : null,
+    reasons: ex ? ex.reasons.map(r => r.text) : [],
+    deadlineText: ex ? ex.deadline.text : null,
   };
 }
 
