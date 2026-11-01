@@ -8,7 +8,7 @@
 - [x] 이의상 [#68 React 기본 셸](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68) P1 대상별 snapshot 혼합 수정과 합성 테스트 확인; GitHub Actions [#41276776099](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41276776099) SUCCESS, 최신 HEAD 재승인 후 merge `51c3c11c`. 합성 UI 기반 완료이지 전체 5탭·실인증 E2E 완료가 아니다.
 - [x] 심민성 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77)의 `HufsApiClient.getCalendar()` 구현/401·403·409·503/불량 wire·취소 테스트 **PR 제출**, GitHub Actions [#41279165323](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41279165323) SUCCESS. **main 미병합/독립 리뷰 대기:** 화면 소유자 UI #51/#72 실제 연결과 2차 asOf·epoch 검증 미완료.
 - [ ] UI 스택 #69→#72→#73→#74→#75→#76는 OPEN. #68의 squash 병합 후 옛 head를 기반으로 쌓인 #69의 커밋 조상 재정렬 또는 정합한 merge ancestry 연결·현재 base 기준 CI/비작성자 승인 전에는 병합하지 않는다. [작업 방식](docs/PR_WORKFLOW.md).
-- [ ] 박준영 [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70): `decideRulePackActivation`에서 `effectiveFrom <= asOf < effectiveUntil` 검증 누락으로 **CHANGES_REQUESTED**. 시행 전/만료 후 후보 유지(HELD) 회귀·최신 CI·재승인 필요.
+- [x] 박준영 [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70): `effectiveFrom <= asOf < effectiveUntil` 검증 누락 수정, 시행 전/만료/경계값 HELD 및 기존 active 유지 회귀 확인, 최신 GitHub Actions [#41279711503](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41279711503) SUCCESS, 비작성자 재승인·main merge `0a8d44bd`. **공식 학칙/실학생 검수 완료는 아님.**
 - [ ] 운영 Google/실 외대메일/영속 세션·공식 출처/사용권한·실학생 개별 목적별 동의·실 PostgreSQL 다중 인스턴스/브라우저/모바일 스크린리더·NCP/CLOVA 비용·권리검증. 이 조건은 CI 성공, 코드 병합 또는 README 체크만으로 닫지 않는다.
 
 **최신 open 이슈:** UI #9/#51, 학업 #11, 추천 정답 #10/#61, API·자료·보안 #8/#18/#19/#21/#27/#39/#52/#71, 심사자 #25, 데이터 동의 #46, NCP #12/#20/#22, 총괄 #23. 의존성 1단계 #63은 CLOSED. 아래의 검토 중/미병합 문구는 작성 당시의 역사적 스냅샷이다.
