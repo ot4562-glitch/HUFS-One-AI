@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import {afterEach, describe, expect, it} from 'vitest';
 import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
-import type {DemoContext} from '@hufs-one/contracts';
+import {DemoOverlayResultSchema, DemoSnapshotSchema, makeApiError, type DemoContext} from '@hufs-one/contracts';
 import {DemoController} from '../../app/index.js';
+import {HufsApiClient, type ApiFetch} from '../../integrations/index.js';
+import {liveServices} from '../../liveServices.js';
 import {SyntheticDemoClient} from '../../dev/syntheticDemoClient.js';
 import {buildSyntheticCalendar} from '../../dev/syntheticCalendar.js';
 import {App, type AppServices} from '../../App.js';
@@ -22,11 +24,19 @@ const SNAPSHOT_AS_OF = '2026-11-20T00:00:00.000Z';
 
 async function open(services: AppServices, subjectIndex = 0) {
   const client = new SyntheticDemoClient({delayMs: 0});
-  render(<App controller={new DemoController(client, 'TEST-RUN')} historyPort={history()} pages={appPages} services={services} />);
+  const controller = new DemoController(client, 'TEST-RUN');
+  render(<App controller={controller} historyPort={history()} pages={appPages} services={services} />);
   await flush();
   pick(subjectIndex);
   await flush();
-  return client;
+  return {client, controller};
+}
+const respond = (payload: unknown, status = 200) => new Response(JSON.stringify(payload), {status, headers: {'content-type': 'application/json'}});
+/** Real HufsApiClient over a fake transport, wired exactly as main.tsx does (liveServices). */
+function liveApi(reply: (url: string, n: number) => Response | Promise<Response>) {
+  const calls: string[] = [];
+  const transport: ApiFetch = async url => { calls.push(url); return reply(url, calls.length); };
+  return {calls, services: liveServices(new HufsApiClient(transport))};
 }
 function pick(i: number) {
   fireEvent.click(within(screen.getByRole('group', {name: /시연 대상 선택/})).getAllByRole('radio')[i]!);
@@ -90,5 +100,75 @@ describe('#51 MiniCalendar on 오늘', () => {
     resolvers.find(r => r.ctx.demoSubjectId === 'S02')!.resolve(buildSyntheticCalendar(SNAPSHOT_AS_OF));
     await flush();
     expect(within(calendar()).getAllByRole('button')).toHaveLength(14);
+  });
+
+  it('hides the shown calendar in the same render when an overlay commit replaces the snapshot (same epoch+context)', async () => {
+    // Grid size in the DOM at the moment each load starts (effects run after commit).
+    const domAtLoad: number[] = [];
+    const {controller} = await open({loadCalendar: () => {
+      domAtLoad.push(document.querySelectorAll('.cal__day').length);
+      return domAtLoad.length === 1 ? Promise.resolve(buildSyntheticCalendar(SNAPSHOT_AS_OF)) : new Promise(() => {});
+    }});
+    await flush();
+    expect(within(calendar()).getAllByRole('button')).toHaveLength(14);
+    const before = controller.getState();
+    const s = before.snapshot!;
+    const receipt = DemoOverlayResultSchema.parse({
+      overlay: {version: 1, value: {interestTopics: ['AI_ML']}, updatedAt: s.asOf},
+      snapshot: DemoSnapshotSchema.parse({...s, versions: {...s.versions, consent: before.context!.sharingGrantVersion, overlay: 'BETA_OVERLAY:1'}}),
+      calendar: buildSyntheticCalendar(s.asOf),
+    });
+    await act(async () => { expect(await controller.runOverlayOperation(async () => receipt)).not.toBeNull(); });
+    await flush();
+    const after = controller.getState();
+    expect([after.epoch, after.context?.contextId, after.snapshot === s]).toEqual([before.epoch, before.context?.contextId, false]);
+    expect(domAtLoad).toEqual([0, 0]); // the old 14-day grid was never committed under the new snapshot
+    expect(within(calendar()).getByText('일정을 불러오는 중')).toBeTruthy();
+  });
+
+  describe('real API port (liveServices → HufsApiClient.getCalendar)', () => {
+    it('loads the current context calendar over the authorized GET and renders it', async () => {
+      const api = liveApi(() => respond(buildSyntheticCalendar(SNAPSHOT_AS_OF)));
+      await open(api.services);
+      await flush();
+      expect(api.calls.length).toBeGreaterThan(0);
+      expect(api.calls.every(u => u.startsWith('/api/demo/contexts/') && u.endsWith('/calendar'))).toBe(true);
+      expect(within(calendar()).getAllByRole('button')).toHaveLength(14);
+    });
+
+    it.each([
+      ['SHARING_REVOKED', 403],
+      ['UNAUTHENTICATED', 401],
+      ['VERSION_CONFLICT', 409],
+    ] as const)('%s/%i on reload clears the shown calendar instead of keeping the old one', async (code, status) => {
+      const api = liveApi((_u, n) => n === 1 ? respond(buildSyntheticCalendar(SNAPSHOT_AS_OF)) : respond(makeApiError(code, 'SYN-REQ-01'), status));
+      const {controller} = await open(api.services);
+      await flush();
+      expect(within(calendar()).getAllByRole('button')).toHaveLength(14);
+      await act(async () => { await controller.revalidate(); });
+      await flush();
+      expect(controller.getState().status).not.toBe('READY');
+      expect(screen.queryByRole('region', {name: '내 주요 일정'})).toBeNull();
+      expect(screen.queryByText(/가상 졸업인증 서류 제출/)).toBeNull();
+    });
+
+    it('a 200 that arrives after the same context got a new snapshot is never shown', async () => {
+      const pending: ((r: Response) => void)[] = [];
+      const api = liveApi(() => new Promise<Response>(resolve => pending.push(resolve)));
+      const {controller} = await open(api.services);
+      const first = pending.length;
+      expect(first).toBeGreaterThan(0);
+      await act(async () => { await controller.revalidate(); }); // same epoch + context, new snapshot object
+      await flush();
+      expect(controller.getState().status).toBe('READY');
+      // Old request (wrong asOf on purpose) resolves late: dropped, still loading for the new snapshot.
+      for (const r of pending.slice(0, first)) r(respond(buildSyntheticCalendar('2026-11-21T00:00:00.000Z')));
+      await flush();
+      expect(within(calendar()).getByText('일정을 불러오는 중')).toBeTruthy();
+      expect(within(calendar()).queryByRole('alert')).toBeNull();
+      for (const r of pending.slice(first)) r(respond(buildSyntheticCalendar(SNAPSHOT_AS_OF)));
+      await flush();
+      expect(within(calendar()).getAllByRole('button')).toHaveLength(14);
+    });
   });
 });

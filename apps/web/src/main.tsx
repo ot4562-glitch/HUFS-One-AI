@@ -4,6 +4,7 @@ import {DemoController, newTabDemoRunId, type DemoClientPort} from './app/index.
 import {HufsApiClient} from './integrations/index.js';
 import {cssVariables} from './design/tokens.js';
 import {App, type AppServices} from './App.js';
+import {liveServices} from './liveServices.js';
 import {appPages} from './pages/index.js';
 import './styles.css';
 
@@ -12,10 +13,10 @@ async function start() {
   tokens.textContent = `:root{${cssVariables()}}`;
   document.head.append(tokens);
 
-  let client: DemoClientPort = new HufsApiClient();
+  const api = new HufsApiClient();
+  let client: DemoClientPort = api;
   let transportLabel: string | null = null;
-  // Real calendar port waits for HufsApiClient.getCalendar (#71); until then the widget says it is not connected.
-  let services: AppServices = {};
+  let services: AppServices = liveServices(api);
   // Synthetic transport only for `vite --mode synthetic` on a loopback host. The literal
   // import.meta.env.DEV check lets the production build drop this branch and its chunk.
   if (import.meta.env.DEV && import.meta.env.MODE === 'synthetic'

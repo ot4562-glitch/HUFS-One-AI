@@ -17,7 +17,7 @@ export interface PageContext {
 
 /** Optional data ports beyond DemoController. Missing ports render a "not connected" state. */
 export interface AppServices {
-  /** Raw CalendarResult for the context (validated by the widget). Pending HufsApiClient.getCalendar (#71). */
+  /** Raw CalendarResult for the context (validated by the widget). Real path: liveServices → HufsApiClient.getCalendar. */
   readonly loadCalendar?: (context: DemoContext, signal: AbortSignal) => Promise<unknown>;
 }
 
