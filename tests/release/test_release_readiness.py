@@ -49,11 +49,12 @@ def manual_release_workflow_problems(source: str) -> list[str]:
 
 
 class ReleaseReadinessTests(unittest.TestCase):
-    def test_no_offline_evidence_means_blocked_external(self) -> None:
+    def test_no_offline_evidence_means_blocked_offline(self) -> None:
         report = evaluate_release()
         self.assertEqual(report["release"], "BLOCKED")
         self.assertEqual(report["status"], "BLOCKED")
-        self.assertEqual(report["blocker"], "BLOCKED_EXTERNAL")
+        self.assertEqual(report["blocker"], "BLOCKED_OFFLINE_EVIDENCE")
+        self.assertIn("OFFLINE_GATE_NOT_RUN", report["reason_codes"])
         self.assertEqual(len(report["gates"]), len(OFFLINE) + len(EXTERNAL_UNVERIFIED))
         self.assertTrue(all(gate["status"] == "NOT_RUN" for gate in report["gates"]))
 
@@ -63,6 +64,32 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(report["blocker"], "BLOCKED_EXTERNAL")
         self.assertTrue(all(gate["status"] == "NOT_RUN"
                             for gate in report["gates"][len(OFFLINE):]))
+
+    def test_offline_browser_and_server_map_gates_are_tracked(self) -> None:
+        self.assertIn("compiled_browser_cache_and_loopback_preview", OFFLINE)
+        self.assertIn("offline_server_sourcemap_packaging", OFFLINE)
+        self.assertIn("offline_git_index_privacy", OFFLINE)
+        report = evaluate_release({name: "PASS" for name in OFFLINE
+                                   if name != "offline_server_sourcemap_packaging"})
+        self.assertEqual(report["blocker"], "BLOCKED_OFFLINE_EVIDENCE")
+        self.assertEqual(next(gate["status"] for gate in report["gates"]
+                              if gate["name"] == "offline_server_sourcemap_packaging"),
+                         "NOT_RUN")
+
+    def test_unapproved_server_source_map_blocks_release(self) -> None:
+        report = evaluate_release({name: ("BLOCKED" if
+            name == "offline_server_sourcemap_packaging" else "PASS") for name in OFFLINE})
+        self.assertEqual(report["release"], "BLOCKED")
+        self.assertEqual(report["blocker"], "BLOCKED_SECURITY")
+        self.assertEqual(report["reason_codes"][0], "OFFLINE_GATE_FAILED")
+        self.assertTrue(all(x["status"] == "NOT_RUN" for x in
+                            report["gates"][len(OFFLINE):]))
+
+    def test_unexpected_gate_name_cannot_fake_approval(self) -> None:
+        report = evaluate_release({**{name: "PASS" for name in OFFLINE},
+                                   "external_release_approved": "PASS"})
+        self.assertEqual(report["blocker"], "BLOCKED_SECURITY")
+        self.assertNotIn("external_release_approved", json.dumps(report))
 
     def test_missing_and_failed_offline_gate_stay_distinct(self) -> None:
         report = evaluate_release({OFFLINE[0]: "FAIL", OFFLINE[1]: "PASS"})
