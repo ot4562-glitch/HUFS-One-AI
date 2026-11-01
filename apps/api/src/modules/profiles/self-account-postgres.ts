@@ -114,10 +114,11 @@ export class PostgresSelfAccountStore implements SelfAccountPort{
       }
       if(rows.rows.length!==1)throw new SelfAccountConflict();
       const result=parseConsent(rows.rows[0]!);
-      const audited=await c.query(`INSERT INTO api_self_consent_events
-        (actor_id,version,changed_purposes) VALUES($1,$2,$3::text[])
-        RETURNING version`,[id,result.version,changed]);
-      if(audited.rows.length!==1)throw new Error('Consent audit unavailable');
+      // Audit table is intentionally INSERT-only for this non-owner API role.
+      // RETURNING would require a SELECT grant and weaken that boundary.
+      await c.query(`INSERT INTO api_self_consent_events
+        (actor_id,version,changed_purposes) VALUES($1,$2,$3::text[])`,
+        [id,result.version,changed]);
       if(!parsed.choices.personalStorage){
         // A withdrawal immediately removes THIS table's private profile,
         // not external provider copies, raw student intake, or another owner.

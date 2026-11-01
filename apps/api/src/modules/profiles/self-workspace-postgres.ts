@@ -95,11 +95,11 @@ export class PostgresOwnerWorkspaceStore implements OwnerWorkspacePort{
   }
   private async audit(c:ReviewerSqlConnection,input:{actorId:string;kind:WorkspaceKind;
     itemId:string;version:number;action:'CREATED'|'UPDATED'|'DELETED'}):Promise<void>{
-    const r=await c.query(`INSERT INTO api_self_workspace_events
+    // This table permits INSERT only. No RETURNING: that would require SELECT.
+    await c.query(`INSERT INTO api_self_workspace_events
       (actor_id,kind,item_id,version,action)
-      VALUES($1,$2,$3,$4,$5) RETURNING version`,
+      VALUES($1,$2,$3,$4,$5)`,
       [input.actorId,input.kind,input.itemId,input.version,input.action]);
-    if(r.rows.length!==1)throw new Error('Workspace audit unavailable');
   }
   list(input:{actorId:string;kind:WorkspaceKind;limit:number;afterId?:string}){
     const kind=WorkspaceKindSchema.parse(input.kind);
