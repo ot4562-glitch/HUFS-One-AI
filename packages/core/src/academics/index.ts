@@ -16,7 +16,9 @@ export type {
   TrustedSourceClause,
   TrustedSourceInventory,
 } from './rule-approval.js';
-export {buildAcademicPlan} from './plan.js';
+export {simulateStudyPlan} from './study-plan.js';
+export type {StudyPlanCheck, StudyPlanCheckRequest, StudyPlanItem, UncheckedReason} from './study-plan.js';
+export {buildAcademicPlan, checkAcademicPlan} from './plan.js';
 export type {
   AcademicPlanRequest,
   PrerequisiteRule,
