@@ -122,6 +122,33 @@ export class PostgresSourceRevisionWriter {
     }finally{c.release();}
   }
 
+  async storeHttpValidators(input:{
+    sourceId:string;revisionId:string;canonicalUrl:string;
+    checkedAt:string;etag:string|null;lastModified:string|null;
+  }):Promise<void>{
+    // A changed head must never inherit validators from an older revision.
+    const c=await this.pool.connect();
+    try{
+      const result=await c.query(`INSERT INTO source_http_validators(
+        source_id,revision_id,canonical_url,etag,last_modified,observed_at)
+        SELECT h.source_id,h.revision_id,$3,$4,$5,$6::timestamptz
+        FROM source_ingest_heads h
+        WHERE h.source_id=$1 AND h.revision_id=$2
+        ON CONFLICT(source_id) DO UPDATE SET
+          revision_id=EXCLUDED.revision_id,canonical_url=EXCLUDED.canonical_url,
+          etag=EXCLUDED.etag,last_modified=EXCLUDED.last_modified,
+          observed_at=EXCLUDED.observed_at
+        WHERE EXISTS(SELECT 1 FROM source_ingest_heads h
+          WHERE h.source_id=EXCLUDED.source_id
+            AND h.revision_id=EXCLUDED.revision_id)
+        RETURNING source_id`,[
+        input.sourceId,input.revisionId,input.canonicalUrl,
+        input.etag,input.lastModified,input.checkedAt,
+      ]);
+      if(result.rows.length!==1)throw new Error('Stale source HTTP validator update');
+    }finally{c.release();}
+  }
+
   async observeUnchanged(input:{
     sourceId:string;revisionId:string;checkedAt:string;responseStatus:200|304;
   }):Promise<void>{

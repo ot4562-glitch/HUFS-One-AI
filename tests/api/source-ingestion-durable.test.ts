@@ -16,6 +16,8 @@ const input={sourceId:policy.sourceId,permissionRef:policy.permissionRef,
   actorRef:'SYN-OPERATOR'};
 function harness(){
   let grant=true,material='가상 공고 첫 판',calls=0,nowCounter=0;
+  let responseStatus:200|304=200,etag:string|null=null,lastModified:string|null=null;
+  const sentValidators:string[]=[];
   let latest:SourceRevisionVNext|null=null;
   let lastSeen='',approvedTime='2026-10-25T00:00:00.000Z';
   const observed:string[]=[];
@@ -32,24 +34,33 @@ function harness(){
     now:()=>new Date(Date.parse('2026-10-31T00:00:00Z')+nowCounter++*1000).toISOString(),
     egress:{
       resolveAddresses:async()=>['8.8.8.8'],
-      requestPinned:async()=>{calls++;return new Response(material,{status:200,
-        headers:{'content-type':'text/plain'}});},
+      requestPinned:async({init})=>{
+        calls++;
+        const headers=new Headers(init.headers);
+        sentValidators.push(headers.get('if-none-match')??'<none>');
+        return new Response(responseStatus===304?null:material,{status:responseStatus,
+          headers:responseStatus===304?{}:{'content-type':'text/plain',etag:'"SYN-ETAG"'}});
+      },
     },
     extractor:new ApprovedPlainTextExtractor(),
     readerPool:{connect:async()=>({
       query:async()=>({rows:latest?[{
         revision_id:latest.revisionId,original_sha256:latest.originalSha256,
         content_sha256:latest.contentSha256,fetched_at:latest.fetchedAt,
-        permission_ref:latest.permissionRef,
+        permission_ref:latest.permissionRef,etag,last_modified:lastModified,
       }]:[]}),
       release:()=>{},
     })},
     writer:{
       append:async({revision})=>{latest=revision as SourceRevisionVNext;return null;},
       observeUnchanged:async({revisionId})=>{lastSeen=revisionId;observed.push(revisionId);},
+      storeHttpValidators:async(input)=>{etag=input.etag;lastModified=input.lastModified;},
+
     },
   });
   return {service,setMaterial:(x:string)=>{material=x;},
+    setResponseStatus:(s:200|304)=>{responseStatus=s;},
+    sentValidators:()=>sentValidators,
     revoke:()=>{grant=false;},calls:()=>calls,head:()=>latest,
     observed:()=>observed,lastSeen:()=>lastSeen};
 }
@@ -74,6 +85,22 @@ describe('TASK-19 durable approved-source fetch-to-Postgres adapter (synthetic t
     expect(newer.kind).toBe('CHANGED_DRAFT');
     expect(x.head()?.supersedes).toBe(first.revisionId);
     expect(x.head()?.status).toBe('NEEDS_REVIEW');
+  });
+  it('persists safe ETag headers and handles HTTP 304 without promoting human verification',async()=>{
+    const x=harness();
+    const first=await x.service.execute(input);
+    x.setResponseStatus(304);
+    expect(await x.service.execute(input)).toEqual({
+      kind:'NOT_MODIFIED',revisionId:first.revisionId,
+    });
+    expect(x.sentValidators()).toEqual(['<none>','"SYN-ETAG"']);
+    expect(x.observed()).toEqual([first.revisionId]);
+    expect(x.head()?.lastVerifiedAt).toBeUndefined();
+  });
+  it('rejects unsolicited HTTP 304 without a persisted matching source validator',async()=>{
+    const x=harness();x.setResponseStatus(304);
+    await expect(x.service.execute(input)).rejects.toThrow('Unconditional 304');
+    expect(x.observed()).toHaveLength(0);
   });
   it('never calls the injected transport if independent rights were revoked',async()=>{
     const x=harness();x.revoke();

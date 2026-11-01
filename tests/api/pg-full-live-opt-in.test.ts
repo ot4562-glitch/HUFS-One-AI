@@ -35,7 +35,8 @@ const migrationNames=[
   '20261031_beta_admission.sql','20261031_school_mail.sql',
   '20261031_reviewer_invitations.sql','20261101_reviewer_sandbox.sql',
   '20261031_auth_attempt_windows.sql',
-  '20261031_temporal_evidence.sql','20261101_source_ingest_queue.sql',
+  '20261031_temporal_evidence.sql','20261101_source_http_validators.sql',
+  '20261101_source_ingest_queue.sql',
   '20261101_intake_staging.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
@@ -82,7 +83,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        GRANT SELECT,INSERT ON api_intake_revisions TO hufs_test_intake;
        GRANT EXECUTE ON FUNCTION reviewer_sandbox_allowed(text,text) TO hufs_test_sandbox;
        GRANT SELECT,INSERT,UPDATE ON reviewer_sandbox_state TO hufs_test_sandbox;
-      GRANT SELECT ON source_ingest_heads,source_revisions_vnext,source_paragraphs_vnext,
+      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
     `);
@@ -169,7 +170,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await expect(sandbox.query('SELECT * FROM reviewer_enrollments')).rejects.toMatchObject({code:'42501'});
     await expect(sandbox.query('DELETE FROM reviewer_sandbox_state')).rejects.toMatchObject({code:'42501'});
   });
-  it('applies all twelve real SQL migrations and FORCE RLS policies',async()=>{
+  it('applies all thirteen real SQL migrations and FORCE RLS policies',async()=>{
     const r=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE oid='api_personal_records'::regclass`);
     expect(r.rows[0]).toEqual({relrowsecurity:true,relforcerowsecurity:true});
@@ -202,7 +203,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query('SELECT attempts FROM auth_attempt_windows')).rows[0]?.attempts).toBe(10);
   });
   it('bridges exact allowlisted synthetic HTTPS responses into immutable PG drafts and unchanged observations',async()=>{
-    let body='가상 안내 원문',calls=0,step=0;
+    let body='가상 안내 원문',calls=0,step=0,status:200|304=200;
+    const conditional:string[]=[];
     const url='https://synthetic.example.edu/notice/one';
     const policy={sourceId:'SYN-DURABLE-PG',canonicalUrl:url,
       approvedOrigin:'https://synthetic.example.edu',permissionRef:'SYN-DURABLE-RIGHTS',
@@ -212,8 +214,12 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       rights:{resolve:async()=>null},
       egress:{
         resolveAddresses:async()=>['8.8.8.8'],
-        requestPinned:async()=>{calls++;return new Response(body,{status:200,
-          headers:{'content-type':'text/plain'}});},
+        requestPinned:async({init})=>{
+          calls++;
+          conditional.push(new Headers(init.headers).get('if-none-match')??'<none>');
+          return new Response(status===304?null:body,{status,
+            headers:status===304?{}:{'content-type':'text/plain',etag:'"SYN-REAL-PG"'}});
+        },
       },
       extractor:new ApprovedPlainTextExtractor(),readerPool:adapter(temporal),
       writer:new PostgresSourceRevisionWriter(adapter(admin)),
@@ -225,6 +231,11 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect(first.kind).toBe('NEW_DRAFT');
     const same=await executor.execute(input);
     expect(same).toEqual({kind:'NOT_MODIFIED',revisionId:first.revisionId});
+    status=304;
+    const notModified=await executor.execute(input);
+    expect(notModified).toEqual({kind:'NOT_MODIFIED',revisionId:first.revisionId});
+    expect(conditional).toEqual(['<none>','"SYN-REAL-PG"','"SYN-REAL-PG"']);
+    status=200;
     body='가상 안내 정정판';
     const changed=await executor.execute(input);
     expect(changed.kind).toBe('CHANGED_DRAFT');
@@ -235,8 +246,11 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       {revision_id:changed.revisionId,supersedes:first.revisionId,status:'NEEDS_REVIEW'},
     ]);
     expect((await admin.query('SELECT count(*)::integer AS n FROM source_check_observations WHERE source_id=$1',
-      [policy.sourceId])).rows[0]?.n).toBe(1);
-    expect(calls).toBe(3);
+      [policy.sourceId])).rows[0]?.n).toBe(2);
+    expect(calls).toBe(4);
+    const validators=await admin.query('SELECT revision_id,etag FROM source_http_validators WHERE source_id=$1',
+      [policy.sourceId]);
+    expect(validators.rows).toEqual([{revision_id:changed.revisionId,etag:'"SYN-REAL-PG"'}]);
     await expect(temporal.query('UPDATE source_revisions_vnext SET status=$1', ['ACTIVE']))
       .rejects.toMatchObject({code:'42501'});
   });

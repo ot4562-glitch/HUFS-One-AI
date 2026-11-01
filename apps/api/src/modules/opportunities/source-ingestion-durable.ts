@@ -14,9 +14,13 @@ const CAP=256*1024;
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/pdf','image/png','image/jpeg']);
 const SHA=(v:Uint8Array)=>createHash('sha256').update(v).digest('hex');
+const SAFE_HTTP_VALIDATOR=/^[\x20-\x7e]{1,200}$/;
+function safeValidator(value:string|null):string|null{
+  return value!==null&&SAFE_HTTP_VALIDATOR.test(value)?value:null;
+}
 type StoredHead={
   revisionId:string;originalSha256:string;contentSha256:string;
-  fetchedAt:string;permissionRef:string;
+  fetchedAt:string;permissionRef:string;etag:string|null;lastModified:string|null;
 };
 function stringDate(value:unknown):string{
   if(value instanceof Date)return value.toISOString();
@@ -85,18 +89,20 @@ export function createApprovedDurableSourceExecutor(options:{
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
   readerPool:ReviewerSqlPool;
-  writer:Pick<PostgresSourceRevisionWriter,'append'|'observeUnchanged'>;
+  writer:Pick<PostgresSourceRevisionWriter,'append'|'observeUnchanged'|'storeHttpValidators'>;
   now?:()=>string;
 }):TrustedDurableSourceExecutor{
   const now=options.now??(()=>new Date().toISOString());
-  const readHead=async(sourceId:string):Promise<StoredHead|null>=>{
+  const readHead=async(sourceId:string,canonicalUrl:string):Promise<StoredHead|null>=>{
     const c=await options.readerPool.connect();
     try{
       const r=await c.query(`SELECT h.revision_id,r.original_sha256,r.content_sha256,
-        r.fetched_at,r.permission_ref
+        r.fetched_at,r.permission_ref,v.etag,v.last_modified
         FROM source_ingest_heads h LEFT JOIN source_revisions_vnext r
           ON r.revision_id=h.revision_id
-        WHERE h.source_id=$1`,[sourceId]);
+        LEFT JOIN source_http_validators v ON v.source_id=h.source_id
+          AND v.revision_id=h.revision_id AND v.canonical_url=$2
+        WHERE h.source_id=$1`,[sourceId,canonicalUrl]);
       if(r.rows.length>1)throw new Error('Multiple source heads');
       if(r.rows.length===0||r.rows[0]?.revision_id===null)return null;
       const v=r.rows[0]!;
@@ -105,7 +111,9 @@ export function createApprovedDurableSourceExecutor(options:{
         throw new Error('Malformed source head');
       return {revisionId:v.revision_id,originalSha256:v.original_sha256,
         contentSha256:v.content_sha256,fetchedAt:stringDate(v.fetched_at),
-        permissionRef:v.permission_ref};
+        permissionRef:v.permission_ref,
+        etag:typeof v.etag==='string'?v.etag:null,
+        lastModified:typeof v.last_modified==='string'?v.last_modified:null};
     }finally{c.release();}
   };
   return {
@@ -114,16 +122,33 @@ export function createApprovedDurableSourceExecutor(options:{
       if(!policy)throw new Error('Source was not allowlisted');
       const u=reviewPolicy(policy,input.sourceId,input.permissionRef);
       const at=now(),initial=await approvedFingerprint({policy,resolver:options.rights,now:at});
-      const head=await readHead(input.sourceId);
+      const head=await readHead(input.sourceId,u.href);
       if(head&&head.permissionRef!==input.permissionRef)
         throw new Error('Existing source permission changed');
       // The transport independently checks A/AAAA twice, rejects internal IPs
       // and connects to the pinned address using hostname/SNI TLS validation.
       const transport=createApprovedPinnedTransport({canonicalUrl:u.href},options.egress);
+      const headers:Record<string,string>={
+        Accept:'text/plain,text/html,application/rss+xml,application/atom+xml,application/pdf,image/png,image/jpeg',
+      };
+      if(head?.etag)headers['If-None-Match']=head.etag;
+      if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
       const response=await transport(u,{method:'GET',redirect:'error',credentials:'omit',
-        headers:{Accept:'text/plain,text/html,application/rss+xml,application/atom+xml,application/pdf,image/png,image/jpeg'},
-        signal:AbortSignal.timeout(5000)});
-      if(response.status!==200)throw new Error('Unsupported response (304 requires persisted validators)');
+        headers,signal:AbortSignal.timeout(5000)});
+      // Conditional requests are valid only with a persisted validator for
+      // exactly this canonical URL and current immutable source revision.
+      if(response.status===304){
+        if(!head||(!head.etag&&!head.lastModified))
+          throw new Error('Unconditional 304 refused');
+        if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+          throw new Error('Source rights changed during conditional fetch');
+        await options.writer.observeUnchanged({sourceId:input.sourceId,
+          revisionId:head.revisionId,checkedAt:now(),responseStatus:304});
+        return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
+      }
+      if(response.status!==200)throw new Error('Unapproved source response');
+      const etag=safeValidator(response.headers.get('etag'));
+      const lastModified=safeValidator(response.headers.get('last-modified'));
       const media=(response.headers.get('content-type')??'').split(';')[0]!.trim().toLowerCase();
       if(!ALLOWED.has(media))throw new Error('Unsupported approved content type');
       const bytes=await readBounded(response);
@@ -139,8 +164,11 @@ export function createApprovedDurableSourceExecutor(options:{
       // Duplicate content never upgrades human verification timestamps.
       if(head&&head.originalSha256===originalSha256
         &&head.contentSha256===contentSha256){
+        const checkedAt=now();
         await options.writer.observeUnchanged({sourceId:input.sourceId,
-          revisionId:head.revisionId,checkedAt:now(),responseStatus:200});
+          revisionId:head.revisionId,checkedAt,responseStatus:200});
+        await options.writer.storeHttpValidators({sourceId:input.sourceId,
+          revisionId:head.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
         return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
       }
       const checkedAt=now();
@@ -159,6 +187,8 @@ export function createApprovedDurableSourceExecutor(options:{
       };
       await options.writer.append({revision,paragraphs,originalBytes:bytes,
         permissionReviewed:true});
+      await options.writer.storeHttpValidators({sourceId:input.sourceId,
+        revisionId:revision.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
       // A revocation after append leaves an unapproved DRAFT, never ACTIVE.
       // The operator must manually reconcile changes before approving a claim.
       if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
