@@ -16,7 +16,7 @@ export interface EvidenceRightsResolver {
   resolveFor(input:{actor:VerifiedTeamActor;now:string}):
     Promise<CurrentEvidenceGrants|null>;
 }
-function policyFingerprint(scope:CurrentEvidenceGrants):string{
+export function policyFingerprint(scope:CurrentEvidenceGrants):string{
   return JSON.stringify({
     policyVersion:scope.policyVersion,
     sourceHeadVersion:scope.sourceHeadVersion??null,

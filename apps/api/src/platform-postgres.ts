@@ -8,6 +8,9 @@ import {PostgresPersonalStateStore} from './db/personal-state-postgres.js';
 import type {PersonalDataConsentVerifier,SyntheticPersonalFixtureAuthority} from './db/personal-state-postgres.js';
 import {PostgresTemporalEvidenceReader} from './modules/opportunities/temporal-postgres.js';
 import {createPostgresTemporalGateway} from './modules/opportunities/temporal-gateway.js';
+import {PostgresSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
+import {PostgresSourceIngestionQueue} from './modules/opportunities/source-ingestion-queue-postgres.js';
+import type {TrustedDurableSourceExecutor,TrustedSourceIngestionAuthority} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import type {EvidenceRightsResolver} from './modules/opportunities/temporal-gateway.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
@@ -20,6 +23,9 @@ export interface PostgresPlatformConfig {
   syntheticAuthority?:SyntheticPersonalFixtureAuthority;
   /** Separate approved synthetic source. No fallback to team/student projections. */
   reviewerCalendar?:CalendarInputSource;
+  /** Optional private operator port. No automatic crawler/worker or network. */
+  sourceIngestion?:{pool:ReviewerSqlPool;
+    authority:TrustedSourceIngestionAuthority;executor:TrustedDurableSourceExecutor};
   now?:()=>string;
 }
 
@@ -43,5 +49,11 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       config.personalConsent,config.syntheticAuthority),
     temporalEvidence:createPostgresTemporalGateway(
       new PostgresTemporalEvidenceReader(config.pools.evidence),config.evidenceRights),
+    // Calendar reader role has SELECT on source heads and revision metadata.
+    sourceHistory:new PostgresSourceRevisionHistory(config.pools.calendar,config.evidenceRights),
+    ...(config.sourceIngestion?{
+      sourceIngestion:new PostgresSourceIngestionQueue(config.sourceIngestion.pool,
+        config.sourceIngestion.authority,config.sourceIngestion.executor,now),
+    }:{}),
   };
 }

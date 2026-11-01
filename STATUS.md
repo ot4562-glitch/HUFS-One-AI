@@ -1,13 +1,14 @@
 # HUFS One AI | 현재 작업 상태
 
-## 2026-11-01 심민성 담당 플랫폼 통합 — PR 검토 전용
+## 2026-11-01 심민성 담당 플랫폼 통합 — 단일 PR #58 검토 중
 
 - **범위/위치:** 사용자 최신 지시로 `C:\AIProjects\naver-competition`에 저장소를 clone했다. 기존 underscore checkout·작업 폴더는 보존. `feat/platform-integration-20261101`은 #32/#33/#34/#35/#55의 기존 커밋을 통합한 리뷰 브랜치이며 main 병합·운영 배포는 하지 않았다.
 - **구현:** OIDC/PKCE·학교메일 증명·영속 세션/시도 제한, EvidenceScope vNext·권한/시점 기반 출처 수집/RAG, PostgreSQL SharingGrant/개인 상태 및 HTTP CRUD. 새 캘린더 GET은 scopeInputsToGrant→출처 current-head/현재 권리·충돌 확인→추천/공지/일정 재계산→권한 receipt 재검증을 거친다. 부분공유에서 전체 precomputed 결과를 복사하지 않는다.
 - **동시성 수정:** 조회 중 grant/source 범위가 달라지면 결과를 폐기한다. 현재 취소/미검수 head가 과거 ACTIVE 일정으로 되살아나지 않으며, 학업/전망 요약은 같은 거래와 receipt에 묶인 approvedSnapshot만 반환한다. summary의 원래 asOf를 임의 재표시하지 않는다. SELECT-only DB 역할은 좁은 SECURITY DEFINER 잠금 함수만 실행한다.
-- **검증:** 기본 Windows 환경 `npm run check` **826 PASS / 실DB opt-in 15 SKIP**(TypeScript 포함), `npm run build:api` PASS, `npm run check:privacy` **144/144 PASS**. Codex의 독립 검증 worktree에서 disposable 로컬 PostgreSQL 18.6으로 세 opt-in suite **15/15 PASS**(migration·최소권한/RLS·동시 CAS·rollback·철회·RAG·calendar·summary receipt)한 기록은 `local_only/pg-validation-20261101/validation-receipt.md` 및 JSON에 보존. 현재 연결 세션에서 재실행한 것은 기본 합성/빌드/게시 경계 검사이며, 실 PG 15건은 이전 독립 검증 기록이다. GitHub Actions `postgres-integration`의 새 HEAD 결과는 PR 게시 후 별도 확인한다.
-- **협업 검토:** 이슈20·PR37 전체, 대화130·리뷰43·스레드5/인라인10을 검토했다. #56/#57의 기존 CHANGES_REQUESTED는 해결되지 않았으므로 동일 코멘트를 반복하거나 임의 승인/병합하지 않는다.
-- **미완료:** 사람의 현재 HEAD 승인/main 병합, 실제 Google·메일/도메인 브라우저 로그인, 기관·학생 원본 목적별 동의/권한 #46, NCP/provider 운영 승인/실측, 이의상 UI #9/#51 및 동료 학업 #11은 별도다. 합성 테스트·로컬 PG 성공은 운영 또는 사람 승인 증거가 아니다. 완료되지 않은 이슈를 닫지 않는다.
+- **검증:** 기본 Windows 환경 `npm run check` **867 PASS / 실DB opt-in 18 SKIP**(TypeScript 포함), `npm run build:api` PASS, `npm run check:privacy` **144/144 PASS**. Codex의 독립 검증 worktree에서 disposable 로컬 PostgreSQL 18.6으로 세 opt-in suite **15/15 PASS**(migration·최소권한/RLS·동시 CAS·rollback·철회·RAG·calendar·summary receipt)한 기록은 `local_only/pg-validation-20261101/validation-receipt.md` 및 JSON에 보존. 현재 연결 세션에서 재실행한 것은 기본 합성/빌드/게시 경계 검사이며, 실 PG 15건은 이전 독립 검증 기록이다. 기존 통합 HEAD e556053에서는 GitHub Actions synthetic + 실PG **15/15 PASS**([run #41261261860](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41261261860)). **새 수집 큐 migration/3개 실PG 테스트가 추가된 후속 HEAD**의 원격 결과는 별도 확인하여 최신화한다.
+- **PR 정리:** #58 HEAD는 새 출처 이력/인증·DB/Temporal RAG/캘린더 전체 통합의 유일한 리뷰 대상. 기존 미병합 PR **#32/#33/#34/#35/#55는 파일별 포함 확인 후 모두 CLOSED (superseded, NOT MERGED)**. #56/#57 동료 PR의 CHANGES_REQUESTED는 그대로 유지한다.
+- **추가 구현 (TASK-19/21):** 권한·학업 적용범위·최신 SourceRevision head를 재확인하는 `GET /api/evidence/sources/:sourceId/revisions`(원문/OCR·학생자료 비반환), **명시적 operator 전용 PostgreSQL 수집 큐(최대16건·전역 1개 lease·멱등 요청·실패/크래시 시 자동 재시도 금지)** 및 별도 migration. 합성 시간 12시나리오+가상 포스터 20개 인용 검증(실제 OCR/근거 Recall@k 측정 아님) 추가.
+- **미완료/이슈 OPEN 이유:** #8/#18/#19/#21/#25/#27/#39/#52 및 총괄 #23은 사람의 최신 HEAD 승인·main 병합, 실제 Google/SMTP/브라우저·도메인, 학생 원본 목적별 동의/기관 출처 권리 #46, 허가된 수집·정규화/OCR/실수집 관찰, 운영 PG/TLS/배포, 독립 40공고×5프로필 평가·지연/비용 실측 또는 이의상 #9/#51 UI와 연계 중 해당 조건이 미충족이다. 현재 큐의 **trusted executor가 실 PostgreSQL draft 영속화/출처권리 recheck를 구현·주입**해야 실데이터를 처리할 수 있으며 자동 실행/유료 NCP 호출은 없음. 합성/CI 성공을 운영 승인으로 해석하거나 이슈를 조기 종료하지 않는다.
 
 아래 2026-10-31 절은 그 시점의 main/협업 기록이다.
 

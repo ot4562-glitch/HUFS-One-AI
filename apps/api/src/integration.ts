@@ -1,4 +1,5 @@
 import {createApi} from './server.js';
+import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
 import type {FastifyRequest, FastifyReply} from 'fastify';
 import type {
   AiCandidateProvider, ApiRepository, ApiOptions, VerifySession, VerifiedActor,
@@ -43,6 +44,7 @@ interface SharedDependencies {
   maxSyntheticAiCallsPerActor?:number;
   /** Server-owned, current source rights. Never supplied by a browser. */
   temporalEvidence?:ApiOptions['temporalEvidence'];
+  sourceHistory?:ApiOptions['sourceHistory'];
   calendarSource?:ApiOptions['calendarSource'];
   personalState?:ApiOptions['personalState'];
 }
@@ -126,10 +128,13 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
       ?{maxSyntheticAiCallsPerActor:deps.maxSyntheticAiCallsPerActor}:{}),
     ...(deps.now?{now:deps.now}:{}),
     ...(deps.temporalEvidence?{temporalEvidence:deps.temporalEvidence}:{}),
+    ...(deps.sourceHistory?{sourceHistory:deps.sourceHistory}:{}),
     ...(deps.calendarSource?{calendarSource:deps.calendarSource}:{}),
     ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options);
+  if(deps.sourceHistory)registerSourceRevisionHistoryRoute(
+    app,deps.sourceHistory,auth.verifySession,deps.now??(()=>new Date().toISOString()));
   if(deps.googleAuth) {
     // Until Agent 1 #32 is included, main's createApi has no such routes.
     // Do NOT pretend that passing a port automatically enables OIDC.

@@ -10,6 +10,7 @@ import {PostgresPersonalStateStore} from '../../apps/api/src/db/personal-state-p
 import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-postgres.js';
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
+import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
@@ -26,7 +27,7 @@ const migrationNames=[
   '20261031_zz_api_roles.sql','20261031_google_auth.sql',
   '20261031_beta_admission.sql','20261031_school_mail.sql',
   '20261031_reviewer_invitations.sql','20261031_auth_attempt_windows.sql',
-  '20261031_temporal_evidence.sql',
+  '20261031_temporal_evidence.sql','20261101_source_ingest_queue.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -83,7 +84,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(pool=>pool.end()));},30000);
 
-  it('applies all nine real SQL migrations and FORCE RLS policies',async()=>{
+  it('applies all ten real SQL migrations and FORCE RLS policies',async()=>{
     const r=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE oid='api_personal_records'::regclass`);
     expect(r.rows[0]).toEqual({relrowsecurity:true,relforcerowsecurity:true});
@@ -114,6 +115,61 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     })));
     expect(result.filter(Boolean)).toHaveLength(10);
     expect((await admin.query('SELECT attempts FROM auth_attempt_windows')).rows[0]?.attempts).toBe(10);
+  });
+  it('durably deduplicates operator jobs and records only an immutable reviewed draft',async()=>{
+    const sourceId='SYN-QUEUE-SOURCE',requestKey='SYN-QUEUE-R1';
+    await admin.query(`INSERT INTO source_revisions_vnext
+      (revision_id,source_id,original_sha256,content_sha256,media_kind,source_class,
+        permission_ref,provenance,status,change_kind,fetched_at,last_checked_at)
+      VALUES('SYN-QUEUE-DRAFT', $1,repeat('e',64),repeat('f',64),'TEXT','SYNTHETIC',
+        'SYN-QUEUE-PERM','SYNTHETIC','NEEDS_REVIEW','NEW',clock_timestamp(),clock_timestamp())`,[sourceId]);
+    let calls=0;
+    const queue=new PostgresSourceIngestionQueue(adapter(admin),{
+      mayProcess:async()=>true,
+    },{execute:async()=>{calls++;return {kind:'NEW_DRAFT',revisionId:'SYN-QUEUE-DRAFT'};}});
+    const task={actorRef:'SYN-OPERATOR',sourceId,permissionRef:'SYN-QUEUE-PERM',requestKey};
+    const first=await queue.enqueue(task);
+    expect(first.created).toBe(true);
+    expect(await queue.enqueue(task)).toEqual({...first,created:false});
+    await expect(queue.enqueue({...task,actorRef:'SYN-OTHER'})).rejects.toThrow('identity conflict');
+    expect(await queue.runOne()).toEqual({jobId:first.jobId,state:'NEW_DRAFT'});
+    expect(await queue.runOne()).toEqual({state:'IDLE'});
+    expect(calls).toBe(1);
+    expect((await admin.query('SELECT state,outcome_revision_id,attempt_count FROM source_ingest_jobs WHERE job_id=$1',
+      [first.jobId])).rows[0]).toEqual({
+      state:'NEW_DRAFT',outcome_revision_id:'SYN-QUEUE-DRAFT',attempt_count:1,
+    });
+    await expect(reader.query('SELECT * FROM source_ingest_jobs')).rejects.toMatchObject({code:'42501'});
+  });
+  it('fails closed for revoked rights and unknown completion without an automatic retry',async()=>{
+    let revoked=false,calls=0;
+    const queue=new PostgresSourceIngestionQueue(adapter(admin),{
+      mayProcess:async({sourceId})=>!revoked||sourceId!=='SYN-QUEUE-REVOKE',
+    },{execute:async()=>{calls++;throw new Error('Synthetic transport failed');}});
+    const task={actorRef:'SYN-OPERATOR',sourceId:'SYN-QUEUE-REVOKE',
+      permissionRef:'SYN-QUEUE-PERM',requestKey:'SYN-QUEUE-REVOKE-1'};
+    const accepted=await queue.enqueue(task);revoked=true;
+    expect(await queue.runOne()).toEqual({jobId:accepted.jobId,state:'BLOCKED_RIGHTS'});
+    expect(calls).toBe(0);
+    const fail=await queue.enqueue({...task,sourceId:'SYN-QUEUE-FAIL',requestKey:'SYN-QUEUE-FAIL-1'});
+    expect(await queue.runOne()).toEqual({jobId:fail.jobId,state:'NEEDS_REVIEW'});
+    expect(await queue.runOne()).toEqual({state:'IDLE'});
+    expect(calls).toBe(1);
+    expect((await admin.query('SELECT state,last_error_code FROM source_ingest_jobs WHERE job_id=$1',
+      [fail.jobId])).rows[0]).toEqual({state:'NEEDS_REVIEW',last_error_code:'SOURCE_FAILURE'});
+  });
+  it('quarantines an expired source lease instead of repeating an ambiguous provider call',async()=>{
+    const queue=new PostgresSourceIngestionQueue(adapter(admin),{
+      mayProcess:async()=>true,
+    },{execute:async()=>{throw Error('Must not execute');}});
+    const task=await queue.enqueue({actorRef:'SYN-OPERATOR',sourceId:'SYN-QUEUE-EXPIRED',
+      permissionRef:'SYN-QUEUE-PERM',requestKey:'SYN-QUEUE-EXPIRED-1'});
+    await admin.query(`UPDATE source_ingest_jobs SET state='LEASED',attempt_count=1,
+      lease_token=gen_random_uuid(),lease_until=clock_timestamp()-interval '5 seconds'
+      WHERE job_id=$1`,[task.jobId]);
+    expect(await queue.runOne()).toEqual({state:'IDLE'});
+    expect((await admin.query('SELECT state,last_error_code FROM source_ingest_jobs WHERE job_id=$1',
+      [task.jobId])).rows[0]).toEqual({state:'NEEDS_REVIEW',last_error_code:'UNKNOWN_COMPLETION'});
   });
   it('executes permission/asOf/academic-scope SQL and never revives a retracted source',async()=>{
     const old=new Date(Date.now()-60_000).toISOString();

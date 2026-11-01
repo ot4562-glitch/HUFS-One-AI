@@ -4,6 +4,7 @@ import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
 import type {GoogleAuthFlow} from './modules/auth/google-auth-flow.js';
 import type {createSchoolMailProofService} from './modules/auth/school-mail-proof.js';
 import type {TemporalResult} from './modules/opportunities/revision-ledger.js';
+import type {PublicSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
 import type {CalendarInputSource} from './modules/calendar.js';
 import type {PersonalStatePort} from './modules/personal-state.js';
 import type {
@@ -94,6 +95,10 @@ export interface ApiOptions {
   /** This must be explicitly supplied by a private local test harness. */
   syntheticAiProvider?: AiCandidateProvider;
   maxSyntheticAiCallsPerActor?: number;
+  /** Server-owned, rights/scope/head-bound revision metadata; never raw source bodies. */
+  sourceHistory?:{
+    read(input:{actor:VerifiedTeamActor;sourceId:string;now:string}):Promise<PublicSourceRevisionHistory|null>;
+  };
   /** Trusted server-only permission resolver. Never accept permissions from browser. */
   temporalEvidence?: {
     query(input:{actor:VerifiedTeamActor;query:string;asOf:string;topK:number;now:string}):
