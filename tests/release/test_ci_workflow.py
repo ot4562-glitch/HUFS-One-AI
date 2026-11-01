@@ -124,7 +124,7 @@ class WorkflowBoundaryTests(unittest.TestCase):
         self.assertTrue(audit_ci_boundary(changed))
 
     def test_missing_anonymous_http_probe_is_rejected(self) -> None:
-        changed = self.policy.replace("run: node tools/release_entrypoint_gate.mjs", "run: echo skipped", 1)
+        changed = self.policy.replace("node tools/release_entrypoint_gate.mjs", "echo skipped", 1)
         self.assertTrue(audit_ci_boundary(changed))
 
     def test_raw_student_directory_in_checkout_is_rejected(self) -> None:
