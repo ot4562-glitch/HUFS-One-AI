@@ -17,7 +17,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/packages/fixtures/negative/", "/packages/core/", "/apps/api/",
     "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
-    "/tests/security/", "/tests/release/",
+    "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/.github/workflows/task00-contracts.yml",
 })
 EXCLUDED_DIRECTORIES = (
@@ -85,6 +85,7 @@ def audit_ci_boundary(text: str) -> list[str]:
         if not {
             "/tests/release/", "/tests/security/",
             "/.github/workflows/task00-contracts.yml",
+            "/tools/release_entrypoint_gate.mjs",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
         if "/infra/sql/" not in sparse[1] or "/tests/api/" not in sparse[1]:
@@ -95,6 +96,10 @@ def audit_ci_boundary(text: str) -> list[str]:
             issues.append(f"both jobs must assert absence of {directory}")
     if "python3 -m unittest discover -s tests/release" not in text:
         issues.append("release policy regression tests must execute in CI")
+    if "node --test tests/security/release_entrypoint_gate.test.mjs" not in text:
+        issues.append("security negative regression tests must execute in CI")
+    if "node tools/release_entrypoint_gate.mjs" not in text:
+        issues.append("actual offline anonymous HTTP probe must execute in CI")
     return issues
 
 
@@ -116,6 +121,10 @@ class WorkflowBoundaryTests(unittest.TestCase):
         changed = self.policy.replace(
             "  pull_request:\n", "  pull_request:\n    paths: [apps/api/**]\n", 1
         )
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_missing_anonymous_http_probe_is_rejected(self) -> None:
+        changed = self.policy.replace("node tools/release_entrypoint_gate.mjs", "echo skipped", 1)
         self.assertTrue(audit_ci_boundary(changed))
 
     def test_raw_student_directory_in_checkout_is_rejected(self) -> None:
