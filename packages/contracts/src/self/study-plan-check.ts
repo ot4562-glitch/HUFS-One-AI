@@ -7,9 +7,10 @@ import {AcademicPlanIssueVNextSchema,AcademicTermVNextSchema,
  */
 const Ref=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
 const Utc=z.iso.datetime({offset:true});
-const Https=z.url().refine(url=>new URL(url).protocol==='https:',{
-  message:'Only approved HTTPS evidence may be linked',
-});
+const Https=z.url().refine(url=>{
+  const parsed=new URL(url);
+  return parsed.protocol==='https:'&&!parsed.username&&!parsed.password;
+},{message:'Only credential-free HTTPS evidence may be linked'});
 export const OwnerStudyPlanCheckRequestSchema=z.strictObject({
   term:AcademicTermVNextSchema,
   expectedPlanVersion:Ref.optional(),
@@ -75,14 +76,37 @@ export const OwnerStudyPlanCheckResponseSchema=z.strictObject({
     if(!v.caveats.includes(required))problem(['caveats'],'Missing '+required);
   if(v.creditCapUnits!==undefined&&!v.approval)
     problem(['creditCapUnits'],'Unverified term cap must not be shown');
+  // Confirmed cap/prerequisite/section warnings cannot be attributed to an
+  // unreviewed RulePack. Needs-review findings may still be displayed.
+  const officialCodes=new Set([
+    'CREDIT_CAP_EXCEEDED','PREREQUISITE_MISSING',
+    'TIMETABLE_CONFLICT','REQUIRED_COURSE_UNOFFERED',
+  ]);
+  if(!v.approval&&v.planIssues.some(item=>officialCodes.has(item.code)))
+    problem(['planIssues'],'Unreviewed rules cannot produce confirmed warnings');
+  const sources=new Set<string>();
+  for(const [i,link] of v.evidenceLinks.entries()){
+    if(sources.has(link.evidenceRef))
+      problem(['evidenceLinks',i,'evidenceRef'],'Duplicate evidence ref');
+    sources.add(link.evidenceRef);
+    if(Date.parse(link.verifiedAt)>Date.parse(v.asOf))
+      problem(['evidenceLinks',i,'verifiedAt'],'Future evidence verification is not usable as of this check');
+  }
+  for(const [i,item] of v.planIssues.entries()){
+    for(const ref of item.evidenceRefs)
+      if(!sources.has(ref))
+        problem(['planIssues',i,'evidenceRefs'],'Evidence ref must have an authorized link');
+    if(officialCodes.has(item.code)&&item.evidenceRefs.length===0)
+      problem(['planIssues',i,'evidenceRefs'],'Confirmed warning requires verified evidence');
+  }
   if(v.approval){
     if(v.approval.rulePackVersion!==v.versions.rulePack)
       problem(['versions','rulePack'],'Receipt does not match current RulePack');
     if(Date.parse(v.approval.verifiedAt)>Date.parse(v.asOf))
       problem(['approval','verifiedAt'],'Look-ahead receipt forbidden');
-    if(!v.approval.officialEvidenceRefs.some(ref=>
-      v.evidenceLinks.some(link=>link.evidenceRef===ref)))
-      problem(['evidenceLinks'],'Approved source requires a permitted evidence link');
+    for(const ref of v.approval.officialEvidenceRefs)
+      if(!sources.has(ref))
+        problem(['evidenceLinks'],'All approved source refs need permitted links');
   }
   if(v.state==='READY'){
     if(!v.approval||v.creditCapUnits===undefined)
@@ -100,6 +124,15 @@ export const OwnerStudyPlanCheckResponseSchema=z.strictObject({
   const visible=new Set(v.disclosure.visibleCourseRefs);
   if(visible.size!==v.disclosure.visibleCourseRefs.length)
     problem(['disclosure','visibleCourseRefs'],'Repeated course references');
+  // Avoid sending the whole owner-grant allowlist as metadata: disclose only
+  // course IDs actually referenced by this response and separately authorized.
+  const used=new Set([
+    ...v.planIssues.flatMap(issue=>issue.courseRefs),
+    ...v.unchecked.flatMap(item=>item.courseId?[item.courseId]:[]),
+  ]);
+  for(const ref of visible)
+    if(!used.has(ref))
+      problem(['disclosure','visibleCourseRefs'],'Unused course allowance leaks private course identity');
   if(v.disclosure.mode==='REDACTED'&&visible.size!==0)
     problem(['disclosure'],'Redacted response cannot contain course references');
   if(v.disclosure.mode==='GRANT_SCOPED'&&!v.disclosure.grantVersion)
