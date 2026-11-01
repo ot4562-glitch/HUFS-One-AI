@@ -200,7 +200,12 @@ export class PostgresOwnerWorkspaceStore implements OwnerWorkspacePort{
       if(old.version!==expectedVersion)throw new WorkspaceConflict();
       await gate({itemId:id,value:old.value,operation:'WRITE'});
       const r=await c.query(`UPDATE api_self_workspace_records
-        SET version=version+1,deleted_at=clock_timestamp(),updated_at=clock_timestamp()
+        SET version=version+1,deleted_at=clock_timestamp(),
+            updated_at=clock_timestamp(),
+            -- Tombstones retain identity/version for CAS and immutable audit,
+            -- but must never retain the deleted owner's private payload.
+            value_json=jsonb_build_object('kind',kind,'dataMode',
+              value_json->'dataMode')
         WHERE actor_id=$1 AND kind=$2 AND item_id=$3
           AND version=$4 AND deleted_at IS NULL RETURNING version`,
         [input.actorId,kind,id,expectedVersion]);
