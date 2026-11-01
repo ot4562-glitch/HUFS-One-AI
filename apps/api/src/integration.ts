@@ -3,6 +3,10 @@ import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source
 import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
 import {registerOwnerCatalogRoutes} from './modules/opportunities/owner-catalog-http.js';
 import {registerOwnerWorkspaceRoutes} from './modules/profiles/self-workspace-http.js';
+import {registerOwnerStudyPlanCheckRoutes} from './modules/profiles/owner-study-plan-check-http.js';
+import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
+import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
+import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
 import {registerExperienceApprovalRoutes} from './modules/profiles/experience-approval-http.js';
 import type {ExperienceApprovalPort} from './modules/profiles/experience-approval-postgres.js';
@@ -39,6 +43,11 @@ export interface TrustedSchoolMailPort {
 }
 
 interface SharedDependencies {
+  /** Explicit approved provider ports only. Absence keeps these reads at 503. */
+  studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
+  majorWhatIf?:Omit<Parameters<typeof registerOwnerMajorWhatIfRoutes>[0],'app'|'session'>;
+  opportunityExplanation?:Omit<Parameters<typeof registerOpportunityExplanationRoutes>[0],'app'|'session'>;
+  revisionComparison?:Omit<Parameters<typeof registerOpportunityRevisionComparisonRoutes>[0],'app'|'session'>;
   experienceApproval?:ExperienceApprovalPort;
   demoOverlay?:ApiOptions['demoOverlay'];
   adminAuthority?:ApiOptions['adminAuthority'];
@@ -154,6 +163,11 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options);
+  const ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
+  registerOwnerStudyPlanCheckRoutes({...deps.studyPlanCheck,app,session:ownerSession});
+  registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
+  registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
+  registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});
   if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,{
     verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString()),
   });
