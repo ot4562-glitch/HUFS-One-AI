@@ -1,5 +1,12 @@
 # HUFS One AI | 시연·에이전트 검증 기준
 
+## 2026-11-01 후속 PR 리뷰·심사 검증 정본
+
+- [x] [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 정책 버전 결과 캐시 키는 최신 HEAD 타인 APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) 합성/PG 2 job SUCCESS 후 main merge `fdf0b09b`.
+- [x] [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 조직 노출 상한·다양성에서 사유가 실제 순위와 맞지 않는 문제로 CHANGES_REQUESTED. [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120) 계약→[#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) owner API는 HEAD COMMENT·Actions SUCCESS·타인 리뷰 요청만 완료(아직 미병합).
+- [ ] UI #72~#76·#119 실제 정정 전후 비교·#86 화면·#82 What-if 학업 계산 엔진·#81 계획 화면/실브라우저 종단 검증 미완료. 작성자 로컬 합성/CI 결과를 실제 학생·기관 공고/정식 학칙·브라우저 출시 승인으로 표기하지 않는다.
+- [ ] #46 개인정보 원본 인덱스 검사 2 FAIL 및 #89 `RELEASE_BLOCKED`; 과거 '이번 신규 병합 0건'은 **이전 UI 전용 감사**의 기록이며 이번 코어 PR 1건은 실제 병합했다.
+
 ## 2026-11-01 새 PR 리뷰·시연 검증 게이트
 
 - [x] 열린 UI PR #72~#76 **5건 모두 HEAD 리뷰**(두 건 CHANGES_REQUESTED: #72 일정 실제 API/스냅샷 버전, #75 REVIEWER 대상별 미저장 초안·설정 분리; 나머지 세 건 COMMENT). [상세 상태](STATUS.md).

@@ -1,6 +1,8 @@
 # HUFS One AI — 5인 담당 범위 진척·증거 원장
 
-> **기준:** 2026-11-01 KST · 문서 업데이트 직전 `main` `8070e3d` · [해당 HEAD Actions #41306183268](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41306183268) `synthetic-contracts`/`postgres-integration` **2/2 SUCCESS**. 이 문서 자체의 변경 커밋 CI 성공은 별도로 확인해야 한다.
+> **2026-11-01 후속 PR 병합 반영:** 김채윤 [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전별 결과 캐시 키 개선은 타인 현재 HEAD APPROVED·Actions 합성/PG 2 job SUCCESS 후 **main `fdf0b09b`** 병합됐다. 이는 기존 수락 항목인 “출처 버전·시점·캐시 분리”를 보강한 것이므로 **신규 체크 항목이나 퍼센트를 임의 추가하지 않는다**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 제외 이유는 변경 요청, 총괄 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)→[#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)은 독립 승인/병합 전이므로 기존 담당 범위 진척 **7/12·5/12·7/12·8/12·1/8** 그대로다. 이 값은 실제 출시 완성도가 아니다.
+
+> **최초 산정 기준:** 2026-11-01 KST · 당시 `main` `8070e3d` · [해당 HEAD Actions #41306183268](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41306183268) `synthetic-contracts`/`postgres-integration` **2/2 SUCCESS**. 이 문서 자체의 변경 커밋 CI 성공은 별도로 확인해야 한다.
 
 ## 진척 산정 규칙
 
@@ -62,7 +64,7 @@
 
 - [x] 개인 관심·공고 주제/자격에 따른 결정론 추천·대형/소형 피드 구성 ([PR #15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15)).
 - [x] 학생 대상 중요공지·마감/기한 경과 및 고정 알림 코어 ([PR #16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16)).
-- [x] 출처 버전·시점 및 날짜 claim 재검증·캐시 키 분리 코어 ([PR #40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40)).
+- [x] 출처 버전·시점 및 날짜 claim 재검증·캐시 키 분리 코어 ([PR #40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40)), 권한 정책 버전 캐시 키 ([PR #118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118)).
 - [x] 추천 이유·관련도/토픽 다양성(비기본 opt-in) 코어 ([PR #41](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41)).
 - [x] 학업·경험 미공유 입력이 추천/공지 근거로 노출되지 않게 scope 필터 ([PR #49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49)).
 - [x] 확정 마감·행사/시험·일정 미정/확인 필요를 분리하는 달력 **계산 코어** ([PR #50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)).

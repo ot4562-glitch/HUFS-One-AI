@@ -1,6 +1,13 @@
 # PR 운영과 파일 충돌 예방
 
-## 2026-11-01 신규 UI 5개 PR 리뷰·병합 게이트 재검증
+## 2026-11-01 후속 코드 리뷰·병합 기록 (최신)
+
+- [x] [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) HEAD `830a8eaf` 비작성자 APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) synthetic-contracts/postgres-integration **2/2 SUCCESS**·expected-head 확인 뒤 **일반 merge `fdf0b09b`**.
+- [x] [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) HEAD `68063d0a` CHANGES_REQUESTED: 순위보다 그룹별 최대 2개·주제 다양성 규칙으로 제외되는 반례를 설명/테스트에 반영해야 함.
+- [x] [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120) 계약 HEAD `6b8e73e`, [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) API HEAD `1d43960` COMMENT 리뷰·각자 CI 2 job SUCCESS. 작성자 본인 승인 불가. #120 김채윤/박준영·#121 박준영/이의상 독립 리뷰 요청; **선행 계약 병합 후 후속 API 최신 HEAD 재검증**.
+- [ ] 열린 PR 8건(#72~#76, #117, #120, #121), 열린 Issue 28/기존 닫힌 5. **이번 신규 병합 1건(#118)**, 신규 전체 Issue 종료 0건. #46 자료권리/Privacy 2 FAIL·#89 RELEASE_BLOCKED. 이전 “신규 UI 병합 0건” 기록은 UI 스택에만 해당한다.
+
+## 2026-11-01 이전 UI 5개 PR 리뷰·병합 게이트 재검증
 
 - [x] #72~#76 **최신 HEAD에 리뷰 5건 등록**: #72, #75는 `CHANGES_REQUESTED`; #73, #74, #76은 `COMMENTED`. 리뷰 등록만 완료했으며 최신 HEAD 승인 또는 병합 완료가 아니다.
 - [ ] **#72:** 실 API port와 동일 context snapshot 버전 갱신 READY 잔상 수정. **#73:** 초대 getSession 완료 후 abort 검사. **#74:** PENDING/비공유 학업에서도 비공식 졸업 판정 안내. **#75:** sandbox action 로그·미저장 form/초안/메모/관심 분야의 대상·snapshot 버전 격리. **#76:** 로컬 Edge E2E 주장과 독립/Actions 실행 증거 분리.

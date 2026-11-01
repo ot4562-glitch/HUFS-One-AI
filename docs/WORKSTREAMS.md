@@ -1,5 +1,13 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
+## 2026-11-01 후속 PR 리뷰·인수인계 최신 상태
+
+- **김채윤(추천/공지):** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전 캐시 키는 총괄의 독립 승인/Actions 2 job 성공 후 **main merge `fdf0b09b`**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 추천 제외 사유는 조직별 노출 상한과 다양성에서 틀린 `OUTRANKED` 설명이 가능해 **CHANGES_REQUESTED**; 알고리즘과 설명의 반례 회귀 추가 필요.
+- **심민성(공통 계약/API):** [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120) 검수된 공고 정정 비교·안전한 제외 사유 DTO → [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) owner/rights 인가 read-only API 및 브라우저 클라이언트 **스택 미병합**. 두 HEAD 코드 리뷰 COMMENT·동일 HEAD Actions SUCCESS; 비작성자 리뷰어는 #120 김채윤·박준영, #121 박준영·이의상 요청 상태.
+- **박준영(학업):** #121의 What-if는 인증된 실행 경계만 제공하고 **실제 두 RulePack 재계산 코어는 없음**. 수강계획 adapter도 승인 원장/공식 규칙팩/권리 provider 없이는 기본 503.
+- **이의상(UI):** #72→#76 기존 스택 차단(#72/#75 CHANGES_REQUESTED) 유지. #119 정정 비교·#86 제외 이유·#81 계획·#82 What-if의 실제 React 화면/브라우저 E2E는 미완료.
+- **릴리스/데이터:** #46 Private 원본 권리·개인정보 감사 2 FAIL, #61 독립 골드 0/200, #89 `RELEASE_BLOCKED`. 팀별 소유권/합성 코드/운영 승인 분리를 유지.
+
 ## 2026-11-01 추가 제안 4건 담당/의존성 (이슈 등록 완료, 기능 미완료)
 
 - **P0 제안 · [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교:** 이의상 `uisang2004-maker` 화면/접근성 소유, 심민성 `ot4562-glitch` 허용된 SourceRevision·검수 시각·permission/asOf/API, 김채윤 `qamarrchae` 정정/취소/추천 캐시 소비 검수. #19/#21 기존 출처 계약에 연결; 합성 11/20→11/25 예시와 401/403/409/철회/늦은 응답 테스트가 신규 수락 게이트.

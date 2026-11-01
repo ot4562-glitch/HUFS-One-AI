@@ -1,5 +1,7 @@
 # HUFS One AI | 제품·화면 기준 안내
 
+**2026-11-01 후속 코드·검수 상태:** 권한 정책 버전 캐시 무효화 [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118)은 독립 승인·Actions 성공 후 main **`fdf0b09b`** 병합. 추천 제외 사유 [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117)은 CHANGES_REQUESTED; 정정 비교/설명 계약 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)→권한 있는 API·owner 클라이언트 [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)은 작성자 COMMENT+비작성자 승인 요청 단계로 미병합. UI #72~#76 차단 유지. **열린 PR 8·Issue 28**, #46 Privacy 2 FAIL·#89 `RELEASE_BLOCKED`. 합성 코드 수락/운영 서비스 수락을 구분한다. [STATUS](STATUS.md).
+
 **2026-11-01 구현/리뷰 상태:** #83 플랫폼과 #116 학업 응답 계약 등은 main의 **합성/일회용 DB 검증된 코드 단계**이고, #72→#76 UI 스택은 최신 HEAD 리뷰 5건 후에도 미병합(0건), #72/#75 변경 요청 차단 상태다. 실제 기관/학생 자료·외대 메일/OIDC·NCP/HTTPS 검증은 미완료이며 공개 웹은 `RELEASE_BLOCKED`. [STATUS](STATUS.md)와 [PR_WORKFLOW](docs/PR_WORKFLOW.md) 우선.
 
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.

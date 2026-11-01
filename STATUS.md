@@ -1,12 +1,23 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-01 후속 PR/Issue 전수 검증 — 최신 정본
+
+- [x] **실병합:** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전 캐시 키는 비작성자 현재 HEAD `830a8eaf` APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) synthetic/PG 2/2 SUCCESS 후 **main merge `fdf0b09b`**.
+- [x] [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 추천 제외 이유 코어는 조직별 최대 노출 수/주제 다양성 때문에 더 높은 점수 공고가 빠져도 `OUTRANKED`가 “더 관련 높은 공고가 우선”이라고 잘못 설명할 수 있어 **CHANGES_REQUESTED**(HEAD `68063d0a`).
+- [x] [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120) 정정 비교·추천 이유 계약(`6b8e73e`)→[#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) 인가된 읽기 API·브라우저 연동(`1d43960`) 최신 HEAD COMMENT 리뷰·Actions 2/2 SUCCESS 확인. **작성자 본인 리뷰는 APPROVED가 아님**. #120에 김채윤/박준영, #121에 박준영/이의상 독립 리뷰 요청.
+- [x] Issue #8/#10/#19/#21/#27/#39/#81/#82/#86/#119에 해당 리뷰·캐시 수정의 좁은 완료 부분만 [x]로 추가. **전체 Issue 신규 종결 없음.**
+- [ ] **열린 PR 8건:** UI #72→#76 기존 5건(#72/#75 CHANGES_REQUESTED·현재 HEAD Actions 0), 코어 #117 수정 전, 총괄 #120→#121 타인 승인/병합 전. 최초 조회 시 9건에서 #118 1건 병합. **열린 Issue 28건, 기존 closed 5건**.
+- [ ] #121은 권한/계약/합성 API 경계 제안이며 승인된 source/rights/RulePack loader·실 What-if 계산·React UI는 제공하지 않음. #46 개인정보 153/155 PASS·2 FAIL/보호 추적 경로 6건, #61 독립 골드 0/200, #89 `RELEASE_BLOCKED` 유지.
+
+이전 절의 “열린 Issue 27/신규 UI 병합 0”은 **당시 UI 전용 감사 기록**이다.
+
 ## 2026-11-01 사용자 추가 UX 기능 4건 — 이슈 추적만 완료 (최신 제안)
 
 - [x] **신규:** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교(변경된 마감·자격·취소·확인 시각·승인 원문 근거) **P0 제안**, UI 이의상/출처·API 심민성/추천 김채윤. 기존 #19/#21/SourceRevision 코드 재사용, 실제 비교 UI·권한 경계/브라우저 E2E는 미구현.
 - [x] **기존 이슈 본문·수락 기준 보강:** [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) 추천되지 않은 이유 **P1**(김채윤 코어/심민성 권한/API/이의상 UI), [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비·진행 보드 **P1**(#97/#106/#115 API·계약 main, React UI 미완료), [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 전공 What-if **P2**(#107 DTO만 main, 승인 RulePack·계산/실행 API/UI 미완료). 기존 이슈를 중복 생성하지 않음.
 - [ ] **실제 기능 완성/릴리스 아님:** 합성 출처/프로필로 구현·테스트, 계약·권한·시점·UI 접근성/다중탭 격리 독립 검증 전 완료 처리 금지. #46 원본 자료 권리/동의, #61 독립 골드, #89 `RELEASE_BLOCKED` 유지. 아래 ‘열린 이슈 27건’은 **이번 4개 제안 전 시점의 감사 기록**이며 새 #119가 추가됐다.
 
-## 2026-11-01 UI PR·Issue 전수 재검토 (현재 HEAD 기준)
+## 2026-11-01 이전 UI PR·Issue 전수 재검토 (당시 HEAD 기준)
 
 - [x] **GitHub 리뷰 등록 완료 5건:** [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) `8aa1371` **CHANGES_REQUESTED**(실 캘린더 port/버전 잔상), [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) `1cfc61f` COMMENT(초대 세션 응답 경합), [#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) `fb33810` COMMENT(비공식 졸업판정 안내 분기), [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) `0a19d1e` **CHANGES_REQUESTED**(sandbox 스냅샷/미저장 초안·경험·설정 격리), [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) `90326bc` COMMENT(로컬 Edge E2E와 원격 CI 구별).
 - [x] **Issue 상태 감사:** 열린 이슈 **27건**, 닫힌 이슈 **5건**. 모두 열린 이슈에 남은 구현·기관 권리/개인정보·실운영/릴리스·독립 검증 조건이 있어 이번 감사로 신규 종료하지 않았다. 리뷰/감사 완료 체크는 관련 [#8](https://github.com/ot4562-glitch/HUFS-One-AI/issues/8)·[#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)·[#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25)·[#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)·[#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)·[#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)·[#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81)에 기록했다.

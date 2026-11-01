@@ -1,5 +1,7 @@
 # TASK-00 | 네 트랙이 공유할 계약의 잠금 기준
 
+**2026-11-01 후속 공유 계약 정본:** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) `resultCacheKey.permissionPolicyVersion` 필수 의존성은 비작성자 최신 HEAD 승인·Actions 합성/PG 성공 후 **main merge `fdf0b09b`**. [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)의 검수된 공고 두 SourceRevision 비교·단일 허용 공고 제외 이유 strict wire 및 [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) 인가된 read-only API/브라우저 소비는 **작성자 COMMENT·비작성자 APPROVED 요청·CI SUCCESS 단계(미병합)**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 순수 사유 코어는 노출 상한/다양성 설명 오류 CHANGES_REQUESTED. 계약/HTTP gate만으로 실제 승인 원본·권리·RulePack·What-if 계산·React UI·배포가 완료되지 않는다. [STATUS](../STATUS.md).
+
 **2026-11-01 UI 소비 계약 검토:** #72~#76 HEAD 리뷰 5건 완료. #72 캘린더 실 API/versions, #75 sandbox `loaded.key` 및 미저장 `draft/note/picked` 학생 전환 격리 **변경 요청**, #73 취소된 세션 성공 콜백·#74 비공식 주의 안내·#76 실제 CI/E2E 증거는 COMMENT 후 수정 대기. 모두 미병합, 최신 HEAD Actions 0건. 코드/계약 소비자 4트랙 전체 인적 독립 수락 및 자료권리/실운영은 미완료. [STATUS](../STATUS.md).
 
 ## 2026-11-01 최신 소비 계약 — 코드 병합/실연동 구분
