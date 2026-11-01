@@ -34,9 +34,9 @@ class BrowserSurfaceGateTests(unittest.TestCase):
                    "export function App({controller}) { const state = useDemo(controller); }")
         self.write("apps/web/src/shell/useDemo.ts",
                    "useEffect(() => attachDemoResumeRevalidation(controller, ports), "
-                   "[controller]);\\n"
-                   "const channel = new BroadcastChannel(SESSION_CLOSE_CHANNEL);\\n"
-                   "const detach = attachCrossTabSessionClosure(controller, channel);\\n"
+                   "[controller]);\n"
+                   "const channel = new BroadcastChannel(SESSION_CLOSE_CHANNEL);\n"
+                   "const detach = attachCrossTabSessionClosure(controller, channel);\n"
                    "return () => { detach(); channel.close(); };")
 
     def write(self, name: str, value: str) -> None:
@@ -64,8 +64,8 @@ class BrowserSurfaceGateTests(unittest.TestCase):
 
     def test_declared_helpers_without_calls_do_not_count_as_wired(self) -> None:
         self.write("apps/web/src/shell/useDemo.ts",
-                   "// attachDemoResumeRevalidation(controller)\\n"
-                   "import {attachCrossTabSessionClosure} from './app/index.js';\\n"
+                   "// attachDemoResumeRevalidation(controller)\n"
+                   "import {attachCrossTabSessionClosure} from './app/index.js';\n"
                    "/* attachCrossTabSessionClosure(controller, channel) */")
         report = self.audit()
         self.assertEqual(report["gates"][1]["status"], "BLOCKED")
@@ -79,8 +79,8 @@ class BrowserSurfaceGateTests(unittest.TestCase):
 
     def test_missing_broadcast_cleanup_remains_blocked(self) -> None:
         self.write("apps/web/src/shell/useDemo.ts",
-                   "useEffect(() => attachDemoResumeRevalidation(controller, ports));\\n"
-                   "const channel = new BroadcastChannel(SESSION_CLOSE_CHANNEL);\\n"
+                   "useEffect(() => attachDemoResumeRevalidation(controller, ports));\n"
+                   "const channel = new BroadcastChannel(SESSION_CLOSE_CHANNEL);\n"
                    "attachCrossTabSessionClosure(controller, channel);")
         self.assertIn("CROSS_TAB_CLOSE_NOT_WIRED",
                       self.audit()["gates"][1]["reason_codes"])
