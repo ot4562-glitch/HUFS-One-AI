@@ -5,6 +5,7 @@ import {
   OwnerWorkspaceDeleteSchema,WorkspaceKindSchema,OwnerTranscriptSchema,
   CourseCatalogPageSchema,CourseOfferingsPageSchema,OpportunityCatalogPageSchema,
   OpportunityCatalogDetailSchema,
+  BookmarkStageSchema,BookmarkOutcomeSchema,BookmarkStagePatchSchema,isNextBookmarkStage,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
@@ -35,6 +36,7 @@ const ItemWrite=z.strictObject({item:OwnerWorkspaceRecordSchema});
 const WorkspacePage=z.strictObject({items:z.array(OwnerWorkspaceRecordSchema).max(50),nextCursor:Id.nullable()});
 const DeleteReceipt=z.strictObject({version:z.number().int().min(1)});
 const FromOpportunity=z.strictObject({itemId:Id,opportunityId:Id});
+const BookmarkAdvance=z.strictObject({stage:BookmarkStageSchema,outcome:BookmarkOutcomeSchema.optional()});
 const Paths:Record<WorkspaceKind,string>={EXPERIENCE:'/api/experience/cards',
   STUDY_PLAN:'/api/study-plans',BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'};
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
@@ -111,6 +113,30 @@ export class HufsOwnerApiClient {
     const method=input.value.kind==='STUDY_PLAN'?'PUT':'PATCH';
     const result=await this.mutate(Paths[input.value.kind]+'/'+id,ItemWrite,method,input,signal);
     matchItem(result.item,id,input.value.kind,input.expectedVersion+1,input.value);return result;
+  }
+  /**
+   * Owner-only #80 self-reported application progression, never a real submission.
+   * The complete prior record binds CAS, the immutable opportunity and data mode.
+   * Route and state machine belong to Agent 05 (#97); UI writes use
+   * OwnerSessionController.runMutation to reject duplicate clicks.
+   */
+  async advanceBookmarkStage(bookmark:OwnerWorkspaceRecord,
+    change:z.infer<typeof BookmarkAdvance>,signal?:AbortSignal){
+    const previous=clientInput(OwnerWorkspaceRecordSchema,bookmark);
+    if(previous.value.kind!=='BOOKMARK')throw new HufsApiError('INVALID_INPUT',422);
+    const next=clientInput(BookmarkAdvance,change);
+    const patch=clientInput(BookmarkStagePatchSchema,{...next,expectedVersion:previous.version});
+    if(!isNextBookmarkStage(previous.value.stage,patch.stage))
+      throw new HufsApiError('VERSION_CONFLICT',409);
+    const result=await this.mutate(Paths.BOOKMARK+'/'+previous.itemId,ItemWrite,'PATCH',patch,signal);
+    matchItem(result.item,previous.itemId,'BOOKMARK',previous.version+1);
+    requireMatchingReceipt(result.item.value.kind==='BOOKMARK'
+      &&result.item.value.state==='SAVED'
+      &&result.item.value.opportunityId===previous.value.opportunityId
+      &&result.item.value.dataMode===previous.value.dataMode
+      &&result.item.value.stage===patch.stage
+      &&same(result.item.value.outcome,patch.outcome));
+    return result;
   }
   async deleteWorkspace(kind:'EXPERIENCE'|'BOOKMARK',itemId:string,expectedVersion:number,signal?:AbortSignal){
     const k=clientInput(z.enum(['EXPERIENCE','BOOKMARK']),kind),id=clientInput(Id,itemId);
