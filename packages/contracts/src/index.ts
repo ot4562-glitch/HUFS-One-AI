@@ -7,3 +7,4 @@ export * from './errors/index.js';
 export * from './intake/index.js';
 export * from './calendar/index.js';
 export * from './evidence/index.js';
+export * from './self/index.js';

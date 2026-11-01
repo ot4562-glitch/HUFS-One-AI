@@ -12,6 +12,10 @@ import {PostgresSourceRevisionHistory} from './modules/opportunities/source-hist
 import {PostgresSourceIngestionQueue} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import {PostgresReviewerSandboxStore} from './modules/auth/reviewer-sandbox-postgres.js';
 import {PostgresRestrictedIntakeImport} from './modules/academics/intake-postgres.js';
+import {PostgresSelfAccountStore} from './modules/profiles/self-account-postgres.js';
+import {PostgresOwnerWorkspaceStore} from './modules/profiles/self-workspace-postgres.js';
+import type {SelfWorkspaceAuthority} from './modules/profiles/self-workspace-postgres.js';
+import type {SelfAccountAuthority} from './modules/profiles/self-account-postgres.js';
 import type {IntakeOperatorAuthority} from './modules/academics/intake-postgres.js';
 import type {TrustedDurableSourceExecutor,TrustedSourceIngestionAuthority} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import type {EvidenceRightsResolver} from './modules/opportunities/temporal-gateway.js';
@@ -33,6 +37,9 @@ export interface PostgresPlatformConfig {
   reviewerSandbox?:ReviewerSqlPool;
   /** Strictly operator-only local import; NOT a public browser route. */
   restrictedIntake?:{pool:ReviewerSqlPool;authority:IntakeOperatorAuthority};
+  /** Dedicated owner-private profile/consent pool, never demo or public roles. */
+  selfAccount?:{pool:ReviewerSqlPool;authority:SelfAccountAuthority};
+  ownerWorkspace?:{pool:ReviewerSqlPool;authority:SelfWorkspaceAuthority};
   now?:()=>string;
 }
 
@@ -64,6 +71,14 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
     }:{}),
     ...(config.reviewerSandbox?{
       reviewerSandbox:new PostgresReviewerSandboxStore(config.reviewerSandbox),
+    }:{}),
+    ...(config.selfAccount?{
+      selfAccount:new PostgresSelfAccountStore(config.selfAccount.pool,
+        config.selfAccount.authority,now),
+    }:{}),
+    ...(config.ownerWorkspace?{
+      ownerWorkspace:new PostgresOwnerWorkspaceStore(config.ownerWorkspace.pool,
+        config.ownerWorkspace.authority,now),
     }:{}),
     ...(config.restrictedIntake?{
       restrictedIntake:new PostgresRestrictedIntakeImport(config.restrictedIntake.pool,

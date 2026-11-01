@@ -17,6 +17,8 @@ import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportuni
 import {PostgresSourceRevisionHistory} from '../../apps/api/src/modules/opportunities/source-history-postgres.js';
 import {PostgresReviewerSandboxStore} from '../../apps/api/src/modules/auth/reviewer-sandbox-postgres.js';
 import {PostgresRestrictedIntakeImport} from '../../apps/api/src/modules/academics/intake-postgres.js';
+import {PostgresSelfAccountStore} from '../../apps/api/src/modules/profiles/self-account-postgres.js';
+import {PostgresOwnerWorkspaceStore} from '../../apps/api/src/modules/profiles/self-workspace-postgres.js';
 import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
@@ -25,7 +27,7 @@ const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
 const pools:Pool[]=[];
 // Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
 const rolePassword=randomBytes(24).toString('hex');
-let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool;
+let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
 const now=()=>new Date().toISOString();
@@ -37,7 +39,8 @@ const migrationNames=[
   '20261031_auth_attempt_windows.sql',
   '20261031_temporal_evidence.sql','20261101_source_http_validators.sql',
   '20261101_source_ingest_queue.sql',
-  '20261101_intake_staging.sql',
+  '20261101_intake_staging.sql','20261101_self_account.sql',
+  '20261101_self_workspace.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -76,9 +79,15 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       CREATE ROLE hufs_test_limiter LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_sandbox LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_intake LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+       CREATE ROLE hufs_test_self LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
-      GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake;
+      GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake,hufs_test_self;
+       GRANT SELECT,INSERT,UPDATE ON api_self_consents TO hufs_test_self;
+       GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_profiles TO hufs_test_self;
+       GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_workspace_records TO hufs_test_self;
+       GRANT INSERT ON api_self_workspace_events TO hufs_test_self;
+       GRANT INSERT ON api_self_consent_events TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE ON api_intake_heads TO hufs_test_intake;
        GRANT SELECT,INSERT ON api_intake_revisions TO hufs_test_intake;
        GRANT EXECUTE ON FUNCTION reviewer_sandbox_allowed(text,text) TO hufs_test_sandbox;
@@ -90,6 +99,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     writer=poolFor(url,'hufs_test_personal');reader=poolFor(url,'hufs_test_projection');
     temporal=poolFor(url,'hufs_test_temporal');limiter=poolFor(url,'hufs_test_limiter');
     sandbox=poolFor(url,'hufs_test_sandbox');intake=poolFor(url,'hufs_test_intake');
+    selfAccount=poolFor(url,'hufs_test_self');
     await admin.query(`INSERT INTO api_sharing_grants(
       grant_id,actor_id,subject_id,allowed_sections,version,consent_ref,
       approved_by,approved_at,expires_at)
@@ -101,6 +111,145 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(pool=>pool.end()));},30000);
 
+  it('supports owner-private profile/consent CAS, no implicit grant, withdrawal and immutable audit under FORCE RLS',async()=>{
+    const id='SYN-SELF-OWNER';
+    const consent={personalStorage:true,teamReview:false,externalAi:false,
+      ncpStorage:false,presentation:false};
+    const service=new PostgresSelfAccountStore(adapter(selfAccount),{
+      mayAccess:async(input)=>input.actorId===id,
+    });
+    expect(await service.readConsents(id)).toBeNull();
+    await expect(service.readProfile(id)).rejects.toThrow('Owner data access denied');
+    await expect(service.readConsents('SYN-OTHER')).rejects.toThrow('Owner data access denied');
+    const initial=await service.putConsents(id,{expectedVersion:0,choices:consent});
+    expect(initial.version).toBe(1);
+    expect(initial.choices.externalAi).toBe(false);
+    const same=await service.putConsents(id,{expectedVersion:1,choices:consent});
+    expect(same.version).toBe(1);
+    await expect(service.putConsents(id,{expectedVersion:0,choices:consent}))
+      .rejects.toThrow('Owner version conflict');
+    const info={displayName:'가상 소유자',interestTopics:['DATA_ANALYTICS'],
+      desiredJobTopics:['DATA_ANALYTICS']};
+    expect((await service.patchProfile(id,{expectedVersion:0,value:info})).version).toBe(1);
+    expect((await service.readProfile(id))?.value.displayName).toBe('가상 소유자');
+    await expect(service.patchProfile(id,{expectedVersion:0,value:info}))
+      .rejects.toThrow('Owner version conflict');
+    expect((await service.patchProfile(id,{expectedVersion:1,value:{
+      ...info,displayName:'가상 갱신'
+    }})).version).toBe(2);
+    const withdrawn=await service.putConsents(id,{expectedVersion:1,choices:{
+      ...consent,personalStorage:false,
+    }});
+    expect(withdrawn.version).toBe(2);
+    await expect(service.readProfile(id)).rejects.toThrow('Owner data access denied');
+    const remaining=await admin.query('SELECT count(*)::int AS n FROM api_self_profiles WHERE actor_id=$1',[id]);
+    expect(remaining.rows[0]?.n).toBe(0);
+    const updated=await service.putConsents(id,{expectedVersion:2,choices:consent});
+    expect(updated.version).toBe(3);
+    expect(await service.readProfile(id)).toBeNull();
+    const audits=await admin.query('SELECT version,changed_purposes FROM api_self_consent_events WHERE actor_id=$1 ORDER BY version',[id]);
+    expect(audits.rows).toHaveLength(3);
+    expect(audits.rows[1]?.changed_purposes).toEqual(['personalStorage']);
+    expect((await selfAccount.query('SELECT * FROM api_self_consents')).rows).toEqual([]);
+    await expect(selfAccount.query('SELECT * FROM api_self_consent_events'))
+      .rejects.toMatchObject({code:'42501'});
+    await expect(reader.query('SELECT * FROM api_self_profiles')).rejects.toMatchObject({code:'42501'});
+    await expect(admin.query('UPDATE api_self_consent_events SET changed_purposes=ARRAY[\'externalAi\']'))
+      .rejects.toThrow('immutable');
+  });
+  it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
+    const actorId='SYN-SELF-OWNER';
+    const auth={mayOperate:async(input:{actorId:string;itemId?:string;
+      value?:{dataMode:string};operation:string})=>input.actorId===actorId
+      &&(input.operation==='DISCOVER'
+        ||(input.itemId?.startsWith('SYN-')===true
+          &&input.value?.dataMode==='SYNTHETIC'))};
+    const a=new PostgresOwnerWorkspaceStore(adapter(selfAccount),auth);
+    const b=new PostgresOwnerWorkspaceStore(adapter(selfAccount),auth);
+    const value={kind:'EXPERIENCE' as const,dataMode:'SYNTHETIC' as const,
+      state:'DRAFT' as const,title:'가상 경험',summary:'개인 합성 기록'};
+    const first=await a.create({actorId,itemId:'SYN-EXP-1',value});
+    expect(first.version).toBe(1);
+    const found=await b.read({actorId,kind:'EXPERIENCE',itemId:'SYN-EXP-1'});
+    expect(found?.value.kind).toBe('EXPERIENCE');
+    const changed=await a.update({actorId,kind:'EXPERIENCE',
+      itemId:'SYN-EXP-1',expectedVersion:1,value:{...value,title:'가상 수정'}});
+    expect(changed.version).toBe(2);
+    await expect(b.update({actorId,kind:'EXPERIENCE',itemId:'SYN-EXP-1',
+      expectedVersion:1,value})).rejects.toThrow('version conflict');
+    const list=await a.list({actorId,kind:'EXPERIENCE',limit:10});
+    expect(list.items).toHaveLength(1);
+    expect(list.items[0]?.value.kind).toBe('EXPERIENCE');
+    await expect(a.read({actorId:'SYN-SELF-OTHER',kind:'EXPERIENCE',itemId:'SYN-EXP-1'}))
+      .rejects.toThrow('access denied');
+    const deleted=await b.delete({actorId,kind:'EXPERIENCE',
+      itemId:'SYN-EXP-1',expectedVersion:2});
+    expect(deleted.version).toBe(3);
+    expect(await a.read({actorId,kind:'EXPERIENCE',itemId:'SYN-EXP-1'})).toBeNull();
+    const race=await Promise.allSettled([
+      a.create({actorId,itemId:'SYN-EXP-RACE',value}),
+      b.create({actorId,itemId:'SYN-EXP-RACE',value}),
+    ]);
+    expect(race.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    expect(race.filter(x=>x.status==='rejected')).toHaveLength(1);
+    await expect(a.create({actorId,itemId:'SYN-REAL',value:{
+      ...value,dataMode:'OWNER_CONSENTED' as const,
+    }})).rejects.toThrow('access denied');
+    const events=await admin.query('SELECT action,version FROM api_self_workspace_events WHERE actor_id=$1 AND item_id=$2 ORDER BY version',
+      [actorId,'SYN-EXP-1']);
+    expect(events.rows).toEqual([
+      {action:'CREATED',version:'1'},{action:'UPDATED',version:'2'},{action:'DELETED',version:'3'},
+    ]);
+    expect((await selfAccount.query('SELECT * FROM api_self_workspace_records')).rows).toEqual([]);
+    await expect(selfAccount.query('SELECT * FROM api_self_workspace_events'))
+      .rejects.toMatchObject({code:'42501'});
+    const profile=new PostgresSelfAccountStore(adapter(selfAccount),{
+      mayAccess:async({actorId:id})=>id===actorId,
+    });
+    const prior=await profile.readConsents(actorId);
+    expect(prior?.version).toBe(3);
+    const withdrawal=await profile.putConsents(actorId,{expectedVersion:3,choices:{
+      personalStorage:false,teamReview:false,externalAi:false,ncpStorage:false,presentation:false,
+    }});
+    expect(withdrawal.version).toBe(4);
+    const remaining=await admin.query('SELECT count(*)::int AS n FROM api_self_workspace_records WHERE actor_id=$1',[actorId]);
+    expect(remaining.rows[0]?.n).toBe(0);
+    await expect(a.list({actorId,kind:'EXPERIENCE',limit:10}))
+      .rejects.toThrow('access denied');
+  });
+  it('serializes concurrent initial owner writes and rolls back independent permission loss',async()=>{
+    const id='SYN-SELF-CONCURRENT',info={displayName:'합성 병렬 입력',
+      interestTopics:['DATA_ANALYTICS'],desiredJobTopics:[]};
+    let permitted=true;
+    const authority={mayAccess:async()=>permitted};
+    const a=new PostgresSelfAccountStore(adapter(selfAccount),authority);
+    const b=new PostgresSelfAccountStore(adapter(selfAccount),authority);
+    const choices={personalStorage:true,teamReview:false,externalAi:false,
+      ncpStorage:false,presentation:false};
+    const race=await Promise.allSettled([
+      a.putConsents(id,{expectedVersion:0,choices}),
+      b.putConsents(id,{expectedVersion:0,choices}),
+    ]);
+    expect(race.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    expect(race.filter(x=>x.status==='rejected')).toHaveLength(1);
+    const profiles=await Promise.allSettled([
+      a.patchProfile(id,{expectedVersion:0,value:info}),
+      b.patchProfile(id,{expectedVersion:0,value:info}),
+    ]);
+    expect(profiles.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    expect(profiles.filter(x=>x.status==='rejected')).toHaveLength(1);
+    permitted=false;
+    await expect(a.readProfile(id)).rejects.toThrow('Owner data access denied');
+    let checks=0;
+    const transient=new PostgresSelfAccountStore(adapter(selfAccount),{
+      mayAccess:async()=>++checks===1,
+    });
+    await expect(transient.putConsents('SYN-ROLLED-BACK',{expectedVersion:0,choices}))
+      .rejects.toThrow('Owner data access denied');
+    const count=await admin.query('SELECT count(*)::int AS n FROM api_self_consents WHERE actor_id=$1',
+      ['SYN-ROLLED-BACK']);
+    expect(count.rows[0]?.n).toBe(0);
+  });
   it('commits four synthetic intake drafts atomically with idempotent file hashes and version CAS',async()=>{
     const fixture=makeSyntheticIntake();
     const imports=new PostgresRestrictedIntakeImport(adapter(intake),{
@@ -170,7 +319,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await expect(sandbox.query('SELECT * FROM reviewer_enrollments')).rejects.toMatchObject({code:'42501'});
     await expect(sandbox.query('DELETE FROM reviewer_sandbox_state')).rejects.toMatchObject({code:'42501'});
   });
-  it('applies all thirteen real SQL migrations and FORCE RLS policies',async()=>{
+  it('applies all fifteen real SQL migrations and FORCE RLS policies',async()=>{
     const r=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE oid='api_personal_records'::regclass`);
     expect(r.rows[0]).toEqual({relrowsecurity:true,relforcerowsecurity:true});

@@ -1,5 +1,11 @@
 import {createApi} from './server.js';
 import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
+import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
+import {registerOwnerCatalogRoutes} from './modules/opportunities/owner-catalog-http.js';
+import {registerOwnerWorkspaceRoutes} from './modules/profiles/self-workspace-http.js';
+import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
+import type {TrustedCatalogPort} from './modules/opportunities/owner-catalog-http.js';
+import type {SelfAccountPort} from './modules/profiles/self-account-postgres.js';
 import type {FastifyRequest, FastifyReply} from 'fastify';
 import type {
   AiCandidateProvider, ApiRepository, ApiOptions, VerifySession, VerifiedActor,
@@ -47,6 +53,12 @@ interface SharedDependencies {
   sourceHistory?:ApiOptions['sourceHistory'];
   calendarSource?:ApiOptions['calendarSource'];
   personalState?:ApiOptions['personalState'];
+  /** Independent owner-private storage, NEVER the shared demo/REVIEWER DB. */
+  selfAccount?:SelfAccountPort;
+  /** Approved server-owned source+grant head adapter; no demo/raw data fallback. */
+  ownerCatalog?:TrustedCatalogPort;
+  /** Owner-private self workspace; does not reuse a demo SharingGrant. */
+  ownerWorkspace?:OwnerWorkspacePort;
 }
 
 /**
@@ -135,6 +147,17 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   const app=createApi(options);
   if(deps.sourceHistory)registerSourceRevisionHistoryRoute(
     app,deps.sourceHistory,auth.verifySession,deps.now??(()=>new Date().toISOString()));
+  if(deps.selfAccount)registerSelfAccountRoutes(app,deps.selfAccount,{
+    verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString()),
+  });
+  if(deps.ownerCatalog)registerOwnerCatalogRoutes(app,deps.ownerCatalog,{
+    verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString()),
+  });
+  if(deps.ownerWorkspace)registerOwnerWorkspaceRoutes({
+    app,store:deps.ownerWorkspace,
+    ...(deps.ownerCatalog?{catalog:deps.ownerCatalog}:{}),
+    session:{verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())},
+  });
   if(deps.googleAuth) {
     // Until Agent 1 #32 is included, main's createApi has no such routes.
     // Do NOT pretend that passing a port automatically enables OIDC.
