@@ -18,6 +18,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
+    "/tools/release_publication_gate.py", "/.dockerignore",
     "/.github/workflows/task00-contracts.yml",
 })
 EXCLUDED_DIRECTORIES = (
@@ -86,6 +87,8 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/tests/release/", "/tests/security/",
             "/.github/workflows/task00-contracts.yml",
             "/tools/release_entrypoint_gate.mjs",
+            "/tools/release_publication_gate.py",
+            "/.dockerignore",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
         if "/infra/sql/" not in sparse[1] or "/tests/api/" not in sparse[1]:
@@ -100,6 +103,10 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("security negative regression tests must execute in CI")
     if "node tools/release_entrypoint_gate.mjs" not in text:
         issues.append("actual offline anonymous HTTP probe must execute in CI")
+    if "npm run build:web" not in text:
+        issues.append("public web bundle must be built for publication audit")
+    if "python3 tools/release_publication_gate.py" not in text:
+        issues.append("compiled publication privacy audit must execute in CI")
     return issues
 
 
@@ -121,6 +128,10 @@ class WorkflowBoundaryTests(unittest.TestCase):
         changed = self.policy.replace(
             "  pull_request:\n", "  pull_request:\n    paths: [apps/api/**]\n", 1
         )
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_missing_publication_audit_is_rejected(self) -> None:
+        changed = self.policy.replace("python3 tools/release_publication_gate.py", "echo skipped", 1)
         self.assertTrue(audit_ci_boundary(changed))
 
     def test_missing_anonymous_http_probe_is_rejected(self) -> None:

@@ -42,6 +42,8 @@ jobs:
             /tests/release/
             /tests/security/
             /tools/release_entrypoint_gate.mjs
+            /tools/release_publication_gate.py
+            /.dockerignore
       - name: Prove real-student sources are not in this workspace
         run: |
           test ! -d csv
@@ -64,6 +66,10 @@ jobs:
         run: |
           node --test tests/security/release_entrypoint_gate.test.mjs
           node tools/release_entrypoint_gate.mjs
+      - name: Build synthetic-only public React assets
+        run: npm run build:web
+      - name: Reject private sources and credentials in compiled publication artifacts
+        run: python3 tools/release_publication_gate.py
 
   postgres-integration:
     runs-on: ubuntu-latest
