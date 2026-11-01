@@ -2,6 +2,7 @@ import type {PageRenderer} from '../App.js';
 import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
+import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
 import {Badges, CompactRow, FeaturedCard, NOT_SHARED_TEXT, NoSnapshot, NoticeRow, Section, screenViewOf} from './parts.js';
 
 /** 오늘: large matched cards (≤3), compact general list (≤6), pinned notices (A11.1). */
@@ -62,7 +63,7 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
   };
 };
 
-export const opportunityDetailPage: PageRenderer = ({path, state, navigate}) => {
+export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sandbox}) => {
   const m = /^\/opportunities\/([^/]+)$/.exec(path);
   if (!m) return null;
   const view = screenViewOf(state);
@@ -85,6 +86,7 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate}) => 
         </dl>
         {card.relevance && <p className="card__relevance">{card.relevance.text}<span className="card__disclaimer">{card.relevance.disclaimer}</span></p>}
         {card.reasons.length > 0 && <Section title="이 공고를 보여 준 이유"><ul>{card.reasons.map(r => <li key={r}>{r}</li>)}</ul></Section>}
+        {sandbox && <OpportunityActions key={card.opportunityId} sandbox={sandbox} id={card.opportunityId} />}
         <p><InAppLink to="/" navigate={navigate}>오늘로 돌아가기</InAppLink></p>
       </>
     ),
@@ -104,7 +106,7 @@ export const noticesPage: PageRenderer = ({path, state, navigate}) => {
   };
 };
 
-export const noticeDetailPage: PageRenderer = ({path, state, navigate}) => {
+export const noticeDetailPage: PageRenderer = ({path, state, navigate, sandbox}) => {
   const m = /^\/notices\/([^/]+)$/.exec(path);
   if (!m) return null;
   const view = screenViewOf(state);
@@ -123,6 +125,7 @@ export const noticeDetailPage: PageRenderer = ({path, state, navigate}) => {
           {item.deadlineText && <><dt>학생 마감</dt><dd>{item.deadlineText}{item.overdueText ? ` (${item.overdueText})` : ''}</dd></>}
           <dt>근거</dt><dd>{item.evidenceCount}개 확인 자료</dd>
         </dl>
+        {sandbox && <NoticeReadToggle sandbox={sandbox} id={item.noticeId} />}
         <p><InAppLink to="/notices" navigate={navigate}>공지 목록으로</InAppLink></p>
       </>
     ),
