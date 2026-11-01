@@ -1,6 +1,19 @@
 # HUFS One AI | 현재 작업 상태
 
-## 2026-11-01 심민성 담당 플랫폼 통합 — 단일 PR #58 검토 중
+
+## 2026-11-01 최신 확인 — PR/이슈 검증·운영 분리
+
+- [x] 플랫폼 통합 [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58) **main 병합**: OIDC/학교메일·일반 PG/권한/SourceRevision/Temporal RAG/캘린더 API **코드와 합성·일회용 PG 테스트**를 포함. 개별 [#32](https://github.com/ot4562-glitch/HUFS-One-AI/pull/32)·[#33](https://github.com/ot4562-glitch/HUFS-One-AI/pull/33)·[#34](https://github.com/ot4562-glitch/HUFS-One-AI/pull/34)·[#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35)·[#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)는 CLOSED/unmerged; 통합 #58의 병합과 동일시하지 않는다.
+- [x] 학업 코어 [#56](https://github.com/ot4562-glitch/HUFS-One-AI/pull/56)·[#57](https://github.com/ot4562-glitch/HUFS-One-AI/pull/57)·[#62](https://github.com/ot4562-glitch/HUFS-One-AI/pull/62), 추천 합성 #60/#65/#67, UI 토큰 #64/의존성 #66 **main 병합**. 별도 사람 손계산·공식 학칙·실학생 정답 검증은 미완료.
+- [x] 이의상 [#68 React 기본 셸](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68) P1 대상별 snapshot 혼합 수정과 합성 테스트 확인; GitHub Actions [#41276776099](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41276776099) SUCCESS, 최신 HEAD 재승인 후 merge `51c3c11c`. 합성 UI 기반 완료이지 전체 5탭·실인증 E2E 완료가 아니다.
+- [x] 심민성 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77)의 `HufsApiClient.getCalendar()` 구현/401·403·409·503/불량 wire·취소 테스트 **PR 제출**, GitHub Actions [#41279165323](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41279165323) SUCCESS. **main 미병합/독립 리뷰 대기:** 화면 소유자 UI #51/#72 실제 연결과 2차 asOf·epoch 검증 미완료.
+- [ ] UI 스택 #69→#72→#73→#74→#75→#76는 OPEN. #68의 squash 병합 후 옛 head를 기반으로 쌓인 #69의 커밋 조상 재정렬 또는 정합한 merge ancestry 연결·현재 base 기준 CI/비작성자 승인 전에는 병합하지 않는다. [작업 방식](docs/PR_WORKFLOW.md).
+- [ ] 박준영 [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70): `decideRulePackActivation`에서 `effectiveFrom <= asOf < effectiveUntil` 검증 누락으로 **CHANGES_REQUESTED**. 시행 전/만료 후 후보 유지(HELD) 회귀·최신 CI·재승인 필요.
+- [ ] 운영 Google/실 외대메일/영속 세션·공식 출처/사용권한·실학생 개별 목적별 동의·실 PostgreSQL 다중 인스턴스/브라우저/모바일 스크린리더·NCP/CLOVA 비용·권리검증. 이 조건은 CI 성공, 코드 병합 또는 README 체크만으로 닫지 않는다.
+
+**최신 open 이슈:** UI #9/#51, 학업 #11, 추천 정답 #10/#61, API·자료·보안 #8/#18/#19/#21/#27/#39/#52/#71, 심사자 #25, 데이터 동의 #46, NCP #12/#20/#22, 총괄 #23. 의존성 1단계 #63은 CLOSED. 아래의 검토 중/미병합 문구는 작성 당시의 역사적 스냅샷이다.
+
+## 2026-11-01 당시 플랫폼 통합 검토 노트 (#58 병합 전 기록)
 
 - **학업 독립 변경요청 3건 반영(2026-11-01):** 박준영 [PR #59](https://github.com/ot4562-glitch/HUFS-One-AI/pull/59)의 작성자 커밋을 원작성자 유지한 채 #58 브랜치에 적용(`32f6204`). `OwnerTranscriptSchema`의 PLANNED 행 차단, `CourseOfferingSchema`의 정규 학기/공식 ACTIVE 확정만 허용·`HISTORICAL_PATTERN` 제거·학기당 단일 상태, `EvidenceScopeSchema`의 빈 campuses/majorCodes 차단. 통합 API는 개설 응답 학기 순서·afterId·nextCursor 일관성을 추가 검증. **로컬 `npm run check` 924 PASS/실PG opt-in 26 SKIP, `build:api` PASS, `check:privacy` 145 PASS**. 최신 변경 HEAD의 GitHub Actions·박준영 재승인 후에만 리뷰 차단 해제를 인정하며, **main 미병합**.
 
