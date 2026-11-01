@@ -1,5 +1,7 @@
 import {z} from 'zod';
 export * from './bookmark-stage.js';
+export * from './study-plan-check.js';
+export * from './major-what-if.js';
 export * from './workspace.js';
 export * from './experience-approval.js';
 import {DesiredJobTopicsSchema,InterestTopicsSchema} from '../topics/index.js';
