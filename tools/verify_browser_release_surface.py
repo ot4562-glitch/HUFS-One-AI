@@ -137,17 +137,17 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
     main = sources.get("main", "")
     app = sources.get("app", "")
     hook = sources.get("hook", "")
-    if not (re.search(r"<App\\b[^>]*\\bcontroller\\s*=\\s*\\{\\s*controller\\s*\\}", main)
-            and re.search(r"\\buseDemo\\s*\\(\\s*controller\\s*\\)", app)):
+    if not (re.search(r"<App\b[^>]*\bcontroller\s*=\s*\{\s*controller\s*\}", main)
+            and re.search(r"\buseDemo\s*\(\s*controller\s*\)", app)):
         blocked.append("MOUNTED_REACT_SESSION_HOOK_NOT_PROVEN")
     if not (CALLS["resume"].search(hook)
-            and re.search(r"\\buseEffect\\s*\\(\\s*\\(\\s*\\)\\s*=>\\s*"
-                          r"attachDemoResumeRevalidation\\s*\\(", hook)):
+            and re.search(r"\buseEffect\s*\(\s*\(\s*\)\s*=>\s*"
+                          r"attachDemoResumeRevalidation\s*\(", hook)):
         blocked.append("RESUME_LISTENER_NOT_WIRED")
     if not (CALLS["broadcast"].search(hook)
-            and re.search(r"\\bnew\\s+BroadcastChannel\\s*\\(\\s*SESSION_CLOSE_CHANNEL\\s*\\)", hook)
-            and re.search(r"\\bdetach\\s*\\(\\s*\\)", hook)
-            and re.search(r"\\bchannel\\s*\\.\\s*close\\s*\\(\\s*\\)", hook)):
+            and re.search(r"\bnew\s+BroadcastChannel\s*\(\s*SESSION_CLOSE_CHANNEL\s*\)", hook)
+            and re.search(r"\bdetach\s*\(\s*\)", hook)
+            and re.search(r"\bchannel\s*\.\s*close\s*\(\s*\)", hook)):
         blocked.append("CROSS_TAB_CLOSE_NOT_WIRED")
 
     static_status = "FAIL" if findings else "PASS"
