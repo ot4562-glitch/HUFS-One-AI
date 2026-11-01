@@ -10,7 +10,7 @@
 - `DemoController.runOverlayOperation`: 탭/선택 epoch, abort, 응답 binding, 단일 진행중 CAS, 이전 버전 회귀 방지, 인증 철회 시 스냅샷 즉시 비우기. `OwnerSessionController`: 실제 same-origin BETA 세션을 호출 전·후 대조, 계정/탭 전환·logout·revalidate 시 모든 개인 요청 취소, 동시 개인 수정 직렬화.
 - 중단된 body stream을 실제 취소하며 abort를 provider outage/성공으로 오인하지 않도록 클라이언트 전송 계층을 수정. 응답 수치/민감 payload 로그는 추가하지 않았다.
 - 새 합성 브라우저/서버 회귀 테스트 **75건**(25 owner-browser, 5 cancellation, 20 owner/account/catalog, 10 overlay epoch, 12 owner session, 3 real Fastify+browser)에서 모두 통과했다.
-- **최종 로컬 검사**: Node 24.15.0, `npm run check` **1,253 PASS / 30 opt-in PostgreSQL SKIP**, `build:api`/`build:web`/`fixtures:check` 성공, `check:privacy` **146/146 PASS**. 기존 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)의 과거 Actions PG 성공은 이전 HEAD 근거이며, 후속 HEAD의 GitHub CI와 독립 승인으로 대체해야 한다.
+- **최종 로컬 검사**: Node 24.15.0, `npm run check` **1,265 PASS / 30 opt-in PostgreSQL SKIP**, `build:api`/`build:web`/`fixtures:check` 성공, `check:privacy` **146/146 PASS**. 기존 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)의 과거 Actions PG 성공은 이전 HEAD 근거이며, 후속 HEAD의 GitHub CI와 독립 승인으로 대체해야 한다.
 - 후속 승인 조건: 현재 HEAD 비작성자 APPROVED, GitHub Actions 최신 두 job, UI 직접 연결/360px·실브라우저 확인, 공식 자료권한/실학생 목적동의, disposable PG 신규 migration 증명, OAuth/메일/TLS/NCP 별도 운영 승인. 어느 것도 합성 자동시험만으로 충족 처리하지 않는다.
 
 ## 과거 #83 최초 제출 기록 (당시 검증 스냅샷)

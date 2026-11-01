@@ -3,7 +3,7 @@
 ## 2026-11-01 플랫폼 #83 후속 브라우저 연결 — 최신 로컬 검증
 
 - [x] 심민성 담당 owner API 브라우저 소비자, 경험 태그 승인, BETA overlay 일괄 갱신, 탭/계정 전환·철회·비동기 취소 보호를 기존 #83에 추가했다. 이의상 UI 화면과 학업/추천 코어/NCP 제공자는 수정하지 않았다.
-- [x] 로컬 Node 24.15.0 **1,253 PASS / 실제 disposable PostgreSQL opt-in 30 SKIP**, API·웹 프로덕션 빌드 및 합성 생성물 검증 PASS, 게시·개인정보 경계 **146/146 PASS**. 새 합성 테스트는 총 75건이며, 그중 3건은 Fastify→브라우저 HTTP 호출이다.
+- [x] 로컬 Node 24.15.0 **1,265 PASS / 실제 disposable PostgreSQL opt-in 30 SKIP**, API·웹 프로덕션 빌드 및 합성 생성물 검증 PASS, 게시·개인정보 경계 **146/146 PASS**. 새 합성 테스트는 총 75건이며, 그중 3건은 Fastify→브라우저 HTTP 호출이다.
 - [ ] 현재 HEAD GitHub Actions 두 job·비작성자 독립 APPROVED와 PR #83 main 병합은 별도 확인 전이다. 실제 학생 자료권리·목적별 동의·Google/SMTP/TLS/PG 운영 환경·NCP 실호출 및 실브라우저 접근성 시험도 미완료다.
 - [설계/실행/DB migration/남은 의존성](docs/PLATFORM_COMPLETION_PR.md). 아래 이전 PR HEAD·테스트 숫자는 해당 시점의 이력이다.
 
