@@ -16,6 +16,9 @@ OFFLINE = (
     "offline_anonymous_fastify",
     "offline_session_cookie_csrf",
     "offline_compiled_publication",
+    "compiled_browser_cache_and_loopback_preview",
+    "offline_server_sourcemap_packaging",
+    "offline_git_index_privacy",
     "disposable_postgres",
 )
 EXTERNAL_UNVERIFIED = (
@@ -33,7 +36,9 @@ def evaluate_release(offline: Mapping[str, str] | None = None) -> dict:
     """Offline PASS is evidence of tests only, never of real authorization."""
     offline = offline or {}
     statuses = []
-    invalid = False
+    # An unexpected name is not an external attestation. Never echo the
+    # untrusted key, which may itself contain identity or deployment data.
+    invalid = any(name not in OFFLINE for name in offline)
     for name in OFFLINE:
         value = offline.get(name, "NOT_RUN")
         if value not in STATUSES:
@@ -44,14 +49,24 @@ def evaluate_release(offline: Mapping[str, str] | None = None) -> dict:
                     for name in EXTERNAL_UNVERIFIED)
     offline_failure = invalid or any(gate["status"] in ("FAIL", "BLOCKED")
                                      for gate in statuses[:len(OFFLINE)])
+    offline_missing = any(gate["status"] == "NOT_RUN"
+                          for gate in statuses[:len(OFFLINE)])
+    if offline_failure:
+        blocker = "BLOCKED_SECURITY"
+    elif offline_missing:
+        blocker = "BLOCKED_OFFLINE_EVIDENCE"
+    else:
+        blocker = "BLOCKED_EXTERNAL"
     return {
         "release": "BLOCKED",
         "status": "BLOCKED",
-        "blocker": "BLOCKED_SECURITY" if offline_failure else "BLOCKED_EXTERNAL",
+        "blocker": blocker,
         "gates": statuses,
         "reason_codes": (
-            ["OFFLINE_GATE_FAILED"] if offline_failure else []
-        ) + ["NO_EXTERNAL_VALIDATOR_OR_OPERATIONAL_APPROVAL"],
+            (["OFFLINE_GATE_FAILED"] if offline_failure else [])
+            + (["OFFLINE_GATE_NOT_RUN"] if offline_missing else [])
+            + ["NO_EXTERNAL_VALIDATOR_OR_OPERATIONAL_APPROVAL"]
+        ),
         "evidence": "No validated live ingress, provider, user consent or human release receipt",
     }
 
