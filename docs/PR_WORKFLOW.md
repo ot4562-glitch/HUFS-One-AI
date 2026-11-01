@@ -1,6 +1,13 @@
 # PR 운영과 파일 충돌 예방
 
 
+## 2026-11-01 최신 PR 검증·squash 스택 관리
+
+- **병합 게이트:** 비작성자의 *현재 HEAD* APPROVED 최소 1명, 관련 GitHub Actions 실제 SUCCESS, 해결된 CHANGES_REQUESTED, 개인정보/권한/시간 경계, 현재 main과의 충돌/의존 확인 뒤 통합 담당이 최종 병합. 작성자 본인 승인으로 독립 검토를 대체할 수 없다. 스택의 후속 PR은 선행 PR 병합 사실만으로 자동 승인하지 않는다.
+- **squash PR의 자손 스택:** #68을 squash 병합한 결과 main `51c3c11c`과 옛 #68 head `7fc2f5c`는 **동일 Git tree `bcdf0b435d...`**이지만 ancestry는 연결되지 않아 #69를 즉시 main에 retarget하면 비교 diff가 선행 #68 전체를 재포함하고 mergeability=false가 될 수 있다. **절대 force push/충돌 강제 병합 금지.** 원작성자의 독립 리베이스를 우선한다. 혹은 **정확한 동일 트리 검증 후**, 명시적으로 기록한 문서 변경 브랜치에 두 커밋을 부모로 갖는 ancestry bridge merge commit을 PR로 제출·검토·정상 병합해 기존 작업 브랜치를 훼손하지 않고 조상을 복구할 수 있다. 양쪽 트리 불일치 시 이 방식을 사용하지 않는다.
+- 문서가 최신 상태를 잘못 표시하면 정본 문서와 이슈에서 구체 PR·커밋·CI를 기입해 정정하고, 이전 이력은 "당시"로 분리한다. 체계적 운영을 위한 문서-only main 정정 예외는 아래 기존 계약대로 유지된다. **주석·체크박스 작성은 검증이 아니며 미완료/불확실성은 열린 상태로 남긴다.**
+
+
 - **코드/공통 계약 변경:** 한 TASK = 한 브랜치 = 한 주 편집자 = 한 PR. 리뷰/CI와 소유 경계 준수 후 병합하며, 코드의 main 직접 푸시는 금지한다.
 - **운영 문서 예외(2026-10-31 사용자 최신 지시):** 기술 총괄 `ot4562-glitch`는 문서(`Proposal.md`, `Architecture.md`, `STATUS.md`, `README.md`, `docs/*.md` 등)를 최신 `main` blob SHA 충돌 확인 후 **직접 커밋**한다. 문서 정정만을 위한 PR은 열지 않는다. 이 예외로 코드, 데이터, 공통 TS/Zod 계약, lockfile, CI, 배포 설정을 우회하지 않는다.
 - 브랜치 예시: feat/ui-, feat/recommendation-, feat/academics-, feat/platform-, chore/contracts-, docs/.

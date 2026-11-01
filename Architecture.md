@@ -1,5 +1,8 @@
 # HUFS One AI | Architecture.md
 
+
+> **2026-11-01 구현 상태 보정 (아래 A00~A17 설계의 시간별 구현 증거와 구분):** 인증·일반 PG·SourceRevision/Temporal RAG/권한·캘린더 서버 #58 **main 병합(합성/일회용 PG 검증)**, UI 공통 셸 #68 **main 병합(개발용 합성 모드·데이터 혼합 수정)**. 앱 전체 UI #69→#72→#73→#74→#75→#76은 순차 스택으로 OPEN이고, #71의 브라우저 캘린더 GET은 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) CI 성공·독립 리뷰/병합 대기다. 학업 RulePack activation #70은 asOf/발효 기간 차단 수정·합성 경계 CI 및 비작성자 승인 뒤 main `0a8d44bd`에 병합되었다(공식 검수 아님). 실제 Google/학교 이메일·학생 권리/동의·운영 PG/NCP/OCR/모바일 브라우저 E2E·공식 학칙 검증은 어떤 합성 성공이나 PR 병합만으로 승인되지 않는다. [최신 현황](STATUS.md) · [병합 게이트](docs/PR_WORKFLOW.md).
+
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
@@ -1109,7 +1112,7 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest; 신규 포스터 20건 + 시의성 정정 12건 별도 검증팩, 원본 이미지 bbox·오독·변경 이벤트 |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
-| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET·#51 UI 미구현, partial sharing/철회/출처 시점·접근성 E2E 미검증 |
+| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET은 #58 main 합성/PG 코드로 구현; #51 UI는 #72 OPEN·#77 클라이언트 CI/리뷰 대기, live partial sharing/철회/출처 시점·접근성 E2E 미검증 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
 | TASK-16 팀원 이해 | 설명 담당+각 모듈 / A01·A16 | 지도3개·질문10개·역할별 설명·팀원 재설명 |
 | TASK-17 개설 전망 | GPT/Claude 계산·교차검토 / A09 | 완전성·n/k·0/n·정보누출 방지·rolling-origin·precision/recall/IoU·공식 override·가정 분리 |

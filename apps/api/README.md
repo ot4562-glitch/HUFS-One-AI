@@ -1,6 +1,9 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
-## 2026-11-01 통합 브랜치 사용법
+
+> **최신 main 검증 기록(2026-11-01):** 단일 [#58 플랫폼 통합 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58) **병합 완료**. 아래 "통합 브랜치/main 미병합"은 제출 당시 기록이다. 인가/증빙·출처·RAG/PG·캘린더는 합성 및 일회용 PostgreSQL 경계 구현으로 검증했지만, 실 Google OIDC/학교메일 SMTP·운영 DB/권리/실학생 개인정보/HTTPS/NCP는 재현·승인되지 않았다. 브라우저 캘린더 `getCalendar` 포트는 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) CI 성공/독립 리뷰·병합 대기이며 UI #51/#72 연결 전이다.
+
+## 2026-11-01 통합 브랜치 당시 구현 내역 (#58 main 병합됨)
 
 `feat/platform-integration-20261101`에서 #32/#33/#34/#35/#55를 통합했고 다음 기능을 추가했다(main 미병합).
 

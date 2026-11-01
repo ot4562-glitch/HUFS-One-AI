@@ -1,6 +1,18 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
 
+## 2026-11-01 최신 역할·협업 핸드오프
+
+GitHub 이슈의 **현재 담당**은 심민성 `ot4562-glitch`(#27 API/인증/일반 PG/Temporal/공통 계약, #71 브라우저 캘린더 포트), 이의상 `uisang2004-maker`(#9 UI/접근성, #51 캘린더), 김채윤 `qamarrchae`(#10 추천·공지·합성 평가), 박준영 `taewangim-alt`(#11 학업/RulePack), 이서연 `lhh42001`(#12/#20/#22 NCP·CLOVA·OCR/Vision·Laya 환경/실 provider)이다. GitHub 할당은 개인정보 처리/기관 승인과 별개다.
+
+- **통합/main:** API·출처·권한 합성 코드 #58와 React 셸 #68 모두 병합. [#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68)의 데이터 혼합 P1은 최신 CI·반례 테스트 후 수정/승인됨.
+- **UI 스택:** [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) → [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) → [#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) → [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) → [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76)는 각각 OPEN. UI 코어/실인증 소비·캘린더·REVIEWER 구간을 합성 E2E와 실제 서버 E2E로 구별한다. 승인/CI 후 선행 순서대로 merge한다.
+- **API→UI 요청:** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77)은 `getCalendar(contextId, signal)`와 합성 부정 테스트, CI SUCCESS. 화면 담당은 병합 후 같은 객체의 `getCalendar`를 `AppServices.loadCalendar`에 연결하고 `DemoController.runContextOperation` + `validateCalendarWire(result, snapshot.asOf)`로 late 응답/철회·버전 mismatch를 차단한다.
+- **학업 코어 추가 병합:** [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 규칙 발효기간/asOf 수정·CI·재승인 후 main `0a8d44bd` 병합. 실제 학칙 사람 원문 검토·적용 학번 규칙은 별도.
+
+이 아래의 날짜별 협업 메모는 해당 시점의 이력이다. 예전 "calendar API 미구현"/"웹 UI 전부 미구현" 주장은 최신 통합 코드/기초 셸 상태를 덮어쓰지 않는다.
+
+
 **SKU·기간·비용 공식 확인:** [NCP 2026 운영 정본](NCP_OPERATIONS_2026.md). 11/6~12/9 816h 계획 상한, 본선 발표 11/16 이후 개통 승인. 4vCPU/32GB High Memory-g3 326원/h, CB 50GB 8원/h, 서버+CB 272,544원(최대).
 
 기준: **2026-10-30 사용자가 직접 알려준 팀 구성**. 이서연은 **팀 결성·기획을 이끈 리드**, 심민성은 **기술 총괄·GitHub 저장소 소유자·공통 계약과 최종 통합 담당자**다. 사람의 구독 현황은 보고 당시 기준이며, GPT·Claude·Gemini 개발도구와 **제품이 사용하는 CLOVA**를 혼동하지 않는다.

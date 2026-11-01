@@ -1,6 +1,15 @@
 # HUFS One AI
 
-## 2026-11-01 심민성 플랫폼 통합 구현 (리뷰 브랜치, main 미병합)
+
+## 최신 구현·병합 상태 (2026-11-01, GitHub HEAD 기준)
+
+- **main 병합:** [#58 플랫폼·인증/영속 PG·권한/RAG/캘린더 서버 합성 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58), 학업 [#56](https://github.com/ot4562-glitch/HUFS-One-AI/pull/56)·[#57](https://github.com/ot4562-glitch/HUFS-One-AI/pull/57)·[#62](https://github.com/ot4562-glitch/HUFS-One-AI/pull/62), 코어/합성 [#60](https://github.com/ot4562-glitch/HUFS-One-AI/pull/60)·[#65](https://github.com/ot4562-glitch/HUFS-One-AI/pull/65)·[#67](https://github.com/ot4562-glitch/HUFS-One-AI/pull/67), UI 기초 [#64](https://github.com/ot4562-glitch/HUFS-One-AI/pull/64)·[#66](https://github.com/ot4562-glitch/HUFS-One-AI/pull/66)·[#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68). #68은 대상별 S01–S05 합성 스냅샷 혼합 P1 수정·최신 CI 성공 후 `51c3c11c`로 병합했다.
+- **미병합/검증 중:** UI 화면·캘린더·초대·졸업·REVIEWER·브라우저 E2E 순차 스택 [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) → [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) → [#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) → [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) → [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76)는 독립 PR/승인·현재 base CI가 필요하다. [#70 학사 승인](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70)은 효력 시작/종료 경계값 회귀를 수정·CI 성공 및 최신 HEAD 재승인 뒤 **main merge `0a8d44bd` 완료**. [#77 브라우저 캘린더 GET](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77)은 2026-11-01 GitHub Actions SUCCESS, UI 담당 독립 리뷰·병합과 실제 화면 연결 대기.
+- **운영 완료 아님:** 합성/일회용 PostgreSQL 검증과 실 Google OIDC·SMTP·학교 권리/허가·학생별 동의/철회·NCP/CLOVA 운영·실브라우저 인증 E2E를 구별한다. 현재 유료 환경 개통·정식 출시 승인은 없다. [최신 상태와 차단사항](STATUS.md) 및 [팀별 역할](docs/WORKSTREAMS.md)을 먼저 확인한다.
+
+아래 날짜별 기록에 남아 있는 "main 미병합"·"API 미구현" 등 표현은 **당시 상황의 이력**이며 이 최신 절보다 우선하지 않는다.
+
+## 2026-11-01 심민성 플랫폼 통합 당시 기록 (#58 병합 전)
 
 `feat/platform-integration-20261101`에서 기존 인증 #32·공통 계약 #33·출처/RAG #34·DB #35·원자 권한 조회 #55를 최신 main과 통합했다. 인증된 캘린더 GET, 권한별 추천/공지 재계산, 개인 상태 HTTP CRUD와 명시적 PostgreSQL 서비스 조립을 추가했다. `npm ci --ignore-scripts --no-audit --no-fund`, `npm run check`, `npm run build:api`로 재현한다. [현재 증거와 남은 게이트](STATUS.md) · [API 연결법](apps/api/README.md). 아래 2026-10-31 기록은 당시 main 기준이며 새 브랜치 구현을 main 병합이나 실서비스 개통으로 해석하지 않는다.
 
