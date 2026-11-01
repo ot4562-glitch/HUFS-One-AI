@@ -132,6 +132,46 @@ describe('BETA context-local demo preference overlay',()=>{
     });
     await expect(f.service.read(f.input,f.metadata)).rejects.toMatchObject({code:'VERSION_CONFLICT'});
   });
+  it('accepts granted synthetic academic/forecast summaries only at the authorized asOf',async()=>{
+    const f=fixture();
+    const summary={state:'READY' as const,rulePackVersion:'SYN-RULE',asOf:NOW,
+      earnedCreditUnits:4,inProgressCreditUnits:2,plannedCreditUnits:0,
+      deficits:[],caveats:['Synthetic-only audit']};
+    const outlook={status:'PARTIAL' as const,asOf:NOW,items:[]};
+    f.metadata.academics=summary;f.metadata.forecast=outlook;
+    f.bundle.grant!.allowedSections=['FEED','NOTICES','ACADEMICS','FORECAST'];
+    f.bundle.scopeKey=scopeInputsToGrant(f.bundle.profile,f.bundle.noticeStudent,
+      f.bundle.grant!.allowedSections).scopeKey;
+    const result=await f.service.read(f.input,f.metadata);
+    expect(result.snapshot.academics).toEqual(summary);
+    expect(result.snapshot.forecast).toEqual(outlook);
+  });
+  it('fails closed when academic or forecast metadata asOf does not match input provenance',async()=>{
+    const f=fixture();
+    f.metadata.academics={state:'READY',rulePackVersion:'SYN-RULE',
+      asOf:'2026-11-01T01:00:00.000Z',earnedCreditUnits:4,
+      inProgressCreditUnits:2,plannedCreditUnits:0,deficits:[],caveats:['Synthetic only']};
+    await expect(f.service.read(f.input,f.metadata))
+      .rejects.toMatchObject({code:'VERSION_CONFLICT'});
+    f.metadata.academics={state:'NOT_SHARED'};
+    f.metadata.forecast={status:'PARTIAL',asOf:'2026-11-01T01:00:00.000Z',items:[]};
+    await expect(f.service.read(f.input,f.metadata))
+      .rejects.toMatchObject({code:'VERSION_CONFLICT'});
+  });
+  it('masks precomputed academic/outlook summaries after the authorized source grant narrows',async()=>{
+    const f=fixture();
+    f.metadata.academics={state:'READY',rulePackVersion:'SYN-RULE',asOf:NOW,
+      earnedCreditUnits:4,inProgressCreditUnits:2,plannedCreditUnits:0,
+      deficits:[],caveats:['Synthetic only']};
+    f.metadata.forecast={status:'PARTIAL',asOf:NOW,items:[]};
+    // Upstream projection metadata may have been allowed under the initial
+    // context grant. The independently rechecked bundle lacks both sections.
+    expect(f.bundle.grant!.allowedSections).toEqual(['FEED','NOTICES']);
+    const result=await f.service.read(f.input,f.metadata);
+    expect(result.snapshot.academics).toEqual({state:'NOT_SHARED'});
+    expect(result.snapshot.forecast).toEqual({state:'NOT_SHARED'});
+  });
+
   it('does not allow overlay fields to add eligibility facts, academic or experience signals',async()=>{
     const f=fixture();
     for(const value of [{facts:{major:'FAKE'}},{approvedExperienceTopics:['AI_ML']},

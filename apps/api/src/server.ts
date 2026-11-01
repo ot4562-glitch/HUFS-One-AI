@@ -164,6 +164,36 @@ export function createApi(options:ApiOptions) {
   const mustAllow=(grant:SharingGrant,actor:VerifiedActor,subject:SubjectAlias,section:Section):void=>{
     if(!allowed(grant,actor,subject,section))throw new ApiFailure('FORBIDDEN');
   };
+  // Checked AFTER awaiting a repository, provider or synthetic read. An
+  // onRequest check alone cannot protect a response whose session/invite
+  // expires while that asynchronous operation is in flight.
+  const recheckCurrent=async(req:FastifyRequest,actor:VerifiedActor,
+    context?:DemoContext,sections:Section[]=[])=>{
+    const sameSession=(next:VerifiedActor)=>
+      next.role===actor.role&&next.actorId===actor.actorId
+      &&next.sessionIdHash===actor.sessionIdHash
+      &&(actor.role!=='REVIEWER'
+        ||next.role==='REVIEWER'&&next.verifiedEmail===actor.verifiedEmail);
+    if(!sameSession(await verifiedSession(req)))throw new ApiFailure('FORBIDDEN');
+    if(actor.role==='REVIEWER'){
+      const initial=reviewerGrants.get(req);
+      if(!initial||!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
+      const active=await options.reviewerAccess.readActive({
+        actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock()});
+      if(!active||active.inviteId!==initial.inviteId
+        ||Date.parse(active.endsAt)<=nowEpoch(clock())
+        ||context&&context.sharingGrantVersion!=='REVIEWER:'+active.inviteId)
+        throw new ApiFailure('FORBIDDEN');
+    }else if(context){
+      const grant=await getGrant(actor,context.demoSubjectId);
+      if(grant.version!==context.sharingGrantVersion
+        ||sections.some(section=>!allowed(grant,actor,context.demoSubjectId,section)))
+        throw new ApiFailure('VERSION_CONFLICT',context.contextId);
+    }
+    if(!sameSession(await verifiedSession(req))
+      ||context&&Date.parse(context.expiresAt)<=nowEpoch(clock()))
+      throw new ApiFailure('FORBIDDEN');
+  };
   const overlayResult=async(raw:unknown,req:FastifyRequest,actor:VerifiedActor,context:DemoContext)=>{
     const checked=OverlayResultSchema.safeParse(raw);
     if(!checked.success)throw new ApiFailure('PROVIDER_UNAVAILABLE');
@@ -195,6 +225,7 @@ export function createApi(options:ApiOptions) {
       if(checked.versions.dataset!==context.datasetVersion
         ||checked.versions.projection!==context.projectionVersion)
         throw new ApiFailure('VERSION_CONFLICT',id);
+      await recheckCurrent(req,actor,context);
       return {actor,context,result:DemoSnapshotSchema.parse({...checked,contextId:context.contextId})};
     }
     const grant=await getGrant(actor,context.demoSubjectId);
@@ -217,6 +248,9 @@ export function createApi(options:ApiOptions) {
       ||snapshot.versions.dataset!==context.datasetVersion
       ||snapshot.versions.projection!==context.projectionVersion
       ||snapshot.feed.asOf!==snapshot.asOf||snapshot.notices.asOf!==snapshot.asOf
+      ||("asOf" in snapshot.academics&&snapshot.academics.asOf!==snapshot.asOf)
+      ||("asOf" in snapshot.forecast&&snapshot.forecast.asOf!==snapshot.asOf)
+      ||("items" in snapshot.forecast&&snapshot.forecast.items.some(item=>Date.parse(item.asOf)>Date.parse(snapshot.asOf)))
       ||Date.parse(snapshot.asOf)>nowEpoch(clock()))
       throw new ApiFailure('VERSION_CONFLICT',id);
     const result=DemoSnapshotSchema.parse({
@@ -224,6 +258,7 @@ export function createApi(options:ApiOptions) {
       academics:allowed(grant,actor,context.demoSubjectId,'ACADEMICS')?snapshot.academics:{state:'NOT_SHARED'},
       forecast:allowed(grant,actor,context.demoSubjectId,'FORECAST')?snapshot.forecast:{state:'NOT_SHARED'},
     });
+    await recheckCurrent(req,actor,context,sections);
     if(applyOverlay&&options.demoOverlay&&actor.role==='BETA'){
       const r=await overlayResult(await options.demoOverlay.read({actorId:actor.actorId,context,now:clock()},result),
         req,actor,context);
@@ -420,9 +455,26 @@ export function createApi(options:ApiOptions) {
   const validateReviewerSnapshot=(raw:unknown,id:SubjectAlias)=>{
     const snap=DemoSnapshotSchema.parse(raw);
     if(snap.datasetMode!=='SYNTHETIC'||snap.demoSubjectId!==id
-      ||snap.aiProvenance==='LIVE_NCP'
+      ||(snap.aiProvenance!=='MOCK'&&snap.aiProvenance!=='NONE')
       ||snap.feed.asOf!==snap.asOf||snap.notices.asOf!==snap.asOf
-      ||nowEpoch(snap.asOf)>nowEpoch(clock()))throw new ApiFailure('FORBIDDEN');
+      )throw new ApiFailure('FORBIDDEN');
+    // Scenario asOf is a frozen fictitious clock; only the live authenticated
+    // invitation session and rights checks use the actual request clock.
+    const syntheticEvidence=(refs:readonly string[])=>refs.every(ref=>ref.startsWith('EV-SYN-'));
+    const academic=snap.academics;
+    if('rulePackVersion' in academic
+      &&(!academic.rulePackVersion.startsWith('SYN-')
+        ||Date.parse(academic.asOf)>Date.parse(snap.asOf)
+        ||academic.deficits.some(d=>!d.requirementId.startsWith('SYN-')
+          ||!syntheticEvidence(d.evidenceRefs))))
+      throw new ApiFailure('FORBIDDEN');
+    const forecast=snap.forecast;
+    if('items' in forecast
+      &&(Date.parse(forecast.asOf)>Date.parse(snap.asOf)
+        ||forecast.items.some(item=>!item.courseId.startsWith('SYN-')
+          ||Date.parse(item.asOf)>Date.parse(snap.asOf)
+          ||!syntheticEvidence(item.evidenceRefs))))
+      throw new ApiFailure('FORBIDDEN');
     const cards=[...snap.feed.featured,...snap.feed.compact];
     if(cards.some(c=>c.dataMode!=='SYNTHETIC'||!c.opportunityId.startsWith('SYN-')
       ||c.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-')))
@@ -444,10 +496,11 @@ export function createApi(options:ApiOptions) {
     aiProvenance:'MOCK',externalSubmission:false,ncpCalls:false,
     actualBrowserUiVerified:false,
   }));
-  app.get('/api/reviewer/demo/profiles',async()=>{
+  app.get('/api/reviewer/demo/profiles',async(req)=>{
     const list=DemoProfilesResponseSchema.parse({profiles:await reviewerDemo().listProfiles()});
     // Separate curated fixture source. Never reuse the team-member repository or grants.
     if(list.profiles.some(p=>p.dataMode!=='SYNTHETIC'))throw new ApiFailure('FORBIDDEN');
+    await recheckCurrent(req,principal(req));
     return list;
   });
   app.get('/api/reviewer/demo/subjects/:id/snapshot',async(req)=>{
@@ -459,6 +512,7 @@ export function createApi(options:ApiOptions) {
       ||profile.readiness==='PENDING')throw new ApiFailure('FORBIDDEN');
     const source=await demo.readSnapshot(id);
     if(!source)throw new ApiFailure('FORBIDDEN');
+    await recheckCurrent(req,principal(req));
     return validateReviewerSnapshot(source,id);
   });
 
@@ -470,6 +524,7 @@ export function createApi(options:ApiOptions) {
       });
       if(response.profiles.some(p=>p.dataMode!=='SYNTHETIC'))
         throw new ApiFailure('FORBIDDEN');
+      await recheckCurrent(req,actor);
       return response;
     }
     const raw=await options.repository.listProfiles();
@@ -492,6 +547,7 @@ export function createApi(options:ApiOptions) {
         allowedSections:sections,
       });
     }
+    await recheckCurrent(req,actor);
     return DemoProfilesResponseSchema.parse({profiles:selected});
   });
   app.post('/api/demo/contexts',async(req,reply)=>{
@@ -524,6 +580,7 @@ export function createApi(options:ApiOptions) {
         expiresAt:new Date(exp).toISOString(),
       });
       if(contexts.size>=200)throw new ApiFailure('RATE_LIMITED');
+      await recheckCurrent(req,actor,context);
       contexts.set(context.contextId,context);
       reply.code(201);
       return context;
@@ -562,6 +619,7 @@ export function createApi(options:ApiOptions) {
     });
     for(const [id,item] of contexts)if(Date.parse(item.expiresAt)<=time)contexts.delete(id);
     if(contexts.size>=200)throw new ApiFailure('RATE_LIMITED');
+    await recheckCurrent(req,actor,context,['FEED','NOTICES']);
     contexts.set(context.contextId,context);
     reply.code(201);
     return context;
@@ -613,8 +671,10 @@ export function createApi(options:ApiOptions) {
     const {context}=await checkedContext(req,id,[]);
     const grant=reviewerGrants.get(req);
     if(!grant)throw new ApiFailure('FORBIDDEN');
-    return options.reviewerSandbox.read({inviteId:grant.inviteId,
+    const result=await options.reviewerSandbox.read({inviteId:grant.inviteId,
       actorId:actor.actorId,subjectId:context.demoSubjectId});
+    await recheckCurrent(req,actor,context);
+    return result;
   });
   app.post('/api/reviewer/demo/contexts/:id/actions',async(req)=>{
     const actor=principal(req);
@@ -625,8 +685,10 @@ export function createApi(options:ApiOptions) {
     if(!grant)throw new ApiFailure('FORBIDDEN');
     const action=ReviewerSandboxActionSchema.parse(req.body);
     // Simulated operations have no production side effects or external sends.
-    return options.reviewerSandbox.save({inviteId:grant.inviteId,
+    const result=await options.reviewerSandbox.save({inviteId:grant.inviteId,
       actorId:actor.actorId,subjectId:context.demoSubjectId,action});
+    await recheckCurrent(req,actor,context);
+    return result;
   });
 
   app.post('/api/ai/:task',async(req,reply)=>{
@@ -649,6 +711,7 @@ export function createApi(options:ApiOptions) {
     if(existing){
       const job=jobs.get(existing);
       if(!job||job.packetRef!==body.packetRef)throw new ApiFailure('VERSION_CONFLICT');
+      await recheckCurrent(req,actor);
       reply.code(202);
       return {jobId:job.jobId,state:job.state,provenance:'MOCK'};
     }
@@ -679,6 +742,7 @@ export function createApi(options:ApiOptions) {
       catch {throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     }
     const candidate=validateModelCandidate(packet,raw);
+    await recheckCurrent(req,actor);
     const job:Job={jobId:newId(),actorId:actor.actorId,sessionIdHash:actor.sessionIdHash,
       task,packetRef:body.packetRef,state:'NEEDS_REVIEW',createdAt:clock(),candidate};
     if(jobs.size>=200)throw new ApiFailure('RATE_LIMITED');
@@ -700,6 +764,9 @@ export function createApi(options:ApiOptions) {
       const {actor,context}=await checkedContext(request,id,[section]);
       return {actorId:actor.actorId,subjectId:context.demoSubjectId,
         grantVersion:context.sharingGrantVersion};
+    },
+    revalidate:async(request,id,section)=>{
+      await checkedContext(request,id,[section],false);
     },
   });
   return app;
