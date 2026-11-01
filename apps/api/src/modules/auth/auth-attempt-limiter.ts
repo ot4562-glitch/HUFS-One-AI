@@ -13,6 +13,9 @@ export const AUTH_ATTEMPT_RULES={
   REVIEWER_REDEEM:{maxAttempts:5,windowMs:15*60_000},
   SCHOOL_OTP_ISSUE:{maxAttempts:3,windowMs:60*60_000},
   SCHOOL_OTP_CONFIRM:{maxAttempts:10,windowMs:10*60_000},
+  SCHOOL_OTP_ISSUE_IP:{maxAttempts:10,windowMs:60*60_000},
+  SCHOOL_OTP_ISSUE_GLOBAL:{maxAttempts:100,windowMs:60*60_000},
+  SCHOOL_OTP_CONFIRM_IP:{maxAttempts:30,windowMs:10*60_000},
 } as const;
 
 export type AuthAttemptKind=keyof typeof AUTH_ATTEMPT_RULES;

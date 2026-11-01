@@ -1,5 +1,18 @@
 # HUFS One AI | 시연·에이전트 검증 기준
 
+## 2026-11-01 후속 PR 리뷰·심사 검증 정본
+
+- [x] [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 정책 버전 결과 캐시 키는 최신 HEAD 타인 APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) 합성/PG 2 job SUCCESS 후 main merge `fdf0b09b`.
+- [x] [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 조직 노출 상한·다양성에서 사유가 실제 순위와 맞지 않는 문제로 CHANGES_REQUESTED. [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120) 계약→[#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) owner API는 HEAD COMMENT·Actions SUCCESS·타인 리뷰 요청만 완료(아직 미병합).
+- [ ] UI #72~#76·#119 실제 정정 전후 비교·#86 화면·#82 What-if 학업 계산 엔진·#81 계획 화면/실브라우저 종단 검증 미완료. 작성자 로컬 합성/CI 결과를 실제 학생·기관 공고/정식 학칙·브라우저 출시 승인으로 표기하지 않는다.
+- [ ] #46 개인정보 원본 인덱스 검사 2 FAIL 및 #89 `RELEASE_BLOCKED`; 과거 '이번 신규 병합 0건'은 **이전 UI 전용 감사**의 기록이며 이번 코어 PR 1건은 실제 병합했다.
+
+## 2026-11-01 새 PR 리뷰·시연 검증 게이트
+
+- [x] 열린 UI PR #72~#76 **5건 모두 HEAD 리뷰**(두 건 CHANGES_REQUESTED: #72 일정 실제 API/스냅샷 버전, #75 REVIEWER 대상별 미저장 초안·설정 분리; 나머지 세 건 COMMENT). [상세 상태](STATUS.md).
+- [ ] 현재 PR HEAD 원격 Actions 검증 0건/병합 0건. #76 본문 Edge E2E 10/10은 작성자 로컬 실행 진술이며 이 감사의 독립 재실행 결과가 아니다. 실제 Google/OIDC·권한 철회·모바일/스크린리더·실서버 E2E 별도.
+- [ ] [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 전체 개인정보 경계 153/155 PASS·2 FAIL, 실자료/기관·동의·NCP 사용승인과 [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 운영 릴리스 게이트 미완료. 현재 `RELEASE_BLOCKED`.
+
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
@@ -23,7 +36,7 @@ TASK-00~TASK-12의 체크박스는 담당 구현 에이전트가 실행·증거�
 
 실제 학생별 적용 근거·독립 기대값·현재/계획 불변성·미확인 상태·원본 보호·동의철회·온라인/오프라인·live/캐시/replay 표시를 기록한다. 공개 결과물에는 개인 원장·증빙·개인 replay·학교 원본을 넣지 않는다. 실제 입력자 최대 4명의 검수 완료와 5개 데모 슬롯의 합성 시험 완료를 서로 대체하지 않는다.
 
-현재는 제품 구현·시연 성능 측정 전 문서 단계다.
+현재 main에 합성 검증된 UI 셸·개인화 코어·서버/PG/권한 코드가 있으나, 실제 기관 원장/룰팩·공개 도메인·Google/외대 메일/NCP·심사자/학생 실브라우저 운영 검증은 미완료다. 실제 배포 시연 성능을 측정했다고 주장하지 않는다.
 
 ## 신규 신뢰성·시의성·이미지 증거 게이트 (2026-10-31 설계, 미실행)
 

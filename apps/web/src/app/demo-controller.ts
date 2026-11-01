@@ -1,9 +1,9 @@
 import {
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, SubjectAliasSchema,
-  isSnapshotCurrent,
+  DemoOverlayResultSchema, isSnapshotCurrent,
 } from '@hufs-one/contracts';
 import type {
-  ApiErrorCode, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
+  ApiErrorCode, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias, DemoOverlayResult,
 } from '@hufs-one/contracts';
 import {HufsApiError} from '../integrations/api-client.js';
 
@@ -54,6 +54,7 @@ export class DemoController {
   private current:AbortController|null=null;
   private revalidation:AbortController|null=null;
   private readonly scopedActions=new Set<AbortController>();
+  private overlayAction:AbortController|null=null;
   private readonly listeners=new Set<()=>void>();
   private disposed=false;
   private endingSession=false;
@@ -83,6 +84,7 @@ export class DemoController {
   private abortScopedActions():void {
     for(const action of this.scopedActions)action.abort();
     this.scopedActions.clear();
+    this.overlayAction=null;
   }
 
   async loadProfiles():Promise<void> {
@@ -195,18 +197,61 @@ export class DemoController {
    * Returning null means denied, stale, cancelled or unavailable. Error codes
    * are exposed only through the immutable controller state, not raw payloads.
    */
+  async runOverlayOperation(perform:(context:DemoContext,signal:AbortSignal)=>Promise<DemoOverlayResult>):Promise<DemoOverlayResult|null> {
+    if(this.disposed||this.endingSession||this.state.status!=='READY'
+      ||!this.state.context||!this.state.snapshot||this.overlayAction)return null;
+    const {context,snapshot,epoch}=this.state;
+    const request=new AbortController();
+    this.scopedActions.add(request);
+    this.overlayAction=request;
+    const current=()=>!this.disposed&&!this.endingSession&&!request.signal.aborted
+      &&this.overlayAction===request&&this.state.epoch===epoch
+      &&this.state.status==='READY'&&this.state.context?.contextId===context.contextId;
+    try {
+      const raw=await perform(context,request.signal);
+      if(!current())return null;
+      const parsed=DemoOverlayResultSchema.safeParse(raw);
+      if(!parsed.success)throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+      const next=parsed.data;
+      if(!isSnapshotCurrent(next.snapshot,{context,selectionEpoch:epoch,
+        currentSelectionEpoch:this.state.epoch})
+        ||next.snapshot.versions.consent!==context.sharingGrantVersion
+        ||Date.parse(next.snapshot.asOf)!==Date.parse(snapshot.asOf))
+        throw new HufsApiError('VERSION_CONFLICT',409);
+      const previous=snapshot.versions.overlay;
+      if(previous.startsWith('BETA_OVERLAY:')){
+        const version=Number(previous.slice('BETA_OVERLAY:'.length));
+        if(Number.isSafeInteger(version)&&next.overlay.version<version)
+          throw new HufsApiError('VERSION_CONFLICT',409);
+      }
+      if(!current())return null;
+      this.emit({...this.state,snapshot:next.snapshot,error:null});
+      return next;
+    }catch(error){
+      if(current())this.applyContextError(context.contextId,epoch,error);
+      return null;
+    }finally{
+      this.scopedActions.delete(request);
+      if(this.overlayAction===request)this.overlayAction=null;
+    }
+  }
+
   async runContextOperation<T>(
     perform:(context:DemoContext,signal:AbortSignal)=>Promise<T>,
   ):Promise<T|null> {
     if(this.disposed||this.endingSession||this.state.status!=='READY'
       ||!this.state.context)return null;
-    const {context,epoch}=this.state;
+    const {context,epoch,snapshot}=this.state;
     const request=new AbortController();
     this.scopedActions.add(request);
+    // A successful overlay write can replace this context's snapshot without
+    // changing the selection epoch. Older calendar/section responses must not
+    // be handed to the UI under the new snapshot's version or consent state.
     const current=()=>!this.disposed&&!this.endingSession
       &&!request.signal.aborted
       &&this.state.epoch===epoch&&this.state.status==='READY'
-      &&this.state.context?.contextId===context.contextId;
+      &&this.state.context?.contextId===context.contextId
+      &&this.state.snapshot===snapshot;
     try {
       const result=await perform(context,request.signal);
       return current()?result:null;

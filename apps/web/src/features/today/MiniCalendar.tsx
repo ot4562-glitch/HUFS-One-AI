@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import type {DemoController, DemoViewState} from '../../app/index.js';
+import type {DemoSnapshot} from '@hufs-one/contracts';
 import type {AppServices} from '../../App.js';
 import {InAppLink} from '../../shell/AppShell.js';
 import {buildCalendarView, MARKERS, type CalendarItemView, type CalendarScreenView, type MarkerCategory} from './calendarView.js';
@@ -11,10 +12,12 @@ interface Props {
   readonly navigate: (path: string) => void;
 }
 
+// `snapshot` is the exact snapshot object the load was issued for. Any same-context change
+// (revalidation, overlay commit, consent/grant or asOf) replaces that object.
 type Load =
-  | {readonly key: string; readonly status: 'LOADING'}
-  | {readonly key: string; readonly status: 'READY'; readonly view: CalendarScreenView}
-  | {readonly key: string; readonly status: 'ERROR'};
+  | {readonly key: string; readonly snapshot: DemoSnapshot; readonly status: 'LOADING'}
+  | {readonly key: string; readonly snapshot: DemoSnapshot; readonly status: 'READY'; readonly view: CalendarScreenView}
+  | {readonly key: string; readonly snapshot: DemoSnapshot; readonly status: 'ERROR'};
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
 
@@ -54,14 +57,14 @@ export function MiniCalendar({state, controller, loadCalendar, navigate}: Props)
 
   useEffect(() => {
     setPicked(null);
-    if (!contextId || !asOf || !loadCalendar) { setLoad(null); return; }
-    setLoad({key, status: 'LOADING'});
+    if (!contextId || !snapshot || !asOf || !loadCalendar) { setLoad(null); return; }
+    setLoad({key, snapshot, status: 'LOADING'});
     let live = true;
     void controller.runContextOperation((ctx, signal) => loadCalendar(ctx, signal)).then(raw => {
       if (!live) return;
       if (raw === null) { setLoad(null); return; } // stale, denied or cancelled: controller state explains
       const result = buildCalendarView(raw, asOf);
-      setLoad(result.ok ? {key, status: 'READY', view: result.view} : {key, status: 'ERROR'});
+      setLoad(result.ok ? {key, snapshot, status: 'READY', view: result.view} : {key, snapshot, status: 'ERROR'});
     });
     return () => { live = false; };
     // snapshot identity changes after resume revalidation (same epoch): reload then too.
@@ -72,8 +75,9 @@ export function MiniCalendar({state, controller, loadCalendar, navigate}: Props)
   if (!loadCalendar) {
     return <section className="section cal" aria-labelledby="cal-title">{heading}<p className="muted">일정 정보 연결을 준비하고 있습니다.</p></section>;
   }
-  // Never render a calendar computed for a different key (previous subject or epoch).
-  if (!load || load.key !== key || load.status === 'LOADING') {
+  // Never render a calendar computed for a different key (previous subject or epoch) or an older
+  // snapshot of the same context: checked during render, so it hides before the reload effect runs.
+  if (!load || load.key !== key || load.snapshot !== snapshot || load.status === 'LOADING') {
     return <section className="section cal" aria-labelledby="cal-title" aria-busy="true">{heading}<p className="muted">일정을 불러오는 중</p></section>;
   }
   if (load.status === 'ERROR') {

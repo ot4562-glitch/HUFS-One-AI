@@ -206,7 +206,8 @@ describe('#10 AI topic candidates are re-checked by code', () => {
 describe('#10 cache keys: version change invalidates, students never share', () => {
   const base:ResultCacheParts = {
     kind:'FEED', asOf:ASOF, profile:'P1', projection:'S01-PR1', consent:'C1', overlay:'OV1', topics:'topics-v1',
-    rankConfig:'rank-v1.0', sourceRevisionIds:['r2', 'a1'], claimVersion:'cl-1', retrievalConfigVersion:'keyword-v1', academics:'none',
+    rankConfig:'rank-v1.0', sourceRevisionIds:['r2', 'a1'], claimVersion:'cl-1', retrievalConfigVersion:'keyword-v1',
+    permissionPolicyVersion:'policy-v1', academics:'none',
   };
   it('is order-independent and changes with every dependency', () => {
     const k = resultCacheKey(base);
@@ -214,10 +215,19 @@ describe('#10 cache keys: version change invalidates, students never share', () 
     for (const change of [
       {sourceRevisionIds:['r3', 'a1']}, {claimVersion:'cl-2'}, {retrievalConfigVersion:'keyword-v2'},
       {projection:'S02-PR1'}, {rankConfig:'rank-v1.1'}, {asOf:D(1)}, {kind:'NOTICES' as const},
+      {permissionPolicyVersion:'policy-v2'}, {profile:'P2'}, {consent:'C2'}, {overlay:'OV2'}, {topics:'topics-v2'},
+      {academics:'R2'},
     ]) expect(resultCacheKey({...base, ...change})).not.toBe(k);
   });
   it('refuses a missing version instead of sharing an entry', () => {
     expect(() => resultCacheKey({...base, projection:''})).toThrow(RangeError);
     expect(() => resultCacheKey({...base, claimVersion:'a|b'})).toThrow(RangeError);
+    // A source-rights revoke bumps the policy version; an empty one must not fall back to a shared entry.
+    expect(() => resultCacheKey({...base, permissionPolicyVersion:' '})).toThrow(RangeError);
+  });
+  it('every dependency is visible in the key, so no version can be silently dropped later', () => {
+    const k = resultCacheKey(base);
+    for (const part of ['kind=', 'asOf=', 'profile=', 'projection=', 'consent=', 'overlay=', 'topics=', 'rankConfig=',
+      'claimVersion=', 'retrievalConfigVersion=', 'permissionPolicyVersion=', 'academics=', 'sources=']) expect(k).toContain(part);
   });
 });

@@ -1,5 +1,9 @@
 # HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
+**2026-11-01 후속 보안/출시 경계:** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 결과 캐시의 권한 정책 버전 키는 비작성자 승인·CI 성공 후 main merge `fdf0b09b`로 구현했다. 이는 실제 소스 권리 resolver·학생 동의 철회/다중 브라우저·운영 인증/클라우드 보증이 아니다. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117)은 추천 설명 오판 수정 대기, [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)→[#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)은 독립 승인 및 실제 source/rights/RulePack provider 부재로 미병합. #46 전체 Privacy 검사 153/155 PASS·2 FAIL, #89 `RELEASE_BLOCKED` 유지.
+
+**2026-11-01 출시 게이트 재확인:** main의 #83 서버 인증·원자 PG·합성 REVIEWER 및 #89 관련 오프라인 검사 구현은 실제 인터넷 NCP/Google/TLS 가동 증거가 아니다. 신규 UI #72~#76은 현재 HEAD 리뷰 5건만 완료·병합 0건(#72/#75 변경 요청/CI 미확인). [#46 개인정보 검사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)는 전체 Private checkout에서 153/155 PASS·2 FAIL이고 [#89 출시](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)는 `RELEASE_BLOCKED`; 운영 자료·기관 허가·예산 승인 전 개통·AI 호출·공개 이전 금지. [STATUS.md](STATUS.md).
+
 
 **NCP 새 운영 정본:** [NCP_OPERATIONS_2026.md](docs/NCP_OPERATIONS_2026.md) — 2026-11-06~12-09(816h 예산 상한), 실제 본선 발표 11/16 및 크레딧·사용자 승인 이후 개통. 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB SSD 8원/h(선택 공인 IP 5.6원/h); 816h 서버+CB 272,544원, IP 포함 277,113.6원(VAT 등 제외).
 

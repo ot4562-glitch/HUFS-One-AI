@@ -1,0 +1,5023 @@
+{
+  "datasetMode": "SYNTHETIC",
+  "version": "syn-corpus-v1",
+  "asOf": "2026-11-20T00:00:00.000Z",
+  "independentGoldReview": "PENDING",
+  "snapshots": [
+    {
+      "contextId": "SYN-CTX-S01",
+      "demoSubjectId": "S01",
+      "datasetMode": "SYNTHETIC",
+      "asOf": "2026-11-20T00:00:00.000Z",
+      "versions": {
+        "profile": "syn-corpus-v1+snapshot-v1:S01",
+        "projection": "SYN-PROJ-ACADEMICS,EXPERIENCE,FEED,FORECAST,NOTICES",
+        "consent": "SYN-CONSENT-ALL",
+        "dataset": "syn-corpus-v1",
+        "topics": "topics-v1",
+        "rules": "SYN-RULES-PENDING",
+        "overlay": "SYN-OVERLAY-NONE",
+        "rankConfig": "rank-v1.0"
+      },
+      "feed": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "featured": [
+          {
+            "opportunityId": "SYN-OPP-002",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 데이터 공공문제 공모전",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "AI_ML",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 71.166667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-002",
+              "relevance": {
+                "score": 71,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘데이터 분석’과 일치해요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘AI·머신러닝’과 일치해요.",
+                  "topics": [
+                    "AI_ML"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘데이터 분석’과 관련 있어요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 8일 09:00까지 신청",
+                "iso": "2026-12-08T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-029",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 파이썬 데이터 분석 부트캠프",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "SOFTWARE_DEV"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-029-C1"
+            ],
+            "score": 69.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-029",
+              "relevance": {
+                "score": 70,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘데이터 분석’과 일치해요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘소프트웨어 개발’과 일치해요.",
+                  "topics": [
+                    "SOFTWARE_DEV"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘데이터 분석’과 관련 있어요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-029-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 25일 09:00까지 신청",
+                "iso": "2026-11-25T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-008",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 핀테크 데이터 분석가 신입",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "FINANCE_INVESTMENT"
+            ],
+            "evidenceRefs": [],
+            "score": 59.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-008",
+              "relevance": {
+                "score": 60,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘데이터 분석’과 일치해요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘데이터 분석’과 관련 있어요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 11일 09:00까지 신청",
+                "iso": "2026-12-11T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "compact": [
+          {
+            "opportunityId": "SYN-OPP-019",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 HR테크 인사 데이터 인턴",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "HR_ORG",
+              "DATA_ANALYTICS"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-019-C1"
+            ],
+            "score": 59.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-019",
+              "relevance": {
+                "score": 60,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘데이터 분석’과 일치해요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘데이터 분석’과 관련 있어요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-019-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 12일 09:00까지 신청",
+                "iso": "2026-12-12T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-033",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 행정 자료 입력 봉사 (단순 입력 업무)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS"
+            ],
+            "evidenceRefs": [],
+            "score": 59.333333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-033",
+              "relevance": {
+                "score": 59,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘데이터 분석’과 일치해요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘데이터 분석’과 관련 있어요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 28일 09:00까지 신청",
+                "iso": "2026-11-28T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-021",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 공공데이터 시각화 경진대회",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 59,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-021",
+              "relevance": {
+                "score": 59,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘데이터 분석’과 일치해요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘데이터 분석’과 관련 있어요.",
+                  "topics": [
+                    "DATA_ANALYTICS"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 16일 09:00까지 신청",
+                "iso": "2026-12-16T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-016",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 AI 스타트업 머신러닝 인턴",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "AI_ML",
+              "SOFTWARE_DEV"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-016-C1",
+              "EV-SYN-OPP-016-C2"
+            ],
+            "score": 33.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-016",
+              "relevance": {
+                "score": 34,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 25,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘AI·머신러닝’, ‘소프트웨어 개발’과 일치해요.",
+                  "topics": [
+                    "AI_ML",
+                    "SOFTWARE_DEV"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-016-C1",
+                  "EV-SYN-OPP-016-C2"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 1일 09:00까지 신청",
+                "iso": "2026-12-01T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-025",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 UX 리디자인 챌린지",
+            "eligibility": "UNKNOWN",
+            "lifecycle": "OPEN",
+            "topics": [
+              "PRODUCT_UX",
+              "SOFTWARE_DEV"
+            ],
+            "evidenceRefs": [],
+            "score": 21.166667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-025",
+              "relevance": {
+                "score": 21,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘소프트웨어 개발’과 일치해요.",
+                  "topics": [
+                    "SOFTWARE_DEV"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "UNKNOWN",
+                "text": "공고 안의 조건이 서로 달라 확인이 필요해요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 30일 09:00까지 신청",
+                "iso": "2026-11-30T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-036",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 정보보안 동아리 연합 해커톤",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "CYBERSECURITY",
+              "SOFTWARE_DEV"
+            ],
+            "evidenceRefs": [],
+            "score": 21.166667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-036",
+              "relevance": {
+                "score": 21,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘소프트웨어 개발’과 일치해요.",
+                  "topics": [
+                    "SOFTWARE_DEV"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 6일 09:00까지 신청",
+                "iso": "2026-12-06T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "hasMore": true,
+        "totalCandidates": 36
+      },
+      "notices": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "items": [
+          {
+            "noticeId": "SYN-NOT-008",
+            "title": "가상 수강정정 기간 안내",
+            "priority": "CRITICAL_DUE",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-23T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-008"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-001",
+            "title": "가상 졸업인증 서류 제출 안내",
+            "priority": "CRITICAL_DUE",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-24T09:00:00.000Z",
+            "overdue": false,
+            "adminReportDeadline": "2026-11-22T00:00:00.000Z",
+            "evidenceRefs": [
+              "EV-SYN-NOT-001"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-005",
+            "title": "가상 성적우수 장학 신청",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-28T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-005"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-006",
+            "title": "가상 교외 재단 장학생 모집",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-02T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-006"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-010",
+            "title": "가상 데이터 진로 특강 안내",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-010"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-007",
+            "title": "가상 장학 신청 안내",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-18T09:00:00.000Z",
+            "overdue": true,
+            "evidenceRefs": [
+              "EV-SYN-NOT-007"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-002",
+            "title": "가상 교과개편·대체과목 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-26T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-002"
+            ],
+            "verificationState": "CANDIDATE"
+          },
+          {
+            "noticeId": "SYN-NOT-003",
+            "title": "가상 졸업시험 시행 안내 (2026-2 졸업예정자)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-11-30T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-003"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-009",
+            "title": "가상 교환학생 파견 모집 (글로벌캠퍼스)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-08T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-009"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-004",
+            "title": "가상 외국인 유학생 졸업 한국어 시험 안내",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-11T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-004"
+            ],
+            "verificationState": "VERIFIED"
+          }
+        ],
+        "pinnedIds": [
+          "SYN-NOT-008",
+          "SYN-NOT-001"
+        ]
+      },
+      "academics": {
+        "state": "PENDING"
+      },
+      "forecast": {
+        "state": "PENDING"
+      },
+      "aiProvenance": "NONE"
+    },
+    {
+      "contextId": "SYN-CTX-S02",
+      "demoSubjectId": "S02",
+      "datasetMode": "SYNTHETIC",
+      "asOf": "2026-11-20T00:00:00.000Z",
+      "versions": {
+        "profile": "syn-corpus-v1+snapshot-v1:S02",
+        "projection": "SYN-PROJ-ACADEMICS,EXPERIENCE,FEED,FORECAST,NOTICES",
+        "consent": "SYN-CONSENT-ALL",
+        "dataset": "syn-corpus-v1",
+        "topics": "topics-v1",
+        "rules": "SYN-RULES-PENDING",
+        "overlay": "SYN-OVERLAY-NONE",
+        "rankConfig": "rank-v1.0"
+      },
+      "feed": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "featured": [
+          {
+            "opportunityId": "SYN-OPP-007",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 무역상사 해외영업 신입",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "GLOBAL_SALES",
+              "TRADE_OVERSEAS"
+            ],
+            "evidenceRefs": [],
+            "score": 81.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-007",
+              "relevance": {
+                "score": 82,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘해외영업’과 일치해요.",
+                  "topics": [
+                    "GLOBAL_SALES"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘무역·통상’과 일치해요.",
+                  "topics": [
+                    "TRADE_OVERSEAS"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘무역·통상’과 관련 있어요.",
+                  "topics": [
+                    "TRADE_OVERSEAS"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 4일 09:00까지 신청",
+                "iso": "2026-12-04T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-001",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 글로벌 커리어 챌린지 (팀 신청·재학생 대표)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "GLOBAL_SALES",
+              "TRADE_OVERSEAS"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-001-C1",
+              "EV-SYN-OPP-001-C2"
+            ],
+            "score": 80.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-001",
+              "relevance": {
+                "score": 81,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘해외영업’과 일치해요.",
+                  "topics": [
+                    "GLOBAL_SALES"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘무역·통상’과 일치해요.",
+                  "topics": [
+                    "TRADE_OVERSEAS"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘무역·통상’과 관련 있어요.",
+                  "topics": [
+                    "TRADE_OVERSEAS"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-001-C1",
+                  "EV-SYN-OPP-001-C2"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 2일 09:00까지 신청",
+                "iso": "2026-12-02T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 1,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-028",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 해외영업 실무 특강 시리즈",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "GLOBAL_SALES"
+            ],
+            "evidenceRefs": [],
+            "score": 43.333333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-028",
+              "relevance": {
+                "score": 43,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘해외영업’과 일치해요.",
+                  "topics": [
+                    "GLOBAL_SALES"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 26일 09:00까지 신청",
+                "iso": "2026-11-26T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "compact": [
+          {
+            "opportunityId": "SYN-OPP-011",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 게임사 현지화 번역가 (일본어·영어)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "LANGUAGE_TRANSLATION",
+              "MEDIA_CONTENT"
+            ],
+            "evidenceRefs": [],
+            "score": 30.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-011",
+              "relevance": {
+                "score": 31,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘통번역·언어서비스’와 일치해요.",
+                  "topics": [
+                    "LANGUAGE_TRANSLATION"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 6일 09:00까지 신청",
+                "iso": "2026-12-06T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-026",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 번역 공모전 (스페인어·영어)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "LANGUAGE_TRANSLATION"
+            ],
+            "evidenceRefs": [],
+            "score": 30.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-026",
+              "relevance": {
+                "score": 31,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘통번역·언어서비스’와 일치해요.",
+                  "topics": [
+                    "LANGUAGE_TRANSLATION"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 9일 09:00까지 신청",
+                "iso": "2026-12-09T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-037",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 국제교류 장학 (교환학생 예정자)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_COOPERATION",
+              "LANGUAGE_TRANSLATION"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-037-C1"
+            ],
+            "score": 20.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-037",
+              "relevance": {
+                "score": 21,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘통번역·언어서비스’와 일치해요.",
+                  "topics": [
+                    "LANGUAGE_TRANSLATION"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-037-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 2일 09:00까지 신청",
+                "iso": "2026-12-02T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-015",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 국제기구 청년 인턴 (외교·개발협력)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_ORGANIZATION",
+              "DIPLOMACY_PUBLIC"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-015-C1"
+            ],
+            "score": 19.333333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-015",
+              "relevance": {
+                "score": 19,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-015-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 15일 09:00까지 신청",
+                "iso": "2026-12-15T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-030",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 모의 유엔 총회 (영어 진행)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_ORGANIZATION",
+              "DIPLOMACY_PUBLIC"
+            ],
+            "evidenceRefs": [],
+            "score": 19,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-030",
+              "relevance": {
+                "score": 19,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 1일 09:00까지 신청",
+                "iso": "2026-12-01T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-014",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 컨설팅사 전략 리서치 애널리스트",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "CONSULTING_STRATEGY",
+              "ECONOMIC_RESEARCH"
+            ],
+            "evidenceRefs": [],
+            "score": 17.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-014",
+              "relevance": {
+                "score": 18,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 13일 09:00까지 신청",
+                "iso": "2026-12-13T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "hasMore": true,
+        "totalCandidates": 35
+      },
+      "notices": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "items": [
+          {
+            "noticeId": "SYN-NOT-001",
+            "title": "가상 졸업인증 서류 제출 안내",
+            "priority": "CRITICAL_DUE",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-24T09:00:00.000Z",
+            "overdue": false,
+            "adminReportDeadline": "2026-11-22T00:00:00.000Z",
+            "evidenceRefs": [
+              "EV-SYN-NOT-001"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-005",
+            "title": "가상 성적우수 장학 신청",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-28T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-005"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-006",
+            "title": "가상 교외 재단 장학생 모집",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-02T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-006"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-009",
+            "title": "가상 교환학생 파견 모집 (글로벌캠퍼스)",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-08T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-009"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-007",
+            "title": "가상 장학 신청 안내",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-18T09:00:00.000Z",
+            "overdue": true,
+            "evidenceRefs": [
+              "EV-SYN-NOT-007"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-008",
+            "title": "가상 수강정정 기간 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-23T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-008"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-002",
+            "title": "가상 교과개편·대체과목 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-26T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-002"
+            ],
+            "verificationState": "CANDIDATE"
+          },
+          {
+            "noticeId": "SYN-NOT-003",
+            "title": "가상 졸업시험 시행 안내 (2026-2 졸업예정자)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-11-30T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-003"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-004",
+            "title": "가상 외국인 유학생 졸업 한국어 시험 안내",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-11T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-004"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-010",
+            "title": "가상 데이터 진로 특강 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-010"
+            ],
+            "verificationState": "VERIFIED"
+          }
+        ],
+        "pinnedIds": [
+          "SYN-NOT-001"
+        ]
+      },
+      "academics": {
+        "state": "PENDING"
+      },
+      "forecast": {
+        "state": "PENDING"
+      },
+      "aiProvenance": "NONE"
+    },
+    {
+      "contextId": "SYN-CTX-S03",
+      "demoSubjectId": "S03",
+      "datasetMode": "SYNTHETIC",
+      "asOf": "2026-11-20T00:00:00.000Z",
+      "versions": {
+        "profile": "syn-corpus-v1+snapshot-v1:S03",
+        "projection": "SYN-PROJ-ACADEMICS,EXPERIENCE,FEED,FORECAST,NOTICES",
+        "consent": "SYN-CONSENT-ALL",
+        "dataset": "syn-corpus-v1",
+        "topics": "topics-v1",
+        "rules": "SYN-RULES-PENDING",
+        "overlay": "SYN-OVERLAY-NONE",
+        "rankConfig": "rank-v1.0"
+      },
+      "feed": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "featured": [
+          {
+            "opportunityId": "SYN-OPP-015",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 국제기구 청년 인턴 (외교·개발협력)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_ORGANIZATION",
+              "DIPLOMACY_PUBLIC"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-015-C1"
+            ],
+            "score": 66.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-015",
+              "relevance": {
+                "score": 67,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘국제기구’와 일치해요.",
+                  "topics": [
+                    "INTL_ORGANIZATION"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘외교·공공외교’와 일치해요.",
+                  "topics": [
+                    "DIPLOMACY_PUBLIC"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-015-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 15일 09:00까지 신청",
+                "iso": "2026-12-15T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-030",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 모의 유엔 총회 (영어 진행)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_ORGANIZATION",
+              "DIPLOMACY_PUBLIC"
+            ],
+            "evidenceRefs": [],
+            "score": 66.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-030",
+              "relevance": {
+                "score": 67,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘국제기구’와 일치해요.",
+                  "topics": [
+                    "INTL_ORGANIZATION"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘외교·공공외교’와 일치해요.",
+                  "topics": [
+                    "DIPLOMACY_PUBLIC"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 1일 09:00까지 신청",
+                "iso": "2026-12-01T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-005",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 국제협력 인턴 탐색 프로그램",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_COOPERATION",
+              "INTL_ORGANIZATION"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-005-C1",
+              "EV-SYN-OPP-005-C2"
+            ],
+            "score": 64.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-005",
+              "relevance": {
+                "score": 65,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘국제기구’와 일치해요.",
+                  "topics": [
+                    "INTL_ORGANIZATION"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘국제개발·협력’과 일치해요.",
+                  "topics": [
+                    "INTL_COOPERATION"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-005-C1",
+                  "EV-SYN-OPP-005-C2"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 10일 09:00까지 신청",
+                "iso": "2026-12-10T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "compact": [
+          {
+            "opportunityId": "SYN-OPP-024",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 외교 정책 에세이 공모전",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DIPLOMACY_PUBLIC",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 29.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-024",
+              "relevance": {
+                "score": 30,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘외교·공공외교’와 일치해요.",
+                  "topics": [
+                    "DIPLOMACY_PUBLIC"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 2일 09:00까지 신청",
+                "iso": "2026-12-02T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-037",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 국제교류 장학 (교환학생 예정자)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "INTL_COOPERATION",
+              "LANGUAGE_TRANSLATION"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-037-C1"
+            ],
+            "score": 20.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-037",
+              "relevance": {
+                "score": 21,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘국제개발·협력’과 일치해요.",
+                  "topics": [
+                    "INTL_COOPERATION"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-037-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 2일 09:00까지 신청",
+                "iso": "2026-12-02T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-007",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 무역상사 해외영업 신입",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "GLOBAL_SALES",
+              "TRADE_OVERSEAS"
+            ],
+            "evidenceRefs": [],
+            "score": 19.333333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-007",
+              "relevance": {
+                "score": 19,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 4일 09:00까지 신청",
+                "iso": "2026-12-04T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-011",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 게임사 현지화 번역가 (일본어·영어)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "LANGUAGE_TRANSLATION",
+              "MEDIA_CONTENT"
+            ],
+            "evidenceRefs": [],
+            "score": 18.333333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-011",
+              "relevance": {
+                "score": 18,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 6일 09:00까지 신청",
+                "iso": "2026-12-06T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-001",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 글로벌 커리어 챌린지 (팀 신청·재학생 대표)",
+            "eligibility": "UNKNOWN",
+            "lifecycle": "OPEN",
+            "topics": [
+              "GLOBAL_SALES",
+              "TRADE_OVERSEAS"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-001-C1",
+              "EV-SYN-OPP-001-C2"
+            ],
+            "score": 18,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-001",
+              "relevance": {
+                "score": 18,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "UNKNOWN",
+                "text": "팀 역할 정보가 없어 지원 가능 여부를 확인해야 해요.",
+                "fields": [
+                  "teamRole"
+                ],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-001-C1",
+                  "EV-SYN-OPP-001-C2"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 2일 09:00까지 신청",
+                "iso": "2026-12-02T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 1,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-026",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 번역 공모전 (스페인어·영어)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "LANGUAGE_TRANSLATION"
+            ],
+            "evidenceRefs": [],
+            "score": 18,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-026",
+              "relevance": {
+                "score": 18,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 9일 09:00까지 신청",
+                "iso": "2026-12-09T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "hasMore": true,
+        "totalCandidates": 36
+      },
+      "notices": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "items": [
+          {
+            "noticeId": "SYN-NOT-003",
+            "title": "가상 졸업시험 시행 안내 (2026-2 졸업예정자)",
+            "priority": "ACADEMIC_REQUIRED",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-30T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-003"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-005",
+            "title": "가상 성적우수 장학 신청",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-28T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-005"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-006",
+            "title": "가상 교외 재단 장학생 모집",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-02T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-006"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-007",
+            "title": "가상 장학 신청 안내",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-18T09:00:00.000Z",
+            "overdue": true,
+            "evidenceRefs": [
+              "EV-SYN-NOT-007"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-008",
+            "title": "가상 수강정정 기간 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-23T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-008"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-001",
+            "title": "가상 졸업인증 서류 제출 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-24T09:00:00.000Z",
+            "overdue": false,
+            "adminReportDeadline": "2026-11-22T00:00:00.000Z",
+            "evidenceRefs": [
+              "EV-SYN-NOT-001"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-002",
+            "title": "가상 교과개편·대체과목 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-26T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-002"
+            ],
+            "verificationState": "CANDIDATE"
+          },
+          {
+            "noticeId": "SYN-NOT-009",
+            "title": "가상 교환학생 파견 모집 (글로벌캠퍼스)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-08T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-009"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-004",
+            "title": "가상 외국인 유학생 졸업 한국어 시험 안내",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-11T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-004"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-010",
+            "title": "가상 데이터 진로 특강 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-010"
+            ],
+            "verificationState": "VERIFIED"
+          }
+        ],
+        "pinnedIds": [
+          "SYN-NOT-003"
+        ]
+      },
+      "academics": {
+        "state": "PENDING"
+      },
+      "forecast": {
+        "state": "PENDING"
+      },
+      "aiProvenance": "NONE"
+    },
+    {
+      "contextId": "SYN-CTX-S04",
+      "demoSubjectId": "S04",
+      "datasetMode": "SYNTHETIC",
+      "asOf": "2026-11-20T00:00:00.000Z",
+      "versions": {
+        "profile": "syn-corpus-v1+snapshot-v1:S04",
+        "projection": "SYN-PROJ-ACADEMICS,EXPERIENCE,FEED,FORECAST,NOTICES",
+        "consent": "SYN-CONSENT-ALL",
+        "dataset": "syn-corpus-v1",
+        "topics": "topics-v1",
+        "rules": "SYN-RULES-PENDING",
+        "overlay": "SYN-OVERLAY-NONE",
+        "rankConfig": "rank-v1.0"
+      },
+      "feed": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "featured": [
+          {
+            "opportunityId": "SYN-OPP-017",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 출판사 콘텐츠 마케팅 인턴",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "MEDIA_CONTENT",
+              "MARKETING_BRAND"
+            ],
+            "evidenceRefs": [],
+            "score": 70.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-017",
+              "relevance": {
+                "score": 71,
+                "level": "HIGH",
+                "label": "관련 높음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘마케팅·브랜딩’과 일치해요.",
+                  "topics": [
+                    "MARKETING_BRAND"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘미디어·콘텐츠’와 일치해요.",
+                  "topics": [
+                    "MEDIA_CONTENT"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘미디어·콘텐츠’와 관련 있어요.",
+                  "topics": [
+                    "MEDIA_CONTENT"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 3일 09:00까지 신청",
+                "iso": "2026-12-03T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-004",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 문화관광 콘텐츠 프로젝트",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "CULTURE_TOURISM",
+              "MEDIA_CONTENT"
+            ],
+            "evidenceRefs": [],
+            "score": 49,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-004",
+              "relevance": {
+                "score": 49,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 25,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘미디어·콘텐츠’, ‘문화·관광’과 일치해요.",
+                  "topics": [
+                    "MEDIA_CONTENT",
+                    "CULTURE_TOURISM"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘미디어·콘텐츠’와 관련 있어요.",
+                  "topics": [
+                    "MEDIA_CONTENT"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 5일 09:00까지 신청",
+                "iso": "2026-12-05T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-011",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 게임사 현지화 번역가 (일본어·영어)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "LANGUAGE_TRANSLATION",
+              "MEDIA_CONTENT"
+            ],
+            "evidenceRefs": [],
+            "score": 45.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-011",
+              "relevance": {
+                "score": 46,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 10,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘미디어·콘텐츠’와 일치해요.",
+                  "topics": [
+                    "MEDIA_CONTENT"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘미디어·콘텐츠’와 관련 있어요.",
+                  "topics": [
+                    "MEDIA_CONTENT"
+                  ]
+                },
+                {
+                  "code": "LANGUAGE_MATCH",
+                  "text": "공고의 사용 언어가 내가 등록한 언어와 맞아요(어학 자격 인정은 아님)."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 6일 09:00까지 신청",
+                "iso": "2026-12-06T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "compact": [
+          {
+            "opportunityId": "SYN-OPP-022",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 지역관광 숏폼 영상 공모전",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "CULTURE_TOURISM",
+              "MEDIA_CONTENT"
+            ],
+            "evidenceRefs": [],
+            "score": 45.333333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-022",
+              "relevance": {
+                "score": 45,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 25,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 15,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 5.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘미디어·콘텐츠’, ‘문화·관광’과 일치해요.",
+                  "topics": [
+                    "MEDIA_CONTENT",
+                    "CULTURE_TOURISM"
+                  ]
+                },
+                {
+                  "code": "EXPERIENCE_MATCH",
+                  "text": "승인한 경험의 주제 ‘미디어·콘텐츠’와 관련 있어요.",
+                  "topics": [
+                    "MEDIA_CONTENT"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 28일 09:00까지 신청",
+                "iso": "2026-11-28T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-013",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 브랜드사 마케팅 데이터 분석 담당 (SQL·대시보드)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "MARKETING_BRAND"
+            ],
+            "evidenceRefs": [],
+            "score": 44,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-013",
+              "relevance": {
+                "score": 44,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘마케팅·브랜딩’과 일치해요.",
+                  "topics": [
+                    "MARKETING_BRAND"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 9일 09:00까지 신청",
+                "iso": "2026-12-09T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-031",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 브랜드 마케팅 케이스 스터디 모임",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "MARKETING_BRAND"
+            ],
+            "evidenceRefs": [],
+            "score": 42.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-031",
+              "relevance": {
+                "score": 43,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘마케팅·브랜딩’과 일치해요.",
+                  "topics": [
+                    "MARKETING_BRAND"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 29일 09:00까지 신청",
+                "iso": "2026-11-29T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-035",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 문화유산 해설사 양성 과정",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "UNKNOWN",
+            "topics": [
+              "CULTURE_TOURISM",
+              "EDUCATION_TUTORING"
+            ],
+            "evidenceRefs": [],
+            "score": 20.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-035",
+              "relevance": {
+                "score": 21,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘문화·관광’과 일치해요.",
+                  "topics": [
+                    "CULTURE_TOURISM"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "EVENT_ONLY",
+                "text": "행사 기간만 공개돼 있어요. 신청 마감은 원문에서 확인하세요."
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-008",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 핀테크 데이터 분석가 신입",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "FINANCE_INVESTMENT"
+            ],
+            "evidenceRefs": [],
+            "score": 9.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-008",
+              "relevance": {
+                "score": 10,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 11일 09:00까지 신청",
+                "iso": "2026-12-11T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-019",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 HR테크 인사 데이터 인턴",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "HR_ORG",
+              "DATA_ANALYTICS"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-019-C1"
+            ],
+            "score": 9.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-019",
+              "relevance": {
+                "score": 10,
+                "level": "GENERAL",
+                "label": "일반 공고",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "NO_PERSONAL_MATCH",
+                  "text": "내 관심·직무·경험과 직접 일치하지는 않는 일반 공고예요."
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-019-C1"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 12일 09:00까지 신청",
+                "iso": "2026-12-12T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "hasMore": true,
+        "totalCandidates": 36
+      },
+      "notices": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "items": [
+          {
+            "noticeId": "SYN-NOT-008",
+            "title": "가상 수강정정 기간 안내",
+            "priority": "CRITICAL_DUE",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-23T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-008"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-005",
+            "title": "가상 성적우수 장학 신청",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-28T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-005"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-006",
+            "title": "가상 교외 재단 장학생 모집",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-02T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-006"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-007",
+            "title": "가상 장학 신청 안내",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-18T09:00:00.000Z",
+            "overdue": true,
+            "evidenceRefs": [
+              "EV-SYN-NOT-007"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-001",
+            "title": "가상 졸업인증 서류 제출 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-24T09:00:00.000Z",
+            "overdue": false,
+            "adminReportDeadline": "2026-11-22T00:00:00.000Z",
+            "evidenceRefs": [
+              "EV-SYN-NOT-001"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-002",
+            "title": "가상 교과개편·대체과목 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-26T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-002"
+            ],
+            "verificationState": "CANDIDATE"
+          },
+          {
+            "noticeId": "SYN-NOT-003",
+            "title": "가상 졸업시험 시행 안내 (2026-2 졸업예정자)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-11-30T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-003"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-009",
+            "title": "가상 교환학생 파견 모집 (글로벌캠퍼스)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-08T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-009"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-004",
+            "title": "가상 외국인 유학생 졸업 한국어 시험 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-11T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-004"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-010",
+            "title": "가상 데이터 진로 특강 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-010"
+            ],
+            "verificationState": "VERIFIED"
+          }
+        ],
+        "pinnedIds": [
+          "SYN-NOT-008"
+        ]
+      },
+      "academics": {
+        "state": "PENDING"
+      },
+      "forecast": {
+        "state": "PENDING"
+      },
+      "aiProvenance": "NONE"
+    },
+    {
+      "contextId": "SYN-CTX-S05",
+      "demoSubjectId": "S05",
+      "datasetMode": "SYNTHETIC",
+      "asOf": "2026-11-20T00:00:00.000Z",
+      "versions": {
+        "profile": "syn-corpus-v1+snapshot-v1:S05",
+        "projection": "SYN-PROJ-ACADEMICS,EXPERIENCE,FEED,FORECAST,NOTICES",
+        "consent": "SYN-CONSENT-ALL",
+        "dataset": "syn-corpus-v1",
+        "topics": "topics-v1",
+        "rules": "SYN-RULES-PENDING",
+        "overlay": "SYN-OVERLAY-NONE",
+        "rankConfig": "rank-v1.0"
+      },
+      "feed": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "featured": [
+          {
+            "opportunityId": "SYN-OPP-040",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 지역사회 공헌 장학 (학번 제한)",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "PUBLIC_POLICY",
+              "ESG_SUSTAINABILITY"
+            ],
+            "evidenceRefs": [
+              "EV-SYN-OPP-040-C1",
+              "EV-SYN-OPP-040-C2"
+            ],
+            "score": 56.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-040",
+              "relevance": {
+                "score": 57,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘공공정책’과 일치해요.",
+                  "topics": [
+                    "PUBLIC_POLICY"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘ESG·지속가능성’과 일치해요.",
+                  "topics": [
+                    "ESG_SUSTAINABILITY"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 적힌 지원 조건을 모두 확인했어요.",
+                "fields": [],
+                "evidenceRefs": [
+                  "EV-SYN-OPP-040-C1",
+                  "EV-SYN-OPP-040-C2"
+                ]
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 4일 09:00까지 신청",
+                "iso": "2026-12-04T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-010",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 공공기관 정책연구 보조원",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "PUBLIC_POLICY",
+              "ECONOMIC_RESEARCH"
+            ],
+            "evidenceRefs": [],
+            "score": 54.5,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-010",
+              "relevance": {
+                "score": 55,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘공공정책’과 일치해요.",
+                  "topics": [
+                    "PUBLIC_POLICY"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘경제연구’와 일치해요.",
+                  "topics": [
+                    "ECONOMIC_RESEARCH"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "11월 27일 09:00까지 신청",
+                "iso": "2026-11-27T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-032",
+            "displayMode": "FEATURED_LARGE",
+            "title": "가상 ESG 캠퍼스 서포터즈",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "ESG_SUSTAINABILITY",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 54.166667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-032",
+              "relevance": {
+                "score": 54,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 6.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘공공정책’과 일치해요.",
+                  "topics": [
+                    "PUBLIC_POLICY"
+                  ]
+                },
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘ESG·지속가능성’과 일치해요.",
+                  "topics": [
+                    "ESG_SUSTAINABILITY"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 3일 09:00까지 신청",
+                "iso": "2026-12-03T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "compact": [
+          {
+            "opportunityId": "SYN-OPP-021",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 공공데이터 시각화 경진대회",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 44,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-021",
+              "relevance": {
+                "score": 44,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘공공정책’과 일치해요.",
+                  "topics": [
+                    "PUBLIC_POLICY"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 16일 09:00까지 신청",
+                "iso": "2026-12-16T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-002",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 데이터 공공문제 공모전",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DATA_ANALYTICS",
+              "AI_ML",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 43.666667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-002",
+              "relevance": {
+                "score": 44,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 8.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘공공정책’과 일치해요.",
+                  "topics": [
+                    "PUBLIC_POLICY"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 8일 09:00까지 신청",
+                "iso": "2026-12-08T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-024",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 외교 정책 에세이 공모전",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "DIPLOMACY_PUBLIC",
+              "PUBLIC_POLICY"
+            ],
+            "evidenceRefs": [],
+            "score": 42,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-024",
+              "relevance": {
+                "score": 42,
+                "level": "MEDIUM",
+                "label": "관련 보통",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 35,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 0,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "JOB_MATCH",
+                  "text": "희망 직무 ‘공공정책’과 일치해요.",
+                  "topics": [
+                    "PUBLIC_POLICY"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 2일 09:00까지 신청",
+                "iso": "2026-12-02T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-027",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 금융 투자 리서치 대회",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "FINANCE_INVESTMENT",
+              "ECONOMIC_RESEARCH"
+            ],
+            "evidenceRefs": [],
+            "score": 21.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-027",
+              "relevance": {
+                "score": 22,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 9.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘경제연구’와 일치해요.",
+                  "topics": [
+                    "ECONOMIC_RESEARCH"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 4일 09:00까지 신청",
+                "iso": "2026-12-04T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-014",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 컨설팅사 전략 리서치 애널리스트",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "CONSULTING_STRATEGY",
+              "ECONOMIC_RESEARCH"
+            ],
+            "evidenceRefs": [],
+            "score": 20.166667,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-014",
+              "relevance": {
+                "score": 20,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 7.7,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘경제연구’와 일치해요.",
+                  "topics": [
+                    "ECONOMIC_RESEARCH"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 13일 09:00까지 신청",
+                "iso": "2026-12-13T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          },
+          {
+            "opportunityId": "SYN-OPP-018",
+            "displayMode": "COMPACT_LIST",
+            "title": "가상 ESG 컨설팅 리서치 인턴",
+            "eligibility": "ELIGIBLE",
+            "lifecycle": "OPEN",
+            "topics": [
+              "ESG_SUSTAINABILITY",
+              "CONSULTING_STRATEGY"
+            ],
+            "evidenceRefs": [],
+            "score": 18.833333,
+            "dataMode": "SYNTHETIC",
+            "explanation": {
+              "opportunityId": "SYN-OPP-018",
+              "relevance": {
+                "score": 19,
+                "level": "LOW",
+                "label": "관련 낮음",
+                "breakdown": [
+                  {
+                    "key": "J",
+                    "label": "희망 직무",
+                    "points": 0,
+                    "max": 35
+                  },
+                  {
+                    "key": "I",
+                    "label": "관심 분야",
+                    "points": 12.5,
+                    "max": 25
+                  },
+                  {
+                    "key": "S",
+                    "label": "승인한 경험",
+                    "points": 0,
+                    "max": 15
+                  },
+                  {
+                    "key": "L",
+                    "label": "언어",
+                    "points": 0,
+                    "max": 10
+                  },
+                  {
+                    "key": "M",
+                    "label": "전공",
+                    "points": 0,
+                    "max": 5
+                  },
+                  {
+                    "key": "F",
+                    "label": "최신 게시",
+                    "points": 6.3,
+                    "max": 10
+                  }
+                ],
+                "disclaimer": "관심·직무·경험 일치를 코드로 계산한 관련도예요. 합격이나 취업 가능성이 아니에요."
+              },
+              "reasons": [
+                {
+                  "code": "INTEREST_MATCH",
+                  "text": "관심 분야 ‘ESG·지속가능성’과 일치해요.",
+                  "topics": [
+                    "ESG_SUSTAINABILITY"
+                  ]
+                },
+                {
+                  "code": "RECENT",
+                  "text": "최근 15일 안에 게시됐어요."
+                }
+              ],
+              "eligibility": {
+                "state": "ELIGIBLE",
+                "text": "공고에 별도 지원 조건이 없어요.",
+                "fields": [],
+                "evidenceRefs": []
+              },
+              "deadline": {
+                "kind": "CONFIRMED",
+                "text": "12월 7일 09:00까지 신청",
+                "iso": "2026-12-07T00:00:00.000Z"
+              },
+              "prioritySelectionCount": 0,
+              "provenance": "CODE_RULES",
+              "rankConfigVersion": "rank-v1.0"
+            }
+          }
+        ],
+        "hasMore": true,
+        "totalCandidates": 37
+      },
+      "notices": {
+        "asOf": "2026-11-20T00:00:00.000Z",
+        "items": [
+          {
+            "noticeId": "SYN-NOT-001",
+            "title": "가상 졸업인증 서류 제출 안내",
+            "priority": "ACADEMIC_REQUIRED",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-24T09:00:00.000Z",
+            "overdue": false,
+            "adminReportDeadline": "2026-11-22T00:00:00.000Z",
+            "evidenceRefs": [
+              "EV-SYN-NOT-001"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-003",
+            "title": "가상 졸업시험 시행 안내 (2026-2 졸업예정자)",
+            "priority": "ACADEMIC_REQUIRED",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-30T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-003"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-004",
+            "title": "가상 외국인 유학생 졸업 한국어 시험 안내",
+            "priority": "ACADEMIC_REQUIRED",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-12-11T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-004"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-005",
+            "title": "가상 성적우수 장학 신청",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "UNKNOWN",
+            "studentDeadline": "2026-11-28T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-005"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-006",
+            "title": "가상 교외 재단 장학생 모집",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-12-02T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-006"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-007",
+            "title": "가상 장학 신청 안내",
+            "priority": "PERSONAL_OPPORTUNITY",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-18T09:00:00.000Z",
+            "overdue": true,
+            "evidenceRefs": [
+              "EV-SYN-NOT-007"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-008",
+            "title": "가상 수강정정 기간 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-23T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-008"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-002",
+            "title": "가상 교과개편·대체과목 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "studentDeadline": "2026-11-26T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-002"
+            ],
+            "verificationState": "CANDIDATE"
+          },
+          {
+            "noticeId": "SYN-NOT-009",
+            "title": "가상 교환학생 파견 모집 (글로벌캠퍼스)",
+            "priority": "GENERAL",
+            "appliesTo": "NO",
+            "studentDeadline": "2026-12-08T09:00:00.000Z",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-009"
+            ],
+            "verificationState": "VERIFIED"
+          },
+          {
+            "noticeId": "SYN-NOT-010",
+            "title": "가상 데이터 진로 특강 안내",
+            "priority": "GENERAL",
+            "appliesTo": "YES",
+            "overdue": false,
+            "evidenceRefs": [
+              "EV-SYN-NOT-010"
+            ],
+            "verificationState": "VERIFIED"
+          }
+        ],
+        "pinnedIds": []
+      },
+      "academics": {
+        "state": "PENDING"
+      },
+      "forecast": {
+        "state": "PENDING"
+      },
+      "aiProvenance": "NONE"
+    }
+  ]
+}
