@@ -179,8 +179,34 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         &&r.changeKind!=='UNKNOWN'&&!blocked.has(r.revisionId)&&rights.some(right=>right.actor_id===actor
         &&right.subject_id===context.demoSubjectId&&right.source_id===r.sourceId&&right.permission_ref===r.permissionRef
         &&right.active===true&&active(right,now))).map(r=>r.revisionId);
-      // A reviewed projection's REAL deadlines are re-derived from asOf-verified
-      // current-revision TEXT claims. Cached, unsigned dates never reach the calendar.
+      // Bind every real deadline proof TEXT span to the immutable paragraph rows
+      // of its exact, CURRENT and authorized source revision. An approval JSON
+      // entry cannot invent both the quote and the "original" paragraph.
+      const realProofs=(normalized.deadlineProofs??[]).filter(proof=>
+        authorizedRevisionIds.includes(proof.sourceRevisionId)
+        &&revisions.some(r=>r.revisionId===proof.sourceRevisionId
+          &&r.provenance==='REAL_APPROVED'));
+      const pairKey=(id:string,paragraphId:string)=>id+'\\0'+paragraphId;
+      const pairs=new Map(realProofs.flatMap(proof=>proof.paragraphs.map(p=>[
+        pairKey(p.revisionId,p.paragraphId),p,
+      ] as const)));
+      if(pairs.size>1000)throw Error('Too many source paragraph proofs');
+      const wanted=[...pairs.values()];
+      const originalParagraphs=wanted.length?await this.rows(client,
+        `SELECT revision_id,paragraph_id,paragraph_text FROM source_paragraphs_vnext
+          WHERE (revision_id,paragraph_id) IN
+            (SELECT revision_id,paragraph_id FROM unnest($1::text[],$2::text[])
+              AS requested(revision_id,paragraph_id))
+          ORDER BY revision_id,paragraph_id LIMIT 1001`,
+        [wanted.map(p=>p.revisionId),wanted.map(p=>p.paragraphId)]):[];
+      const originalByKey=new Map(originalParagraphs.map(p=>[
+        pairKey(String(p.revision_id),String(p.paragraph_id)),p.paragraph_text,
+      ]));
+      if(originalByKey.size!==pairs.size||wanted.some(p=>
+        originalByKey.get(pairKey(p.revisionId,p.paragraphId))!==p.text))
+        throw Error('Verified deadline proof does not match immutable source paragraphs');
+      // REAL dates are re-derived from asOf-verified, independently reviewed
+      // current-revision claims. Unsigned dates never reach the calendar.
       const verifiedDates=verifyCalendarDeadlineProjection({
         opportunities:normalized.opportunities,notices:normalized.notices,asOf,actorId:actor,
         proofs:normalized.deadlineProofs??[],authorizedRevisionIds,
