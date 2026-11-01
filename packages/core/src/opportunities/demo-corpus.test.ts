@@ -55,7 +55,8 @@ describe('A12 synthetic demo corpus invariants', () => {
   });
 
   it('has 200 labels (40 × 5) over exactly the corpus ids, with a per-student review record', () => {
-    expect(DEMO_STUDENTS.map(s => DEMO_LABEL_REVIEW[s.subject].status)).toEqual(['HUMAN_CHECKED', 'HUMAN_CHECKED', 'AGENT_DRAFT', 'AGENT_DRAFT', 'AGENT_DRAFT']);
+    expect(DEMO_STUDENTS.map(s => DEMO_LABEL_REVIEW[s.subject].status)).toEqual(['HUMAN_CHECKED', 'HUMAN_CHECKED', 'HUMAN_CHECKED', 'HUMAN_CHECKED', 'HUMAN_CHECKED']);
+    expect(DEMO_STUDENTS.every(s => DEMO_LABEL_REVIEW[s.subject].unchecked.length === 0)).toBe(true);
     // Every recorded change is reflected in the label set.
     for (const s of DEMO_STUDENTS) for (const [id, , to] of DEMO_LABEL_REVIEW[s.subject].changes) expect(DEMO_LABELS[s.subject][id]).toBe(to);
     expect(DEMO_STUDENTS.map(s => s.subject)).toEqual(['S01', 'S02', 'S03', 'S04', 'S05']);

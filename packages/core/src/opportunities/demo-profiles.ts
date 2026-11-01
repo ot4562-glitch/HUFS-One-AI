@@ -59,13 +59,16 @@ export interface LabelReview {
 }
 
 export const DEMO_LABEL_REVIEW:Readonly<Record<DemoStudent['subject'], LabelReview>> = {
-  S01:{status:'HUMAN_CHECKED', unchecked:['SYN-OPP-011'], changes:[
+  S01:{status:'HUMAN_CHECKED', unchecked:[], changes:[
     ['SYN-OPP-025', 1, 2, '소프트웨어 개발'], ['SYN-OPP-036', 1, 2, '소프트웨어 개발']]},
   S02:{status:'HUMAN_CHECKED', unchecked:[], changes:[
     ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장을 위한 것'], ['SYN-OPP-014', 1, 0, '']]},
-  S03:{status:'AGENT_DRAFT', unchecked:[], changes:[]},
-  S04:{status:'AGENT_DRAFT', unchecked:[], changes:[]},
-  S05:{status:'AGENT_DRAFT', unchecked:[], changes:[]},
+  S03:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+    ['SYN-OPP-006', 0, 1, '개인 성장 관련'], ['SYN-OPP-010', 1, 2, '정책연구는 관련됨'], ['SYN-OPP-037', 1, 2, '']]},
+  S04:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+    ['SYN-OPP-006', 0, 1, ''], ['SYN-OPP-011', 1, 2, '일본어와 미디어'], ['SYN-OPP-035', 2, 1, '마케팅과 거리가 있음']]},
+  S05:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+    ['SYN-OPP-006', 0, 1, ''], ['SYN-OPP-014', 1, 2, '경제연구'], ['SYN-OPP-024', 1, 2, '공공정책 관련']]},
 };
 /** Review date of the human check (2026-11-01, track owner, via the local label review page). */
 export const DEMO_LABEL_REVIEWED_AT = '2026-11-01';
@@ -81,7 +84,7 @@ const L = (two:string[], one:string[]):LabelSet => {
 export const DEMO_LABELS:Readonly<Record<DemoStudent['subject'], LabelSet>> = {
   S01:L(['002', '008', '013', '016', '019', '021', '025', '029', '036', '038'], ['003']),
   S02:L(['001', '007', '020', '026', '028'], ['006', '011', '037']),
-  S03:L(['005', '015', '024', '030'], ['010', '037', '040']),
-  S04:L(['004', '017', '022', '031', '035'], ['011', '013']),
-  S05:L(['010', '018', '032', '040'], ['002', '014', '021', '024', '027']),
+  S03:L(['005', '010', '015', '024', '030', '037'], ['006', '040']),
+  S04:L(['004', '011', '017', '022', '031'], ['006', '013', '035']),
+  S05:L(['010', '014', '018', '024', '032', '040'], ['002', '006', '021', '027']),
 };
