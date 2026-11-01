@@ -5,6 +5,7 @@ import {
   AI_TASK_PATHS, AiTaskPathSchema, DemoContextSchema, DemoProfilesResponseSchema,
   DemoSnapshotSchema, httpStatusForError, makeApiError, SharingGrantSchema,
   canReadSharedSection, SubjectAliasSchema, SafeLlmPacketSchema,
+  RetrievalEnvelopeVNextSchema,
 } from '@hufs-one/contracts';
 import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectionSchema} from '@hufs-one/contracts';
 import type {FastifyRequest} from 'fastify';
@@ -13,7 +14,12 @@ import {digestInviteToken} from './modules/auth/reviewer.js';
 import {ReviewerSandboxActionSchema} from './modules/auth/reviewer-sandbox.js';
 import type {ReviewerGrant} from './modules/auth/reviewer.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/auth/gates.js';
+import {GoogleAuthFlowError} from './modules/auth/google-auth-flow.js';
+import {SchoolMailProofError} from './modules/auth/school-mail-proof.js';
 import {validateModelCandidate} from './modules/ai/candidate.js';
+import {computeAuthorizedCalendar} from './modules/calendar.js';
+import type {CalendarReadRequest} from './modules/calendar.js';
+import {registerPersonalStateRoutes} from './modules/personal-state.js';
 
 const SelectBody=z.strictObject({
   demoSubjectId:SubjectAliasSchema,
@@ -25,6 +31,17 @@ const ContextParams=z.strictObject({id:z.string().min(1).max(100)});
 const AiPathParams=z.strictObject({task:AiTaskPathSchema});
 const JobParams=z.strictObject({id:z.string().min(1).max(100)});
 const ReviewerInviteBody=z.strictObject({enrollmentCode:z.string().regex(/^[A-Za-z0-9_-]{43}$/)});
+const SchoolMailRequest=z.strictObject({schoolEmail:z.email().max(254)});
+const SchoolMailConfirm=z.strictObject({
+  schoolEmail:z.email().max(254),
+  challengeId:z.string().regex(/^[A-Za-z0-9_-]{22}$/),
+  code:z.string().regex(/^\d{8}$/),
+});
+const EvidenceSearchQuery=z.strictObject({
+  q:z.string().trim().min(2).max(200),
+  asOf:z.iso.datetime({offset:true}).optional(),
+  topK:z.coerce.number().int().min(1).max(12).optional(),
+});
 const ReviewerSubject=z.strictObject({id:SubjectAliasSchema});
 const AiRequest=z.strictObject({
   packetRef:z.string().regex(/^[a-zA-Z0-9_-]{1,90}$/),
@@ -45,10 +62,14 @@ function nowEpoch(now:string):number {
 export function createApi(options:ApiOptions) {
   if(!options.allowedOrigin||new URL(options.allowedOrigin).origin!==options.allowedOrigin)
     throw new Error('Exact allowedOrigin required');
+  if(options.googleAuth&&(options.verifySession||options.revokeSession))
+    throw new Error('Google auth flow must exclusively own session verification and revocation');
+  if(options.schoolMailProof&&!options.googleAuth)
+    throw new Error('Verified Google browser identity required for school mail proof');
   const app=Fastify({logger:false,trustProxy:false,bodyLimit:65536,requestIdHeader:false});
   const clock=options.now??(()=>new Date().toISOString());
   const newId=options.newId??randomUUID;
-  const verifier=options.verifySession??(async()=>null);
+  const verifier=options.verifySession??options.googleAuth?.verifySession??(async()=>null);
   const actors=new WeakMap<FastifyRequest,VerifiedActor>();
   const reviewerGrants=new WeakMap<FastifyRequest,ReviewerGrant>();
   const inviteAttempts=new Map<string,{window:number;attempts:number}>();
@@ -64,21 +85,24 @@ export function createApi(options:ApiOptions) {
     reply.header('Referrer-Policy','no-referrer');
     reply.header('Content-Security-Policy',"default-src 'none'; frame-ancestors 'none'");
     if(!request.raw.url?.startsWith('/api/'))throw new ApiFailure('FORBIDDEN');
+    const path=request.url.split('?')[0];
+    if(options.googleAuth&&request.method==='GET'&&(
+      path==='/api/auth/google/start'||path==='/api/auth/google/callback'))return;
     let verified:unknown;
     try { verified=await verifier(request); }
     catch { throw new ApiFailure('UNAUTHENTICATED'); }
     const actor=authorizeSession(verified,clock());
-    const path=request.url.split('?')[0];
     if(actor.role==='REVIEWER') {
       if(!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
       const enrollment=request.method==='POST'&&path==='/api/reviewer/invitations/redeem';
       const reviewerRead=request.method==='GET'&&(
         path==='/api/auth/session'
+        ||path==='/api/auth/csrf'
         ||path==='/api/reviewer/demo/profiles'
         ||path==='/api/reviewer/capabilities'
         ||path==='/api/demo/profiles'
         ||/^\/api\/reviewer\/demo\/subjects\/S0[1-5]\/snapshot$/.test(path??'')
-        ||/^\/api\/demo\/contexts\/[^/]+\/(snapshot|notices|graduation|outlook)$/.test(path??'')
+        ||/^\/api\/demo\/contexts\/[^/]+\/(snapshot|notices|graduation|outlook|calendar)$/.test(path??'')
         ||/^\/api\/reviewer\/demo\/contexts\/[^/]+\/actions$/.test(path??'')
         ||/^\/api\/ai\/jobs\/[^/]+$/.test(path??'')
       );
@@ -87,10 +111,16 @@ export function createApi(options:ApiOptions) {
         ||/^\/api\/reviewer\/demo\/contexts\/[^/]+\/actions$/.test(path??'')
         ||/^\/api\/ai\/[^/]+$/.test(path??'')
       );
+      const schoolMail=request.method==='POST'&&!!options.schoolMailProof&&(
+        path==='/api/auth/school-mail/request'
+        ||path==='/api/auth/school-mail/confirm');
       const logout=request.method==='POST'&&path==='/api/auth/logout';
-      if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout)
+      if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail)
         throw new ApiFailure('FORBIDDEN');
-      if(!enrollment){
+      // A new reviewer needs CSRF proof in order to redeem the invitation.
+      // Logout must remain available when a reviewer invitation has expired
+      // or been revoked; data access still requires a live grant.
+      if(!enrollment&&!schoolMail&&!logout&&path!=='/api/auth/csrf'){
         const grant=await options.reviewerAccess.readActive({
           actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
         });
@@ -141,8 +171,18 @@ export function createApi(options:ApiOptions) {
     const grant=await getGrant(actor,context.demoSubjectId);
     if(grant.version!==context.sharingGrantVersion)throw new ApiFailure('VERSION_CONFLICT',id);
     for(const section of sections)mustAllow(grant,actor,context.demoSubjectId,section);
-    const source=await options.repository.readSnapshot(context.demoSubjectId);
-    if(!source)throw new ApiFailure('VERSION_CONFLICT',id);
+    // Do NOT call the subject-only repository method after a detached grant read.
+    // A revoke/scope change between those two awaits would expose a stale
+    // precomputed feed or notice. The adapter must enforce the grant and return
+    // a scoped projection in ONE operation (PR #35 / Issue #39).
+    if(!options.repository.readAuthorizedSnapshot)throw new ApiFailure('FORBIDDEN');
+    const source=await options.repository.readAuthorizedSnapshot({
+      actorId:actor.actorId,subjectId:context.demoSubjectId,
+      grantVersion:context.sharingGrantVersion,
+      requiredSections:[...new Set<Section>(['FEED','NOTICES',...sections])],
+      now:clock(),
+    });
+    if(!source)throw new ApiFailure('FORBIDDEN',id);
     const snapshot=DemoSnapshotSchema.parse(source);
     if(snapshot.demoSubjectId!==context.demoSubjectId
       ||snapshot.versions.dataset!==context.datasetVersion
@@ -159,7 +199,9 @@ export function createApi(options:ApiOptions) {
   };
 
   app.setErrorHandler((err,req,reply)=>{
-    const code=err instanceof ApiFailure?err.code:
+    const code=err instanceof GoogleAuthFlowError||err instanceof SchoolMailProofError
+      ?'FORBIDDEN':
+      err instanceof ApiFailure?err.code:
       (err instanceof z.ZodError || (typeof err==='object'&&err!==null&&'statusCode' in err
         &&(err.statusCode===400||err.statusCode===413)))
         ?'INVALID_INPUT':'PROVIDER_UNAVAILABLE';
@@ -170,6 +212,96 @@ export function createApi(options:ApiOptions) {
   app.setNotFoundHandler((req,reply)=>{
     const error=makeApiError('FORBIDDEN',req.id);
     reply.code(httpStatusForError(error)).send(error);
+  });
+
+  // Login routes exist only when an operator supplies a trusted OAuth adapter.
+  if(options.googleAuth){
+    app.get('/api/auth/google/start',async(req,reply)=>options.googleAuth!.start(req,reply));
+    app.get('/api/auth/google/callback',async(req,reply)=>options.googleAuth!.callback(req,reply));
+  }
+  app.get('/api/auth/csrf',async(req)=>({csrfToken:principal(req).csrfToken}));
+  if(options.schoolMailProof){
+    const googleSubject=(req:FastifyRequest):string=>{
+      const actor=principal(req);
+      if(actor.role!=='REVIEWER'||!actor.actorId.startsWith('google:'))
+        throw new ApiFailure('FORBIDDEN');
+      const value=actor.actorId.slice('google:'.length);
+      if(!value)throw new ApiFailure('FORBIDDEN');
+      return value;
+    };
+    app.post('/api/auth/school-mail/request',async(req,reply)=>{
+      const schoolEmail=SchoolMailRequest.parse(req.body).schoolEmail;
+      const response=await options.schoolMailProof!.issue({
+        googleSubject:googleSubject(req),schoolEmail,
+      });
+      reply.code(202).send(response);
+    });
+    app.post('/api/auth/school-mail/confirm',async(req)=>{
+      const body=SchoolMailConfirm.parse(req.body);
+      const verified=await options.schoolMailProof!.verify({
+        googleSubject:googleSubject(req),...body,
+      });
+      return {verified};
+    });
+  }
+  // Optional permission-first Temporal RAG endpoint. REVIEWER is explicitly
+  // excluded by the auth hook; no browser-provided grants/source IDs accepted.
+  app.get('/api/evidence/search',async(req)=>{
+    const actor=principal(req);
+    if(actor.role!=='BETA'&&actor.role!=='ADMIN')throw new ApiFailure('FORBIDDEN');
+    if(!options.temporalEvidence)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const q=EvidenceSearchQuery.parse(req.query);
+    const at=q.asOf??clock();
+    if(nowEpoch(at)>nowEpoch(clock()))throw new ApiFailure('INVALID_INPUT');
+    const result=await options.temporalEvidence.query({
+      actor,query:q.q,asOf:at,topK:q.topK??12,now:clock(),
+    });
+    const validated=RetrievalEnvelopeVNextSchema.parse(result.envelope);
+    if(validated.asOf!==at)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    return validated;
+  });
+  app.get('/api/demo/contexts/:id/calendar',async(req)=>{
+    const {id}=ContextParams.parse(req.params);
+    z.strictObject({}).parse(req.query);
+    const actor=principal(req),context=contexts.get(id);
+    if(!context||context.actorId!==actor.actorId||context.sessionIdHash!==actor.sessionIdHash)
+      throw new ApiFailure('FORBIDDEN');
+    if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    if(!options.calendarSource)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const input:CalendarReadRequest={actorId:actor.actorId,context,now:clock()};
+    if(actor.role==='REVIEWER'){
+      const grant=reviewerGrants.get(req);
+      if(!grant||context.sharingGrantVersion!==`REVIEWER:${grant.inviteId}`)
+        throw new ApiFailure('FORBIDDEN');
+      input.reviewerInviteId=grant.inviteId;
+    }
+    const bundle=await options.calendarSource.readAuthorizedInputs(input);
+    if(!bundle)throw new ApiFailure('FORBIDDEN');
+    let result;
+    try {result=computeAuthorizedCalendar(bundle,input);}
+    catch(error){
+      // A malformed server projection is an unavailable provider, not invalid client input.
+      if(error instanceof ApiFailure)throw error;
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    }
+    // All awaits can race with expiry/revoke. Recheck the session, context, invite and atomic
+    // source receipt just before returning; never send an already-computed stale result.
+    const current=authorizeSession(await verifier(req),clock());
+    if(current.actorId!==actor.actorId||current.sessionIdHash!==actor.sessionIdHash||current.role!==actor.role)
+      throw new ApiFailure('FORBIDDEN');
+    if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    if(!await options.calendarSource.revalidateAuthorization(input,{
+      authorizationToken:bundle.authorizationToken,sourceVersion:bundle.sourceVersion,
+      scopeKey:bundle.scopeKey,asOf:bundle.asOf,
+    },clock()))throw new ApiFailure('FORBIDDEN');
+    if(actor.role==='REVIEWER'){
+      const active=await options.reviewerAccess!.readActive({actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock()});
+      if(!active||active.inviteId!==input.reviewerInviteId||Date.parse(active.endsAt)<=nowEpoch(clock()))
+        throw new ApiFailure('FORBIDDEN');
+    }
+    authorizeSession(current,clock());
+    if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    return result;
   });
 
   app.get('/api/health',async()=>({
@@ -188,13 +320,15 @@ export function createApi(options:ApiOptions) {
   });
   app.post('/api/auth/logout',async(req,reply)=>{
     const actor=principal(req);
-    if(!options.revokeSession)throw new ApiFailure('PROVIDER_UNAVAILABLE');
-    try { await options.revokeSession(actor); }
+    const invalidate=options.revokeSession??options.googleAuth?.revokeSession;
+    if(!invalidate)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    try { await invalidate(actor); }
     catch {throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     for(const [id,ctx] of contexts)if(ctx.actorId===actor.actorId&&ctx.sessionIdHash===actor.sessionIdHash)
       contexts.delete(id);
     for(const [id,job] of jobs)if(job.actorId===actor.actorId&&job.sessionIdHash===actor.sessionIdHash)
       jobs.delete(id);
+    options.googleAuth?.clearSession(reply);
     reply.code(204).send();
   });
 
@@ -342,8 +476,14 @@ export function createApi(options:ApiOptions) {
     const profile=profiles.find(p=>p.demoSubjectId===body.demoSubjectId);
     if(!profile || !['READY','PARTIAL'].includes(profile.readiness))
       throw new ApiFailure('FORBIDDEN');
-    const snapshotValue=await options.repository.readSnapshot(body.demoSubjectId);
-    if(!snapshotValue)throw new ApiFailure('VERSION_CONFLICT');
+    // Context creation must obey the same atomic authorization invariant as
+    // every later read; a grant check followed by a subject-only fetch is unsafe.
+    if(!options.repository.readAuthorizedSnapshot)throw new ApiFailure('FORBIDDEN');
+    const snapshotValue=await options.repository.readAuthorizedSnapshot({
+      actorId:actor.actorId,subjectId:body.demoSubjectId,grantVersion:grant.version,
+      requiredSections:['FEED','NOTICES'],now:clock(),
+    });
+    if(!snapshotValue)throw new ApiFailure('FORBIDDEN');
     const snapshot=DemoSnapshotSchema.parse(snapshotValue);
     if(snapshot.demoSubjectId!==body.demoSubjectId
       ||Date.parse(snapshot.asOf)>nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT');
@@ -470,6 +610,15 @@ export function createApi(options:ApiOptions) {
     if(!job||job.actorId!==actor.actorId||job.sessionIdHash!==actor.sessionIdHash)
       throw new ApiFailure('FORBIDDEN');
     return {jobId:job.jobId,state:job.state,task:job.task,createdAt:job.createdAt,candidate:job.candidate};
+  });
+  registerPersonalStateRoutes(app,{
+    store:options.personalState,
+    authorize:async(request,id,section)=>{
+      if(principal(request).role==='REVIEWER')throw new ApiFailure('FORBIDDEN');
+      const {actor,context}=await checkedContext(request,id,[section]);
+      return {actorId:actor.actorId,subjectId:context.demoSubjectId,
+        grantVersion:context.sharingGrantVersion};
+    },
   });
   return app;
 }

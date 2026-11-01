@@ -1,5 +1,9 @@
 # HUFS One AI
 
+## 2026-11-01 심민성 플랫폼 통합 구현 (리뷰 브랜치, main 미병합)
+
+`feat/platform-integration-20261101`에서 기존 인증 #32·공통 계약 #33·출처/RAG #34·DB #35·원자 권한 조회 #55를 최신 main과 통합했다. 인증된 캘린더 GET, 권한별 추천/공지 재계산, 개인 상태 HTTP CRUD와 명시적 PostgreSQL 서비스 조립을 추가했다. `npm ci --ignore-scripts --no-audit --no-fund`, `npm run check`, `npm run build:api`로 재현한다. [현재 증거와 남은 게이트](STATUS.md) · [API 연결법](apps/api/README.md). 아래 2026-10-31 기록은 당시 main 기준이며 새 브랜치 구현을 main 병합이나 실서비스 개통으로 해석하지 않는다.
+
 **NCP 새 운영 정본:** [NCP_OPERATIONS_2026.md](docs/NCP_OPERATIONS_2026.md) — 2026-11-06~12-09(816h 예산 상한), 실제 본선 발표 11/16 및 크레딧·사용자 승인 이후 개통. 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB SSD 8원/h(선택 공인 IP 5.6원/h); 816h 서버+CB 272,544원, IP 포함 277,113.6원(VAT 등 제외).
 
 

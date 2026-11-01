@@ -45,10 +45,17 @@ describe('central owner4 composition of Agent1 ports',()=>{
     }finally{await app.close();}
   });
 
-  it('rejects a Google port if the actual Agent1 OIDC routes have not been merged',()=>{
-    expect(()=>createIntegratedApi({
-      allowedOrigin,repository:repo(),googleAuth:google,
-    })).toThrow('Agent-1 OIDC/mail routes not installed');
+  it('installs the actual OIDC and authenticated CSRF routes with a trusted Google port',async()=>{
+    const app=createIntegratedApi({allowedOrigin,repository:repo(),googleAuth:google,
+      now:()=> '2026-10-31T00:00:00.000Z'});
+    try {
+      expect(app.hasRoute({method:'GET',url:'/api/auth/google/start'})).toBe(true);
+      expect(app.hasRoute({method:'GET',url:'/api/auth/google/callback'})).toBe(true);
+      const response=await app.inject({url:'/api/auth/csrf'});
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({csrfToken:actor.csrfToken});
+      expect(response.headers['cache-control']).toBe('no-store');
+    } finally {await app.close();}
   });
 
   it('rejects mixed verified-session and Google authorities',()=>{

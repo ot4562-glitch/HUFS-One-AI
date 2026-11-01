@@ -16,6 +16,7 @@ on:
       - tests/api/**
       - tests/integration/**
       - tests/e2e/**
+      - tests/evaluation/**
       - apps/api/**
       - infra/sql/**
       - packages/core/**
@@ -36,6 +37,7 @@ on:
       - tests/api/**
       - tests/integration/**
       - tests/e2e/**
+      - tests/evaluation/**
       - apps/api/**
       - infra/sql/**
       - packages/core/**
@@ -68,6 +70,7 @@ jobs:
             /tests/api/
             /tests/integration/
             /tests/e2e/
+            /tests/evaluation/
             /apps/api/
             /infra/sql/
             /packages/core/
@@ -88,3 +91,77 @@ jobs:
         run: npm run check
       - name: Build local fail-closed Fastify API
         run: npm run build:api
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: hufs_local_admin
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hufs_local_admin -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout synthetic backend subset only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /package.json
+            /package-lock.json
+            /tsconfig.json
+            /vitest.config.ts
+            /packages/contracts/
+            /packages/fixtures/synthetic/
+            /packages/fixtures/negative/
+            /tests/api/
+            /apps/api/
+            /infra/sql/
+            /packages/core/
+      - name: Prove real-student sources are not in this workspace
+        run: |
+          test ! -d csv
+          test ! -d local_only
+          test ! -d templates/real5-intake
+          test ! -d reference/hufsability/raw
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned lockfile without dependency lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Create three empty synthetic databases in the disposable service
+        env:
+          HUFS_PG_CI_ADMIN_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/postgres
+        run: |
+          node --input-type=module <<'NODE'
+          import pg from 'pg';
+          const pool = new pg.Pool({connectionString: process.env.HUFS_PG_CI_ADMIN_URL});
+          try {
+            await pool.query('CREATE DATABASE hufs_one_a2_test');
+            await pool.query('CREATE DATABASE hufs_one_full_test');
+            await pool.query('CREATE DATABASE hufs_one_calendar_test');
+          } finally {
+            await pool.end();
+          }
+          NODE
+      - name: Build contracts for the live adapter tests
+        run: npm run build:contracts
+      - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL
+        env:
+          HUFS_A2_PG_LIVE: '1'
+          HUFS_A2_PG_LIVE_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_a2_test
+          HUFS_PG_CALENDAR_LIVE: '1'
+          HUFS_PG_CALENDAR_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_calendar_test
+          HUFS_PG_FULL_LIVE: '1'
+          HUFS_PG_FULL_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_full_test
+        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts --reporter=verbose

@@ -1,6 +1,12 @@
 import type {FastifyRequest} from 'fastify';
 import type {ReviewerAccessStore,ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ReviewerSandboxStore} from './modules/auth/reviewer-sandbox.js';
+import type {GoogleAuthFlow} from './modules/auth/google-auth-flow.js';
+import type {createSchoolMailProofService} from './modules/auth/school-mail-proof.js';
+import type {TemporalResult} from './modules/opportunities/revision-ledger.js';
+import type {PublicSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
+import type {CalendarInputSource} from './modules/calendar.js';
+import type {PersonalStatePort} from './modules/personal-state.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -20,6 +26,9 @@ interface ActorSessionBase {
 export interface VerifiedTeamActor extends ActorSessionBase {
   schoolMailProofExpiresAt:string;
   betaAllowed:boolean;
+  /** Populated by real Google auth flow; required for per-request beta recheck. */
+  verifiedSchoolEmail?:string|undefined;
+  schoolProofMethod?:'SIGNED_WORKSPACE'|'MAILBOX_OTP'|undefined;
   role:'BETA'|'ADMIN';
 }
 export interface VerifiedReviewerActor extends ActorSessionBase {
@@ -33,7 +42,20 @@ export type VerifySession = (request: FastifyRequest) => Promise<VerifiedActor|n
 export interface ApiRepository {
   listProfiles(): Promise<DemoProfileOption[]>;
   readGrant(actorId: string, subject: SubjectAlias): Promise<SharingGrant|null>;
+  /** Unsafe subject-only read: internal REVIEWER/synthetic legacy use only.
+   * BETA HTTP routes must call readAuthorizedSnapshot instead. */
   readSnapshot(subject: SubjectAlias): Promise<DemoSnapshot|null>;
+  /**
+   * One repository operation must validate current actor+subject+grant version,
+   * requested sections, revoke/expiry and return only a scope-safe projection.
+   * Optional while DB adapters migrate; absence MUST deny BETA reads.
+   * Never accept actorId or grantVersion from a browser payload.
+   */
+  readAuthorizedSnapshot?(input:{
+    actorId:string;subjectId:SubjectAlias;grantVersion:string;
+    requiredSections?:Array<'FEED'|'NOTICES'|'ACADEMICS'|'FORECAST'|'EXPERIENCE'>;
+    now?:string;
+  }):Promise<DemoSnapshot|null>;
   /** Server-approved packet reference. A browser must NEVER send raw model text. */
   readSafePacket(actorId: string, task: AiTask, ref: string): Promise<SafeLlmPacket|null>;
 }
@@ -51,12 +73,20 @@ export interface AiCandidateProvider {
 
 export interface ApiOptions {
   repository: ApiRepository;
+  /** Atomic current grant/source/projection reader; absent means calendar is unavailable. */
+  calendarSource?:CalendarInputSource;
+  /** Actor-owned durable state; independent consent/provenance remains mandatory. */
+  personalState?:PersonalStatePort;
   /** A separate grant store and synthetic-only projection repository for REVIEWER. */
   reviewerAccess?: ReviewerAccessStore;
   reviewerDemo?: ReviewerDemoRepository;
   /** Only an isolated synthetic/replay workspace; never production actions. */
   reviewerSandbox?: ReviewerSandboxStore;
   verifySession?: VerifySession;
+  /** Optional browser OAuth flow; local main intentionally does not configure it. */
+  googleAuth?: GoogleAuthFlow;
+  /** Explicitly injected verified-school-mail flow. Disabled by default. */
+  schoolMailProof?: ReturnType<typeof createSchoolMailProofService>;
   /** Actual session invalidator must revoke server-side session, not just clear a cookie. */
   revokeSession?: (actor: VerifiedActor) => Promise<void>;
   allowedOrigin: string;
@@ -65,4 +95,13 @@ export interface ApiOptions {
   /** This must be explicitly supplied by a private local test harness. */
   syntheticAiProvider?: AiCandidateProvider;
   maxSyntheticAiCallsPerActor?: number;
+  /** Server-owned, rights/scope/head-bound revision metadata; never raw source bodies. */
+  sourceHistory?:{
+    read(input:{actor:VerifiedTeamActor;sourceId:string;now:string}):Promise<PublicSourceRevisionHistory|null>;
+  };
+  /** Trusted server-only permission resolver. Never accept permissions from browser. */
+  temporalEvidence?: {
+    query(input:{actor:VerifiedTeamActor;query:string;asOf:string;topK:number;now:string}):
+      Promise<TemporalResult>;
+  };
 }

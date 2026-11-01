@@ -1,5 +1,7 @@
 import {ReviewerRecordSchema,ReviewerEnrollmentSchema,normalizeReviewerEmail} from './reviewer.js';
 import type {ReviewerAccessStore,ReviewerGrant,ReviewerRecord} from './reviewer.js';
+import type {AuthAttemptLimiter} from './auth-attempt-limiter.js';
+import {ApiFailure} from './gates.js';
 
 /** PostgreSQL adapter. No DB connection, NCP resource, or migration is created here. */
 export interface SqlResult {rows:Array<Record<string,unknown>>}
@@ -38,7 +40,8 @@ const isActive=(r:ReviewerRecord,now:string)=>!r.revokedAt
   &&Date.parse(r.startsAt)<=Date.parse(now)&&Date.parse(now)<Date.parse(r.endsAt);
 
 export class PostgresReviewerAccessStore implements ReviewerAccessStore {
-  constructor(private readonly pool:ReviewerSqlPool){}
+  constructor(private readonly pool:ReviewerSqlPool,
+    private readonly limiter?:AuthAttemptLimiter){}
   async saveIssued(value:ReviewerRecord):Promise<void>{
     const v=ReviewerRecordSchema.parse(value);
     const c=await this.pool.connect();
@@ -51,6 +54,16 @@ export class PostgresReviewerAccessStore implements ReviewerAccessStore {
   }
   async redeem(input:{tokenDigest:string;actorId:string;verifiedEmail:string;now:string}):Promise<ReviewerGrant|null>{
     const email=normalizeReviewerEmail(input.verifiedEmail);
+    // An operator may issue/revoke invitations without a limiter, but a
+    // public redemption path must never proceed without a durable guard.
+    if(!this.limiter)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    let available=false;
+    try{
+      available=await this.limiter.consume({
+        kind:'REVIEWER_REDEEM',identifier:'actor:'+input.actorId,at:input.now,
+      });
+    }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    if(!available)throw new ApiFailure('RATE_LIMITED');
     const c=await this.pool.connect();
     let open=false;
     try{
