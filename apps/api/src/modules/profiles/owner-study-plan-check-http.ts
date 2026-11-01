@@ -19,6 +19,26 @@ export interface TrustedOwnerStudyPlanSource {
   revalidate(input:{actorId:string;receipt:string;now:string}):Promise<boolean>;
 }
 
+/** Rights and course/evidence visibility are checked by an independent
+ * server authority, not the academic result provider or the browser. In
+ * particular, a self-described OWNER_VERIFIED/GRANT_SCOPED disclosure in a
+ * provider response is not proof of a current consent or SharingGrant.
+ */
+export interface TrustedOwnerStudyPlanRights {
+  /** Must pass BEFORE an owner transcript or study plan can be inspected. */
+  mayInspect(input:{actorId:string;term:string;now:string}):Promise<boolean>;
+  authorize(input:{
+    actorId:string;term:string;asOf:string;sourceReceipt:string;now:string;
+    planVersion?:string;disclosureMode:'REDACTED'|'OWNER_VERIFIED'|'GRANT_SCOPED';
+    sharingGrantVersion?:string;courseRefs:readonly string[];
+    evidenceRefs:readonly string[];
+  }):Promise<{allowed:boolean;rightsReceipt:string}>;
+  /** Must still hold after all other awaited operations and source checks. */
+  revalidate(input:{
+    actorId:string;sourceReceipt:string;rightsReceipt:string;now:string;
+  }):Promise<boolean>;
+}
+
 /** Separate activation gate for current-HEAD-reviewed academic core and RulePack.
  * A source result by itself must never self-authorize READY or an official cap.
  */
@@ -40,14 +60,23 @@ export interface ApprovedStudyPlanGate {
 export function registerOwnerStudyPlanCheckRoutes(options:{
   app:FastifyInstance;session:BetaRouteVerifier;
   source?:TrustedOwnerStudyPlanSource;
+  rights?:TrustedOwnerStudyPlanRights;
   approvalGate?:ApprovedStudyPlanGate;
 }):void{
-  const {app,session,source,approvalGate}=options;
+  const {app,session,source,rights,approvalGate}=options;
   app.post('/api/study-plans/check',async request=>{
     const input=OwnerStudyPlanCheckRequestSchema.parse(request.body);
     const actor=await betaActor(request,session);
-    if(!source)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    if(!source||!rights)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const now=session.now();
+    // A provider that reads the transcript before checking current independent
+    // owner purpose consent would leak private data even if HTTP later returned
+    // 403. Preauthorization must precede the first source read.
+    let mayInspect=false;
+    try{mayInspect=await rights.mayInspect({
+      actorId:actor.actorId,term:input.term,now,
+    })===true;}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    if(!mayInspect)throw new ApiFailure('FORBIDDEN');
     let result:Awaited<ReturnType<TrustedOwnerStudyPlanSource['inspect']>>;
     try{result=await source.inspect({
       actorId:actor.actorId,term:input.term,now,
@@ -63,6 +92,34 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     if(input.expectedPlanVersion&&safe.versions.plan!==input.expectedPlanVersion)
       throw new ApiFailure('VERSION_CONFLICT');
+    // Only actual response refs, never an entire private transcript/allowlist,
+    // are passed to the independent rights resolver for exact scope checking.
+    const evidenceRefs=[...new Set([
+      ...safe.evidenceLinks.map(link=>link.evidenceRef),
+      ...safe.planIssues.flatMap(issue=>issue.evidenceRefs),
+      ...(safe.approval?.officialEvidenceRefs??[]),
+    ])].sort();
+    let rightsReceipt:string|undefined;
+    try{
+      const checked=await rights.authorize({
+        actorId:actor.actorId,term:safe.term,asOf:safe.asOf,
+        sourceReceipt:result.receipt,now:session.now(),
+        ...(safe.versions.plan?{planVersion:safe.versions.plan}:{}),
+        disclosureMode:safe.disclosure.mode,
+        ...(safe.disclosure.grantVersion
+          ?{sharingGrantVersion:safe.disclosure.grantVersion}:{}),
+        courseRefs:safe.disclosure.visibleCourseRefs,
+        evidenceRefs,
+      });
+      if(checked?.allowed!==true)throw new ApiFailure('FORBIDDEN');
+      if(typeof checked.rightsReceipt!=='string'
+        ||checked.rightsReceipt.length<8||checked.rightsReceipt.length>256)
+        throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      rightsReceipt=checked.rightsReceipt;
+    }catch(error){
+      if(error instanceof ApiFailure)throw error;
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    }
     if(safe.state==='READY'||safe.approval||safe.creditCapUnits!==undefined){
       if(!safe.approval||!approvalGate)
         throw new ApiFailure('PROVIDER_UNAVAILABLE');
@@ -81,6 +138,12 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
       actorId:actor.actorId,receipt:result.receipt,now:session.now(),
     })===true;}catch{/* revoked/stale source: deny */}
     if(!valid)throw new ApiFailure('FORBIDDEN');
+    let stillAuthorized=false;
+    try{stillAuthorized=await rights.revalidate({
+      actorId:actor.actorId,sourceReceipt:result.receipt,
+      rightsReceipt:rightsReceipt!,now:session.now(),
+    })===true;}catch{/* fail closed on grant or consent changes */}
+    if(!stillAuthorized)throw new ApiFailure('FORBIDDEN');
     await betaRecheck(request,session,actor);
     return safe;
   });
