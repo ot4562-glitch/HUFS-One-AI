@@ -45,6 +45,7 @@ jobs:
             /tools/release_publication_gate.py
             /tools/release_readiness_gate.py
             /tools/verify_browser_release_surface.py
+            /tools/verify_release_boundary.py
             /.github/workflows/release-readiness.yml
             /.dockerignore
       - name: Prove real-student sources are not in this workspace

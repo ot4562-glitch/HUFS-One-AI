@@ -11,9 +11,14 @@ def check(name,passed,detail=None): checks.append({'name':name,'passed':bool(pas
 def git(*args):
     return subprocess.run(['git','-C',str(ROOT),*args],capture_output=True,check=False)
 def entries(result):return [x.decode('utf-8','surrogateescape') for x in result.stdout.split(b'\0') if x]
+def path_id(name):
+    # Stable trace identifier without disclosing a student's filename in a report.
+    return hashlib.sha256(name.encode('utf-8','surrogateescape')).hexdigest()[:16]
 def forbidden(name):
-    parts=Path(name).parts;lower=name.replace('\\','/').lower()
-    return (any(x in lower.split('/') for x in ['local_only','retire','private','secrets','student_records','real5']) or
+    lower=name.replace('\\','/').lower()
+    return (any(x in lower.split('/') for x in ['local_only','retire','private','secrets','student_records','real5','csv','backups','exports','credentials']) or
+            lower.startswith(('templates/real5-intake/','data/student/','data/students/','data/incoming/')) or
+            any(x in lower for x in ['private_identity_map','forms_raw','student_records']) or
             (lower.startswith('reference/') and any(x in lower.split('/') for x in ['raw','text','data','links','screenshots'])) or
             lower.endswith(('hufs_ui.pdf','.key','.pem','.pfx','.p12','.db','.sqlite','.sqlite3','.dump','.log','.zip','.7z')) or
             any(x.startswith('.env') for x in lower.split('/')))
@@ -21,12 +26,16 @@ tracked_result=git('ls-files','-z');check('git_index_readable',tracked_result.re
 tracked=entries(tracked_result)
 candidate_result=git('ls-files','--cached','--others','--exclude-standard','-z');check('git_candidates_readable',candidate_result.returncode==0)
 candidates=sorted(set(entries(candidate_result)))
-check('no_protected_tracked_files',not [x for x in tracked if forbidden(x)],[x for x in tracked if forbidden(x)])
-check('no_protected_publication_candidates',not [x for x in candidates if forbidden(x)],[x for x in candidates if forbidden(x)])
+protected_tracked=[x for x in tracked if forbidden(x)]
+protected_candidates=[x for x in candidates if forbidden(x)]
+# Already tracked sensitive paths/history remain a BLOCKER; counts do not conceal
+# the violation, and reports do not replicate filenames or student identifiers.
+check('no_protected_tracked_files',not protected_tracked,{'count':len(protected_tracked)})
+check('no_protected_publication_candidates',not protected_candidates,{'count':len(protected_candidates)})
 probe=['HUFS_UI.pdf','local_only/real5/intake_status.json','reference/hufsability/screenshots/index.png','reference/hufsability/snapshots/2026-10-29/raw/academic/2026_2_seoul_handbook.pdf','reference/hufsability/snapshots/2026-10-29-followup/raw/BRAND-01-6.html','retire/README.md','.env','secrets/a.key','packages/fixtures/real5/student.json']
 for name in probe:
     result=git('check-ignore','--no-index','--quiet',name)
-    check('ignored:'+name,result.returncode==0)
+    check('ignored:'+path_id(name),result.returncode==0)
 docker=(ROOT/'.dockerignore').read_text(encoding='utf-8')
 for value in ['local_only','reference/hufsability','HUFS_UI.pdf','retire','secrets','data/real5','packages/fixtures/real5']:
     check('docker_excludes:'+value,value in docker.splitlines())
@@ -34,6 +43,9 @@ for value in ['local_only','reference/hufsability','HUFS_UI.pdf','retire','secre
 secret_patterns=[r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',r'gh[pousr]_[A-Za-z0-9]{30,}',r'github_pat_[A-Za-z0-9_]{35,}',r'AKIA[0-9A-Z]{16}',r'sk-(?:proj-)?[A-Za-z0-9_-]{35,}']
 findings=[];text_count=0
 for name in candidates:
+    # Git's index may list tracked private files despite .gitignore or sparse
+    # checkout. Do not open any protected raw/student path, even on audit failure.
+    if forbidden(name):continue
     p=ROOT/name
     if not p.is_file() or p.is_symlink():continue
     if p.suffix.lower() not in ('.md','.json','.py','.ps1','.txt','.yaml','.yml','.toml','.ini','.html') and not p.name.startswith('.'):continue
@@ -42,7 +54,7 @@ for name in candidates:
     except UnicodeError:continue
     text_count+=1
     for i,pattern in enumerate(secret_patterns):
-        if re.search(pattern,text):findings.append({'file':name,'pattern_index':i})
+        if re.search(pattern,text):findings.append({'path_hash':path_id(name),'pattern_index':i})
 check('no_common_secret_signatures_in_candidates',not findings,findings)
 p=(ROOT/'Architecture.md').read_text(encoding='utf-8-sig')
 team=(ROOT/'Proposal.md').read_text(encoding='utf-8-sig')
@@ -67,9 +79,9 @@ for name in active_docs:
     check('utf8:'+name,'\ufffd' not in text)
     for target in re.findall(r'\]\(([^)]+)\)',text):
         if urlsplit(target).scheme or target.startswith('#'):continue
-        check('link:'+name+':'+target,(doc.parent/unquote(target.split('#')[0])).exists())
+        check('link:'+name+':'+path_id(target),(doc.parent/unquote(target.split('#')[0])).exists())
 failures=[x for x in checks if not x['passed']]
-report={'checked_at':datetime.now(timezone(timedelta(hours=9))).isoformat(),'result':'PASS' if not failures else 'FAIL','checks':len(checks),'passed':len(checks)-len(failures),'failures':failures,'tracked_file_count':len(tracked),'candidate_file_count':len(candidates),'text_files_scanned':text_count,'candidate_files':candidates,'source_sha256':hashlib.sha256((ROOT/'Proposal.md').read_bytes()).hexdigest(),'scope':'Static local document/ignore/candidate checks before an approved private GitHub upload; not legal clearance or proof of full secret absence; audit itself does not upload.','results':checks}
+report={'checked_at':datetime.now(timezone(timedelta(hours=9))).isoformat(),'result':'PASS' if not failures else 'FAIL','checks':len(checks),'passed':len(checks)-len(failures),'failures':failures,'tracked_file_count':len(tracked),'candidate_file_count':len(candidates),'text_files_scanned':text_count,'protected_tracked_count':len(protected_tracked),'protected_candidate_count':len(protected_candidates),'source_sha256':hashlib.sha256((ROOT/'Proposal.md').read_bytes()).hexdigest(),'scope':'Static local document/ignore/candidate checks before an approved private GitHub upload; not legal clearance or proof of full secret absence; audit itself does not upload.','results':checks}
 (OUT/'publication_boundary.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps({k:report[k] for k in ['result','checks','passed','failures','tracked_file_count','candidate_file_count','text_files_scanned']},ensure_ascii=True))
 sys.exit(1 if failures else 0)

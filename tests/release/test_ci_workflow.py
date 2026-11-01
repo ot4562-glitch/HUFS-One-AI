@@ -21,6 +21,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/release_publication_gate.py", "/.dockerignore",
     "/tools/release_readiness_gate.py",
     "/tools/verify_browser_release_surface.py",
+    "/tools/verify_release_boundary.py",
     "/.github/workflows/release-readiness.yml",
     "/.github/workflows/task00-contracts.yml",
 })
@@ -94,6 +95,7 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/.dockerignore",
             "/tools/release_readiness_gate.py",
             "/tools/verify_browser_release_surface.py",
+            "/tools/verify_release_boundary.py",
             "/.github/workflows/release-readiness.yml",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
@@ -125,6 +127,8 @@ class WorkflowBoundaryTests(unittest.TestCase):
 
     def test_current_workflow_is_fail_closed(self) -> None:
         self.assertEqual(audit_ci_boundary(self.policy), [])
+        self.assertIn("/tools/verify_release_boundary.py",
+                      sparse_checkout_lists(self.policy)[0])
         for name in ("release_entrypoint_gate.test.mjs", "release_session_csrf.test.mjs"):
             self.assertTrue(
                 (WORKFLOW.parents[2] / "tests/security" / name).is_file(),
