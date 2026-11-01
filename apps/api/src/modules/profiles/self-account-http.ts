@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import type {FastifyInstance,FastifyRequest} from 'fastify';
-import {SelfConsentPutSchema,SelfProfilePatchSchema} from '@hufs-one/contracts';
+import {SelfConsentPutSchema,SelfProfilePatchSchema,
+  SelfProfileSchema,SelfConsentSchema} from '@hufs-one/contracts';
 import type {VerifySession,VerifiedTeamActor} from '../../types.js';
 import {ApiFailure,authorizeSession} from '../auth/gates.js';
 import type {SelfAccountPort} from './self-account-postgres.js';
@@ -37,6 +38,11 @@ export async function safeOwnerStore<T>(fn:()=>Promise<T>):Promise<T>{
   }
 }
 const Empty=z.strictObject({});
+function checkedStored<T>(schema:z.ZodType<T>,raw:unknown):T{
+  const result=schema.safeParse(raw);
+  if(!result.success)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+  return result.data;
+}
 export function registerSelfAccountRoutes(
   app:FastifyInstance,store:SelfAccountPort,
   verifier:BetaRouteVerifier,
@@ -44,7 +50,8 @@ export function registerSelfAccountRoutes(
   app.get('/api/profile',async request=>{
     Empty.parse(request.query);
     const actor=await betaActor(request,verifier);
-    const profile=await safeOwnerStore(()=>store.readProfile(actor.actorId));
+    const profile=checkedStored(SelfProfileSchema.nullable(),
+      await safeOwnerStore(()=>store.readProfile(actor.actorId)));
     await betaRecheck(request,verifier,actor);
     return {profile};
   });
@@ -52,14 +59,19 @@ export function registerSelfAccountRoutes(
     Empty.parse(request.query);
     const actor=await betaActor(request,verifier);
     const input=SelfProfilePatchSchema.parse(request.body);
-    const profile=await safeOwnerStore(()=>store.patchProfile(actor.actorId,input));
+    const profile=checkedStored(SelfProfileSchema,
+      await safeOwnerStore(()=>store.patchProfile(actor.actorId,input)));
+    if(profile.version!==input.expectedVersion+1
+      ||JSON.stringify(profile.value)!==JSON.stringify(input.value))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
     await betaRecheck(request,verifier,actor);
     return {profile};
   });
   app.get('/api/consents',async request=>{
     Empty.parse(request.query);
     const actor=await betaActor(request,verifier);
-    const consents=await safeOwnerStore(()=>store.readConsents(actor.actorId));
+    const consents=checkedStored(SelfConsentSchema.nullable(),
+      await safeOwnerStore(()=>store.readConsents(actor.actorId)));
     await betaRecheck(request,verifier,actor);
     return {consents};
   });
@@ -67,7 +79,11 @@ export function registerSelfAccountRoutes(
     Empty.parse(request.query);
     const actor=await betaActor(request,verifier);
     const input=SelfConsentPutSchema.parse(request.body);
-    const consents=await safeOwnerStore(()=>store.putConsents(actor.actorId,input));
+    const consents=checkedStored(SelfConsentSchema,
+      await safeOwnerStore(()=>store.putConsents(actor.actorId,input)));
+    if(consents.version!==input.expectedVersion+1
+      ||JSON.stringify(consents.choices)!==JSON.stringify(input.choices))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
     await betaRecheck(request,verifier,actor);
     return {consents};
   });

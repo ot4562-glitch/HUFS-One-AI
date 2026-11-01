@@ -1,5 +1,50 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
+## 2026-11-01 후속 PR 리뷰·인수인계 최신 상태
+
+- **김채윤(추천/공지):** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전 캐시 키는 총괄의 독립 승인/Actions 2 job 성공 후 **main merge `fdf0b09b`**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 추천 제외 사유는 조직별 노출 상한과 다양성에서 틀린 `OUTRANKED` 설명이 가능해 **CHANGES_REQUESTED**; 알고리즘과 설명의 반례 회귀 추가 필요.
+- **심민성(공통 계약/API):** [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120) 검수된 공고 정정 비교·안전한 제외 사유 DTO → [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121) owner/rights 인가 read-only API 및 브라우저 클라이언트 **스택 미병합**. 두 HEAD 코드 리뷰 COMMENT·동일 HEAD Actions SUCCESS; 비작성자 리뷰어는 #120 김채윤·박준영, #121 박준영·이의상 요청 상태.
+- **박준영(학업):** #121의 What-if는 인증된 실행 경계만 제공하고 **실제 두 RulePack 재계산 코어는 없음**. 수강계획 adapter도 승인 원장/공식 규칙팩/권리 provider 없이는 기본 503.
+- **이의상(UI):** #72→#76 기존 스택 차단(#72/#75 CHANGES_REQUESTED) 유지. #119 정정 비교·#86 제외 이유·#81 계획·#82 What-if의 실제 React 화면/브라우저 E2E는 미완료.
+- **릴리스/데이터:** #46 Private 원본 권리·개인정보 감사 2 FAIL, #61 독립 골드 0/200, #89 `RELEASE_BLOCKED`. 팀별 소유권/합성 코드/운영 승인 분리를 유지.
+
+## 2026-11-01 추가 제안 4건 담당/의존성 (이슈 등록 완료, 기능 미완료)
+
+- **P0 제안 · [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교:** 이의상 `uisang2004-maker` 화면/접근성 소유, 심민성 `ot4562-glitch` 허용된 SourceRevision·검수 시각·permission/asOf/API, 김채윤 `qamarrchae` 정정/취소/추천 캐시 소비 검수. #19/#21 기존 출처 계약에 연결; 합성 11/20→11/25 예시와 401/403/409/철회/늦은 응답 테스트가 신규 수락 게이트.
+- **P1 제안 · [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) ‘왜 추천되지 않았나요?’:** 기존 issue 보강. 김채윤 core reason enum, 심민성 권한/비노출 API, 이의상 상세/피드 UI. 권한 없는 후보의 존재·숫자/미공유 개인정보를 이유로 노출하지 않음.
+- **P1 제안 · [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비·진행 보드:** 기존 issue 보강. #97/#106/#115의 owner API·CAS/웹 소비자 계약은 병합, 실제 학생용 React 단계 보드/할 일/D-day·다중탭/360px E2E는 이의상 미완료(착수 시기는 팀 결정, 종전 11/10 이후 권고 유지).
+- **P2 제안 · [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 복수·이중전공 What-if:** 기존 issue 보강. 박준영 검수된 전공별 RulePack/가정 계산 → 심민성 인가 HTTP API(#107 DTO만 main) → 이의상 현재 vs 가정·불확실성 UI. 실제 학칙/학적 확인 전 합성 전용·‘공식 판정 아님’ 경고.
+
+**통합 규칙:** 서로 다른 트랙의 소유 모듈을 임의 변경하지 않고 독립 현재 HEAD 리뷰·CI 후 병합. 네 기능의 우선순위는 **사용자 제안에 대한 구현 추천**이며 운영 리소스·실학생 자료 사용·출시 허가는 아니다.
+
+**2026-11-01 UI 소유자 최신 핸드오프:** 이의상 담당 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)·[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)는 최신 HEAD 변경 요청, #73·#74·#76은 COMMENT 검수(5건 리뷰 등록 완료). #72 실 calendar 소비/버전 잔상, #75 대상별 미저장 form state/새 snapshot 격리 재현 테스트가 우선이다. 다섯 HEAD Actions 기록 0건/병합 0건. 학업/추천/NCP/UI 소유권은 유지하며 기술 총괄은 타인 화면 코드를 임의 덮어쓰지 않는다.
+
+## 2026-11-01 최신 역할별 병합/핸드오프 (정본)
+
+- **심민성 — 웹 API·계약·PG·RAG·릴리스 보안/통합:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)과 #92~#115 중 본인 담당/협업 승인 범위의 후속 PR을 병합했다. 인증 사후 재검증 #105, SourceReview #99, DB 철회 #102/#112, 수집 중복 실행 #113, 계약/API #97/#103/#107, 웹 소비자 #95/#100/#106/#110/#115, 오프라인 릴리스 보안 #92/#93/#94/#96/#98/#101/#104/#108/#109/#111이 main에 있다. **신규 PR의 자체 리뷰/병합은 이번 사용자 지시 예외로 기록한 COMMENT이며 독립 승인 아님.**
+- **이의상 — UI/접근성/실브라우저:** #72 캘린더 비합성 포트 연결 및 snapshot 교체 시 잔상 가능성 해결이 필수. 후속 UI 스택 #73~#76은 선행 #72의 CHANGES_REQUESTED·스택 CI 차단으로 **OPEN**. 기술 총괄은 화면 코드를 임의 수정하지 않으며 재현 테스트·리뷰에 원인/계약을 전달한다.
+- **박준영 — 학업 순수 코어:** [#90](https://github.com/ot4562-glitch/HUFS-One-AI/pull/90) RulePack 개정판 diff와 [#91](https://github.com/ot4562-glitch/HUFS-One-AI/pull/91) 수강계획 검사 코어 병합, [#116](https://github.com/ot4562-glitch/HUFS-One-AI/pull/116) #103 응답 strict wire 호환성 수정도 독립 승인·main 병합. #82 가상 전공 계산과 공식 학칙·독립 학생/조항 승인은 아직 미완료. #103은 API 인가·검토 계약이지 실학업 provider 자동 개통이 아니다.
+- **김채윤 — 추천·공지 순수 코어:** [#84](https://github.com/ot4562-glitch/HUFS-One-AI/pull/84) 학업 결과→공지용 열린 요건 처리 병합. 실기관 출처 권리·독립 검토 200개 골드 라벨 [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61)은 OPEN.
+- **이서연 — NCP/클라우드/provider:** NCP·CLOVA OCR/HCX/Laya·TLS/실 ingress·유료 실행은 별도 승인/실측 전 BLOCKED. 기술 총괄은 클라우드 리소스를 생성하지 않았다.
+- **교차 의존:** #80는 owner 보관함 단계 API/웹(#97/#106/#115) 완료, UI 보드는 미완료. #81은 학기 계획 검사 코어 #91·응답 정합 #116/서버 계약 #103 완료, 실제 RulePack 승인·provider·나란히 보기 UI 미완료. #82는 What-if DTO #107만 완료, 학업 가상 계산·인가 API·UI 미완료. #52는 서버/클라이언트 계약 main 병합, 실제 달력 UI #72 미연결로 OPEN. #89는 오프라인 CI가 존재하나 인터넷 진입면/운영 검증이 없어 RELEASE_BLOCKED 유지.
+
+
+
+## 2026-11-01 최신 역할·협업 핸드오프
+
+- **11/10 이후 UI 제안의 현재 이슈 분담:** [#79](https://github.com/ot4562-glitch/HUFS-One-AI/issues/79) D-day는 `uisang2004-maker` UI 담당, [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 현황 보드는 UI `uisang2004-maker` + 계약/API `ot4562-glitch`, [#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81) 수강계획 나란히 보기 및 [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 졸업 What-if는 UI `uisang2004-maker` + 학업 `taewangim-alt` + API `ot4562-glitch` 공동 할당 확인. 이슈 배정은 작업 수락/실자료 권한 검증이 아니며 세부 계약·RulePack 검수는 미완료.
+
+- **이전 핸드오프 정정:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 당시 리뷰 요청 단계였지만, 이후 main `3c6378c` 병합되었다. 이번 신규 UI #72~#76은 별개로 현재 열린 스택이고 검증 대기 중이다.
+
+GitHub 이슈의 **현재 담당**은 심민성 `ot4562-glitch`(#27 API/인증/일반 PG/Temporal/공통 계약, #71 브라우저 캘린더 포트), 이의상 `uisang2004-maker`(#9 UI/접근성, #51 캘린더), 김채윤 `qamarrchae`(#10 추천·공지·합성 평가), 박준영 `taewangim-alt`(#11 학업/RulePack), 이서연 `lhh42001`(#12/#20/#22 NCP·CLOVA·OCR/Vision·Laya 환경/실 provider)이다. GitHub 할당은 개인정보 처리/기관 승인과 별개다.
+
+- **통합/main:** API·출처·권한 합성 코드 #58와 React 셸 #68 모두 병합. [#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68)의 데이터 혼합 P1은 최신 CI·반례 테스트 후 수정/승인됨.
+- **UI 스택 현황(2026-11-01):** [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) 현재 HEAD 독립 APPROVED/CI 2 jobs SUCCESS 후 merge commit `5617222f`로 **main 병합 완료**. 후속 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → #73 → #74 → #75 → #76은 OPEN; #72 base를 main으로 바꿨으나 **비합성 loadCalendar 미연결로 CHANGES_REQUESTED**. 작성자 `uisang2004-maker`가 수정/새 CI 후 재검토하고, 합성 E2E/실서버 E2E는 구별한다.
+- **API→UI 요청(#71 완료, UI #51 진행):** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) `HufsApiClient.getCalendar(contextId,signal)`와 응답 거부/취소/권한 검증은 **main squash `552ad35e` 병합**(UI 담당 독립 승인·Actions 2 jobs 성공). 작성자 UI #72의 `main.tsx` 실제 비합성 `AppServices.loadCalendar = (ctx, signal) => api.getCalendar(ctx.contextId, signal)` 연결 및 `DemoController.runContextOperation` + `validateCalendarWire(..., snapshot.asOf)`·401/403·late 응답 회귀가 남았다.
+- **학업 코어 추가 병합:** [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 규칙 발효기간/asOf 수정·CI·재승인 후 main `0a8d44bd` 병합. 실제 학칙 사람 원문 검토·적용 학번 규칙은 별도.
+
+이 아래의 날짜별 협업 메모는 해당 시점의 이력이다. 예전 "calendar API 미구현"/"웹 UI 전부 미구현" 주장은 최신 통합 코드/기초 셸 상태를 덮어쓰지 않는다.
+
 
 **SKU·기간·비용 공식 확인:** [NCP 2026 운영 정본](NCP_OPERATIONS_2026.md). 11/6~12/9 816h 계획 상한, 본선 발표 11/16 이후 개통 승인. 4vCPU/32GB High Memory-g3 326원/h, CB 50GB 8원/h, 서버+CB 272,544원(최대).
 

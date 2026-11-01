@@ -30,7 +30,7 @@ function fixture(){
     query:async(sql)=>{dbReads++;
       if(sql.startsWith('SELECT revision_id FROM source_ingest_heads'))
         return {rows:[{revision_id:head}]};
-      if(sql.includes('FROM source_revisions_vnext'))return {rows:revisionRows};
+      if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:revisionRows};
       return {rows:[]};
     },release:()=>{},
   })};

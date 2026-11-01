@@ -147,7 +147,7 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         WHERE source_id=ANY($1::text[]) ORDER BY source_id LIMIT 101`,[sourceIds]);
       if(heads.length!==sourceIds.length||heads.some(h=>!sourceIds.includes(String(h.source_id))))return null;
       const rawRevisions=await this.rows(client,`SELECT revision_id,source_id,supersedes,status,change_kind,provenance,
-        permission_ref,published_at,fetched_at,last_verified_at,valid_from,valid_until FROM source_revisions_vnext
+        permission_ref,published_at,fetched_at,last_verified_at,valid_from,valid_until FROM source_effective_revisions_vnext
         WHERE source_id=ANY($1::text[]) ORDER BY source_id,fetched_at,revision_id LIMIT 1001`,[sourceIds]);
       if(rawRevisions.length>1000)throw Error('Revision history needs a narrower approved projection');
       const revisions=rawRevisions.map(revision);

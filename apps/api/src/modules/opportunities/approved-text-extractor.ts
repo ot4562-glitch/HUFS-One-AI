@@ -18,6 +18,9 @@ function decodeEntity(entity:string):string{
   return String.fromCodePoint(code);
 }
 function clean(content:string,xml=false):string{
+  // The HTML5 declaration has no external subset. XML and all other DTDs
+  // remain forbidden; this parser never expands entities or fetches a DTD.
+  if(!xml)content=content.replace(/^\s*<!doctype\s+html\s*>/i,'');
   if(/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(content))throw new Error('External entity/DTD is forbidden');
   if(/<script\b/i.test(content)&&!/<\/script\s*>/i.test(content))
     throw new Error('Unterminated active content');

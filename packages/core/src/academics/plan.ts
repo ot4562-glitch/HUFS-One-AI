@@ -142,16 +142,18 @@ function termLoad(attempts:readonly LedgerAttempt[], term:string, issues:PlanIss
   return [...byCourse.values()].sort((a, b) => byCodeUnit(a.courseId, b.courseId));
 }
 
-function checkCap(plan:TermPlan, load:readonly TermCourse[], packApproved:boolean, issues:PlanIssue[]):void {
+/** Returns the term load in units so a caller can show it next to the cap. */
+function checkCap(plan:TermPlan, load:readonly TermCourse[], packApproved:boolean, issues:PlanIssue[]):number {
   assertPositiveUnits(plan.creditCapUnits, 'creditCapUnits');
   const evidenceRefs = assertRefs(plan.capEvidenceRefs, 'capEvidenceRefs');
   let total = 0;
   for (const course of load) total = addUnits(total, course.units);
-  if (total <= plan.creditCapUnits) return;
+  if (total <= plan.creditCapUnits) return total;
   const courseRefs = load.map(course => course.courseId);
   issues.push(packApproved
     ? {code:'CREDIT_CAP_EXCEEDED', reasonCode:'EXCEEDS_APPROVED_LIMIT', courseRefs, evidenceRefs}
     : {code:'NEEDS_REVIEW', reasonCode:'UNKNOWN', courseRefs, evidenceRefs});
+  return total;
 }
 
 type PrerequisiteState = 'EARNED'|'REVIEW'|'MISSING';
@@ -354,6 +356,14 @@ function checkTimetable(plan:TermPlan, load:readonly TermCourse[], asOfMs:number
  * Without an APPROVED pack, cap and prerequisite blockers are held as NEEDS_REVIEW.
  */
 export function buildAcademicPlan(input:AcademicPlanRequest):AcademicAuditVNext {
+  return checkAcademicPlan(input).audit;
+}
+
+/**
+ * Same check as buildAcademicPlan, also returning the term load: the unique PLANNED +
+ * IN_PROGRESS units of the plan term, counted once per course (CREDIT-07).
+ */
+export function checkAcademicPlan(input:AcademicPlanRequest):{audit:AcademicAuditVNext; termLoadCreditUnits:number} {
   const {termPlan:plan, ...ledgerRequest} = input;
   const audit = buildAcademicLedger(ledgerRequest);
   if (!plan || typeof plan !== 'object') throw new TypeError('termPlan is required');
@@ -364,7 +374,7 @@ export function buildAcademicPlan(input:AcademicPlanRequest):AcademicAuditVNext 
   const excluded = new Map(audit.excludedAttempts.map(row => [row.attemptToken, row.reason]));
   const issues:PlanIssue[] = [];
   const load = termLoad(input.attempts, plan.term, issues);
-  checkCap(plan, load, packApproved, issues);
+  const termLoadCreditUnits = checkCap(plan, load, packApproved, issues);
   checkPrerequisites(plan, load, input.attempts, excluded, packApproved, issues);
   checkTimetable(plan, load, asOfMs, issues);
   if (issues.length > MAX_PLAN_ISSUES) throw new RangeError('too many plan issues');
@@ -377,5 +387,5 @@ export function buildAcademicPlan(input:AcademicPlanRequest):AcademicAuditVNext 
   if (!parsed.success) {
     throw new TypeError(`academic plan result is not a valid audit: ${parsed.error.issues.map(issue => issue.message).join('; ')}`);
   }
-  return parsed.data;
+  return {audit:parsed.data, termLoadCreditUnits};
 }

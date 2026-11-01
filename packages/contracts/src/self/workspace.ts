@@ -1,3 +1,4 @@
+import {BookmarkStageSchema,BookmarkOutcomeSchema} from './bookmark-stage.js';
 import {z} from 'zod';
 const Id=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
 const Mode=z.enum(['SYNTHETIC','OWNER_CONSENTED']);
@@ -22,6 +23,14 @@ const StudyPlan=z.strictObject({
 const Bookmark=z.strictObject({
   kind:z.literal('BOOKMARK'),dataMode:Mode,
   opportunityId:Id,state:z.literal('SAVED'),
+  // Old rows have no stage. The owner-only HTTP handler treats them as INTERESTED.
+  stage:BookmarkStageSchema.optional(),
+  outcome:BookmarkOutcomeSchema.optional(),
+}).superRefine((value,ctx)=>{
+  if(value.stage==='RESULT_RECORDED'&&!value.outcome)
+    ctx.addIssue({code:'custom',path:['outcome'],message:'Owner outcome required'});
+  if(value.stage!=='RESULT_RECORDED'&&value.outcome)
+    ctx.addIssue({code:'custom',path:['outcome'],message:'Outcome is only for the final stage'});
 });
 const Action=z.strictObject({
   kind:z.literal('ACTION_PLAN'),dataMode:Mode,state:z.literal('DRAFT'),
@@ -35,6 +44,14 @@ export type OwnerWorkspaceValue=z.infer<typeof OwnerWorkspaceValueSchema>;
 export type WorkspaceKind=z.infer<typeof WorkspaceKindSchema>;
 export const OwnerWorkspaceCreateSchema=z.strictObject({
   itemId:Id,value:OwnerWorkspaceValueSchema,
+}).superRefine((input,ctx)=>{
+  // Creating an already submitted/decided item would bypass the owner-only CAS
+  // state machine. Legacy un-staged SAVED and explicit INTERESTED are accepted.
+  if(input.value.kind==='BOOKMARK'&&
+    (input.value.stage!==undefined&&input.value.stage!=='INTERESTED'
+      ||input.value.outcome!==undefined))
+    ctx.addIssue({code:'custom',path:['value','stage'],
+      message:'Bookmarks start at INTERESTED; advance with owner-only PATCH'});
 });
 export const OwnerWorkspaceUpdateSchema=z.strictObject({
   expectedVersion:z.number().int().min(1).max(Number.MAX_SAFE_INTEGER-1),
