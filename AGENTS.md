@@ -1,7 +1,7 @@
 # HUFS One AI | 에이전트 작업 기준
 
 
-**2026-11-01 최종 GitHub 병합·안전 기준:** 기존 플랫폼 #58/React 셸 #68에 더해 **#78 문서·스택 이력(`83b4dab8`), #77 캘린더 브라우저 API(`552ad35e`), #69 오늘·기회·공지 UI(`5617222f`)는 `main` 병합 완료**. #71 API 클라이언트 이슈는 CLOSED. [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 `loadCalendar` 미연결 CHANGES_REQUESTED, #73~#76 스택 OPEN. [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 Ready for review/타인 리뷰 요청 상태로 **main 미병합**(30 real-PG opt-in 미실행); 사용자 작성 PR은 타인 현재 HEAD 승인과 CI 전 병합 금지. 코드/합성 검증과 실제 Google·기관 자료권리·개인 동의·NCP·배포 승인은 분리한다. 최신 [STATUS.md](STATUS.md)와 GitHub 실제 HEAD을 우선한다.
+**2026-11-01 GitHub 최신 안전 기준:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 이미 main merge `3c6378c`, 학업 응답 계약 수정 [#116](https://github.com/ot4562-glitch/HUFS-One-AI/pull/116)도 비작성자 현재 HEAD 승인·동일 HEAD CI 뒤 main merge `6e287a0`. 기존 #58/#68/#69/#77/#78 및 후속 출처·권한·보안 PR도 STATUS.md에 정리되어 있다. **이번 열린 UI #72~#76은 5건 리뷰만 등록(병합 0건)**: #72·#75 CHANGES_REQUESTED(#72 실제 calendar port/버전 잔상, #75 미저장 input·sandbox snapshot 격리), 나머지 COMMENT, 최신 HEAD Actions 0건. 열린 Issue 27건/닫힌 5건에서 종결 조건 신규 충족 없음. #46 전체 Private 개인정보 검사 2 FAIL 및 #89 RELEASE_BLOCKED, 실 Google/기관 자료권리/학생 동의·NCP·배포/실브라우저 미검증. **코드/공통계약 변경은 비작성자 현재 HEAD 승인+CI+보안 차단 해소 전 병합 금지**(과거 한시적 사용자 예외는 PR_WORKFLOW에서 별도 명시); [STATUS.md](STATUS.md)가 구현/검증 정본이다.
 
 **2026-11-01 사용자 실행 지시:** 심민성 담당 공통 계약·웹/외부 API·인증·일반 DB·출처/RAG·통합 검증 구현과 PR 게시, 전체 이슈/PR 검토 및 필요한 코멘트 작성을 승인했다. `C:\AIProjects\naver-competition`을 이번 작업 checkout으로 사용하고 기존 `naver_competition`은 보존한다. 코드 변경은 PR로 제안하며 사람의 현재 HEAD 승인·CI 전 main에 병합하지 않는다. 유료/NCP·도메인 개통·실학생 자료 사용/동의는 이 실행 지시로 확대하지 않는다. 최신 구현/검증은 STATUS.md의 2026-11-01 절을 따른다.
 
