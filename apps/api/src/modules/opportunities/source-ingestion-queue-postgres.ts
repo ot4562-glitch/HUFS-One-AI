@@ -42,8 +42,9 @@ export class PostgresSourceIngestionQueue {
     private readonly now:()=>string=()=>new Date().toISOString(),
   ){}
 
-  private async withTransaction<T>(callback:(c:ReviewerSqlConnection)=>Promise<T>):Promise<T>{
-    const c=await this.pool.connect();let open=false;
+  private async withTransaction<T>(callback:(c:ReviewerSqlConnection)=>Promise<T>,
+    shared?:ReviewerSqlConnection):Promise<T>{
+    const c=shared??await this.pool.connect();let open=false;
     try{
       await c.query('BEGIN');open=true;
       await c.query("SET LOCAL lock_timeout='3s'");
@@ -54,7 +55,7 @@ export class PostgresSourceIngestionQueue {
     }catch(e){
       if(open)try{await c.query('ROLLBACK');}catch{/* preserve the failure */}
       throw e;
-    }finally{c.release();}
+    }finally{if(!shared)c.release();}
   }
   async enqueue(raw:{actorRef:string;sourceId:string;permissionRef:string;requestKey:string}):
     Promise<{jobId:string;created:boolean}>{
@@ -88,7 +89,7 @@ export class PostgresSourceIngestionQueue {
     });
   }
 
-  private async claim():Promise<z.infer<typeof Job>|null>{
+  private async claim(c:ReviewerSqlConnection):Promise<z.infer<typeof Job>|null>{
     return this.withTransaction(async c=>{
       // This lock is transaction-scoped. No network work occurs under a DB lock.
       const guard=await c.query('SELECT pg_try_advisory_xact_lock($1::bigint) AS acquired',[64091002]);
@@ -114,37 +115,51 @@ export class PostgresSourceIngestionQueue {
       [job.job_id,token]);
       if(result.rows.length!==1)throw new Error('Unsafe source queue lease');
       return Job.parse(result.rows[0]);
-    });
+    },c);
   }
 
-  private async settle(job:z.infer<typeof Job>,
+  private async settle(c:ReviewerSqlConnection,job:z.infer<typeof Job>,
     state:'NEW_DRAFT'|'CHANGED_DRAFT'|'UNCHANGED'|'BLOCKED_RIGHTS'|'NEEDS_REVIEW',
     revisionId:string|null=null):Promise<void>{
     const lastError=state==='BLOCKED_RIGHTS'?'RIGHTS_DENIED'
       :state==='NEEDS_REVIEW'?'SOURCE_FAILURE':null;
-    const c=await this.pool.connect();
-    try{
-      const result=await c.query(`UPDATE source_ingest_jobs SET
+    const result=await c.query(`UPDATE source_ingest_jobs SET
         state=$3,lease_token=NULL,lease_until=NULL,outcome_revision_id=$4,
         last_error_code=$5,updated_at=clock_timestamp()
         WHERE job_id=$1 AND lease_token=$2 AND state='LEASED'
         AND lease_until>clock_timestamp() RETURNING job_id`,
       [job.job_id,job.lease_token,state,revisionId,lastError]);
-      if(result.rows.length!==1)throw new Error('Source lease lost; operator must review');
-    }finally{c.release();}
+    if(result.rows.length!==1)throw new Error('Source lease lost; operator must review');
   }
 
   async runOne():Promise<SourceQueueRunResult>{
     if(this.running)throw new Error('Source queue permits one worker per process');
     this.running=true;
+    let c:ReviewerSqlConnection|undefined;
+    let held=false,uncertain=false;
     try{
-      const job=await this.claim();
+      // A 30-second durable lease is only a *fencing receipt*, not a mutex:
+      // an executor can still be running when its lease expires. Keep one
+      // PostgreSQL SESSION advisory lock over the entire execution instead.
+      // No row lock or open SQL transaction is held during external IO.
+      // Reuse this same connection for short claim/settle transactions so a
+      // pool limited to a single connection cannot deadlock.
+      c=await this.pool.connect();
+      uncertain=true;
+      const guard=await c.query(
+        'SELECT pg_try_advisory_lock($1::bigint) AS acquired',[64091003]);
+      if(guard.rows.length!==1||typeof guard.rows[0]?.acquired!=='boolean')
+        throw new Error('Invalid source queue global execution guard');
+      uncertain=false;
+      if(!guard.rows[0]!.acquired)return {state:'IDLE'};
+      held=true;
+      const job=await this.claim(c);
       if(!job)return {state:'IDLE'};
       const permission={actorRef:job.actor_ref,sourceId:job.source_id,
         permissionRef:job.permission_ref,now:this.now()};
       try{
         if(!await this.authority.mayProcess(permission)){
-          await this.settle(job,'BLOCKED_RIGHTS');
+          await this.settle(c,job,'BLOCKED_RIGHTS');
           return {jobId:job.job_id,state:'BLOCKED_RIGHTS'};
         }
         const output=await this.executor.execute({
@@ -154,19 +169,43 @@ export class PostgresSourceIngestionQueue {
           ||!Ref.safeParse(output.revisionId).success)
           throw new Error('Executor returned untrusted result');
         if(!await this.authority.mayProcess({...permission,now:this.now()})){
-          await this.settle(job,'BLOCKED_RIGHTS');
+          await this.settle(c,job,'BLOCKED_RIGHTS');
           return {jobId:job.job_id,state:'BLOCKED_RIGHTS'};
         }
         const state=output.kind==='NOT_MODIFIED'?'UNCHANGED':output.kind;
-        await this.settle(job,state,output.revisionId);
+        await this.settle(c,job,state,output.revisionId);
         return {jobId:job.job_id,state};
       }catch(e){
         // A failed handler may have committed a draft. NEVER automatically retry it.
         // A failed acknowledgement is also ambiguous; keep the lease for quarantine.
         if(e instanceof Error&&e.message.startsWith('Source lease lost'))throw e;
-        await this.settle(job,'NEEDS_REVIEW');
+        await this.settle(c,job,'NEEDS_REVIEW');
         return {jobId:job.job_id,state:'NEEDS_REVIEW'};
       }
-    }finally{this.running=false;}
+    }finally{
+      try{
+        if(c){
+          if(held){
+            try{
+              const unlocked=await c.query(
+                'SELECT pg_advisory_unlock($1::bigint) AS unlocked',[64091003]);
+              if(unlocked.rows.length!==1||unlocked.rows[0]?.unlocked!==true)
+                throw new Error('Source queue global lock release failed');
+              held=false;
+            }catch{
+              uncertain=true;
+            }
+          }
+          if(uncertain){
+            // PoolClient.release(error) discards a connection that might still
+            // own a lock. Never return an uncertain locked session to a pool.
+            const error=new Error('Source queue global lock release failed');
+            (c as ReviewerSqlConnection & {release(error?:Error):void}).release(error);
+            throw error;
+          }
+          c.release();
+        }
+      }finally{this.running=false;}
+    }
   }
 }

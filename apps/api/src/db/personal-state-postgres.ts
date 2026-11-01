@@ -168,6 +168,9 @@ export class PostgresPersonalStateStore {
       return result;
     }catch(error){
       if(started)try{await c.query('ROLLBACK');}catch{/* fail closed */}
+      // The storage-consent trigger's private SQLSTATE is a deliberate deny,
+      // not a provider outage. Never expose PostgreSQL internals to HTTP.
+      if((error as {code?:unknown}).code==='P6001')throw new PersonalStateDenied();
       throw error;
     }finally{c.release();}
   }

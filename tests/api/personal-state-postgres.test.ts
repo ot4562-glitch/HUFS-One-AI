@@ -21,7 +21,7 @@ function fake(){
   let rows=new Map<string,Row>(),events:Row[]=[];
   let snapshot:Map<string,Row>|null=null,eventSnapshot:Row[]=[];
   let grantActive=true,grantVersion='v1',failAudit=false,otherActor=false;
-  let syntheticAllowed=true,ownerAllowed=false;
+  let syntheticAllowed=true,ownerAllowed=false,pgStorageAllowed=true;
   const calls:Array<{sql:string;params:readonly unknown[]}>=[],releases:number[]=[];
   const identity=(v:readonly unknown[])=>v.slice(0,4).join('|');
   const clone=(r:Row):Row=>structuredClone(r);
@@ -44,6 +44,8 @@ function fake(){
         return {rows:[{allowed}]};
       }
       if(sql.includes('INSERT INTO api_personal_records')){
+        if(params[5]==='OWNER_CONSENTED'&&!pgStorageAllowed)
+          throw Object.assign(new Error('synthetic SQL consent revoked'),{code:'P6001'});
         const k=identity(params),old=rows.get(k);
         if(old)return {rows:[]};
         const record={
@@ -61,6 +63,9 @@ function fake(){
       }
       if(sql.includes('UPDATE api_personal_records')){
         const k=identity(params),row=rows.get(k);
+        if(row?.data_mode==='OWNER_CONSENTED'&&!pgStorageAllowed
+          &&!sql.includes("value_json='{}'"))
+          throw Object.assign(new Error('synthetic SQL consent revoked'),{code:'P6001'});
         const expected=sql.includes("value_json='{}'")?params[5]:params[7];
         if(!row||row.deleted_at||row.version!==expected)return {rows:[]};
         const next:Row={...row,version:Number(row.version)+1};
@@ -104,6 +109,7 @@ function fake(){
     failAudit:(active:boolean)=>{failAudit=active;},
     synthetic:(allowed:boolean)=>{syntheticAllowed=allowed;},
     owner:(allowed:boolean)=>{ownerAllowed=allowed;},
+    postgresStorage:(allowed:boolean)=>{pgStorageAllowed=allowed;},
   };
 }
 describe('TASK-27 personal PostgreSQL CRUD (SQL stub, not a real DB)',()=>{
@@ -225,6 +231,25 @@ describe('TASK-27 personal PostgreSQL CRUD (SQL stub, not a real DB)',()=>{
     expect(h.getRows().size).toBe(0);
     expect(h.getEvents()).toHaveLength(0);
   });
+  it('maps an in-transaction SQL storage revocation to 403 and rolls back',async()=>{
+    const h=fake();
+    h.owner(true);
+    h.postgresStorage(false);
+    await expect(h.store.create({scope:baseScope,itemId:'owner-sql',
+      value:{...experience,dataMode:'OWNER_CONSENTED'}}))
+      .rejects.toBeInstanceOf(PersonalStateDenied);
+    expect(h.getRows().size).toBe(0);
+    h.postgresStorage(true);
+    await h.store.create({scope:baseScope,itemId:'owner-sql',
+      value:{...experience,dataMode:'OWNER_CONSENTED'}});
+    h.postgresStorage(false);
+    await expect(h.store.update({scope:baseScope,itemId:'owner-sql',
+      expectedVersion:1,value:{...experience,dataMode:'OWNER_CONSENTED',title:'new'}}))
+      .rejects.toBeInstanceOf(PersonalStateDenied);
+    expect([...h.getRows().values()][0]?.version).toBe(1);
+    expect(h.getEvents()).toHaveLength(1);
+    expect(h.calls.filter(c=>c.sql.trim()==='ROLLBACK')).toHaveLength(2);
+  });
   it('cannot downgrade old owner-consented data to synthetic after consent withdrawal',async()=>{
     const h=fake();
     h.owner(true);
@@ -254,6 +279,18 @@ describe('TASK-27 PG configuration and migration gate (offline static only)',()=
   const base=readFileSync(new URL('20261031_api_projections.sql',dir),'utf8');
   const personal=readFileSync(new URL('20261031_z_api_personal_state.sql',dir),'utf8');
   const roles=readFileSync(new URL('20261031_zz_api_roles.sql',dir),'utf8');
+  const consent=readFileSync(new URL('20261101_personal_storage_withdrawal.sql',dir),'utf8');
+  it('gates legacy owner records and serializes private storage withdrawal in SQL',()=>{
+    expect(consent).toContain('SECURITY DEFINER');
+    expect(consent).toContain('FOR SHARE;');
+    expect(consent).toContain("choices_json->>'personalStorage'");
+    expect(consent).toContain("data_mode='OWNER_CONSENTED'");
+    expect(consent).toContain('api_personal_events');
+    expect(consent).toContain('P6001');
+    expect(consent).toContain('RAISE EXCEPTION');
+    expect(consent).toContain('REVOKE ALL ON FUNCTION');
+    expect(consent).not.toMatch(/GRANT (ALL|SELECT|UPDATE|DELETE) ON/);
+  });
   it('refuses production without CA, remote test DBs and URL sslmode overrides',()=>{
     const config={connectionString:'postgres://tester:secret@localhost/hufs_one_test',
       environment:'local-test' as const,expectedRole:'tester'};
