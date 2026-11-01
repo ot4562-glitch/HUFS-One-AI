@@ -16,8 +16,14 @@ function Status({ok}: {ok: boolean | null}) {
   return <span role="status" className="muted">{ok ? ' 반영했습니다.' : ' 반영하지 못했습니다. 화면 위 안내를 확인해 주세요.'}</span>;
 }
 
+// Each control remounts when sandbox.scope changes (subject, context, epoch or snapshot), so an unsaved
+// draft, note, interest pick, reset confirmation or status line is dropped instead of reaching the next scope.
+
 /** 저장·지원서 초안·모의 지원 on an opportunity detail. */
 export function OpportunityActions({sandbox, id}: {sandbox: SandboxApi; id: string}) {
+  return <OpportunityActionsIn key={`${sandbox.scope}:${id}`} sandbox={sandbox} id={id} />;
+}
+function OpportunityActionsIn({sandbox, id}: {sandbox: SandboxApi; id: string}) {
   const saved = sandbox.state.bookmarks.has(id);
   const simulated = sandbox.state.simulated.has(id);
   const [draft, setDraft] = useState<string | null>(null);
@@ -56,6 +62,9 @@ export function OpportunityActions({sandbox, id}: {sandbox: SandboxApi; id: stri
 
 /** 읽음 표시 on a notice detail. */
 export function NoticeReadToggle({sandbox, id}: {sandbox: SandboxApi; id: string}) {
+  return <NoticeReadToggleIn key={`${sandbox.scope}:${id}`} sandbox={sandbox} id={id} />;
+}
+function NoticeReadToggleIn({sandbox, id}: {sandbox: SandboxApi; id: string}) {
   const [ok, setOk] = useState<boolean | null>(null);
   if (!sandbox.ready || !sandbox.can('MARK_READ')) return null;
   const read = sandbox.state.read.has(id);
@@ -72,6 +81,9 @@ export function NoticeReadToggle({sandbox, id}: {sandbox: SandboxApi; id: string
 
 /** 경험: short notes (title line + description), saved in the sandbox only. */
 export function ExperienceEditor({sandbox}: {sandbox: SandboxApi}) {
+  return <ExperienceEditorIn key={sandbox.scope} sandbox={sandbox} />;
+}
+function ExperienceEditorIn({sandbox}: {sandbox: SandboxApi}) {
   const [note, setNote] = useState('');
   const [ok, setOk] = useState<boolean | null>(null);
   if (!sandbox.ready) return <p className="muted" aria-busy="true">시연 기록을 불러오는 중</p>;
@@ -102,6 +114,9 @@ export function ExperienceEditor({sandbox}: {sandbox: SandboxApi}) {
 
 /** 설정: interests (≤5 TopicCodes), notifications, sandbox reset. */
 export function SandboxSettings({sandbox}: {sandbox: SandboxApi}) {
+  return <SandboxSettingsIn key={sandbox.scope} sandbox={sandbox} />;
+}
+function SandboxSettingsIn({sandbox}: {sandbox: SandboxApi}) {
   const [picked, setPicked] = useState<TopicCode[] | null>(null);
   const [ok, setOk] = useState<boolean | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
