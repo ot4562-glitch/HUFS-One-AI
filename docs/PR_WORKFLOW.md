@@ -20,7 +20,7 @@
 - CODEOWNERS는 소유자 안내이고 GitHub 플랜의 보호 정책 강제를 보장하지 않는다.
 - CI·합성 fixture에 실제 학생 CSV를 포함하지 않는다. NCP 결제/서버 생성/공개 릴리스는 별도 사용자 승인.
 - **공개 접속 Google 인증 계약:** 주소 `외대.온라인.한국` 및 **Google OAuth + 실제 외대 메일 소유 검증 + 베타 allowlist**는 신규 P0 설계다. 기관 공식 SSO 허가는 전제하지 않는다. Google token (`sub`,`iss`,`aud`,`hd`), 외대 메일 OTP의 일회성/유효기간/계정 결속, 세션·401/403·로그아웃, 익명 HTML/API/CDN/storage/direct-IP/preview 우회 부정시험을 별도 계약·운영 PR로 입증한다. 메일 접미사/Google `email_verified` 단독 체크 금지. 이 설계 PR은 NCP 개통이나 실학생 자료 이전을 승인하지 않는다.
-- **현재 선행 게이트:** TASK-00 계약 소스와 synthetic fixture는 구현됐다. `npm ci --ignore-scripts --no-audit --no-fund` → `npm run check`로 검증하고 `packages/contracts/README.md`의 각 트랙 명령을 사용한다. PR 병합/CI·실제 4명의 리뷰 완료 여부를 확인한 후 네 트랙을 동일 SHA에 맞춰 개발한다. 그 전에도 별도 브랜치의 합성 mock 구조 연구는 가능하지만 **공통 타입/API를 독자 변경하면 안 된다.**
+- **TASK-00 초기 검사 게이트(현재 보완):** shared TS/Zod 계약과 synthetic fixtures가 main에서 구현·병합됐고, 각 최신 PR은 `npm ci --ignore-scripts --no-audit --no-fund` → `npm run check`와 필수 Actions/독립 현재 HEAD 리뷰를 검증한다. 이전 "4인 전체 리뷰 대기 후 착수"는 초기 병렬개발 준비 기록이며, 현재는 병합된 #58/#68/#69/#77 코드와 미병합 #72~#76/#83의 실제 차이를 기준으로 통합한다. 공통 계약/API를 담당 승인 없이 독자 변경하지 않는다.
 - **확인된 역할·이슈 assignee (2026-10-31):** 심민성 `ot4562-glitch`(#8/#18/#27), 김채윤 `qamarrchae`(#10), 박준영 `taewangim-alt`(#11), 이의상 `uisang2004-maker`(#9), 이서연 `lhh42001`(#12/#20/#22). GitHub 할당 사실은 실제 학생 개인정보·클라우드 처리 동의나 신원 인증을 의미하지 않는다. [WORKSTREAMS.md](WORKSTREAMS.md) 기준.
 - **실제 학생자료 주의:** 개발팀 5인과 Forms/과목 CSV 제출 4인은 다르다. 박준영은 제출하지 않는다. 사용자가 `까마르` 파일의 소유자가 **김채윤**임을 확인했지만, **매핑 확인=팀 공유/외부 AI/NCP 동의가 아니다**. 파일명 대응은 제한된 import registry에서만 주입하고 CI/mock/PR에는 합성 fixture만 사용한다.
 - **계약 변경:** API·TopicCode·응답·오류·DB 스키마·lockfile 수정은 영향·마이그레이션·합성 검증과 소비자 리뷰를 첨부해 심민성에게 별도 계약 PR로 요청한다.
@@ -28,7 +28,7 @@
 ## 2026-10-31 협업 지원·재검토 필수 절차
 
 1. **전수 조회:** 이슈·PR 전체(open/closed/merged), 최신 커밋 SHA, base/head 스택, `CHANGES_REQUESTED` 이후 신규 커밋, CI/배포 미검증을 구별한다. 과거 리뷰 상태만으로 최신 HEAD을 합격 처리하지 않는다.
-2. **선행 순서 최신:** 추천·공지 **#15→#16→#40**, 부분공유 #49, 캘린더 계산 #50과 Wire #53은 모두 **main 병합 완료**(현재 CI/HEAD 승인 확인). 추천 설명 #41도 충돌을 해소하고 HEAD c5e86f2의 승인·CI 성공 후 **main 병합 완료**. 실제 React/API 표시·권한 입력은 별도 검증 대상이다. Temporal RAG는 **#33 계약→#34 SQL** 순서로 독립 승인·충돌 해소 필요. `rank-v1.1`은 A15/UX 검증 전 opt-in으로 유지한다.
+2. **2026-11-01 현재 선행 관계:** 추천 #15/#16/#40/#41, 부분공유 #49, 달력 #50/#53, 통합 API/PG/Temporal RAG [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58), React 셸 #68, 오늘·기회·공지 #69, 캘린더 브라우저 API #77은 **main 병합 완료**. 옛 #33→#34는 개별 CLOSED/unmerged이고 상응 코드는 #58에 통합돼 별도 미병합 PR을 재활성화하지 않는다. #72 실제 UI port 연결이 선행하며 #73→#76 순차 스택, #83 플랫폼 추가 기능은 타인 리뷰/PG 검증 전 미병합. `rank-v1.1`은 A15/UX 검증 전 opt-in 유지.
 3. **병합 기준(최신 사용자 지시):** (a) 비작성자 **1명 이상이 현재 HEAD SHA에 `APPROVED`**, (b) 동일 HEAD 필수 GitHub Actions 성공, (c) draft 아님/mergeable, (d) 스택 안에 아직 미승인·미병합 선행 변경이 잠입하지 않음, (e) 유효한 `CHANGES_REQUESTED`/보안·권한 차단이 해결됨을 확인한다. `COMMENTED`, 과거 HEAD 승인, 본인 PR 자기 승인, 합성 CI만으로 실배포 승인을 대신하지 못한다. 선행 PR 병합 후 base 동기화로 HEAD가 달라지면 최신 변경을 검토하고 다시 승인받는다. GitHub가 리뷰 수를 기술적으로 강제하지 않는 경우도 총괄이 수동으로 지킨다.
 4. **파일·권한:** 팀원 소유 모듈을 총괄자가 덮어쓰지 않는다. 문제는 재현·근거 링크를 적은 리뷰/이슈로 남기고 작성자가 수정하도록 요청한다. 공통 타입은 독립 리뷰 PR로 수정하고 문서는 총괄자가 main에 직접 커밋한다. 실제 과목 CSV·Forms 원문이 이미 Private Git에 추적된 이력은 [DATA_GOVERNANCE](DATA_GOVERNANCE.md)에 기록하고 목적별 승인 없이 코드·CI·모델·배포로 옮기지 않는다.
 
@@ -37,7 +37,7 @@
 - **PR 대체/재기반:** #54 → [#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)처럼 main 선행 변경과 테스트 충돌이 있을 때 기존 PR을 미병합 폐쇄하고 최신 main 기반 successor에서 해결한다. CI가 실패한 PR을 예전 승인만으로 병합하지 않는다.
 
 - 계획에 없던 사용자 기능(예: 홈 하단 **'내 주요 일정' 미니 캘린더**)이 제안되면 담당 이슈·기술 계약·UI 소비자·권한/검증 테스트를 함께 정의하고 **Proposal.md, Architecture.md, STATUS.md, README.md, docs/WORKSTREAMS.md**에 설계/구현/미구현을 구별해 반영한다. 단순 리뷰나 타입 PR 병합을 기능 출시로 기록하지 않는다.
-- 캘린더: 추천/공지 계산 **#50 + 결과 계약 #53 main 병합 완료**, UI **#51**(이의상) 및 인증된 API **#52**(심민성)는 **미구현**, 부분공유 순수 코어 #49 main 병합·원자적 DB/HTTP #35/#55는 타인 승인 및 실제 PG 검증 대기. #39 인가 게이트와 서버 출처 rights/provenance를 종단 연결해야 한다. `GET /api/demo/contexts/:contextId/calendar`는 계약 결정으로, 서버 라우트/DB/React 연결 전에는 실제 API가 제공된다고 쓰지 않는다. 날짜 미정·UNKNOWN·중복 공지는 별도 처리, 부서 행정 마감은 학생 마감이 아니다. `.ics` export와 푸시는 이번 mini-calendar 범위 밖.
+- **캘린더 최신 상태(2026-11-01):** #50 계산/#53 Wire, #58 actor·grant·asOf 서버 `GET /api/demo/contexts/:contextId/calendar`, [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 브라우저 `getCalendar`는 모두 **main 병합**. [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)의 실제 비합성 `main.tsx` `AppServices.loadCalendar` 소비가 미연결이라 #51 UI 완료/실운영 API 연결은 **미완료**. 리뷰 요청에서 401/403 revoke, late response/epoch·snapshot.asOf, 비공유 scope, 브라우저 E2E를 확인한다. 미정 날짜/UNKNOWN/중복과 행정 보고 마감은 학생 마감으로 승격하지 않는다. `.ics`/push는 범위 밖.
 - 문서 정정은 위의 운영 문서 예외에 따라 총괄이 최신 SHA 확인 후 `main`에 바로 기록할 수 있다. 코드/공통 계약은 항상 리뷰 PR을 거친다.
 
 ## 통합 PR 의존 및 공유 CI 경계 (#15/#16/#28/#29/#31)
@@ -46,10 +46,10 @@
 
 ## 신규 OCR·RAG·Laya 설계와 기존 TASK/PR 충돌 방지
 
-2026-10-31 설계 변경은 **문서와 합성 계약만 변경**하며 제안서 산출물은 `Proposal.md`만 유지한다. `SourceRevision`, 이미지 좌표 `SourceSpan`, `VerifiedClaim`, `RetrievalEnvelope`, CPU Laya 판단 어댑터 등 공통 타입과 DB·API 시그니처는 **후속 독립 contracts PR**에서 도입한다. 이미 열려 있는 TASK-06/14 PR과 임의 혼합/rebase·자동 병합하지 않는다. 신규 계약 PR은 추천·공지, 학업, UI, API 소비자 리뷰와 합성 이미지/정정·`asOf` 부정시험, 최신 요금·CPU/RSS 확인을 요구한다. 문서 변경 자체는 NCP 사용/실학생 데이터 외부 전송·OCR/HCX 호출 승인이 아니다. [세부 계약](TRUSTED_RAG_MEDIA_VERSIONING.md).
+**2026-10-31 당시 설계 결정을 기록한 절(현재 코드 구현 상태는 위 최신 요약 우선):** SourceRevision·IMAGE span·VerifiedClaim·Temporal RAG 공통 계약과 permission-first PG/API 코드는 [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58)로 main 통합됐다. 새 운영 provider SDK/권리 검수/실 OCR·원본 bbox/학사 학칙/모델 메모리·요금·CPU 검증을 구현 완료로 혼동하지 않는다. #83의 신규 증빙 검수/attestation/overlay SQL 등은 추가 리뷰·일회용 PG 검증과 권한 gate 확인이 필요하다. [세부 설계](TRUSTED_RAG_MEDIA_VERSIONING.md).
 
 ## 심사자 초대·기간제 접근 PR 리뷰 게이트 (#25)
 
-- 외부 REVIEWER가 일반 팀원 API나 실학생 projection/Forms, 관리자·유료 AI API로 들어갈 수 있는 경로가 없는지 독립 **UI·API 보안 교차검토**한다. `/api/reviewer`의 인가 구현은 base API [PR #24](https://github.com/ot4562-glitch/HUFS-One-AI/pull/24)에 스택으로 작성한다.
+- **최신 REVIEWER 통합:** #24의 기반 API는 #58 합성/PG 통합으로 main 병합. UI 초대 [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73)·합성 sandbox [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)는 #72 선행 수정/병합 및 별도 현재 HEAD 리뷰/CI 전 **OPEN**. 외부 REVIEWER가 실제 학생 projection·Forms·관리자/유료 AI로 접근하지 못함을 UI/API 교차 권한 E2E에서 검증한다.
 - [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md)의 이메일/Google sub 바인딩·초대 digest·기간 끝 경계·철회·다중 세션·CSRF·RATE 제한/재시작 후 DB 지속성·민감 화면 접근 거부 합성 테스트를 요구한다. 초대 링크/실제 수신 이메일을 GitHub/PR/테스트 출력에 공개하지 않는다.
 - 실제 Google 로그인/메일 검증·지속 DB·배포·초대 발송은 별도 운영 승인 없이 동작했다고 표시하지 않는다. 현재 PDF는 **비활성 양식**만 공유한다. 초대장이 있다고 해서 공식 학교 SSO/학교 승인이 부여되는 것은 아니다.
