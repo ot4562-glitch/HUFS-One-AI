@@ -3,11 +3,13 @@
 
 ## 2026-11-01 최신 역할·협업 핸드오프
 
+- **통합 담당 후속 PR:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 합성 코퍼스/원본 검수·태그 승인·overlay/OTP quota/preflight는 심민성 소유, 리뷰 가능 상태로 전환하고 `qamarrchae`·`taewangim-alt`·`uisang2004-maker`에게 독립 리뷰 요청했다. 현재 HEAD CI 2 jobs 성공과 30개 신규 opt-in 실제 PG SKIP을 구분하고, 다른 사람 승인/신규 일회용 PG·main 정렬 전 main 병합 금지.
+
 GitHub 이슈의 **현재 담당**은 심민성 `ot4562-glitch`(#27 API/인증/일반 PG/Temporal/공통 계약, #71 브라우저 캘린더 포트), 이의상 `uisang2004-maker`(#9 UI/접근성, #51 캘린더), 김채윤 `qamarrchae`(#10 추천·공지·합성 평가), 박준영 `taewangim-alt`(#11 학업/RulePack), 이서연 `lhh42001`(#12/#20/#22 NCP·CLOVA·OCR/Vision·Laya 환경/실 provider)이다. GitHub 할당은 개인정보 처리/기관 승인과 별개다.
 
 - **통합/main:** API·출처·권한 합성 코드 #58와 React 셸 #68 모두 병합. [#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68)의 데이터 혼합 P1은 최신 CI·반례 테스트 후 수정/승인됨.
-- **UI 스택:** [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) → [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) → [#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) → [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) → [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76)는 각각 OPEN. UI 코어/실인증 소비·캘린더·REVIEWER 구간을 합성 E2E와 실제 서버 E2E로 구별한다. 승인/CI 후 선행 순서대로 merge한다.
-- **API→UI 요청:** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77)은 `getCalendar(contextId, signal)`와 합성 부정 테스트, CI SUCCESS. 화면 담당은 병합 후 같은 객체의 `getCalendar`를 `AppServices.loadCalendar`에 연결하고 `DemoController.runContextOperation` + `validateCalendarWire(result, snapshot.asOf)`로 late 응답/철회·버전 mismatch를 차단한다.
+- **UI 스택 현황(2026-11-01):** [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) 현재 HEAD 독립 APPROVED/CI 2 jobs SUCCESS 후 merge commit `5617222f`로 **main 병합 완료**. 후속 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → #73 → #74 → #75 → #76은 OPEN; #72 base를 main으로 바꿨으나 **비합성 loadCalendar 미연결로 CHANGES_REQUESTED**. 작성자 `uisang2004-maker`가 수정/새 CI 후 재검토하고, 합성 E2E/실서버 E2E는 구별한다.
+- **API→UI 요청(#71 완료, UI #51 진행):** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) `HufsApiClient.getCalendar(contextId,signal)`와 응답 거부/취소/권한 검증은 **main squash `552ad35e` 병합**(UI 담당 독립 승인·Actions 2 jobs 성공). 작성자 UI #72의 `main.tsx` 실제 비합성 `AppServices.loadCalendar = (ctx, signal) => api.getCalendar(ctx.contextId, signal)` 연결 및 `DemoController.runContextOperation` + `validateCalendarWire(..., snapshot.asOf)`·401/403·late 응답 회귀가 남았다.
 - **학업 코어 추가 병합:** [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 규칙 발효기간/asOf 수정·CI·재승인 후 main `0a8d44bd` 병합. 실제 학칙 사람 원문 검토·적용 학번 규칙은 별도.
 
 이 아래의 날짜별 협업 메모는 해당 시점의 이력이다. 예전 "calendar API 미구현"/"웹 UI 전부 미구현" 주장은 최신 통합 코드/기초 셸 상태를 덮어쓰지 않는다.
