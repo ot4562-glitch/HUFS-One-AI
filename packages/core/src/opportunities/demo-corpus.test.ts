@@ -54,6 +54,33 @@ describe('A12 synthetic demo corpus invariants', () => {
     for (const n of DEMO_NOTICES) expect(n.evidenceRefs.every(r => r.startsWith('EV-SYN-NOT-'))).toBe(true);
   });
 
+  it('review records are internally consistent (PR #60 review)', () => {
+    const ids = new Set(DEMO_OPPORTUNITIES.map(o => o.id));
+    for (const s of DEMO_STUDENTS) {
+      const r = DEMO_LABEL_REVIEW[s.subject];
+      // unchecked ⊆ corpus ids, no duplicates, and consistent with status / checkedCount
+      expect(new Set(r.unchecked).size).toBe(r.unchecked.length);
+      for (const id of r.unchecked) expect(ids.has(id)).toBe(true);
+      if (r.status === 'AGENT_DRAFT') {
+        expect(r).toMatchObject({reviewerRole:'NONE', checkedCount:0, changes:[]});
+        expect(r.unchecked).toHaveLength(40);
+      } else {
+        expect(r.reviewerRole).not.toBe('NONE');
+        expect(r.checkedCount).toBe(40 - r.unchecked.length);
+      }
+      // every change: corpus id, real change, current label equals "to", non-empty reason, no duplicates
+      expect(new Set(r.changes.map(c => c[0])).size).toBe(r.changes.length);
+      for (const [id, from, to] of r.changes) {
+        expect(ids.has(id)).toBe(true);
+        expect(from).not.toBe(to);
+        expect(DEMO_LABELS[s.subject][id]).toBe(to);
+        expect(r.unchecked).not.toContain(id);
+      }
+    }
+    // A self-check by the track owner is never presented as independent gold labels.
+    expect(DEMO_STUDENTS.some(s => DEMO_LABEL_REVIEW[s.subject].reviewerRole === 'INDEPENDENT')).toBe(false);
+  });
+
   it('has 200 labels (40 × 5) over exactly the corpus ids, with a per-student review record', () => {
     expect(DEMO_STUDENTS.map(s => DEMO_LABEL_REVIEW[s.subject].status)).toEqual(['HUMAN_CHECKED', 'HUMAN_CHECKED', 'HUMAN_CHECKED', 'HUMAN_CHECKED', 'HUMAN_CHECKED']);
     expect(DEMO_STUDENTS.every(s => DEMO_LABEL_REVIEW[s.subject].unchecked.length === 0)).toBe(true);

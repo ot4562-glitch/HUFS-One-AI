@@ -50,8 +50,13 @@ export const DEMO_STUDENTS:readonly DemoStudent[] = [
  * fully independent reviewer A15.1 asks for. Eligibility is not labelled here.
  */
 export type LabelReviewStatus = 'HUMAN_CHECKED'|'AGENT_DRAFT';
+/** Who checked: the recommendation track owner (self-check) vs an independent reviewer (A15.1 gold). */
+export type LabelReviewerRole = 'TRACK_OWNER_SELF'|'INDEPENDENT'|'NONE';
 export interface LabelReview {
   status:LabelReviewStatus;
+  reviewerRole:LabelReviewerRole;
+  /** Number of the 40 labels the person checked (40 − unchecked.length when HUMAN_CHECKED, 0 for AGENT_DRAFT). */
+  checkedCount:number;
   /** Ids still at the agent draft value (not checked by the person). */
   unchecked:string[];
   /** Labels the person changed from the draft: [id, from, to, note]. */
@@ -59,15 +64,15 @@ export interface LabelReview {
 }
 
 export const DEMO_LABEL_REVIEW:Readonly<Record<DemoStudent['subject'], LabelReview>> = {
-  S01:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+  S01:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
     ['SYN-OPP-025', 1, 2, '소프트웨어 개발'], ['SYN-OPP-036', 1, 2, '소프트웨어 개발']]},
-  S02:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+  S02:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
     ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장을 위한 것'], ['SYN-OPP-014', 1, 0, '']]},
-  S03:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+  S03:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
     ['SYN-OPP-006', 0, 1, '개인 성장 관련'], ['SYN-OPP-010', 1, 2, '정책연구는 관련됨'], ['SYN-OPP-037', 1, 2, '']]},
-  S04:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+  S04:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
     ['SYN-OPP-006', 0, 1, ''], ['SYN-OPP-011', 1, 2, '일본어와 미디어'], ['SYN-OPP-035', 2, 1, '마케팅과 거리가 있음']]},
-  S05:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+  S05:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
     ['SYN-OPP-006', 0, 1, ''], ['SYN-OPP-014', 1, 2, '경제연구'], ['SYN-OPP-024', 1, 2, '공공정책 관련']]},
 };
 /** Review date of the human check (2026-11-01, track owner, via the local label review page). */
