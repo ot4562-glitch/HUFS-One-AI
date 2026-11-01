@@ -35,20 +35,71 @@ export const OwnerMajorWhatIfBlockedSchema=z.strictObject({
   scenario:OwnerMajorWhatIfScenarioSchema,
   blockers:z.array(OwnerMajorWhatIfBlockerSchema).min(1).max(10),
   caveat:Caveat,
+}).superRefine((v,ctx)=>{
+  if(new Set(v.blockers).size!==v.blockers.length)
+    ctx.addIssue({code:'custom',path:['blockers'],message:'Duplicate dependency blockers'});
 });
 
+const RequirementProgress=z.strictObject({
+  requirementId:Ref,
+  state:z.enum(['SATISFIED','MISSING']),
+  missingCreditUnits:CreditUnitsSchema.max(2000).optional(),
+}).superRefine((v,ctx)=>{
+  if(v.state==='SATISFIED'&&v.missingCreditUnits!==undefined
+    &&v.missingCreditUnits!==0)
+    ctx.addIssue({code:'custom',path:['missingCreditUnits'],
+      message:'Satisfied requirement has no missing credits'});
+});
 const Projection=z.strictObject({
   asOf:Utc,
   role:z.enum(['CURRENT','HYPOTHETICAL']),
   rulePackVersion:Ref,
+  /** Same immutable owner ledger, regardless of hypothetical major. */
   earnedCreditUnits:CreditUnitsSchema.max(2000),
   remainingCreditUnits:CreditUnitsSchema.max(2000),
-  requirements:z.array(z.strictObject({
-    requirementId:Ref,
-    state:z.enum(['SATISFIED','MISSING']),
-    missingCreditUnits:CreditUnitsSchema.max(2000).optional(),
-  })).max(200),
+  requirements:z.array(RequirementProgress).max(200),
+}).superRefine((v,ctx)=>{
+  if(new Set(v.requirements.map(r=>r.requirementId)).size!==v.requirements.length)
+    ctx.addIssue({code:'custom',path:['requirements'],
+      message:'Duplicate requirement projection ID'});
 });
+export type MajorWhatIfRequirementProgress=z.infer<typeof RequirementProgress>;
+export type MajorWhatIfDeltaRow={
+  requirementId:string;
+  change:'NEW_REQUIREMENT'|'ALREADY_SATISFIED'|'REMOVED_REQUIREMENT'
+    |'UNCHANGED'|'PROGRESS_CHANGED';
+};
+/** Sanity-check a proposed delta; this is not a course recognition,
+ * major-program calculation, or a substitute for an approved academic core.
+ * Every current/virtual requirement must appear exactly once in the diff.
+ */
+export function isConsistentMajorWhatIfDelta(input:{
+  current:readonly MajorWhatIfRequirementProgress[];
+  hypothetical:readonly MajorWhatIfRequirementProgress[];
+  delta:readonly MajorWhatIfDeltaRow[];
+}):boolean{
+  const before=new Map(input.current.map(r=>[r.requirementId,r]));
+  const after=new Map(input.hypothetical.map(r=>[r.requirementId,r]));
+  const ids=new Set([...before.keys(),...after.keys()]);
+  if(before.size!==input.current.length||after.size!==input.hypothetical.length
+    ||ids.size!==input.delta.length)return false;
+  const seen=new Set<string>();
+  for(const row of input.delta){
+    const id=row.requirementId;
+    if(seen.has(id)||!ids.has(id))return false;
+    seen.add(id);
+    const previous=before.get(id),next=after.get(id);
+    let expected:MajorWhatIfDeltaRow['change'];
+    if(!previous)expected=next!.state==='SATISFIED'
+      ?'ALREADY_SATISFIED':'NEW_REQUIREMENT';
+    else if(!next)expected='REMOVED_REQUIREMENT';
+    else expected=previous.state===next.state
+      &&(previous.missingCreditUnits??0)===(next.missingCreditUnits??0)
+      ?'UNCHANGED':'PROGRESS_CHANGED';
+    if(row.change!==expected)return false;
+  }
+  return true;
+}
 const Proof=z.strictObject({
   verifiedAt:Utc,
   coreVersion:Ref,cohortApplicabilityVersion:Ref,
@@ -66,7 +117,7 @@ export const OwnerMajorWhatIfReadySchema=z.strictObject({
   delta:z.array(z.strictObject({
     requirementId:Ref,
     change:z.enum(['NEW_REQUIREMENT','ALREADY_SATISFIED',
-      'REMOVED_REQUIREMENT','UNCHANGED']),
+      'REMOVED_REQUIREMENT','UNCHANGED','PROGRESS_CHANGED']),
     evidenceRefs:z.array(Ref).min(1).max(20),
   })).max(200),
   versions:z.strictObject({
@@ -75,7 +126,10 @@ export const OwnerMajorWhatIfReadySchema=z.strictObject({
   }),
   evidenceLinks:z.array(z.strictObject({
     evidenceRef:Ref,
-    href:z.url().refine(x=>new URL(x).protocol==='https:'),
+    href:z.url().refine(x=>{
+      const url=new URL(x);
+      return url.protocol==='https:'&&!url.username&&!url.password;
+    }),
     verifiedAt:Utc,
   })).min(1).max(100),
   approval:Proof,
@@ -86,6 +140,12 @@ export const OwnerMajorWhatIfReadySchema=z.strictObject({
   });
   if(v.current.asOf!==v.asOf||v.hypothetical.asOf!==v.asOf)
     issue(['asOf'],'Current and hypothetical must share one verified snapshot');
+  if(v.current.earnedCreditUnits!==v.hypothetical.earnedCreditUnits)
+    issue(['hypothetical','earnedCreditUnits'],'Virtual programs cannot change unique earned ledger');
+  if(!isConsistentMajorWhatIfDelta({
+    current:v.current.requirements,hypothetical:v.hypothetical.requirements,
+    delta:v.delta,
+  }))issue(['delta'],'Diff must cover each requirement once and match both projections');
   for(const [key,field] of [
     ['currentRulePack','currentRulePackVersion'],
     ['hypotheticalRulePack','hypotheticalRulePackVersion'],
@@ -103,6 +163,12 @@ export const OwnerMajorWhatIfReadySchema=z.strictObject({
   if(Date.parse(v.approval.verifiedAt)>Date.parse(v.asOf))
     issue(['approval','verifiedAt'],'Future approval cannot validate past asOf');
   const linked=new Set(v.evidenceLinks.map(x=>x.evidenceRef));
+  if(linked.size!==v.evidenceLinks.length
+    ||new Set(v.approval.officialEvidenceRefs).size!==v.approval.officialEvidenceRefs.length)
+    issue(['evidenceLinks'],'Duplicate evidence refs');
+  for(const [i,link] of v.evidenceLinks.entries())
+    if(Date.parse(link.verifiedAt)>Date.parse(v.asOf))
+      issue(['evidenceLinks',i,'verifiedAt'],'Future verification is not evidence as-of this check');
   if(v.approval.officialEvidenceRefs.some(ref=>!linked.has(ref)))
     issue(['evidenceLinks'],'Missing a permitted official clause link');
   if(v.delta.some(d=>d.evidenceRefs.some(ref=>!linked.has(ref))))
