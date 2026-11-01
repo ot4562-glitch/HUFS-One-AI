@@ -30,13 +30,13 @@ CREATE POLICY reviewer_sandbox_exact_scope ON reviewer_sandbox_state
 -- Least-privileged caller can ask for authorization but cannot browse identities
 -- or invitation digests. The row lock serializes reads/writes with revoke.
 CREATE OR REPLACE FUNCTION reviewer_sandbox_allowed(p_invite text,p_actor text)
-RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp AS $
+RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp AS $reviewer_guard$
   SELECT EXISTS(SELECT 1 FROM reviewer_invitations i
     JOIN reviewer_enrollments e ON e.invite_id=i.id
     WHERE i.id=p_invite AND e.actor_id=p_actor AND i.revoked_at IS NULL
       AND i.starts_at<=clock_timestamp() AND i.ends_at>clock_timestamp()
     FOR UPDATE OF i);
-$;
+$reviewer_guard$;
 REVOKE ALL ON FUNCTION reviewer_sandbox_allowed(text,text) FROM PUBLIC;
 -- Dedicated trusted API role gets function EXECUTE and table SELECT/INSERT/UPDATE
 -- after security review; it does NOT get reviewer identity/invitation tables.
