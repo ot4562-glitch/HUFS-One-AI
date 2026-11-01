@@ -1,7 +1,7 @@
 import {z} from 'zod';
 export * from './workspace.js';
 import {DesiredJobTopicsSchema,InterestTopicsSchema} from '../topics/index.js';
-import {CourseRecordSchema} from '../academics/index.js';
+import {AcademicTermVNextSchema,CourseRecordSchema} from '../academics/index.js';
 import {OpportunitySchema} from '../corpus/index.js';
 
 const Utc=z.iso.datetime({offset:true});
@@ -31,13 +31,22 @@ export const SelfConsentSchema=z.strictObject({
 });
 export type SelfConsent=z.infer<typeof SelfConsentSchema>;
 
-/** This transcript is private, independently approved, and never a demo SharingGrant. */
+/** This transcript is private, independently approved, and never a demo SharingGrant.
+ * Rows are earned or in progress only. A plan is not a transcript line, and this
+ * list is not a credit total: unique credits still go through the ledger rules.
+ */
 export const OwnerTranscriptSchema=z.strictObject({
   state:z.literal('OWNER_APPROVED'),
   sourceRevisionId:z.string().min(1).max(128),
   sourceRightsVersion:z.string().min(1).max(128),
   asOf:Utc,reviewedAt:Utc,
   courses:z.array(CourseRecordSchema).max(500),
+}).superRefine((v,ctx)=>{
+  for(const [i,course] of v.courses.entries()){
+    if(course.ledger==='PLANNED')
+      ctx.addIssue({code:'custom',path:['courses',i,'ledger'],
+        message:'An approved transcript cannot contain a planned course'});
+  }
 });
 export type OwnerTranscript=z.infer<typeof OwnerTranscriptSchema>;
 
@@ -59,11 +68,16 @@ export const CatalogCourseSchema=z.strictObject({
   creditUnits:z.number().int().min(0).max(60),
   source:ApprovedSourceSchema,
 });
+/** Official catalog fact for one regular term. A past count stays on OfferingOutlookVNext. */
 export const CourseOfferingSchema=z.strictObject({
   courseId:z.string().min(1).max(90),
-  term:z.string().min(1).max(32),
-  status:z.enum(['CONFIRMED_OFFERED','CONFIRMED_NOT_OFFERED','HISTORICAL_PATTERN','UNKNOWN']),
+  term:AcademicTermVNextSchema,
+  status:z.enum(['CONFIRMED_OFFERED','CONFIRMED_NOT_OFFERED','UNKNOWN']),
   source:ApprovedSourceSchema,
+}).superRefine((item,ctx)=>{
+  if(item.status.startsWith('CONFIRMED_')&&item.source.status!=='ACTIVE')
+    ctx.addIssue({code:'custom',path:['status'],
+      message:'Official offering confirmation requires an ACTIVE verified source'});
 });
 const PageMeta={asOf:Utc,nextCursor:z.string().max(90).nullable()};
 export const CourseCatalogPageSchema=z.strictObject({
@@ -71,6 +85,13 @@ export const CourseCatalogPageSchema=z.strictObject({
 });
 export const CourseOfferingsPageSchema=z.strictObject({
   ...PageMeta,items:z.array(CourseOfferingSchema).max(50),
+}).superRefine((page,ctx)=>{
+  const seen=new Set<string>();
+  for(const [i,item] of page.items.entries()){
+    if(seen.has(item.term))
+      ctx.addIssue({code:'custom',path:['items',i,'term'],message:'One offering status per term'});
+    seen.add(item.term);
+  }
 });
 export const OpportunityCatalogItemSchema=z.strictObject({
   opportunity:OpportunitySchema,

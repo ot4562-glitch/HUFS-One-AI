@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {
   SelfProfilePatchSchema,SelfConsentPutSchema,OwnerTranscriptSchema,
-  CourseCatalogPageSchema,OpportunityCatalogPageSchema,
+  CourseCatalogPageSchema,CourseOfferingsPageSchema,OpportunityCatalogPageSchema,
   OwnerWorkspaceCreateSchema,OwnerWorkspaceUpdateSchema,
   TOPIC_CODES,
 } from '@hufs-one/contracts';
@@ -45,6 +45,31 @@ describe('Architecture A13 owner and catalog Zod negative contracts',()=>{
     expect(OwnerTranscriptSchema.safeParse({...transcript,state:'STUDENT_REVIEW_PENDING'}).success).toBe(false);
     expect(OwnerTranscriptSchema.safeParse({...transcript,
       courses:[{...transcript.courses[0],creditUnits:-1}]}).success).toBe(false);
+    expect(OwnerTranscriptSchema.safeParse({...transcript,
+      courses:[{...transcript.courses[0],ledger:'IN_PROGRESS'}]}).success).toBe(true);
+    expect(OwnerTranscriptSchema.safeParse({...transcript,
+      courses:[{...transcript.courses[0],ledger:'PLANNED'}]}).success).toBe(false);
+  });
+  it('keeps an offering list to one official catalog fact per regular term',()=>{
+    const item={courseId:'SYN-C1',term:'2026-1',status:'UNKNOWN' as const,source:syntheticSource};
+    const active={...syntheticSource,status:'ACTIVE' as const,verifiedAt:at};
+    expect(CourseOfferingsPageSchema.safeParse({asOf:at,nextCursor:null,items:[item]}).success).toBe(true);
+    expect(CourseOfferingsPageSchema.safeParse({asOf:at,nextCursor:null,items:[
+      {...item,status:'CONFIRMED_OFFERED',source:active},
+    ]}).success).toBe(true);
+    expect(CourseOfferingsPageSchema.safeParse({asOf:at,nextCursor:null,items:[
+      {...item,status:'CONFIRMED_OFFERED'},
+    ]}).success).toBe(false);
+    expect(CourseOfferingsPageSchema.safeParse({asOf:at,nextCursor:null,items:[
+      {...item,status:'HISTORICAL_PATTERN'},
+    ]}).success).toBe(false);
+    expect(CourseOfferingsPageSchema.safeParse({asOf:at,nextCursor:null,items:[
+      {...item,term:'2026-3'},
+    ]}).success).toBe(false);
+    expect(CourseOfferingsPageSchema.safeParse({asOf:at,nextCursor:null,items:[
+      {...item,status:'CONFIRMED_OFFERED',source:active},
+      {...item,status:'CONFIRMED_NOT_OFFERED',source:active},
+    ]}).success).toBe(false);
   });
   it('requires human verifiedAt for ACTIVE source metadata',()=>{
     const item={courseId:'SYN-C1',courseCode:'SYN01',title:'가상',campus:'SEOUL',

@@ -278,8 +278,17 @@ describe('TASK-18 academic notice scope: verified provenance and one-ended cohor
       {graduationTermScope:['2026-2','2026-2']},
       {majorRoles:['PRIMARY','PRIMARY']},
       {admissionTypes:[]},
+      {campuses:[]},
+      {majorCodes:[]},
       {majorRoles:['UNKNOWN']},
     ])expect(EvidenceScopeSchema.safeParse(invalid).success).toBe(false);
     expect(matchesEvidenceScope({unknownStudentCondition:true} as never,actor)).toBe(false);
+    expect(matchesEvidenceScope({campuses:[]} as never,actor)).toBe(false);
+    expect(matchesEvidenceScope({majorCodes:[]} as never,actor)).toBe(false);
+  });
+  it('keeps a role-only restriction when major codes are omitted, not emptied',()=>{
+    const roleOnly=EvidenceScopeSchema.parse({majorRoles:['DOUBLE']});
+    expect(matchesEvidenceScope(roleOnly,{majors:[{code:'ECONOMICS',role:'DOUBLE'}]})).toBe(true);
+    expect(matchesEvidenceScope(roleOnly,{majors:[{code:'ECONOMICS',role:'PRIMARY'}]})).toBe(false);
   });
 });
