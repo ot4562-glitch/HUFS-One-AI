@@ -9,6 +9,11 @@ const CREDIT_6 = 12;
 const CREDIT_9 = 18;
 const CREDIT_12 = 24;
 const AS_OF = '2026-11-01T00:00:00.000Z';
+const RETAKE = {
+  supersedesAttemptToken:'SYN-X-1',
+  retakeApprovalRef:'SYN-RETAKE-APPROVAL-1',
+  term:'2025-2',
+} as const;
 
 const attempt = (
   attemptToken:string,
@@ -63,8 +68,8 @@ describe('buildAcademicLedger A08.5 credit units', () => {
 
   it('CREDIT-02 keeps only the approved retake and excludes the earlier attempt', () => {
     const audit = buildAcademicLedger(base([
-      attempt('SYN-X-1', 'SYN-X', {areaIds:['SYN-AREA-A']}),
-      attempt('SYN-X-2', 'SYN-X', {areaIds:['SYN-AREA-A'], supersedesAttemptToken:'SYN-X-1'}),
+      attempt('SYN-X-1', 'SYN-X', {areaIds:['SYN-AREA-A'], term:'2025-1'}),
+      attempt('SYN-X-2', 'SYN-X', {areaIds:['SYN-AREA-A'], ...RETAKE}),
     ]));
     expect(audit.earnedCreditUnits).toBe(CREDIT_3);
     expect(audit.projectedUniqueCreditUnits).toBe(CREDIT_3);
@@ -74,6 +79,63 @@ describe('buildAcademicLedger A08.5 credit units', () => {
     expect(audit.excludedAttempts).toEqual([
       {attemptToken:'SYN-X-1', reason:'RETAKE_SUPERSEDED'},
     ]);
+    expect(audit.state).toBe('READY');
+  });
+
+  describe('an unverified supersede link never removes earned credit', () => {
+    const earned = attempt('SYN-X-1', 'SYN-X', {areaIds:['SYN-AREA-A'], term:'2025-1'});
+    const expectEarnedKept = (claimer:LedgerAttempt) => {
+      const audit = buildAcademicLedger(base([earned, claimer]));
+      expect(audit.earnedCreditUnits).toBe(CREDIT_3);
+      expect(audit.areaProgress.find(area => area.areaId === 'SYN-AREA-A')?.earnedCreditUnits).toBe(CREDIT_3);
+      expect(audit.excludedAttempts).toEqual([{attemptToken:claimer.attemptToken, reason:'NEEDS_REVIEW'}]);
+      expect(audit.state).toBe('NEEDS_REVIEW');
+      return audit;
+    };
+
+    it('a different course cannot supersede an earned course', () => {
+      expectEarnedKept(attempt('SYN-Y-1', 'SYN-Y', {areaIds:['SYN-AREA-A'], ...RETAKE}));
+    });
+
+    it('a planned or in-progress attempt of the same course cannot supersede an earned one', () => {
+      const planned = expectEarnedKept(attempt('SYN-X-2', 'SYN-X', {...RETAKE, ledger:'PLANNED', term:'2026-2'}));
+      expect(planned.plannedCreditUnits).toBe(0);
+      const current = expectEarnedKept(attempt('SYN-X-2', 'SYN-X', {...RETAKE, ledger:'IN_PROGRESS', term:'2026-2'}));
+      expect(current.inProgressCreditUnits).toBe(0);
+    });
+
+    it('a pending or excluded later attempt cannot supersede an earned one', () => {
+      const pending = expectEarnedKept(attempt('SYN-X-2', 'SYN-X', {...RETAKE, recognition:'PENDING'}));
+      expect(pending.pendingRecognitionCreditUnits).toBe(0);
+      expectEarnedKept(attempt('SYN-X-2', 'SYN-X', {...RETAKE, recognition:'EXCLUDED'}));
+    });
+
+    it('a retake without an approval reference or a later term is held for review', () => {
+      const {retakeApprovalRef: _omit, ...noApproval} = RETAKE;
+      expectEarnedKept(attempt('SYN-X-2', 'SYN-X', noApproval));
+      expectEarnedKept(attempt('SYN-X-2', 'SYN-X', {...RETAKE, term:'2025-1'}));
+      expectEarnedKept(attempt('SYN-X-2', 'SYN-X', {...RETAKE, term:'2024-2'}));
+      const {term: _noTerm, ...noTerm} = RETAKE;
+      expectEarnedKept(attempt('SYN-X-2', 'SYN-X', noTerm));
+    });
+
+    it('two claimers on one earned attempt hold both claimers and keep the original', () => {
+      const audit = buildAcademicLedger(base([
+        earned,
+        attempt('SYN-X-2', 'SYN-X', RETAKE),
+        attempt('SYN-X-3', 'SYN-X', {...RETAKE, term:'2026-1'}),
+      ]));
+      expect(audit.earnedCreditUnits).toBe(CREDIT_3);
+      expect(audit.excludedAttempts).toEqual([
+        {attemptToken:'SYN-X-2', reason:'NEEDS_REVIEW'},
+        {attemptToken:'SYN-X-3', reason:'NEEDS_REVIEW'},
+      ]);
+      expect(audit.state).toBe('NEEDS_REVIEW');
+    });
+
+    it('refuses a malformed term', () => {
+      expect(() => buildAcademicLedger(base([attempt('SYN-X-1', 'SYN-X', {term:'2025-3'})]))).toThrow(/term/);
+    });
   });
 
   it('CREDIT-03 keeps a pending exchange out of earned credits and shows 3학점 awaiting recognition', () => {

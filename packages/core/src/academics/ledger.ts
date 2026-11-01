@@ -25,11 +25,18 @@ export interface LedgerAttempt {
   /** Official allocation. One course may list several areas; the unique total still counts it once. */
   areaIds:readonly string[];
   recognition:LedgerRecognition;
+  /** Academic term `YYYY-1|S|2|W`. Required on both sides of a retake. */
+  term?:string;
   /**
    * Explicit approved retake (repeatPolicy EXPLICIT_APPROVED_ATTEMPT).
-   * The named attempt is excluded as RETAKE_SUPERSEDED and is not added again.
+   * The named attempt is excluded as RETAKE_SUPERSEDED only when both attempts are the
+   * same course, both are EARNED, this one is RECOGNIZED in a later term, and
+   * `retakeApprovalRef` is present. Otherwise this attempt alone is held as NEEDS_REVIEW
+   * and the earlier earned credit stays counted.
    */
   supersedesAttemptToken?:string;
+  /** Reference to the official retake approval. A bare supersede link is not enough. */
+  retakeApprovalRef?:string;
 }
 
 interface RequirementBase {
@@ -85,6 +92,25 @@ interface AreaTotals {
 }
 
 const SLOT_RANK:Record<LedgerSlot, number> = {EARNED:0, IN_PROGRESS:1, PLANNED:2};
+const TERM = /^(\d{4})-(1|S|2|W)$/;
+const SEASON_RANK:Record<string, number> = {'1':0, S:1, '2':2, W:3};
+
+function termKey(term:string):number {
+  const match = TERM.exec(term);
+  if (!match) throw new TypeError(`term must be YYYY-1|S|2|W; refused ${term}`);
+  return Number(match[1]) * 4 + SEASON_RANK[match[2]!]!;
+}
+
+function isApprovedRetake(target:LedgerAttempt, successor:LedgerAttempt):boolean {
+  return target.canonicalCourseId === successor.canonicalCourseId
+    && target.ledger === 'EARNED'
+    && successor.ledger === 'EARNED'
+    && successor.recognition === 'RECOGNIZED'
+    && successor.retakeApprovalRef !== undefined
+    && target.term !== undefined
+    && successor.term !== undefined
+    && termKey(successor.term) > termKey(target.term);
+}
 
 function refuse(label:string, value:unknown):never {
   throw new TypeError(`${label} must be a non-negative safe integer credit unit (1 unit = 0.5 credit); refused ${String(value)}`);
@@ -160,6 +186,8 @@ function classify(attempts:readonly LedgerAttempt[]):Classified {
       areas.add(areaId);
     }
     if (attempt.supersedesAttemptToken !== undefined) assertId(attempt.supersedesAttemptToken, 'supersedesAttemptToken');
+    if (attempt.retakeApprovalRef !== undefined) assertId(attempt.retakeApprovalRef, 'retakeApprovalRef');
+    if (attempt.term !== undefined) termKey(attempt.term);
     if (byToken.has(attempt.attemptToken)) throw new TypeError(`duplicate attempt ${attempt.attemptToken}`);
     byToken.set(attempt.attemptToken, attempt);
   }
@@ -192,8 +220,9 @@ function classify(attempts:readonly LedgerAttempt[]):Classified {
   const superseded = new Set<string>();
   for (const [target, tokens] of claimers) {
     if (cycles.has(target) || tokens.some(token => cycles.has(token))) continue;
-    if (!byToken.has(target) || tokens.length !== 1) {
-      needsReview.add(target);
+    const targetAttempt = byToken.get(target);
+    const successor = tokens.length === 1 ? byToken.get(tokens[0]!) : undefined;
+    if (!targetAttempt || !successor || !isApprovedRetake(targetAttempt, successor)) {
       for (const token of tokens) needsReview.add(token);
       continue;
     }
