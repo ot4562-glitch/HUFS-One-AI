@@ -16,9 +16,9 @@ const Cohort=z.number().int().min(1950).max(2200);
 const MajorRole=z.enum(['PRIMARY','DOUBLE','MINOR']);
 const GraduationTerm=z.string().regex(/^(19|20|21|22)\d{2}-[12]$/);
 const ScopeSchema=z.strictObject({
-  campuses:z.array(Token).max(8).optional(),
+  campuses:z.array(Token).min(1).max(8).optional(),
   colleges:z.array(Token).min(1).max(32).optional(),
-  majorCodes:z.array(Token).max(32).optional(),
+  majorCodes:z.array(Token).min(1).max(32).optional(),
   /** Role restriction applies to the SAME major as majorCodes, not any unrelated major. */
   majorRoles:z.array(MajorRole).min(1).max(3).optional(),
   enrollmentStates:z.array(Token).min(1).max(12).optional(),

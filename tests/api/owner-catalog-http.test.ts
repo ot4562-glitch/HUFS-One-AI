@@ -132,6 +132,21 @@ describe('A13 owner catalog and academic/transcript HTTP contract',()=>{
     }}));
     expect((await h.app.inject({url:'/api/courses'})).statusCode).toBe(503);
   });
+  it('refuses a planned transcript row or an unofficial offering confirmation',async()=>{
+    const h=fixture();
+    h.replace('readTranscript',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...transcript,courses:[{...transcript.courses[0],ledger:'PLANNED'}],
+    }}));
+    expect((await h.app.inject({url:'/api/academics/transcript'})).statusCode).toBe(503);
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[{...offering,status:'CONFIRMED_OFFERED'}],
+    }}));
+    expect((await h.app.inject({url:'/api/courses/SYN-C01/offerings'})).statusCode).toBe(503);
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[{...offering},{...offering}],
+    }}));
+    expect((await h.app.inject({url:'/api/courses/SYN-C01/offerings'})).statusCode).toBe(503);
+  });
   it('denies anonymous sessions before catalog lookup, and does not activate an absent port',async()=>{
     const h=fixture();h.revoke();
     expect((await h.app.inject({url:'/api/opportunities'})).statusCode).toBe(401);
