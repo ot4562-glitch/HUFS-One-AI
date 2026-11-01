@@ -4,7 +4,7 @@ import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {
   registerOwnerStudyPlanCheckRoutes,
 } from '../../apps/api/src/modules/profiles/owner-study-plan-check-http.js';
-import type {TrustedOwnerStudyPlanSource} from
+import type {TrustedOwnerStudyPlanSource,TrustedOwnerStudyPlanRights} from
   '../../apps/api/src/modules/profiles/owner-study-plan-check-http.js';
 
 const NOW='2026-11-01T00:00:00.000Z',ORIGIN='https://synthetic.invalid';
@@ -22,18 +22,41 @@ const review={
 };
 const apps:Array<ReturnType<typeof createApi>>=[];
 afterEach(async()=>{await Promise.all(apps.map(app=>app.close()));apps.length=0;});
-function fixture(options?:{source?:boolean}){
-  let enabled=true,canRead=true;
+function fixture(options?:{source?:boolean;rights?:boolean}){
+  let enabled=true,canRead=true,mayInspect=true,mayDisclose=true,mayRevalidate=true;
   let check:unknown=review;
   const seen:string[]=[];
   const source:TrustedOwnerStudyPlanSource={
     inspect:async input=>{
-      seen.push(input.actorId);
+      seen.push('source:'+input.actorId);
       return {check,receipt:'SYN-RECEIPT-CURRENT'};
     },
     revalidate:async input=>{
-      seen.push(input.actorId);
+      seen.push('source-recheck:'+input.actorId);
       return canRead;
+    },
+  };
+  const rights:TrustedOwnerStudyPlanRights={
+    mayInspect:async input=>{
+      seen.push('pre:'+input.actorId);
+      return mayInspect&&input.actorId===actor.actorId;
+    },
+    authorize:async input=>{
+      seen.push('disclose:'+input.actorId);
+      const permittedCourses=new Set(['SYN-COURSE-A']);
+      const permittedEvidence=new Set(['SYN-EV-A']);
+      return {
+        allowed:mayDisclose
+          &&input.courseRefs.every(x=>permittedCourses.has(x))
+          &&input.evidenceRefs.every(x=>permittedEvidence.has(x))
+          &&(input.disclosureMode!=='GRANT_SCOPED'
+            ||input.sharingGrantVersion==='SYN-GRANT-1'),
+        rightsReceipt:'SYN-RIGHTS-CURRENT',
+      };
+    },
+    revalidate:async input=>{
+      seen.push('rights-recheck:'+input.actorId);
+      return mayRevalidate;
     },
   };
   const verify=async()=>enabled?actor:null;
@@ -44,13 +67,18 @@ function fixture(options?:{source?:boolean}){
   registerOwnerStudyPlanCheckRoutes({
     app,session:{verify,now:()=>NOW},
     ...(options?.source?{source}:{}),
+    ...(options?.rights===false?{}:{rights}),
   });
   apps.push(app);
   const post=(body:Record<string,unknown>={term:'2026-2'})=>app.inject({
     method:'POST',url:'/api/study-plans/check',headers:HEADERS,payload:body,
   });
   return {app,post,seen,setCheck:(v:unknown)=>{check=v;},
-    revokeRights:()=>{canRead=false;},logout:()=>{enabled=false;}};
+    revokeRights:()=>{canRead=false;},logout:()=>{enabled=false;},
+    denyBeforeRead:()=>{mayInspect=false;},
+    denyDisclosure:()=>{mayDisclose=false;},
+    revokeGrantAfterRead:()=>{mayRevalidate=false;},
+  };
 }
 
 describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
@@ -66,7 +94,10 @@ describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
     expect(r.statusCode).toBe(200);
     expect(r.json()).toEqual(review);
     expect(r.headers['cache-control']).toBe('no-store');
-    expect(h.seen).toEqual([actor.actorId,actor.actorId]);
+    expect(h.seen).toEqual([
+      'pre:'+actor.actorId,'source:'+actor.actorId,'disclose:'+actor.actorId,
+      'source-recheck:'+actor.actorId,'rights-recheck:'+actor.actorId,
+    ]);
   });
   it('requires authenticated owner, Origin/CSRF, and rejects private client inputs',async()=>{
     const h=fixture({source:true});
@@ -92,6 +123,63 @@ describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
     h.setCheck(review);
     expect((await h.post({term:'2026-2',expectedPlanVersion:'SYN-OLD'}))
       .statusCode).toBe(409);
+  });
+  it('requires independently injected rights even for a redacted review result',async()=>{
+    const h=fixture({source:true,rights:false});
+    const r=await h.post();
+    expect(r.statusCode).toBe(503);
+    expect(h.seen).toEqual([]); // Source must NOT read the transcript.
+  });
+  it('denies withdrawn consent before any academic source inspection',async()=>{
+    const h=fixture({source:true});
+    h.denyBeforeRead();
+    const r=await h.post();
+    expect(r.statusCode).toBe(403);
+    expect(h.seen).toEqual(['pre:'+actor.actorId]);
+  });
+  it('denies unshared course IDs and source refs independent of provider claims',async()=>{
+    const h=fixture({source:true});
+    const issue={code:'NEEDS_REVIEW',reasonCode:'UNKNOWN',
+      courseRefs:['SYN-PRIVATE-COURSE'],evidenceRefs:[]};
+    h.setCheck({...review,
+      planIssues:[issue],
+      disclosure:{mode:'OWNER_VERIFIED',visibleCourseRefs:['SYN-PRIVATE-COURSE']},
+    });
+    const r=await h.post();
+    expect(r.statusCode).toBe(403);
+    expect(r.body).not.toContain('SYN-PRIVATE-COURSE');
+    h.setCheck({...review,
+      planIssues:[{...issue,courseRefs:[],evidenceRefs:['SYN-PRIVATE-EV']}],
+      evidenceLinks:[{evidenceRef:'SYN-PRIVATE-EV',href:'https://synthetic.invalid/source',
+        verifiedAt:NOW}],
+    });
+    const denied=await h.post();
+    expect(denied.statusCode).toBe(403);
+    expect(denied.body).not.toContain('SYN-PRIVATE-EV');
+  });
+  it('redacts a revoked owner/SharingGrant before the final HTTP response',async()=>{
+    const h=fixture({source:true});
+    h.revokeGrantAfterRead();
+    const r=await h.post();
+    expect(r.statusCode).toBe(403);
+    expect(h.seen).toContain('rights-recheck:'+actor.actorId);
+    const h2=fixture({source:true});
+    h2.denyDisclosure();
+    expect((await h2.post()).statusCode).toBe(403);
+  });
+  it('permits only independently verified course and evidence refs for this plan',async()=>{
+    const h=fixture({source:true});
+    const check={
+      ...review,planIssues:[{code:'NEEDS_REVIEW',reasonCode:'UNKNOWN',
+        courseRefs:['SYN-COURSE-A'],evidenceRefs:['SYN-EV-A']}],
+      evidenceLinks:[{evidenceRef:'SYN-EV-A',
+        href:'https://synthetic.invalid/source',verifiedAt:NOW}],
+      disclosure:{mode:'OWNER_VERIFIED',visibleCourseRefs:['SYN-COURSE-A']},
+    };
+    h.setCheck(check);
+    const r=await h.post();
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual(check);
   });
   it('never serializes unreviewed READY, raw ledger, grades or courseRef leakage',async()=>{
     const h=fixture({source:true});
