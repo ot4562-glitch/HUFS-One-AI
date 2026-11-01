@@ -49,6 +49,43 @@ describe('A05 #81 plan-check wire privacy and rule gates',()=>{
       {...review,caveats:['RULEPACK_UNVERIFIED']},
     ])expect(schema.safeParse(invalid).success).toBe(false);
   });
+  it('blocks falsely confirmed course-cap/prerequisite/section claims without approval',()=>{
+    for(const [code,reasonCode] of [
+      ['CREDIT_CAP_EXCEEDED','EXCEEDS_APPROVED_LIMIT'],
+      ['PREREQUISITE_MISSING','UNMET_OFFICIAL_PREREQUISITE'],
+      ['TIMETABLE_CONFLICT','ALL_VERIFIED_SECTIONS_OVERLAP'],
+      ['REQUIRED_COURSE_UNOFFERED','COURSE_NOT_CONFIRMED'],
+    ] as const){
+      const raw={...review,planIssues:[{code,reasonCode,
+        courseRefs:[],evidenceRefs:['SYN-EV-A']}]};
+      const withLink={...raw,evidenceLinks:[{evidenceRef:'SYN-EV-A',
+        href:'https://synthetic.invalid/evidence',verifiedAt:review.asOf}]};
+      expect(OwnerStudyPlanCheckResponseSchema.safeParse(withLink).success).toBe(false);
+    }
+  });
+  it('rejects future evidence, missing source links, duplicate refs and private URL credentials',()=>{
+    const issue={code:'NEEDS_REVIEW' as const,reasonCode:'UNKNOWN' as const,
+      courseRefs:[],evidenceRefs:['SYN-EV-A']};
+    const good={...review,planIssues:[issue],evidenceLinks:[{
+      evidenceRef:'SYN-EV-A',href:'https://synthetic.invalid/source',
+      verifiedAt:review.asOf,
+    }]};
+    expect(OwnerStudyPlanCheckResponseSchema.safeParse(good).success).toBe(true);
+    for(const evidenceLinks of [
+      [{...good.evidenceLinks[0]!,verifiedAt:'2026-11-02T00:00:00Z'}],
+      [],
+      [...good.evidenceLinks,...good.evidenceLinks],
+      [{...good.evidenceLinks[0]!,href:'https://user:password@synthetic.invalid/source'}],
+    ])expect(OwnerStudyPlanCheckResponseSchema.safeParse({
+      ...good,evidenceLinks,
+    }).success).toBe(false);
+  });
+  it('never emits an unused private course allowlist in the public response',()=>{
+    const extra={...review,
+      disclosure:{mode:'OWNER_VERIFIED',visibleCourseRefs:['SYN-PRIVATE-COURSE']},
+    };
+    expect(OwnerStudyPlanCheckResponseSchema.safeParse(extra).success).toBe(false);
+  });
   it('does not accept extra transcript rows, grades or attempt tokens in the response',()=>{
     for(const extra of [
       {attemptToken:'SYN-ATTEMPT-1'}, {grade:'A'},
