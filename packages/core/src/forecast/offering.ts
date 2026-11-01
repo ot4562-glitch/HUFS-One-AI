@@ -35,6 +35,11 @@ export interface OfficialAcademicEvent {
   impact:'POTENTIAL_ASSIGNMENT_CHANGE'|'EXPLICIT_COURSE_STATUS';
   affectedCourseIds:readonly string[];
   effectiveUntil?:string;
+  /**
+   * REPLACEMENT_CONFIRMED only: substitutes the official source names for the
+   * affected courses. Without it no alternative is approved.
+   */
+  replacementCourseIds?:readonly string[];
 }
 
 /** Caller-supplied substitute only. This function never invents one. */
@@ -97,9 +102,10 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
     && row.term.endsWith(`-${season}`)
     && termWindow(row.term).end <= asOfMs);
   const history = capHistory(dedupe(prior), season);
-  const events = (input.officialEvents ?? [])
+  const applicable = (input.officialEvents ?? [])
     .filter(event => event.affectedCourseIds.includes(input.courseId))
-    .filter(event => eventApplies(event, input.targetTerm, asOfMs))
+    .filter(event => eventApplies(event, input.targetTerm, asOfMs));
+  const events = applicable
     .map(cloneEvent)
     .sort((a, b) => Date.parse(a.publishedAt) - Date.parse(b.publishedAt) || (a.eventId < b.eventId ? -1 : a.eventId > b.eventId ? 1 : 0));
   if (events.length > MAX_EVENTS) throw new RangeError('more than 30 official events apply to this course');
@@ -117,7 +123,7 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
     officialEvents:events,
     sameSeasonObservedTerms:n,
     sameSeasonOfferedTerms:k,
-    alternatives:officialAlternatives(input.courseId, input.alternatives, events),
+    alternatives:officialAlternatives(input.courseId, input.alternatives, applicable),
     caveat:decision.caveat,
     ...(decision.sourcePublishedAt === undefined ? {} : {sourcePublishedAt:decision.sourcePublishedAt}),
   };
@@ -240,25 +246,26 @@ function decide(args:{
 }
 
 /**
- * An alternative is returned only when its evidenceRef is the source of a
- * REPLACEMENT_CONFIRMED event that already passed eventApplies: published and verified
- * by asOf, effective in the target term, and naming this course.
+ * An alternative is returned only when a REPLACEMENT_CONFIRMED event that passed
+ * eventApplies (published and verified by asOf, effective in the target term, naming
+ * this course) has evidenceRef as its source and lists this substitute in
+ * replacementCourseIds. A matching source alone does not prove the substitute.
  */
 function officialAlternatives(
   courseId:string,
   input:readonly OfferingAlternative[] | undefined,
-  events:OfferingOutlookVNext['officialEvents'],
+  events:readonly OfficialAcademicEvent[],
 ):OfferingOutlookVNext['alternatives'] {
   if (input === undefined || input.length === 0) return [];
   if (input.length > MAX_OBSERVATIONS) throw new RangeError('more than 20 alternatives');
-  const replacementSources = new Set(events
-    .filter(event => event.kind === 'REPLACEMENT_CONFIRMED' && event.impact === 'EXPLICIT_COURSE_STATUS')
-    .map(event => event.sourceRef));
+  const replacements = events.filter(event =>
+    event.kind === 'REPLACEMENT_CONFIRMED' && event.impact === 'EXPLICIT_COURSE_STATUS');
   const kept:OfferingOutlookVNext['alternatives'] = [];
   for (const alt of input) {
     if (alt.courseId === courseId) continue;
     if (alt.status !== 'OFFICIALLY_APPROVED' || alt.evidenceRef === undefined) continue;
-    if (!replacementSources.has(alt.evidenceRef)) continue;
+    if (!replacements.some(event => event.sourceRef === alt.evidenceRef
+      && (event.replacementCourseIds ?? []).includes(alt.courseId))) continue;
     kept.push({courseId:alt.courseId, status:'OFFICIALLY_APPROVED', evidenceRef:alt.evidenceRef});
   }
   return kept;

@@ -321,6 +321,7 @@ describe('forecastOffering', () => {
         effectiveFrom:'2026-03-01T00:00:00.000+09:00',
         impact:'EXPLICIT_COURSE_STATUS',
         affectedCourseIds:['SYN-COURSE-ALT-NONE'],
+        replacementCourseIds:['SYN-COURSE-ALT'],
       }],
       alternatives:[
         {courseId:'SYN-COURSE-ALT', status:'OFFICIALLY_APPROVED', evidenceRef:'SYN-SRC-REPLACE'},
@@ -350,6 +351,7 @@ describe('forecastOffering', () => {
       effectiveFrom:'2026-03-01T00:00:00.000+09:00',
       impact:'EXPLICIT_COURSE_STATUS',
       affectedCourseIds:[courseId],
+      replacementCourseIds:['SYN-COURSE-ALT'],
       ...over,
     });
     const alternativesWith = (officialEvents:OfficialAcademicEvent[]) => outlook({
@@ -375,6 +377,27 @@ describe('forecastOffering', () => {
         effectiveFrom:'2025-03-01T00:00:00.000+09:00',
         effectiveUntil:'2025-06-30T00:00:00.000+09:00',
       })])).toEqual([]);
+    });
+
+    it('drops a substitute the replacement event does not name, even with the same source', () => {
+      const result = outlook({
+        courseId, targetTerm:'2026-1', asOf:ASOF, observations:threeClosed,
+        officialEvents:[replacement()],
+        alternatives:[
+          {courseId:'SYN-COURSE-ALT', status:'OFFICIALLY_APPROVED', evidenceRef:'SYN-SRC-REPLACE'},
+          {courseId:'SYN-COURSE-UNRELATED', status:'OFFICIALLY_APPROVED', evidenceRef:'SYN-SRC-REPLACE'},
+        ],
+      });
+      expect(result.alternatives).toEqual([
+        {courseId:'SYN-COURSE-ALT', status:'OFFICIALLY_APPROVED', evidenceRef:'SYN-SRC-REPLACE'},
+      ]);
+      expect(result.officialEvents[0]).not.toHaveProperty('replacementCourseIds');
+    });
+
+    it('drops it when the replacement event names no substitute', () => {
+      const {replacementCourseIds: _none, ...unnamed} = replacement();
+      expect(alternativesWith([unnamed])).toEqual([]);
+      expect(alternativesWith([replacement({replacementCourseIds:[]})])).toEqual([]);
     });
 
     it('drops it when the evidence is not a replacement event', () => {
