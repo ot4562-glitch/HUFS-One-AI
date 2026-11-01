@@ -1,5 +1,14 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
+## 2026-11-01 추가 제안 4건 담당/의존성 (이슈 등록 완료, 기능 미완료)
+
+- **P0 제안 · [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교:** 이의상 `uisang2004-maker` 화면/접근성 소유, 심민성 `ot4562-glitch` 허용된 SourceRevision·검수 시각·permission/asOf/API, 김채윤 `qamarrchae` 정정/취소/추천 캐시 소비 검수. #19/#21 기존 출처 계약에 연결; 합성 11/20→11/25 예시와 401/403/409/철회/늦은 응답 테스트가 신규 수락 게이트.
+- **P1 제안 · [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) ‘왜 추천되지 않았나요?’:** 기존 issue 보강. 김채윤 core reason enum, 심민성 권한/비노출 API, 이의상 상세/피드 UI. 권한 없는 후보의 존재·숫자/미공유 개인정보를 이유로 노출하지 않음.
+- **P1 제안 · [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비·진행 보드:** 기존 issue 보강. #97/#106/#115의 owner API·CAS/웹 소비자 계약은 병합, 실제 학생용 React 단계 보드/할 일/D-day·다중탭/360px E2E는 이의상 미완료(착수 시기는 팀 결정, 종전 11/10 이후 권고 유지).
+- **P2 제안 · [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 복수·이중전공 What-if:** 기존 issue 보강. 박준영 검수된 전공별 RulePack/가정 계산 → 심민성 인가 HTTP API(#107 DTO만 main) → 이의상 현재 vs 가정·불확실성 UI. 실제 학칙/학적 확인 전 합성 전용·‘공식 판정 아님’ 경고.
+
+**통합 규칙:** 서로 다른 트랙의 소유 모듈을 임의 변경하지 않고 독립 현재 HEAD 리뷰·CI 후 병합. 네 기능의 우선순위는 **사용자 제안에 대한 구현 추천**이며 운영 리소스·실학생 자료 사용·출시 허가는 아니다.
+
 **2026-11-01 UI 소유자 최신 핸드오프:** 이의상 담당 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)·[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)는 최신 HEAD 변경 요청, #73·#74·#76은 COMMENT 검수(5건 리뷰 등록 완료). #72 실 calendar 소비/버전 잔상, #75 대상별 미저장 form state/새 snapshot 격리 재현 테스트가 우선이다. 다섯 HEAD Actions 기록 0건/병합 0건. 학업/추천/NCP/UI 소유권은 유지하며 기술 총괄은 타인 화면 코드를 임의 덮어쓰지 않는다.
 
 ## 2026-11-01 최신 역할별 병합/핸드오프 (정본)
