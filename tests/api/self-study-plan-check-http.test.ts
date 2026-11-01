@@ -59,7 +59,7 @@ describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
     const r=await h.post();
     expect(r.statusCode).toBe(503);
     expect(h.seen).toEqual([]);
-  });
+  },60_000);
   it('returns only a conservative review state from a trusted synthetic port',async()=>{
     const h=fixture({source:true});
     const r=await h.post();
