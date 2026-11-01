@@ -154,13 +154,14 @@ describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic onl
     const submitted=history.find(x=>x.url==='/api/reviewer/invitations/redeem');
     const bodyMatches=submitted?.body
       ?JSON.parse(submitted.body).enrollmentCode===invite.enrollmentCode:false;
-    expect({response,proof,bodyMatches}).toEqual({
-      response:200,bodyMatches:true,
-      proof:[{
-        method:'POST',url:'/api/reviewer/invitations/redeem',
-        originOk:true,csrfOk:true,sessionOk:true,
-      }],
-    });
+    expect({response,bodyMatches}).toEqual({response:200,bodyMatches:true});
+    // Post-redeem revalidation may authenticate repeatedly. Every check must
+    // retain the same trusted session, Origin and CSRF proof; accepting only
+    // the initial onRequest check would miss an async revocation race.
+    expect(proof.length).toBeGreaterThanOrEqual(3);
+    expect(proof.every(entry=>
+      entry.method==='POST'&&entry.url==='/api/reviewer/invitations/redeem'
+      &&entry.originOk&&entry.csrfOk&&entry.sessionOk)).toBe(true);
   });
 
   it('redeems an invitation and operates one fake student end-to-end without real reads',async()=>{

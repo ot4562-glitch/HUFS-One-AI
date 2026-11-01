@@ -181,6 +181,8 @@ export function createApi(options:ApiOptions) {
       const active=await options.reviewerAccess.readActive({
         actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock()});
       if(!active||active.inviteId!==initial.inviteId
+        ||active.actorId!==actor.actorId||active.verifiedEmail!==actor.verifiedEmail
+        ||active.startsAt!==initial.startsAt||active.endsAt!==initial.endsAt
         ||Date.parse(active.endsAt)<=nowEpoch(clock())
         ||context&&context.sharingGrantVersion!=='REVIEWER:'+active.inviteId)
         throw new ApiFailure('FORBIDDEN');
@@ -443,6 +445,11 @@ export function createApi(options:ApiOptions) {
       actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
     });
     if(!grant)throw new ApiFailure('FORBIDDEN');
+    // Enrollment can commit while its HTTP request is still pending.
+    // A durable row is not proof of a currently authorized response.
+    // Verify the original session and active invitation after redeem().
+    reviewerGrants.set(req,grant);
+    await recheckCurrent(req,actor);
     reply.code(200);
     return {role:'REVIEWER',accessEndsAt:grant.endsAt,dataMode:'SYNTHETIC',
       readOnly:false,sandboxOnly:true};
@@ -530,11 +537,15 @@ export function createApi(options:ApiOptions) {
     const raw=await options.repository.listProfiles();
     const {profiles}=DemoProfilesResponseSchema.parse({profiles:raw});
     const selected=[];
+    const seenGrants=new Map<SubjectAlias,{value:string|null;active:boolean}>();
     for(const profile of profiles){
       const grant=await options.repository.readGrant(actor.actorId,profile.demoSubjectId);
       const valid=grant?SharingGrantSchema.safeParse(grant):null;
-      const active=valid?.success&&!valid.data.revokedAt
+      const active=!!valid?.success&&!valid.data.revokedAt
         &&Date.parse(valid.data.expiresAt)>nowEpoch(clock());
+      seenGrants.set(profile.demoSubjectId,{
+        value:valid?.success?JSON.stringify(valid.data):null,active,
+      });
       const sections=active?profile.allowedSections.filter(section=>
         canReadSharedSection(valid.data,{
           actorId:actor.actorId,demoSubjectId:profile.demoSubjectId,section,asOf:clock(),
@@ -546,6 +557,18 @@ export function createApi(options:ApiOptions) {
         readiness:active&&sections.length?profile.readiness:'PENDING',
         allowedSections:sections,
       });
+    }
+    // An earlier profile's SharingGrant can change while later reads await.
+    // Reject the entire response rather than serializing stale names or scope.
+    for(const profile of profiles){
+      const raw=await options.repository.readGrant(actor.actorId,profile.demoSubjectId);
+      const checked=raw?SharingGrantSchema.safeParse(raw):null;
+      const current=checked?.success?checked.data:null;
+      const prior=seenGrants.get(profile.demoSubjectId)!;
+      if((current?JSON.stringify(current):null)!==prior.value
+        ||prior.active&&(!current||!!current.revokedAt
+          ||Date.parse(current.expiresAt)<=nowEpoch(clock())))
+        throw new ApiFailure('SHARING_REVOKED');
     }
     await recheckCurrent(req,actor);
     return DemoProfilesResponseSchema.parse({profiles:selected});
