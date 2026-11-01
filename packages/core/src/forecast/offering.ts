@@ -92,7 +92,10 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
   const season = input.targetTerm.slice(-1);
   const usable = (input.observations ?? []).filter(row => observationVisible(row, asOfMs));
   const targetRows = usable.filter(row => row.term === input.targetTerm).map(cloneObservation);
-  const prior = usable.filter(row => row.term < input.targetTerm && row.term.endsWith(`-${season}`));
+  const prior = usable.filter(row =>
+    row.term < input.targetTerm
+    && row.term.endsWith(`-${season}`)
+    && termWindow(row.term).end <= asOfMs);
   const history = capHistory(dedupe(prior), season);
   const events = (input.officialEvents ?? [])
     .filter(event => event.affectedCourseIds.includes(input.courseId))
@@ -114,7 +117,7 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
     officialEvents:events,
     sameSeasonObservedTerms:n,
     sameSeasonOfferedTerms:k,
-    alternatives:officialAlternatives(input.courseId, input.alternatives),
+    alternatives:officialAlternatives(input.courseId, input.alternatives, events),
     caveat:decision.caveat,
     ...(decision.sourcePublishedAt === undefined ? {} : {sourcePublishedAt:decision.sourcePublishedAt}),
   };
@@ -236,15 +239,26 @@ function decide(args:{
   };
 }
 
+/**
+ * An alternative is returned only when its evidenceRef is the source of a
+ * REPLACEMENT_CONFIRMED event that already passed eventApplies: published and verified
+ * by asOf, effective in the target term, and naming this course.
+ */
 function officialAlternatives(
-  courseId:string, input:readonly OfferingAlternative[] | undefined,
+  courseId:string,
+  input:readonly OfferingAlternative[] | undefined,
+  events:OfferingOutlookVNext['officialEvents'],
 ):OfferingOutlookVNext['alternatives'] {
   if (input === undefined || input.length === 0) return [];
   if (input.length > MAX_OBSERVATIONS) throw new RangeError('more than 20 alternatives');
+  const replacementSources = new Set(events
+    .filter(event => event.kind === 'REPLACEMENT_CONFIRMED' && event.impact === 'EXPLICIT_COURSE_STATUS')
+    .map(event => event.sourceRef));
   const kept:OfferingOutlookVNext['alternatives'] = [];
   for (const alt of input) {
     if (alt.courseId === courseId) continue;
-    if (alt.status !== 'OFFICIALLY_APPROVED' || alt.evidenceRef === undefined || alt.evidenceRef === '') continue;
+    if (alt.status !== 'OFFICIALLY_APPROVED' || alt.evidenceRef === undefined) continue;
+    if (!replacementSources.has(alt.evidenceRef)) continue;
     kept.push({courseId:alt.courseId, status:'OFFICIALLY_APPROVED', evidenceRef:alt.evidenceRef});
   }
   return kept;
@@ -288,8 +302,9 @@ function eventApplies(event:OfficialAcademicEvent, targetTerm:string, asOfMs:num
 }
 
 /**
- * Asia/Seoul regular-semester bounds used only to test whether an official event's
- * effective period meets the target term. Season 1 is March–June; season 2 is September–December.
+ * Asia/Seoul regular-semester bounds. Used to test whether an official event's effective
+ * period meets the target term, and to count a past term only after it has ended by asOf.
+ * Season 1 is March–June; season 2 is September–December.
  */
 function termWindow(term:string):{start:number; end:number} {
   const year = Number(term.slice(0, 4));

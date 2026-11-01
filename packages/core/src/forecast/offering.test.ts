@@ -195,6 +195,36 @@ describe('forecastOffering', () => {
     expect(late.signal).toBe('HISTORICAL_PATTERN');
   });
 
+  it('does not count a published timetable for a term that has not ended by asOf', () => {
+    const result = outlook({
+      courseId:'SYN-COURSE-AHEAD',
+      targetTerm:'2026-1',
+      asOf:'2024-08-01T00:00:00.000Z',
+      observations:[
+        catalog('2023-1', 'OFFERED'),
+        catalog('2024-1', 'OFFERED'),
+        catalog('2025-1', 'OFFERED', 'COMPLETE_TERM_CATALOG', '2024-07-01T00:00:00.000Z', '2024-07-02T00:00:00.000Z'),
+      ],
+    });
+    expect(result.observations.map(row => row.term)).toEqual(['2023-1', '2024-1']);
+    expect(result.sameSeasonObservedTerms).toBe(2);
+    expect(result.sameSeasonOfferedTerms).toBe(2);
+    expect(result.signal).toBe('INSUFFICIENT_DATA');
+
+    const after = outlook({
+      courseId:'SYN-COURSE-AHEAD',
+      targetTerm:'2026-1',
+      asOf:'2025-07-01T00:00:00.000Z',
+      observations:[
+        catalog('2023-1', 'OFFERED'),
+        catalog('2024-1', 'OFFERED'),
+        catalog('2025-1', 'OFFERED', 'COMPLETE_TERM_CATALOG', '2024-07-01T00:00:00.000Z', '2024-07-02T00:00:00.000Z'),
+      ],
+    });
+    expect(after.sameSeasonObservedTerms).toBe(3);
+    expect(after.signal).toBe('HISTORICAL_PATTERN');
+  });
+
   it('confirms a published cancellation and does not treat curriculum change as closure', () => {
     const cancelled = outlook({
       courseId:'SYN-COURSE-CANCEL',
@@ -306,6 +336,51 @@ describe('forecastOffering', () => {
     expect(replaced).not.toHaveProperty('weekday');
     expect(replaced).not.toHaveProperty('classroom');
     expect(replaced).not.toHaveProperty('section');
+  });
+
+  describe('an approved alternative needs an applicable official replacement event', () => {
+    const courseId = 'SYN-COURSE-ALT-GATE';
+    const approved = [{courseId:'SYN-COURSE-ALT', status:'OFFICIALLY_APPROVED', evidenceRef:'SYN-SRC-REPLACE'}] as const;
+    const replacement = (over:Partial<OfficialAcademicEvent> = {}):OfficialAcademicEvent => ({
+      eventId:'SYN-EVENT-REPLACE',
+      kind:'REPLACEMENT_CONFIRMED',
+      sourceRef:'SYN-SRC-REPLACE',
+      publishedAt:'2026-01-02T00:00:00.000Z',
+      verifiedAt:'2026-01-03T00:00:00.000Z',
+      effectiveFrom:'2026-03-01T00:00:00.000+09:00',
+      impact:'EXPLICIT_COURSE_STATUS',
+      affectedCourseIds:[courseId],
+      ...over,
+    });
+    const alternativesWith = (officialEvents:OfficialAcademicEvent[]) => outlook({
+      courseId, targetTerm:'2026-1', asOf:ASOF, observations:threeClosed, officialEvents, alternatives:approved,
+    }).alternatives;
+
+    it('keeps it when the replacement event applies', () => {
+      expect(alternativesWith([replacement()])).toEqual([...approved]);
+    });
+
+    it('drops it with no events and no observations', () => {
+      expect(outlook({courseId, targetTerm:'2026-1', asOf:ASOF, alternatives:approved}).alternatives).toEqual([]);
+    });
+
+    it('drops it when the replacement is published or verified after asOf', () => {
+      expect(alternativesWith([replacement({publishedAt:'2026-03-01T00:00:00.000Z', verifiedAt:'2026-03-02T00:00:00.000Z'})])).toEqual([]);
+      expect(alternativesWith([replacement({verifiedAt:'2026-02-20T00:00:00.000Z'})])).toEqual([]);
+    });
+
+    it('drops it when the replacement is for another course or another term', () => {
+      expect(alternativesWith([replacement({affectedCourseIds:['SYN-COURSE-OTHER']})])).toEqual([]);
+      expect(alternativesWith([replacement({
+        effectiveFrom:'2025-03-01T00:00:00.000+09:00',
+        effectiveUntil:'2025-06-30T00:00:00.000+09:00',
+      })])).toEqual([]);
+    });
+
+    it('drops it when the evidence is not a replacement event', () => {
+      expect(alternativesWith([{...personnel('RESEARCH_LEAVE', courseId), sourceRef:'SYN-SRC-REPLACE'}])).toEqual([]);
+      expect(alternativesWith([replacement({sourceRef:'SYN-SRC-UNRELATED'})])).toEqual([]);
+    });
   });
 });
 
