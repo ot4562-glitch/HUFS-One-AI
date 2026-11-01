@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {CalendarResultSchema, FeedResultSchema, NoticeResultSchema} from '@hufs-one/contracts';
 import {
-  DEMO_AS_OF, DEMO_LABELS, DEMO_LABEL_STATUS, DEMO_OPPORTUNITIES, DEMO_PUBLISHED_AT, DEMO_SPLIT, DEMO_STUDENTS,
+  DEMO_AS_OF, DEMO_LABELS, DEMO_LABEL_REVIEW, DEMO_OPPORTUNITIES, DEMO_PUBLISHED_AT, DEMO_SPLIT, DEMO_STUDENTS,
   buildCalendar, compareRankers, composeFeed, opportunityLifecycle,
 } from './index.js';
 import {DEMO_NOTICES, composeNotices} from '../notices/index.js';
@@ -54,8 +54,10 @@ describe('A12 synthetic demo corpus invariants', () => {
     for (const n of DEMO_NOTICES) expect(n.evidenceRefs.every(r => r.startsWith('EV-SYN-NOT-'))).toBe(true);
   });
 
-  it('has 200 draft labels (40 × 5) over exactly the corpus ids', () => {
-    expect(DEMO_LABEL_STATUS).toBe('AGENT_DRAFT');
+  it('has 200 labels (40 × 5) over exactly the corpus ids, with a per-student review record', () => {
+    expect(DEMO_STUDENTS.map(s => DEMO_LABEL_REVIEW[s.subject].status)).toEqual(['HUMAN_CHECKED', 'HUMAN_CHECKED', 'AGENT_DRAFT', 'AGENT_DRAFT', 'AGENT_DRAFT']);
+    // Every recorded change is reflected in the label set.
+    for (const s of DEMO_STUDENTS) for (const [id, , to] of DEMO_LABEL_REVIEW[s.subject].changes) expect(DEMO_LABELS[s.subject][id]).toBe(to);
     expect(DEMO_STUDENTS.map(s => s.subject)).toEqual(['S01', 'S02', 'S03', 'S04', 'S05']);
     const ids = DEMO_OPPORTUNITIES.map(o => o.id).sort();
     for (const s of DEMO_STUDENTS) {

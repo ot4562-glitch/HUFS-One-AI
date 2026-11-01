@@ -45,10 +45,30 @@ export const DEMO_STUDENTS:readonly DemoStudent[] = [
  * A15.1 relevance labels (0 무관 / 1 보조 / 2 매우 관련), 40 × 5 = 200, graded from each student's stated
  * goal and the posting text — NOT from the ranker's TopicCode overlap (two traps: SYN-OPP-013 is data work
  * tagged only MARKETING; SYN-OPP-033 is tagged DATA_ANALYTICS but is plain data entry).
- * STATUS = AGENT_DRAFT: drafted by the recommendation agent; an independent human/agent review is still
- * required before these labels are used as official evaluation evidence (A15.1). Eligibility is not labelled here.
+ * Labels were drafted by the recommendation agent and then checked per student by a person (see
+ * DEMO_LABEL_REVIEW). The person is the recommendation track owner, so this is a human check, not yet the
+ * fully independent reviewer A15.1 asks for. Eligibility is not labelled here.
  */
-export const DEMO_LABEL_STATUS = 'AGENT_DRAFT' as const;
+export type LabelReviewStatus = 'HUMAN_CHECKED'|'AGENT_DRAFT';
+export interface LabelReview {
+  status:LabelReviewStatus;
+  /** Ids still at the agent draft value (not checked by the person). */
+  unchecked:string[];
+  /** Labels the person changed from the draft: [id, from, to, note]. */
+  changes:[string, RelevanceLabel, RelevanceLabel, string][];
+}
+
+export const DEMO_LABEL_REVIEW:Readonly<Record<DemoStudent['subject'], LabelReview>> = {
+  S01:{status:'HUMAN_CHECKED', unchecked:['SYN-OPP-011'], changes:[
+    ['SYN-OPP-025', 1, 2, '소프트웨어 개발'], ['SYN-OPP-036', 1, 2, '소프트웨어 개발']]},
+  S02:{status:'HUMAN_CHECKED', unchecked:[], changes:[
+    ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장을 위한 것'], ['SYN-OPP-014', 1, 0, '']]},
+  S03:{status:'AGENT_DRAFT', unchecked:[], changes:[]},
+  S04:{status:'AGENT_DRAFT', unchecked:[], changes:[]},
+  S05:{status:'AGENT_DRAFT', unchecked:[], changes:[]},
+};
+/** Review date of the human check (2026-11-01, track owner, via the local label review page). */
+export const DEMO_LABEL_REVIEWED_AT = '2026-11-01';
 
 const L = (two:string[], one:string[]):LabelSet => {
   const out:Record<string, RelevanceLabel> = {};
@@ -59,8 +79,8 @@ const L = (two:string[], one:string[]):LabelSet => {
 };
 
 export const DEMO_LABELS:Readonly<Record<DemoStudent['subject'], LabelSet>> = {
-  S01:L(['002', '008', '013', '016', '019', '021', '029', '038'], ['003', '025', '036']),
-  S02:L(['001', '007', '020', '026', '028'], ['011', '014', '037']),
+  S01:L(['002', '008', '013', '016', '019', '021', '025', '029', '036', '038'], ['003']),
+  S02:L(['001', '007', '020', '026', '028'], ['006', '011', '037']),
   S03:L(['005', '015', '024', '030'], ['010', '037', '040']),
   S04:L(['004', '017', '022', '031', '035'], ['011', '013']),
   S05:L(['010', '018', '032', '040'], ['002', '014', '021', '024', '027']),
