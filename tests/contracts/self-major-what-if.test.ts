@@ -2,6 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {
   OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
   OwnerMajorWhatIfBlockedSchema,OwnerMajorWhatIfScenarioSchema,
+  isConsistentMajorWhatIfDelta,
 } from '@hufs-one/contracts';
 
 const scenario={action:'CHANGE_PRIMARY_MAJOR' as const,targetMajorId:'SYN-MAJOR-B'};
@@ -69,6 +70,44 @@ describe('A05 #82 owner What-if: hypothetical-only and NO unverified result',()=
     ])expect(OwnerMajorWhatIfResponseSchema.safeParse({
       ...blocked,...extra,
     }).success).toBe(false);
+  });
+  it('rejects duplicate dependency blockers without any invented calculation',()=>{
+    expect(OwnerMajorWhatIfResponseSchema.safeParse({
+      ...blocked,blockers:['COHORT_NOT_VERIFIED','COHORT_NOT_VERIFIED'],
+    }).success).toBe(false);
+  });
+  it('checks a complete current-vs-hypothetical requirement diff without calculating credits',()=>{
+    const current=[
+      {requirementId:'SYN-REQ-1',state:'SATISFIED' as const},
+      {requirementId:'SYN-REQ-2',state:'MISSING' as const,missingCreditUnits:6},
+      {requirementId:'SYN-REQ-3',state:'MISSING' as const},
+    ];
+    const hypothetical=[
+      {requirementId:'SYN-REQ-1',state:'SATISFIED' as const},
+      {requirementId:'SYN-REQ-2',state:'SATISFIED' as const},
+      {requirementId:'SYN-REQ-4',state:'MISSING' as const,missingCreditUnits:4},
+      {requirementId:'SYN-REQ-5',state:'SATISFIED' as const},
+    ];
+    const delta=[
+      {requirementId:'SYN-REQ-1',change:'UNCHANGED' as const},
+      {requirementId:'SYN-REQ-2',change:'PROGRESS_CHANGED' as const},
+      {requirementId:'SYN-REQ-3',change:'REMOVED_REQUIREMENT' as const},
+      {requirementId:'SYN-REQ-4',change:'NEW_REQUIREMENT' as const},
+      {requirementId:'SYN-REQ-5',change:'ALREADY_SATISFIED' as const},
+    ];
+    const verify=(d:typeof delta,c=current,h=hypothetical)=>
+      isConsistentMajorWhatIfDelta({current:c,hypothetical:h,delta:d});
+    expect(verify(delta)).toBe(true);
+    expect(verify(delta.slice(0,4))).toBe(false); // Missing a requirement
+    expect(verify([...delta,delta[0]!])).toBe(false); // Duplicate
+    expect(verify([{requirementId:'SYN-UNKNOWN',change:'UNCHANGED'},...delta.slice(1)]
+      as typeof delta)).toBe(false); // Invented requirement
+    expect(verify(delta.map(x=>x.requirementId==='SYN-REQ-5'
+      ?{...x,change:'NEW_REQUIREMENT' as const}:x))).toBe(false);
+    expect(verify(delta.map(x=>x.requirementId==='SYN-REQ-2'
+      ?{...x,change:'UNCHANGED' as const}:x))).toBe(false);
+    expect(verify(delta,current.slice(1))).toBe(false);
+    expect(verify(delta,current,[...hypothetical,hypothetical[0]!])).toBe(false);
   });
   it('requires a nonempty explicit reason and the non-official caution',()=>{
     for(const invalid of [
