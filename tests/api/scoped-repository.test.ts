@@ -28,6 +28,27 @@ function fixture(){
   return {base,source,repository:new ScopedApiRepository(base,source,()=>now)};
 }
 describe('server-owned per-grant recomputation before HTTP context creation',()=>{
+  it('stamps exactly the rank configuration used for recomputed feed, not old snapshot metadata',async()=>{
+    const h=fixture();
+    const original=(await h.base.readSnapshot('S01'))!;
+    expect(original.versions.rankConfig).not.toBe('rank-v1.0');
+    const result=await h.repository.readAuthorizedSnapshot(request);
+    expect(result?.versions.rankConfig).toBe('rank-v1.0');
+    expect((await h.base.readSnapshot('S01'))?.versions.rankConfig)
+      .toBe(original.versions.rankConfig);
+    const source=h.source.readAuthorizedInputs;
+    h.source.readAuthorizedInputs=async req=>{
+      const bundle=await source(req);
+      if(!bundle)return null;
+      const approved=DemoSnapshotSchema.parse({...snapshotRaw,asOf:now,
+        feed:{...snapshotRaw.feed,asOf:now},
+        notices:{...snapshotRaw.notices,asOf:now},
+        versions:{...snapshotRaw.versions,rankConfig:'rank-v1.1'}});
+      return {...bundle,approvedSnapshot:approved};
+    };
+    const fresh=await h.repository.readAuthorizedSnapshot(request);
+    expect(fresh?.versions.rankConfig).toBe('rank-v1.0');
+  });
   it('recomputes partial-scope results instead of reusing a full-share feed',async()=>{
     const h=fixture();
     expect(await h.base.readAuthorizedSnapshot(request)).toBeNull();

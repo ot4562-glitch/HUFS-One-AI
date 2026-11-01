@@ -3,7 +3,7 @@ import {DemoContextSchema} from '@hufs-one/contracts';
 import {PostgresCalendarInputSource} from '../../apps/api/src/modules/calendar-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import type {CalendarReadRequest} from '../../apps/api/src/modules/calendar.js';
-import {computeAuthorizedCalendar} from '../../apps/api/src/modules/calendar.js';
+import {computeAuthorizedCalendar,computeAuthorizedSections} from '../../apps/api/src/modules/calendar.js';
 import snapshotFixture from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
 const now='2026-11-01T00:00:00.000Z';
@@ -33,6 +33,7 @@ function fakeDatabase(){
     policy_version:'RIGHTS1',approval_state:'APPROVED',approved_by:'SYN-REVIEWER',approved_at:'2026-10-30T00:00:00Z',
     expires_at:'2026-11-02T00:00:00Z',revoked_at:null,active:true}];
   const conflicts:Record<string,unknown>[]=[];
+  const paragraphs:Record<string,unknown>[]=[];
   const log:{sql:string;params:readonly unknown[]}[]=[];
   let fail=false,releases=0;
   const pool:ReviewerSqlPool={connect:async()=>({
@@ -47,13 +48,80 @@ function fakeDatabase(){
       if(sql.includes('FROM source_revisions_vnext'))return {rows:structuredClone(revisions)};
       if(sql.includes('FROM api_calendar_source_permissions'))return {rows:structuredClone(rights)};
       if(sql.includes('FROM source_conflict_decisions_vnext'))return {rows:structuredClone(conflicts)};
+      if(sql.includes('FROM source_paragraphs_vnext'))return {rows:structuredClone(paragraphs)};
       return {rows:[]};
     },release:()=>{releases++;},
   })};
-  return {grant,projection,snapshotRow,revisions,heads,rights,conflicts,log,pool,get releases(){return releases;},fail:()=>{fail=true;}};
+  return {grant,projection,snapshotRow,revisions,heads,rights,conflicts,paragraphs,log,pool,get releases(){return releases;},fail:()=>{fail=true;}};
 }
 
 describe('PostgresCalendarInputSource: server-reviewed raw inputs and current grants/rights',()=>{
+  it('real approved calendar projection only exposes source-proven deadlines and claim IDs',async()=>{
+    const db=fakeDatabase(),expiry='2026-11-03T15:00:00.000Z';
+    db.projection.dataset_mode='REAL_CONSENTED';
+    (db.snapshotRow.snapshot_json as {datasetMode:string}).datasetMode='REAL_CONSENTED';
+    db.revisions[0]!.provenance='REAL_APPROVED';
+    const sentence='신청 마감 '+expiry;
+    db.paragraphs.push({revision_id:'REV1',paragraph_id:'PAR1',paragraph_text:sentence});
+    const span={kind:'TEXT',sourceRevisionId:'REV1',paragraphId:'PAR1',
+      startCodePoint:0,endCodePoint:Array.from(sentence).length,quote:sentence};
+    const proof=(kind:string,itemId:string,field:string,dateKind:string,claimId:string,
+      clock='2026-10-30T00:00:00.000Z')=>({
+      kind,itemId,sourceRevisionId:'REV1',
+      paragraphs:[{revisionId:'REV1',paragraphId:'PAR1',text:sentence}],
+      claims:[{claimId,sourceRevisionId:'REV1',field,value:expiry,
+        state:'VERIFIED',dateKind,claimCheckedAt:clock,
+        reviewerId:'SYN-INDEPENDENT-REVIEWER',evidence:[span]}],
+    });
+    const input=db.projection.input_json as Record<string,unknown>;
+    const opp={id:'SYN-OP',version:'1',sourceSnapshotId:'REV1',title:'가상 공고',
+      organization:'합성기관',kind:'CONTEST',topicCodes:['DATA_ANALYTICS'],
+      languageCodes:[],eventSessions:[],actualApplicationRoute:'DEMO_DISABLED',
+      conditions:[],roleSteps:[],prioritySelection:[],completionRules:[],
+      dataMode:'REAL',dataQuality:'COMPLETE',deadlineKind:'FIXED',
+      applyClosesAt:expiry};
+    const notice={id:'SYN-NOTICE',sourceSnapshotId:'REV1',title:'가상 제출',
+      issuer:'합성기관',category:'SCHOLARSHIP',verificationState:'VERIFIED',
+      studentDeadline:expiry,evidenceRefs:['SYN-SOURCE']};
+    input.opportunities=[opp];input.notices=[notice];
+    const reader=new PostgresCalendarInputSource(db.pool);
+    // Unreviewed raw projection dates (even if a caller marked them VERIFIED)
+    // are stripped without creating a false verified calendar deadline.
+    let bundle=await reader.readAuthorizedInputs(request);
+    expect(bundle?.opportunities[0]?.applyClosesAt).toBeUndefined();
+    expect(bundle?.opportunities[0]?.deadlineKind).toBe('UNKNOWN');
+    expect(bundle?.notices[0]?.studentDeadline).toBeUndefined();
+    input.deadlineProofs=[
+      proof('OPPORTUNITY','SYN-OP','applyClosesAt','APPLY','SYN-APPLY'),
+      proof('NOTICE','SYN-NOTICE','studentDeadline','STUDENT','SYN-STUDENT'),
+    ];
+    bundle=await reader.readAuthorizedInputs(request);
+    expect(bundle?.opportunities[0]?.applyClosesAt).toBe(expiry);
+    expect(bundle?.notices[0]?.studentDeadline).toBe(expiry);
+    expect(bundle?.notices[0]?.evidenceRefs).toContain('SYN-STUDENT');
+    expect(bundle?.deadlineClaimRefsByOpportunity).toEqual({'SYN-OP':['SYN-APPLY']});
+    expect(db.log.some(x=>x.sql.includes('FROM source_paragraphs_vnext'))).toBe(true);
+    expect(bundle).not.toHaveProperty('deadlineProofs');
+    // Deliberately forge the alleged source paragraph in a reviewer-approved
+    // projection. The immutable TEXT stored in PostgreSQL is authoritative.
+    db.paragraphs[0]!.paragraph_text='TAMPERED ORIGINAL';
+    await expect(reader.readAuthorizedInputs(request))
+      .rejects.toThrow('Calendar input source unavailable');
+    db.paragraphs[0]!.paragraph_text=sentence;
+    const sections=computeAuthorizedSections(bundle!,request);
+    const card=[...sections.feed.featured,...sections.feed.compact]
+      .find(c=>c.opportunityId==='SYN-OP');
+    expect(card?.evidenceRefs).toContain('SYN-APPLY');
+    const entry=sections.calendar.entries.find(e=>e.refId==='SYN-OP'&&e.kind==='APPLY_DEADLINE');
+    expect(entry?.evidenceRefs).toContain('SYN-APPLY');
+    // As-of verification is evaluated again at read; a future review cannot
+    // be laundered into an earlier approved source projection.
+    (input.deadlineProofs as Array<{claims:Array<{claimCheckedAt:string}>}>)[0]!
+      .claims[0]!.claimCheckedAt='2026-12-01T00:00:00Z';
+    bundle=await reader.readAuthorizedInputs(request);
+    expect(bundle?.opportunities[0]?.applyClosesAt).toBeUndefined();
+    expect(bundle?.notices[0]?.studentDeadline).toBe(expiry);
+  });
   it('uses a narrow definer helper so the API connection retains SELECT-only table privileges',async()=>{
     const db=fakeDatabase();await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
     expect(db.log.some(x=>x.sql.includes('api_lock_authorized_calendar_inputs'))).toBe(true);

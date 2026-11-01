@@ -34,7 +34,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     await admin.query(`CREATE ROLE hufs_test_calendar LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT USAGE ON SCHEMA public TO hufs_test_calendar;
       GRANT SELECT ON api_sharing_grants,api_demo_snapshot_projections,api_calendar_input_projections,api_calendar_source_permissions,
-        source_ingest_heads,source_revisions_vnext,source_conflict_decisions_vnext TO hufs_test_calendar;`);
+        source_ingest_heads,source_revisions_vnext,source_paragraphs_vnext,
+        source_conflict_decisions_vnext TO hufs_test_calendar;`);
     // The reviewed helper, when present, grants row locks without UPDATE authority.
     const helper=await admin.query(`SELECT oid::regprocedure::text AS signature FROM pg_proc
       WHERE pronamespace='public'::regnamespace AND proname='api_lock_authorized_calendar_inputs'`);
@@ -71,6 +72,19 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
       sharingGrantVersion:'G1',expiresAt:expires})};
   },30000);
   afterAll(async()=>{await reader?.end();await admin?.end();},30000);
+  it('reads immutable source TEXT paragraphs through non-owner SELECT only',async()=>{
+    const original='합성 출처 문단 2026-11-03T15:00:00.000Z';
+    await admin.query(`INSERT INTO source_paragraphs_vnext
+      (revision_id,paragraph_id,paragraph_text) VALUES('SYN-REV1','SYN-PAR1',$1)`,[original]);
+    const rows=await reader.query(`SELECT revision_id,paragraph_id,paragraph_text
+      FROM source_paragraphs_vnext WHERE (revision_id,paragraph_id) IN
+      (SELECT revision_id,paragraph_id FROM unnest($1::text[],$2::text[])
+        AS requested(revision_id,paragraph_id)) ORDER BY revision_id,paragraph_id LIMIT 1001`,
+    [['SYN-REV1'],['SYN-PAR1']]);
+    expect(rows.rows).toEqual([{revision_id:'SYN-REV1',paragraph_id:'SYN-PAR1',paragraph_text:original}]);
+    await expect(reader.query(`UPDATE source_paragraphs_vnext SET paragraph_text='MALICIOUS'`))
+      .rejects.toMatchObject({code:'42501'});
+  });
   it('reads with SELECT+one lock helper and recomputes partial grants without academic deadlines',async()=>{
     const bundle=await source.readAuthorizedInputs({...request,now:now()});expect(bundle).not.toBeNull();
     expect(bundle?.grant?.allowedSections).toEqual(['FEED','NOTICES']);

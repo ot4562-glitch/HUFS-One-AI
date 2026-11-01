@@ -2,6 +2,8 @@
 
 ## 2026-11-01 심민성 담당 플랫폼 통합 — 단일 PR #58 검토 중
 
+- **2026-11-01 최신 리뷰 반영/팀별 완료율:** 김채윤의 PR #58 추천·공지 소비자 `APPROVED`(기존 HEAD `683ab98`)에 포함된 비차단 제안 2건(마감시각의 신뢰근거·rankConfig 버전 일치)을 보강. 실제 데이트는 현재 source head·독립 승인 provenance의 `VERIFIED` TEXT claim/검수시각/인용으로 재계산, 미검증 시 일정에서 제거; 합성 시연만 예외. 재추천 결과의 `versions.rankConfig`는 실행된 rank 버전과 일치. 로컬 919 합성 테스트/빌드/145 개인정보 경계 PASS(실PG 26건 opt-in 별도); 새 HEAD 원격 CI 및 독립 재승인은 별도 확인. **5인 담당범위 증거 기반 진척 추정치는 [팀별 현황](docs/TEAM_PROGRESS.md)에 기록**하며 실서비스 준비율과 구별.
+
 - **범위/위치:** 사용자 최신 지시로 `C:\AIProjects\naver-competition`에 저장소를 clone했다. 기존 underscore checkout·작업 폴더는 보존. `feat/platform-integration-20261101`은 #32/#33/#34/#35/#55의 기존 커밋을 통합한 리뷰 브랜치이며 main 병합·운영 배포는 하지 않았다.
 - **구현:** OIDC/PKCE·학교메일 증명·영속 세션/시도 제한, EvidenceScope vNext·권한/시점 기반 출처 수집/RAG, PostgreSQL SharingGrant/개인 상태 및 HTTP CRUD. 새 캘린더 GET은 scopeInputsToGrant→출처 current-head/현재 권리·충돌 확인→추천/공지/일정 재계산→권한 receipt 재검증을 거친다. 부분공유에서 전체 precomputed 결과를 복사하지 않는다.
 - **동시성 수정:** 조회 중 grant/source 범위가 달라지면 결과를 폐기한다. 현재 취소/미검수 head가 과거 ACTIVE 일정으로 되살아나지 않으며, 학업/전망 요약은 같은 거래와 receipt에 묶인 approvedSnapshot만 반환한다. summary의 원래 asOf를 임의 재표시하지 않는다. SELECT-only DB 역할은 좁은 SECURITY DEFINER 잠금 함수만 실행한다.

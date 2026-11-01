@@ -1,4 +1,4 @@
-import {canReadSharedSection,DatasetModeSchema,DemoContextSchema,ISODateTimeSchema,
+import {canReadSharedSection,DatasetModeSchema,DemoContextSchema,FeedResultSchema,ISODateTimeSchema,
   OpportunitySchema,SharingGrantSchema,validateCalendarWire} from '@hufs-one/contracts';
 import type {CalendarResult,DemoContext,DemoSnapshot,FeedResult,NoticeResult,Opportunity,SharingGrant} from '@hufs-one/contracts';
 import {buildCalendar} from '../../../../packages/core/src/opportunities/calendar.js';
@@ -44,6 +44,8 @@ export interface CalendarInputBundle {
   authorizedRevisionIds:string[];
   /** Actor-owned bookmark overlay, loaded with the same context/authorization receipt. */
   savedOpportunityIds?:string[];
+  /** Verified deadline claim ids bound to the currently approved source. */
+  deadlineClaimRefsByOpportunity?:Readonly<Record<string,readonly string[]>>;
   sourceVersion:string;
   authorizationToken:string;
 }
@@ -77,6 +79,8 @@ export function computeAuthorizedCalendar(bundle:CalendarInputBundle,input:Calen
 /** All three outputs use exactly the same grant, rights and input provenance. */
 export function computeAuthorizedSections(bundle:CalendarInputBundle,input:CalendarReadRequest):{
   calendar:CalendarResult;feed:FeedResult;notices:NoticeResult;
+  /** Exact rank policy used for recomputation, never a stale source version. */
+  rankConfigVersion:string;
 } {
   const context=DemoContextSchema.parse(bundle.context);
   if(bundle.actorId!==input.actorId)throw new ApiFailure('FORBIDDEN');
@@ -117,9 +121,19 @@ export function computeAuthorizedSections(bundle:CalendarInputBundle,input:Calen
   const notices=gateBySourceRevision(bundle.notices,usable).usable;
   const publishedAtBySnapshotId=Object.fromEntries([...current.values()].map(r=>[r.revisionId,r.publishedAt]));
   const feed=composeFeed(scoped.profile,opportunities,{asOf,publishedAtBySnapshotId});
+  const validatedRefs=bundle.deadlineClaimRefsByOpportunity??{};
+  const withRefs=(id:string,refs:readonly string[])=>[...new Set([...refs,...(validatedRefs[id]??[])])];
+  const enriched={...feed,
+    all:feed.all.map(r=>({...r,evaluation:{...r.evaluation,
+      evidenceRefs:withRefs(r.opportunity.id,r.evaluation.evidenceRefs)}})),
+    feed:FeedResultSchema.parse({...feed.feed,
+      featured:feed.feed.featured.map(c=>({...c,evidenceRefs:withRefs(c.opportunityId,c.evidenceRefs)})),
+      compact:feed.feed.compact.map(c=>({...c,evidenceRefs:withRefs(c.opportunityId,c.evidenceRefs)})),
+    }),
+  };
   const evaluated=composeNotices(scoped.noticeStudent,notices,{asOf});
-  const calendar=validateCalendarWire(buildCalendar(feed,evaluated,notices,{asOf,
+  const calendar=validateCalendarWire(buildCalendar(enriched,evaluated,notices,{asOf,
     ...(bundle.savedOpportunityIds===undefined?{}:{savedOpportunityIds:bundle.savedOpportunityIds}),
   }),asOf);
-  return {calendar,feed:feed.feed,notices:evaluated.result};
+  return {calendar,feed:enriched.feed,notices:evaluated.result,rankConfigVersion:feed.rankConfigVersion};
 }
