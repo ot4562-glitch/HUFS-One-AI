@@ -1,5 +1,11 @@
 # HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
 
+## 2026-11-01 심사자 UI 최신 HEAD 안전 리뷰
+
+- [x] [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) `1cfc61f` 초대 화면 및 [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) `0a19d1e` 합성 sandbox 독립 코드 리뷰를 등록. 이는 리뷰 완료 체크일 뿐 기능 수락·운영 초대 발송 완료가 아니다.
+- [ ] #73 `getSession`의 성공 응답도 abort/언마운트 후 READY로 반영되지 않도록 회귀 확인. #75는 **같은 context에서 snapshot 버전 교체 시 이전 action log가 잠시 READY로 보이는 문제**와 S01→S02 전환 때 미저장 **지원서 초안·경험 작성·관심 분야 선택** 값이 남지 않도록 렌더 단계에서 즉시 격리/초기화 필수. #75 CHANGES_REQUESTED.
+- [ ] #72 선행 미병합, #73/#75 현재 HEAD Actions 0건, 스택 후속 #76 local Edge 실행과 CI 증거 분리. 실 OIDC/HTTPS/기간 만료·철회/다중 탭 브라우저 시험과 관리자 초대 발급은 BLOCKED. `actualBrowserUiVerified:false` 유지.
+
 ## 2026-11-01 최신 구현/미검증 구분
 
 - **main 서버·권한 완료(코드/합성 기준):** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 생성 합성 코퍼스/REVIEWER sandbox·일회용 PostgreSQL, [#105](https://github.com/ot4562-glitch/HUFS-One-AI/pull/105) `redeem()` 영속 기록 후 원 세션·동일 email/sub·활성 초대 재검증, [#100](https://github.com/ot4562-glitch/HUFS-One-AI/pull/100) 20회 대상 전환 2탭 합성 격리, [#110](https://github.com/ot4562-glitch/HUFS-One-AI/pull/110) URL fragment 1회 소비·선제 history 정리·실제 synthetic Fastify→브라우저 요청 검증. #110 HEAD Actions #41300314453 2 jobs 성공.
