@@ -112,8 +112,8 @@ export const OwnerMajorWhatIfReadySchema=z.strictObject({
   state:z.literal('READY'),
   asOf:Utc,
   scenario:OwnerMajorWhatIfScenarioSchema,
-  current:Projection.extend({role:z.literal('CURRENT')}),
-  hypothetical:Projection.extend({role:z.literal('HYPOTHETICAL')}),
+  current:Projection.safeExtend({role:z.literal('CURRENT')}),
+  hypothetical:Projection.safeExtend({role:z.literal('HYPOTHETICAL')}),
   delta:z.array(z.strictObject({
     requirementId:Ref,
     change:z.enum(['NEW_REQUIREMENT','ALREADY_SATISFIED',
