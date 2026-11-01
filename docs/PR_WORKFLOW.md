@@ -1,5 +1,12 @@
 # PR 운영과 파일 충돌 예방
 
+## 2026-11-01 신규 UI 5개 PR 리뷰·병합 게이트 재검증
+
+- [x] #72~#76 **최신 HEAD에 리뷰 5건 등록**: #72, #75는 `CHANGES_REQUESTED`; #73, #74, #76은 `COMMENTED`. 리뷰 등록만 완료했으며 최신 HEAD 승인 또는 병합 완료가 아니다.
+- [ ] **#72:** 실 API port와 동일 context snapshot 버전 갱신 READY 잔상 수정. **#73:** 초대 getSession 완료 후 abort 검사. **#74:** PENDING/비공유 학업에서도 비공식 졸업 판정 안내. **#75:** sandbox action 로그·미저장 form/초안/메모/관심 분야의 대상·snapshot 버전 격리. **#76:** 로컬 Edge E2E 주장과 독립/Actions 실행 증거 분리.
+- [ ] 다섯 HEAD의 Actions run/check-run **0건**, 선행 스택 미병합, #72/#75 blocker 유효. **이번 신규 merge 0건**. 새 커밋/선행 병합 후 최신 HEAD 리뷰와 CI 다시 확인하고 순차 merge로 스택을 보존한다.
+- **운영/개인정보:** #46 전체 Private 개인정보 검사 153/155 PASS·2 FAIL, #89 `RELEASE_BLOCKED`; 이미 병합된 #83/#116을 미병합으로 오기한 과거 절은 당시 상태로만 읽는다.
+
 ## 2026-11-01 최신 리뷰·병합 실적과 한시적 예외 (정본)
 
 - **정상 원칙:** 코드/공통계약 PR은 독립 비작성자 현재 HEAD APPROVED 최소 1명, 같은 HEAD CI 성공, 유효한 CHANGES_REQUESTED 해소, 현재 main diff/스택·보안 검증 후 병합. 합성 CI PASS와 실제 공개·NCP·개인정보 처리 허가는 별도다.
@@ -14,7 +21,7 @@
 
 ## 2026-11-01 최신 PR 검증·squash 스택 관리
 
-- **2026-11-01 병합 기록:** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 캘린더 브라우저 API는 비작성자 UI 승인·GitHub Actions 2 jobs SUCCESS 뒤 squash `552ad35e`, #71 API-only issue CLOSED. [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 60파일 플랫폼 후속은 Draft → Ready/독립 리뷰어 3명 요청/합성 및 PG CI 성공이나 현재 HEAD 타인 APPROVED 없고 신규 실제 PG opt-in 30건 미실행. **리뷰/실검증 없이 merge 금지.**
+- **병합 기록 정정(최신):** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77)은 비작성자 UI 현재 HEAD 승인·Actions 두 작업 성공 후 squash `552ad35e`로 병합했고 #71은 CLOSED. **[#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 이미 사용자 해당 회차 한시적 예외 절차로 `3c6378c` main 병합**; 작성자 COMMENT/CI와 비작성자 APPROVED를 혼동하지 않는다. 그 외 #116은 정상 타인 APPROVED·CI 뒤 main 병합 완료.
 
 - **병합 게이트:** 비작성자의 *현재 HEAD* APPROVED 최소 1명, 관련 GitHub Actions 실제 SUCCESS, 해결된 CHANGES_REQUESTED, 개인정보/권한/시간 경계, 현재 main과의 충돌/의존 확인 뒤 통합 담당이 최종 병합. 작성자 본인 승인으로 독립 검토를 대체할 수 없다. 스택의 후속 PR은 선행 PR 병합 사실만으로 자동 승인하지 않는다.
 - **#68 squash 이후 #69 ancestry 실제 해결(2026-11-01):** 작성자 `uisang2004-maker`가 force push 없이 `main 0a8d44b`를 #69 브랜치에 일반 merge하여 #68 squash 후손 단절을 복구했다(HEAD `5679c8a`, 본인 diff 11파일, Actions 2 jobs SUCCESS). 문서·이력 [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78)은 **merge commit `83b4dab8`**, [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69)도 **merge commit `5617222f`**로 병합했다. #72의 base는 `main`으로 retarget됐지만 코드 누락 및 CHANGES_REQUESTED로 병합 보류. 후속 #73→#76는 선행 정상 병합/현재 HEAD 검증 후 base를 순차 main으로 변경한다. 스택을 끊을 수 있는 squash/rebase, 타인의 HEAD 강제 push 금지; tree 동일성·의존 그래프와 리뷰 증거를 먼저 확인한다.
