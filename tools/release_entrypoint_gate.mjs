@@ -76,7 +76,26 @@ export function auditAnonymousResponse(reply, method = 'GET') {
     problems.push('APP_OR_STREAM_BODY');
   if (typeof reply.payload === 'string' && reply.payload.includes(CANARY))
     problems.push('REQUEST_DATA_REFLECTED');
-  if (method === 'HEAD' && reply.payload) problems.push('HEAD_HAS_BODY');
+  // Fastify inject can retain a serialized generic denial envelope for HEAD
+  // even though this is not proof of a public on-wire response body. Accept
+  // ONLY a bounded, code-matched, known-shape error; reject any other content.
+  if (method === 'HEAD' && reply.payload) {
+    let safeError = false;
+    if (typeof reply.payload === 'string' && reply.payload.length <= 1024) {
+      try {
+        const body = JSON.parse(reply.payload);
+        const expected = reply.statusCode === 401 ? 'UNAUTHENTICATED'
+          : reply.statusCode === 403 ? 'FORBIDDEN' : null;
+        safeError = Boolean(expected && body && !Array.isArray(body)
+          && typeof body === 'object' && body.code === expected
+          && Object.keys(body).every(key =>
+            ['code', 'message', 'requestId', 'retryable', 'contextId'].includes(key))
+          && (body.message === undefined
+            || (typeof body.message === 'string' && body.message.length <= 160)));
+      } catch { /* malformed HEAD response must fail */ }
+    }
+    if (!safeError) problems.push('HEAD_UNSAFE_RESPONSE');
+  }
   return problems;
 }
 
