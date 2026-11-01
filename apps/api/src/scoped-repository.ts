@@ -51,7 +51,8 @@ export class ScopedApiRepository implements ApiRepository {
       ||('asOf' in approved.academics&&approved.academics.asOf!==bundle.asOf)
       ||('asOf' in approved.forecast&&approved.forecast.asOf!==bundle.asOf)))return null;
     const candidate=DemoSnapshotSchema.parse({...approved??metadata,asOf:bundle.asOf,
-      versions:{...(approved?.versions??metadata.versions),consent:currentGrant.version},feed:result.feed,notices:result.notices,
+      versions:{...(approved?.versions??metadata.versions),consent:currentGrant.version,
+        rankConfig:result.rankConfigVersion},feed:result.feed,notices:result.notices,
       academics:currentGrant.allowedSections.includes('ACADEMICS')?approved?.academics??{state:'PENDING'}:{state:'NOT_SHARED'},
       forecast:currentGrant.allowedSections.includes('FORECAST')?approved?.forecast??{state:'PENDING'}:{state:'NOT_SHARED'},
       aiProvenance:'NONE'});
