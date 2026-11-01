@@ -17,7 +17,8 @@ const history = (): HistoryPort => {
   return port;
 };
 const flush = () => act(async () => { for (let i = 0; i < 6; i++) await new Promise(r => setTimeout(r, 0)); });
-const SNAPSHOT_AS_OF = '2026-10-30T09:00:00.000Z';
+// Must equal the snapshot asOf (DEMO_AS_OF): Fri 2026-11-20 09:00 Seoul → grid Mon 11-16 … Sun 11-29.
+const SNAPSHOT_AS_OF = '2026-11-20T00:00:00.000Z';
 
 async function open(services: AppServices, subjectIndex = 0) {
   const client = new SyntheticDemoClient({delayMs: 0});
@@ -43,27 +44,27 @@ describe('#51 MiniCalendar on 오늘', () => {
     const days = within(calendar()).getAllByRole('button');
     expect(days).toHaveLength(14);
     const pressed = days.filter(d => d.getAttribute('aria-pressed') === 'true');
-    expect(pressed.map(d => d.getAttribute('aria-label'))).toEqual(['10월 30일 금요일 (기준일), 일정 없음']);
+    expect(pressed.map(d => d.getAttribute('aria-label'))).toEqual(['11월 20일 금요일 (기준일), 일정 없음']);
     expect(within(screen.getByRole('list', {name: '표시 기호'})).getAllByRole('listitem').map(li => li.textContent?.trim()))
       .toEqual(['필수 마감', '시험·행사', '관심 공고 마감']);
-    expect(within(calendar()).getByText(/기준 시각 2026년 10월 30일 18:00/)).toBeTruthy();
+    expect(within(calendar()).getByText(/기준 시각 2026년 11월 20일 09:00/)).toBeTruthy();
   });
 
   it('tapping a day lists its items as 마감/일정 with links to the card', async () => {
     await open({loadCalendar: async () => buildSyntheticCalendar(SNAPSHOT_AS_OF)});
-    fireEvent.click(within(calendar()).getByRole('button', {name: '11월 3일 화요일, 마감 1건'}));
+    fireEvent.click(within(calendar()).getByRole('button', {name: '11월 24일 화요일, 마감 1건'}));
     const link = within(calendar()).getByRole('link', {name: /가상 졸업인증 서류 제출/});
     expect(link.getAttribute('href')).toBe('/notices/SYN-NOT-001');
-    expect(link.textContent).toContain('마감 18:00');
-    fireEvent.click(within(calendar()).getByRole('button', {name: '11월 8일 일요일, 일정 1건'}));
-    expect(within(calendar()).getByRole('link', {name: /가상 통상 활동 설명회/}).textContent).toContain('일정 18:00 ~ 11월 9일');
+    expect(link.textContent).toContain('마감 09:00');
+    fireEvent.click(within(calendar()).getByRole('button', {name: '11월 29일 일요일, 일정 1건'}));
+    expect(within(calendar()).getByRole('link', {name: /가상 통상 활동 설명회/}).textContent).toContain('일정 09:00 ~ 11월 30일');
   });
 
   it('keeps overdue, later, undated and needs-confirmation outside the grid', async () => {
     await open({loadCalendar: async () => buildSyntheticCalendar(SNAPSHOT_AS_OF)});
     const c = calendar();
-    expect(within(c).getByRole('button', {name: '10월 28일 수요일, 마감 1건'})).toBeTruthy();
-    fireEvent.click(within(c).getByRole('button', {name: '10월 28일 수요일, 마감 1건'}));
+    expect(within(c).getByRole('button', {name: '11월 18일 수요일, 마감 1건'})).toBeTruthy();
+    fireEvent.click(within(c).getByRole('button', {name: '11월 18일 수요일, 마감 1건'}));
     expect(within(c).getByRole('link', {name: /가상 수강정정 신청/}).textContent).toContain('기한 경과 · 담당부서 확인');
     expect(within(c).getByText('2주 뒤에도 일정 2건이 더 있어요.')).toBeTruthy();
     expect(within(c).getByRole('link', {name: /가상 상시 채용/}).textContent).toContain('상시 모집');
@@ -71,7 +72,7 @@ describe('#51 MiniCalendar on 오늘', () => {
   });
 
   it('shows an error, not guessed dates, when the wire asOf differs from the snapshot', async () => {
-    await open({loadCalendar: async () => buildSyntheticCalendar('2026-10-31T09:00:00.000Z')});
+    await open({loadCalendar: async () => buildSyntheticCalendar('2026-11-21T00:00:00.000Z')});
     expect(within(calendar()).getByRole('alert').textContent).toBe('일정 자료를 확인할 수 없어 표시하지 않았습니다.');
     expect(within(calendar()).queryAllByRole('button')).toHaveLength(0);
   });

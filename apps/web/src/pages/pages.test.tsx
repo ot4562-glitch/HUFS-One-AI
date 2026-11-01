@@ -37,29 +37,45 @@ describe('오늘 page', () => {
     expect(screen.queryByRole('region', {name: '나에게 맞춘 공고'})).toBeNull();
   });
 
-  it('shows large matched cards, the compact list, synthetic/AI-mock badges and pinned notices', async () => {
+  // S01's own generated synthetic data (core buildDemoSnapshot, DEMO_AS_OF).
+  const S01_FEATURED = ['가상 데이터 공공문제 공모전', '가상 파이썬 데이터 분석 부트캠프', '가상 핀테크 데이터 분석가 신입'];
+
+  it("shows S01's large matched cards (3), compact list (6), synthetic badge and pinned notices", async () => {
     await open();
     const featured = screen.getByRole('region', {name: '나에게 맞춘 공고'});
-    expect(within(featured).getAllByRole('article')).toHaveLength(2);
-    expect(within(featured).getAllByRole('heading', {level: 3}).map(h => h.textContent)).toEqual(['가상 데이터 체험', '가상 통상 활동']);
-    expect(within(screen.getByRole('region', {name: '다른 공고'})).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(featured).getAllByRole('heading', {level: 3}).map(h => h.textContent)).toEqual(S01_FEATURED);
+    expect(within(screen.getByRole('region', {name: '다른 공고'})).getAllByRole('listitem')).toHaveLength(6);
+    expect(screen.getByRole('link', {name: '전체 보기'})).toBeTruthy();
     expect(within(screen.getByRole('list', {name: '이 화면의 자료'})).getAllByRole('listitem').map(li => li.textContent))
-      .toEqual(['합성 자료', 'AI 예시(모의)']);
-    expect(within(screen.getByRole('region', {name: '고정 알림'})).getByText(/가상 학사 확인 안내/)).toBeTruthy();
+      .toEqual(['합성 자료']);
+    const pinned = screen.getByRole('region', {name: '고정 알림'});
+    expect(within(pinned).getByText(/가상 수강정정 기간 안내/)).toBeTruthy();
+    expect(within(pinned).getByText(/가상 졸업인증 서류 제출 안내/)).toBeTruthy();
+  });
+
+  it("switching to S02 shows S02's own cards and none of S01's", async () => {
+    await open();
+    fireEvent.click(within(screen.getByRole('group', {name: /시연 대상 선택/})).getAllByRole('radio')[1]!);
+    await flush();
+    const titles = within(screen.getByRole('region', {name: '나에게 맞춘 공고'})).getAllByRole('heading', {level: 3}).map(h => h.textContent);
+    expect(titles[0]).toBe('가상 무역상사 해외영업 신입');
+    for (const t of S01_FEATURED) expect(titles).not.toContain(t);
   });
 
   it('shows a relevance score only with its "not a pass probability" disclaimer', async () => {
     await open();
-    expect(screen.getByText('관련도 50 · 보통')).toBeTruthy();
-    expect(screen.getAllByText(RECOMMENDATION_SCORE_DISCLAIMER)).toHaveLength(1);
+    expect(screen.getByText(/^관련도 71 · /)).toBeTruthy();
+    expect(screen.getAllByText(/^관련도 [0-9]+ · /)).toHaveLength(3);
+    expect(screen.getAllByText(RECOMMENDATION_SCORE_DISCLAIMER)).toHaveLength(3);
   });
 
-  it('opens a card detail with server eligibility text verbatim', async () => {
+  it('opens a card detail with the server eligibility text', async () => {
     await open();
-    fireEvent.click(screen.getByRole('link', {name: '가상 통상 활동'}));
+    fireEvent.click(screen.getByRole('link', {name: '가상 핀테크 데이터 분석가 신입'}));
     await flush();
-    expect(screen.getByRole('heading', {level: 1}).textContent).toBe('가상 통상 활동');
-    expect(screen.getByText('지원 조건 충족')).toBeTruthy();
+    expect(screen.getByRole('heading', {level: 1}).textContent).toBe('가상 핀테크 데이터 분석가 신입');
+    expect(screen.getByText('지원 조건')).toBeTruthy();
+    expect(screen.getByRole('region', {name: '이 공고를 보여 준 이유'})).toBeTruthy();
   });
 
   it('hides the feed when the profile does not share FEED', async () => {
@@ -71,17 +87,17 @@ describe('오늘 page', () => {
     }
     await open('/', new NoFeedClient({delayMs: 0}));
     expect(screen.getByText('이 항목은 시연 공유 범위 밖입니다.')).toBeTruthy();
-    expect(screen.queryByText('가상 데이터 체험')).toBeNull();
+    expect(screen.queryByText(S01_FEATURED[0]!)).toBeNull();
   });
 });
 
 describe('공지 and detail routes', () => {
   it('lists notices with priority, applicability and verification state', async () => {
     await open('/notices');
-    const row = screen.getByRole('link', {name: /가상 학사 확인 안내/});
-    expect(row.textContent).toContain('학사 필수');
-    expect(row.textContent).toContain('해당 여부 확인 필요');
-    expect(row.textContent).toContain('확인 전 초안');
+    const draft = screen.getByRole('link', {name: /가상 교과개편·대체과목 안내/});
+    expect(draft.textContent).toContain('확인 전 초안');
+    const first = screen.getAllByRole('link').find(a => a.getAttribute('href')?.startsWith('/notices/'))!;
+    expect(first.textContent).toContain('고정');
   });
 
   it('a detail id that is not in the current snapshot is not found (no cross-subject lookup)', async () => {
