@@ -2,9 +2,9 @@ import {describe, it, expect} from 'vitest';
 import {CalendarResultSchema, FeedResultSchema, NoticeResultSchema} from '@hufs-one/contracts';
 import {
   DEMO_AS_OF, DEMO_LABELS, DEMO_LABEL_REVIEW, DEMO_OPPORTUNITIES, DEMO_PUBLISHED_AT, DEMO_SPLIT, DEMO_STUDENTS,
-  buildCalendar, compareRankers, composeFeed, opportunityLifecycle,
+  DEMO_OPPORTUNITY_NOTES, buildCalendar, compareRankers, composeFeed, opportunityLifecycle,
 } from './index.js';
-import {DEMO_NOTICES, composeNotices} from '../notices/index.js';
+import {DEMO_NOTICES, DEMO_NOTICE_NOTES, composeNotices} from '../notices/index.js';
 
 const opts = {asOf:DEMO_AS_OF, publishedAtBySnapshotId:DEMO_PUBLISHED_AT};
 
@@ -93,6 +93,28 @@ describe('A12 synthetic demo corpus invariants', () => {
       expect(Object.keys(DEMO_LABELS[s.subject]).sort()).toEqual(ids);
       expect(Object.values(DEMO_LABELS[s.subject]).some(v => v === 2)).toBe(true);
     }
+  });
+});
+
+describe('titles read like real postings; test intent stays out of the student-facing text (PR #60 UI review)', () => {
+  const memo = /≠|\((마감|접수 예정|기한 경과|승인 전 초안|조건 충돌[^)]*|게시 예정[^)]*|행사 일정만 공개|성적 조건[^)]*|우선선발·수료조건 분리|언어 자기기재[^)]*|학생 제출[^)]*)\)/u;
+  it('no opportunity or notice title carries a test memo', () => {
+    for (const o of DEMO_OPPORTUNITIES) expect(o.title).not.toMatch(memo);
+    for (const n of DEMO_NOTICES) expect(n.title).not.toMatch(memo);
+  });
+  it('the moved notes cover exactly the retitled ids and never reach the built objects', () => {
+    expect(Object.keys(DEMO_OPPORTUNITY_NOTES).sort()).toEqual(['SYN-OPP-003', 'SYN-OPP-005', 'SYN-OPP-006', 'SYN-OPP-012', 'SYN-OPP-023', 'SYN-OPP-025', 'SYN-OPP-035', 'SYN-OPP-038']);
+    expect(Object.keys(DEMO_NOTICE_NOTES).sort()).toEqual(['SYN-NOT-001', 'SYN-NOT-002', 'SYN-NOT-005', 'SYN-NOT-007']);
+    for (const o of DEMO_OPPORTUNITIES) expect(o).not.toHaveProperty('note');
+  });
+  it('content parentheses that the trap cases rely on are kept', () => {
+    const titles = DEMO_OPPORTUNITIES.map(o => o.title).join('\n');
+    for (const keep of ['(SQL·대시보드)', '(단순 입력 업무)', '(졸업생 대상)', '(학번 제한)']) expect(titles).toContain(keep);
+  });
+  it('notices use the same demo instant as the corpus', () => {
+    // SYN-NOT-007 is due two days before DEMO_AS_OF at 09:00 UTC; any other base instant would move it.
+    const late = DEMO_NOTICES.find(n => n.id === 'SYN-NOT-007')!;
+    expect(Date.parse(late.studentDeadline!)).toBe(Date.parse(DEMO_AS_OF) - 2 * 86_400_000 + 9 * 3_600_000);
   });
 });
 
