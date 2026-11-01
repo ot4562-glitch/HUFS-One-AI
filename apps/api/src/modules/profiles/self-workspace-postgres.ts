@@ -5,6 +5,7 @@ import {
 } from '@hufs-one/contracts';
 import type {OwnerWorkspaceValue,OwnerWorkspaceRecord,WorkspaceKind} from '@hufs-one/contracts';
 import type {ReviewerSqlConnection,ReviewerSqlPool} from '../auth/reviewer-postgres.js';
+import {invalidateExperienceTagApprovals} from './experience-approval-postgres.js';
 
 const Actor=z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:@-]+$/);
 const Id=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
@@ -179,6 +180,9 @@ export class PostgresOwnerWorkspaceStore implements OwnerWorkspacePort{
         [input.actorId,kind,id,raw,expectedVersion]);
       if(r.rows.length!==1)throw new WorkspaceConflict();
       const result=stored(r.rows[0]!,kind,id);
+      if(kind==='EXPERIENCE')await invalidateExperienceTagApprovals(c,{
+        actorId:input.actorId,experienceId:id,
+      });
       await this.audit(c,{actorId:input.actorId,kind,
         itemId:id,version:result.version,action:'UPDATED'});
       return result;
@@ -196,12 +200,20 @@ export class PostgresOwnerWorkspaceStore implements OwnerWorkspacePort{
       if(old.version!==expectedVersion)throw new WorkspaceConflict();
       await gate({itemId:id,value:old.value,operation:'WRITE'});
       const r=await c.query(`UPDATE api_self_workspace_records
-        SET version=version+1,deleted_at=clock_timestamp(),updated_at=clock_timestamp()
+        SET version=version+1,deleted_at=clock_timestamp(),
+            updated_at=clock_timestamp(),
+            -- Tombstones retain identity/version for CAS and immutable audit,
+            -- but must never retain the deleted owner's private payload.
+            value_json=jsonb_build_object('kind',kind,'dataMode',
+              value_json->'dataMode')
         WHERE actor_id=$1 AND kind=$2 AND item_id=$3
           AND version=$4 AND deleted_at IS NULL RETURNING version`,
         [input.actorId,kind,id,expectedVersion]);
       if(r.rows.length!==1)throw new WorkspaceConflict();
       const newVersion=Number(r.rows[0]?.version);
+      if(kind==='EXPERIENCE')await invalidateExperienceTagApprovals(c,{
+        actorId:input.actorId,experienceId:id,
+      });
       await this.audit(c,{actorId:input.actorId,kind,itemId:id,
         version:newVersion,action:'DELETED'});
       return {version:newVersion};

@@ -19,6 +19,12 @@ import type {SelfAccountAuthority} from './modules/profiles/self-account-postgre
 import type {IntakeOperatorAuthority} from './modules/academics/intake-postgres.js';
 import type {TrustedDurableSourceExecutor,TrustedSourceIngestionAuthority} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import type {EvidenceRightsResolver} from './modules/opportunities/temporal-gateway.js';
+import {PostgresSourceReviewService} from './modules/opportunities/source-review-postgres.js';
+import type {SourceReviewAuthority} from './modules/opportunities/source-review-postgres.js';
+import {PostgresExperienceApprovalStore} from './modules/profiles/experience-approval-postgres.js';
+import type {ExperienceApprovalAuthority} from './modules/profiles/experience-approval-postgres.js';
+import {PostgresDemoOverlayStore} from './modules/demo-overlay-postgres.js';
+import {DemoOverlayService} from './modules/demo-overlay.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -40,6 +46,10 @@ export interface PostgresPlatformConfig {
   /** Dedicated owner-private profile/consent pool, never demo or public roles. */
   selfAccount?:{pool:ReviewerSqlPool;authority:SelfAccountAuthority};
   ownerWorkspace?:{pool:ReviewerSqlPool;authority:SelfWorkspaceAuthority};
+  experienceApproval?:{pool:ReviewerSqlPool;authority:ExperienceApprovalAuthority};
+  demoOverlay?:{pool:ReviewerSqlPool};
+  /** Private operator-only service; never automatically approved or exposed as HTTP. */
+  sourceReview?:{pool:ReviewerSqlPool;authority:SourceReviewAuthority};
   now?:()=>string;
 }
 
@@ -56,6 +66,17 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.experienceApproval?{
+      experienceApproval:new PostgresExperienceApprovalStore(config.experienceApproval.pool,
+        config.experienceApproval.authority,now),
+    }:{}),
+    ...(config.demoOverlay?{
+      demoOverlay:new DemoOverlayService({source:teamCalendar,
+        store:new PostgresDemoOverlayStore(config.demoOverlay.pool),now}),
+    }:{}),
+    ...(config.sourceReview?{
+      sourceReview:new PostgresSourceReviewService(config.sourceReview.pool,config.sourceReview.authority,now),
+    }:{}),
     repository:new ScopedApiRepository(new PostgresApiProjectionRepository(
       config.pools.projections,now,config.displayConsent),teamCalendar,now),
     calendarSource,

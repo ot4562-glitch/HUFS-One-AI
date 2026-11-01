@@ -1,6 +1,33 @@
 # HUFS One AI
 
-## 2026-11-01 심민성 플랫폼 통합 구현 (리뷰 브랜치, main 미병합)
+**2026-11-01 후속 GitHub 검증:** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전 캐시 무효화는 독립 승인·Actions 2/2 성공 후 **main 병합 `fdf0b09b`**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117)은 추천 사유 설명 반례로 변경 요청; 계약 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)→API [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)은 합성 CI 성공·COMMENT 리뷰·비작성자 승인 요청 상태로 **미병합**. UI #72~#76도 차단 그대로. **열린 PR 8/Issue 28, 기존 닫힌 Issue 5, 신규 완료 폐쇄 0건**. #46 원본 권한 검사 2 FAIL·#89 RELEASE_BLOCKED 유지. 아래 “이번 신규 병합 0/Issue 27”은 이전 회차 기록. [정본](STATUS.md) · [PR 운영](docs/PR_WORKFLOW.md).
+
+**2026-11-01 기능 제안 4건(이슈 등록·수락 기준 정리만):** **P0 제안** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교 화면(신규), **P1 제안** [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) 추천 제외 이유(기존), [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비 보드(기존·API 단계 계약만 완료), **P2 제안** [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 복수/이중전공 What-if(기존·#107 DTO만 완료). 구현 완료나 공식 일정·운영 승인을 의미하지 않으며 원문 권리·학칙·권한·실브라우저 E2E 선결 사항은 이슈에 기록했다.
+
+**2026-11-01 이전 UI 리뷰 기록:** UI #72~#76 최신 HEAD 리뷰 5건 완료(#72·#75 CHANGES_REQUESTED, #73·#74·#76 COMMENT), **신규 병합 0건**. 해당 HEAD GitHub Actions 성공 증거는 없으며, #72 비합성 캘린더 port/스냅샷 잔상과 #75 REVIEWER sandbox의 미저장 입력·버전 격리가 차단 상태다. 열린 Issue 27건/종료 5건을 확인했고 관련 7개 Issue에 감사 체크를 남겼다. #46 개인정보 전체 checkout 2 FAIL·#89 `RELEASE_BLOCKED` 및 실제 기관/운영 검증은 여전히 미완료. [STATUS.md](STATUS.md)·[PR 정책](docs/PR_WORKFLOW.md)이 기준이다.
+
+## 2026-11-01 최신 코드 통합·출시 경계 (정본)
+
+- **main 통합 완료:** [#83 플랫폼/인가·일반 PG·출처/Temporal RAG/owner API](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83); 학업·개정 비교 [#84](https://github.com/ot4562-glitch/HUFS-One-AI/pull/84)·[#90](https://github.com/ot4562-glitch/HUFS-One-AI/pull/90)·[#91](https://github.com/ot4562-glitch/HUFS-One-AI/pull/91); 데이터 철회·삭제/수집 경합 [#99](https://github.com/ot4562-glitch/HUFS-One-AI/pull/99)·[#102](https://github.com/ot4562-glitch/HUFS-One-AI/pull/102)·[#105](https://github.com/ot4562-glitch/HUFS-One-AI/pull/105)·[#112](https://github.com/ot4562-glitch/HUFS-One-AI/pull/112)·[#113](https://github.com/ot4562-glitch/HUFS-One-AI/pull/113); 본인 보관함 계약/HTTP/웹 [#97](https://github.com/ot4562-glitch/HUFS-One-AI/pull/97)·[#106](https://github.com/ot4562-glitch/HUFS-One-AI/pull/106)·[#115](https://github.com/ot4562-glitch/HUFS-One-AI/pull/115); 수강계획 확인 **인가 gate** [#103](https://github.com/ot4562-glitch/HUFS-One-AI/pull/103)와 전공 What-if **계약만** [#107](https://github.com/ot4562-glitch/HUFS-One-AI/pull/107).
+- **학업 #116 새 검증:** [박준영의 계획 검사 출력→API strict wire 정합 수정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/116)이 심민성 **독립 승인**·동일 HEAD CI 두 작업 성공 후 `main` 병합(`6e287a0`). 학업 순수 검사/응답 호환만 해결한 것이며 검수된 RulePack/권리 adapter/실 UI #81은 아직 미완료.
+- **보안 CI:** [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 관련 #92~#94/#96/#98/#101/#104/#108/#109/#111의 오프라인 정책·릴리스 차단 검증이 병합됐다. 공식 actions/* SHA pin과 민감 원본 제외를 유지한다. **실서비스 출시는 여전히 RELEASE_BLOCKED.**
+- **미병합 UI:** [#72 캘린더](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → #73 심사 초대 → #74 학업 → #75 합성 리뷰어 → #76 브라우저 E2E는 OPEN. #72 비합성 캘린더 포트/버전 갱신 race는 CHANGES_REQUESTED 상태다.
+- **실제 Private 로컬 파일 경계 검사:** 2026-11-01 `npm run check:privacy`는 **153/155 PASS·2 FAIL**(Git 추적 보호 경로 6건, 원본 미열람). 합성 CI PASS와 구별하며 공개/배포를 계속 차단한다. [#46 데이터·동의 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46).
+- **아직 실제로 제공되지 않은 것:** 공식 학칙·원장 승인, 실 Google/외대메일 인증 운영, 실학생 동의·기관 자료 권리, 실제 NCP/HTTPS·도메인·CDN 검증, #80 지원 현황 보드 UI·#81 계획 UI/공식 계산 연결·#82 What-if 계산/화면. 구현과 공식 학교 판정·실학생 처리 승인을 혼동하지 않는다. 현재 작업 상태는 [STATUS.md](STATUS.md), 담당 경계는 [WORKSTREAMS.md](docs/WORKSTREAMS.md) 기준.
+- 이번 자체 작성 PR의 기술 총괄 직접 리뷰/병합은 사용자 **해당 회차 명시 예외**로만 시행했으며, GitHub의 비작성자 `APPROVED`를 허위로 기록하지 않았다.
+
+
+
+## 최신 구현·병합 상태 (2026-11-01, GitHub HEAD 기준)
+
+- **main 병합:** [#58 플랫폼·인증/영속 PG·권한/RAG/캘린더 서버 합성 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58), 학업 [#56](https://github.com/ot4562-glitch/HUFS-One-AI/pull/56)·[#57](https://github.com/ot4562-glitch/HUFS-One-AI/pull/57)·[#62](https://github.com/ot4562-glitch/HUFS-One-AI/pull/62), 코어/합성 [#60](https://github.com/ot4562-glitch/HUFS-One-AI/pull/60)·[#65](https://github.com/ot4562-glitch/HUFS-One-AI/pull/65)·[#67](https://github.com/ot4562-glitch/HUFS-One-AI/pull/67), UI 기초 [#64](https://github.com/ot4562-glitch/HUFS-One-AI/pull/64)·[#66](https://github.com/ot4562-glitch/HUFS-One-AI/pull/66)·[#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68). #68은 대상별 S01–S05 합성 스냅샷 혼합 P1 수정·최신 CI 성공 후 `51c3c11c`로 병합했다.
+- **2026-11-01 추가 main 병합:** 문서·스택 ancestry [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78) merge `83b4dab8`, 캘린더 브라우저 GET [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) squash `552ad35e` (비작성자 UI 승인·Actions 두 job SUCCESS), 오늘·기회·공지 [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) merge `5617222f` (비작성자 총괄 승인·Actions 두 job SUCCESS). #69 작성자는 force push 없이 main merge로 #68 스택 조상을 복구했고, 남은 스택 보전을 위해 #69는 merge commit을 사용했다. [API 이슈 #71](https://github.com/ot4562-glitch/HUFS-One-AI/issues/71)는 범위 완료로 CLOSED.
+- **현재 UI 스택:** [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)→[#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73)→[#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74)→[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)→[#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) 전부 OPEN. **#83은 이미 main 병합**되었고, #72/#75 변경 요청·현재 HEAD CI 미확인·선행 스택 미병합으로 이 UI PR들은 승인/병합 대기 중. 학업 #70은 main 병합, 공식 규칙 독립 검토는 별도.
+- **운영 완료 아님:** 합성/일회용 PostgreSQL 검증과 실 Google OIDC·SMTP·학교 권리/허가·학생별 동의/철회·NCP/CLOVA 운영·실브라우저 인증 E2E를 구별한다. 현재 유료 환경 개통·정식 출시 승인은 없다. [최신 상태와 차단사항](STATUS.md) 및 [팀별 역할](docs/WORKSTREAMS.md)을 먼저 확인한다.
+
+아래 날짜별 기록에 남아 있는 "main 미병합"·"API 미구현" 등 표현은 **당시 상황의 이력**이며 이 최신 절보다 우선하지 않는다.
+
+## 2026-11-01 심민성 플랫폼 통합 당시 기록 (#58 병합 전)
 
 `feat/platform-integration-20261101`에서 기존 인증 #32·공통 계약 #33·출처/RAG #34·DB #35·원자 권한 조회 #55를 최신 main과 통합했다. 인증된 캘린더 GET, 권한별 추천/공지 재계산, 개인 상태 HTTP CRUD와 명시적 PostgreSQL 서비스 조립을 추가했다. `npm ci --ignore-scripts --no-audit --no-fund`, `npm run check`, `npm run build:api`로 재현한다. [현재 증거와 남은 게이트](STATUS.md) · [API 연결법](apps/api/README.md). 아래 2026-10-31 기록은 당시 main 기준이며 새 브랜치 구현을 main 병합이나 실서비스 개통으로 해석하지 않는다.
 

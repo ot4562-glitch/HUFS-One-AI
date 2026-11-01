@@ -1,5 +1,17 @@
 # HUFS One AI | Architecture.md
 
+> **2026-11-01 후속 구현 현황:** 결과 캐시 키의 필수 `permissionPolicyVersion`은 [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118)로 독립 승인·합성/PG CI 뒤 main merge `fdf0b09b`. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 제외 이유 코어는 조직·종류 상한/주제 다양성에 따른 제외를 `OUTRANKED`로 오설명할 수 있어 변경 요청. [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)의 reviewed revision 비교·단일 공고 사유 strict 계약과 후속 [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)의 인가 read-only route·수강계획 코어 adapter·What-if 실행 gate·owner 브라우저 client는 **합성 CI 성공했지만 미병합(비작성자 APPROVED 요청)**. 실제 source/rights·RulePack loader·What-if 계산 엔진·React 화면/기관 운영권한이 자동 제공되는 것은 아니다. [STATUS](STATUS.md).
+
+> **2026-11-01 추가 기능 최초 설계(당시 제안):** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119)은 동일 허용 공고의 두 `SourceRevision`을 permission/asOf/승인 claim 범위 안에서만 비교해 정정값·확인 시각·원문 인용을 표시한다(수집=검수 아님). [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86)은 허용된 후보에 한해 마감 경과·자격 미확인·낮은 관련성 등의 안전한 제외/보류 이유 enum을 제공하며 숨겨진 후보 수/미공유 입력을 공개하지 않는다. [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80)은 `main`의 #97/#106/#115 owner BOOKMARK stage/CAS를 실제 React 보드에서 소비할 **미완료 UI**이고 실제 기관 지원·합격을 대행하지 않는다. [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82)는 #107 가상 전공 DTO 뒤 공식 RulePack·순수 계산·인가 API·비공식 판정 경고 UI를 별도 구현해야 한다. 공통 게이트: actor/grant/epoch/버전 변경·401/403/409 fail-closed, 합성 E2E, 독립 현재 HEAD 승인/CI, 실자료 권리 및 유료 인프라 별도 승인.
+
+> **2026-11-01 추가 코드 리뷰 정본:** 현재 열린 UI [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)→#73→#74→[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)→#76 전체 5건에 HEAD 리뷰 등록. #72는 비합성 캘린더 실제 API 미연결/동일 context snapshot 버전 갱신 READY 잔상, #75는 REVIEWER sandbox 로그와 **미저장 편집 input의 선택 학생 간 노출 위험**으로 CHANGES_REQUESTED; #73 초대 getSession 성공 콜백 취소 검사, #74 비공식 졸업안내 항상 노출, #76 E2E Actions 증거는 보완 COMMENT. 5개 HEAD의 Actions run/check-run이 확인되지 않아 신규 merge 0건. **기존 #83/#116은 이미 main 병합**. 합성 테스트 결과와 운영 인가·개인정보·실브라우저/기관 자료권리/Google/NCP 검증은 분리; #46 개인정보 전체 checkout 2 FAIL, #89 RELEASE_BLOCKED 유지. [상태](STATUS.md)·[PR_WORKFLOW](docs/PR_WORKFLOW.md) 우선.
+
+> **2026-11-01 현재 구현 정본:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 인증·원자 PG/권한·SourceRevision/Temporal RAG·본인 API·합성 REVIEWER main 병합. 후속 #99/#102/#105/#112/#113에서 출처/동의/동시성 보강, #97/#106/#115에서 지원 보관함 단계+웹 소비자, #103에서 수강계획 **읽기 전용 인가 gate**, #116에서 순수 학업 계산의 #103 strict 응답 정합(독립 HEAD 승인/CI 병합), #107에서 전공 What-if **가정 요청/결과 DTO만** main 병합했다. #90 RulePack 개정판 비교는 #82 가상 전공 계산과 다르다. #89 오프라인 보안 CI도 main에 있으나 실제 DNS/TLS/클라우드/권리/동의/실브라우저 `RELEASE_BLOCKED`. #72~#76 UI 스택은 #72 비합성 달력 연결과 snapshot 갱신 잔상 문제로 미병합/CHANGES_REQUESTED. 아래 이력의 '#83 OPEN'은 당시의 기록이다. 세부 상태 [STATUS.md](STATUS.md)·[계약](docs/CONTRACT_BOUNDARIES.md) 참고.
+
+
+
+> **2026-11-01 최신 구현 상태 (이하 상세 설계/과거 기록과 구분):** API/인증·일반 PG·Temporal RAG·권한·캘린더 서버 #58, UI 공통 셸 #68에 이어 **문서 이력 #78(`83b4dab8`), 브라우저 캘린더 GET #77(`552ad35e`), 오늘·기회·공지 UI #69(`5617222f`) main 병합 완료**. #69 작성자가 force push 없이 main 일반 merge로 #68 조상 문제를 해소하여 #69 본문만 clean diff임을 확인했고 merge commit으로 후속 스택을 보호했다. #71 API 메서드 이슈 CLOSED. #72(현재 main base, 비합성 `loadCalendar` 미연결·CHANGES_REQUESTED) → #73 초대 → #74 졸업 → #75 합성 REVIEWER → #76 브라우저 E2E는 OPEN. owner [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 추가 PG/권한/원본 검수/overlay 코드는 Ready for review / 3명 독립 리뷰 요청/합성 CI 성공이나 신규 실제 PG opt-in 30 SKIP·타인 APPROVED/최신 main 정렬 전이라 미병합. 학업 #70 activation은 `0a8d44bd` main 병합. 공식 학칙·실학생 동의/기관 출처권리·Google/SMTP/TLS/운영 PG/NCP/CLOVA/실기기 E2E·공개 배포는 검증/승인 전. [STATUS](STATUS.md)·[PR 병합 게이트](docs/PR_WORKFLOW.md)를 현재 기준으로 따른다.
+
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
@@ -1109,7 +1121,7 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest; 신규 포스터 20건 + 시의성 정정 12건 별도 검증팩, 원본 이미지 bbox·오독·변경 이벤트 |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
-| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET·#51 UI 미구현, partial sharing/철회/출처 시점·접근성 E2E 미검증 |
+| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET은 #58 main 합성/PG 코드로 구현; #51 UI는 #72 OPEN·#77 클라이언트 CI/리뷰 대기, live partial sharing/철회/출처 시점·접근성 E2E 미검증 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
 | TASK-16 팀원 이해 | 설명 담당+각 모듈 / A01·A16 | 지도3개·질문10개·역할별 설명·팀원 재설명 |
 | TASK-17 개설 전망 | GPT/Claude 계산·교차검토 / A09 | 완전성·n/k·0/n·정보누출 방지·rolling-origin·precision/recall/IoU·공식 override·가정 분리 |

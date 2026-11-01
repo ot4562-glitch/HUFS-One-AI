@@ -5,7 +5,8 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS auth_attempt_windows (
   kind text NOT NULL CHECK (kind IN (
     'GOOGLE_START','GOOGLE_CALLBACK','REVIEWER_REDEEM',
-    'SCHOOL_OTP_ISSUE','SCHOOL_OTP_CONFIRM')),
+    'SCHOOL_OTP_ISSUE','SCHOOL_OTP_CONFIRM','SCHOOL_OTP_ISSUE_IP',
+    'SCHOOL_OTP_ISSUE_GLOBAL','SCHOOL_OTP_CONFIRM_IP')),
   identity_digest char(64) NOT NULL
     CHECK (identity_digest ~ '^[0123456789abcdef]{64}$'),
   window_started_at timestamptz NOT NULL,

@@ -1,5 +1,9 @@
 # HUFS One AI | 제품·화면 기준 안내
 
+**2026-11-01 후속 코드·검수 상태:** 권한 정책 버전 캐시 무효화 [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118)은 독립 승인·Actions 성공 후 main **`fdf0b09b`** 병합. 추천 제외 사유 [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117)은 CHANGES_REQUESTED; 정정 비교/설명 계약 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)→권한 있는 API·owner 클라이언트 [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)은 작성자 COMMENT+비작성자 승인 요청 단계로 미병합. UI #72~#76 차단 유지. **열린 PR 8·Issue 28**, #46 Privacy 2 FAIL·#89 `RELEASE_BLOCKED`. 합성 코드 수락/운영 서비스 수락을 구분한다. [STATUS](STATUS.md).
+
+**2026-11-01 구현/리뷰 상태:** #83 플랫폼과 #116 학업 응답 계약 등은 main의 **합성/일회용 DB 검증된 코드 단계**이고, #72→#76 UI 스택은 최신 HEAD 리뷰 5건 후에도 미병합(0건), #72/#75 변경 요청 차단 상태다. 실제 기관/학생 자료·외대 메일/OIDC·NCP/HTTPS 검증은 미완료이며 공개 웹은 `RELEASE_BLOCKED`. [STATUS](STATUS.md)와 [PR_WORKFLOW](docs/PR_WORKFLOW.md) 우선.
+
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
@@ -15,7 +19,7 @@
 
 ## 신규 홈 기능: 개인별 '내 주요 일정' 미니 캘린더
 
-**2026-10-31 계획 추가:** 오늘 화면 하단에 시험·학사 서류 제출일, 모집 지원마감 및 행사일을 **학생별로** 표시하는 작은 달력을 추가한다. 실제 학생 마감과 학과 내부 행정 보고일을 혼동하지 않는다. 상시/마감 미정은 달력 밖 별도 목록, 학사정보 미공유·적용 여부 UNKNOWN은 '적용 확인 필요'로 안내한다. 360px 모바일·키보드/스크린리더, 색 외 텍스트/아이콘, 시연 5개 대상 변경·철회 시 화면 초기화가 필요하다. **계약 #53만 main 병합**됐고 **김채윤 계산 #50, 이의상 UI #51, 심민성 인증 API #52**는 미구현·미연동이다. [Architecture.md A07.3](Architecture.md), [Proposal.md §08](Proposal.md), [진행 상태](STATUS.md) 참조. ICS export/푸시는 범위 밖이다.
+**2026-10-31 계획 추가:** 오늘 화면 하단에 시험·학사 서류 제출일, 모집 지원마감 및 행사일을 **학생별로** 표시하는 작은 달력을 추가한다. 실제 학생 마감과 학과 내부 행정 보고일을 혼동하지 않는다. 상시/마감 미정은 달력 밖 별도 목록, 학사정보 미공유·적용 여부 UNKNOWN은 '적용 확인 필요'로 안내한다. 360px 모바일·키보드/스크린리더, 색 외 텍스트/아이콘, 시연 5개 대상 변경·철회 시 화면 초기화가 필요하다. **계산 #50·계약 #53·인증 calendar GET #58·브라우저 API #77·snapshot race 방어 #95는 main 병합**됐다. 하지만 [#72 UI 위젯 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)은 비합성 서비스 포트 연결·snapshot 버전 갱신 잔상 문제로 CHANGES_REQUESTED, HEAD CI/선행 스택 병합 전이며, [#51 UI 이슈](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)는 OPEN이다. [Architecture.md A07.3](Architecture.md), [Proposal.md §08](Proposal.md), [진행 상태](STATUS.md) 참조. ICS export/푸시는 범위 밖이다.
 
 ## 읽을 절
 

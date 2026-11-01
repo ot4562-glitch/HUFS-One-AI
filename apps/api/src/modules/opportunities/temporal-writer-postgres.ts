@@ -23,12 +23,17 @@ export class PostgresSourceRevisionWriter {
   }):Promise<RevisionInvalidationVNext|null>{
     if(!input.permissionReviewed)throw new Error('Missing approved source rights');
     const r=SourceRevisionVNextSchema.parse(input.revision);
+    if(input.originalBytes.byteLength>500_000||input.paragraphs.length>200)
+      throw new Error('Immutable revision integrity failure');
+    // Snapshot caller-owned mutable buffers before asynchronous pool/SQL work.
+    const originalBytes=Buffer.from(input.originalBytes);
+    const paragraphs=structuredClone(input.paragraphs);
     if(!input.originalBytes.length||input.originalBytes.byteLength>500_000
       ||!input.paragraphs.length||input.paragraphs.length>200
       ||new Set(input.paragraphs.map(x=>x.id)).size!==input.paragraphs.length
       ||Buffer.byteLength(JSON.stringify(input.paragraphs))>500_000
       ||input.paragraphs.some(x=>!x.id||!x.text||x.text.length>20_000)
-      ||createHash('sha256').update(input.originalBytes).digest('hex')!==r.originalSha256
+      ||createHash('sha256').update(originalBytes).digest('hex')!==r.originalSha256
       ||hashRevisionParagraphs(input.paragraphs)!==r.contentSha256)
       throw new Error('Immutable revision integrity failure');
     const c=await this.pool.connect();
@@ -78,10 +83,15 @@ export class PostgresSourceRevisionWriter {
         r.applicableScope?.cohortRange?.[1]??r.applicableScope?.cohortMax??null,
       ]);
       await c.query(`INSERT INTO source_paragraphs_vnext(
-        revision_id,paragraph_id,paragraph_text)
-        SELECT $1, item.id,item.text FROM jsonb_to_recordset($2::jsonb)
-        AS item(id text,text text)`,[
-        r.revisionId,JSON.stringify(input.paragraphs),
+        revision_id,paragraph_id,paragraph_text,paragraph_ordinal)
+        SELECT $1,item.value->>'id',item.value->>'text',item.ordinality
+        FROM jsonb_array_elements($2::jsonb) WITH ORDINALITY AS item(value,ordinality)`,[
+        r.revisionId,JSON.stringify(paragraphs),
+      ]);
+      await c.query(`INSERT INTO source_originals_vnext(
+        revision_id,original_sha256,original_bytes,captured_at)
+        VALUES($1,$2,$3,$4)`,[
+        r.revisionId,r.originalSha256,originalBytes,r.fetchedAt,
       ]);
       const updated=await c.query(`UPDATE source_ingest_heads
         SET revision_id=$2,fetched_at=$3,last_checked_at=$3

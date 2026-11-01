@@ -58,7 +58,7 @@ describe('TASK-19 SQL append-only revisions and atomic cross-instance invalidati
     expect(event).toBeNull();
     expect(x.calls[0]?.sql.trim()).toBe('BEGIN');
     expect(x.calls.some(q=>q.sql.includes('FOR UPDATE'))).toBe(true);
-    expect(x.calls.some(q=>q.sql.includes('jsonb_to_recordset'))).toBe(true);
+    expect(x.calls.some(q=>q.sql.includes('WITH ORDINALITY'))).toBe(true);
     expect(x.calls.some(q=>q.sql.includes('INSERT INTO source_revisions_vnext'))).toBe(true);
     expect(x.calls.at(-1)?.sql.trim()).toBe('COMMIT');
     expect(x.released).toHaveLength(1);

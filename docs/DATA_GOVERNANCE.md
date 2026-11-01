@@ -1,5 +1,13 @@
 # Private 저장소의 명시 승인 학생 수강 CSV 예외
 
+## 2026-11-01 개인정보 코드 게이트 최신 정본
+
+- **main 코드 검증:** 개인 동의 철회/원장 원자 삭제 [#102](https://github.com/ot4562-glitch/HUFS-One-AI/pull/102), 삭제한 owner workspace의 값 비움·옛 tombstone 정리 [#112](https://github.com/ot4562-glitch/HUFS-One-AI/pull/112), Git index의 `csv/private` 등 보호 경로를 **읽지 않고** 개수만 감지·보고값 해시 처리 [#104](https://github.com/ot4562-glitch/HUFS-One-AI/pull/104), Docker ignore/서버 source map 우회 차단 [#108](https://github.com/ot4562-glitch/HUFS-One-AI/pull/108) 및 공개 합성 아티팩트 검사는 main 병합. 합성/일회용 PG CI PASS는 실제 4인 개인정보의 새로운 동의·기관 권리 부여가 아니다.
+- **전체 로컬 Private checkout 검사:** 2026-11-01 `npm run check:privacy` **155개 중 153개 PASS, 2개 FAIL**, `no_protected_tracked_files`/`no_protected_publication_candidates`와 보호된 추적 경로 **6개**가 확인됐다. 원본 바이트·실제 파일명은 열거나 출력하지 않았다. 이 결과는 합성/희소 체크아웃 CI의 PASS와 다르며 #46 실자료 이력·동의 차단을 직접 뒷받침한다.
+- **[#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 계속 OPEN:** 과거 Private Git 커밋/협업자 clone에 존재하는 원본의 당사자별 목적·기간·접근 승인과 반환/보존/이력 처리 검증은 미완료. 스캔 우회/파일 무시만으로 Git history 게시·외부 AI/NCP/웹 공개 승인 또는 완전 삭제를 뜻하지 않는다.
+- 릴리스는 실동의·자료권리·실 계정/도메인/브라우저 확인 전 `RELEASE_BLOCKED`이며, 실제 CSV/Forms 파일 내용을 CI·PR·로그·AI 또는 문서에 다시 인용하지 않는다.
+
+
 
 **역사적 승인 범위:** PR #1의 2개 수강 CSV(48·39행)와 PR #5의 추가 수강 CSV(28행)는 이전의 사용자 지시에 따라 Private에 포함됐다. 그 지시만으로 추가 개인 파일·Google Forms 원본 게시, 팀 전체 열람, 외부 AI/NCP 처리 동의가 자동 부여되지는 않는다. 원본 값·행을 여기나 PR/CI에 재출력하지 않는다.
 
