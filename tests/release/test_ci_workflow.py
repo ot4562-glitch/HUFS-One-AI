@@ -11,6 +11,10 @@ from pathlib import Path
 
 
 WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/task00-contracts.yml"
+# Resolved 2026-11-01 from the official actions/* refs/tags/v4 Git objects.
+# Require full commit identity, not a mutable tag, branch or unreviewed action.
+PINNED_CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+PINNED_SETUP_NODE = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 SAFE_SPARSE_PATHS = frozenset({
     "/package.json", "/package-lock.json", "/tsconfig.json", "/vitest.config.ts",
     "/packages/contracts/", "/packages/fixtures/synthetic/",
@@ -73,7 +77,11 @@ def audit_ci_boundary(text: str) -> list[str]:
     if "  synthetic-contracts:" not in lines or "  postgres-integration:" not in lines:
         issues.append("synthetic and disposable PostgreSQL jobs must be separate")
 
-    checkouts = text.count("uses: actions/checkout@v4")
+    actions = re.findall(r"(?m)^\s*(?:-\s*)?uses:\s*(\S+)", text)
+    if (len(actions) != 4 or actions.count(PINNED_CHECKOUT) != 2
+        or actions.count(PINNED_SETUP_NODE) != 2):
+        issues.append("only reviewed commit-pinned checkout and setup-node are permitted")
+    checkouts = text.count("uses: " + PINNED_CHECKOUT)
     if checkouts != 2 or text.count("persist-credentials: false") != checkouts:
         issues.append("each checkout must disable credential persistence")
     if checkouts != 2 or text.count("sparse-checkout-cone-mode: false") != checkouts:
@@ -146,6 +154,16 @@ class WorkflowBoundaryTests(unittest.TestCase):
             "  pull_request:\n", "  pull_request:\n    paths: [apps/api/**]\n", 1
         )
         self.assertTrue(audit_ci_boundary(changed))
+
+    def test_mutable_actions_or_unreviewed_action_are_rejected(self) -> None:
+        for changed in (
+            self.policy.replace(PINNED_CHECKOUT, "actions/checkout@v4", 1),
+            self.policy.replace(PINNED_SETUP_NODE, "actions/setup-node@main", 1),
+            self.policy.replace(PINNED_CHECKOUT, "actions/checkout@0000000000000000000000000000000000000000", 1),
+            self.policy + "\n  - uses: untrusted/third-party@v1\n",
+        ):
+            with self.subTest(changed=changed != self.policy):
+                self.assertTrue(audit_ci_boundary(changed))
 
     def test_missing_browser_cache_gate_is_rejected(self) -> None:
         changed = self.policy.replace(

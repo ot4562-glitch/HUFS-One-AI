@@ -14,6 +14,7 @@ from tools.release_readiness_gate import EXTERNAL_UNVERIFIED, OFFLINE, evaluate_
 ROOT = Path(__file__).resolve().parents[2]
 MANUAL_WORKFLOW = ROOT / ".github/workflows/release-readiness.yml"
 GATE = ROOT / "tools/release_readiness_gate.py"
+PINNED_CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 
 
 def manual_release_workflow_problems(source: str) -> list[str]:
@@ -27,6 +28,9 @@ def manual_release_workflow_problems(source: str) -> list[str]:
         problems.append("read-only permissions missing")
     if "persist-credentials: false" not in source:
         problems.append("checkout credentials persisted")
+    actions = re.findall(r"(?m)^\s*(?:-\s*)?uses:\s*(\S+)", source)
+    if actions != [PINNED_CHECKOUT]:
+        problems.append("manual gate must use only exact commit-pinned checkout")
     if "sparse-checkout-cone-mode: false" not in source:
         problems.append("sparse checkout missing")
     checkout = re.search(
@@ -93,6 +97,16 @@ class ReleaseReadinessTests(unittest.TestCase):
     def test_manual_workflow_uses_only_read_only_release_gate_checkout(self) -> None:
         self.assertEqual(manual_release_workflow_problems(
             MANUAL_WORKFLOW.read_text(encoding="utf-8")), [])
+
+    def test_manual_gate_rejects_mutable_or_unreviewed_actions(self) -> None:
+        source = MANUAL_WORKFLOW.read_text(encoding="utf-8")
+        for modified in (
+            source.replace(PINNED_CHECKOUT, "actions/checkout@v4", 1),
+            source.replace(PINNED_CHECKOUT, "actions/checkout@main", 1),
+            source + "\n  - uses: unknown/unreviewed@v1\n",
+        ):
+            with self.subTest(changed=modified != source):
+                self.assertTrue(manual_release_workflow_problems(modified))
 
     def test_privileged_dispatch_or_broadened_checkout_is_rejected(self) -> None:
         source = MANUAL_WORKFLOW.read_text(encoding="utf-8")
