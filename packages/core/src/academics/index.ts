@@ -15,6 +15,7 @@ export type {
   RulePackRevisionDiff,
   RulePackRevisionRequest,
 } from './rule-diff.js';
+export {openRequirementIdsFromAudit} from './notice-links.js';
 export {decideRulePackActivation} from './rule-approval.js';
 export type {
   RulePackActivationRequest,
@@ -24,7 +25,9 @@ export type {
   TrustedSourceClause,
   TrustedSourceInventory,
 } from './rule-approval.js';
-export {buildAcademicPlan} from './plan.js';
+export {simulateStudyPlan} from './study-plan.js';
+export type {StudyPlanCheck, StudyPlanCheckRequest, StudyPlanItem, UncheckedReason} from './study-plan.js';
+export {buildAcademicPlan, checkAcademicPlan} from './plan.js';
 export type {
   AcademicPlanRequest,
   PrerequisiteRule,
