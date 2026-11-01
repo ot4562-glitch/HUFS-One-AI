@@ -1,5 +1,7 @@
 # HUFS One AI
 
+**2026-11-01 기능 제안 4건(이슈 등록·수락 기준 정리만):** **P0 제안** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교 화면(신규), **P1 제안** [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) 추천 제외 이유(기존), [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비 보드(기존·API 단계 계약만 완료), **P2 제안** [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 복수/이중전공 What-if(기존·#107 DTO만 완료). 구현 완료나 공식 일정·운영 승인을 의미하지 않으며 원문 권리·학칙·권한·실브라우저 E2E 선결 사항은 이슈에 기록했다.
+
 **2026-11-01 새 PR 리뷰 확인:** UI #72~#76 최신 HEAD 리뷰 5건 완료(#72·#75 CHANGES_REQUESTED, #73·#74·#76 COMMENT), **신규 병합 0건**. 해당 HEAD GitHub Actions 성공 증거는 없으며, #72 비합성 캘린더 port/스냅샷 잔상과 #75 REVIEWER sandbox의 미저장 입력·버전 격리가 차단 상태다. 열린 Issue 27건/종료 5건을 확인했고 관련 7개 Issue에 감사 체크를 남겼다. #46 개인정보 전체 checkout 2 FAIL·#89 `RELEASE_BLOCKED` 및 실제 기관/운영 검증은 여전히 미완료. [STATUS.md](STATUS.md)·[PR 정책](docs/PR_WORKFLOW.md)이 기준이다.
 
 ## 2026-11-01 최신 코드 통합·출시 경계 (정본)
