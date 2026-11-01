@@ -3,8 +3,10 @@
 
 ## 2026-11-01 최신 PR 검증·squash 스택 관리
 
+- **2026-11-01 병합 기록:** [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 캘린더 브라우저 API는 비작성자 UI 승인·GitHub Actions 2 jobs SUCCESS 뒤 squash `552ad35e`, #71 API-only issue CLOSED. [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 60파일 플랫폼 후속은 Draft → Ready/독립 리뷰어 3명 요청/합성 및 PG CI 성공이나 현재 HEAD 타인 APPROVED 없고 신규 실제 PG opt-in 30건 미실행. **리뷰/실검증 없이 merge 금지.**
+
 - **병합 게이트:** 비작성자의 *현재 HEAD* APPROVED 최소 1명, 관련 GitHub Actions 실제 SUCCESS, 해결된 CHANGES_REQUESTED, 개인정보/권한/시간 경계, 현재 main과의 충돌/의존 확인 뒤 통합 담당이 최종 병합. 작성자 본인 승인으로 독립 검토를 대체할 수 없다. 스택의 후속 PR은 선행 PR 병합 사실만으로 자동 승인하지 않는다.
-- **squash PR의 자손 스택:** #68을 squash 병합한 결과 main `51c3c11c`과 옛 #68 head `7fc2f5c`는 **동일 Git tree `bcdf0b435d...`**이지만 ancestry는 연결되지 않아 #69를 즉시 main에 retarget하면 비교 diff가 선행 #68 전체를 재포함하고 mergeability=false가 될 수 있다. **절대 force push/충돌 강제 병합 금지.** 원작성자의 독립 리베이스를 우선한다. 혹은 **정확한 동일 트리 검증 후**, 명시적으로 기록한 문서 변경 브랜치에 두 커밋을 부모로 갖는 ancestry bridge merge commit을 PR로 제출·검토·정상 병합해 기존 작업 브랜치를 훼손하지 않고 조상을 복구할 수 있다. 양쪽 트리 불일치 시 이 방식을 사용하지 않는다.
+- **#68 squash 이후 #69 ancestry 실제 해결(2026-11-01):** 작성자 `uisang2004-maker`가 force push 없이 `main 0a8d44b`를 #69 브랜치에 일반 merge하여 #68 squash 후손 단절을 복구했다(HEAD `5679c8a`, 본인 diff 11파일, Actions 2 jobs SUCCESS). 문서·이력 [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78)은 **merge commit `83b4dab8`**, [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69)도 **merge commit `5617222f`**로 병합했다. #72의 base는 `main`으로 retarget됐지만 코드 누락 및 CHANGES_REQUESTED로 병합 보류. 후속 #73→#76는 선행 정상 병합/현재 HEAD 검증 후 base를 순차 main으로 변경한다. 스택을 끊을 수 있는 squash/rebase, 타인의 HEAD 강제 push 금지; tree 동일성·의존 그래프와 리뷰 증거를 먼저 확인한다.
 - 문서가 최신 상태를 잘못 표시하면 정본 문서와 이슈에서 구체 PR·커밋·CI를 기입해 정정하고, 이전 이력은 "당시"로 분리한다. 체계적 운영을 위한 문서-only main 정정 예외는 아래 기존 계약대로 유지된다. **주석·체크박스 작성은 검증이 아니며 미완료/불확실성은 열린 상태로 남긴다.**
 
 
