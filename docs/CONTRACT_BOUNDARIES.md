@@ -1,5 +1,7 @@
 # TASK-00 | 네 트랙이 공유할 계약의 잠금 기준
 
+**2026-11-01 UI 소비 계약 검토:** #72~#76 HEAD 리뷰 5건 완료. #72 캘린더 실 API/versions, #75 sandbox `loaded.key` 및 미저장 `draft/note/picked` 학생 전환 격리 **변경 요청**, #73 취소된 세션 성공 콜백·#74 비공식 주의 안내·#76 실제 CI/E2E 증거는 COMMENT 후 수정 대기. 모두 미병합, 최신 HEAD Actions 0건. 코드/계약 소비자 4트랙 전체 인적 독립 수락 및 자료권리/실운영은 미완료. [STATUS](../STATUS.md).
+
 ## 2026-11-01 최신 소비 계약 — 코드 병합/실연동 구분
 
 | 계약·API | 실제 확인된 코드/PR | 아직 충족하지 않은 완료 게이트 |
@@ -25,7 +27,7 @@
 | TopicCode 24개·alias | A04.1~3 | 추천 김채윤 → 통합 심민성 → UI/AI | 24개 enum 단일 출처, UNKNOWN 보존 |
 | FeedResult·적격성 | A04~05 | 추천 김채윤 → UI/API | 큰 카드 최대3, 작은 목록 최대6, 전체 목록 |
 | NoticeResult | A07 | 김채윤 → UI/학업/API | #44 overdue Wire 및 #16 실제 items[].overdue 출력·합성 부정 테스트 **main 병합**; 서버/화면 권한 소비는 별도 |
-| CalendarResult (신규, #53 Wire + #50 계산 main 병합) | A07.3·A13 | 김채윤 계산 완료 #50 → 심민성 인증 API 예정 #52 → 이의상 UI 예정 #51 | asOf/서울 날짜·확정/미정/적용 미확인·rights/grant·철회, 실제 API/UI 아직 미구현 |
+| CalendarResult (#53 wire, #50 계산) | A07.3·A13 | 김채윤 계산 #50 → 심민성 서버 #58/브라우저 #77·경합 보호 #95 → 이의상 UI #72 미병합 | asOf/서울 날짜·확정/미정/적용 미확인·grant/철회. **API 코드 main 병합 ≠ 실제 UI 연결**; #72 비합성 port 미연결/동일 context 버전 잔상 CHANGES_REQUESTED, HEAD CI·실브라우저 검증 미완료 |
 | RulePack, AcademicSummary, Outlook | A08~09 | 학업 박준영 → UI/API | 3원장, 정수학점, 검수/미확정, asOf |
 | SafeLlmPacket·증거 | A06 | 심민성(웹 API/DTO·증거 검증) ↔ 이서연(NCP Provider SDK/실제 호출) → 추천·UI | 네 AI 작업, 안전 입력과 quote ID, NCP 외부 호출은 이서연 전담 |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
