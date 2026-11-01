@@ -1,5 +1,22 @@
 # HUFS One AI — 5인 담당 영역 구현·검증 현황 (2026-11-01 KST)
 
+
+## 최신 PR 근거 보정 (2026-11-01)
+
+**새 병합 확인:** [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78) 문서/ancestry merge `83b4dab8`, [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) merge `552ad35e`, [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) merge `5617222f`. 그 외 실자료 권리·운영 증거 없는 항목은 OPEN. 신규 완료율은 추정하지 않음.
+
+| 트랙 | 확인된 통합 완료 | 남은 완료조건 |
+| --- | --- | --- |
+| 심민성 API·통합 | #58 서버/보호 코어 main, [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 캘린더 브라우저 GET **main squash `552ad35e`**, #71 API 클라이언트 이슈 완료 | [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 플랫폼 후속(60파일) Ready / 독립 3명 리뷰 요청 / 타인 APPROVED 없음·실제 신규 PG opt-in 30 skip; 실 OIDC/SMTP·학생/기관 권리·운영 DB/NCP·UI 실제 연결 |
+| 이의상 UI | #28/#64/#66/#68 및 **[#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) 오늘·기회·공지 화면 main merge `5617222f`**. #68 데이터 혼합 P1 수정, #69 화면 합성 CI/독립 승인 완료 | [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) `main` base지만 실제 비합성 달력 `loadCalendar` 연결 누락·CHANGES_REQUESTED; #73→#76 스택 미병합. 360px·실 인증/권한/접근성 E2E 추가 필요 |
+| 김채윤 추천·공지 | 기존 #15/#16/#40/#41/#48/#49/#50 + #60/#65/#67 합성 코퍼스/snapshot **main 병합** | A15 독립 골드 200·실공고 사용권/자격·UI/실 API 성능 |
+| 박준영 학업 | #56/#57/#62 학점·예측·계획 pure core **main 병합** | [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 발효기간/asOf 차단 수정·CI/재승인 main merge `0a8d44bd` (합성 코어 완료), 공식 원문 사람 검수/학업 E2E |
+| 이서연 NCP/모델 | #12/#20/#22 기획·SKU/비용/기본 OFF 설계 | 실제 provider/worker·권리·클라우드/비용 실측·승인; 유료 환경 미개통 |
+
+**주의:** 아래 75/30/80/35/10% 수치는 #58/#56/#57/#62/#68 등이 병합되기 **이전**의 이력 추정으로 현재 진척률로 사용하면 안 된다. 같은 기준으로 전체 트랙을 재평가하지 않았으므로 최신 퍼센트를 지어내지 않는다. 팀원의 역량/노력·본선 준비율과도 무관하다.
+
+## 이전 리뷰의 시점별 추정 (역사적 스냅샷, 현재 수치 아님)
+
 **평가 성격:** 기술 총괄의 GitHub **확인 가능 산출물 기준** 진척 추정치이며 개인 역량·노력 평가가 아니다. 각자의 확정 담당 범위를 100%로 보고, 필수 기능 코드·테스트/CI·다른 트랙 소비·실자료/운영/인적 검증을 종합했다. **진척률 오차 ±10%p** 이상 가능: 공동작업, GitHub 밖 작업, 운영 승인을 아직 확인할 수 없다. PR 병합·합성 PASS·설계문서와 실 사용자/유료 NCP 검증은 별개다. 전체 평균 또는 본선 준비율로 환산하지 않는다.
 
 | 담당·코드 소유자 | 증거 기반 담당 범위 진척(추정) | 검증된 완료 산출물 | 아직 완료로 셀 수 없는 핵심 항목 |

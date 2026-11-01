@@ -1,6 +1,16 @@
 # HUFS One AI
 
-## 2026-11-01 심민성 플랫폼 통합 구현 (리뷰 브랜치, main 미병합)
+
+## 최신 구현·병합 상태 (2026-11-01, GitHub HEAD 기준)
+
+- **main 병합:** [#58 플랫폼·인증/영속 PG·권한/RAG/캘린더 서버 합성 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58), 학업 [#56](https://github.com/ot4562-glitch/HUFS-One-AI/pull/56)·[#57](https://github.com/ot4562-glitch/HUFS-One-AI/pull/57)·[#62](https://github.com/ot4562-glitch/HUFS-One-AI/pull/62), 코어/합성 [#60](https://github.com/ot4562-glitch/HUFS-One-AI/pull/60)·[#65](https://github.com/ot4562-glitch/HUFS-One-AI/pull/65)·[#67](https://github.com/ot4562-glitch/HUFS-One-AI/pull/67), UI 기초 [#64](https://github.com/ot4562-glitch/HUFS-One-AI/pull/64)·[#66](https://github.com/ot4562-glitch/HUFS-One-AI/pull/66)·[#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68). #68은 대상별 S01–S05 합성 스냅샷 혼합 P1 수정·최신 CI 성공 후 `51c3c11c`로 병합했다.
+- **2026-11-01 추가 main 병합:** 문서·스택 ancestry [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78) merge `83b4dab8`, 캘린더 브라우저 GET [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) squash `552ad35e` (비작성자 UI 승인·Actions 두 job SUCCESS), 오늘·기회·공지 [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) merge `5617222f` (비작성자 총괄 승인·Actions 두 job SUCCESS). #69 작성자는 force push 없이 main merge로 #68 스택 조상을 복구했고, 남은 스택 보전을 위해 #69는 merge commit을 사용했다. [API 이슈 #71](https://github.com/ot4562-glitch/HUFS-One-AI/issues/71)는 범위 완료로 CLOSED.
+- **미병합/검증 중:** [#72 달력 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → [#73 초대](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) → [#74 졸업](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) → [#75 REVIEWER](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) → [#76 Playwright E2E](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76)는 OPEN. #72는 main으로 base 변경했지만 **비합성 `AppServices.loadCalendar` 연결 누락**으로 CHANGES_REQUESTED 유지. 플랫폼 후속 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 Draft → Ready/3명 독립 리뷰 요청, HEAD 합성/PG CI 성공이나 비작성자 승인/신규 opt-in PG 30건 실실행·main 정렬 미완료로 미병합. 학업 RulePack 시행기간 수정 [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70)은 이미 `main` 병합, 공식 규칙 독립 검토는 별도.
+- **운영 완료 아님:** 합성/일회용 PostgreSQL 검증과 실 Google OIDC·SMTP·학교 권리/허가·학생별 동의/철회·NCP/CLOVA 운영·실브라우저 인증 E2E를 구별한다. 현재 유료 환경 개통·정식 출시 승인은 없다. [최신 상태와 차단사항](STATUS.md) 및 [팀별 역할](docs/WORKSTREAMS.md)을 먼저 확인한다.
+
+아래 날짜별 기록에 남아 있는 "main 미병합"·"API 미구현" 등 표현은 **당시 상황의 이력**이며 이 최신 절보다 우선하지 않는다.
+
+## 2026-11-01 심민성 플랫폼 통합 당시 기록 (#58 병합 전)
 
 `feat/platform-integration-20261101`에서 기존 인증 #32·공통 계약 #33·출처/RAG #34·DB #35·원자 권한 조회 #55를 최신 main과 통합했다. 인증된 캘린더 GET, 권한별 추천/공지 재계산, 개인 상태 HTTP CRUD와 명시적 PostgreSQL 서비스 조립을 추가했다. `npm ci --ignore-scripts --no-audit --no-fund`, `npm run check`, `npm run build:api`로 재현한다. [현재 증거와 남은 게이트](STATUS.md) · [API 연결법](apps/api/README.md). 아래 2026-10-31 기록은 당시 main 기준이며 새 브랜치 구현을 main 병합이나 실서비스 개통으로 해석하지 않는다.
 

@@ -1,10 +1,27 @@
 # HUFS One AI | 현재 작업 상태
 
-## 2026-11-01 플랫폼 후속 PR 제출·대기
+## 2026-11-01 플랫폼 #83 후속 브라우저 연결 — 최신 로컬 검증
 
-`feat/owner-platform-completion-20261101`은 캘린더/근거 브라우저 연결, OTP IP·전역 제한, 출처 원본/독립 검수, 경험 태그 승인·무효화, BETA overlay와 ADMIN 사전점검, 공용 합성 snapshot을 추가했다. 사용자 지시로 **PR 제출 후 개발을 중지하고 대기**한다. 로컬 Node 24.15.0 `npm run check` **1,148 PASS / 실PG 30 SKIP**, API·웹 빌드와 합성 생성물 일치, 개인정보 **146/146 PASS**. main 병합·운영 개통·실자료 권리·독립 사람 승인은 미완료다. [정확한 범위·마이그레이션·미검증 항목](docs/PLATFORM_COMPLETION_PR.md).
+- [x] 심민성 담당 owner API 브라우저 소비자, 경험 태그 승인, BETA overlay 일괄 갱신, 탭/계정 전환·철회·비동기 취소 보호를 기존 #83에 추가했다. 이의상 UI 화면과 학업/추천 코어/NCP 제공자는 수정하지 않았다.
+- [x] 로컬 Node 24.15.0 **1,253 PASS / 실제 disposable PostgreSQL opt-in 30 SKIP**, API·웹 프로덕션 빌드 및 합성 생성물 검증 PASS, 게시·개인정보 경계 **146/146 PASS**. 새 합성 테스트는 총 75건이며, 그중 3건은 Fastify→브라우저 HTTP 호출이다.
+- [ ] 현재 HEAD GitHub Actions 두 job·비작성자 독립 APPROVED와 PR #83 main 병합은 별도 확인 전이다. 실제 학생 자료권리·목적별 동의·Google/SMTP/TLS/PG 운영 환경·NCP 실호출 및 실브라우저 접근성 시험도 미완료다.
+- [설계/실행/DB migration/남은 의존성](docs/PLATFORM_COMPLETION_PR.md). 아래 이전 PR HEAD·테스트 숫자는 해당 시점의 이력이다.
 
-## 2026-11-01 심민성 담당 플랫폼 통합 — 단일 PR #58 검토 중
+## 2026-11-01 최신 확인 — PR/이슈 검증·운영 분리
+
+- [x] 플랫폼 통합 [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58) **main 병합**: OIDC/학교메일·일반 PG/권한/SourceRevision/Temporal RAG/캘린더 API **코드와 합성·일회용 PG 테스트**를 포함. 개별 [#32](https://github.com/ot4562-glitch/HUFS-One-AI/pull/32)·[#33](https://github.com/ot4562-glitch/HUFS-One-AI/pull/33)·[#34](https://github.com/ot4562-glitch/HUFS-One-AI/pull/34)·[#35](https://github.com/ot4562-glitch/HUFS-One-AI/pull/35)·[#55](https://github.com/ot4562-glitch/HUFS-One-AI/pull/55)는 CLOSED/unmerged; 통합 #58의 병합과 동일시하지 않는다.
+- [x] 학업 코어 [#56](https://github.com/ot4562-glitch/HUFS-One-AI/pull/56)·[#57](https://github.com/ot4562-glitch/HUFS-One-AI/pull/57)·[#62](https://github.com/ot4562-glitch/HUFS-One-AI/pull/62), 추천 합성 #60/#65/#67, UI 토큰 #64/의존성 #66 **main 병합**. 별도 사람 손계산·공식 학칙·실학생 정답 검증은 미완료.
+- [x] 이의상 [#68 React 기본 셸](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68) P1 대상별 snapshot 혼합 수정과 합성 테스트 확인; GitHub Actions [#41276776099](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41276776099) SUCCESS, 최신 HEAD 재승인 후 merge `51c3c11c`. 합성 UI 기반 완료이지 전체 5탭·실인증 E2E 완료가 아니다.
+- [x] 심민성 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 캘린더 브라우저 GET·권한/응답 음성 테스트는 HEAD `78433fe` UI 담당 독립 승인 + GitHub Actions [41279165323](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41279165323) 두 job SUCCESS 후 **main squash `552ad35e` 병합**. [#71](https://github.com/ot4562-glitch/HUFS-One-AI/issues/71) API 전용 이슈 COMPLETED; 별도 #72 실제 UI 포트 연결은 남음.
+- [x] [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78) 최신 문서/스택 ancestry 정리 **main merge `83b4dab8`**, [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) 오늘·기회·공지 UI 최신 HEAD `5679c8a` 독립 승인·Actions [41281669833](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41281669833) 두 job SUCCESS 후 **main merge `5617222f`**. #69 작성자 직접 main merge로 #68 squash ancestry를 복구하여 diff 11파일 확인; 후속 스택을 지키기 위해 merge commit 사용.
+- [ ] [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)→[#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73)→[#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74)→[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)→[#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) OPEN. #72 base는 main으로 재지정했지만 비합성 `main.tsx` `AppServices.loadCalendar` 미연결 및 지연 응답/401·403·asOf 회귀 미완료; 기존 CHANGES_REQUESTED 유지, 다른 UI 스택 별도 리뷰/CI 필요.
+- [ ] owner 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 60파일·OTP 한도/출처검수/원본불변/overlay/태그승인/preflight **Ready for review(초안 해제)**, `qamarrchae`·`taewangim-alt`·`uisang2004-maker` 3명 요청. HEAD `4cc043f` Actions [41280935002](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41280935002) 두 job SUCCESS이나 **타인 APPROVED 0·신규 실제 PG opt-in 30 SKIP·최신 main 병합 반영 재검토 필요**. main 미병합; 운영/학생/유료 인프라 승인 아님.
+- [x] 박준영 [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70): `effectiveFrom <= asOf < effectiveUntil` 검증 누락 수정, 시행 전/만료/경계값 HELD 및 기존 active 유지 회귀 확인, 최신 GitHub Actions [#41279711503](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41279711503) SUCCESS, 비작성자 재승인·main merge `0a8d44bd`. **공식 학칙/실학생 검수 완료는 아님.**
+- [ ] 운영 Google/실 외대메일/영속 세션·공식 출처/사용권한·실학생 개별 목적별 동의·실 PostgreSQL 다중 인스턴스/브라우저/모바일 스크린리더·NCP/CLOVA 비용·권리검증. 이 조건은 CI 성공, 코드 병합 또는 README 체크만으로 닫지 않는다.
+
+**최신 open 이슈:** UI #9/#51, 학업 #11, 추천 정답 #10/#61, API·자료·보안 #8/#18/#19/#21/#27/#39/#52/#71, 심사자 #25, 데이터 동의 #46, NCP #12/#20/#22, 총괄 #23. 의존성 1단계 #63은 CLOSED. 아래의 검토 중/미병합 문구는 작성 당시의 역사적 스냅샷이다.
+
+## 2026-11-01 당시 플랫폼 통합 검토 노트 (#58 병합 전 기록)
 
 - **학업 독립 변경요청 3건 반영(2026-11-01):** 박준영 [PR #59](https://github.com/ot4562-glitch/HUFS-One-AI/pull/59)의 작성자 커밋을 원작성자 유지한 채 #58 브랜치에 적용(`32f6204`). `OwnerTranscriptSchema`의 PLANNED 행 차단, `CourseOfferingSchema`의 정규 학기/공식 ACTIVE 확정만 허용·`HISTORICAL_PATTERN` 제거·학기당 단일 상태, `EvidenceScopeSchema`의 빈 campuses/majorCodes 차단. 통합 API는 개설 응답 학기 순서·afterId·nextCursor 일관성을 추가 검증. **로컬 `npm run check` 924 PASS/실PG opt-in 26 SKIP, `build:api` PASS, `check:privacy` 145 PASS**. 최신 변경 HEAD의 GitHub Actions·박준영 재승인 후에만 리뷰 차단 해제를 인정하며, **main 미병합**.
 

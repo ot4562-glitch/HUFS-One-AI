@@ -1,5 +1,8 @@
 # HUFS One AI | Architecture.md
 
+
+> **2026-11-01 최신 구현 상태 (이하 상세 설계/과거 기록과 구분):** API/인증·일반 PG·Temporal RAG·권한·캘린더 서버 #58, UI 공통 셸 #68에 이어 **문서 이력 #78(`83b4dab8`), 브라우저 캘린더 GET #77(`552ad35e`), 오늘·기회·공지 UI #69(`5617222f`) main 병합 완료**. #69 작성자가 force push 없이 main 일반 merge로 #68 조상 문제를 해소하여 #69 본문만 clean diff임을 확인했고 merge commit으로 후속 스택을 보호했다. #71 API 메서드 이슈 CLOSED. #72(현재 main base, 비합성 `loadCalendar` 미연결·CHANGES_REQUESTED) → #73 초대 → #74 졸업 → #75 합성 REVIEWER → #76 브라우저 E2E는 OPEN. owner [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 추가 PG/권한/원본 검수/overlay 코드는 Ready for review / 3명 독립 리뷰 요청/합성 CI 성공이나 신규 실제 PG opt-in 30 SKIP·타인 APPROVED/최신 main 정렬 전이라 미병합. 학업 #70 activation은 `0a8d44bd` main 병합. 공식 학칙·실학생 동의/기관 출처권리·Google/SMTP/TLS/운영 PG/NCP/CLOVA/실기기 E2E·공개 배포는 검증/승인 전. [STATUS](STATUS.md)·[PR 병합 게이트](docs/PR_WORKFLOW.md)를 현재 기준으로 따른다.
+
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 
@@ -1109,7 +1112,7 @@ API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실�
 | TASK-12 독립 출시검사 | 별도 검증자 / A14.1a·A15·A18 | 인증/인가 401·403, 외부 우회 차단·동의·실행/미실행 전체 검사와 release 증거 |
 | TASK-13 합성·이미지 | Claude 자산·GPT schema / A12 | 40+10 목표·배지·license·alt·manifest; 신규 포스터 20건 + 시의성 정정 12건 별도 검증팩, 원본 이미지 bbox·오독·변경 이벤트 |
 | TASK-14 개인공지 | GPT 조건·Claude 요약 / A07 | 적용·기한·UNKNOWN·장학조건. 학사 교차검토 |
-| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET·#51 UI 미구현, partial sharing/철회/출처 시점·접근성 E2E 미검증 |
+| TASK-14C 내 주요 일정(추가 기능) | 김채윤 계산·심민성 계약/API·이의상 UI·박준영 교차 / A07.3·A11·A13 | #53 Wire + #50 계산 **main 병합**; #52 actor/grant 인증 GET은 #58 main 합성/PG 코드로 구현; #51 UI는 #72 OPEN·#77 클라이언트 CI/리뷰 대기, live partial sharing/철회/출처 시점·접근성 E2E 미검증 |
 | TASK-15 대상 문맥 | GPT 권한·Claude selector / A02 | 20쌍·race·동시탭·철회·overlay 불변 |
 | TASK-16 팀원 이해 | 설명 담당+각 모듈 / A01·A16 | 지도3개·질문10개·역할별 설명·팀원 재설명 |
 | TASK-17 개설 전망 | GPT/Claude 계산·교차검토 / A09 | 완전성·n/k·0/n·정보누출 방지·rolling-origin·precision/recall/IoU·공식 override·가정 분리 |
