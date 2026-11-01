@@ -1,7 +1,9 @@
 import {CalendarResultSchema, type CalendarResult} from '@hufs-one/contracts';
 
 /**
- * SYNTHETIC CalendarResult relative to a snapshot asOf, for `--mode synthetic` and tests only.
+ * Hand-shaped SYNTHETIC CalendarResult relative to an asOf, for component tests (edge cases such as
+ * multi-day events, overdue, undated and needs-confirmation in one fixture). The dev client uses each
+ * subject's corpus-derived calendar instead (syntheticCorpus).
  * Shapes follow the merged #53 wire (ids, Seoul day, overdue, window rules) and are schema-checked.
  */
 const DAY = 86_400_000;

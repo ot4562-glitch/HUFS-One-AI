@@ -80,7 +80,7 @@ describe('App shell', () => {
     expect(screen.getByRole('status').textContent).toBe('선택한 학생의 정보를 불러오는 중');
     client.pending.get('S02')!.resolve();
     await flush();
-    expect(screen.getByRole('status').textContent).toBe('시연 대상: 가상 대상 2');
+    expect(screen.getByRole('status').textContent).toBe('시연 대상: 가상 학생 2 · 해외영업/무역 지망 4학년');
   });
 
   it('403 revoked: clears and asks for another subject, no retry button', async () => {
@@ -108,7 +108,7 @@ describe('App shell', () => {
     expect(screen.getByRole('status').textContent).toBe('선택한 학생의 정보를 불러오는 중');
     client.pending.get('S01')!.resolve();
     await flush();
-    expect(screen.getByRole('status').textContent).toBe('시연 대상: 가상 대상 1');
+    expect(screen.getByRole('status').textContent).toBe('시연 대상: 가상 학생 1 · 데이터/AI 지망 3학년');
   });
 
   it('401 shows a top-level Google sign-in link, not a fetch', async () => {
