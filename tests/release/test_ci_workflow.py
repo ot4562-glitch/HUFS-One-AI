@@ -19,6 +19,8 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/tools/release_publication_gate.py", "/.dockerignore",
+    "/tools/release_readiness_gate.py",
+    "/.github/workflows/release-readiness.yml",
     "/.github/workflows/task00-contracts.yml",
 })
 EXCLUDED_DIRECTORIES = (
@@ -89,6 +91,8 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/tools/release_entrypoint_gate.mjs",
             "/tools/release_publication_gate.py",
             "/.dockerignore",
+            "/tools/release_readiness_gate.py",
+            "/.github/workflows/release-readiness.yml",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
         if "/infra/sql/" not in sparse[1] or "/tests/api/" not in sparse[1]:

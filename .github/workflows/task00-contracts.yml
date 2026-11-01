@@ -43,6 +43,8 @@ jobs:
             /tests/security/
             /tools/release_entrypoint_gate.mjs
             /tools/release_publication_gate.py
+            /tools/release_readiness_gate.py
+            /.github/workflows/release-readiness.yml
             /.dockerignore
       - name: Prove real-student sources are not in this workspace
         run: |
