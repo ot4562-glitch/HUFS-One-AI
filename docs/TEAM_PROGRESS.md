@@ -3,10 +3,12 @@
 
 ## 최신 PR 근거 보정 (2026-11-01)
 
+**새 병합 확인:** [#78](https://github.com/ot4562-glitch/HUFS-One-AI/pull/78) 문서/ancestry merge `83b4dab8`, [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) merge `552ad35e`, [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) merge `5617222f`. 그 외 실자료 권리·운영 증거 없는 항목은 OPEN. 신규 완료율은 추정하지 않음.
+
 | 트랙 | 확인된 통합 완료 | 남은 완료조건 |
 | --- | --- | --- |
-| 심민성 API·통합 | [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58) **main 병합**, 서버 캘린더·인증·동의/PG·RAG/SourceRevision 합성/일회용 PG 코드. [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 브라우저 캘린더 GET 코드/합성 회귀·CI 성공 | #77 타인 최신 HEAD 리뷰·병합/실 UI 연결; 실 OIDC/SMTP·학생 권리·운영 DB/NCP/모바일 E2E |
-| 이의상 UI | [#28](https://github.com/ot4562-glitch/HUFS-One-AI/pull/28) 컨트롤러·[#64](https://github.com/ot4562-glitch/HUFS-One-AI/pull/64) 디자인/달력 모델·[#66](https://github.com/ot4562-glitch/HUFS-One-AI/pull/66) 의존성·[#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68) React 셸/대상별 합성 분리 **main 병합** | #69/#72/#73/#74/#75/#76 스택 OPEN, 앱 전체 화면·실 인증/달력/REVIEWER·접근성 E2E |
+| 심민성 API·통합 | #58 서버/보호 코어 main, [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 캘린더 브라우저 GET **main squash `552ad35e`**, #71 API 클라이언트 이슈 완료 | [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 플랫폼 후속(60파일) Ready / 독립 3명 리뷰 요청 / 타인 APPROVED 없음·실제 신규 PG opt-in 30 skip; 실 OIDC/SMTP·학생/기관 권리·운영 DB/NCP·UI 실제 연결 |
+| 이의상 UI | #28/#64/#66/#68 및 **[#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) 오늘·기회·공지 화면 main merge `5617222f`**. #68 데이터 혼합 P1 수정, #69 화면 합성 CI/독립 승인 완료 | [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) `main` base지만 실제 비합성 달력 `loadCalendar` 연결 누락·CHANGES_REQUESTED; #73→#76 스택 미병합. 360px·실 인증/권한/접근성 E2E 추가 필요 |
 | 김채윤 추천·공지 | 기존 #15/#16/#40/#41/#48/#49/#50 + #60/#65/#67 합성 코퍼스/snapshot **main 병합** | A15 독립 골드 200·실공고 사용권/자격·UI/실 API 성능 |
 | 박준영 학업 | #56/#57/#62 학점·예측·계획 pure core **main 병합** | [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 발효기간/asOf 차단 수정·CI/재승인 main merge `0a8d44bd` (합성 코어 완료), 공식 원문 사람 검수/학업 E2E |
 | 이서연 NCP/모델 | #12/#20/#22 기획·SKU/비용/기본 OFF 설계 | 실제 provider/worker·권리·클라우드/비용 실측·승인; 유료 환경 미개통 |
