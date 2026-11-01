@@ -1,7 +1,7 @@
 # HUFS One AI | 에이전트 작업 기준
 
 
-**현재 기준(2026-11-01):** 플랫폼 #58과 React 셸 #68은 실제 `main` 병합. UI 후속 #69/#72~#76은 리뷰·CI 대기, 달력 브라우저 메서드 #77은 CI 통과/타인 승인 대기, 학업 규칙 활성화 #70은 시행기간 경계 수정·합성 검증 후 main `0a8d44bd` 병합(공식 학칙 검토와 별개). 코드·합성·운영 검증을 분리하고 현재 GitHub PR/issue + [STATUS.md](STATUS.md)를 우선 확인한다. 외부 NCP 실행·실학생자료 접근 권리와 동의·서비스 릴리스 승인은 이 개발 지시에 포함되지 않는다.
+**2026-11-01 최종 GitHub 병합·안전 기준:** 기존 플랫폼 #58/React 셸 #68에 더해 **#78 문서·스택 이력(`83b4dab8`), #77 캘린더 브라우저 API(`552ad35e`), #69 오늘·기회·공지 UI(`5617222f`)는 `main` 병합 완료**. #71 API 클라이언트 이슈는 CLOSED. [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 `loadCalendar` 미연결 CHANGES_REQUESTED, #73~#76 스택 OPEN. [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 Ready for review/타인 리뷰 요청 상태로 **main 미병합**(30 real-PG opt-in 미실행); 사용자 작성 PR은 타인 현재 HEAD 승인과 CI 전 병합 금지. 코드/합성 검증과 실제 Google·기관 자료권리·개인 동의·NCP·배포 승인은 분리한다. 최신 [STATUS.md](STATUS.md)와 GitHub 실제 HEAD을 우선한다.
 
 **2026-11-01 사용자 실행 지시:** 심민성 담당 공통 계약·웹/외부 API·인증·일반 DB·출처/RAG·통합 검증 구현과 PR 게시, 전체 이슈/PR 검토 및 필요한 코멘트 작성을 승인했다. `C:\AIProjects\naver-competition`을 이번 작업 checkout으로 사용하고 기존 `naver_competition`은 보존한다. 코드 변경은 PR로 제안하며 사람의 현재 HEAD 승인·CI 전 main에 병합하지 않는다. 유료/NCP·도메인 개통·실학생 자료 사용/동의는 이 실행 지시로 확대하지 않는다. 최신 구현/검증은 STATUS.md의 2026-11-01 절을 따른다.
 
