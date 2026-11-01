@@ -41,6 +41,7 @@ jobs:
             /.github/workflows/task00-contracts.yml
             /tests/release/
             /tests/security/
+            /tools/release_entrypoint_gate.mjs
       - name: Prove real-student sources are not in this workspace
         run: |
           test ! -d csv
@@ -59,6 +60,10 @@ jobs:
         run: npm run check
       - name: Build local fail-closed Fastify API
         run: npm run build:api
+      - name: Reject unsafe anonymous responses and false release readiness
+        run: |
+          node --test tests/security/release_entrypoint_gate.test.mjs
+          node tools/release_entrypoint_gate.mjs
 
   postgres-integration:
     runs-on: ubuntu-latest
