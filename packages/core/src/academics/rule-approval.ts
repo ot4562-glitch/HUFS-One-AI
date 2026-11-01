@@ -10,8 +10,8 @@ import {AS_OF, ID, assertId, byCodeUnit} from './ledger.js';
 
 /**
  * RulePack activation gate (A08.6, RULE-EXC-01..RULE-EXC-04).
- * A candidate replaces the active pack only when it is a valid APPROVED pack, carries no
- * blocking warning, and matches an independent inventory of the original document:
+ * A candidate replaces the active pack only when it is a valid APPROVED pack, is in effect
+ * at asOf (effectiveFrom <= asOf < effectiveUntil), carries no blocking warning, and matches an independent inventory of the original document:
  * every clause, every exception attached to the requirement it governs, and every
  * per-role applicability. Otherwise the active pack stays exactly as it was.
  * Numeric exact matches never stand in for clause coverage.
@@ -27,6 +27,8 @@ export type RulePackGateCode =
   | 'INVALID_PACK'
   | 'NOT_APPROVED'
   | 'NOT_APPROVED_BY_AS_OF'
+  | 'NOT_YET_EFFECTIVE'
+  | 'EXPIRED'
   | 'VERSION_ALREADY_ACTIVE'
   | 'SUPERSEDE_CHAIN_BROKEN';
 
@@ -275,6 +277,9 @@ export function decideRulePackActivation(input:RulePackActivationRequest):RulePa
     || (pack.validationReport && Date.parse(pack.validationReport.checkedAt) > asOfMs)) {
     issues.push({code:'NOT_APPROVED_BY_AS_OF'});
   }
+  // Same interval as selectAcademicRulePackAsOfVNext: effectiveFrom <= asOf < effectiveUntil.
+  if (Date.parse(pack.effectiveFrom) > asOfMs) issues.push({code:'NOT_YET_EFFECTIVE'});
+  if (pack.effectiveUntil !== undefined && Date.parse(pack.effectiveUntil) <= asOfMs) issues.push({code:'EXPIRED'});
 
   if (pack.sourceDocumentSha256 !== input.trustedOriginal.sourceDocumentSha256) {
     issues.push({code:'UNVERIFIED_ORIGINAL'});

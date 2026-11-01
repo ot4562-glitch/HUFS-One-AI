@@ -295,7 +295,34 @@ describe('versions and time', () => {
 
   it('holds a pack approved after asOf', () => {
     const result = decideRulePackActivation(request(pack(), {asOf:'2026-01-25T00:00:00.000Z'}));
-    expect(result.issues).toEqual([{code:'NOT_APPROVED_BY_AS_OF'}]);
+    // This asOf is also before effectiveFrom 2026-03-01.
+    expect(result.issues).toEqual([{code:'NOT_APPROVED_BY_AS_OF'}, {code:'NOT_YET_EFFECTIVE'}]);
+  });
+
+  it('holds a pack that takes effect after asOf and keeps the active pack', () => {
+    const result = decideRulePackActivation(request(pack({effectiveFrom:'2027-03-01T00:00:00.000Z'})));
+    expect(result.decision).toBe('HELD');
+    expect(result.active).toBe(ACTIVE);
+    expect(result.issues).toEqual([{code:'NOT_YET_EFFECTIVE'}]);
+  });
+
+  it('activates a pack whose effectiveFrom equals asOf', () => {
+    expect(decideRulePackActivation(request(pack({effectiveFrom:AS_OF}))).decision).toBe('ACTIVATED');
+  });
+
+  it('holds an expired pack and keeps the active pack', () => {
+    const result = decideRulePackActivation(request(pack({effectiveUntil:'2026-10-01T00:00:00.000Z'})));
+    expect(result.decision).toBe('HELD');
+    expect(result.active).toBe(ACTIVE);
+    expect(result.issues).toEqual([{code:'EXPIRED'}]);
+  });
+
+  it('treats effectiveUntil equal to asOf as expired', () => {
+    expect(decideRulePackActivation(request(pack({effectiveUntil:AS_OF}))).issues).toEqual([{code:'EXPIRED'}]);
+  });
+
+  it('activates a pack whose effectiveUntil is after asOf', () => {
+    expect(decideRulePackActivation(request(pack({effectiveUntil:'2026-11-01T00:00:00.001Z'}))).decision).toBe('ACTIVATED');
   });
 
   it('refuses a candidate for another scope than the active pack', () => {
