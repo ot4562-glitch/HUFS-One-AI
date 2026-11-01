@@ -16,6 +16,7 @@ on:
       - tests/api/**
       - tests/integration/**
       - tests/e2e/**
+      - tests/evaluation/**
       - apps/api/**
       - infra/sql/**
       - packages/core/**
@@ -36,6 +37,7 @@ on:
       - tests/api/**
       - tests/integration/**
       - tests/e2e/**
+      - tests/evaluation/**
       - apps/api/**
       - infra/sql/**
       - packages/core/**
@@ -68,6 +70,7 @@ jobs:
             /tests/api/
             /tests/integration/
             /tests/e2e/
+            /tests/evaluation/
             /apps/api/
             /infra/sql/
             /packages/core/

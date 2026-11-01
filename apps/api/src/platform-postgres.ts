@@ -10,6 +10,9 @@ import {PostgresTemporalEvidenceReader} from './modules/opportunities/temporal-p
 import {createPostgresTemporalGateway} from './modules/opportunities/temporal-gateway.js';
 import {PostgresSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
 import {PostgresSourceIngestionQueue} from './modules/opportunities/source-ingestion-queue-postgres.js';
+import {PostgresReviewerSandboxStore} from './modules/auth/reviewer-sandbox-postgres.js';
+import {PostgresRestrictedIntakeImport} from './modules/academics/intake-postgres.js';
+import type {IntakeOperatorAuthority} from './modules/academics/intake-postgres.js';
 import type {TrustedDurableSourceExecutor,TrustedSourceIngestionAuthority} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import type {EvidenceRightsResolver} from './modules/opportunities/temporal-gateway.js';
 
@@ -26,6 +29,10 @@ export interface PostgresPlatformConfig {
   /** Optional private operator port. No automatic crawler/worker or network. */
   sourceIngestion?:{pool:ReviewerSqlPool;
     authority:TrustedSourceIngestionAuthority;executor:TrustedDurableSourceExecutor};
+  /** Independently restricted REVIEWER-only SQL pool, never a team projection. */
+  reviewerSandbox?:ReviewerSqlPool;
+  /** Strictly operator-only local import; NOT a public browser route. */
+  restrictedIntake?:{pool:ReviewerSqlPool;authority:IntakeOperatorAuthority};
   now?:()=>string;
 }
 
@@ -54,6 +61,13 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
     ...(config.sourceIngestion?{
       sourceIngestion:new PostgresSourceIngestionQueue(config.sourceIngestion.pool,
         config.sourceIngestion.authority,config.sourceIngestion.executor,now),
+    }:{}),
+    ...(config.reviewerSandbox?{
+      reviewerSandbox:new PostgresReviewerSandboxStore(config.reviewerSandbox),
+    }:{}),
+    ...(config.restrictedIntake?{
+      restrictedIntake:new PostgresRestrictedIntakeImport(config.restrictedIntake.pool,
+        config.restrictedIntake.authority,now),
     }:{}),
   };
 }

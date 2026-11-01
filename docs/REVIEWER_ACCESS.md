@@ -5,7 +5,7 @@
 ## 0. 합성 API 범위와 웹 연동 조건
 
 - 신규 `GET /api/reviewer/capabilities`는 **활성 초대가 검증된 REVIEWER에게만** 학생용 10개 화면 범주(TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS)를 반환한다. 웹 화면과의 실제 연결은 이의상 UI 트랙의 후속 작업으로 관리한다.
-- 기존 BOOKMARK/MARK_READ/CHECKLIST/EXPERIENCE/APPLICATION_DRAFT/SIMULATE_APPLICATION 외에 SET_INTERESTS(공유 24 TopicCode), SET_DESIRED_JOBS, PLAN_COURSE, SET_SEARCH, SET_NOTIFICATIONS, RESET_SANDBOX가 각 reviewer·invite·합성 프로필별 메모리 샌드박스에서만 작동한다. 타 계정/실제 학생 데이터·실제 지원·외부 요금 호출은 차단.
+- 기존 BOOKMARK/MARK_READ/CHECKLIST/EXPERIENCE/APPLICATION_DRAFT/SIMULATE_APPLICATION 외에 SET_INTERESTS(공유 24 TopicCode), SET_DESIRED_JOBS, PLAN_COURSE, SET_SEARCH, SET_NOTIFICATIONS, RESET_SANDBOX를 각 reviewer·invite·합성 프로필별로 격리한다. 초기 구현은 메모리 샌드박스이고 **심민성 통합 PR #58에 옵션형 PostgreSQL 영속 adapter**를 추가했다(실 운영 DB 적용·실 Google 로그인은 별도). 타 계정/실제 학생 데이터·실제 지원·외부 요금 호출은 차단.
 - session/redeem의 `readOnly:false,sandboxOnly:true`는 **합성 sandbox 안에서만 수정 가능**한 접근을 뜻한다. `actualBrowserUiVerified:false`가 표시되는 한 공개 사용 준비 완료로 판정하지 않는다.
 - 이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)가 웹 프런트 화면/인증 흐름/접근성 담당, 심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)이 OIDC·REST·DB·sandbox/권한 담당, 이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)가 Cloud 및 모든 NCP provider 호출/운영 담당. [운영 요금·시기](NCP_OPERATIONS_2026.md).
 
@@ -32,7 +32,7 @@
 
 공통 API UI 재사용: `GET /api/demo/profiles`, `POST /api/demo/contexts`, `GET /api/demo/contexts/:id/{snapshot,notices,graduation,outlook}`는 REVIEWER에게 합성 사본으로만 응답한다. 작업모의 API는 `/api/reviewer/demo/contexts/:id/actions` GET/POST. 네 작업 `/api/ai/:task`는 REVIEWER일 때 합성 packet + contextId로만 실행해 MOCK 후보를 돌려준다. 모든 요청은 관리자 아닌 REVIEWER role, 현재 초대·시간·계정 확인 후 허용. 원본 수집, 실제 관리/다른 팀원 데이터·재학 확인 API는 금지.
 
-**코드 현재 상태:** Fastify API, 초대 등록·만료, 메모리 sandbox 및 합성 리포지토리 DI 경계 구현·테스트 가능. 웹의 실제 모든 화면, 5명 전용 합성 콘텐츠·DB 영속 sandbox, 실제 OIDC 연동은 별도 작업이다. '모든 기능이 실운영 준비 완료'와 혼동하지 않는다.
+**코드 현재 상태(2026-11-01 PR #58):** Fastify API, 초대 등록·만료, 메모리 sandbox 및 임의 클라우드 호출 없는 합성 리포지토리 DI 경계에 더해 `PostgresReviewerSandboxStore`·`20261101_reviewer_sandbox.sql`을 작성했다. 초대-actor-대상별 SQL row lock, 원자 저장, 만료/철회 차단, 복원/리셋을 **일회성 disposable DB에서 검증하는 통합 테스트**를 포함한다. 실제 영속 데이터베이스/Google/브라우저 UI/인증 배포는 별도 작업이다. '모든 기능이 실운영 준비 완료'와 혼동하지 않는다.
 
 ## 3. 기간·철회
 
@@ -52,7 +52,7 @@
 - [x] 로컬 합성 테스트: 공용 초대 두 Google 계정 등록, 20명 상한, 70회 반복, 종료 경계, 철회, CSRF, 실제 학생 저장소를 쓰지 않는지, UI 호환 demo context·학업·공지, 합성 북마크·가상 신청 및 AI 네 작업.
 - [ ] 실제 Google OAuth OIDC/메일 검증·실 PG transaction/migration·분산 rate limiting·세션 revoke 및 보안 E2E·초대장 발행/전달 테스트.
 - [ ] 이의상 UI #9: `/reviewer/invite` fragment 처리, 프로필/모든 화면 연결, 합성/REPLAY 배지, 기한 종료 시 화면 삭제, 모바일·접근성·다중 탭·실 데이터 미노출 E2E.
-- [ ] 심민성 API #27: 현재 `MemoryReviewerSandboxStore`는 테스트용; 영속/격리/복원과 실제 Google 인증 및 API 연동이 완료되어야 출시 가능.
+- [ ] 심민성 API #27: `PostgresReviewerSandboxStore` 영속 어댑터/원자 격리·철회·복원 코드를 #58에서 구현했다. **이슈 전체 완료 조건**은 실제 Google 인증·실 운영 DB/프런트 연계·최신 독립 리뷰 및 브라우저 E2E까지 포함하므로 아직 미충족이다.
 - [ ] 이서연 NCP #12: High Memory-g3 4vCPU32GB·CB 50GB·CLOVA/보안/크레딧 운영환경. 본선 확정 전 NCP 개통 없음.
 - [x] PR #24 기초 API → 원본 #26 코드 [복구 PR #30](https://github.com/ot4562-glitch/HUFS-One-AI/pull/30) 순서로 main 반영 확인(기존 GitHub PR #26은 #24 브랜치에 병합된 기록 보존). 추천/공지 #15/#16 공유 설정 충돌 여부 확인. 교차 코드 리뷰와 원격 CI 및 실제 시연 화면 시험 전 자동 병합 금지.
 

@@ -11,7 +11,13 @@ import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-pos
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
 import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
+import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
+import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
+import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
 import {PostgresSourceRevisionHistory} from '../../apps/api/src/modules/opportunities/source-history-postgres.js';
+import {PostgresReviewerSandboxStore} from '../../apps/api/src/modules/auth/reviewer-sandbox-postgres.js';
+import {PostgresRestrictedIntakeImport} from '../../apps/api/src/modules/academics/intake-postgres.js';
+import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
@@ -19,7 +25,7 @@ const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
 const pools:Pool[]=[];
 // Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
 const rolePassword=randomBytes(24).toString('hex');
-let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool;
+let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
 const now=()=>new Date().toISOString();
@@ -27,8 +33,10 @@ const migrationNames=[
   '20261031_api_projections.sql','20261031_z_api_personal_state.sql',
   '20261031_zz_api_roles.sql','20261031_google_auth.sql',
   '20261031_beta_admission.sql','20261031_school_mail.sql',
-  '20261031_reviewer_invitations.sql','20261031_auth_attempt_windows.sql',
+  '20261031_reviewer_invitations.sql','20261101_reviewer_sandbox.sql',
+  '20261031_auth_attempt_windows.sql',
   '20261031_temporal_evidence.sql','20261101_source_ingest_queue.sql',
+  '20261101_intake_staging.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -65,15 +73,22 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       CREATE ROLE hufs_test_projection LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       CREATE ROLE hufs_test_temporal LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       CREATE ROLE hufs_test_limiter LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+       CREATE ROLE hufs_test_sandbox LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+       CREATE ROLE hufs_test_intake LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
-      GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter;
+      GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake;
+       GRANT SELECT,INSERT,UPDATE ON api_intake_heads TO hufs_test_intake;
+       GRANT SELECT,INSERT ON api_intake_revisions TO hufs_test_intake;
+       GRANT EXECUTE ON FUNCTION reviewer_sandbox_allowed(text,text) TO hufs_test_sandbox;
+       GRANT SELECT,INSERT,UPDATE ON reviewer_sandbox_state TO hufs_test_sandbox;
       GRANT SELECT ON source_ingest_heads,source_revisions_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
     `);
     writer=poolFor(url,'hufs_test_personal');reader=poolFor(url,'hufs_test_projection');
     temporal=poolFor(url,'hufs_test_temporal');limiter=poolFor(url,'hufs_test_limiter');
+    sandbox=poolFor(url,'hufs_test_sandbox');intake=poolFor(url,'hufs_test_intake');
     await admin.query(`INSERT INTO api_sharing_grants(
       grant_id,actor_id,subject_id,allowed_sections,version,consent_ref,
       approved_by,approved_at,expires_at)
@@ -85,7 +100,76 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(pool=>pool.end()));},30000);
 
-  it('applies all ten real SQL migrations and FORCE RLS policies',async()=>{
+  it('commits four synthetic intake drafts atomically with idempotent file hashes and version CAS',async()=>{
+    const fixture=makeSyntheticIntake();
+    const imports=new PostgresRestrictedIntakeImport(adapter(intake),{
+      mayProcess:async()=>true,
+    });
+    const preview=await imports.preview(fixture);
+    expect(preview.ready).toBe(true);
+    expect(preview.formRowCount).toBe(4);
+    const versions=Object.fromEntries(fixture.formsOptions.expectedSubjectKeys.map(s=>[s,0]));
+    const first=await imports.apply(fixture,{previewHash:preview.previewHash,expectedVersions:versions});
+    expect(first.applied).toHaveLength(4);
+    expect(first.applied.every(x=>x.version===1&&!x.reused)).toBe(true);
+    const repeated=await imports.apply(fixture,{previewHash:preview.previewHash,expectedVersions:versions});
+    expect(repeated.applied.every(x=>x.version===1&&x.reused)).toBe(true);
+    const changes={...fixture,courseFiles:fixture.courseFiles.map(f=>({
+      ...f,content:f.content.replace('가상 기초과목','가상 수정 과목'),
+    }))};
+    const changed=await imports.preview(changes);
+    expect(changed.ready).toBe(true);
+    const stale={...Object.fromEntries(fixture.formsOptions.expectedSubjectKeys.map(s=>[s,1])),
+      'SYN-INT-D':0};
+    await expect(imports.apply(changes,{previewHash:changed.previewHash,expectedVersions:stale}))
+      .rejects.toMatchObject({code:'VERSION_CONFLICT'});
+    const rolledBack=await admin.query('SELECT subject_key,current_version FROM api_intake_heads ORDER BY subject_key');
+    expect(rolledBack.rows).toHaveLength(4);
+    expect(rolledBack.rows.every(x=>Number(x.current_version)===1)).toBe(true);
+    const correct=Object.fromEntries(fixture.formsOptions.expectedSubjectKeys.map(s=>[s,1]));
+    const second=await imports.apply(changes,{previewHash:changed.previewHash,expectedVersions:correct});
+    expect(second.applied.every(x=>x.version===2&&!x.reused)).toBe(true);
+    const audit=await admin.query('SELECT state,count(*)::integer AS n FROM api_intake_revisions GROUP BY state');
+    expect(audit.rows).toEqual([{state:'STUDENT_REVIEW_PENDING',n:8}]);
+    await expect(intake.query("UPDATE api_intake_revisions SET actor_ref='SYN-OTHER'"))
+      .rejects.toMatchObject({code:'42501'});
+    await expect(reader.query('SELECT * FROM api_intake_revisions'))
+      .rejects.toMatchObject({code:'42501'});
+    expect(JSON.stringify(first)).not.toContain('가상 기초과목');
+  });
+  it('persists reviewer-only synthetic sandbox across connections, serializes edits and denies revoked access',async()=>{
+    const inviteId='SYN-REVIEWER-PG',actorId='google:SYN-PG-REVIEWER';
+    await admin.query(`INSERT INTO reviewer_invitations
+      (id,starts_at,ends_at,label,max_accounts,token_digest,issued_at)
+      VALUES($1,clock_timestamp()-interval '1 minute',
+        clock_timestamp()+interval '1 hour','SYNTHETIC TEST',20,repeat('a',64),clock_timestamp())`,
+      [inviteId]);
+    await admin.query(`INSERT INTO reviewer_enrollments(invite_id,actor_id,verified_email,enrolled_at)
+      VALUES($1,$2,'synthetic-reviewer@example.invalid',clock_timestamp())`,[inviteId,actorId]);
+    const a=new PostgresReviewerSandboxStore(adapter(sandbox));
+    const b=new PostgresReviewerSandboxStore(adapter(sandbox));
+    const key={inviteId,actorId,subjectId:'S01' as const};
+    expect((await a.read(key)).actions).toEqual([]);
+    await Promise.all([
+      a.save({...key,action:{kind:'BOOKMARK',itemId:'SYN-BOOK-1',saved:true}}),
+      b.save({...key,action:{kind:'MARK_READ',itemId:'SYN-BOOK-1',read:true}}),
+    ]);
+    const result=await b.read(key);
+    expect(result.actions).toHaveLength(2);
+    expect(new Set(result.actions.map(x=>x.kind))).toEqual(new Set(['BOOKMARK','MARK_READ']));
+    expect((await a.read({...key,subjectId:'S02'})).actions).toEqual([]);
+    await expect(a.read({...key,actorId:'google:SYN-OTHER'})).rejects.toMatchObject({code:'FORBIDDEN'});
+    expect((await a.save({...key,action:{kind:'RESET_SANDBOX'}})).actions).toEqual([]);
+    expect((await b.read(key)).actions).toEqual([]);
+    await admin.query('UPDATE reviewer_invitations SET revoked_at=clock_timestamp() WHERE id=$1',[inviteId]);
+    await expect(a.read(key)).rejects.toMatchObject({code:'FORBIDDEN'});
+    await expect(b.save({...key,action:{kind:'BOOKMARK',itemId:'SYN-BOOK-1',saved:true}}))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+    expect((await sandbox.query('SELECT * FROM reviewer_sandbox_state')).rows).toEqual([]);
+    await expect(sandbox.query('SELECT * FROM reviewer_enrollments')).rejects.toMatchObject({code:'42501'});
+    await expect(sandbox.query('DELETE FROM reviewer_sandbox_state')).rejects.toMatchObject({code:'42501'});
+  });
+  it('applies all twelve real SQL migrations and FORCE RLS policies',async()=>{
     const r=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE oid='api_personal_records'::regclass`);
     expect(r.rows[0]).toEqual({relrowsecurity:true,relforcerowsecurity:true});
@@ -116,6 +200,45 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     })));
     expect(result.filter(Boolean)).toHaveLength(10);
     expect((await admin.query('SELECT attempts FROM auth_attempt_windows')).rows[0]?.attempts).toBe(10);
+  });
+  it('bridges exact allowlisted synthetic HTTPS responses into immutable PG drafts and unchanged observations',async()=>{
+    let body='가상 안내 원문',calls=0,step=0;
+    const url='https://synthetic.example.edu/notice/one';
+    const policy={sourceId:'SYN-DURABLE-PG',canonicalUrl:url,
+      approvedOrigin:'https://synthetic.example.edu',permissionRef:'SYN-DURABLE-RIGHTS',
+      rightsReviewed:true,sourceClass:'SYNTHETIC' as const,provenance:'SYNTHETIC' as const};
+    const executor=createApprovedDurableSourceExecutor({
+      policies:new Map([[policy.sourceId,policy]]),
+      rights:{resolve:async()=>null},
+      egress:{
+        resolveAddresses:async()=>['8.8.8.8'],
+        requestPinned:async()=>{calls++;return new Response(body,{status:200,
+          headers:{'content-type':'text/plain'}});},
+      },
+      extractor:new ApprovedPlainTextExtractor(),readerPool:adapter(temporal),
+      writer:new PostgresSourceRevisionWriter(adapter(admin)),
+      now:()=>new Date(Date.now()+step++*1000).toISOString(),
+    });
+    const input={actorRef:'SYN-OPERATOR',sourceId:policy.sourceId,
+      permissionRef:policy.permissionRef};
+    const first=await executor.execute(input);
+    expect(first.kind).toBe('NEW_DRAFT');
+    const same=await executor.execute(input);
+    expect(same).toEqual({kind:'NOT_MODIFIED',revisionId:first.revisionId});
+    body='가상 안내 정정판';
+    const changed=await executor.execute(input);
+    expect(changed.kind).toBe('CHANGED_DRAFT');
+    const old=await admin.query(`SELECT revision_id,supersedes,status FROM source_revisions_vnext
+      WHERE source_id=$1 ORDER BY fetched_at`,[policy.sourceId]);
+    expect(old.rows).toMatchObject([
+      {revision_id:first.revisionId,supersedes:null,status:'NEEDS_REVIEW'},
+      {revision_id:changed.revisionId,supersedes:first.revisionId,status:'NEEDS_REVIEW'},
+    ]);
+    expect((await admin.query('SELECT count(*)::integer AS n FROM source_check_observations WHERE source_id=$1',
+      [policy.sourceId])).rows[0]?.n).toBe(1);
+    expect(calls).toBe(3);
+    await expect(temporal.query('UPDATE source_revisions_vnext SET status=$1', ['ACTIVE']))
+      .rejects.toMatchObject({code:'42501'});
   });
   it('durably deduplicates operator jobs and records only an immutable reviewed draft',async()=>{
     const sourceId='SYN-QUEUE-SOURCE',requestKey='SYN-QUEUE-R1';
