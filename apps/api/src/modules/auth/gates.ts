@@ -20,14 +20,16 @@ export class ApiFailure extends Error {
     super(code);
   }
 }
-export function authorizeSession(value:unknown,now:string):VerifiedActor {
+export function authorizeSession(value:unknown,now:string,
+  operatorAdmission?:'INDEPENDENT_OPERATOR_POLICY'):VerifiedActor {
   if(value===null || value===undefined)throw new ApiFailure('UNAUTHENTICATED');
   const actor=VerifiedActorSchema.safeParse(value);
   if(!actor.success)throw new ApiFailure('UNAUTHENTICATED');
   // ADMIN privileges require an independently verified operator policy.
   // A BETA proof or a REVIEWER invite must never double as admin admission.
   // Central Fastify wiring may add a distinct admin verifier in a reviewed PR.
-  if(actor.data.role==='ADMIN')throw new ApiFailure('FORBIDDEN');
+  if(actor.data.role==='ADMIN'&&operatorAdmission!=='INDEPENDENT_OPERATOR_POLICY')
+    throw new ApiFailure('FORBIDDEN');
   const at=Date.parse(now);
   if(!Number.isFinite(at)||Date.parse(actor.data.sessionExpiresAt)<=at)throw new ApiFailure('UNAUTHENTICATED');
   if(actor.data.role==='REVIEWER') {

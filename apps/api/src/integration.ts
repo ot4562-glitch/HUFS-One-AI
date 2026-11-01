@@ -4,6 +4,8 @@ import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js
 import {registerOwnerCatalogRoutes} from './modules/opportunities/owner-catalog-http.js';
 import {registerOwnerWorkspaceRoutes} from './modules/profiles/self-workspace-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
+import {registerExperienceApprovalRoutes} from './modules/profiles/experience-approval-http.js';
+import type {ExperienceApprovalPort} from './modules/profiles/experience-approval-postgres.js';
 import type {TrustedCatalogPort} from './modules/opportunities/owner-catalog-http.js';
 import type {SelfAccountPort} from './modules/profiles/self-account-postgres.js';
 import type {FastifyRequest, FastifyReply} from 'fastify';
@@ -30,13 +32,17 @@ export interface TrustedGoogleAuthPort extends TrustedSessionAdapter {
   clearSession(reply:FastifyReply):void;
 }
 export interface TrustedSchoolMailPort {
-  issue(input:{googleSubject:string;schoolEmail:string}):
+  issue(input:{googleSubject:string;schoolEmail:string;clientIp?:string}):
     Promise<{challengeId:string;expiresAt:string}>;
-  verify(input:{challengeId:string;googleSubject:string;schoolEmail:string;code:string}):
+  verify(input:{challengeId:string;googleSubject:string;schoolEmail:string;code:string;clientIp?:string}):
     Promise<boolean>;
 }
 
 interface SharedDependencies {
+  experienceApproval?:ExperienceApprovalPort;
+  demoOverlay?:ApiOptions['demoOverlay'];
+  adminAuthority?:ApiOptions['adminAuthority'];
+  demoPreflight?:ApiOptions['demoPreflight'];
   allowedOrigin:string;
   repository:ApiRepository;
   reviewer?:{
@@ -123,6 +129,9 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
 
   const options:ApiOptionsWithAgent1={
     allowedOrigin:deps.allowedOrigin,repository:deps.repository,
+    ...(deps.demoOverlay?{demoOverlay:deps.demoOverlay}:{}),
+    ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{}),
+    ...(deps.demoPreflight?{demoPreflight:deps.demoPreflight}:{}),
     ...(deps.googleAuth?{
       googleAuth:deps.googleAuth,
       ...(deps.schoolMailProof?{schoolMailProof:deps.schoolMailProof}:{}),
@@ -145,6 +154,9 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options);
+  if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,{
+    verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString()),
+  });
   if(deps.sourceHistory)registerSourceRevisionHistoryRoute(
     app,deps.sourceHistory,auth.verifySession,deps.now??(()=>new Date().toISOString()));
   if(deps.selfAccount)registerSelfAccountRoutes(app,deps.selfAccount,{

@@ -1,5 +1,6 @@
 import {createHmac,randomBytes,randomInt,timingSafeEqual} from 'node:crypto';
-import type {AuthAttemptLimiter} from './auth-attempt-limiter.js';
+import {isIP} from 'node:net';
+import type {AuthAttemptKind,AuthAttemptLimiter} from './auth-attempt-limiter.js';
 import {ApiFailure} from './gates.js';
 
 const SCHOOL_MAIL=/^[^\s@]{1,64}@hufs\.ac\.kr$/;
@@ -72,6 +73,23 @@ function digest(key:Buffer,id:string,subject:string,email:string,code:string):st
     .digest('hex');
 }
 
+/** Only a trusted socket/proxy policy may supply this value, never form fields
+ * or unvalidated forwarded headers. Canonicalize aliases before quota lookup. */
+function canonicalClientIp(raw:string|undefined,required:boolean):string|undefined{
+  if(raw===undefined){
+    if(required)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    return undefined;
+  }
+  if(typeof raw!=='string'||raw.length>45||raw.includes('%')||!isIP(raw))
+    throw new ApiFailure('PROVIDER_UNAVAILABLE');
+  if(isIP(raw)===4)return raw;
+  const value=new URL('http://['+raw+']/').hostname.slice(1,-1);
+  const mapped=/^::ffff:([a-f0-9]{1,4}):([a-f0-9]{1,4})$/.exec(value);
+  if(!mapped)return value;
+  const high=parseInt(mapped[1]!,16),low=parseInt(mapped[2]!,16);
+  return [high>>>8,high&255,low>>>8,low&255].join('.');
+}
+
 /** Synthetic single-process store; production must use a transactional adapter. */
 export class MemorySchoolMailChallengeStore implements SchoolMailChallengeStore {
   private rows=new Map<string,SchoolMailChallenge&{attempts:number;used:boolean}>();
@@ -114,6 +132,9 @@ export function createSchoolMailProofService(options:{
   approver:SchoolProofApprover;
   /** Mandatory distributed per-Google-account limits, shared by all API replicas. */
   attemptLimiter:AuthAttemptLimiter;
+  /** Reviewed network runtimes must set true. Default false preserves private
+   * direct consumers; it does not claim IP enforcement without a socket IP. */
+  requireClientIp?:boolean;
   /** 32+ random bytes kept in a protected server runtime only. */
   digestKey:Buffer;
   now?:()=>Date;
@@ -124,12 +145,12 @@ export function createSchoolMailProofService(options:{
     throw new Error('A shared school mail attempt limiter is required');
   const key=Buffer.from(options.digestKey);
   const now=options.now??(()=>new Date());
-  const reserve=async(kind:'SCHOOL_OTP_ISSUE'|'SCHOOL_OTP_CONFIRM',
-    googleSubject:string,at:Date):Promise<void>=>{
+  const reserve=async(kind:AuthAttemptKind,
+    identifier:string,at:Date):Promise<void>=>{
     let permitted=false;
     try{
       permitted=await options.attemptLimiter.consume({
-        kind,identifier:'google:'+googleSubject,at:at.toISOString(),
+        kind,identifier,at:at.toISOString(),
       });
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!permitted)throw new ApiFailure('RATE_LIMITED');
@@ -141,15 +162,17 @@ export function createSchoolMailProofService(options:{
     return value;
   };
   return {
-    async issue(input:{googleSubject:string;schoolEmail:string}):
+    async issue(input:{googleSubject:string;schoolEmail:string;clientIp?:string}):
       Promise<{challengeId:string;expiresAt:string}>{
       if(!validate(input.googleSubject,input.schoolEmail))
         throw new SchoolMailProofError();
       const at=current();
+      const clientIp=canonicalClientIp(input.clientIp,options.requireClientIp===true);
       let allowed=false;
       try{
         allowed=await options.approver.mayIssue({
-          ...input,at:at.toISOString(),
+          googleSubject:input.googleSubject,schoolEmail:input.schoolEmail,
+          at:at.toISOString(),
         });
       }catch{
         // A failed admission ledger is not evidence that the mailbox is unapproved.
@@ -157,7 +180,11 @@ export function createSchoolMailProofService(options:{
       }
       if(allowed!==true)throw new SchoolMailProofError();
       // Reserve atomically across replicas before persisting or sending a code.
-      await reserve('SCHOOL_OTP_ISSUE',input.googleSubject,at);
+      await reserve('SCHOOL_OTP_ISSUE','google:'+input.googleSubject,at);
+      if(clientIp)await reserve('SCHOOL_OTP_ISSUE_IP','ip:'+clientIp,at);
+      // A rotating IP/account must still share one deployment-wide send cap.
+      // Reservations are deliberately not refunded after any later failure.
+      await reserve('SCHOOL_OTP_ISSUE_GLOBAL','global:school-mail',at);
       const challengeId=randomBytes(16).toString('base64url');
       const code=String(randomInt(0,100_000_000)).padStart(8,'0');
       const expiresAt=new Date(at.getTime()+TEN_MINUTES).toISOString();
@@ -178,17 +205,21 @@ export function createSchoolMailProofService(options:{
     },
     async verify(input:{
       challengeId:string;googleSubject:string;schoolEmail:string;code:string;
+      clientIp?:string;
     }):Promise<boolean>{
       if(!ID.test(input.challengeId)||!validate(input.googleSubject,input.schoolEmail)
         ||!CODE.test(input.code))return false;
       const at=current();
+      const clientIp=canonicalClientIp(input.clientIp,options.requireClientIp===true);
       // No second challenge may reset the per-actor guessing budget.
       // The rate limiter's denial/outage must remain visible as 429/503.
-      await reserve('SCHOOL_OTP_CONFIRM',input.googleSubject,at);
+      await reserve('SCHOOL_OTP_CONFIRM','google:'+input.googleSubject,at);
+      if(clientIp)await reserve('SCHOOL_OTP_CONFIRM_IP','ip:'+clientIp,at);
       let accepted=false;
       try{
         accepted=await options.store.check({
-          ...input,proofDigest:digest(
+          challengeId:input.challengeId,googleSubject:input.googleSubject,
+          schoolEmail:input.schoolEmail,proofDigest:digest(
             key,input.challengeId,input.googleSubject,input.schoolEmail,input.code),
           now:at.toISOString(),
         });

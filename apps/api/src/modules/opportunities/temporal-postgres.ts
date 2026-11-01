@@ -68,7 +68,7 @@ export class PostgresTemporalEvidenceReader{
         r.scope_campuses,r.scope_majors,r.scope_colleges,
         r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
         r.scope_graduation_terms,r.cohort_min,r.cohort_max
-      FROM source_revisions_vnext r
+      FROM source_effective_revisions_vnext r
       WHERE r.fetched_at <= $1::timestamptz
         AND (r.published_at IS NULL OR r.published_at <= $1::timestamptz)
       ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
@@ -80,7 +80,7 @@ export class PostgresTemporalEvidenceReader{
     CROSS JOIN LATERAL (
       SELECT count(*)::integer AS score
       FROM unnest($13::text[]) AS token(term)
-      WHERE position(token.term IN lower(p.paragraph_text))>0
+      WHERE position(token.term IN lower(normalize(p.paragraph_text,NFKC)))>0
     ) AS score
     WHERE l.permission_ref=ANY($2::text[])
       AND ($3::text[] IS NULL OR l.source_id=ANY($3::text[]))
@@ -124,7 +124,7 @@ export class PostgresTemporalEvidenceReader{
         r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,r.scope_colleges,
         r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
         r.scope_graduation_terms,r.cohort_min,r.cohort_max
-      FROM source_revisions_vnext r
+      FROM source_effective_revisions_vnext r
       WHERE r.fetched_at<=$1::timestamptz
         AND (r.published_at IS NULL OR r.published_at<=$1::timestamptz)
       ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
@@ -154,14 +154,14 @@ export class PostgresTemporalEvidenceReader{
         AND (l.cohort_min IS NULL OR $6::integer>=l.cohort_min)
         AND (l.cohort_max IS NULL OR $6::integer<=l.cohort_max)
         AND EXISTS (
-          SELECT 1 FROM source_revisions_vnext h
+          SELECT 1 FROM source_effective_revisions_vnext h
           JOIN source_paragraphs_vnext p ON p.revision_id=h.revision_id
           WHERE h.source_id=l.source_id
             AND h.fetched_at<=$1::timestamptz
             AND (h.published_at IS NULL OR h.published_at<=$1::timestamptz)
             AND EXISTS (
               SELECT 1 FROM unnest($13::text[]) AS token(term)
-              WHERE position(token.term IN lower(p.paragraph_text))>0
+              WHERE position(token.term IN lower(normalize(p.paragraph_text,NFKC)))>0
             )
         )
     )
@@ -184,7 +184,7 @@ export class PostgresTemporalEvidenceReader{
         r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,r.scope_colleges,
         r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
         r.scope_graduation_terms,r.cohort_min,r.cohort_max
-      FROM source_revisions_vnext r
+      FROM source_effective_revisions_vnext r
       WHERE r.fetched_at<=$1::timestamptz
         AND (r.published_at IS NULL OR r.published_at<=$1::timestamptz)
       ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
@@ -221,7 +221,7 @@ export class PostgresTemporalEvidenceReader{
           SELECT 1 FROM source_paragraphs_vnext p
           WHERE p.revision_id=l.revision_id AND EXISTS (
             SELECT 1 FROM unnest($13::text[]) AS token(term)
-            WHERE position(token.term IN lower(p.paragraph_text))>0
+            WHERE position(token.term IN lower(normalize(p.paragraph_text,NFKC)))>0
           )
         )
     ), decisions AS (

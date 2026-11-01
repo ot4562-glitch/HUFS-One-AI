@@ -34,6 +34,20 @@ function stub(rows:Record<string,unknown>[]){
   };
 }
 describe('TASK-21 PostgreSQL permission-first historical retrieval (SQL stub)',()=>{
+  it('normalizes compatibility characters on both query and corpus in retrieval, conflict and empty-state paths',async()=>{
+    const original='ＡＩ 합성 모집';
+    const ready=stub([{source_id:'s',revision_id:'r',paragraph_id:'p',paragraph_text:original,score:1}]);
+    const result=await ready.reader.retrieve({...policy,query:'ＡＩ'});
+    expect(result.hits[0]!.quote).toBe(original);
+    expect(ready.calls[0]!.args[12]).toEqual(['ai']);
+    const missing=stub([]);await missing.reader.retrieve({...policy,query:'AI'});
+    const searches=[...ready.calls,...missing.calls].filter(q=>q.sql.includes('position(token.term'));
+    expect(searches.length).toBeGreaterThanOrEqual(3);
+    for(const {sql} of searches){
+      expect(sql).toContain('position(token.term IN lower(normalize(p.paragraph_text,NFKC)))');
+      expect(sql).not.toContain('position(token.term IN lower(p.paragraph_text))');
+    }
+  });
   it('preserves configured trusted policy versions on READY and empty reads',async()=>{
     const x=stub([{source_id:'s',revision_id:'r',paragraph_id:'p',paragraph_text:'데이터',score:1}]);
     expect((await x.reader.retrieve({...policy,permissionPolicyVersion:'rights-v2'}))
@@ -62,6 +76,7 @@ describe('TASK-21 PostgreSQL permission-first historical retrieval (SQL stub)',(
     expect(sql).toContain("l.status='ACTIVE'");
     expect(sql).toContain("l.permission_ref=ANY($2::text[])");
     expect(sql).toContain('l.last_verified_at<=$1::timestamptz');
+    expect(sql).toContain('FROM source_effective_revisions_vnext r');
     for(const column of ['scope_campuses','scope_majors','scope_colleges',
       'scope_major_roles','scope_admission_types','scope_enrollment_states',
       'scope_graduation_terms','cohort_min','cohort_max']){

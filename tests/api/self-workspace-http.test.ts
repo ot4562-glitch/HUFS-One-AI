@@ -154,6 +154,26 @@ describe('A13 owner-only experience, study plan, saved items and action plan HTT
     expect((await r.app.inject({method:'POST',url:'/api/action-plans',headers:post,
       payload:{itemId:'SYN-AC1',value:{...action,done:true,more:'fabricated'}}})).statusCode).toBe(422);
   });
+  it('does not publish extra owner columns or another workspace kind from storage',async()=>{
+    const h=fixture(),privateItem={itemId:'SYN-EX1',version:1,value:experience,
+      updatedAt:NOW,actorId:'SYN-PRIVATE'};
+    h.workspace.read=async()=>privateItem as OwnerWorkspaceRecord;
+    const detail=await h.app.inject({url:'/api/experience/cards/SYN-EX1'});
+    expect(detail.statusCode).toBe(503);
+    expect(detail.body).not.toContain('SYN-PRIVATE');
+    h.workspace.list=async()=>({items:[{itemId:'SYN-SV1',version:1,
+      value:experience,updatedAt:NOW}],nextCursor:null});
+    const list=await h.app.inject({url:'/api/saved-items'});
+    expect(list.statusCode).toBe(503);
+    expect(list.json()).not.toHaveProperty('items');
+  });
+  it('rejects a malformed owner paging cursor even if each record is valid',async()=>{
+    const h=fixture();
+    h.workspace.list=async()=>({items:[],nextCursor:'SYN-UNKNOWN'});
+    const res=await h.app.inject({url:'/api/study-plans?limit=1'});
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).not.toHaveProperty('items');
+  });
   it('leaves routes unavailable unless the owner workspace adapter is supplied',async()=>{
     const app=createIntegratedApi({allowedOrigin:origin,
       repository:new MemoryApiRepository({profiles:[]}),now:()=>NOW,

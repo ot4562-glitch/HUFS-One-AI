@@ -7,20 +7,26 @@ import type {ReviewerSandboxClientAction,ReviewerSandboxClientResult}
 import {
   AiTaskPathSchema, AiTaskSchema, TopicCodeSchema, ApiErrorSchema, CalendarResultSchema,
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
+  RetrievalEnvelopeVNextSchema, DemoOverlayPutSchema, DemoOverlayResetSchema,
+  DemoOverlayResultSchema, ExperienceTagApprovalSchema, ExperienceTagApprovalPutSchema,
+  ExperienceTagApprovalDeleteSchema,
 } from '@hufs-one/contracts';
 import type {
   ApiErrorCode, AiTaskPath, CalendarResult, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
+  RetrievalEnvelopeVNext, DemoOverlayPut, DemoOverlayResult, ExperienceTagApprovalPut,
+  ExperienceTagApprovalDelete,
 } from '@hufs-one/contracts';
+
+import {HufsApiError,clientInput} from './api-error.js';
+import {HufsOwnerApiClient} from './owner-api-client.js';
+import type {BrowserRequestOptions} from './owner-api-client.js';
+export {HufsApiError} from './api-error.js';
+
+const ExperienceTagResultSchema=z.strictObject({approval:ExperienceTagApprovalSchema});
+const OwnerItemIdSchema=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
 
 /** Browser fetch only. No actor/role headers, localStorage, third-party URLs or provider keys. */
 export type ApiFetch = (url: string, init: RequestInit) => Promise<Response>;
-
-export class HufsApiError extends Error {
-  constructor(readonly code: ApiErrorCode, readonly status: number) {
-    super(code);
-    this.name = 'HufsApiError';
-  }
-}
 
 const CsrfSchema = z.strictObject({csrfToken:z.string().min(16)});
 const ReviewerSectionSchema=z.enum([
@@ -94,7 +100,15 @@ const AiJobResponseSchema=z.strictObject({
 });
 
 const MAX_RESPONSE_BYTES=256*1024;
-async function readBoundedJson(response:Response):Promise<unknown> {
+function assertNotAborted(signal?:AbortSignal):void {
+  // Do not expose the caller's potentially private signal.reason to the UI.
+  if(signal?.aborted)throw new DOMException('Request cancelled','AbortError');
+}
+function isAbort(error:unknown):boolean {
+  return error instanceof Error&&error.name==='AbortError';
+}
+async function readBoundedJson(response:Response,signal?:AbortSignal):Promise<unknown> {
+  assertNotAborted(signal);
   const contentType=response.headers.get('content-type')?.toLowerCase()??'';
   if(!contentType.startsWith('application/json'))
     throw new Error('Unexpected API content type');
@@ -104,11 +118,15 @@ async function readBoundedJson(response:Response):Promise<unknown> {
     throw new Error('Invalid or oversized API response');
   if(!response.body)throw new Error('Empty API JSON');
   const reader=response.body.getReader();
+  const cancel=()=>{void reader.cancel().catch(()=>{});};
+  signal?.addEventListener('abort',cancel,{once:true});
   let size=0;
   const chunks:Uint8Array[]=[];
   try{
+    assertNotAborted(signal);
     while(true){
       const step=await reader.read();
+      assertNotAborted(signal);
       if(step.done)break;
       size+=step.value.byteLength;
       if(size>MAX_RESPONSE_BYTES){
@@ -117,7 +135,10 @@ async function readBoundedJson(response:Response):Promise<unknown> {
       }
       chunks.push(step.value);
     }
-  }finally{reader.releaseLock();}
+  }finally{
+    signal?.removeEventListener('abort',cancel);
+    reader.releaseLock();
+  }
   const buffer=new Uint8Array(size);
   let pos=0;
   for(const chunk of chunks){buffer.set(chunk,pos);pos+=chunk.byteLength;}
@@ -131,29 +152,39 @@ function validApiPath(path: string): boolean {
 
 /** Transport JSON is untrusted even on 200; never render server/SQL/provider error text. */
 export class HufsApiClient {
+  readonly owner:HufsOwnerApiClient;
   constructor(private readonly transport: ApiFetch =
-    (url, init) => fetch(url, init)) {}
+    (url, init) => fetch(url, init)) {
+    this.owner=new HufsOwnerApiClient((path,schema,options)=>this.request(path,schema,options),
+      signal=>this.getCsrfProof(signal));
+  }
 
   private async request<T>(
     path: string, schema: z.ZodType<T>,
-    options: {method?: 'GET'|'POST'; body?: unknown; signal?: AbortSignal|undefined; csrf?: string|undefined} = {},
+    options: BrowserRequestOptions = {},
   ): Promise<T> {
     if (!validApiPath(path)) throw new HufsApiError('INVALID_INPUT',422);
     const method=options.method ?? 'GET';
     const headers: Record<string,string>={accept:'application/json'};
-    if (method==='POST') headers['content-type']='application/json';
+    if (method!=='GET') headers['content-type']='application/json';
     if (options.csrf) headers['x-csrf-token']=options.csrf;
     const init:RequestInit={
       method, headers, credentials:'same-origin', cache:'no-store',
       redirect:'error', mode:'same-origin', referrerPolicy:'no-referrer',
-      ...(method==='POST'?{body:JSON.stringify(options.body ?? {})}:{}),
+      ...(method!=='GET'?{body:JSON.stringify(options.body ?? {})}:{}),
       ...(options.signal?{signal:options.signal}:{}),
     };
+    assertNotAborted(options.signal);
     let response:Response;
     try { response=await this.transport(path,init); }
     catch (error) {
-      if (error instanceof Error && error.name==='AbortError') throw error;
+      assertNotAborted(options.signal);
+      if (isAbort(error)) throw new DOMException('Request cancelled','AbortError');
       throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+    }
+    if(options.signal?.aborted){
+      void response.body?.cancel().catch(()=>{});
+      assertNotAborted(options.signal);
     }
     if(response.status===204 && response.ok) {
       const parsed=schema.safeParse(undefined);
@@ -162,8 +193,11 @@ export class HufsApiClient {
     }
     let payload:unknown;
     try {
-      payload=await readBoundedJson(response);
-    } catch {
+      payload=await readBoundedJson(response,options.signal);
+      assertNotAborted(options.signal);
+    } catch (error) {
+      assertNotAborted(options.signal);
+      if(isAbort(error))throw new DOMException('Request cancelled','AbortError');
       // Do not echo a malformed response or its body into the UI.
       throw new HufsApiError(response.status===401?'UNAUTHENTICATED':'PROVIDER_UNAVAILABLE',
         response.status===401?401:503);
@@ -253,6 +287,76 @@ export class HufsApiClient {
       throw new HufsApiError('INVALID_INPUT',422);
     return this.request('/api/demo/contexts/'+encodeURIComponent(contextId)+'/calendar',
       CalendarResultSchema,{signal});
+  }
+
+  private checkedOverlayResult(context:DemoContext,result:DemoOverlayResult):DemoOverlayResult {
+    const s=result.snapshot;
+    if(s.contextId!==context.contextId||s.demoSubjectId!==context.demoSubjectId
+      ||s.versions.dataset!==context.datasetVersion||s.versions.projection!==context.projectionVersion
+      ||s.versions.consent!==context.sharingGrantVersion)
+      throw new HufsApiError('VERSION_CONFLICT',409);
+    return result;
+  }
+
+  /** Temporary BETA choices; caller must use the tab controller's epoch guard. */
+  async getDemoOverlay(context:DemoContext,signal?:AbortSignal):Promise<DemoOverlayResult> {
+    const c=this.checkedReviewerContext(context);
+    return this.checkedOverlayResult(c,await this.request(
+      '/api/demo/contexts/'+c.contextId+'/overlay',DemoOverlayResultSchema,{signal}));
+  }
+
+  async setDemoOverlay(context:DemoContext,change:DemoOverlayPut,signal?:AbortSignal):Promise<DemoOverlayResult> {
+    const c=this.checkedReviewerContext(context),input=clientInput(DemoOverlayPutSchema,change);
+    const {csrfToken}=await this.getCsrfProof(signal);
+    const result=this.checkedOverlayResult(c,await this.request(
+      '/api/demo/contexts/'+c.contextId+'/overlay',DemoOverlayResultSchema,
+      {method:'PATCH',body:input,csrf:csrfToken,signal}));
+    if(result.overlay.version!==input.expectedVersion+1
+      ||JSON.stringify(result.overlay.value)!==JSON.stringify(input.value))
+      throw new HufsApiError('VERSION_CONFLICT',409);
+    return result;
+  }
+
+  async resetDemoOverlay(context:DemoContext,expectedVersion:number,signal?:AbortSignal):Promise<DemoOverlayResult> {
+    const c=this.checkedReviewerContext(context),input=clientInput(DemoOverlayResetSchema,{expectedVersion});
+    const {csrfToken}=await this.getCsrfProof(signal);
+    const result=this.checkedOverlayResult(c,await this.request(
+      '/api/demo/contexts/'+c.contextId+'/reset',DemoOverlayResultSchema,
+      {method:'POST',body:input,csrf:csrfToken,signal}));
+    if(result.overlay.version!==input.expectedVersion+1||Object.keys(result.overlay.value).length!==0)
+      throw new HufsApiError('VERSION_CONFLICT',409);
+    return result;
+  }
+
+  async getExperienceTagApproval(experienceId:string,signal?:AbortSignal) {
+    const id=clientInput(OwnerItemIdSchema,experienceId);
+    return this.request('/api/experience/cards/'+id+'/tag-approval',ExperienceTagResultSchema,{signal});
+  }
+
+  /** Local user approval is not an AI-generated credential or a sharing grant. */
+  async approveExperienceTags(experienceId:string,change:ExperienceTagApprovalPut,signal?:AbortSignal) {
+    const id=clientInput(OwnerItemIdSchema,experienceId),input=clientInput(ExperienceTagApprovalPutSchema,change);
+    const {csrfToken}=await this.getCsrfProof(signal);
+    const result=await this.request('/api/experience/cards/'+id+'/tag-approval',ExperienceTagResultSchema,
+      {method:'PUT',body:input,csrf:csrfToken,signal});
+    const a=result.approval;
+    if(a.state!=='ACTIVE'||a.version!==input.expectedApprovalVersion+1
+      ||a.contentVersion!==input.expectedContentVersion||a.consentVersion!==input.expectedConsentVersion
+      ||JSON.stringify(a.topics)!==JSON.stringify(input.topics))
+      throw new HufsApiError('VERSION_CONFLICT',409);
+    return result;
+  }
+
+  async revokeExperienceTags(experienceId:string,change:ExperienceTagApprovalDelete,signal?:AbortSignal) {
+    const id=clientInput(OwnerItemIdSchema,experienceId),input=clientInput(ExperienceTagApprovalDeleteSchema,change);
+    const {csrfToken}=await this.getCsrfProof(signal);
+    const result=await this.request('/api/experience/cards/'+id+'/tag-approval',ExperienceTagResultSchema,
+      {method:'DELETE',body:input,csrf:csrfToken,signal});
+    const a=result.approval;
+    if(a.state!=='INACTIVE'||!(a.version===input.expectedApprovalVersion+1&&a.reason==='REVOKED'
+      ||input.expectedApprovalVersion===0&&a.version===0&&a.reason==='NOT_APPROVED'))
+      throw new HufsApiError('VERSION_CONFLICT',409);
+    return result;
   }
 
   loadReviewerCapabilities(signal?:AbortSignal) {
@@ -358,13 +462,18 @@ export class HufsApiClient {
     return result;
   }
 
-  /**
-   * Fail closed until PR #33's authoritative RetrievalEnvelopeVNextSchema
-   * and PR #34's permission-first route are merged and reviewed.
-   * Never expose unvalidated evidence as JSON in the browser.
-   */
-  async searchEvidence(_query:string,_asOf?:string,_signal?:AbortSignal):Promise<never> {
-    throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+  /** Current server authorization is mandatory; never cache or supply browser source rights. */
+  async searchEvidence(query:string,asOf?:string,signal?:AbortSignal):Promise<RetrievalEnvelopeVNext> {
+    const input=z.strictObject({q:z.string().trim().min(2).max(200),
+      asOf:z.iso.datetime({offset:true}).optional()}).safeParse({q:query,asOf});
+    if(!input.success)throw new HufsApiError('INVALID_INPUT',422);
+    const params=new URLSearchParams({q:input.data.q});
+    if(input.data.asOf!==undefined)params.set('asOf',input.data.asOf);
+    const result=await this.request('/api/evidence/search?'+params.toString(),
+      RetrievalEnvelopeVNextSchema,{signal});
+    if(input.data.asOf!==undefined&&result.asOf!==input.data.asOf)
+      throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+    return result;
   }
 
   async submitSyntheticAi(

@@ -36,10 +36,11 @@ async function harness(store:ApiOptions['personalState']){
     profiles:profiles.profiles.map(x=>DemoProfileOptionSchema.parse(x)),
     projections:[DemoSnapshotSchema.parse(snapshot)],grants:[grant],
   });
+  let live=true;
   const app=createApi({repository,allowedOrigin:ORIGIN,now:()=>NOW,
     ...(store?{personalState:store}:{}),
     reviewerAccess:{saveIssued:async()=>{},redeem:async()=>null,readActive:async()=>null,revoke:async()=>false},
-    verifySession:async req=>req.headers.cookie==='owner'?actor:
+    verifySession:async req=>req.headers.cookie==='owner'&&live?actor:
       req.headers.cookie==='other'?{...actor,actorId:'SYN-OTHER',sessionIdHash:'J'.repeat(32)}:
       req.headers.cookie==='reviewer'?{actorId:'SYN-REVIEWER',role:'REVIEWER',
         sessionIdHash:'R'.repeat(32),csrfToken:actor.csrfToken,
@@ -49,7 +50,7 @@ async function harness(store:ApiOptions['personalState']){
   const res=await app.inject({method:'POST',url:'/api/demo/contexts',headers,
     payload:{demoSubjectId:'S01',demoRunId:'SYN-RUN'}});
   expect(res.statusCode).toBe(201);
-  return {app,repository,url:`/api/demo/contexts/${res.json().contextId}/personal`};
+  return {app,repository,revokeSession:()=>{live=false;},url:`/api/demo/contexts/${res.json().contextId}/personal`};
 }
 describe('authenticated actor-owned personal HTTP state',()=>{
   it('creates, lists, reads, updates and deletes via trusted actor/context/grant scope',async()=>{
@@ -119,6 +120,37 @@ describe('authenticated actor-owned personal HTTP state',()=>{
     expect((await app.inject({url:url+'/item1?kind=EXPERIENCE',headers:{cookie:'reviewer'}})).statusCode).toBe(403);
     expect((await app.inject({method:'POST',url,headers:{...headers,cookie:'reviewer'},payload:{itemId:'item1',value}})).statusCode).toBe(403);
     for(const operation of Object.values(store))expect(operation).not.toHaveBeenCalled();
+  });
+  it('never publishes a personal list after the session disappears while its store awaits',async()=>{
+    const store=port(),h=await harness(store);
+    store.list.mockImplementationOnce(async({scope})=>{
+      h.revokeSession();
+      return [record(scope,'item1')];
+    });
+    const response=await h.app.inject({url:h.url+'?kind=EXPERIENCE',headers:{cookie:'owner'}});
+    expect([401,403]).toContain(response.statusCode);
+    expect(response.json()).not.toHaveProperty('items');
+  });
+  it('never publishes an owner write receipt after a session revoke mid-store',async()=>{
+    const store=port(),h=await harness(store);
+    store.create.mockImplementationOnce(async({scope,itemId,value:input})=>{
+      h.revokeSession();
+      return record(scope,itemId,input as PersonalRecordValue);
+    });
+    const response=await h.app.inject({method:'POST',url:h.url,headers,
+      payload:{itemId:'item1',value}});
+    expect([401,403]).toContain(response.statusCode);
+    expect(response.json()).not.toHaveProperty('itemId');
+  });
+  it('never publishes personal data after its grant is revoked during storage',async()=>{
+    const store=port(),h=await harness(store);
+    store.read.mockImplementationOnce(async({scope,itemId})=>{
+      h.repository.revokeGrant(actor.actorId,'S01',NOW);
+      return record(scope,itemId);
+    });
+    const response=await h.app.inject({url:h.url+'/item1?kind=EXPERIENCE',headers:{cookie:'owner'}});
+    expect([401,403,409]).toContain(response.statusCode);
+    expect(response.json()).not.toHaveProperty('itemId');
   });
   it('returns an explicit missing item without inventing data',async()=>{
     const store=port(),{app,url}=await harness(store);
