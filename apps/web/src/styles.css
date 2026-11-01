@@ -158,3 +158,6 @@ a { color: var(--color-primary); }
 .cal__item-head { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 14px; line-height: 20px; color: var(--color-text-muted); }
 .cal__item-title { font-weight: 600; }
 .cal__item-time { font-size: 14px; line-height: 20px; color: var(--color-text-muted); }
+
+.invite { display: grid; gap: var(--space-3); justify-items: start; max-width: 640px; }
+.invite p, .invite ul { margin: 0; }
