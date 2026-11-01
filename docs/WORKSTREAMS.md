@@ -3,6 +3,8 @@
 
 ## 2026-11-01 최신 역할·협업 핸드오프
 
+- **11/10 이후 UI 제안의 현재 이슈 분담:** [#79](https://github.com/ot4562-glitch/HUFS-One-AI/issues/79) D-day는 `uisang2004-maker` UI 담당, [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 현황 보드는 UI `uisang2004-maker` + 계약/API `ot4562-glitch`, [#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81) 수강계획 나란히 보기 및 [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 졸업 What-if는 UI `uisang2004-maker` + 학업 `taewangim-alt` + API `ot4562-glitch` 공동 할당 확인. 이슈 배정은 작업 수락/실자료 권한 검증이 아니며 세부 계약·RulePack 검수는 미완료.
+
 - **통합 담당 후속 PR:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 합성 코퍼스/원본 검수·태그 승인·overlay/OTP quota/preflight는 심민성 소유, 리뷰 가능 상태로 전환하고 `qamarrchae`·`taewangim-alt`·`uisang2004-maker`에게 독립 리뷰 요청했다. 현재 HEAD CI 2 jobs 성공과 30개 신규 opt-in 실제 PG SKIP을 구분하고, 다른 사람 승인/신규 일회용 PG·main 정렬 전 main 병합 금지.
 
 GitHub 이슈의 **현재 담당**은 심민성 `ot4562-glitch`(#27 API/인증/일반 PG/Temporal/공통 계약, #71 브라우저 캘린더 포트), 이의상 `uisang2004-maker`(#9 UI/접근성, #51 캘린더), 김채윤 `qamarrchae`(#10 추천·공지·합성 평가), 박준영 `taewangim-alt`(#11 학업/RulePack), 이서연 `lhh42001`(#12/#20/#22 NCP·CLOVA·OCR/Vision·Laya 환경/실 provider)이다. GitHub 할당은 개인정보 처리/기관 승인과 별개다.
