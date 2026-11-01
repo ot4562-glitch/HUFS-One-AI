@@ -2,6 +2,7 @@ import type {FastifyInstance} from 'fastify';
 import {
   OwnerStudyPlanCheckRequestSchema,OwnerStudyPlanCheckResponseSchema,
 } from '@hufs-one/contracts';
+import type {OwnerStudyPlanCheckResponse} from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
 import {betaActor,betaRecheck} from './self-account-http.js';
 import type {BetaRouteVerifier} from './self-account-http.js';
@@ -32,6 +33,8 @@ export interface TrustedOwnerStudyPlanRights {
     planVersion?:string;disclosureMode:'REDACTED'|'OWNER_VERIFIED'|'GRANT_SCOPED';
     sharingGrantVersion?:string;courseRefs:readonly string[];
     evidenceRefs:readonly string[];
+    /** Check exact trusted href and verifiedAt bindings, not just the ref name. */
+    evidenceLinks:readonly OwnerStudyPlanCheckResponse['evidenceLinks'][number][];
   }):Promise<{allowed:boolean;rightsReceipt:string}>;
   /** Must still hold after all other awaited operations and source checks. */
   revalidate(input:{
@@ -41,12 +44,17 @@ export interface TrustedOwnerStudyPlanRights {
 
 /** Separate activation gate for current-HEAD-reviewed academic core and RulePack.
  * A source result by itself must never self-authorize READY or an official cap.
+ * Independently bind the full approval, official evidence refs, exact link URLs
+ * and verification instants to the supplied source receipt and current heads.
  */
 export interface ApprovedStudyPlanGate {
   isApproved(input:{
     actorId:string;coreVersion:string;rulePackVersion:string;
     sourceRightsVersion:string;consentVersion:string;
     term:string;asOf:string;now:string;
+    sourceReceipt:string;
+    approval:NonNullable<OwnerStudyPlanCheckResponse['approval']>;
+    evidenceLinks:readonly OwnerStudyPlanCheckResponse['evidenceLinks'][number][];
   }):Promise<boolean>;
 }
 
@@ -77,6 +85,9 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
       actorId:actor.actorId,term:input.term,now,
     })===true;}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!mayInspect)throw new ApiFailure('FORBIDDEN');
+    // Awaited permission checks cannot retain authority for a logged-out or
+    // replaced session. Stop before the first private academic read.
+    await betaRecheck(request,session,actor);
     let result:Awaited<ReturnType<TrustedOwnerStudyPlanSource['inspect']>>;
     try{result=await source.inspect({
       actorId:actor.actorId,term:input.term,now,
@@ -109,7 +120,7 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
         ...(safe.disclosure.grantVersion
           ?{sharingGrantVersion:safe.disclosure.grantVersion}:{}),
         courseRefs:safe.disclosure.visibleCourseRefs,
-        evidenceRefs,
+        evidenceRefs,evidenceLinks:safe.evidenceLinks,
       });
       if(checked?.allowed!==true)throw new ApiFailure('FORBIDDEN');
       if(typeof checked.rightsReceipt!=='string'
@@ -120,7 +131,8 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
       if(error instanceof ApiFailure)throw error;
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     }
-    if(safe.state==='READY'||safe.approval||safe.creditCapUnits!==undefined){
+    const requiresApproval=safe.state==='READY'||!!safe.approval||safe.creditCapUnits!==undefined;
+    const checkApproval=async()=>{
       if(!safe.approval||!approvalGate)
         throw new ApiFailure('PROVIDER_UNAVAILABLE');
       let approved=false;
@@ -130,9 +142,12 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
         sourceRightsVersion:safe.approval.sourceRightsVersion,
         consentVersion:safe.approval.consentVersion,
         term:safe.term,asOf:safe.asOf,now:session.now(),
+        sourceReceipt:result.receipt,approval:safe.approval,
+        evidenceLinks:safe.evidenceLinks,
       })===true;}catch{/* fail closed */}
       if(!approved)throw new ApiFailure('PROVIDER_UNAVAILABLE');
-    }
+    };
+    if(requiresApproval)await checkApproval();
     let valid=false;
     try{valid=await source.revalidate({
       actorId:actor.actorId,receipt:result.receipt,now:session.now(),
@@ -144,6 +159,9 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
       rightsReceipt:rightsReceipt!,now:session.now(),
     })===true;}catch{/* fail closed on grant or consent changes */}
     if(!stillAuthorized)throw new ApiFailure('FORBIDDEN');
+    // Source/rights revalidation may await storage while approval is withdrawn.
+    // Recheck the complete receipt and link bindings after those operations.
+    if(requiresApproval)await checkApproval();
     await betaRecheck(request,session,actor);
     return safe;
   });

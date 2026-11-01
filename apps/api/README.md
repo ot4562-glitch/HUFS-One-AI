@@ -1,5 +1,10 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+**2026-11-01 미병합 구현 제안:** #119 정정 비교·#86 추천 제외 이유 계약/API,
+#82 read-only What-if gate, #81 계획 검사 통합/신뢰 snapshot→기존 학업 코어 adapter와
+네 브라우저 메서드를 추가했다. 명시적 source/rights/approval 주입 전에는 503이다.
+[경로·주입 계약·소비 방법·남은 게이트](../../docs/OWNER_API_IMPLEMENTATION_20261101.md).
+
 
 > **2026-11-01 최신 `main` 코드 정본:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 병합, 비동기 REVIEWER 등록/목록 grant 재확인 #105, 출처 원본·문단 정합 검수 #99, 동의 철회/삭제 원자 PG #102/#112, 다중 인스턴스 ingest worker lock #113, 보관함 단계 owner-only HTTP #97/브라우저 #106·#115, 학기계획 read-only 권한 gate #103·[학업 #116 strict 응답 호환](https://github.com/ot4562-glitch/HUFS-One-AI/pull/116), 가상 전공 What-if Zod DTO(계산 아님) #107, 캘린더 늦은 응답 방어 #95, REVIEWER 합성 탭 격리/fragment 보호 #100/#110 모두 main 병합. `createIntegratedApi`의 실제 인증/provider/학사 RulePack/자료 권리 포트를 갖추지 않으면 미검증 학업 READY·실학생 응답을 반환하지 않는다.
 >

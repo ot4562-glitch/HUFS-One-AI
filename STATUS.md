@@ -1,5 +1,15 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-01 담당 API 후속 — 미병합 PR 구현 범위
+
+#119 정정 비교와 #86 단일 허가 공고의 추천 제외 이유 계약/API,
+#82 What-if read-only 실행 gate·브라우저 호출, #81 계획 검사 종단 등록·기존 학업
+코어 adapter·브라우저 호출을 별도 계약/API 스택으로 제안한다.
+[소스 위치·주입 계약·검증·복구](docs/OWNER_API_IMPLEMENTATION_20261101.md).
+이는 실제 승인된 source/rights/RulePack loader나 #82 계산 엔진·#117 추천 코어를
+자동으로 제공하는 구현이 아니다. 없는 provider는 503/명시적 blocked 유지.
+UI·실제 원본/동의·운영 검증과 이슈 전체 완료는 별도이며 #46/RELEASE_BLOCKED 유지.
+
 ## 2026-11-01 사용자 추가 UX 기능 4건 — 이슈 추적만 완료 (최신 제안)
 
 - [x] **신규:** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교(변경된 마감·자격·취소·확인 시각·승인 원문 근거) **P0 제안**, UI 이의상/출처·API 심민성/추천 김채윤. 기존 #19/#21/SourceRevision 코드 재사용, 실제 비교 UI·권한 경계/브라우저 E2E는 미구현.

@@ -6,6 +6,10 @@ import {
   CourseCatalogPageSchema,CourseOfferingsPageSchema,OpportunityCatalogPageSchema,
   OpportunityCatalogDetailSchema,
   BookmarkStageSchema,BookmarkOutcomeSchema,BookmarkStagePatchSchema,isNextBookmarkStage,
+  OwnerStudyPlanCheckRequestSchema,OwnerStudyPlanCheckResponseSchema,
+  OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
+  OpportunityExplanationRequestSchema,OpportunityExplanationResponseSchema,
+  OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
@@ -185,5 +189,36 @@ export class HufsOwnerApiClient {
     const id=clientInput(CatalogId,opportunityId);
     const result=await this.request('/api/opportunities/'+encodeURIComponent(id),OpportunityCatalogDetailSchema,{signal});
     requireMatchingReceipt(result.opportunity.id===id);return result;
+  }
+  /** Private read-only calculations still use POST/CSRF. Render through
+   * OwnerSessionController.runLatest so late actor/tab responses are dropped. */
+  async checkStudyPlan(change:z.infer<typeof OwnerStudyPlanCheckRequestSchema>,signal?:AbortSignal){
+    const input=clientInput(OwnerStudyPlanCheckRequestSchema,change);
+    const result=await this.mutate('/api/study-plans/check',OwnerStudyPlanCheckResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.term===input.term
+      &&(input.expectedPlanVersion===undefined||result.versions.plan===input.expectedPlanVersion));
+    return result;
+  }
+  async checkMajorWhatIf(change:z.infer<typeof OwnerMajorWhatIfRequestSchema>,signal?:AbortSignal){
+    const input=clientInput(OwnerMajorWhatIfRequestSchema,change);
+    const result=await this.mutate('/api/academics/major-what-if',OwnerMajorWhatIfResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(same(result.scenario,input.scenario));
+    return result;
+  }
+  async explainOpportunity(opportunityId:string,change:z.infer<typeof OpportunityExplanationRequestSchema>,signal?:AbortSignal){
+    const id=clientInput(CatalogId,opportunityId),input=clientInput(OpportunityExplanationRequestSchema,change);
+    const result=await this.mutate('/api/opportunities/'+encodeURIComponent(id)+'/explanation',
+      OpportunityExplanationResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.opportunityId===id&&result.sourceRevisionId===input.sourceRevisionId
+      &&result.rankConfigVersion===input.rankConfigVersion&&Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
+  }
+  async compareOpportunityRevisions(opportunityId:string,change:z.infer<typeof OpportunityRevisionComparisonRequestSchema>,signal?:AbortSignal){
+    const id=clientInput(CatalogId,opportunityId),input=clientInput(OpportunityRevisionComparisonRequestSchema,change);
+    const result=await this.mutate('/api/opportunities/'+encodeURIComponent(id)+'/revisions/compare',
+      OpportunityRevisionComparisonResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.opportunityId===id&&result.beforeRevisionId===input.beforeRevisionId
+      &&result.afterRevisionId===input.afterRevisionId&&Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
   }
 }
