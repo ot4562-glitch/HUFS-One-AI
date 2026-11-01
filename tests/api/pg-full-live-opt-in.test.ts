@@ -6,7 +6,7 @@ import {readFileSync} from 'node:fs';
 import {randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
-import {PostgresPersonalStateStore} from '../../apps/api/src/db/personal-state-postgres.js';
+import {PostgresPersonalStateStore,PersonalStateDenied} from '../../apps/api/src/db/personal-state-postgres.js';
 import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-postgres.js';
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
@@ -40,6 +40,7 @@ const migrationNames=[
   '20261031_temporal_evidence.sql','20261101_source_http_validators.sql',
   '20261101_source_ingest_queue.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
+  '20261101_personal_storage_withdrawal.sql',
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
@@ -311,6 +312,65 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const rls=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE oid='api_self_workspace_records'::regclass`);
     expect(rls.rows).toEqual([{relrowsecurity:true,relforcerowsecurity:true}]);
+  });
+  it('atomically purges demo owner data on storage withdrawal across connections',async()=>{
+    const owner=actor,recordId='SYN-OWNER-CONSENT-01';
+    const account=new PostgresSelfAccountStore(adapter(selfAccount),{
+      mayAccess:async({actorId})=>actorId===owner,
+    });
+    const personal=new PostgresPersonalStateStore(adapter(writer),
+      {mayProcess:async()=>true},{isApproved:async()=>true});
+    const value={kind:'EXPERIENCE' as const,dataMode:'OWNER_CONSENTED' as const,
+      title:'SYNTHETIC owner-only secret',summary:'synthetic record to erase'};
+    const choices={personalStorage:true,teamReview:false,externalAi:false,
+      ncpStorage:false,presentation:false};
+    // External consent/verifier alone must never authorize a PG write.
+    await expect(personal.create({scope,itemId:recordId,value}))
+      .rejects.toBeInstanceOf(PersonalStateDenied);
+    expect((await admin.query(`SELECT count(*)::int AS n FROM api_personal_records
+      WHERE actor_id=$1 AND item_id=$2`,[owner,recordId])).rows[0]?.n).toBe(0);
+    await account.putConsents(owner,{expectedVersion:0,choices});
+    expect((await personal.create({scope,itemId:recordId,value})).version).toBe(1);
+
+    // Independent writer connection already holds the owner consent share lock
+    // when withdrawal begins. A revoked value cannot survive either ordering.
+    const c=await writer.connect();
+    let inTransaction=false;
+    try{
+      await c.query('BEGIN');inTransaction=true;
+      await c.query(`SELECT set_config('hufs.actor_id',$1,true),
+        set_config('hufs.subject_id',$2,true)`,[owner,'S01']);
+      const changed=await c.query(`UPDATE api_personal_records
+        SET value_json=$3::jsonb,version=version+1
+        WHERE actor_id=$1 AND subject_id=$2 AND kind='EXPERIENCE'
+          AND item_id='SYN-OWNER-CONSENT-01'
+        RETURNING version`,[owner,'S01',JSON.stringify({...value,title:'synthetic revised'})]);
+      expect(changed.rows).toHaveLength(1);
+      const revoke=account.putConsents(owner,{expectedVersion:1,
+        choices:{...choices,personalStorage:false}});
+      await c.query('COMMIT');inTransaction=false;
+      await revoke;
+    }finally{
+      if(inTransaction)await c.query('ROLLBACK').catch(()=>undefined);
+      c.release();
+    }
+
+    const after=await admin.query(`SELECT version,value_json,deleted_at,data_mode
+      FROM api_personal_records WHERE actor_id=$1 AND item_id=$2`,[owner,recordId]);
+    expect(after.rows).toHaveLength(1);
+    expect(after.rows[0]?.value_json).toEqual({});
+    expect(after.rows[0]?.deleted_at).not.toBeNull();
+    expect(after.rows[0]?.data_mode).toBe('OWNER_CONSENTED');
+    const audit=await admin.query(`SELECT action,version FROM api_personal_events
+      WHERE actor_id=$1 AND item_id=$2 ORDER BY version`,[owner,recordId]);
+    expect(audit.rows.map(r=>r.action)).toEqual(['CREATED','DELETED']);
+    expect(JSON.stringify(audit.rows)).not.toContain(value.title);
+    await expect(personal.create({scope,itemId:'SYN-OWNER-CONSENT-02',value}))
+      .rejects.toBeInstanceOf(PersonalStateDenied);
+    await account.putConsents(owner,{expectedVersion:2,choices});
+    expect(await personal.read({scope,kind:'EXPERIENCE',itemId:recordId})).toBeNull();
+    // The role cannot see another actor without an explicit RLS scope.
+    expect((await writer.query('SELECT * FROM api_personal_records')).rows).toEqual([]);
   });
   it('serializes concurrent initial owner writes and rolls back independent permission loss',async()=>{
     const id='SYN-SELF-CONCURRENT',info={displayName:'합성 병렬 입력',
