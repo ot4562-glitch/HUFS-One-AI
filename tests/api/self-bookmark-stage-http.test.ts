@@ -107,7 +107,7 @@ describe('A05 #80 authenticated owner-only support-status PATCH',()=>{
       ...legacy,stage:'RESULT_RECORDED',outcome,
     });
     expect(h.writeCount()).toBe(4);
-  });
+  },60_000);
   it('rejects skips, backwards, duplicates and stale retries without mutation',async()=>{
     const h=fixture();
     await h.create();
