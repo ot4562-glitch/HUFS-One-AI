@@ -15,6 +15,8 @@ import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
 const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
 const pools:Pool[]=[];
+// Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
+const rolePassword=randomBytes(24).toString('hex');
 let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
@@ -43,7 +45,7 @@ function connectionUrl():URL{
   return u;
 }
 function poolFor(url:URL,user?:string):Pool{
-  const selected=new URL(url);if(user){selected.username=user;selected.password='';}
+  const selected=new URL(url);if(user){selected.username=user;selected.password=rolePassword;}
   const pool=new Pool({connectionString:selected.toString(),ssl:false,max:12,
     connectionTimeoutMillis:3000,statement_timeout:5000});
   pools.push(pool);return pool;
@@ -54,13 +56,13 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const tables=await admin.query(`SELECT count(*)::int AS n FROM pg_tables WHERE schemaname='public'`);
     if(tables.rows[0]?.n!==0)throw new Error('Full live-test database must be empty');
     for(const name of migrationNames)await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
-    // LOGIN roles exist only in this disposable cluster. No password, secret,
-    // school identity, cloud resource, or public listener is involved.
+    // LOGIN roles exist only in the disposable cluster. The password is a random synthetic test value,
+    // not a production credential; never log or persist it.
     await admin.query(`
-      CREATE ROLE hufs_test_personal LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
-      CREATE ROLE hufs_test_projection LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
-      CREATE ROLE hufs_test_temporal LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
-      CREATE ROLE hufs_test_limiter LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_personal LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_projection LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_temporal LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_limiter LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
       GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter;

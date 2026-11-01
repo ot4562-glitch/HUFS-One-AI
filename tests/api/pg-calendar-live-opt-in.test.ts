@@ -2,6 +2,7 @@
  * HUFS_PG_CALENDAR_LIVE=1 HUFS_PG_CALENDAR_URL=postgres://...@127.0.0.1:55432/hufs_one_calendar_test
  */
 import {readFileSync} from 'node:fs';
+import {randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
@@ -11,6 +12,8 @@ import {computeAuthorizedCalendar} from '../../apps/api/src/modules/calendar.js'
 import type {CalendarReadRequest} from '../../apps/api/src/modules/calendar.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 const RUN=process.env.HUFS_PG_CALENDAR_LIVE==='1';
+// Random synthetic password permits SCRAM-authenticated CI least-privilege reads.
+const rolePassword=randomBytes(24).toString('hex');
 let admin:Pool,reader:Pool,source:PostgresCalendarInputSource,request:CalendarReadRequest;
 const actor='SYN-CALENDAR-ACTOR';
 const now=()=>new Date().toISOString();
@@ -28,7 +31,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
       throw Error('Calendar live-test database must be empty');
     for(const name of ['20261031_api_projections.sql','20261031_temporal_evidence.sql','20261101_calendar_inputs.sql'])
       await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
-    await admin.query(`CREATE ROLE hufs_test_calendar LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+    await admin.query(`CREATE ROLE hufs_test_calendar LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT USAGE ON SCHEMA public TO hufs_test_calendar;
       GRANT SELECT ON api_sharing_grants,api_demo_snapshot_projections,api_calendar_input_projections,api_calendar_source_permissions,
         source_ingest_heads,source_revisions_vnext,source_conflict_decisions_vnext TO hufs_test_calendar;`);
@@ -36,7 +39,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     const helper=await admin.query(`SELECT oid::regprocedure::text AS signature FROM pg_proc
       WHERE pronamespace='public'::regnamespace AND proname='api_lock_authorized_calendar_inputs'`);
     if(helper.rows.length===1)await admin.query(`GRANT EXECUTE ON FUNCTION ${helper.rows[0].signature} TO hufs_test_calendar`);
-    const readUrl=new URL(url);readUrl.username='hufs_test_calendar';readUrl.password='';
+    const readUrl=new URL(url);readUrl.username='hufs_test_calendar';readUrl.password=rolePassword;
     reader=new Pool({connectionString:readUrl.toString(),ssl:false,max:4,connectionTimeoutMillis:3000});
     source=new PostgresCalendarInputSource(adapter(reader));
     const at=now(),before=new Date(Date.now()-60_000).toISOString(),expires=new Date(Date.now()+3_600_000).toISOString();
