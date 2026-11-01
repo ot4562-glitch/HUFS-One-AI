@@ -8,7 +8,7 @@
 | 심민성 API·통합 | [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58) **main 병합**, 서버 캘린더·인증·동의/PG·RAG/SourceRevision 합성/일회용 PG 코드. [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) 브라우저 캘린더 GET 코드/합성 회귀·CI 성공 | #77 타인 최신 HEAD 리뷰·병합/실 UI 연결; 실 OIDC/SMTP·학생 권리·운영 DB/NCP/모바일 E2E |
 | 이의상 UI | [#28](https://github.com/ot4562-glitch/HUFS-One-AI/pull/28) 컨트롤러·[#64](https://github.com/ot4562-glitch/HUFS-One-AI/pull/64) 디자인/달력 모델·[#66](https://github.com/ot4562-glitch/HUFS-One-AI/pull/66) 의존성·[#68](https://github.com/ot4562-glitch/HUFS-One-AI/pull/68) React 셸/대상별 합성 분리 **main 병합** | #69/#72/#73/#74/#75/#76 스택 OPEN, 앱 전체 화면·실 인증/달력/REVIEWER·접근성 E2E |
 | 김채윤 추천·공지 | 기존 #15/#16/#40/#41/#48/#49/#50 + #60/#65/#67 합성 코퍼스/snapshot **main 병합** | A15 독립 골드 200·실공고 사용권/자격·UI/실 API 성능 |
-| 박준영 학업 | #56/#57/#62 학점·예측·계획 pure core **main 병합** | [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 시행기간/asOf 수정 요청, 공식 원문 사람 검수/학업 E2E |
+| 박준영 학업 | #56/#57/#62 학점·예측·계획 pure core **main 병합** | [#70](https://github.com/ot4562-glitch/HUFS-One-AI/pull/70) 발효기간/asOf 차단 수정·CI/재승인 main merge `0a8d44bd` (합성 코어 완료), 공식 원문 사람 검수/학업 E2E |
 | 이서연 NCP/모델 | #12/#20/#22 기획·SKU/비용/기본 OFF 설계 | 실제 provider/worker·권리·클라우드/비용 실측·승인; 유료 환경 미개통 |
 
 **주의:** 아래 75/30/80/35/10% 수치는 #58/#56/#57/#62/#68 등이 병합되기 **이전**의 이력 추정으로 현재 진척률로 사용하면 안 된다. 같은 기준으로 전체 트랙을 재평가하지 않았으므로 최신 퍼센트를 지어내지 않는다. 팀원의 역량/노력·본선 준비율과도 무관하다.
