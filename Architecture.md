@@ -1,6 +1,6 @@
 # HUFS One AI | Architecture.md
 
-> **2026-11-01 현재 구현 정본:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 인증·원자 PG/권한·SourceRevision/Temporal RAG·본인 API·합성 REVIEWER main 병합. 후속 #99/#102/#105/#112/#113에서 출처/동의/동시성 보강, #97/#106/#115에서 지원 보관함 단계+웹 소비자, #103에서 수강계획 **읽기 전용 인가 gate**, #107에서 전공 What-if **가정 요청/결과 DTO만** main 병합했다. #90 RulePack 개정판 비교는 #82 가상 전공 계산과 다르다. #89 오프라인 보안 CI도 main에 있으나 실제 DNS/TLS/클라우드/권리/동의/실브라우저 `RELEASE_BLOCKED`. #72~#76 UI 스택은 #72 비합성 달력 연결과 snapshot 갱신 잔상 문제로 미병합/CHANGES_REQUESTED. 아래 이력의 '#83 OPEN'은 당시의 기록이다. 세부 상태 [STATUS.md](STATUS.md)·[계약](docs/CONTRACT_BOUNDARIES.md) 참고.
+> **2026-11-01 현재 구현 정본:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 인증·원자 PG/권한·SourceRevision/Temporal RAG·본인 API·합성 REVIEWER main 병합. 후속 #99/#102/#105/#112/#113에서 출처/동의/동시성 보강, #97/#106/#115에서 지원 보관함 단계+웹 소비자, #103에서 수강계획 **읽기 전용 인가 gate**, #116에서 순수 학업 계산의 #103 strict 응답 정합(독립 HEAD 승인/CI 병합), #107에서 전공 What-if **가정 요청/결과 DTO만** main 병합했다. #90 RulePack 개정판 비교는 #82 가상 전공 계산과 다르다. #89 오프라인 보안 CI도 main에 있으나 실제 DNS/TLS/클라우드/권리/동의/실브라우저 `RELEASE_BLOCKED`. #72~#76 UI 스택은 #72 비합성 달력 연결과 snapshot 갱신 잔상 문제로 미병합/CHANGES_REQUESTED. 아래 이력의 '#83 OPEN'은 당시의 기록이다. 세부 상태 [STATUS.md](STATUS.md)·[계약](docs/CONTRACT_BOUNDARIES.md) 참고.
 
 
 

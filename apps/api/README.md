@@ -1,7 +1,7 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
 
-> **2026-11-01 최신 `main` 코드 정본:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 병합, 비동기 REVIEWER 등록/목록 grant 재확인 #105, 출처 원본·문단 정합 검수 #99, 동의 철회/삭제 원자 PG #102/#112, 다중 인스턴스 ingest worker lock #113, 보관함 단계 owner-only HTTP #97/브라우저 #106·#115, 학기계획 read-only 권한 gate #103, 가상 전공 What-if Zod DTO(계산 아님) #107, 캘린더 늦은 응답 방어 #95, REVIEWER 합성 탭 격리/fragment 보호 #100/#110 모두 main 병합. `createIntegratedApi`의 실제 인증/provider/학사 RulePack/자료 권리 포트를 갖추지 않으면 미검증 학업 READY·실학생 응답을 반환하지 않는다.
+> **2026-11-01 최신 `main` 코드 정본:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 병합, 비동기 REVIEWER 등록/목록 grant 재확인 #105, 출처 원본·문단 정합 검수 #99, 동의 철회/삭제 원자 PG #102/#112, 다중 인스턴스 ingest worker lock #113, 보관함 단계 owner-only HTTP #97/브라우저 #106·#115, 학기계획 read-only 권한 gate #103·[학업 #116 strict 응답 호환](https://github.com/ot4562-glitch/HUFS-One-AI/pull/116), 가상 전공 What-if Zod DTO(계산 아님) #107, 캘린더 늦은 응답 방어 #95, REVIEWER 합성 탭 격리/fragment 보호 #100/#110 모두 main 병합. `createIntegratedApi`의 실제 인증/provider/학사 RulePack/자료 권리 포트를 갖추지 않으면 미검증 학업 READY·실학생 응답을 반환하지 않는다.
 >
 > **실제로 남은 게이트:** UI #72 비합성 `AppServices.loadCalendar` 연결 및 동일 epoch snapshot 교체 잔상 버그, 후속 #73→#76 UI/접근성 미병합. Google OIDC·외대메일 OTP 발송·운영 PostgreSQL/NCP·기관 자료권리/학생 동의·TLS/CDN/직접 IP·실브라우저 E2E 검증이 없어 공개 배포는 `RELEASE_BLOCKED`. 과거의 '#83 미병합' 아래 기록은 당시 이력이다. [STATUS](../../STATUS.md).
 
