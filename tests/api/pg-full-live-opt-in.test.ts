@@ -155,7 +155,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       .rejects.toMatchObject({code:'42501'});
     await expect(reader.query('SELECT * FROM api_self_profiles')).rejects.toMatchObject({code:'42501'});
     await expect(admin.query('UPDATE api_self_consent_events SET changed_purposes=ARRAY[\'externalAi\']'))
-      .rejects.toThrow('immutable');
+      .rejects.toThrow('cannot be mutated');
   });
   it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
     const actorId='SYN-SELF-OWNER';
