@@ -27,13 +27,22 @@
     "check:privacy": "python3 tools/verify_release_boundary.py",
     "build:contracts": "npm run build -w @hufs-one/contracts",
     "test:core": "npm run build:contracts && vitest run packages/core/src",
-    "test:web": "npm run build:contracts && vitest run apps/web/src"
+    "test:web": "npm run build:contracts && vitest run apps/web/src",
+    "dev:web": "npm run build:contracts && vite --config apps/web/vite.config.ts",
+    "build:web": "npm run build:contracts && vite build --config apps/web/vite.config.ts"
   },
   "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
     "@types/node": "22.19.15",
     "@types/papaparse": "5.5.2",
     "@types/pg": "^8.15.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "30.1.3",
     "typescript": "5.9.3",
+    "vite": "8.3.4",
     "vitest": "5.0.5"
   },
   "dependencies": {
@@ -41,6 +50,8 @@
     "jose": "6.2.14",
     "papaparse": "5.7.0",
     "pg": "^8.16.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "zod": "4.6.7"
   }
 }
