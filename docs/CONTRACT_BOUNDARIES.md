@@ -1,5 +1,20 @@
 # TASK-00 | 네 트랙이 공유할 계약의 잠금 기준
 
+## 2026-11-01 최신 소비 계약 — 코드 병합/실연동 구분
+
+| 계약·API | 실제 확인된 코드/PR | 아직 충족하지 않은 완료 게이트 |
+| --- | --- | --- |
+| actor·Context·SharingGrant/인증·REVIEWER | 서버/PG #58·[#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83), 비동기 등록/프로필 grant 최종 재확인 #105, URL fragment·REVIEWER 합성 end-to-end #110 | 실 Google OIDC/실학교 메일·실 DB/HTTPS·실 심사자 UI #73/#75 |
+| CalendarResult 및 브라우저 GET | #50 계산/#53 wire/#58 `GET /api/demo/contexts/:id/calendar`, #77 브라우저, #95 늦은 overlay 후 응답 폐기·#100 합성 탭 분리 | [UI #72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 서비스 포트/버전 교체 잔상 문제 해결 및 UI #51 실제 E2E |
+| OwnerWorkspace BOOKMARK 지원 단계 | #97 strict enum·CAS/원하는 한 단계 owner-only PATCH, #106 same-origin 브라우저·#115 탭 종료/actor 전환 후 성공 영수증 폐기 | #80 UI 보드·접근성, 공식 결과 자동 판정/제출은 의도적으로 없음 |
+| STUDY_PLAN 검사 | [학업 순수 계산 #91](https://github.com/ot4562-glitch/HUFS-One-AI/pull/91), [인가/응답 계약·HTTP gate #103](https://github.com/ot4562-glitch/HUFS-One-AI/pull/103) | 실제 검수된 RulePack/전공·과목 rights 및 authorized provider 연결, #81 UI. provider 없음은 503, 임의 READY 금지 |
+| 전공 What-if | [#107](https://github.com/ot4562-glitch/HUFS-One-AI/pull/107) 엄격한 hypothetical-only 요청/blocked/검증된 delta **DTO만** 병합 | #82 실제 다른 전공 학업 계산 코어·source rights·서버 인가 API·UI. RulePack 개정 비교 #90은 What-if 계산이 아님 |
+| 출처/RAG·권리 | #58 Temporal RAG·SourceRevision, #99 원본 SHA/capture/문단 ordinal 거부, #113 PG session-level ingest lock | 실제 기관 원문 승인·사용조건·OCR 이미지 검수·독립 사실 근거/Recall@k |
+| 공개 배포 게이트 | #92~#111 synthetic·PG Actions/민감 번들/브라우저 캐시/비밀 경로·release readiness 차단 | 실제 도메인/TLS·CDN/직접 IP·운영 NCP·학생 원본 및 권리/개인정보 동의. RELEASE_BLOCKED |
+
+아래의 '캘린더 API 미구현', 'Google/OIDC/SourceRevision 계약 미구현' 표현은 당시 설계 이력이며, 이 표의 **main 코드 구현 상태**가 우선한다. 코드 병합/합성 PASS가 기관 승인·실학생 처리·UI 실브라우저 접속을 뜻하지는 않는다.
+
+
 
 **정본:** [Architecture.md](../Architecture.md) A02~A09·A13. 기술 총괄 심민성(`ot4562-glitch`)이 `packages/contracts`·TopicCode·공통 설정/lockfile·DB migration을 조정한다. **TypeScript/Zod v0.1.0의 합성 계약 코드는 `packages/contracts/`에 구현되어 있으며, 최종 잠금은 전용 PR의 CI 및 4명 실제 소비자 검토 이후다.** 자동 소비 테스트와 실제 사람의 리뷰를 혼동하지 않는다. [사용법](../packages/contracts/README.md).
 

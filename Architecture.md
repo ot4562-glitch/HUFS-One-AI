@@ -1,5 +1,8 @@
 # HUFS One AI | Architecture.md
 
+> **2026-11-01 현재 구현 정본:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 인증·원자 PG/권한·SourceRevision/Temporal RAG·본인 API·합성 REVIEWER main 병합. 후속 #99/#102/#105/#112/#113에서 출처/동의/동시성 보강, #97/#106/#115에서 지원 보관함 단계+웹 소비자, #103에서 수강계획 **읽기 전용 인가 gate**, #107에서 전공 What-if **가정 요청/결과 DTO만** main 병합했다. #90 RulePack 개정판 비교는 #82 가상 전공 계산과 다르다. #89 오프라인 보안 CI도 main에 있으나 실제 DNS/TLS/클라우드/권리/동의/실브라우저 `RELEASE_BLOCKED`. #72~#76 UI 스택은 #72 비합성 달력 연결과 snapshot 갱신 잔상 문제로 미병합/CHANGES_REQUESTED. 아래 이력의 '#83 OPEN'은 당시의 기록이다. 세부 상태 [STATUS.md](STATUS.md)·[계약](docs/CONTRACT_BOUNDARIES.md) 참고.
+
+
 
 > **2026-11-01 최신 구현 상태 (이하 상세 설계/과거 기록과 구분):** API/인증·일반 PG·Temporal RAG·권한·캘린더 서버 #58, UI 공통 셸 #68에 이어 **문서 이력 #78(`83b4dab8`), 브라우저 캘린더 GET #77(`552ad35e`), 오늘·기회·공지 UI #69(`5617222f`) main 병합 완료**. #69 작성자가 force push 없이 main 일반 merge로 #68 조상 문제를 해소하여 #69 본문만 clean diff임을 확인했고 merge commit으로 후속 스택을 보호했다. #71 API 메서드 이슈 CLOSED. #72(현재 main base, 비합성 `loadCalendar` 미연결·CHANGES_REQUESTED) → #73 초대 → #74 졸업 → #75 합성 REVIEWER → #76 브라우저 E2E는 OPEN. owner [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 추가 PG/권한/원본 검수/overlay 코드는 Ready for review / 3명 독립 리뷰 요청/합성 CI 성공이나 신규 실제 PG opt-in 30 SKIP·타인 APPROVED/최신 main 정렬 전이라 미병합. 학업 #70 activation은 `0a8d44bd` main 병합. 공식 학칙·실학생 동의/기관 출처권리·Google/SMTP/TLS/운영 PG/NCP/CLOVA/실기기 E2E·공개 배포는 검증/승인 전. [STATUS](STATUS.md)·[PR 병합 게이트](docs/PR_WORKFLOW.md)를 현재 기준으로 따른다.
 

@@ -1,5 +1,12 @@
 # HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
 
+## 2026-11-01 최신 구현/미검증 구분
+
+- **main 서버·권한 완료(코드/합성 기준):** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 생성 합성 코퍼스/REVIEWER sandbox·일회용 PostgreSQL, [#105](https://github.com/ot4562-glitch/HUFS-One-AI/pull/105) `redeem()` 영속 기록 후 원 세션·동일 email/sub·활성 초대 재검증, [#100](https://github.com/ot4562-glitch/HUFS-One-AI/pull/100) 20회 대상 전환 2탭 합성 격리, [#110](https://github.com/ot4562-glitch/HUFS-One-AI/pull/110) URL fragment 1회 소비·선제 history 정리·실제 synthetic Fastify→브라우저 요청 검증. #110 HEAD Actions #41300314453 2 jobs 성공.
+- **UI 연동 미완료:** [#73 초대 화면](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73)·[#75 합성 sandbox](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) 및 #74/#76은 #72 UI 선행 차단 때문에 OPEN. `actualBrowserUiVerified:false`를 임의 true로 바꾸지 않는다.
+- **실심사자 배포 불가:** 실제 Google OIDC/메일 검증·운영 PostgreSQL·TLS·공용 초대 토큰 발급/전달·실브라우저/접근성 검증은 `NOT_RUN/BLOCKED`. 합성 REVIEWER 권한은 실학생 정보·공식 자격·유료 AI 접근을 부여하지 않는다.
+
+
 > 합성 REVIEWER API는 `main`에 반영됐다. 실제 Google OIDC·PostgreSQL·웹 화면·NCP 배포는 출시 전 연동·검증 게이트다. **심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** · **이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)** · **이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**. 제안서는 [Proposal.md](../Proposal.md)를 따른다.
 
 ## 0. 합성 API 범위와 웹 연동 조건

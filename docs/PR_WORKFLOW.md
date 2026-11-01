@@ -1,5 +1,15 @@
 # PR 운영과 파일 충돌 예방
 
+## 2026-11-01 최신 리뷰·병합 실적과 한시적 예외 (정본)
+
+- **정상 원칙:** 코드/공통계약 PR은 독립 비작성자 현재 HEAD APPROVED 최소 1명, 같은 HEAD CI 성공, 유효한 CHANGES_REQUESTED 해소, 현재 main diff/스택·보안 검증 후 병합. 합성 CI PASS와 실제 공개·NCP·개인정보 처리 허가는 별도다.
+- **이번 사용자 직접 지시의 한시적 예외:** 기술 총괄 `ot4562-glitch` 작성 PR도 **코드 diff/반례/독립 가능한 기술 검토 및 실제 두 CI job을 확인하고** 총괄이 직접 병합했다. GitHub 리뷰는 `COMMENTED`로 남기고 **비작성자 `APPROVED`가 있었다고 쓰지 않는다**. 이는 2026-11-01의 이 통합 검토 회차에만 적용하고, 이후 코드 PR 일반 정책을 영구 완화하지 않는다. 증거: [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83), [#105](https://github.com/ot4562-glitch/HUFS-One-AI/pull/105), [#107](https://github.com/ot4562-glitch/HUFS-One-AI/pull/107), [#109](https://github.com/ot4562-glitch/HUFS-One-AI/pull/109), [#110](https://github.com/ot4562-glitch/HUFS-One-AI/pull/110), [#115](https://github.com/ot4562-glitch/HUFS-One-AI/pull/115).
+- **스택 병합:** #83 기반 개인/인증/PG·RAG PR과 #92→#111 보안·#97→#115 웹 PR의 선행 HEAD를 순서대로 main에 일반 merge, 원인별 합성/일회용 PostgreSQL 검증 확인. #90/#103/#107의 `index.ts` export 충돌·#83/#112의 PG 시험 충돌은 양쪽 기존 테스트/기능을 **모두 유지**해 해결했다. 기존 branch/dirty tree 강제 reset·force push 금지.
+- **남은 UI 차단:** [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)는 비합성 `AppServices.loadCalendar` 미연결, 동일 epoch에서 snapshot 재작성 후 이전 일정 잔상 가능성으로 **CHANGES_REQUESTED** 유지. 후속 #73→#76은 #72 변경/독립 현재 HEAD 검토·CI 성공 전까지 stacked OPEN; 후속 PR의 구 HEAD `COMMENTED`는 승인 아님.
+- **CI/데이터 보호:** 합성·일회용 PostgreSQL job 분리, sparse checkout에서 원본 CSV/Forms·`local_only` 제외, GitHub action immutable SHA, 오프라인 정책 PASS와 외부 조건 `NOT_RUN/BLOCKED` 구분. #89 릴리스는 운영 OIDC/TLS/도메인/CDN/실브라우저·자료권리 검증 전 `RELEASE_BLOCKED`.
+- **문서-only main 정정 예외:** 아래 기존 사용자 합의대로 최신 main/원문 변경을 검사한 뒤 총괄이 문서 변경만 직접 커밋한다. 이 예외는 코드·CI·migration·lockfile을 포함하지 않는다.
+
+
 
 ## 2026-11-01 최신 PR 검증·squash 스택 관리
 

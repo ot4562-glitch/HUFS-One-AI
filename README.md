@@ -1,5 +1,15 @@
 # HUFS One AI
 
+## 2026-11-01 최신 코드 통합·출시 경계 (정본)
+
+- **main 통합 완료:** [#83 플랫폼/인가·일반 PG·출처/Temporal RAG/owner API](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83); 학업·개정 비교 [#84](https://github.com/ot4562-glitch/HUFS-One-AI/pull/84)·[#90](https://github.com/ot4562-glitch/HUFS-One-AI/pull/90)·[#91](https://github.com/ot4562-glitch/HUFS-One-AI/pull/91); 데이터 철회·삭제/수집 경합 [#99](https://github.com/ot4562-glitch/HUFS-One-AI/pull/99)·[#102](https://github.com/ot4562-glitch/HUFS-One-AI/pull/102)·[#105](https://github.com/ot4562-glitch/HUFS-One-AI/pull/105)·[#112](https://github.com/ot4562-glitch/HUFS-One-AI/pull/112)·[#113](https://github.com/ot4562-glitch/HUFS-One-AI/pull/113); 본인 보관함 계약/HTTP/웹 [#97](https://github.com/ot4562-glitch/HUFS-One-AI/pull/97)·[#106](https://github.com/ot4562-glitch/HUFS-One-AI/pull/106)·[#115](https://github.com/ot4562-glitch/HUFS-One-AI/pull/115); 수강계획 확인 **인가 gate** [#103](https://github.com/ot4562-glitch/HUFS-One-AI/pull/103)와 전공 What-if **계약만** [#107](https://github.com/ot4562-glitch/HUFS-One-AI/pull/107).
+- **보안 CI:** [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 관련 #92~#94/#96/#98/#101/#104/#108/#109/#111의 오프라인 정책·릴리스 차단 검증이 병합됐다. 공식 actions/* SHA pin과 민감 원본 제외를 유지한다. **실서비스 출시는 여전히 RELEASE_BLOCKED.**
+- **미병합 UI:** [#72 캘린더](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) → #73 심사 초대 → #74 학업 → #75 합성 리뷰어 → #76 브라우저 E2E는 OPEN. #72 비합성 캘린더 포트/버전 갱신 race는 CHANGES_REQUESTED 상태다.
+- **실제 Private 로컬 파일 경계 검사:** 2026-11-01 `npm run check:privacy`는 **153/155 PASS·2 FAIL**(Git 추적 보호 경로 6건, 원본 미열람). 합성 CI PASS와 구별하며 공개/배포를 계속 차단한다. [#46 데이터·동의 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46).
+- **아직 실제로 제공되지 않은 것:** 공식 학칙·원장 승인, 실 Google/외대메일 인증 운영, 실학생 동의·기관 자료 권리, 실제 NCP/HTTPS·도메인·CDN 검증, #80 지원 현황 보드 UI·#81 계획 UI/공식 계산 연결·#82 What-if 계산/화면. 구현과 공식 학교 판정·실학생 처리 승인을 혼동하지 않는다. 현재 작업 상태는 [STATUS.md](STATUS.md), 담당 경계는 [WORKSTREAMS.md](docs/WORKSTREAMS.md) 기준.
+- 이번 자체 작성 PR의 기술 총괄 직접 리뷰/병합은 사용자 **해당 회차 명시 예외**로만 시행했으며, GitHub의 비작성자 `APPROVED`를 허위로 기록하지 않았다.
+
+
 
 ## 최신 구현·병합 상태 (2026-11-01, GitHub HEAD 기준)
 

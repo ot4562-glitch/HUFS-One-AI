@@ -1,5 +1,8 @@
 # HUFS One AI | 시간·이미지·근거 검증형 RAG와 Laya 운영 계약
 
+> **2026-11-01 구현·운영 경계(정본):** SourceRevision/Temporal RAG·permission-first PG/HTTP는 [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58)·[#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)로 `main` 병합. 독립 원본 SHA·capturedAt/문단 ordinal 검수 부정 경계 [#99](https://github.com/ot4562-glitch/HUFS-One-AI/pull/99), 리스 만료와 중복 실행을 막는 PG session advisory lock [#113](https://github.com/ot4562-glitch/HUFS-One-AI/pull/113)도 main 병합·합성/일회용 PostgreSQL CI 확인. **실제 기관 수집권·PDF/포스터 OCR 원본/이미지 20건 독립 인용 검증, Recall@k, 운영 NCP/CLOVA/Laya/권리/크롤링 승인·배포는 전혀 완료되지 않았다.** 아래 2026-10-31 '미구현'은 당시 설계 기록이다. [최신 상태](../STATUS.md).
+
+
 
 > **상태: 제안된 설계 계약(미구현·미배포·미결제)** · 2026-10-31
 > 기술 정본: `Architecture.md` A04/A05/A06/A07/A12/A13/A14/A15/A17, 본 문서는 그 절의 구현 세부 조건이다. 계약 변경은 통합 담당 심민성 주관의 별도 PR 및 소비자 교차검토 이후 확정한다. 학생 원본·실제 기관 계정·클라우드 자원 생성 권한은 부여하지 않는다.
