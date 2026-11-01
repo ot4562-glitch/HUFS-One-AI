@@ -14,7 +14,7 @@ const denied = () => ({
 test('offline Fastify matrix really exercises denied HTTP with release still blocked', async () => {
   const report = await probeAnonymousFastify();
   assert.equal(report.gates[0].status, 'PASS',
-    'synthetic denied matrix must pass without exposing response bodies');
+    'offline failure metadata only: ' + JSON.stringify(report.findings));
   assert.equal(report.findings.length, 0, 'anonymous-route failure metadata must be empty');
   assert.ok(report.gates[0].requestsChecked >= ENTRYPOINTS.length * 3,
     'GET, HEAD and OPTIONS must be exercised for each path category');
