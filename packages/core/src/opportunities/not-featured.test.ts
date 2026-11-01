@@ -110,6 +110,8 @@ describe('#86 negative cases', () => {
     expect(r.items.some(i => i.reason === 'LOW_RELEVANCE')).toBe(false);
     const ne = r.items.filter(i => i.reason === 'NOT_EVALUATED');
     expect(ne.length).toBeGreaterThan(0);
+    // No evaluation is attached to an unevaluated candidate (aligned with the #120 wire rule).
+    for (const i of ne) expect([i.notes, i.evidenceRefs]).toEqual([[], []]);
     for (const i of r.items) expect(i.text).not.toMatch(/경험 섹션|EXPERIENCE|학업 섹션|ACADEMICS/);
   });
 

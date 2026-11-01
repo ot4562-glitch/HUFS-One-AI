@@ -40,7 +40,7 @@ export interface NotFeaturedItem {
   text:string;
   /** Failed condition fields, only for ELIGIBILITY_NOT_MET. */
   fields:ConditionField[];
-  /** Condition evidence of the decision; empty for HIDDEN_BY_USER (nothing was evaluated for display). */
+  /** Condition evidence of the decision; empty for HIDDEN_BY_USER and NOT_EVALUATED (nothing evaluated for display). */
   evidenceRefs:string[];
 }
 
@@ -98,13 +98,16 @@ export function explainNotFeatured(
 
   const notes = (r:RankedOpportunity):NotFeaturedNote[] =>
     r.evaluation.eligibility !== 'UNKNOWN' ? [] : [factWithheld ? 'NOT_EVALUATED' : 'ELIGIBILITY_UNKNOWN'];
-  const item = (r:RankedOpportunity, reason:NotFeaturedReason, placement:NotFeaturedPlacement, n:NotFeaturedNote[] = []):NotFeaturedItem => {
+  const item = (r:RankedOpportunity, reason:NotFeaturedReason, placement:NotFeaturedPlacement, noteList:NotFeaturedNote[] = []):NotFeaturedItem => {
+    // An unevaluated candidate carries no evaluation at all (#120 contract): no notes, no evidence.
+    const unevaluated = reason === 'NOT_EVALUATED';
+    const n = unevaluated ? [] : noteList;
     const fields = reason === 'ELIGIBILITY_NOT_MET'
       ? [...new Set(r.evaluation.conditions.filter(c => c.outcome === 'FAIL').map(c => c.field))] : [];
     const text = reason === 'ELIGIBILITY_NOT_MET'
       ? `지원 조건(${fields.map(f => FIELD_LABEL[f]).join('·')})이 맞지 않아 “조건 미충족” 영역에 있어요.`
       : TEXT[reason] + n.map(x => NOTE_TEXT[x]).join('');
-    return {opportunityId:r.opportunity.id, reason, notes:n, placement, text, fields, evidenceRefs:[...r.evaluation.evidenceRefs]};
+    return {opportunityId:r.opportunity.id, reason, notes:n, placement, text, fields, evidenceRefs:unevaluated ? [] : [...r.evaluation.evidenceRefs]};
   };
   const featuredRanked = composed.all.filter(r => featured.has(r.opportunity.id));
   const groupCount = new Map<string, number>();
