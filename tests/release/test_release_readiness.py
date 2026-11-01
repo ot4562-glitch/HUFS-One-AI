@@ -29,7 +29,12 @@ def manual_release_workflow_problems(source: str) -> list[str]:
         problems.append("checkout credentials persisted")
     if "sparse-checkout-cone-mode: false" not in source:
         problems.append("sparse checkout missing")
-    if "sparse-checkout: |\n            /tools/release_readiness_gate.py\n" not in source:
+    checkout = re.search(
+        r"(?m)^          sparse-checkout: \\|\\n((?: {12}[^\\n]+\\n)+)", source
+    )
+    if (not checkout or checkout.group(1).splitlines() != [
+        "            /tools/release_readiness_gate.py"
+    ]):
         problems.append("manual checkout expanded beyond gate")
     if ("secrets." in source or "id-token: write" in source
         or "actions/upload-artifact@" in source):
