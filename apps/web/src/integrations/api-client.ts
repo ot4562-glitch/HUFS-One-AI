@@ -5,11 +5,11 @@ import {
 import type {ReviewerSandboxClientAction,ReviewerSandboxClientResult}
   from './reviewer-sandbox-contract.js';
 import {
-  AiTaskPathSchema, AiTaskSchema, TopicCodeSchema, ApiErrorSchema, DemoContextSchema, DemoProfilesResponseSchema,
-  DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
+  AiTaskPathSchema, AiTaskSchema, TopicCodeSchema, ApiErrorSchema, CalendarResultSchema,
+  DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
 } from '@hufs-one/contracts';
 import type {
-  ApiErrorCode, AiTaskPath, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
+  ApiErrorCode, AiTaskPath, CalendarResult, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
 } from '@hufs-one/contracts';
 
 /** Browser fetch only. No actor/role headers, localStorage, third-party URLs or provider keys. */
@@ -242,6 +242,17 @@ export class HufsApiClient {
       throw new HufsApiError('INVALID_INPUT',422);
     return this.request('/api/demo/contexts/'+encodeURIComponent(contextId)+'/snapshot',
       DemoSnapshotSchema,{signal});
+  }
+
+  /** The BETA and REVIEWER contexts share the server-authorized calendar route.
+   * The UI must also check the result against the active snapshot's asOf and
+   * discard late replies through DemoController.runContextOperation.
+   */
+  async getCalendar(contextId:string,signal?:AbortSignal):Promise<CalendarResult> {
+    if(!/^[A-Za-z0-9_-]{1,100}$/.test(contextId))
+      throw new HufsApiError('INVALID_INPUT',422);
+    return this.request('/api/demo/contexts/'+encodeURIComponent(contextId)+'/calendar',
+      CalendarResultSchema,{signal});
   }
 
   loadReviewerCapabilities(signal?:AbortSignal) {
