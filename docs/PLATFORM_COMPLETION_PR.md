@@ -1,6 +1,19 @@
-# 2026-11-01 플랫폼 후속 구현 — PR 제출·대기
+# 2026-11-01 심민성 플랫폼 구현·후속 연결
 
-사용자의 “지금까지 한거 깃허브에 PR로 올리고 대기” 지시로 현재 구현을 제출하고 추가 개발을 중지한다. 이 기록은 `51c3c11` 기반 후속 브랜치에 대한 것으로, main 병합·출시·실서비스 검증을 뜻하지 않는다.
+**최신 지시/검증 (2026-11-01):** 사용자의 후속 “담당한 부분을 모두 구현” 지시에 따라 과거의 PR 제출·대기 지시는 종료됐다. 아래 첫 번째 구현 목록은 원래 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)의 범위이며, 그 뒤 별도로 브라우저 클라이언트와 상태 보호를 추가했다. 병합·실서비스 출시가 완료됐다는 뜻은 아니다.
+
+## 브라우저 소비자·세션 경계 후속 구현
+
+- `HufsApiClient.getDemoOverlay/setDemoOverlay/resetDemoOverlay`: 기존 인증된 BETA 경로, CSRF, CAS, 스냅샷·달력 `asOf`와 선택한 subject/grant/version 검증. 다른 학생이나 잘못된 계산 영수증은 화면에 올리지 않는다.
+- `HufsApiClient.getExperienceTagApproval/approveExperienceTags/revokeExperienceTags`: 당사자가 선택한 로컬 태그만, 승인/본문/동의 버전 결속, idempotent 미승인 철회. AI 추천 후보·기록 수정은 승인으로 가장하지 않는다.
+- `HufsApiClient.owner`: 본인 프로필·목적별 동의·경험/학기계획/보관함/행동계획 CRUD·공고/강의/개설/이수내역 조회의 strict schema/요청 ID 검증/한정된 paging/CSRF와 다음 버전 응답 확인. UI 화면 자체는 이의상 협업 소유로 남긴다.
+- `DemoController.runOverlayOperation`: 탭/선택 epoch, abort, 응답 binding, 단일 진행중 CAS, 이전 버전 회귀 방지, 인증 철회 시 스냅샷 즉시 비우기. `OwnerSessionController`: 실제 same-origin BETA 세션을 호출 전·후 대조, 계정/탭 전환·logout·revalidate 시 모든 개인 요청 취소, 동시 개인 수정 직렬화.
+- 중단된 body stream을 실제 취소하며 abort를 provider outage/성공으로 오인하지 않도록 클라이언트 전송 계층을 수정. 응답 수치/민감 payload 로그는 추가하지 않았다.
+- 새 합성 브라우저/서버 회귀 테스트 **75건**(25 owner-browser, 5 cancellation, 20 owner/account/catalog, 10 overlay epoch, 12 owner session, 3 real Fastify+browser)에서 모두 통과했다.
+- **최종 로컬 검사**: Node 24.15.0, `npm run check` **1,253 PASS / 30 opt-in PostgreSQL SKIP**, `build:api`/`build:web`/`fixtures:check` 성공, `check:privacy` **146/146 PASS**. 기존 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)의 과거 Actions PG 성공은 이전 HEAD 근거이며, 후속 HEAD의 GitHub CI와 독립 승인으로 대체해야 한다.
+- 후속 승인 조건: 현재 HEAD 비작성자 APPROVED, GitHub Actions 최신 두 job, UI 직접 연결/360px·실브라우저 확인, 공식 자료권한/실학생 목적동의, disposable PG 신규 migration 증명, OAuth/메일/TLS/NCP 별도 운영 승인. 어느 것도 합성 자동시험만으로 충족 처리하지 않는다.
+
+## 과거 #83 최초 제출 기록 (당시 검증 스냅샷)
 
 ## 구현 범위
 
