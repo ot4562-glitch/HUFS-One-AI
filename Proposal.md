@@ -1,5 +1,7 @@
 # HUFS One AI
 
+> **2026-11-01 추가 UX 기능 4건은 제안/이슈 단계:** **P0 제안** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교(변경값·검수 시각·원문 근거, 이의상 UI/심민성 API/김채윤 추천), **P1 제안** [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) 추천 제외·보류 이유(기존 issue 보강), [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비 보드(기존 owner 단계 API 구현, 실제 UI 미완료), **P2 제안** [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 복수·이중전공 가상 졸업 비교(#107은 DTO만 구현). P0/P1/P2는 착수 추천 순서이지 완료/공식 일정이 아니다. 검증된 기관 자료·학생 동의·RulePack·CI/실브라우저가 없는 부분은 모두 차단하며 합성 자료로만 설계한다.
+
 > **2026-11-01 현재 시연 준비 상태:** 서버/공통 코어/기본 React 화면은 합성·일회용 PostgreSQL 검증의 코드 단계로 진행 중이다. 심사자 초대·졸업/보관함 추가 화면의 열린 UI #72→#76은 5건의 최신 HEAD 코드 리뷰만 완료, 신규 병합 0건(#72·#75 변경 요청, HEAD CI 미확인). 합성 로컬 화면을 실심사자 운영·공식 졸업/합격 판정이나 NCP 개통으로 설명하지 않는다. 전체 개인정보 검사 2 FAIL 및 운영 권한·기관자료/학생 동의 게이트로 공개 시연 출시는 `RELEASE_BLOCKED`. [STATUS.md](STATUS.md) 참고.
 
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
