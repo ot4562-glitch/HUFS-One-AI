@@ -26,6 +26,11 @@ const opp = (revisionId:string, applyClosesAt:string):Opportunity => Opportunity
   kind:'CONTEST', topicCodes:['DATA_ANALYTICS'], languageCodes:[], applyClosesAt, eventSessions:[], actualApplicationRoute:'DEMO_DISABLED',
   conditions:[], roleSteps:[], prioritySelection:[], completionRules:[], dataMode:'SYNTHETIC', dataQuality:'COMPLETE',
 });
+/** The correction exists but has not been reviewed yet (no lastVerifiedAt). */
+const unreviewed = ():RevisionRecord => {
+  const {lastVerifiedAt:_drop, ...rest} = r2();
+  return rest;
+};
 const OLD = opp('SYN-REV-1', KST('11-20'));
 const NEW = opp('SYN-REV-2', KST('11-25'));
 const profile:RecommendationProfile = {
@@ -62,7 +67,7 @@ describe('#119 correction regressions: the current reviewed revision only, never
   });
 
   for (const [name, head] of [
-    ['new revision still in review (unverified)', r2({lastVerifiedAt:undefined})],
+    ['new revision still in review (unverified)', unreviewed()],
     ['new revision NEEDS_REVIEW', r2({status:'NEEDS_REVIEW'})],
     ['new revision rights withdrawn', r2({status:'BLOCKED_RIGHTS'})],
     ['new revision expired', r2({validUntil:D(-1)})],
@@ -101,7 +106,7 @@ describe('#119 correction regressions: the current reviewed revision only, never
     const show = (revisions:RevisionRecord[]) => composeNotices(student,
       gateBySourceRevision([n('SYN-REV-1'), n('SYN-REV-2')], selectCurrentRevisions(revisions, ASOF)).usable, {asOf:ASOF}).result.items.length;
     expect(show([r1, r2()])).toBe(1);
-    expect(show([r1, r2({lastVerifiedAt:undefined})])).toBe(0);
+    expect(show([r1, unreviewed()])).toBe(0);
     expect(show([r1, r2({changeKind:'CANCELLED', status:'RETRACTED'})])).toBe(0);
   });
 });
