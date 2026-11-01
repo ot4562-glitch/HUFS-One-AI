@@ -28,8 +28,16 @@ class BrowserSurfaceGateTests(unittest.TestCase):
         self.write("dist/web/assets/index.js", "export const synthetic = true;")
         self.write("apps/web/vite.config.ts", SYNTHETIC_CONFIG)
         self.write("apps/web/src/main.tsx",
-                   "const controller = new DemoController(client, 'SYN');")
-        self.write("apps/web/src/App.tsx", "export const App = () => null;")
+                   "const controller = new DemoController(client, 'SYN');"
+                   "root.render(<App controller={controller} />);")
+        self.write("apps/web/src/App.tsx",
+                   "export function App({controller}) { const state = useDemo(controller); }")
+        self.write("apps/web/src/shell/useDemo.ts",
+                   "useEffect(() => attachDemoResumeRevalidation(controller, ports), "
+                   "[controller]);\n"
+                   "const channel = new BroadcastChannel(SESSION_CLOSE_CHANNEL);\n"
+                   "const detach = attachCrossTabSessionClosure(controller, channel);\n"
+                   "return () => { detach(); channel.close(); };")
 
     def write(self, name: str, value: str) -> None:
         path = self.root / name
@@ -48,26 +56,40 @@ class BrowserSurfaceGateTests(unittest.TestCase):
         self.assertEqual(report["gates"][0]["assets_examined"], 2)
         self.assertEqual(report["release"], "BLOCKED")
         self.assertEqual(report["releaseDecision"], "RELEASE_BLOCKED")
-        self.assertEqual(report["gates"][1]["status"], "BLOCKED")
-        self.assertEqual(report["gates"][1]["reason_codes"], [
-            "CROSS_TAB_CLOSE_NOT_WIRED", "RESUME_LISTENER_NOT_WIRED"
-        ])
+        self.assertEqual(report["gates"][1]["status"], "NOT_RUN")
+        self.assertTrue(report["gates"][1]["wiring_detected"])
+        self.assertEqual(report["gates"][1]["reason_codes"], [])
         self.assertEqual([gate["status"] for gate in report["gates"][2:]],
                          ["NOT_RUN", "NOT_RUN"])
 
     def test_declared_helpers_without_calls_do_not_count_as_wired(self) -> None:
-        self.write("apps/web/src/main.tsx",
+        self.write("apps/web/src/shell/useDemo.ts",
                    "// attachDemoResumeRevalidation(controller)\n"
                    "import {attachCrossTabSessionClosure} from './app/index.js';\n"
                    "/* attachCrossTabSessionClosure(controller, channel) */")
-        self.assertEqual(self.audit()["gates"][1]["status"], "BLOCKED")
+        report = self.audit()
+        self.assertEqual(report["gates"][1]["status"], "BLOCKED")
+        self.assertIn("RESUME_LISTENER_NOT_WIRED", report["gates"][1]["reason_codes"])
+        self.assertIn("CROSS_TAB_CLOSE_NOT_WIRED", report["gates"][1]["reason_codes"])
 
-    def test_call_sites_still_cannot_be_claimed_as_live_browser_verified(self) -> None:
-        self.write("apps/web/src/main.tsx",
-                   "attachDemoResumeRevalidation(controller, ports);\n"
-                   "attachCrossTabSessionClosure(controller, channel);\n")
-        self.assertEqual(self.audit()["gates"][1]["status"], "NOT_RUN")
-        self.assertEqual(self.audit()["release"], "BLOCKED")
+    def test_unmounted_hook_cannot_prove_lifecycle(self) -> None:
+        self.write("apps/web/src/App.tsx", "export function App(){return null;}")
+        self.assertIn("MOUNTED_REACT_SESSION_HOOK_NOT_PROVEN",
+                      self.audit()["gates"][1]["reason_codes"])
+
+    def test_missing_broadcast_cleanup_remains_blocked(self) -> None:
+        self.write("apps/web/src/shell/useDemo.ts",
+                   "useEffect(() => attachDemoResumeRevalidation(controller, ports));\n"
+                   "const channel = new BroadcastChannel(SESSION_CLOSE_CHANNEL);\n"
+                   "attachCrossTabSessionClosure(controller, channel);")
+        self.assertIn("CROSS_TAB_CLOSE_NOT_WIRED",
+                      self.audit()["gates"][1]["reason_codes"])
+
+    def test_mounted_static_wiring_is_not_live_browser_proof(self) -> None:
+        report = self.audit()
+        self.assertEqual(report["gates"][1]["status"], "NOT_RUN")
+        self.assertEqual(report["gates"][2]["status"], "NOT_RUN")
+        self.assertEqual(report["release"], "BLOCKED")
 
     def test_service_worker_files_are_rejected(self) -> None:
         for name in ("sw.js", "service-worker.js", "workbox-123.js"):

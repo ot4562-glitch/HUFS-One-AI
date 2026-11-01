@@ -118,21 +118,37 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
         ) or not re.search(r"\bchangeOrigin\s*:\s*false\b", config):
             fail("UNREVIEWED_DEV_API_PROXY")
 
-    # These two entrypoints are the reviewed, currently mounted React shell.
-    # Helpers alone do not attach events. A missing call is a RELEASE BLOCKER,
-    # not a pass/fail verdict on another workstream's unmerged UI changes.
-    entrypoints = [root / "apps/web/src/main.tsx", root / "apps/web/src/App.tsx"]
-    sources: list[str] = []
-    for path in entrypoints:
+    # Main mounts App(controller), App uses useDemo(controller), and the hook
+    # installs browser effects. Checking main/App alone was a FALSE BLOCKER:
+    # current main's useDemo.ts already wires both listeners. Static source
+    # checks prove neither actual event delivery nor BFCache invalidation.
+    entrypoints = {
+        "main": root / "apps/web/src/main.tsx",
+        "app": root / "apps/web/src/App.tsx",
+        "hook": root / "apps/web/src/shell/useDemo.ts",
+    }
+    sources: dict[str, str] = {}
+    for key, path in entrypoints.items():
         if not path.is_file() or path.is_symlink():
             blocked.append("CLIENT_ENTRYPOINT_UNAVAILABLE")
             continue
-        sources.append(_source_calls(path.read_text(encoding="utf-8")))
-    joined = "\n".join(sources)
-    for key, pattern in CALLS.items():
-        if not pattern.search(joined):
-            blocked.append("RESUME_LISTENER_NOT_WIRED" if key == "resume"
-                           else "CROSS_TAB_CLOSE_NOT_WIRED")
+        sources[key] = _source_calls(path.read_text(encoding="utf-8"))
+
+    main = sources.get("main", "")
+    app = sources.get("app", "")
+    hook = sources.get("hook", "")
+    if not (re.search(r"<App\b[^>]*\bcontroller\s*=\s*\{\s*controller\s*\}", main)
+            and re.search(r"\buseDemo\s*\(\s*controller\s*\)", app)):
+        blocked.append("MOUNTED_REACT_SESSION_HOOK_NOT_PROVEN")
+    if not (CALLS["resume"].search(hook)
+            and re.search(r"\buseEffect\s*\(\s*\(\s*\)\s*=>\s*"
+                          r"attachDemoResumeRevalidation\s*\(", hook)):
+        blocked.append("RESUME_LISTENER_NOT_WIRED")
+    if not (CALLS["broadcast"].search(hook)
+            and re.search(r"\bnew\s+BroadcastChannel\s*\(\s*SESSION_CLOSE_CHANNEL\s*\)", hook)
+            and re.search(r"\bdetach\s*\(\s*\)", hook)
+            and re.search(r"\bchannel\s*\.\s*close\s*\(\s*\)", hook)):
+        blocked.append("CROSS_TAB_CLOSE_NOT_WIRED")
 
     static_status = "FAIL" if findings else "PASS"
     # Even when call sites appear, a real browser is still required; source
@@ -144,7 +160,8 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
             {"name": "compiled_browser_cache_and_loopback_preview",
              "status": static_status, "assets_examined": inspected},
             {"name": "browser_session_lifecycle_wiring",
-             "status": wiring_status, "reason_codes": sorted(set(blocked))},
+             "status": wiring_status, "wiring_detected": not bool(blocked),
+             "reason_codes": sorted(set(blocked))},
             {"name": "actual_bfcache_cross_tab_and_service_worker",
              "status": "NOT_RUN"},
             {"name": "live_authenticated_edge_and_cdn_cache_headers",
@@ -158,6 +175,6 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
 if __name__ == "__main__":
     report = audit_browser_surface()
     print(json.dumps(report, ensure_ascii=True, separators=(",", ":")))
-    # Ordinary PR CI must reject NEW insecure build/persistence regressions,
-    # but unmerged UI hookups and unapproved live gates remain release BLOCKED.
+    # Ordinary PR CI rejects unsafe compiled assets. Source call-path inspection
+    # is advisory; real tab/BFCache and external release checks remain NOT_RUN.
     sys.exit(1 if report["gates"][0]["status"] == "FAIL" else 0)
