@@ -62,12 +62,16 @@ test('redirect target, CORS, streaming, upgrade and HTML/JS cannot be waved thro
   }
 });
 
-test('synthetic canary reflection and HEAD body are rejected without printing payload', () => {
+test('synthetic canary and non-error HEAD payload cannot pass the denial gate', () => {
   const payload = 'prefix synthetic-do-not-reflect-canary suffix';
   assert.ok(auditAnonymousResponse({...denied(), payload})
     .includes('REQUEST_DATA_REFLECTED'));
-  assert.ok(auditAnonymousResponse({...denied(), payload: 'forbidden'}, 'HEAD')
-    .includes('HEAD_HAS_BODY'));
+  assert.deepEqual(auditAnonymousResponse(denied(), 'HEAD'), []);
+  assert.ok(auditAnonymousResponse({...denied(), payload: 'unexpected content'}, 'HEAD')
+    .includes('HEAD_UNSAFE_RESPONSE'));
+  assert.ok(auditAnonymousResponse({...denied(),
+    payload: JSON.stringify({code: 'UNAUTHENTICATED', rawPersonalData: 'synthetic'})},
+    'HEAD').includes('HEAD_UNSAFE_RESPONSE'));
 });
 
 test('offline surface inventory retains important categories', () => {
