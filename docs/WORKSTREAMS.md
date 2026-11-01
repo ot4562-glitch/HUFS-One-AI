@@ -1,5 +1,7 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
+**2026-11-01 UI 소유자 최신 핸드오프:** 이의상 담당 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)·[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)는 최신 HEAD 변경 요청, #73·#74·#76은 COMMENT 검수(5건 리뷰 등록 완료). #72 실 calendar 소비/버전 잔상, #75 대상별 미저장 form state/새 snapshot 격리 재현 테스트가 우선이다. 다섯 HEAD Actions 기록 0건/병합 0건. 학업/추천/NCP/UI 소유권은 유지하며 기술 총괄은 타인 화면 코드를 임의 덮어쓰지 않는다.
+
 ## 2026-11-01 최신 역할별 병합/핸드오프 (정본)
 
 - **심민성 — 웹 API·계약·PG·RAG·릴리스 보안/통합:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)과 #92~#115 중 본인 담당/협업 승인 범위의 후속 PR을 병합했다. 인증 사후 재검증 #105, SourceReview #99, DB 철회 #102/#112, 수집 중복 실행 #113, 계약/API #97/#103/#107, 웹 소비자 #95/#100/#106/#110/#115, 오프라인 릴리스 보안 #92/#93/#94/#96/#98/#101/#104/#108/#109/#111이 main에 있다. **신규 PR의 자체 리뷰/병합은 이번 사용자 지시 예외로 기록한 COMMENT이며 독립 승인 아님.**
@@ -15,7 +17,7 @@
 
 - **11/10 이후 UI 제안의 현재 이슈 분담:** [#79](https://github.com/ot4562-glitch/HUFS-One-AI/issues/79) D-day는 `uisang2004-maker` UI 담당, [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 현황 보드는 UI `uisang2004-maker` + 계약/API `ot4562-glitch`, [#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81) 수강계획 나란히 보기 및 [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 졸업 What-if는 UI `uisang2004-maker` + 학업 `taewangim-alt` + API `ot4562-glitch` 공동 할당 확인. 이슈 배정은 작업 수락/실자료 권한 검증이 아니며 세부 계약·RulePack 검수는 미완료.
 
-- **통합 담당 후속 PR:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 합성 코퍼스/원본 검수·태그 승인·overlay/OTP quota/preflight는 심민성 소유, 리뷰 가능 상태로 전환하고 `qamarrchae`·`taewangim-alt`·`uisang2004-maker`에게 독립 리뷰 요청했다. 현재 HEAD CI 2 jobs 성공과 30개 신규 opt-in 실제 PG SKIP을 구분하고, 다른 사람 승인/신규 일회용 PG·main 정렬 전 main 병합 금지.
+- **이전 핸드오프 정정:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)은 당시 리뷰 요청 단계였지만, 이후 main `3c6378c` 병합되었다. 이번 신규 UI #72~#76은 별개로 현재 열린 스택이고 검증 대기 중이다.
 
 GitHub 이슈의 **현재 담당**은 심민성 `ot4562-glitch`(#27 API/인증/일반 PG/Temporal/공통 계약, #71 브라우저 캘린더 포트), 이의상 `uisang2004-maker`(#9 UI/접근성, #51 캘린더), 김채윤 `qamarrchae`(#10 추천·공지·합성 평가), 박준영 `taewangim-alt`(#11 학업/RulePack), 이서연 `lhh42001`(#12/#20/#22 NCP·CLOVA·OCR/Vision·Laya 환경/실 provider)이다. GitHub 할당은 개인정보 처리/기관 승인과 별개다.
 
