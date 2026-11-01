@@ -7,6 +7,8 @@ import type {RevisionRecord} from '../../../../packages/core/src/normalization/r
 import type {ReviewerSqlConnection,ReviewerSqlPool} from './auth/reviewer-postgres.js';
 import type {CalendarAuthorizationReceipt,CalendarInputBundle,CalendarInputSource,CalendarReadRequest} from './calendar.js';
 import type {DemoSnapshot} from '@hufs-one/contracts';
+import {CalendarDeadlineProofSchema,verifyCalendarDeadlineProjection} from './calendar-deadline-evidence.js';
+import type {CalendarDeadlineProof} from './calendar-deadline-evidence.js';
 
 const Ref=z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:@-]+$/);
 const Label=z.string().min(1).max(500);
@@ -37,7 +39,8 @@ const NormalizedInputs=z.strictObject({
     publishedAt:ISODateTimeSchema.optional(),validUntil:ISODateTimeSchema.optional(),
     eventSessions:z.array(z.strictObject({start:ISODateTimeSchema,end:ISODateTimeSchema.optional()})).max(40).optional(),
     verificationState:z.enum(['CANDIDATE','VERIFIED','NEEDS_REVIEW','REJECTED']),evidenceRefs:Refs,
-  })).max(200),savedOpportunityIds:Refs.optional(),
+  })).max(200),deadlineProofs:z.array(CalendarDeadlineProofSchema).max(200).optional(),
+  savedOpportunityIds:Refs.optional(),
 });
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const iso=(value:unknown)=>ISODateTimeSchema.parse(value instanceof Date?value.toISOString():value);
@@ -134,7 +137,8 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
       // PostgreSQL JSON cannot contain undefined. Serializing after validation removes optional
       // undefined values from injected/fake adapters too and preserves exact optional TS contracts.
       const normalized=JSON.parse(JSON.stringify(NormalizedInputs.parse(p.input_json))) as
-        Pick<CalendarInputBundle,'profile'|'noticeStudent'|'provenance'|'opportunities'|'notices'|'savedOpportunityIds'>;
+        Pick<CalendarInputBundle,'profile'|'noticeStudent'|'provenance'|'opportunities'|'notices'|'savedOpportunityIds'>
+        &{deadlineProofs?:CalendarDeadlineProof[]};
       const sourceIds=z.array(Ref).max(100).parse(p.source_ids);
       if(new Set(sourceIds).size!==sourceIds.length)return null;
       // Writers in #34 lock these same HEAD rows before inserting a successor revision. Do not
@@ -175,12 +179,23 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         &&r.changeKind!=='UNKNOWN'&&!blocked.has(r.revisionId)&&rights.some(right=>right.actor_id===actor
         &&right.subject_id===context.demoSubjectId&&right.source_id===r.sourceId&&right.permission_ref===r.permissionRef
         &&right.active===true&&active(right,now))).map(r=>r.revisionId);
+      // A reviewed projection's REAL deadlines are re-derived from asOf-verified
+      // current-revision TEXT claims. Cached, unsigned dates never reach the calendar.
+      const verifiedDates=verifyCalendarDeadlineProjection({
+        opportunities:normalized.opportunities,notices:normalized.notices,asOf,actorId:actor,
+        proofs:normalized.deadlineProofs??[],authorizedRevisionIds,
+        revisionProvenance:Object.fromEntries(revisions.map(r=>[r.revisionId,r.provenance])),
+        datasetMode:DatasetModeSchema.parse(p.dataset_mode),
+      });
+      const {deadlineProofs:_privateProofs,...safeNormalized}=normalized;
       const scopeKey=scopeInputsToGrant(normalized.profile,normalized.noticeStudent,grant.allowedSections,normalized.provenance).scopeKey;
       const sourceVersion=hash([heads,rawRevisions,rights,conflicts]);
       const authorizationToken=hash([context,grant,g.consent_ref,p,s,sourceVersion,scopeKey]);
       await client.query('COMMIT');transaction=false;
       return {actorId:actor,context,grant,asOf,datasetMode:DatasetModeSchema.parse(p.dataset_mode),
-        ...normalized,revisions,authorizedRevisionIds,scopeKey,sourceVersion,authorizationToken,approvedSnapshot};
+        ...safeNormalized,opportunities:verifiedDates.opportunities,notices:verifiedDates.notices,
+        deadlineClaimRefsByOpportunity:verifiedDates.acceptedClaimIdsByOpportunity,
+        revisions,authorizedRevisionIds,scopeKey,sourceVersion,authorizationToken,approvedSnapshot};
     }catch{
       throw new Error('Calendar input source unavailable');
     }finally{
