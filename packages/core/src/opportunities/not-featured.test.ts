@@ -1,8 +1,8 @@
 import {describe, it, expect} from 'vitest';
-import type {Opportunity} from '@hufs-one/contracts';
+import {OpportunitySchema, type Opportunity, type TopicCode} from '@hufs-one/contracts';
 import {
   DEMO_AS_OF, DEMO_OPPORTUNITIES, DEMO_PUBLISHED_AT, DEMO_STUDENTS,
-  composeFeed, explainNotFeatured, explainRecommendation, scopeInputsToGrant,
+  RANK_CONFIG_V1_1, composeFeed, explainNotFeatured, explainRecommendation, scopeInputsToGrant,
   type NotFeaturedOptions, type RecommendationProfile,
 } from './index.js';
 
@@ -54,7 +54,7 @@ describe('#86 reasons for candidates that are not large cards (40 synthetic oppo
         const ranked = byId.get(i.opportunityId);
         if (!ranked) continue;
         const codes = explainRecommendation(ranked).reasons.map(x => x.code);
-        if (i.reason === 'OUTRANKED') expect(codes.some(c => c === 'JOB_MATCH' || c === 'INTEREST_MATCH' || c === 'EXPERIENCE_MATCH')).toBe(true);
+        if (i.reason === 'OUTRANKED' || i.reason === 'GROUP_CAP' || i.reason === 'DIVERSITY') expect(codes.some(c => c === 'JOB_MATCH' || c === 'INTEREST_MATCH' || c === 'EXPERIENCE_MATCH')).toBe(true);
         if (i.reason === 'LOW_RELEVANCE') expect(codes[0]).toBe('NO_PERSONAL_MATCH');
       }
     }
@@ -132,11 +132,77 @@ describe('#86 negative cases', () => {
     for (const i of unknown) expect(i.reason).not.toBe('ELIGIBILITY_NOT_MET');
   });
 
-  it('no personal inputs: shown items are NOT_EVALUATED, not LOW_RELEVANCE or OUTRANKED', () => {
+  it('no personal inputs: shown items are NO_PERSONAL_INPUT (not "unshared"), not LOW_RELEVANCE or OUTRANKED', () => {
     const blank:RecommendationProfile = {...S01.profile, interestTopics:[], desiredJobTopics:[], approvedExperienceTopics:[]};
     const r = explainNotFeatured(blank, DEMO_OPPORTUNITIES, opts);
     expect(r.featuredIds).toEqual([]);
     expect(r.items.filter(i => i.placement === 'COMPACT_LIST' || i.placement === 'MORE_LIST')
-      .every(i => i.reason === 'NOT_EVALUATED' || i.reason === 'SOURCE_NEEDS_REVIEW')).toBe(true);
+      .every(i => i.reason === 'NO_PERSONAL_INPUT' || i.reason === 'SOURCE_NEEDS_REVIEW')).toBe(true);
+    expect(r.items.some(i => i.reason === 'NOT_EVALUATED')).toBe(false);
+    // Copy differs from the unshared case, so the student is told to add preferences, not to change sharing.
+    const np = r.items.find(i => i.reason === 'NO_PERSONAL_INPUT')!;
+    expect(np.text).toMatch(/입력하지 않아/);
+    expect(np.text).not.toMatch(/공유/);
+  });
+});
+
+// #117 review: "outranked" must be literally true for the selection composeFeed made.
+const D = (d:number) => new Date(Date.parse(DEMO_AS_OF) + d * DAY).toISOString();
+function opp(id:string, organization:string, topicCodes:TopicCode[]):Opportunity {
+  return OpportunitySchema.parse({
+    id, version:'v1', sourceSnapshotId:`SYN-SRC-${id}`, title:`가상 공고 ${id}`, organization, kind:'CONTEST', topicCodes,
+    languageCodes:[], applyClosesAt:D(10), eventSessions:[], actualApplicationRoute:'DEMO_DISABLED', conditions:[], roleSteps:[],
+    prioritySelection:[], completionRules:[], dataMode:'SYNTHETIC', dataQuality:'COMPLETE',
+  });
+}
+const base:RecommendationProfile = {
+  interestTopics:[], desiredJobTopics:[], approvedExperienceTopics:[], approvedLanguageCodes:[], officialMajorTopics:[], facts:{},
+};
+const synOpts = {asOf:DEMO_AS_OF};
+
+describe('#117 review: truthful reasons for the kind+organization cap and topic diversity', () => {
+  it('rank A(100) A(95) A(90) B(80): cards A,A,B; the third A is GROUP_CAP, never OUTRANKED', () => {
+    const profile = {...base, desiredJobTopics:['DATA_ANALYTICS', 'AI_ML'] as TopicCode[], interestTopics:['DATA_ANALYTICS'] as TopicCode[]};
+    const opps = [
+      opp('SYN-A1', '시연가상기관 A', ['DATA_ANALYTICS', 'AI_ML']),
+      opp('SYN-A2', '시연가상기관 A', ['DATA_ANALYTICS', 'AI_ML']),
+      opp('SYN-A3', '시연가상기관 A', ['DATA_ANALYTICS', 'AI_ML']),
+      opp('SYN-B1', '시연가상기관 B', ['AI_ML']),
+      opp('SYN-C1', '시연가상기관 C', ['AI_ML']),
+    ];
+    const composed = composeFeed(profile, opps, synOpts);
+    const score = (id:string) => composed.all.find(r => r.opportunity.id === id)!.score.total;
+    expect(score('SYN-A3')).toBeGreaterThan(score('SYN-B1')); // A3 really ranks above a featured card
+    const r = explainNotFeatured(profile, opps, synOpts);
+    expect(r.featuredIds).toEqual(['SYN-A1', 'SYN-A2', 'SYN-B1']);
+    expect(reasonOf(r, 'SYN-A3')).toBe('GROUP_CAP');
+    // C1 ranks below all three cards: that one is honestly OUTRANKED.
+    expect(reasonOf(r, 'SYN-C1')).toBe('OUTRANKED');
+    expect(r.items.find(i => i.opportunityId === 'SYN-A3')!.text).not.toMatch(/점수가 높은/);
+  });
+
+  it('opt-in rank-v1.1 topic diversity: a skipped higher-ranked item is DIVERSITY; v1.0 calls it OUTRANKED', () => {
+    const profile = {...base, desiredJobTopics:['DATA_ANALYTICS'] as TopicCode[], interestTopics:['DATA_ANALYTICS', 'MARKETING_BRAND'] as TopicCode[]};
+    const opps = [
+      opp('SYN-X1', '시연가상기관 X1', ['DATA_ANALYTICS']),
+      opp('SYN-X2', '시연가상기관 X2', ['DATA_ANALYTICS']),
+      opp('SYN-X3', '시연가상기관 X3', ['DATA_ANALYTICS']),
+      opp('SYN-Y1', '시연가상기관 Y1', ['MARKETING_BRAND']),
+    ];
+    const v11 = explainNotFeatured(profile, opps, {...synOpts, config:RANK_CONFIG_V1_1});
+    expect(v11.rankConfigVersion).toBe('rank-v1.1');
+    expect(v11.featuredIds).toEqual(['SYN-X1', 'SYN-X2', 'SYN-Y1']);
+    expect(reasonOf(v11, 'SYN-X3')).toBe('DIVERSITY');
+    const v10 = explainNotFeatured(profile, opps, synOpts);
+    expect(v10.featuredIds).toEqual(['SYN-X1', 'SYN-X2', 'SYN-X3']);
+    expect(reasonOf(v10, 'SYN-Y1')).toBe('OUTRANKED');
+  });
+
+  it('unshared experience with no other preferences is NOT_EVALUATED, not NO_PERSONAL_INPUT, and names no section', () => {
+    const profile = {...base, approvedExperienceTopics:['DATA_ANALYTICS'] as TopicCode[]};
+    const scoped = scopeInputsToGrant(profile, {openRequirementIds:null, courseIds:[], interestTopics:[]}, ['FEED', 'NOTICES']);
+    const r = explainNotFeatured(scoped.profile!, [opp('SYN-X1', '시연가상기관 X1', ['DATA_ANALYTICS'])], {...synOpts, withheld:scoped.withheld});
+    expect(r.items.map(i => i.reason)).toEqual(['NOT_EVALUATED']);
+    expect(r.items[0]!.text).not.toMatch(/경험|학업|EXPERIENCE|ACADEMICS/);
   });
 });

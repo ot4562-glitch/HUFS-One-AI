@@ -35,7 +35,8 @@ export interface ComposedFeed {
   rankConfigVersion:string;
 }
 
-const groupKey = (o:Opportunity) => `${o.kind}|${canonicalTerm(o.organization).toLowerCase()}`;
+/** Same kind + organization group used by the large-card cap (maxPerKindOrganization). */
+export const featureGroupKey = (o:Opportunity) => `${o.kind}|${canonicalTerm(o.organization).toLowerCase()}`;
 const hasPersonalSignal = (p:RecommendationProfile) =>
   p.interestTopics.length + p.desiredJobTopics.length + p.approvedExperienceTopics.length > 0;
 const featurableQuality = (r:RankedOpportunity) => r.opportunity.dataQuality === 'COMPLETE' || r.opportunity.dataQuality === 'PARTIAL';
@@ -46,7 +47,7 @@ function takeDiverse(items:readonly RankedOpportunity[], max:number, cap:number)
   const out:RankedOpportunity[] = [];
   for (const r of items) {
     if (out.length >= max) break;
-    const k = groupKey(r.opportunity);
+    const k = featureGroupKey(r.opportunity);
     const n = counts.get(k) ?? 0;
     if (n >= cap) continue;
     counts.set(k, n + 1);
@@ -69,7 +70,7 @@ function takeTopicDiverse(items:readonly RankedOpportunity[], max:number, cap:nu
   const picked = new Set<RankedOpportunity>();
   const tryPick = (r:RankedOpportunity, requireNewTopic:boolean) => {
     if (picked.size >= max || picked.has(r)) return;
-    const k = groupKey(r.opportunity);
+    const k = featureGroupKey(r.opportunity);
     if ((counts.get(k) ?? 0) >= cap) return;
     const topics = matchedTopics(r);
     if (requireNewTopic && picked.size > 0 && topics.every(t => covered.has(t))) return;
