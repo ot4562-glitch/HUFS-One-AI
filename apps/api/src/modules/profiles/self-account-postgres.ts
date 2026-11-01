@@ -5,6 +5,7 @@ import {
 } from '@hufs-one/contracts';
 import type {SelfConsent,SelfProfile} from '@hufs-one/contracts';
 import type {ReviewerSqlConnection,ReviewerSqlPool} from '../auth/reviewer-postgres.js';
+import {invalidateExperienceTagApprovals} from './experience-approval-postgres.js';
 
 const Actor=z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:@-]+$/);
 const Timestamp=z.iso.datetime({offset:true});
@@ -114,6 +115,9 @@ export class PostgresSelfAccountStore implements SelfAccountPort{
       }
       if(rows.rows.length!==1)throw new SelfAccountConflict();
       const result=parseConsent(rows.rows[0]!);
+      // Approval is bound to the exact consent version; changing even one
+      // purpose requires fresh local approval. No stale derived topic survives.
+      await invalidateExperienceTagApprovals(c,{actorId:id});
       // Audit table is intentionally INSERT-only for this non-owner API role.
       // RETURNING would require a SELECT grant and weaken that boundary.
       await c.query(`INSERT INTO api_self_consent_events
@@ -123,6 +127,7 @@ export class PostgresSelfAccountStore implements SelfAccountPort{
         // A withdrawal immediately removes THIS table's private profile,
         // not external provider copies, raw student intake, or another owner.
         await c.query('DELETE FROM api_self_profiles WHERE actor_id=$1',[id]);
+        await c.query('DELETE FROM api_experience_tag_approvals WHERE actor_id=$1',[id]);
         await c.query('DELETE FROM api_self_workspace_records WHERE actor_id=$1',[id]);
       }
       return result;

@@ -1,5 +1,6 @@
 import {z} from 'zod';
 export * from './workspace.js';
+export * from './experience-approval.js';
 import {DesiredJobTopicsSchema,InterestTopicsSchema} from '../topics/index.js';
 import {AcademicTermVNextSchema,CourseRecordSchema} from '../academics/index.js';
 import {OpportunitySchema} from '../corpus/index.js';

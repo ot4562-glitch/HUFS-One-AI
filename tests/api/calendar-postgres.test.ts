@@ -45,7 +45,7 @@ function fakeDatabase(){
       if(sql.includes('FROM api_calendar_input_projections'))return {rows:[structuredClone(projection)]};
       if(sql.includes('FROM api_demo_snapshot_projections'))return {rows:[structuredClone(snapshotRow)]};
       if(sql.includes('FROM source_ingest_heads'))return {rows:structuredClone(heads)};
-      if(sql.includes('FROM source_revisions_vnext'))return {rows:structuredClone(revisions)};
+      if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:structuredClone(revisions)};
       if(sql.includes('FROM api_calendar_source_permissions'))return {rows:structuredClone(rights)};
       if(sql.includes('FROM source_conflict_decisions_vnext'))return {rows:structuredClone(conflicts)};
       if(sql.includes('FROM source_paragraphs_vnext'))return {rows:structuredClone(paragraphs)};

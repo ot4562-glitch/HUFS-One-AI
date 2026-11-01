@@ -7,9 +7,11 @@ import type {ReviewerSandboxClientAction,ReviewerSandboxClientResult}
 import {
   AiTaskPathSchema, AiTaskSchema, TopicCodeSchema, ApiErrorSchema, CalendarResultSchema,
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
+  RetrievalEnvelopeVNextSchema,
 } from '@hufs-one/contracts';
 import type {
   ApiErrorCode, AiTaskPath, CalendarResult, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
+  RetrievalEnvelopeVNext,
 } from '@hufs-one/contracts';
 
 /** Browser fetch only. No actor/role headers, localStorage, third-party URLs or provider keys. */
@@ -358,13 +360,18 @@ export class HufsApiClient {
     return result;
   }
 
-  /**
-   * Fail closed until PR #33's authoritative RetrievalEnvelopeVNextSchema
-   * and PR #34's permission-first route are merged and reviewed.
-   * Never expose unvalidated evidence as JSON in the browser.
-   */
-  async searchEvidence(_query:string,_asOf?:string,_signal?:AbortSignal):Promise<never> {
-    throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+  /** Current server authorization is mandatory; never cache or supply browser source rights. */
+  async searchEvidence(query:string,asOf?:string,signal?:AbortSignal):Promise<RetrievalEnvelopeVNext> {
+    const input=z.strictObject({q:z.string().trim().min(2).max(200),
+      asOf:z.iso.datetime({offset:true}).optional()}).safeParse({q:query,asOf});
+    if(!input.success)throw new HufsApiError('INVALID_INPUT',422);
+    const params=new URLSearchParams({q:input.data.q});
+    if(input.data.asOf!==undefined)params.set('asOf',input.data.asOf);
+    const result=await this.request('/api/evidence/search?'+params.toString(),
+      RetrievalEnvelopeVNextSchema,{signal});
+    if(input.data.asOf!==undefined&&result.asOf!==input.data.asOf)
+      throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
+    return result;
   }
 
   async submitSyntheticAi(

@@ -3,7 +3,7 @@
  * Start a fresh disposable local cluster first. All records below are synthetic.
  */
 import {readFileSync} from 'node:fs';
-import {randomBytes} from 'node:crypto';
+import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {PostgresPersonalStateStore} from '../../apps/api/src/db/personal-state-postgres.js';
@@ -15,10 +15,14 @@ import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/op
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
 import {PostgresSourceRevisionHistory} from '../../apps/api/src/modules/opportunities/source-history-postgres.js';
+import {PostgresSourceReviewService} from '../../apps/api/src/modules/opportunities/source-review-postgres.js';
+import {hashRevisionParagraphs} from '../../apps/api/src/modules/opportunities/revision-ledger.js';
 import {PostgresReviewerSandboxStore} from '../../apps/api/src/modules/auth/reviewer-sandbox-postgres.js';
 import {PostgresRestrictedIntakeImport} from '../../apps/api/src/modules/academics/intake-postgres.js';
 import {PostgresSelfAccountStore} from '../../apps/api/src/modules/profiles/self-account-postgres.js';
 import {PostgresOwnerWorkspaceStore} from '../../apps/api/src/modules/profiles/self-workspace-postgres.js';
+import {PostgresExperienceApprovalStore} from '../../apps/api/src/modules/profiles/experience-approval-postgres.js';
+import {PostgresDemoOverlayStore} from '../../apps/api/src/modules/demo-overlay-postgres.js';
 import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
@@ -27,7 +31,7 @@ const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
 const pools:Pool[]=[];
 // Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
 const rolePassword=randomBytes(24).toString('hex');
-let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool;
+let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool,overlays:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
 const now=()=>new Date().toISOString();
@@ -37,10 +41,13 @@ const migrationNames=[
   '20261031_beta_admission.sql','20261031_school_mail.sql',
   '20261031_reviewer_invitations.sql','20261101_reviewer_sandbox.sql',
   '20261031_auth_attempt_windows.sql',
-  '20261031_temporal_evidence.sql','20261101_source_http_validators.sql',
+  '20261101_school_mail_network_limits.sql',
+  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261101_source_http_validators.sql',
   '20261101_source_ingest_queue.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
   '20261101_self_workspace.sql',
+  '20261101_experience_tag_approval.sql',
+  '20261101_demo_overlays.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -80,19 +87,23 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        CREATE ROLE hufs_test_sandbox LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_intake LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_self LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+       CREATE ROLE hufs_test_overlay LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
-      GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake,hufs_test_self;
+      GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake,hufs_test_self,hufs_test_overlay;
+       GRANT SELECT,INSERT,UPDATE ON api_demo_overlays TO hufs_test_overlay;
        GRANT SELECT,INSERT,UPDATE ON api_self_consents TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_profiles TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_workspace_records TO hufs_test_self;
        GRANT INSERT ON api_self_workspace_events TO hufs_test_self;
        GRANT INSERT ON api_self_consent_events TO hufs_test_self;
+       GRANT SELECT,INSERT,UPDATE,DELETE ON api_experience_tag_approvals TO hufs_test_self;
+       GRANT INSERT ON api_experience_tag_events TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE ON api_intake_heads TO hufs_test_intake;
        GRANT SELECT,INSERT ON api_intake_revisions TO hufs_test_intake;
        GRANT EXECUTE ON FUNCTION reviewer_sandbox_allowed(text,text) TO hufs_test_sandbox;
        GRANT SELECT,INSERT,UPDATE ON reviewer_sandbox_state TO hufs_test_sandbox;
-      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_paragraphs_vnext,
+      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_effective_revisions_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
     `);
@@ -100,6 +111,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     temporal=poolFor(url,'hufs_test_temporal');limiter=poolFor(url,'hufs_test_limiter');
     sandbox=poolFor(url,'hufs_test_sandbox');intake=poolFor(url,'hufs_test_intake');
     selfAccount=poolFor(url,'hufs_test_self');
+    overlays=poolFor(url,'hufs_test_overlay');
     await admin.query(`INSERT INTO api_sharing_grants(
       grant_id,actor_id,subject_id,allowed_sections,version,consent_ref,
       approved_by,approved_at,expires_at)
@@ -250,6 +262,78 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       ['SYN-ROLLED-BACK']);
     expect(count.rows[0]?.n).toBe(0);
   });
+  it('keeps local experience approvals version-bound through parallel CAS, content/consent invalidation and RLS',async()=>{
+    const actorId='SYN-LOCAL-TAG-OWNER',experienceId='SYN-LOCAL-EXP';
+    const choices={personalStorage:true,teamReview:false,externalAi:false,ncpStorage:false,presentation:false};
+    const account=new PostgresSelfAccountStore(adapter(selfAccount),{mayAccess:async({actorId:id})=>id===actorId});
+    const workspace=new PostgresOwnerWorkspaceStore(adapter(selfAccount),{mayOperate:async({actorId:id})=>id===actorId});
+    const permission={mayOperate:async({actorId:id}:{actorId:string})=>id===actorId};
+    const a=new PostgresExperienceApprovalStore(adapter(selfAccount),permission);
+    const b=new PostgresExperienceApprovalStore(adapter(selfAccount),permission);
+    await account.putConsents(actorId,{expectedVersion:0,choices});
+    const value={kind:'EXPERIENCE' as const,dataMode:'SYNTHETIC' as const,
+      state:'DRAFT' as const,title:'합성 로컬 태그 경험',summary:''};
+    await workspace.create({actorId,itemId:experienceId,value});
+    const request={actorId,experienceId,expectedApprovalVersion:0,expectedContentVersion:1,
+      expectedConsentVersion:1,topics:['DATA_ANALYTICS' as const]};
+    const race=await Promise.allSettled([a.approve(request),b.approve(request)]);
+    expect(race.filter(r=>r.status==='fulfilled')).toHaveLength(1);
+    expect(race.filter(r=>r.status==='rejected')).toHaveLength(1);
+    expect((await b.readApprovedTopics({actorId,experienceId,
+      expectedContentVersion:1,expectedConsentVersion:1}))?.topics).toEqual(['DATA_ANALYTICS']);
+    expect((await selfAccount.query('SELECT * FROM api_experience_tag_approvals')).rows).toEqual([]);
+    await expect(selfAccount.query('SELECT * FROM api_experience_tag_events')).rejects.toMatchObject({code:'42501'});
+    await expect(a.read({actorId:'SYN-OTHER',experienceId})).rejects.toThrow('denied');
+    await workspace.update({actorId,kind:'EXPERIENCE',itemId:experienceId,expectedVersion:1,
+      value:{...value,summary:'수정된 합성 내용'}});
+    expect(await a.read({actorId,experienceId})).toEqual({state:'INACTIVE',version:2,reason:'STALE'});
+    expect(await a.readApprovedTopics({actorId,experienceId,
+      expectedContentVersion:1,expectedConsentVersion:1})).toBeNull();
+    await expect(a.approve(request)).rejects.toThrow('version conflict');
+    await b.approve({...request,expectedApprovalVersion:2,expectedContentVersion:2});
+    await account.putConsents(actorId,{expectedVersion:1,choices:{...choices,teamReview:true}});
+    expect(await a.read({actorId,experienceId})).toEqual({state:'INACTIVE',version:4,reason:'STALE'});
+    await a.approve({...request,expectedApprovalVersion:4,expectedContentVersion:2,expectedConsentVersion:2});
+    await workspace.delete({actorId,kind:'EXPERIENCE',itemId:experienceId,expectedVersion:2});
+    expect(await a.read({actorId,experienceId})).toEqual({state:'INACTIVE',version:6,reason:'NOT_FOUND'});
+    const events=await admin.query(`SELECT action FROM api_experience_tag_events
+      WHERE actor_id=$1 ORDER BY version`,[actorId]);
+    expect(events.rows.map(e=>e.action)).toEqual(['APPROVED','INVALIDATED','APPROVED','INVALIDATED','APPROVED','INVALIDATED']);
+    await expect(admin.query(`UPDATE api_experience_tag_events SET action='APPROVED' WHERE actor_id=$1`,[actorId]))
+      .rejects.toThrow('cannot be mutated');
+    await account.putConsents(actorId,{expectedVersion:2,choices:{...choices,personalStorage:false}});
+    expect(await a.read({actorId,experienceId})).toEqual({state:'INACTIVE',version:0,reason:'CONSENT_REQUIRED'});
+    expect((await admin.query('SELECT * FROM api_experience_tag_approvals WHERE actor_id=$1',[actorId])).rows).toEqual([]);
+  });
+  it('serializes initial/update overlay CAS and separates session, tab, subject, source and grant namespaces under RLS',async()=>{
+    const a=new PostgresDemoOverlayStore(adapter(overlays)),b=new PostgresDemoOverlayStore(adapter(overlays));
+    const key={actorId:'SYN-OVERLAY-ACTOR',sessionIdHash:'SYN-SESSION-1',demoRunId:'SYN-TAB-1',
+      demoSubjectId:'S01' as const,datasetVersion:'SYN-D1',projectionVersion:'SYN-P1',sharingGrantVersion:'SYN-G1'};
+    const value={interestTopics:['DATA_ANALYTICS' as const]};
+    expect((await a.read(key)).version).toBe(0);
+    const first=await Promise.allSettled([
+      a.put(key,{expectedVersion:0,value},now()),b.put(key,{expectedVersion:0,value},now()),
+    ]);
+    expect(first.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    expect(first.filter(x=>x.status==='rejected')).toHaveLength(1);
+    const second=await Promise.allSettled([
+      a.put(key,{expectedVersion:1,value:{}},now()),b.put(key,{expectedVersion:1,value:{}},now()),
+    ]);
+    expect(second.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    expect(second.filter(x=>x.status==='rejected')).toHaveLength(1);
+    expect(await b.read(key)).toMatchObject({version:2,value:{}});
+    await expect(a.put(key,{expectedVersion:0,value},now())).rejects.toThrow('version conflict');
+    for(const change of [{actorId:'SYN-OTHER'}, {sessionIdHash:'SYN-SESSION-2'},
+      {demoRunId:'SYN-TAB-2'},{demoSubjectId:'S02' as const},{datasetVersion:'SYN-D2'},
+      {projectionVersion:'SYN-P2'},{sharingGrantVersion:'SYN-G2'}])
+      expect((await a.read({...key,...change})).version).toBe(0);
+    expect((await overlays.query('SELECT * FROM api_demo_overlays')).rows).toEqual([]);
+    await expect(overlays.query('DELETE FROM api_demo_overlays')).rejects.toMatchObject({code:'42501'});
+    await expect(overlays.query('SELECT * FROM api_self_workspace_records')).rejects.toMatchObject({code:'42501'});
+    const security=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
+      WHERE oid='api_demo_overlays'::regclass`);
+    expect(security.rows[0]).toEqual({relrowsecurity:true,relforcerowsecurity:true});
+  });
   it('commits four synthetic intake drafts atomically with idempotent file hashes and version CAS',async()=>{
     const fixture=makeSyntheticIntake();
     const imports=new PostgresRestrictedIntakeImport(adapter(intake),{
@@ -319,7 +403,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await expect(sandbox.query('SELECT * FROM reviewer_enrollments')).rejects.toMatchObject({code:'42501'});
     await expect(sandbox.query('DELETE FROM reviewer_sandbox_state')).rejects.toMatchObject({code:'42501'});
   });
-  it('applies all fifteen real SQL migrations and FORCE RLS policies',async()=>{
+  it('applies the full migration set and FORCE RLS policies',async()=>{
     const r=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE oid='api_personal_records'::regclass`);
     expect(r.rows[0]).toEqual({relrowsecurity:true,relforcerowsecurity:true});
@@ -350,6 +434,19 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     })));
     expect(result.filter(Boolean)).toHaveLength(10);
     expect((await admin.query('SELECT attempts FROM auth_attempt_windows')).rows[0]?.attempts).toBe(10);
+  });
+  it('enforces shared school-mail IP/global/confirmation budgets with the forward SQL constraint',async()=>{
+    const service=new PostgresAuthAttemptLimiter(adapter(limiter),randomBytes(32));
+    for(const [kind,max] of [['SCHOOL_OTP_ISSUE_IP',10],['SCHOOL_OTP_ISSUE_GLOBAL',100],
+      ['SCHOOL_OTP_CONFIRM_IP',30]] as const){
+      const input={kind,identifier:'SYNTHETIC:'+kind,at:now()};
+      const result=await Promise.all(Array.from({length:max+2},()=>service.consume(input)));
+      expect(result.filter(Boolean)).toHaveLength(max);
+      const rows=await admin.query('SELECT attempts,identity_digest FROM auth_attempt_windows WHERE kind=$1',[kind]);
+      expect(rows.rows).toHaveLength(1);expect(rows.rows[0]?.attempts).toBe(max);
+      expect(rows.rows[0]?.identity_digest).toMatch(/^[a-f0-9]{64}$/);
+      expect(JSON.stringify(rows.rows)).not.toContain(input.identifier);
+    }
   });
   it('bridges exact allowlisted synthetic HTTPS responses into immutable PG drafts and unchanged observations',async()=>{
     let body='가상 안내 원문',calls=0,step=0,status:200|304=200;
@@ -519,5 +616,40 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
         'SYNTHETIC','SYN-PERM','SYNTHETIC','RETRACTED','CANCELLED',$1,$1)`,[fresh]);
     expect((await service.retrieve({...policy,asOf:now()})).hits).toHaveLength(0);
     await expect(admin.query(`UPDATE source_revisions_vnext SET status='ACTIVE' WHERE revision_id='SYN-R1'`)).rejects.toThrow('immutable evidence history');
+  });
+  it('activates an independently reviewed preserved draft only at review time and matches NFKC without rewriting quotes',async()=>{
+    const fetchedAt='2026-11-01T00:00:00.000Z',reviewedAt='2026-11-01T02:00:00.000Z';
+    const bytes=Buffer.from('SYNTHETIC ＡＩ preserved original');
+    const paragraphs=[{id:'SYN-REVIEW-P1',text:'SYNTHETIC ＡＩ preserved original'}];
+    const revision={revisionId:'SYN-REVIEW-R1',sourceId:'SYN-REVIEW-S1',
+      originalSha256:createHash('sha256').update(bytes).digest('hex'),
+      contentSha256:hashRevisionParagraphs(paragraphs),mediaKind:'TEXT',sourceClass:'SYNTHETIC',
+      permissionRef:'SYN-REVIEW-PERM',provenance:'SYNTHETIC',status:'NEEDS_REVIEW',
+      changeKind:'NEW',fetchedAt,lastCheckedAt:fetchedAt,topicCodes:[]};
+    const writer=new PostgresSourceRevisionWriter(adapter(admin));
+    await writer.append({revision,paragraphs,originalBytes:bytes,permissionReviewed:true});
+    const reader=new PostgresTemporalEvidenceReader(adapter(temporal));
+    const request={permissionRefs:new Set([revision.permissionRef]),
+      sourceIds:new Set([revision.sourceId]),asOf:fetchedAt,query:'AI'};
+    expect((await reader.retrieve(request)).hits).toHaveLength(0);
+    const review=new PostgresSourceReviewService(adapter(admin),{
+      authorize:async()=>({reviewerId:'SYN-INDEPENDENT-REVIEWER',independentReview:true,
+        permissionPolicyVersion:'SYN-REVIEW-POLICY-1'}),
+    },()=>reviewedAt);
+    expect(await review.review({reviewId:'SYN-REVIEW-ATTESTATION',actorRef:'SYN-INDEPENDENT-REVIEWER',
+      sourceId:revision.sourceId,revisionId:revision.revisionId,permissionRef:revision.permissionRef,
+      originalSha256:revision.originalSha256,contentSha256:revision.contentSha256,decision:'APPROVED'}))
+      .toEqual({reviewId:'SYN-REVIEW-ATTESTATION',created:true});
+    expect((await reader.retrieve(request)).hits).toHaveLength(0);
+    const ready=await reader.retrieve({...request,asOf:reviewedAt});
+    expect(ready.envelope.retrievalState).toBe('READY');
+    expect(ready.hits).toHaveLength(1);expect(ready.hits[0]?.quote).toBe(paragraphs[0]?.text);
+    const immutable=await admin.query(`SELECT fetched_at,status,last_verified_at
+      FROM source_revisions_vnext WHERE revision_id=$1`,[revision.revisionId]);
+    expect(immutable.rows[0]?.fetched_at.toISOString()).toBe(fetchedAt);
+    expect(immutable.rows[0]?.status).toBe('NEEDS_REVIEW');expect(immutable.rows[0]?.last_verified_at).toBeNull();
+    await expect(temporal.query('SELECT original_bytes FROM source_originals_vnext')).rejects.toMatchObject({code:'42501'});
+    const events=await admin.query(`SELECT count(*)::int AS n FROM source_invalidation_deliveries
+      WHERE event_id='review:SYN-REVIEW-ATTESTATION'`);expect(events.rows[0]?.n).toBe(5);
   });
 });

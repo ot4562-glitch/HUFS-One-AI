@@ -1,5 +1,9 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-01 플랫폼 후속 PR 제출·대기
+
+`feat/owner-platform-completion-20261101`은 캘린더/근거 브라우저 연결, OTP IP·전역 제한, 출처 원본/독립 검수, 경험 태그 승인·무효화, BETA overlay와 ADMIN 사전점검, 공용 합성 snapshot을 추가했다. 사용자 지시로 **PR 제출 후 개발을 중지하고 대기**한다. 로컬 Node 24.15.0 `npm run check` **1,148 PASS / 실PG 30 SKIP**, API·웹 빌드와 합성 생성물 일치, 개인정보 **146/146 PASS**. main 병합·운영 개통·실자료 권리·독립 사람 승인은 미완료다. [정확한 범위·마이그레이션·미검증 항목](docs/PLATFORM_COMPLETION_PR.md).
+
 ## 2026-11-01 심민성 담당 플랫폼 통합 — 단일 PR #58 검토 중
 
 - **학업 독립 변경요청 3건 반영(2026-11-01):** 박준영 [PR #59](https://github.com/ot4562-glitch/HUFS-One-AI/pull/59)의 작성자 커밋을 원작성자 유지한 채 #58 브랜치에 적용(`32f6204`). `OwnerTranscriptSchema`의 PLANNED 행 차단, `CourseOfferingSchema`의 정규 학기/공식 ACTIVE 확정만 허용·`HISTORICAL_PATTERN` 제거·학기당 단일 상태, `EvidenceScopeSchema`의 빈 campuses/majorCodes 차단. 통합 API는 개설 응답 학기 순서·afterId·nextCursor 일관성을 추가 검증. **로컬 `npm run check` 924 PASS/실PG opt-in 26 SKIP, `build:api` PASS, `check:privacy` 145 PASS**. 최신 변경 HEAD의 GitHub Actions·박준영 재승인 후에만 리뷰 차단 해제를 인정하며, **main 미병합**.
