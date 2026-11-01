@@ -5,3 +5,5 @@ export * from './explain.js';
 export * from './calendar.js';
 export * from './scope.js';
 export * from './evaluation.js';
+export * from './demo-corpus.js';
+export * from './demo-profiles.js';
