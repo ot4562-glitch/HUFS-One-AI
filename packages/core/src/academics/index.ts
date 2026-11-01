@@ -7,6 +7,14 @@ export type {
   LedgerSlot,
   RulePackGate,
 } from './ledger.js';
+export {compareRulePackRevisions} from './rule-diff.js';
+export type {
+  RequirementRevision,
+  RevisionBlocker,
+  RevisionBlockerCode,
+  RulePackRevisionDiff,
+  RulePackRevisionRequest,
+} from './rule-diff.js';
 export {decideRulePackActivation} from './rule-approval.js';
 export type {
   RulePackActivationRequest,
