@@ -64,7 +64,7 @@ jobs:
         run: npm run build:api
       - name: Reject unsafe anonymous responses and false release readiness
         run: |
-          node --test tests/security/release_entrypoint_gate.test.mjs
+          node --test tests/security/*.test.mjs
           node tools/release_entrypoint_gate.mjs
       - name: Build synthetic-only public React assets
         run: npm run build:web
