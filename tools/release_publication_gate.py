@@ -50,6 +50,12 @@ def audit_publication_artifacts(root: Path) -> dict:
     root = Path(root)
     dist = root / "dist"
     findings: list[dict] = []
+    # Server build artifacts are not approved public distribution candidates.
+    # Their source maps block release packaging, but are not an automatically
+    # exposed web-asset regression in a synthetic API build.
+    server_maps = {"UNREVIEWED_API_OR_SERVER_SOURCEMAP": 0,
+                   "PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE": 0}
+    server_examples: list[dict] = []
     counted = 0
     scanned = 0
 
@@ -58,6 +64,12 @@ def audit_publication_artifacts(root: Path) -> dict:
             "reason": code,
             "artifact_hash": _identifier(relative) if relative else None,
         })
+
+    def server_block(code: str, relative: str) -> None:
+        server_maps[code] += 1
+        # Bounded diagnostic cardinality: never echo original paths or code.
+        if len(server_examples) < 5:
+            server_examples.append({"reason": code, "artifact_hash": _identifier(relative)})
 
     if not dist.is_dir() or dist.is_symlink():
         report("BUILD_OUTPUT_MISSING_OR_SYMLINK")
@@ -86,6 +98,12 @@ def audit_publication_artifacts(root: Path) -> dict:
             ):
                 report("UNREVIEWED_PUBLIC_SOURCE_OR_HIDDEN_FILE", relative)
                 continue
+            # API/server bundles can also be copied into Docker layers or
+            # uploaded accidentally. A source map there exposes the original
+            # TypeScript even if the React bundle itself has no sourcemaps.
+            if name.endswith((".map", ".js.map", ".css.map")):
+                server_block("UNREVIEWED_API_OR_SERVER_SOURCEMAP", relative)
+                continue
             if path.suffix.casefold() not in TEXT_EXTENSIONS:
                 continue
             if path.stat().st_size > MAX_SCAN_BYTES:
@@ -97,6 +115,13 @@ def audit_publication_artifacts(root: Path) -> dict:
                 report("TEXT_ARTIFACT_UNREADABLE", relative)
                 continue
             scanned += 1
+            if re.search(r"(?m)//[#@]\s*sourceMappingURL=|/\*[#@]\s*sourceMappingURL=", data):
+                # Web mapping directives are a publication violation; backend
+                # mapping directives remain a separately blocked packaging gate.
+                if relative.startswith("web/"):
+                    report("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", relative)
+                else:
+                    server_block("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", relative)
             if any(pattern.search(data) for pattern in SIGNATURES):
                 report("CREDENTIAL_SIGNATURE_IN_BUILD", relative)
 
@@ -110,6 +135,21 @@ def audit_publication_artifacts(root: Path) -> dict:
         }
         if not DOCKER_EXCLUSIONS.issubset(lines):
             report("DOCKER_CONTEXT_PRIVATE_EXCLUSION_MISSING")
+        # .dockerignore uses last-match-wins semantics: a later !csv/** or
+        # !local_only/** makes the mere presence of required exclusions
+        # insufficient. No re-inclusion is approved for private builds.
+        if any(line.startswith("!") for line in lines):
+            report("DOCKER_CONTEXT_UNREVIEWED_REINCLUSION")
+        # Dockerfile-specific ignores can override the root policy. Only
+        # inspect filenames under the already reviewed synthetic checkout
+        # roots; never recurse into raw student, local_only, or dist data.
+        for safe_root in ("apps", "infra/compose", "packages"):
+            safe_dir = root / safe_root
+            if safe_dir.is_dir() and not safe_dir.is_symlink():
+                for override in safe_dir.rglob("*.dockerignore"):
+                    if override.is_file() or override.is_symlink():
+                        report("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED",
+                               override.relative_to(root).as_posix())
 
     workflow = root / ".github/workflows/task00-contracts.yml"
     if not workflow.is_file() or workflow.is_symlink():
@@ -122,17 +162,24 @@ def audit_publication_artifacts(root: Path) -> dict:
             report("CI_PRIVILEGED_OR_ARTIFACT_EGRESS")
 
     status = "FAIL" if findings else "PASS"
+    maps_found = any(server_maps.values())
     return {
         "release": "BLOCKED", "releaseDecision": "RELEASE_BLOCKED",
         "gates": [
             {"name": "offline_compiled_publication", "status": status,
              "files_checked": counted, "text_scanned": scanned},
+            {"name": "offline_server_sourcemap_packaging",
+             "status": "BLOCKED" if maps_found else "PASS",
+             "map_files": server_maps["UNREVIEWED_API_OR_SERVER_SOURCEMAP"],
+             "map_references": server_maps["PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE"],
+             "hashed_examples": server_examples},
             {"name": "historical_student_files_and_consent", "status": "NOT_RUN"},
             {"name": "real_ci_artifact_and_third_party_retention", "status": "NOT_RUN"},
             {"name": "external_storage_cdn_and_infra", "status": "NOT_RUN"},
         ],
         "findings": findings,
-        "scope": "Only synthetic checked-out build outputs; no raw student file inspection",
+        "scope": ("Only synthetic checked-out build outputs; API map artifacts remain "
+                  "BLOCKED pending a reviewed release image/package, no raw student files"),
     }
 
 

@@ -34,7 +34,7 @@ class PublicationGateTests(unittest.TestCase):
         self.assertEqual(report["release"], "BLOCKED")
         self.assertEqual(report["releaseDecision"], "RELEASE_BLOCKED")
         self.assertEqual([gate["status"] for gate in report["gates"][1:]],
-                         ["NOT_RUN", "NOT_RUN", "NOT_RUN"])
+                         ["PASS", "NOT_RUN", "NOT_RUN", "NOT_RUN"])
         self.assertEqual(report["gates"][0]["files_checked"], 2)
 
     def test_raw_csv_and_credentials_in_output_are_rejected(self) -> None:
@@ -72,6 +72,82 @@ class PublicationGateTests(unittest.TestCase):
             with self.subTest(unsafe=unsafe[:20]):
                 self._write(".github/workflows/task00-contracts.yml", unsafe)
                 self.assertIn("CI_PRIVILEGED_OR_ARTIFACT_EGRESS", self._codes())
+
+    def test_dockerignore_negation_cannot_reinclude_private_paths(self) -> None:
+        for unsafe in ("!csv/**", "!local_only/**", "!private/**", "!**/secrets/*"):
+            with self.subTest(unsafe=unsafe):
+                self._write(".dockerignore",
+                            "\n".join(sorted(DOCKER_EXCLUSIONS)) + "\n" + unsafe + "\n")
+                self.assertIn("DOCKER_CONTEXT_UNREVIEWED_REINCLUSION", self._codes())
+
+    def test_commented_negations_are_not_inclusion_rules(self) -> None:
+        self._write(".dockerignore",
+                    "\n".join(sorted(DOCKER_EXCLUSIONS)) + "\n# !csv/** ignored\n")
+        self.assertNotIn("DOCKER_CONTEXT_UNREVIEWED_REINCLUSION", self._codes())
+
+    def test_dockerfile_specific_ignore_override_is_blocked(self) -> None:
+        self._write("apps/api/Dockerfile.dockerignore", "**/*\n!csv/**\n")
+        report = audit_publication_artifacts(self.root)
+        self.assertIn("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED", self._codes())
+        output = json.dumps(report, ensure_ascii=True)
+        self.assertNotIn("apps/api/Dockerfile.dockerignore", output)
+
+    def test_non_web_sourcemap_must_never_be_in_release_artifact(self) -> None:
+        for name in ("dist/apps/api/src/server.js.map",
+                     "dist/packages/contracts/index.css.map",
+                     "dist/apps/api/src/server.MAP"):
+            with self.subTest(name=name):
+                self._write(name, '{"sources":["secret.ts"]}')
+                report = audit_publication_artifacts(self.root)
+                self.assertEqual(report["gates"][0]["status"], "PASS")
+                self.assertEqual(report["gates"][1]["status"], "BLOCKED")
+                self.assertGreaterEqual(report["gates"][1]["map_files"], 1)
+                self.assertEqual(report["release"], "BLOCKED")
+                (self.root / name).unlink()
+
+    def test_inline_or_external_source_mapping_reference_is_rejected(self) -> None:
+        for content in (
+            "//# sourceMappingURL=server.js.map",
+            "/*# sourceMappingURL=data:application/json;base64,ZmFrZQ== */",
+            "//@ sourceMappingURL=https://not-approved.example.test/server.map",
+        ):
+            with self.subTest(content=content[:25]):
+                self._write("dist/apps/api/src/server.js",
+                            "export const synthetic=true;\n" + content + "\n")
+                report = audit_publication_artifacts(self.root)
+                self.assertEqual(report["gates"][0]["status"], "PASS")
+                self.assertEqual(report["gates"][1]["status"], "BLOCKED")
+                self.assertGreaterEqual(report["gates"][1]["map_references"], 1)
+
+    def test_rejection_report_never_echoes_private_pseudopath(self) -> None:
+        marker = "private-synthetic-only-candidate"
+        self._write("dist/apps/api/src/" + marker + ".js.map",
+                    '{"sources":["./synthetic-private-source.ts"]}')
+        result = json.dumps(audit_publication_artifacts(self.root))
+        self.assertNotIn(marker, result)
+        self.assertNotIn("synthetic-private-source", result)
+        self.assertIn("UNREVIEWED_API_OR_SERVER_SOURCEMAP", result)
+        self.assertEqual(audit_publication_artifacts(self.root)["gates"][1]["status"],
+                         "BLOCKED")
+
+    def test_public_web_mapping_reference_is_still_a_ci_failure(self) -> None:
+        self._write("dist/web/assets/site.js",
+                    "//# sourceMappingURL=data:application/json;base64,ZmFrZQ==")
+        report = audit_publication_artifacts(self.root)
+        self.assertIn("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", self._codes())
+        self.assertEqual(report["gates"][0]["status"], "FAIL")
+        self.assertEqual(report["gates"][1]["status"], "PASS")
+
+    def test_server_map_diagnostic_examples_are_bounded(self) -> None:
+        for i in range(20):
+            self._write(f"dist/apps/api/src/synthetic-{i}.js.map", "{}")
+        report = audit_publication_artifacts(self.root)
+        self.assertEqual(report["gates"][1]["map_files"], 20)
+        self.assertLessEqual(len(report["gates"][1]["hashed_examples"]), 5)
+        output = json.dumps(report)
+        self.assertNotIn("synthetic-19.js.map", output)
+        self.assertEqual(report["gates"][1]["status"], "BLOCKED")
+        self.assertEqual(report["gates"][0]["status"], "PASS")
 
     def test_generated_artifact_links_are_rejected(self) -> None:
         target = self.root / "dist/web/index.html"
