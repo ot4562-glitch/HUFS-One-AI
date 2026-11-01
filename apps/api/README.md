@@ -1,7 +1,7 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
 
-> **최신 main 검증 기록(2026-11-01):** 단일 [#58 플랫폼 통합 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58) **병합 완료**. 아래 "통합 브랜치/main 미병합"은 제출 당시 기록이다. 인가/증빙·출처·RAG/PG·캘린더는 합성 및 일회용 PostgreSQL 경계 구현으로 검증했지만, 실 Google OIDC/학교메일 SMTP·운영 DB/권리/실학생 개인정보/HTTPS/NCP는 재현·승인되지 않았다. 브라우저 캘린더 `getCalendar` 포트는 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) CI 성공/독립 리뷰·병합 대기이며 UI #51/#72 연결 전이다.
+> **2026-11-01 최신 main 검증 기록:** 서버 #58은 합성/일회용 PG 인증·권한·SourceRevision/Temporal RAG·캘린더 GET 구현을 main에 병합했다. 브라우저 [#77](https://github.com/ot4562-glitch/HUFS-One-AI/pull/77) `HufsApiClient.getCalendar`·bounded same-origin/no-store 및 401/403/409/503/Abort 테스트는 비작성자 승인·Actions [41279165323](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41279165323) SUCCESS 후 **main squash `552ad35e` 병합**, [#71](https://github.com/ot4562-glitch/HUFS-One-AI/issues/71)은 API 범위 CLOSED. [#69](https://github.com/ot4562-glitch/HUFS-One-AI/pull/69) 오늘·기회·공지 UI main merge `5617222f`. #72 비합성 `AppServices.loadCalendar` 미연결·CHANGES_REQUESTED, UI 나머지 #73~#76 미병합. 후속 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 신규 SQL/인증/원본검수/overlay/태그승인은 Ready review / 타인 승인·신규 PG opt-in 30건 실제 실행 전 미병합. 아래 '#58 main 미병합'은 당시 기록. 실 Google/SMTP/TLS/운영 DB·기관/실학생 동의/NCP 및 브라우저 실서비스 E2E는 미확인이다.
 
 ## 2026-11-01 통합 브랜치 당시 구현 내역 (#58 main 병합됨)
 
