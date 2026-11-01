@@ -100,8 +100,8 @@ describe('A05 #82 owner What-if: hypothetical-only and NO unverified result',()=
     expect(verify(delta)).toBe(true);
     expect(verify(delta.slice(0,4))).toBe(false); // Missing a requirement
     expect(verify([...delta,delta[0]!])).toBe(false); // Duplicate
-    expect(verify([{requirementId:'SYN-UNKNOWN',change:'UNCHANGED'},...delta.slice(1)]
-      as typeof delta)).toBe(false); // Invented requirement
+    expect(verify(delta.map((x,i)=>i===0
+      ?{...x,requirementId:'SYN-UNKNOWN'}:x))).toBe(false); // Invented requirement
     expect(verify(delta.map(x=>x.requirementId==='SYN-REQ-5'
       ?{...x,change:'NEW_REQUIREMENT' as const}:x))).toBe(false);
     expect(verify(delta.map(x=>x.requirementId==='SYN-REQ-2'
