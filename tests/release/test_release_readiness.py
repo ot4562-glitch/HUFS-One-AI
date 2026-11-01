@@ -30,7 +30,7 @@ def manual_release_workflow_problems(source: str) -> list[str]:
     if "sparse-checkout-cone-mode: false" not in source:
         problems.append("sparse checkout missing")
     checkout = re.search(
-        r"(?m)^          sparse-checkout: \\|\\n((?: {12}[^\\n]+\\n)+)", source
+        r"(?m)^          sparse-checkout: \|\n((?: {12}[^\n]+\n)+)", source
     )
     if (not checkout or checkout.group(1).splitlines() != [
         "            /tools/release_readiness_gate.py"
