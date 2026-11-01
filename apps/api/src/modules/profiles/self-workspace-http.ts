@@ -3,6 +3,7 @@ import type {FastifyInstance} from 'fastify';
 import {
   OwnerWorkspaceCreateSchema,OwnerWorkspaceUpdateSchema,
   OwnerWorkspaceDeleteSchema,OwnerWorkspaceRecordSchema,OpportunityCatalogDetailSchema,
+  BookmarkStagePatchSchema,isNextBookmarkStage,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind} from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
@@ -139,6 +140,39 @@ export function registerOwnerWorkspaceRoutes(options:Ctx):void{
 
   list('/api/saved-items','BOOKMARK');
   create('/api/saved-items','BOOKMARK');
+  // #80: only the authenticated owner can advance the saved item's
+  // self-reported application stage. A legacy SAVED record has no stage.
+  // The store owns the *atomic* actor + item + expectedVersion CAS and must
+  // recheck current personal-storage consent/rights inside its transaction.
+  app.patch('/api/saved-items/:id',async request=>{
+    const {id}=Params.parse(request.params);Empty.parse(request.query);
+    const input=BookmarkStagePatchSchema.parse(request.body);
+    const actor=await betaActor(request,session);
+    const raw=await guarded(()=>store.read({
+      actorId:actor.actorId,kind:'BOOKMARK',itemId:id,
+    }));
+    if(raw===null)throw new ApiFailure('VERSION_CONFLICT');
+    const previous=checkedRecord(raw,'BOOKMARK',id);
+    if(previous.value.kind!=='BOOKMARK')throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    if(previous.version!==input.expectedVersion
+      ||!isNextBookmarkStage(previous.value.stage,input.stage))
+      throw new ApiFailure('VERSION_CONFLICT');
+    // Do not accept changes to opportunityId, dataMode, or the SAVED marker.
+    await betaRecheck(request,session,actor);
+    const value={
+      ...previous.value,stage:input.stage,
+      ...(input.outcome?{outcome:input.outcome}:{}),
+    };
+    const updated=checkedRecord(await guarded(()=>store.update({
+      actorId:actor.actorId,kind:'BOOKMARK',itemId:id,
+      expectedVersion:input.expectedVersion,value,
+    })),'BOOKMARK',id);
+    if(updated.version!==input.expectedVersion+1
+      ||JSON.stringify(updated.value)!==JSON.stringify(value))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await betaRecheck(request,session,actor);
+    return {item:updated};
+  });
   remove('/api/saved-items/:id','BOOKMARK');
 
   list('/api/action-plans','ACTION_PLAN');

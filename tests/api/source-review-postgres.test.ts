@@ -3,7 +3,7 @@ import {describe,expect,it} from 'vitest';
 import {PostgresSourceReviewService} from '../../apps/api/src/modules/opportunities/source-review-postgres.js';
 import {hashRevisionParagraphs} from '../../apps/api/src/modules/opportunities/revision-ledger.js';
 const now='2026-11-01T02:00:00.000Z',bytes=Buffer.from('synthetic original');
-const paragraphs=[{id:'p1',text:'synthetic quote'}];
+const paragraphs=[{id:'p1',text:'synthetic quote'},{id:'p2',text:'second synthetic quote'}];
 const originalSha256=createHash('sha256').update(bytes).digest('hex');
 const contentSha256=hashRevisionParagraphs(paragraphs);
 const request={reviewId:'review-1',actorRef:'reviewer-1',sourceId:'source-1',
@@ -12,6 +12,7 @@ const request={reviewId:'review-1',actorRef:'reviewer-1',sourceId:'source-1',
 function harness(options:{deny?:boolean;revoke?:boolean;stale?:boolean;tamper?:boolean;
   failOutbox?:boolean;existing?:boolean;tamperText?:boolean;missingOriginal?:boolean;
   dependent?:boolean;futureFetch?:boolean;policyChanges?:boolean;decisionConflict?:boolean;
+  storedOriginalSha?:string;capturedAt?:string;ordinals?:readonly (number|null)[];
   clock?:()=>string}={}){
   const calls:Array<{sql:string;params:readonly unknown[]}>=[];let authorityCalls=0;
   const authority={authorize:async()=>{
@@ -30,8 +31,15 @@ function harness(options:{deny?:boolean;revoke?:boolean;stale?:boolean;tamper?:b
       change_kind:'NEW',provenance:'SYNTHETIC',source_class:'SYNTHETIC',
       fetched_at:options.futureFetch?'2026-11-02T00:00:00.000Z':'2026-11-01T00:00:00.000Z',
     }]};
-    if(sql.includes('FROM source_originals_vnext'))return {rows:options.missingOriginal?[]:[{original_bytes:options.tamper?Buffer.from('tampered'):bytes}]};
-    if(sql.includes('FROM source_paragraphs_vnext'))return {rows:paragraphs.map(p=>({paragraph_id:p.id,paragraph_text:options.tamperText?'altered':p.text}))};
+    if(sql.includes('FROM source_originals_vnext'))return {rows:options.missingOriginal?[]:[{
+      original_bytes:options.tamper?Buffer.from('tampered'):bytes,
+      original_sha256:options.storedOriginalSha??originalSha256,
+      captured_at:options.capturedAt??'2026-11-01T00:00:00.000Z',
+    }]};
+    if(sql.includes('FROM source_paragraphs_vnext'))return {rows:paragraphs.map((p,i)=>({
+      paragraph_id:p.id,paragraph_text:options.tamperText?'altered':p.text,
+      paragraph_ordinal:options.ordinals?options.ordinals[i]:i+1,
+    }))};
     if(sql.includes('FROM source_review_attestations_vnext'))return {rows:options.existing?[{
       review_id:'review-1',reviewer_id:'reviewer-1',decision:options.decisionConflict?'REJECTED':'APPROVED',
       original_sha256:originalSha256,content_sha256:contentSha256,
@@ -65,6 +73,15 @@ describe('explicit operator source review',()=>{
     ['future source acquisition',{futureFetch:true},'eligibility'],
     ['changed source policy',{policyChanges:true},'authority'],
     ['different immutable decision',{existing:true,decisionConflict:true},'conflict'],
+    ['stored SHA differs from original bytes',{
+      storedOriginalSha:'0'.repeat(64)},'integrity'],
+    ['original capture time differs from revision fetch',{
+      capturedAt:'2026-11-01T01:00:00.000Z'},'integrity'],
+    ['missing paragraph ordinal',{ordinals:[null,2]},'integrity'],
+    ['duplicated paragraph ordinal',{ordinals:[1,1]},'integrity'],
+    ['gapped paragraph ordinals',{ordinals:[1,3]},'integrity'],
+    ['reversed paragraph ordinals',{ordinals:[2,1]},'integrity'],
+    ['zero paragraph ordinal',{ordinals:[0,1]},'integrity'],
   ] as const)it('rolls back '+name,async()=>{
     const x=harness(options);await expect(x.service.review(request)).rejects.toThrow(reason);
     expect(x.calls.at(-1)!.sql).toBe('ROLLBACK');
