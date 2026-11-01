@@ -25,7 +25,11 @@ export interface LedgerAttempt {
   /** Official allocation. One course may list several areas; the unique total still counts it once. */
   areaIds:readonly string[];
   recognition:LedgerRecognition;
-  /** Academic term `YYYY-1|S|2|W`. Required on both sides of a retake. */
+  /**
+   * Academic term `YYYY-1|S|2|W`. An EARNED row without a term, or whose term has not
+   * ended by asOf (Asia/Seoul), is held as NEEDS_REVIEW and not counted.
+   * Also required on both sides of a retake.
+   */
   term?:string;
   /**
    * Explicit approved retake (repeatPolicy EXPLICIT_APPROVED_ATTEMPT).
@@ -101,6 +105,25 @@ function termKey(term:string):number {
   return Number(match[1]) * 4 + SEASON_RANK[match[2]!]!;
 }
 
+/** Asia/Seoul instant after which a term's grades can be earned. */
+function termEndMs(term:string):number {
+  const match = TERM.exec(term);
+  if (!match) throw new TypeError(`term must be YYYY-1|S|2|W; refused ${term}`);
+  const year = Number(match[1]);
+  const end = {
+    '1':`${year}-07-01`,
+    S:`${year}-09-01`,
+    '2':`${year + 1}-01-01`,
+    W:`${year + 1}-03-01`,
+  }[match[2] as '1'|'S'|'2'|'W'];
+  return Date.parse(`${end}T00:00:00.000+09:00`);
+}
+
+/** An EARNED row counts only when its term is known and ended by asOf. */
+function earnedByAsOf(attempt:LedgerAttempt, asOfMs:number):boolean {
+  return attempt.term !== undefined && termEndMs(attempt.term) <= asOfMs;
+}
+
 function isApprovedRetake(target:LedgerAttempt, successor:LedgerAttempt):boolean {
   return target.canonicalCourseId === successor.canonicalCourseId
     && target.ledger === 'EARNED'
@@ -167,7 +190,7 @@ interface Classified {
   ambiguous:boolean;
 }
 
-function classify(attempts:readonly LedgerAttempt[]):Classified {
+function classify(attempts:readonly LedgerAttempt[], asOfMs:number):Classified {
   const byToken = new Map<string, LedgerAttempt>();
   for (const attempt of attempts) {
     assertId(attempt.attemptToken, 'attemptToken');
@@ -217,12 +240,20 @@ function classify(attempts:readonly LedgerAttempt[]):Classified {
   }
 
   const needsReview = new Set<string>(cycles);
+  const notYetEarned = new Set<string>();
+  for (const attempt of attempts) {
+    if (attempt.ledger === 'EARNED' && !earnedByAsOf(attempt, asOfMs)) {
+      notYetEarned.add(attempt.attemptToken);
+      needsReview.add(attempt.attemptToken);
+    }
+  }
   const superseded = new Set<string>();
   for (const [target, tokens] of claimers) {
     if (cycles.has(target) || tokens.some(token => cycles.has(token))) continue;
     const targetAttempt = byToken.get(target);
     const successor = tokens.length === 1 ? byToken.get(tokens[0]!) : undefined;
-    if (!targetAttempt || !successor || !isApprovedRetake(targetAttempt, successor)) {
+    if (!targetAttempt || !successor || notYetEarned.has(successor.attemptToken)
+      || !isApprovedRetake(targetAttempt, successor)) {
       for (const token of tokens) needsReview.add(token);
       continue;
     }
@@ -408,7 +439,7 @@ export function buildAcademicLedger(input:AcademicLedgerRequest):AcademicAuditVN
     seenRequirements.add(requirement.id);
   }
 
-  const {winners, reasons, pendingUnits, ambiguous} = classify(input.attempts);
+  const {winners, reasons, pendingUnits, ambiguous} = classify(input.attempts, Date.parse(input.asOf));
   if (reasons.size > 150) throw new RangeError('too many excluded attempts');
 
   let earned = 0;
@@ -451,7 +482,9 @@ export function buildAcademicLedger(input:AcademicLedgerRequest):AcademicAuditVN
   const caveats = ['Computed credit ledger only; not an official graduation decision.'];
   if (input.rulePackState === 'MISSING') caveats.push('Approved rule pack is missing; graduation is not claimed.');
   else if (!packApproved) caveats.push('Rule pack is not APPROVED; graduation is not claimed.');
-  if (ambiguous) caveats.push('Repeated attempts need one explicit approved retake before they can count.');
+  if (ambiguous) {
+    caveats.push('Some attempts are held for review: an earned row needs a term that ended by asOf, and a retake needs one explicit approval.');
+  }
 
   let state:AcademicAuditVNext['state'];
   if (input.rulePackState === 'MISSING') state = 'INSUFFICIENT_DATA';

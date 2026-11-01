@@ -26,6 +26,7 @@ const attempt = (
   ledger:'EARNED',
   areaIds:[],
   recognition:'RECOGNIZED',
+  term:'2025-1',
   ...over,
 });
 
@@ -284,6 +285,53 @@ describe('buildAcademicLedger A08.5 credit units', () => {
       evidenceRefs:[],
     }]);
     expect(audit.state).toBe('NEEDS_REVIEW');
+  });
+
+  describe('an earned row counts only after its term ended by asOf', () => {
+    const total:LedgerRequirement = {
+      id:'SYN-REQ-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:CREDIT_3, evidenceRefs:['SYN-EVIDENCE-TOTAL'],
+    };
+    const future = attempt('SYN-F-1', 'SYN-F', {term:'2026-1', areaIds:['SYN-AREA-F']});
+
+    it('holds an earned row from a later term in an earlier replay', () => {
+      const audit = buildAcademicLedger(base([future], [total], {asOf:'2024-08-01T00:00:00Z'}));
+      expect(audit.earnedCreditUnits).toBe(0);
+      expect(audit.areaProgress).toEqual([]);
+      expect(audit.excludedAttempts).toEqual([{attemptToken:'SYN-F-1', reason:'NEEDS_REVIEW'}]);
+      expect(audit.requirements[0]?.state).toBe('UNSATISFIED');
+      expect(audit.state).toBe('NEEDS_REVIEW');
+    });
+
+    it('holds the row until the term ends and counts it afterwards', () => {
+      const during = buildAcademicLedger(base([future], [total], {asOf:'2026-06-30T14:59:59Z'}));
+      expect(during.earnedCreditUnits).toBe(0);
+      const after = buildAcademicLedger(base([future], [total], {asOf:'2026-06-30T15:00:00Z'}));
+      expect(after.earnedCreditUnits).toBe(CREDIT_3);
+      expect(after.requirements[0]?.state).toBe('SATISFIED');
+      expect(after.state).toBe('READY');
+    });
+
+    it('does not promote an earned row without a term or a planned row to earned', () => {
+      const {term: _drop, ...noTerm} = attempt('SYN-U-1', 'SYN-U');
+      const audit = buildAcademicLedger(base([
+        noTerm,
+        attempt('SYN-P-1', 'SYN-P', {ledger:'PLANNED', term:'2024-1'}),
+      ], [total]));
+      expect(audit.earnedCreditUnits).toBe(0);
+      expect(audit.plannedCreditUnits).toBe(CREDIT_3);
+      expect(audit.excludedAttempts).toEqual([{attemptToken:'SYN-U-1', reason:'NEEDS_REVIEW'}]);
+      expect(audit.requirements[0]?.state).toBe('UNSATISFIED');
+      expect(audit.state).toBe('NEEDS_REVIEW');
+    });
+
+    it('keeps the original credit when the approved retake has not ended yet', () => {
+      const audit = buildAcademicLedger(base([
+        attempt('SYN-X-1', 'SYN-X'),
+        attempt('SYN-X-2', 'SYN-X', {...RETAKE, term:'2026-2'}),
+      ]));
+      expect(audit.earnedCreditUnits).toBe(CREDIT_3);
+      expect(audit.excludedAttempts).toEqual([{attemptToken:'SYN-X-2', reason:'NEEDS_REVIEW'}]);
+    });
   });
 
   it('does not claim satisfaction when the rule pack is missing or not approved', () => {
