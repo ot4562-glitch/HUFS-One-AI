@@ -1,5 +1,12 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-01 UI PR·Issue 전수 재검토 (현재 HEAD 기준)
+
+- [x] **GitHub 리뷰 등록 완료 5건:** [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) `8aa1371` **CHANGES_REQUESTED**(실 캘린더 port/버전 잔상), [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) `1cfc61f` COMMENT(초대 세션 응답 경합), [#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) `fb33810` COMMENT(비공식 졸업판정 안내 분기), [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) `0a19d1e` **CHANGES_REQUESTED**(sandbox 스냅샷/미저장 초안·경험·설정 격리), [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) `90326bc` COMMENT(로컬 Edge E2E와 원격 CI 구별).
+- [x] **Issue 상태 감사:** 열린 이슈 **27건**, 닫힌 이슈 **5건**. 모두 열린 이슈에 남은 구현·기관 권리/개인정보·실운영/릴리스·독립 검증 조건이 있어 이번 감사로 신규 종료하지 않았다. 리뷰/감사 완료 체크는 관련 [#8](https://github.com/ot4562-glitch/HUFS-One-AI/issues/8)·[#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)·[#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25)·[#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)·[#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51)·[#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52)·[#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81)에 기록했다.
+- [ ] **신규 PR 병합 0건:** #72~#76 현재 HEAD에 GitHub Actions run/check-run 성공 증거가 없고 #72·#75 변경 요청이 미해소되었으며 #73→#76은 선행 스택 위에 있다. 독립 최신 HEAD 승인, 관련 CI, 권한/시점/수신자 격리 테스트와 순차 의존 검증 후에만 병합한다. 과거 로컬/다른 커밋 CI 성공을 이번 HEAD 성공으로 간주하지 않는다.
+- [ ] **출시 계속 차단:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 전체 Private checkout 개인정보 검사 **153/155 PASS·2 FAIL**(보호된 추적 경로 6건, 원본 미열람), [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 운영 OIDC·실 Google/학교메일·TLS·기관 자료권리/학생 동의·NCP/실 PG/브라우저 E2E 미검증. `RELEASE_BLOCKED` 유지.
+
 ## 2026-11-01 최종 통합 점검 (최신 정본, `main` 병합 검증)
 
 - [x] **플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) main 병합** `3c6378c` (HEAD `88d781b`): 합성 REVIEWER/owner API, OIDC·메일/CSRF·세션, PostgreSQL CAS·RLS, 원문·출처 검수, Temporal RAG, overlay, 경험 태그 승인, 웹 소비자 및 합성 ADMIN preflight를 코드로 통합. 같은 HEAD의 [Actions #41295926141](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41295926141) synthetic-contracts·일회용 postgres-integration 모두 성공. 자체 작성 PR의 리뷰는 **사용자 명시 예외로 작성자 COMMENT 후 직접 병합**했으며 비작성자 APPROVED라고 표시하지 않는다.
