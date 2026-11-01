@@ -9,8 +9,8 @@ import {AcademicAuditVNextSchema, type AcademicAuditVNext} from '@hufs-one/contr
  * READY means an approved pack was checked. It is not a graduation decision.
  */
 
-const ID = /^[A-Za-z0-9_.:-]{1,128}$/;
-const AS_OF = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
+export const ID = /^[A-Za-z0-9_.:-]{1,128}$/;
+export const AS_OF = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
 
 export type LedgerSlot = 'EARNED'|'IN_PROGRESS'|'PLANNED';
 export type LedgerRecognition = 'RECOGNIZED'|'PENDING'|'EXCLUDED';
@@ -99,14 +99,14 @@ const SLOT_RANK:Record<LedgerSlot, number> = {EARNED:0, IN_PROGRESS:1, PLANNED:2
 const TERM = /^(\d{4})-(1|S|2|W)$/;
 const SEASON_RANK:Record<string, number> = {'1':0, S:1, '2':2, W:3};
 
-function termKey(term:string):number {
+export function termKey(term:string):number {
   const match = TERM.exec(term);
   if (!match) throw new TypeError(`term must be YYYY-1|S|2|W; refused ${term}`);
   return Number(match[1]) * 4 + SEASON_RANK[match[2]!]!;
 }
 
 /** Asia/Seoul instant after which a term's grades can be earned. */
-function termEndMs(term:string):number {
+export function termEndMs(term:string):number {
   const match = TERM.exec(term);
   if (!match) throw new TypeError(`term must be YYYY-1|S|2|W; refused ${term}`);
   const year = Number(match[1]);
@@ -139,28 +139,28 @@ function refuse(label:string, value:unknown):never {
   throw new TypeError(`${label} must be a non-negative safe integer credit unit (1 unit = 0.5 credit); refused ${String(value)}`);
 }
 
-function assertUnits(value:unknown, label:string):asserts value is number {
+export function assertUnits(value:unknown, label:string):asserts value is number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) refuse(label, value);
 }
 
-function assertPositiveUnits(value:unknown, label:string):asserts value is number {
+export function assertPositiveUnits(value:unknown, label:string):asserts value is number {
   assertUnits(value, label);
   if (value <= 0) refuse(label, value);
 }
 
-function assertId(value:unknown, label:string):asserts value is string {
+export function assertId(value:unknown, label:string):asserts value is string {
   if (typeof value !== 'string' || !ID.test(value)) {
     throw new TypeError(`${label} must be a synthetic id token`);
   }
 }
 
-function addUnits(sum:number, units:number):number {
+export function addUnits(sum:number, units:number):number {
   const next = sum + units;
   if (!Number.isSafeInteger(next)) refuse('credit unit sum', next);
   return next;
 }
 
-function byCodeUnit(a:string, b:string):number {
+export function byCodeUnit(a:string, b:string):number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
