@@ -1,7 +1,8 @@
 import {
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, RECOMMENDATION_SCORE_DISCLAIMER,
-  type ApiErrorCode, type DemoContext, type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
+  type ApiErrorCode, type CalendarResult, type DemoContext, type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
 } from '@hufs-one/contracts';
+import {buildSyntheticCalendar} from './syntheticCalendar.js';
 import {HufsApiError} from '../integrations/api-client.js';
 import type {DemoClientPort} from '../app/demo-controller.js';
 import profilesJson from '../../../../packages/fixtures/synthetic/demo-profiles.json';
@@ -89,6 +90,13 @@ export class SyntheticDemoClient implements DemoClientPort {
       featured: snapshotJson.feed.featured.map(c => c.opportunityId === 'SYN-OPP-001' ? {...c, explanation: SYN_EXPLANATION} : c),
     };
     return DemoSnapshotSchema.parse({...snapshotJson, feed, contextId, demoSubjectId: subject});
+  }
+
+  /** Synthetic stand-in for the pending HufsApiClient.getCalendar (#71). */
+  async getCalendar(contextId: string, signal?: AbortSignal): Promise<CalendarResult> {
+    await wait(this.delayMs, signal);
+    if (!this.contexts.has(contextId)) throw new HufsApiError('FORBIDDEN', 403);
+    return buildSyntheticCalendar(snapshotJson.asOf);
   }
 
   async logout(): Promise<void> {

@@ -1,4 +1,5 @@
 import {useEffect, useRef, type ReactNode} from 'react';
+import type {DemoContext} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -11,6 +12,13 @@ export interface PageContext {
   readonly state: DemoViewState;
   readonly controller: DemoController;
   readonly navigate: (path: string) => void;
+  readonly services: AppServices;
+}
+
+/** Optional data ports beyond DemoController. Missing ports render a "not connected" state. */
+export interface AppServices {
+  /** Raw CalendarResult for the context (validated by the widget). Pending HufsApiClient.getCalendar (#71). */
+  readonly loadCalendar?: (context: DemoContext, signal: AbortSignal) => Promise<unknown>;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;
@@ -32,12 +40,13 @@ interface Props {
   readonly transportLabel?: string | null;
   readonly historyPort?: HistoryPort;
   readonly pages?: readonly PageRenderer[];
+  readonly services?: AppServices;
 }
 
-export function App({controller, transportLabel = null, historyPort, pages = []}: Props) {
+export function App({controller, transportLabel = null, historyPort, pages = [], services = {}}: Props) {
   const state = useDemo(controller);
   const [path, navigate] = useRoute(historyPort);
-  const ctx: PageContext = {path, state, controller, navigate};
+  const ctx: PageContext = {path, state, controller, navigate, services};
   const page = [...pages, basePages].reduce<ReturnType<PageRenderer>>((found, render) => found ?? render(ctx), null)
     ?? {title: '페이지를 찾을 수 없습니다', body: <p className="muted">주소를 확인하거나 아래 메뉴를 이용해 주세요.</p>};
 
