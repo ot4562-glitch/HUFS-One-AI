@@ -2,6 +2,7 @@ import {z} from 'zod';
 import type {FastifyInstance} from 'fastify';
 import {
   OwnerTranscriptSchema,CourseCatalogPageSchema,CourseOfferingsPageSchema,
+  AcademicTermVNextSchema,
   OpportunityCatalogPageSchema,OpportunityCatalogDetailSchema,
 } from '@hufs-one/contracts';
 import type {
@@ -22,7 +23,7 @@ const Listing=z.strictObject({
   asOf:z.iso.datetime({offset:true}).optional(),
 });
 const Offerings=z.strictObject({
-  afterId:Name.optional(),
+  afterId:AcademicTermVNextSchema.optional(),
   limit:z.coerce.number().int().min(1).max(50).optional(),
   asOf:z.iso.datetime({offset:true}).optional(),
 });
@@ -131,7 +132,9 @@ export function registerOwnerCatalogRoutes(
       const x=CourseOfferingsPageSchema.parse(raw);
       if(x.items.some(item=>item.courseId!==id))
         throw new ApiFailure('PROVIDER_UNAVAILABLE');
-      if(x.asOf!==q.asOf||x.items.length>q.limit)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      // Do not trust the provider's after-term cursor: ordering, page cutoff and
+      // continuation must agree with the one-term/one-status contract.
+      assertPage(x,q.asOf,q.limit,item=>item.term,q.afterId);
       for(const item of x.items)assertSourceFresh(item,q.asOf);
       return x;
     });

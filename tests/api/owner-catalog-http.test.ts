@@ -147,6 +147,42 @@ describe('A13 owner catalog and academic/transcript HTTP contract',()=>{
     }}));
     expect((await h.app.inject({url:'/api/courses/SYN-C01/offerings'})).statusCode).toBe(503);
   });
+  it('binds offerings pagination to regular terms, strict order and the last returned cursor',async()=>{
+    const h=fixture(),route='/api/courses/SYN-C01/offerings';
+    const first={...offering,term:'2026-1'};
+    const second={...offering,term:'2026-2'};
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[first,second],nextCursor:'2026-2',
+    }}));
+    expect((await h.app.inject({url:route})).statusCode).toBe(200);
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[{...offering,term:'2027-1'}],nextCursor:null,
+    }}));
+    expect((await h.app.inject({url:route+'?afterId=2026-2'})).statusCode).toBe(200);
+    expect((await h.app.inject({url:route+'?afterId=2026-3'})).statusCode).toBe(422);
+
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[second,first],nextCursor:'2026-1',
+    }}));
+    expect((await h.app.inject({url:route})).statusCode).toBe(503);
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[second],nextCursor:'2027-1',
+    }}));
+    expect((await h.app.inject({url:route})).statusCode).toBe(503);
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[second],nextCursor:null,
+    }}));
+    expect((await h.app.inject({url:route+'?afterId=2026-2'})).statusCode).toBe(503);
+  });
+  it('rejects future verification even if a provider labels an offering officially confirmed',async()=>{
+    const h=fixture();
+    h.replace('listOfferings',async()=>({scopeToken:'SYN-TOKEN',result:{
+      ...offeringPage,items:[{...offering,status:'CONFIRMED_OFFERED',source:{
+        ...source,status:'ACTIVE',verifiedAt:'2026-12-01T00:00:00.000Z',
+      }}],
+    }}));
+    expect((await h.app.inject({url:'/api/courses/SYN-C01/offerings'})).statusCode).toBe(403);
+  });
   it('denies anonymous sessions before catalog lookup, and does not activate an absent port',async()=>{
     const h=fixture();h.revoke();
     expect((await h.app.inject({url:'/api/opportunities'})).statusCode).toBe(401);
