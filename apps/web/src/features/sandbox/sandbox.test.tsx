@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import {afterEach, describe, expect, it} from 'vitest';
 import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
+import {DemoOverlayResultSchema, DemoSnapshotSchema} from '@hufs-one/contracts';
 import {DemoController} from '../../app/index.js';
+import {buildSyntheticCalendar} from '../../dev/syntheticCalendar.js';
 import {SyntheticDemoClient} from '../../dev/syntheticDemoClient.js';
 import {App, type AppServices} from '../../App.js';
 import {appPages} from '../../pages/index.js';
@@ -30,13 +32,28 @@ const pick = (i: number) => fireEvent.click(within(screen.getByRole('group', {na
 const tab = (name: string) => fireEvent.click(within(screen.getByRole('navigation', {name: '주요 메뉴'})).getByRole('link', {name}));
 
 async function open(start: string, services?: AppServices, client = new SyntheticDemoClient({delayMs: 0})) {
-  render(<App controller={new DemoController(client, 'RUN')} historyPort={memoryHistory(start)} pages={appPages}
+  const controller = new DemoController(client, 'RUN');
+  render(<App controller={controller} historyPort={memoryHistory(start)} pages={appPages}
     services={services ?? sandboxFor(client)} />);
   await flush();
   pick(0);
   await flush();
-  return client;
+  return {client, controller};
 }
+/** Replace the current snapshot without changing epoch or context, as a committed overlay write does. */
+async function commitOverlay(controller: DemoController) {
+  const before = controller.getState();
+  const s = before.snapshot!;
+  const receipt = DemoOverlayResultSchema.parse({
+    overlay: {version: 1, value: {interestTopics: ['AI_ML']}, updatedAt: s.asOf},
+    snapshot: DemoSnapshotSchema.parse({...s, versions: {...s.versions, consent: before.context!.sharingGrantVersion, overlay: 'BETA_OVERLAY:1'}}),
+    calendar: buildSyntheticCalendar(s.asOf),
+  });
+  await act(async () => { expect(await controller.runOverlayOperation(async () => receipt)).not.toBeNull(); });
+  const after = controller.getState();
+  expect([after.epoch, after.context?.contextId, after.snapshot === s]).toEqual([before.epoch, before.context?.contextId, false]);
+}
+const value = (label: RegExp) => (screen.queryByLabelText(label) as HTMLTextAreaElement | null)?.value ?? null;
 
 describe('sandbox log fold', () => {
   it('latest action per item wins and RESET clears what came before', () => {
@@ -118,5 +135,71 @@ describe('REVIEWER sandbox screens (synthetic)', () => {
     fireEvent.click(screen.getByRole('button', {name: '모두 지우기'}));
     await flush();
     expect(within(screen.getByRole('group', {name: /관심 분야/})).getAllByRole('checkbox').filter(b => (b as HTMLInputElement).checked)).toHaveLength(0);
+  });
+});
+
+describe('REVIEWER sandbox isolation (#75 review)', () => {
+  it('an unsaved application draft on S01 is gone after switching to S02', async () => {
+    await open('/opportunities/SYN-OPP-002');
+    fireEvent.change(screen.getByLabelText(/지원서 초안/), {target: {value: 'S01 미저장 초안'}});
+    pick(1);
+    await flush();
+    expect([null, '']).toContain(value(/지원서 초안/));
+    expect(screen.queryByDisplayValue('S01 미저장 초안')).toBeNull();
+  });
+
+  it('an unsaved experience note and interest picks on S01 are gone after switching to S02', async () => {
+    await open('/experience');
+    fireEvent.change(screen.getByLabelText(/새 경험/), {target: {value: 'S01 미저장 메모'}});
+    pick(1);
+    await flush();
+    expect(value(/새 경험/)).toBe('');
+    cleanup();
+    await open('/settings');
+    const boxes = () => within(screen.getByRole('group', {name: /관심 분야/})).getAllByRole('checkbox') as HTMLInputElement[];
+    fireEvent.click(boxes()[0]!);
+    fireEvent.click(screen.getByRole('button', {name: '시연 기록 초기화'}));
+    pick(1);
+    await flush();
+    expect(boxes().filter(b => b.checked)).toHaveLength(0);
+    expect(screen.queryByRole('alert')).toBeNull(); // reset confirmation does not carry over either
+  });
+
+  it('a same-context snapshot replacement hides the log at once and drops the unsaved note', async () => {
+    const client = new SyntheticDemoClient({delayMs: 0});
+    const domAtRead: boolean[] = [];
+    let reads = 0;
+    const services: AppServices = {sandbox: {
+      allowedActions: new Set(ALL),
+      read: (ctx, sig) => {
+        domAtRead.push(screen.queryByLabelText(/새 경험/) !== null);
+        return ++reads === 1 ? client.readActions(ctx.contextId, sig) : new Promise(() => {});
+      },
+      save: (ctx, a, sig) => client.saveAction(ctx.contextId, a, sig),
+    }};
+    const {controller} = await open('/experience', services, client);
+    fireEvent.change(screen.getByLabelText(/새 경험/), {target: {value: '이전 snapshot의 미저장 메모'}});
+    await commitOverlay(controller);
+    await flush();
+    expect(domAtRead).toEqual([false, false]); // the old editor was never committed under the new snapshot
+    expect(screen.getByText('시연 기록을 불러오는 중')).toBeTruthy();
+    expect(screen.queryByDisplayValue('이전 snapshot의 미저장 메모')).toBeNull();
+  });
+
+  it('a save that resolves after switching subjects is not applied to the new subject', async () => {
+    const client = new SyntheticDemoClient({delayMs: 0});
+    const late: (() => void)[] = [];
+    const services: AppServices = {sandbox: {
+      allowedActions: new Set(ALL),
+      read: (ctx, sig) => client.readActions(ctx.contextId, sig),
+      save: (ctx, a, sig) => new Promise(resolve => late.push(() => resolve(client.saveAction(ctx.contextId, a, sig)))),
+    }};
+    await open('/opportunities/SYN-OPP-002', services, client);
+    fireEvent.click(screen.getByRole('button', {name: '보관함에 저장'}));
+    pick(1);
+    await flush();
+    late.forEach(go => go());
+    await flush();
+    expect(screen.queryByRole('button', {name: '보관함에서 빼기'})).toBeNull();
   });
 });
