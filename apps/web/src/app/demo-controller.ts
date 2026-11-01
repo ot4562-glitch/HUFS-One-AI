@@ -241,13 +241,17 @@ export class DemoController {
   ):Promise<T|null> {
     if(this.disposed||this.endingSession||this.state.status!=='READY'
       ||!this.state.context)return null;
-    const {context,epoch}=this.state;
+    const {context,epoch,snapshot}=this.state;
     const request=new AbortController();
     this.scopedActions.add(request);
+    // A successful overlay write can replace this context's snapshot without
+    // changing the selection epoch. Older calendar/section responses must not
+    // be handed to the UI under the new snapshot's version or consent state.
     const current=()=>!this.disposed&&!this.endingSession
       &&!request.signal.aborted
       &&this.state.epoch===epoch&&this.state.status==='READY'
-      &&this.state.context?.contextId===context.contextId;
+      &&this.state.context?.contextId===context.contextId
+      &&this.state.snapshot===snapshot;
     try {
       const result=await perform(context,request.signal);
       return current()?result:null;

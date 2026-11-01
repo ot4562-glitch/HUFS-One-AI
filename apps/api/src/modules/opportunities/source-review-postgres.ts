@@ -53,14 +53,28 @@ export class PostgresSourceReviewService {
         ||!['SYNTHETIC','REAL_APPROVED'].includes(String(r.provenance))
         ||!['SYNTHETIC','LICENSED_EXTERNAL'].includes(String(r.source_class))
         ||!Number.isFinite(fetched)||fetched>Date.parse(at))throw new Error('Source review integrity or eligibility failure');
-      const original=await c.query('SELECT original_bytes FROM source_originals_vnext WHERE revision_id=$1',[input.revisionId]);
-      const bytes=original.rows[0]?.original_bytes;
+      const original=await c.query(`SELECT original_sha256,original_bytes,captured_at
+        FROM source_originals_vnext WHERE revision_id=$1`,[input.revisionId]);
+      const stored=original.rows[0];
+      const bytes=stored?.original_bytes;
+      const captured=stored?.captured_at instanceof Date?stored.captured_at.getTime()
+        :Date.parse(String(stored?.captured_at));
+      // The independent attestation must refer to the exact retained snapshot,
+      // not only matching caller-supplied hashes or a differently timed capture.
       if(original.rows.length!==1||!(bytes instanceof Uint8Array)||bytes.byteLength===0
-        ||bytes.byteLength>500_000||createHash('sha256').update(bytes).digest('hex')!==input.originalSha256)
+        ||bytes.byteLength>500_000||stored?.original_sha256!==input.originalSha256
+        ||!Number.isFinite(captured)||captured!==fetched
+        ||createHash('sha256').update(bytes).digest('hex')!==input.originalSha256)
         throw new Error('Original snapshot integrity failure');
-      const text=await c.query('SELECT paragraph_id,paragraph_text FROM source_paragraphs_vnext WHERE revision_id=$1 ORDER BY paragraph_ordinal',[input.revisionId]);
-      if(!text.rows.length||text.rows.length>200||text.rows.some(p=>typeof p.paragraph_id!=='string'
-        ||typeof p.paragraph_text!=='string'))throw new Error('Paragraph integrity failure');
+      const text=await c.query(`SELECT paragraph_id,paragraph_text,paragraph_ordinal
+        FROM source_paragraphs_vnext WHERE revision_id=$1
+        ORDER BY paragraph_ordinal`,[input.revisionId]);
+      // Earlier drafts had nullable order metadata. Never silently turn those
+      // unordered paragraphs into an approved, quotable source revision.
+      if(!text.rows.length||text.rows.length>200||text.rows.some((p,i)=>
+        typeof p.paragraph_id!=='string'||typeof p.paragraph_text!=='string'
+        ||!Number.isSafeInteger(p.paragraph_ordinal)||p.paragraph_ordinal!==i+1))
+        throw new Error('Paragraph integrity failure');
       const paragraphs=text.rows.map(p=>({id:p.paragraph_id as string,text:p.paragraph_text as string}));
       if(hashRevisionParagraphs(paragraphs)!==input.contentSha256)throw new Error('Paragraph integrity failure');
       const current=await authorize();
