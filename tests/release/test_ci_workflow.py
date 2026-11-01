@@ -99,7 +99,7 @@ def audit_ci_boundary(text: str) -> list[str]:
             issues.append(f"both jobs must assert absence of {directory}")
     if "python3 -m unittest discover -s tests/release" not in text:
         issues.append("release policy regression tests must execute in CI")
-    if "node --test tests/security/release_entrypoint_gate.test.mjs" not in text:
+    if "node --test tests/security/*.test.mjs" not in text:
         issues.append("security negative regression tests must execute in CI")
     if "node tools/release_entrypoint_gate.mjs" not in text:
         issues.append("actual offline anonymous HTTP probe must execute in CI")
@@ -117,6 +117,11 @@ class WorkflowBoundaryTests(unittest.TestCase):
 
     def test_current_workflow_is_fail_closed(self) -> None:
         self.assertEqual(audit_ci_boundary(self.policy), [])
+        for name in ("release_entrypoint_gate.test.mjs", "release_session_csrf.test.mjs"):
+            self.assertTrue(
+                (WORKFLOW.parents[2] / "tests/security" / name).is_file(),
+                "owned security test file missing from sparse CI checkout",
+            )
 
     def test_main_only_stacked_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
