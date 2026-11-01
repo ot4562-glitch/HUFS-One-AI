@@ -50,6 +50,12 @@ def audit_publication_artifacts(root: Path) -> dict:
     root = Path(root)
     dist = root / "dist"
     findings: list[dict] = []
+    # Server build artifacts are not approved public distribution candidates.
+    # Their source maps block release packaging, but are not an automatically
+    # exposed web-asset regression in a synthetic API build.
+    server_maps = {"UNREVIEWED_API_OR_SERVER_SOURCEMAP": 0,
+                   "PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE": 0}
+    server_examples: list[dict] = []
     counted = 0
     scanned = 0
 
@@ -58,6 +64,12 @@ def audit_publication_artifacts(root: Path) -> dict:
             "reason": code,
             "artifact_hash": _identifier(relative) if relative else None,
         })
+
+    def server_block(code: str, relative: str) -> None:
+        server_maps[code] += 1
+        # Bounded diagnostic cardinality: never echo original paths or code.
+        if len(server_examples) < 5:
+            server_examples.append({"reason": code, "artifact_hash": _identifier(relative)})
 
     if not dist.is_dir() or dist.is_symlink():
         report("BUILD_OUTPUT_MISSING_OR_SYMLINK")
@@ -90,7 +102,7 @@ def audit_publication_artifacts(root: Path) -> dict:
             # uploaded accidentally. A source map there exposes the original
             # TypeScript even if the React bundle itself has no sourcemaps.
             if name.endswith((".map", ".js.map", ".css.map")):
-                report("UNREVIEWED_API_OR_SERVER_SOURCEMAP", relative)
+                server_block("UNREVIEWED_API_OR_SERVER_SOURCEMAP", relative)
                 continue
             if path.suffix.casefold() not in TEXT_EXTENSIONS:
                 continue
@@ -104,8 +116,12 @@ def audit_publication_artifacts(root: Path) -> dict:
                 continue
             scanned += 1
             if re.search(r"(?m)//[#@]\s*sourceMappingURL=|/\*[#@]\s*sourceMappingURL=", data):
-                # Includes inline data: maps, or references to external maps.
-                report("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", relative)
+                # Web mapping directives are a publication violation; backend
+                # mapping directives remain a separately blocked packaging gate.
+                if relative.startswith("web/"):
+                    report("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", relative)
+                else:
+                    server_block("PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE", relative)
             if any(pattern.search(data) for pattern in SIGNATURES):
                 report("CREDENTIAL_SIGNATURE_IN_BUILD", relative)
 
@@ -146,17 +162,24 @@ def audit_publication_artifacts(root: Path) -> dict:
             report("CI_PRIVILEGED_OR_ARTIFACT_EGRESS")
 
     status = "FAIL" if findings else "PASS"
+    maps_found = any(server_maps.values())
     return {
         "release": "BLOCKED", "releaseDecision": "RELEASE_BLOCKED",
         "gates": [
             {"name": "offline_compiled_publication", "status": status,
              "files_checked": counted, "text_scanned": scanned},
+            {"name": "offline_server_sourcemap_packaging",
+             "status": "BLOCKED" if maps_found else "PASS",
+             "map_files": server_maps["UNREVIEWED_API_OR_SERVER_SOURCEMAP"],
+             "map_references": server_maps["PUBLIC_OR_SERVER_SOURCEMAP_REFERENCE"],
+             "hashed_examples": server_examples},
             {"name": "historical_student_files_and_consent", "status": "NOT_RUN"},
             {"name": "real_ci_artifact_and_third_party_retention", "status": "NOT_RUN"},
             {"name": "external_storage_cdn_and_infra", "status": "NOT_RUN"},
         ],
         "findings": findings,
-        "scope": "Only synthetic checked-out build outputs; no raw student file inspection",
+        "scope": ("Only synthetic checked-out build outputs; API map artifacts remain "
+                  "BLOCKED pending a reviewed release image/package, no raw student files"),
     }
 
 
