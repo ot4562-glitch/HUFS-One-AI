@@ -10,9 +10,15 @@ import {
 } from '../../apps/api/src/modules/auth/reviewer.js';
 import {MemoryReviewerSandboxStore}
   from '../../apps/api/src/modules/auth/reviewer-sandbox.js';
+import {GeneratedSyntheticReviewerRepository}
+  from '../../apps/api/src/modules/auth/reviewer-generated-corpus.js';
 import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
 import type {ApiFetch} from '../../apps/web/src/integrations/api-client.js';
 import {DemoController} from '../../apps/web/src/app/demo-controller.js';
+import {consumeReviewerInviteFragment}
+  from '../../apps/web/src/integrations/reviewer-invite-fragment.js';
+import type {InviteBrowserPort}
+  from '../../apps/web/src/integrations/reviewer-invite-fragment.js';
 import profilesFixture from '../../packages/fixtures/synthetic/demo-profiles.json';
 import snapshotFixture from '../../packages/fixtures/synthetic/demo-snapshot.json';
 import safePacketFixture from '../../packages/fixtures/synthetic/safe-llm-packet.json';
@@ -42,7 +48,7 @@ afterEach(async()=>{
   await Promise.all(opened.splice(0).map(x=>x.close()));
 });
 
-async function harness(){
+async function harness(options:{generated?:boolean}={}){
   let realReads=0;
   const requestProofs:Array<{method:string;url:string;originOk:boolean;csrfOk:boolean;sessionOk:boolean}>=[];
   const denied=async():Promise<never>=>{
@@ -85,14 +91,14 @@ async function harness(){
       },
       revokeSession:async()=>{},
     },
-    reviewer:{access,demo:reviewerDemo,sandbox},
+    reviewer:{access,demo:options.generated?new GeneratedSyntheticReviewerRepository():reviewerDemo,sandbox},
     syntheticAiProvider:{
       analyze:async(packet)=>({
         task:packet.task,reviewRequired:true,citations:[],
       }),
     },
     maxSyntheticAiCallsPerActor:6,
-    now:()=>NOW,
+    now:()=>options.generated?'2026-11-21T00:00:00.000Z':NOW,
   });
   opened.push(app);
   function browser(cookie:'reviewer-one'|'reviewer-two'){
@@ -121,6 +127,55 @@ async function harness(){
 }
 
 describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic only)',()=>{
+  it('redacts one-time URL fragment before enrollment HTTP and grants only synthetic sandbox access',async()=>{
+    const {invite,browser,getRealReads}=await harness({generated:true});
+    const {client,history}=browser('reviewer-one');
+    const location={origin:ORIGIN,pathname:'/reviewer/invite',search:'?via=operator',
+      hash:'#code='+invite.enrollmentCode};
+    const redactions:string[]=[];
+    const port:InviteBrowserPort={
+      location:location as InviteBrowserPort['location'],
+      history:{replaceState:(_state:unknown,_unused:string,url?:string|URL|null)=>{
+        expect(url).toBe('/reviewer/invite');
+        redactions.push('before-network');
+        location.hash='';location.search='';
+      }},
+    };
+    const code=consumeReviewerInviteFragment(port,ORIGIN);
+    expect(code).toBe(invite.enrollmentCode);
+    expect(redactions).toEqual(['before-network']);
+    expect(location.hash).toBe('');
+    expect(location.search).toBe('');
+    expect(consumeReviewerInviteFragment(port,ORIGIN)).toBeNull();
+    expect(history).toHaveLength(0);
+
+    expect((await client.redeemReviewerInvite(code!)).role).toBe('REVIEWER');
+    const capabilities=await client.loadReviewerCapabilities();
+    expect(capabilities).toMatchObject({dataMode:'SYNTHETIC',sandboxOnly:true,
+      ncpCalls:false,externalSubmission:false,actualBrowserUiVerified:false});
+    const controller=new DemoController(client,'SYN-A06-INVITE-TAB');
+    await controller.loadProfiles();
+    expect(controller.getState().profiles).toHaveLength(5);
+    await controller.select('S02');
+    const context=controller.getState().context!;
+    const snapshot=controller.getState().snapshot!;
+    expect(snapshot.demoSubjectId).toBe('S02');
+    expect(snapshot.contextId).toBe(context.contextId);
+    expect(snapshot.datasetMode).toBe('SYNTHETIC');
+    const saved=await controller.runContextOperation((ctx,signal)=>
+      client.saveReviewerAction(ctx,{kind:'BOOKMARK',itemId:'SYN-OPP-1',saved:true},signal));
+    expect(saved?.mode).toBe('SYNTHETIC_SANDBOX');
+    expect(saved?.subjectId).toBe('S02');
+    expect((await client.readReviewerActions(context)).actions).toHaveLength(1);
+    await expect(browser('reviewer-two').client.readReviewerActions(context))
+      .rejects.toMatchObject({code:'FORBIDDEN',status:403});
+    expect(history.filter(x=>x.url.includes(code!))).toHaveLength(0);
+    expect(history.filter(x=>x.body?.includes(code!))).toHaveLength(1);
+    expect(history.filter(x=>x.url==='/api/reviewer/invitations/redeem')).toHaveLength(1);
+    expect(getRealReads()).toBe(0);
+    controller.dispose();
+  });
+
   it('enrolls through the actual authenticated CSRF route without reading student data',async()=>{
     const {invite,browser,getRealReads,requestProofs}=await harness();
     const {client}=browser('reviewer-one');
@@ -154,13 +209,14 @@ describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic onl
     const submitted=history.find(x=>x.url==='/api/reviewer/invitations/redeem');
     const bodyMatches=submitted?.body
       ?JSON.parse(submitted.body).enrollmentCode===invite.enrollmentCode:false;
-    expect({response,proof,bodyMatches}).toEqual({
-      response:200,bodyMatches:true,
-      proof:[{
-        method:'POST',url:'/api/reviewer/invitations/redeem',
-        originOk:true,csrfOk:true,sessionOk:true,
-      }],
-    });
+    expect({response,bodyMatches}).toEqual({response:200,bodyMatches:true});
+    // Post-redeem revalidation may authenticate repeatedly. Every check must
+    // retain the same trusted session, Origin and CSRF proof; accepting only
+    // the initial onRequest check would miss an async revocation race.
+    expect(proof.length).toBeGreaterThanOrEqual(3);
+    expect(proof.every(entry=>
+      entry.method==='POST'&&entry.url==='/api/reviewer/invitations/redeem'
+      &&entry.originOk&&entry.csrfOk&&entry.sessionOk)).toBe(true);
   });
 
   it('redeems an invitation and operates one fake student end-to-end without real reads',async()=>{
@@ -240,6 +296,64 @@ describe('real Fastify inject <-> browser API client REVIEWER E2E (synthetic onl
     expect((await secondBrowser.readReviewerActions(secondContext)).actions).toEqual([]);
     expect((await first.readReviewerActions(context)).actions).toHaveLength(1);
     expect(getRealReads()).toBe(0);
+  });
+
+  it('keeps 20 directed synthetic subject switches isolated from a second reviewer tab',async()=>{
+    const {invite,browser,getRealReads}=await harness({generated:true});
+    const {client,history}=browser('reviewer-one');
+    const other=browser('reviewer-one').client;
+    await client.redeemReviewerInvite(invite.enrollmentCode);
+    const tabA=new DemoController(client,'SYN-REVIEWER-TAB-A');
+    const tabB=new DemoController(other,'SYN-REVIEWER-TAB-B');
+    await Promise.all([tabA.loadProfiles(),tabB.loadProfiles()]);
+    await tabB.select('S03');
+    const pinned=tabB.getState();
+    expect(pinned.status).toBe('READY');
+    const subjects=['S01','S02','S03','S04','S05'] as const;
+    const edges=new Set<string>();
+    const subjectFeeds=new Map<SubjectAlias,string>();
+    for(const from of subjects)for(const to of subjects){
+      if(from===to)continue;
+      await tabA.select(from);
+      expect(tabA.getState().status).toBe('READY');
+      await tabA.select(to);
+      const view=tabA.getState();
+      expect(view.status).toBe('READY');
+      expect(view.context?.demoSubjectId).toBe(to);
+      expect(view.context?.demoRunId).toBe('SYN-REVIEWER-TAB-A');
+      expect(view.snapshot?.demoSubjectId).toBe(to);
+      expect(view.snapshot?.contextId).toBe(view.context?.contextId);
+      expect(view.snapshot?.datasetMode).toBe('SYNTHETIC');
+      expect(tabB.getState().context?.contextId).toBe(pinned.context?.contextId);
+      expect(tabB.getState().snapshot).toEqual(pinned.snapshot);
+      subjectFeeds.set(to,JSON.stringify(view.snapshot?.feed));
+      edges.add(from+'>'+to);
+    }
+    expect(edges.size).toBe(20);
+    // The generated five-subject corpus must not relabel the same S01 feed.
+    expect(subjectFeeds.size).toBe(5);
+    expect(new Set(subjectFeeds.values()).size).toBeGreaterThan(1);
+    expect(history.some(request=>request.url.startsWith('/api/demo/contexts/'))).toBe(true);
+    expect(history.every(request=>!request.url.includes(invite.enrollmentCode))).toBe(true);
+    expect(getRealReads()).toBe(0);
+
+    let entered!:()=>void,release!:()=>void;
+    const waiting=new Promise<void>(resolve=>{entered=resolve;});
+    const gate=new Promise<void>(resolve=>{release=resolve;});
+    const pending=tabA.runContextOperation(async(context,signal)=>{
+      const actions=await client.readReviewerActions(context,signal);
+      entered();
+      await gate; // Simulate a late completed HTTP response despite cancellation.
+      return actions;
+    });
+    await waiting;
+    await tabA.select('S01');
+    release();
+    expect(await pending).toBeNull();
+    expect(tabA.getState().snapshot?.demoSubjectId).toBe('S01');
+    expect(tabB.getState().snapshot).toEqual(pinned.snapshot);
+    expect(getRealReads()).toBe(0);
+    tabA.dispose();tabB.dispose();
   });
 
   it('erases an already visible student once the active reviewer invitation is revoked',async()=>{

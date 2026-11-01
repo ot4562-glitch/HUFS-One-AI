@@ -44,6 +44,8 @@ export interface CalendarInputBundle {
   authorizedRevisionIds:string[];
   /** Actor-owned bookmark overlay, loaded with the same context/authorization receipt. */
   savedOpportunityIds?:string[];
+  /** Actor/run/session-local temporary preferences, never a source-row edit. */
+  hiddenOpportunityIds?:string[];
   /** Verified deadline claim ids bound to the currently approved source. */
   deadlineClaimRefsByOpportunity?:Readonly<Record<string,readonly string[]>>;
   sourceVersion:string;
@@ -120,7 +122,8 @@ export function computeAuthorizedSections(bundle:CalendarInputBundle,input:Calen
   const opportunities=gateBySourceRevision(bundle.opportunities.map(o=>OpportunitySchema.parse(o)),usable).usable;
   const notices=gateBySourceRevision(bundle.notices,usable).usable;
   const publishedAtBySnapshotId=Object.fromEntries([...current.values()].map(r=>[r.revisionId,r.publishedAt]));
-  const feed=composeFeed(scoped.profile,opportunities,{asOf,publishedAtBySnapshotId});
+  const feed=composeFeed(scoped.profile,opportunities,{asOf,publishedAtBySnapshotId,
+    ...(bundle.hiddenOpportunityIds===undefined?{}:{hiddenOpportunityIds:bundle.hiddenOpportunityIds})});
   const validatedRefs=bundle.deadlineClaimRefsByOpportunity??{};
   const withRefs=(id:string,refs:readonly string[])=>[...new Set([...refs,...(validatedRefs[id]??[])])];
   const enriched={...feed,

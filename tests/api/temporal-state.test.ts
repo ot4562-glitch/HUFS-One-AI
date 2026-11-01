@@ -103,7 +103,7 @@ describe('TASK-21 source-state semantics without private text leakage',()=>{
     expect(x.queries).toHaveLength(2);
     const {sql,params}=x.queries[1]!;
     expect(sql).toContain('DISTINCT ON (r.source_id)');
-    expect(sql).toContain('FROM source_revisions_vnext h');
+    expect(sql).toContain('FROM source_effective_revisions_vnext h');
     expect(sql).toContain('l.permission_ref=ANY($2::text[])');
     expect(sql).toContain('scope_campuses');
     expect(sql).toContain('source_class');

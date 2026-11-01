@@ -1,0 +1,23 @@
+name: Release readiness (fail closed, no deployment)
+
+# Manual only. No release, push or PR event can initiate a live deployment.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout only the release gate (never student input or app assets)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/release_readiness_gate.py
+      - name: Stop release unless verified real-world prerequisites exist
+        run: python3 tools/release_readiness_gate.py

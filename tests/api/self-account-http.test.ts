@@ -119,6 +119,34 @@ describe('A13 owner-private profile and granular consent HTTP scope',()=>{
     expect(unavailable.statusCode).toBe(503);
     expect(JSON.stringify(unavailable.json())).not.toContain('private SQL');
   });
+  it('does not serialize private actor columns returned by a misconfigured owner adapter',async()=>{
+    const h=fixture();
+    h.setPort('readProfile',async()=>({version:1,value,updatedAt:NOW,
+      actorId:'SYN-PRIVATE',sessionIdHash:'PRIVATE-COLUMN'}));
+    const res=await h.app.inject({url:'/api/profile'});
+    expect(res.statusCode).toBe(503);
+    expect(res.body).not.toContain('SYN-PRIVATE');
+    expect(res.body).not.toContain('PRIVATE-COLUMN');
+    h.setPort('readConsents',async()=>({version:1,choices,updatedAt:NOW,
+      actorId:'SYN-PRIVATE'}));
+    const consent=await h.app.inject({url:'/api/consents'});
+    expect(consent.statusCode).toBe(503);
+    expect(consent.body).not.toContain('SYN-PRIVATE');
+  });
+  it('does not acknowledge an owner CAS write with an incorrect version or value',async()=>{
+    const h=fixture();
+    h.setPort('patchProfile',async()=>({version:99,value,updatedAt:NOW}));
+    const invalid=await h.app.inject({method:'PATCH',url:'/api/profile',headers,
+      payload:{expectedVersion:0,value}});
+    expect(invalid.statusCode).toBe(503);
+    expect(invalid.json()).not.toHaveProperty('profile');
+    h.setPort('putConsents',async()=>({version:1,choices:{...choices,externalAi:true},
+      updatedAt:NOW}));
+    const stale=await h.app.inject({method:'PUT',url:'/api/consents',headers,
+      payload:{expectedVersion:0,choices}});
+    expect(stale.statusCode).toBe(503);
+    expect(stale.json()).not.toHaveProperty('consents');
+  });
   it('does not register new routes without an explicitly approved owner store',async()=>{
     const app=createIntegratedApi({allowedOrigin:origin,repository:new MemoryApiRepository({profiles:[]}),
       auth:{verifySession:async()=>actor,revokeSession:async()=>{}},now:()=>NOW,

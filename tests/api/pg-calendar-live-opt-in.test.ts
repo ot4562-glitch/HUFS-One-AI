@@ -29,12 +29,13 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     admin=new Pool({connectionString:url.toString(),ssl:false,max:4,connectionTimeoutMillis:3000});
     if((await admin.query(`SELECT count(*)::int AS n FROM pg_tables WHERE schemaname='public'`)).rows[0]?.n!==0)
       throw Error('Calendar live-test database must be empty');
-    for(const name of ['20261031_api_projections.sql','20261031_temporal_evidence.sql','20261101_calendar_inputs.sql'])
+    for(const name of ['20261031_api_projections.sql','20261031_temporal_evidence.sql',
+      '20261101_source_review.sql','20261101_calendar_inputs.sql'])
       await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
     await admin.query(`CREATE ROLE hufs_test_calendar LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT USAGE ON SCHEMA public TO hufs_test_calendar;
       GRANT SELECT ON api_sharing_grants,api_demo_snapshot_projections,api_calendar_input_projections,api_calendar_source_permissions,
-        source_ingest_heads,source_revisions_vnext,source_paragraphs_vnext,
+        source_ingest_heads,source_revisions_vnext,source_effective_revisions_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_calendar;`);
     // The reviewed helper, when present, grants row locks without UPDATE authority.
     const helper=await admin.query(`SELECT oid::regprocedure::text AS signature FROM pg_proc
