@@ -86,7 +86,7 @@ export class PostgresSourceRevisionHistory {
           scope_campuses,scope_majors,scope_colleges,scope_major_roles,
           scope_admission_types,scope_enrollment_states,scope_graduation_terms,
           cohort_min,cohort_max
-          FROM source_revisions_vnext WHERE source_id=$1
+          FROM source_effective_revisions_vnext WHERE source_id=$1
           ORDER BY fetched_at DESC,revision_id DESC LIMIT 51`,[sourceId]);
         if(records.rows.length>50)throw new Error('History exceeds verified response bound');
         const revisions=records.rows.map(x=>Revision.parse(x));

@@ -7,6 +7,7 @@ import type {TemporalResult} from './modules/opportunities/revision-ledger.js';
 import type {PublicSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
 import type {CalendarInputSource} from './modules/calendar.js';
 import type {PersonalStatePort} from './modules/personal-state.js';
+import type {DemoOverlayService} from './modules/demo-overlay.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -72,6 +73,14 @@ export interface AiCandidateProvider {
 }
 
 export interface ApiOptions {
+  demoOverlay?:Pick<DemoOverlayService,'read'|'put'|'reset'>;
+  /** Independent current operator allowlist; a BETA grant or OIDC email alone is insufficient. */
+  adminAuthority?:{isApproved(input:{actor:VerifiedTeamActor;now:string}):Promise<boolean>};
+  /** Read-only evidence collection; no crawling, infrastructure changes or generated approvals. */
+  demoPreflight?:{
+    inspect(input:{actor:VerifiedTeamActor;now:string}):Promise<unknown>;
+    revalidate(input:{actor:VerifiedTeamActor;version:string;now:string}):Promise<boolean>;
+  };
   repository: ApiRepository;
   /** Atomic current grant/source/projection reader; absent means calendar is unavailable. */
   calendarSource?:CalendarInputSource;

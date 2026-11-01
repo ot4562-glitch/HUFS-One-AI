@@ -61,49 +61,58 @@ async function stored<T>(operation:()=>Promise<T>):Promise<T>{
 export function registerPersonalStateRoutes(app:FastifyInstance,options:{
   store:PersonalStatePort|undefined;
   authorize(request:FastifyRequest,contextId:string,section:Section):Promise<TrustedPersonalScope>;
+  /** Permission and session must also be current after every awaited store call. */
+  revalidate(request:FastifyRequest,contextId:string,section:Section):Promise<void>;
 }):void {
   const authorize=async(request:FastifyRequest,id:string,kind:PersonalKind)=>{
     const scope=await options.authorize(request,id,sections[kind]);
     if(!options.store)throw new ApiFailure('PROVIDER_UNAVAILABLE');
-    return {scope,store:options.store};
+    return {scope,store:options.store,revalidate:()=>options.revalidate(request,id,sections[kind])};
   };
   app.post('/api/demo/contexts/:id/personal',async(request,reply)=>{
     const {id}=Context.parse(request.params),body=Create.parse(request.body);
-    const {scope,store}=await authorize(request,id,body.value.kind);
+    const {scope,store,revalidate}=await authorize(request,id,body.value.kind);
     const result=await stored(()=>store.create({scope,itemId:body.itemId,value:body.value}));
     const response=publicRecord(result,scope,body.value.kind,body.itemId);
     if(response.version!==1)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await revalidate();
     reply.code(201);return response;
   });
   app.get('/api/demo/contexts/:id/personal',async(request)=>{
     const {id}=Context.parse(request.params),query=List.parse(request.query);
-    const {scope,store}=await authorize(request,id,query.kind);
+    const {scope,store,revalidate}=await authorize(request,id,query.kind);
     const results=await stored(()=>store.list({scope,kind:query.kind,
       ...(query.afterId!==undefined?{afterId:query.afterId}:{}),
       ...(query.limit!==undefined?{limit:query.limit}:{}),
     }));
     if(!Array.isArray(results)||results.length>(query.limit??50))throw new ApiFailure('PROVIDER_UNAVAILABLE');
-    return {items:results.map(result=>publicRecord(result,scope,query.kind))};
+    const items=results.map(result=>publicRecord(result,scope,query.kind));
+    await revalidate();
+    return {items};
   });
   app.get('/api/demo/contexts/:id/personal/:itemId',async(request)=>{
     const {id,itemId}=Params.parse(request.params),{kind}=Read.parse(request.query);
-    const {scope,store}=await authorize(request,id,kind);
+    const {scope,store,revalidate}=await authorize(request,id,kind);
     const result=await stored(()=>store.read({scope,kind,itemId}));
-    return result===null?{item:null}:publicRecord(result,scope,kind,itemId);
+    const response=result===null?{item:null}:publicRecord(result,scope,kind,itemId);
+    await revalidate();
+    return response;
   });
   app.put('/api/demo/contexts/:id/personal/:itemId',async(request)=>{
     const {id,itemId}=Params.parse(request.params),body=Update.parse(request.body);
-    const {scope,store}=await authorize(request,id,body.value.kind);
+    const {scope,store,revalidate}=await authorize(request,id,body.value.kind);
     const result=await stored(()=>store.update({scope,itemId,...body}));
     const response=publicRecord(result,scope,body.value.kind,itemId);
     if(response.version!==body.expectedVersion+1)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await revalidate();
     return response;
   });
   app.delete('/api/demo/contexts/:id/personal/:itemId',async(request)=>{
     const {id,itemId}=Params.parse(request.params),body=Remove.parse(request.body);
-    const {scope,store}=await authorize(request,id,body.kind);
+    const {scope,store,revalidate}=await authorize(request,id,body.kind);
     const result=await stored(()=>store.delete({scope,itemId,...body}));
     if(result.version!==body.expectedVersion+1)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await revalidate();
     return {version:result.version};
   });
 }
