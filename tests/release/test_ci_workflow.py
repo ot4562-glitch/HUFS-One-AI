@@ -59,7 +59,7 @@ def audit_ci_boundary(text: str) -> list[str]:
 
     if "  push:" not in lines or "    branches: [main]" not in lines:
         issues.append("main push verification missing")
-    if "pull_request_target" in text:
+    if re.search(r"(?m)^  pull_request_target:", text):
         issues.append("privileged pull_request_target is forbidden")
     if "permissions:\n  contents: read\n\njobs:" not in text:
         issues.append("workflow must grant only contents: read")
