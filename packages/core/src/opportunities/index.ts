@@ -7,3 +7,4 @@ export * from './scope.js';
 export * from './evaluation.js';
 export * from './demo-corpus.js';
 export * from './demo-profiles.js';
+export * from './demo-snapshot.js';
