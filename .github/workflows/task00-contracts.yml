@@ -1,48 +1,11 @@
 name: TASK-00 synthetic contracts
 
+# Every PR, including stacked branches and security-only changes, is checked.
+# Keep the unprivileged pull_request event; never use pull_request_target.
 on:
   pull_request:
-    branches: [main]
-    paths:
-      - package.json
-      - package-lock.json
-      - tsconfig.json
-      - vitest.config.ts
-      - packages/contracts/**
-      - packages/fixtures/synthetic/**
-      - packages/fixtures/negative/**
-      - tests/contracts/**
-      - tests/consumers/**
-      - tests/api/**
-      - tests/integration/**
-      - tests/e2e/**
-      - tests/evaluation/**
-      - apps/api/**
-      - infra/sql/**
-      - packages/core/**
-      - apps/web/**
-      - .github/workflows/task00-contracts.yml
   push:
     branches: [main]
-    paths:
-      - package.json
-      - package-lock.json
-      - tsconfig.json
-      - vitest.config.ts
-      - packages/contracts/**
-      - packages/fixtures/synthetic/**
-      - packages/fixtures/negative/**
-      - tests/contracts/**
-      - tests/consumers/**
-      - tests/api/**
-      - tests/integration/**
-      - tests/e2e/**
-      - tests/evaluation/**
-      - apps/api/**
-      - infra/sql/**
-      - packages/core/**
-      - apps/web/**
-      - .github/workflows/task00-contracts.yml
 
 permissions:
   contents: read
@@ -75,12 +38,22 @@ jobs:
             /infra/sql/
             /packages/core/
             /apps/web/
+            /.github/workflows/task00-contracts.yml
+            /tests/release/
+            /tests/security/
+            /tools/release_entrypoint_gate.mjs
+            /tools/release_publication_gate.py
+            /tools/release_readiness_gate.py
+            /.github/workflows/release-readiness.yml
+            /.dockerignore
       - name: Prove real-student sources are not in this workspace
         run: |
           test ! -d csv
           test ! -d local_only
           test ! -d templates/real5-intake
           test ! -d reference/hufsability/raw
+      - name: Enforce CI trigger and sparse checkout regression policy
+        run: python3 -m unittest discover -s tests/release -p 'test_*.py' -v
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -91,6 +64,14 @@ jobs:
         run: npm run check
       - name: Build local fail-closed Fastify API
         run: npm run build:api
+      - name: Reject unsafe anonymous responses and false release readiness
+        run: |
+          node --test tests/security/*.test.mjs
+          node tools/release_entrypoint_gate.mjs
+      - name: Build synthetic-only public React assets
+        run: npm run build:web
+      - name: Reject private sources and credentials in compiled publication artifacts
+        run: python3 tools/release_publication_gate.py
 
   postgres-integration:
     runs-on: ubuntu-latest
