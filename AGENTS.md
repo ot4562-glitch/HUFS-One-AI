@@ -1,5 +1,7 @@
 # HUFS One AI | 에이전트 작업 기준
 
+**2026-11-01 사용자 실행 지시:** 심민성 담당 공통 계약·웹/외부 API·인증·일반 DB·출처/RAG·통합 검증 구현과 PR 게시, 전체 이슈/PR 검토 및 필요한 코멘트 작성을 승인했다. `C:\AIProjects\naver-competition`을 이번 작업 checkout으로 사용하고 기존 `naver_competition`은 보존한다. 코드 변경은 PR로 제안하며 사람의 현재 HEAD 승인·CI 전 main에 병합하지 않는다. 유료/NCP·도메인 개통·실학생 자료 사용/동의는 이 실행 지시로 확대하지 않는다. 최신 구현/검증은 STATUS.md의 2026-11-01 절을 따른다.
+
 > **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
 
 

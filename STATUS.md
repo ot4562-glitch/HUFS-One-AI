@@ -1,5 +1,16 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-01 심민성 담당 플랫폼 통합 — PR 검토 전용
+
+- **범위/위치:** 사용자 최신 지시로 `C:\AIProjects\naver-competition`에 저장소를 clone했다. 기존 underscore checkout·작업 폴더는 보존. `feat/platform-integration-20261101`은 #32/#33/#34/#35/#55의 기존 커밋을 통합한 리뷰 브랜치이며 main 병합·운영 배포는 하지 않았다.
+- **구현:** OIDC/PKCE·학교메일 증명·영속 세션/시도 제한, EvidenceScope vNext·권한/시점 기반 출처 수집/RAG, PostgreSQL SharingGrant/개인 상태 및 HTTP CRUD. 새 캘린더 GET은 scopeInputsToGrant→출처 current-head/현재 권리·충돌 확인→추천/공지/일정 재계산→권한 receipt 재검증을 거친다. 부분공유에서 전체 precomputed 결과를 복사하지 않는다.
+- **동시성 수정:** 조회 중 grant/source 범위가 달라지면 결과를 폐기한다. 현재 취소/미검수 head가 과거 ACTIVE 일정으로 되살아나지 않으며, 학업/전망 요약은 같은 거래와 receipt에 묶인 approvedSnapshot만 반환한다. summary의 원래 asOf를 임의 재표시하지 않는다. SELECT-only DB 역할은 좁은 SECURITY DEFINER 잠금 함수만 실행한다.
+- **검증:** 기본 Windows 환경 `npm run check` **826 PASS / 실DB opt-in 15 SKIP**(TypeScript 포함), `npm run build:api` PASS, `npm run check:privacy` **144/144 PASS**. Codex의 독립 검증 worktree에서 disposable 로컬 PostgreSQL 18.6으로 세 opt-in suite **15/15 PASS**(migration·최소권한/RLS·동시 CAS·rollback·철회·RAG·calendar·summary receipt)한 기록은 `local_only/pg-validation-20261101/validation-receipt.md` 및 JSON에 보존. 현재 연결 세션에서 재실행한 것은 기본 합성/빌드/게시 경계 검사이며, 실 PG 15건은 이전 독립 검증 기록이다. GitHub Actions `postgres-integration`의 새 HEAD 결과는 PR 게시 후 별도 확인한다.
+- **협업 검토:** 이슈20·PR37 전체, 대화130·리뷰43·스레드5/인라인10을 검토했다. #56/#57의 기존 CHANGES_REQUESTED는 해결되지 않았으므로 동일 코멘트를 반복하거나 임의 승인/병합하지 않는다.
+- **미완료:** 사람의 현재 HEAD 승인/main 병합, 실제 Google·메일/도메인 브라우저 로그인, 기관·학생 원본 목적별 동의/권한 #46, NCP/provider 운영 승인/실측, 이의상 UI #9/#51 및 동료 학업 #11은 별도다. 합성 테스트·로컬 PG 성공은 운영 또는 사람 승인 증거가 아니다. 완료되지 않은 이슈를 닫지 않는다.
+
+아래 2026-10-31 절은 그 시점의 main/협업 기록이다.
+
 ## 2026-10-31 협업 피드백 → 수정 → 재승인 → 병합 결과 (최신)
 
 > 작성자 아닌 1명 이상의 **현재 HEAD APPROVED**, 같은 SHA 필수 CI 성공, 스택/보안 blocker 해소 후 병합한다. 여러 협업자의 승인 전부는 필수 요건이 아니지만 본인 PR에 자기 승인은 인정하지 않는다. 수정·리뷰·코드 병합과 실서비스 배포·학생 권한·실 PG/NCP/Google 검증은 엄격히 구분한다. 이 절을 최신 상태로 보고 아래 이전 기록은 해당 시점의 이력이다.

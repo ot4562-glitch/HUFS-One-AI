@@ -1,4 +1,18 @@
-# HUFS One AI API — 로컬 합성 구현 (2026-10-31)
+# HUFS One AI API — 권한 기반 플랫폼 구현
+
+## 2026-11-01 통합 브랜치 사용법
+
+`feat/platform-integration-20261101`에서 #32/#33/#34/#35/#55를 통합했고 다음 기능을 추가했다(main 미병합).
+
+- `GET /api/demo/contexts/:id/calendar`: no-store, 서버 context·현재 grant/source/asOf·전체 receipt 재검증, 부분공유 입력부터 재계산. 미정/상시/적용 미확인과 취소 head를 확정 일정으로 승격하지 않는다.
+- `POST/GET /api/demo/contexts/:id/personal`, `GET/PUT/DELETE .../personal/:itemId`: actor는 인증 세션에서만 도출, 쓰기는 Origin/CSRF와 expectedVersion 검사, 개인자료 동의·검증된 합성 승인 별도. POST `{itemId,value}`, PUT `{expectedVersion,value}`, DELETE `{kind,expectedVersion}`, GET `?kind=...`(목록은 afterId/limit 가능).
+- `createPostgresPlatformServices` (`src/platform-postgres.ts`): 검증된 역할별 pool과 서버 EvidenceRightsResolver를 받아 ScopedApiRepository·calendarSource·personalState·temporalEvidence를 구성한다. `createIntegratedApi({...services, googleAuth, allowedOrigin, reviewer})`로 인증/provider-neutral 포트를 연결한다. 이 조립은 연결/마이그레이션/키 생성이나 production 차단 해제를 수행하지 않는다. REVIEWER calendar는 별도 합성 source가 필요하며 team source로 fallback하지 않는다.
+- DB 적용 순서: 기존 `infra/sql/20261031_*.sql`의 의존 순서 후 `20261101_calendar_inputs.sql`. 실제 운영 적용은 별도 검토한다. 입력은 승인된 정규화 projection과 서버 provenance/목적별 source permission registry이며 기존 csv/Forms를 자동 import하지 않는다.
+- `npm run check`, `npm run build:api`, `python tools/verify_release_boundary.py`. build 출력은 루트 `dist/apps/api/src/`이며 start/admin npm scripts도 이 경로를 사용한다. 기본 local main은 인증 adapter 없이 127.0.0.1에서 401/no-store로 차단한다.
+
+실제 로컬 PostgreSQL 재현(빈 disposable DB만 허용): `HUFS_A2_PG_LIVE=1`/`HUFS_A2_PG_LIVE_URL` → `hufs_one_a2_test`; `HUFS_PG_FULL_LIVE=1`/`HUFS_PG_FULL_URL` → `hufs_one_full_test`; `HUFS_PG_CALENDAR_LIVE=1`/`HUFS_PG_CALENDAR_URL` → `hufs_one_calendar_test`. 정확한 환경변수와 거부 조건은 각 `tests/api/pg-*-live-opt-in.test.ts` 헤더를 따른다. GitHub Actions는 원본 없는 sparse checkout과 공식 PostgreSQL 서비스에서 세 suite를 실행한다.
+
+아래 2026-10-31 설명은 기존 모듈·설계 기록이다. 현재 브랜치 구현과 당시 미구현 상태는 위 절을 우선한다.
 
 
 심민성 담당 Fastify 합성 API는 `main`에 반영됐다. Google OAuth·외대 메일 증빙·영속 DB 연결은 별도 출시 검증 대상이며, NCP·CLOVA·OCR/Vision 제공자 연동은 이서연 트랙에서 담당한다.
