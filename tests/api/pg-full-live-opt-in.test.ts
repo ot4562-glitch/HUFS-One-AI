@@ -41,7 +41,7 @@ const migrationNames=[
   '20261101_source_ingest_queue.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
   '20261101_personal_storage_withdrawal.sql',
-  '20261101_self_workspace.sql',
+  '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -70,7 +70,20 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const url=connectionUrl();admin=poolFor(url);
     const tables=await admin.query(`SELECT count(*)::int AS n FROM pg_tables WHERE schemaname='public'`);
     if(tables.rows[0]?.n!==0)throw new Error('Full live-test database must be empty');
-    for(const name of migrationNames)await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
+    for(const name of migrationNames){
+      await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
+      if(name==='20261101_self_workspace.sql'){
+        // Synthetic pre-migration tombstone: earlier DELETE left private
+        // value_json in storage. The forward migration must scrub this row.
+        await admin.query(`INSERT INTO api_self_workspace_records
+          (actor_id,kind,item_id,version,value_json,deleted_at)
+          VALUES('SYN-LEGACY-ERASURE','EXPERIENCE','SYN-LEGACY-01',3,
+            $1::jsonb,clock_timestamp())`,[JSON.stringify({
+          kind:'EXPERIENCE',dataMode:'OWNER_CONSENTED',
+          state:'DRAFT',title:'SYNTHETIC-LEGACY-MUST-DISAPPEAR',summary:'synthetic',
+        })]);
+      }
+    }
     // LOGIN roles exist only in the disposable cluster. The password is a random synthetic test value,
     // not a production credential; never log or persist it.
     await admin.query(`
@@ -217,6 +230,88 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect(remaining.rows[0]?.n).toBe(0);
     await expect(a.list({actorId,kind:'EXPERIENCE',limit:10}))
       .rejects.toThrow('access denied');
+  });
+  it('physically scrubs deleted owner-workspace values and legacy tombstones',async()=>{
+    const legacy=await admin.query(`SELECT version,value_json,deleted_at
+      FROM api_self_workspace_records WHERE actor_id='SYN-LEGACY-ERASURE'
+        AND item_id='SYN-LEGACY-01'`);
+    expect(legacy.rows).toHaveLength(1);
+    expect(legacy.rows[0]?.version).toBe('3');
+    expect(legacy.rows[0]?.deleted_at).not.toBeNull();
+    expect(legacy.rows[0]?.value_json).toEqual({
+      kind:'EXPERIENCE',dataMode:'OWNER_CONSENTED',
+    });
+    expect(JSON.stringify(legacy.rows)).not.toContain('SYNTHETIC-LEGACY-MUST-DISAPPEAR');
+
+    const actorId='SYN-TOMBSTONE-OWNER';
+    const account=new PostgresSelfAccountStore(adapter(selfAccount),{
+      mayAccess:async({actorId:id})=>id===actorId,
+    });
+    await account.putConsents(actorId,{expectedVersion:0,choices:{
+      personalStorage:true,teamReview:false,externalAi:false,
+      ncpStorage:false,presentation:false,
+    }});
+    const authority={mayOperate:async({actorId:id}:{actorId:string})=>id===actorId};
+    const a=new PostgresOwnerWorkspaceStore(adapter(selfAccount),authority);
+    const b=new PostgresOwnerWorkspaceStore(adapter(selfAccount),authority);
+    const examples=[
+      {id:'SYN-TOMB-EXP',value:{kind:'EXPERIENCE' as const,
+        dataMode:'OWNER_CONSENTED' as const,state:'DRAFT' as const,
+        title:'SYNTHETIC-ERASE-TITLE',summary:'synthetic test entry'}},
+      {id:'SYN-TOMB-SAVED',value:{kind:'BOOKMARK' as const,
+        dataMode:'SYNTHETIC' as const,state:'SAVED' as const,
+        opportunityId:'SYN-SAVED-REF'}},
+    ];
+    for(const {id,value} of examples){
+      expect((await a.create({actorId,itemId:id,value})).version).toBe(1);
+      expect((await b.delete({actorId,kind:value.kind,itemId:id,
+        expectedVersion:1})).version).toBe(2);
+      expect(await a.read({actorId,kind:value.kind,itemId:id})).toBeNull();
+      const saved=await admin.query(`SELECT version,value_json,deleted_at
+        FROM api_self_workspace_records WHERE actor_id=$1 AND kind=$2
+          AND item_id=$3`,[actorId,value.kind,id]);
+      expect(saved.rows).toHaveLength(1);
+      expect(saved.rows[0]?.version).toBe('2');
+      expect(saved.rows[0]?.deleted_at).not.toBeNull();
+      expect(saved.rows[0]?.value_json).toEqual({
+        kind:value.kind,dataMode:value.dataMode,
+      });
+      expect(JSON.stringify(saved.rows)).not.toContain(
+        value.kind==='EXPERIENCE'?'SYNTHETIC-ERASE-TITLE':'SYN-SAVED-REF');
+      await expect(a.update({actorId,kind:value.kind,itemId:id,
+        expectedVersion:1,value})).rejects.toThrow('version conflict');
+      await expect(a.create({actorId,itemId:id,value}))
+        .rejects.toThrow('version conflict');
+      const events=await admin.query(`SELECT version,action FROM api_self_workspace_events
+        WHERE actor_id=$1 AND item_id=$2 ORDER BY version`,[actorId,id]);
+      expect(events.rows).toEqual([
+        {version:'1',action:'CREATED'},{version:'2',action:'DELETED'},
+      ]);
+    }
+
+    // A separate non-owner SQL connection cannot revive or rename tombstones.
+    const c=await selfAccount.connect();
+    try{
+      await c.query('BEGIN');
+      await c.query("SELECT set_config('hufs.self_actor',$1,true)",[actorId]);
+      await expect(c.query(`UPDATE api_self_workspace_records
+        SET deleted_at=NULL,value_json=$3::jsonb,version=version+1
+        WHERE actor_id=$1 AND kind='EXPERIENCE' AND item_id=$2`,
+      [actorId,'SYN-TOMB-EXP',JSON.stringify(examples[0]!.value)]))
+        .rejects.toMatchObject({code:'P6002'});
+      await c.query('ROLLBACK');
+      await c.query('BEGIN');
+      await c.query("SELECT set_config('hufs.self_actor',$1,true)",[actorId]);
+      await expect(c.query(`UPDATE api_self_workspace_records
+        SET actor_id='SYN-FORGED-OWNER' WHERE actor_id=$1
+          AND kind='BOOKMARK' AND item_id='SYN-TOMB-SAVED'`,[actorId]))
+        .rejects.toMatchObject({code:'P6002'});
+      await c.query('ROLLBACK');
+    }finally{c.release();}
+    expect((await selfAccount.query('SELECT * FROM api_self_workspace_records')).rows).toEqual([]);
+    const rls=await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
+      WHERE oid='api_self_workspace_records'::regclass`);
+    expect(rls.rows).toEqual([{relrowsecurity:true,relforcerowsecurity:true}]);
   });
   it('atomically purges demo owner data on storage withdrawal across connections',async()=>{
     const owner=actor,recordId='SYN-OWNER-CONSENT-01';
