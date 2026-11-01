@@ -20,6 +20,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/tools/release_publication_gate.py", "/.dockerignore",
     "/tools/release_readiness_gate.py",
+    "/tools/verify_browser_release_surface.py",
     "/.github/workflows/release-readiness.yml",
     "/.github/workflows/task00-contracts.yml",
 })
@@ -92,6 +93,7 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/tools/release_publication_gate.py",
             "/.dockerignore",
             "/tools/release_readiness_gate.py",
+            "/tools/verify_browser_release_surface.py",
             "/.github/workflows/release-readiness.yml",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
@@ -111,6 +113,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("public web bundle must be built for publication audit")
     if "python3 tools/release_publication_gate.py" not in text:
         issues.append("compiled publication privacy audit must execute in CI")
+    if "python3 tools/verify_browser_release_surface.py" not in text:
+        issues.append("browser cache and loopback preview audit must execute in CI")
     return issues
 
 
@@ -136,6 +140,13 @@ class WorkflowBoundaryTests(unittest.TestCase):
     def test_path_filtered_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
             "  pull_request:\n", "  pull_request:\n    paths: [apps/api/**]\n", 1
+        )
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_missing_browser_cache_gate_is_rejected(self) -> None:
+        changed = self.policy.replace(
+            "python3 tools/verify_browser_release_surface.py",
+            "echo skipped", 1,
         )
         self.assertTrue(audit_ci_boundary(changed))
 
