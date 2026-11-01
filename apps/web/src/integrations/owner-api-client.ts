@@ -4,7 +4,8 @@ import {
   OwnerWorkspaceRecordSchema,OwnerWorkspaceCreateSchema,OwnerWorkspaceUpdateSchema,
   OwnerWorkspaceDeleteSchema,WorkspaceKindSchema,OwnerTranscriptSchema,
   CourseCatalogPageSchema,CourseOfferingsPageSchema,OpportunityCatalogPageSchema,
-  OpportunityCatalogDetailSchema,
+  OpportunityCatalogDetailSchema,BookmarkStagePatchSchema,BookmarkStageSchema,
+  BookmarkOutcomeSchema,isNextBookmarkStage,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
@@ -35,6 +36,8 @@ const ItemWrite=z.strictObject({item:OwnerWorkspaceRecordSchema});
 const WorkspacePage=z.strictObject({items:z.array(OwnerWorkspaceRecordSchema).max(50),nextCursor:Id.nullable()});
 const DeleteReceipt=z.strictObject({version:z.number().int().min(1)});
 const FromOpportunity=z.strictObject({itemId:Id,opportunityId:Id});
+const BookmarkTransition=z.strictObject({stage:BookmarkStageSchema,
+  outcome:BookmarkOutcomeSchema.optional()});
 const Paths:Record<WorkspaceKind,string>={EXPERIENCE:'/api/experience/cards',
   STUDY_PLAN:'/api/study-plans',BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'};
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
@@ -111,6 +114,35 @@ export class HufsOwnerApiClient {
     const method=input.value.kind==='STUDY_PLAN'?'PUT':'PATCH';
     const result=await this.mutate(Paths[input.value.kind]+'/'+id,ItemWrite,method,input,signal);
     matchItem(result.item,id,input.value.kind,input.expectedVersion+1,input.value);return result;
+  }
+  /**
+   * #80: advance an existing owner-only BOOKMARK by one self-reported stage.
+   * Supplying the current server record enables strict CAS and immutable
+   * opportunity/dataMode receipt checks. Never treat the result as a real
+   * application submission, eligibility or official outcome.
+   *
+   * The UI must wrap this call in OwnerSessionController.runMutation and
+   * reload the row on 409 rather than replaying an uncertain write.
+   */
+  async advanceBookmarkStage(
+    current:OwnerWorkspaceRecord,
+    transition:Omit<z.infer<typeof BookmarkStagePatchSchema>,'expectedVersion'>,
+    signal?:AbortSignal,
+  ){
+    const previous=clientInput(OwnerWorkspaceRecordSchema,current);
+    const requested=clientInput(BookmarkTransition,transition);
+    const input=clientInput(BookmarkStagePatchSchema,{
+      expectedVersion:previous.version,...requested,
+    });
+    if(previous.value.kind!=='BOOKMARK'
+      ||!isNextBookmarkStage(previous.value.stage,input.stage))
+      throw new HufsApiError('INVALID_INPUT',422);
+    const expectedValue={...previous.value,stage:input.stage,
+      ...(input.outcome?{outcome:input.outcome}:{})};
+    const result=await this.mutate(
+      Paths.BOOKMARK+'/'+clientInput(Id,previous.itemId),ItemWrite,'PATCH',input,signal);
+    matchItem(result.item,previous.itemId,'BOOKMARK',previous.version+1,expectedValue);
+    return result;
   }
   async deleteWorkspace(kind:'EXPERIENCE'|'BOOKMARK',itemId:string,expectedVersion:number,signal?:AbortSignal){
     const k=clientInput(z.enum(['EXPERIENCE','BOOKMARK']),kind),id=clientInput(Id,itemId);
