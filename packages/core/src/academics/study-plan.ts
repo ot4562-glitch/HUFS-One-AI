@@ -1,6 +1,7 @@
 import {
   OwnerWorkspaceValueSchema,
   type AcademicAuditVNext,
+  type OwnerStudyPlanCheckResponse,
   type OwnerWorkspaceValue,
 } from '@hufs-one/contracts';
 import {AS_OF, assertId, assertPositiveUnits, byCodeUnit, termEndMs, type LedgerAttempt, type RulePackGate} from './ledger.js';
@@ -12,10 +13,14 @@ import {checkAcademicPlan, type PrerequisiteRule, type VerifiedSection} from './
  * check for one regular term, and returns only what the screen needs: plan issues, the
  * term load, the approved cap, and the planned courses it could not check.
  * It never returns transcript rows, attempt tokens, or grades, and it never changes the ledger.
+ * The result is the core part of the #103 OwnerStudyPlanCheckResponse: caveats are its codes,
+ * and without an APPROVED pack no confirmed warning is emitted. The server adds evidence
+ * links, disclosure, and the approval receipt.
  * Pure: the caller supplies asOf. No clock, network, or storage.
  */
 
 type PlanIssue = AcademicAuditVNext['planIssues'][number];
+export type StudyPlanCaveat = OwnerStudyPlanCheckResponse['caveats'][number];
 export type StudyPlanItem = Extract<OwnerWorkspaceValue, {kind:'STUDY_PLAN'}>;
 
 export type UncheckedReason = 'TERM_UNDECIDED'|'TERM_ENDED'|'CREDITS_UNKNOWN';
@@ -49,13 +54,22 @@ export interface StudyPlanCheck {
   creditCapUnits?:number;
   planIssues:PlanIssue[];
   unchecked:{courseId:string; reason:UncheckedReason}[];
-  caveats:string[];
+  caveats:StudyPlanCaveat[];
 }
 
 const REGULAR_TERM = /^(19|20|21)\d{2}-[12]$/;
 const MAX_PLAN_ITEMS = 200;
 const VERSION_KEYS = ['rulePack', 'plan', 'catalog', 'transcript'] as const;
 const REVIEW_CODES:ReadonlySet<PlanIssue['code']> = new Set(['NEEDS_REVIEW', 'SEARCH_LIMIT_REVIEW']);
+
+/**
+ * #62 holds cap and prerequisite blockers under an unapproved pack but still reports a timetable
+ * conflict. The #103 wire forbids every confirmed warning without approval, so the conflict is
+ * held here too, keeping its reason so the screen can still say the verified sections overlap.
+ */
+function holdUnapproved(issue:PlanIssue):PlanIssue {
+  return issue.code === 'TIMETABLE_CONFLICT' ? {...issue, code:'NEEDS_REVIEW'} : issue;
+}
 
 function readPlan(raw:readonly unknown[]):StudyPlanItem[] {
   if (!Array.isArray(raw)) throw new TypeError('studyPlan must be an array');
@@ -144,22 +158,27 @@ export function simulateStudyPlan(input:StudyPlanCheckRequest):StudyPlanCheck {
   });
 
   const approved = input.rulePack.state === 'APPROVED';
+  const planIssues = approved ? audit.planIssues : audit.planIssues.map(holdUnapproved);
   const uncheckedRows = [...unchecked].map(([courseId, reason]) => ({courseId, reason}))
     .sort((a, b) => byCodeUnit(a.courseId, b.courseId));
+  const sectionsUnconfirmed = planIssues.some(issue => issue.reasonCode === 'COURSE_NOT_CONFIRMED');
+  // READY on the wire needs every version, so a result the screen cannot tie to its inputs is held.
+  const versionsComplete = VERSION_KEYS.every(key => versions[key] !== undefined);
   let state:StudyPlanCheck['state'];
   if (input.rulePack.state === 'MISSING') state = 'INSUFFICIENT_DATA';
-  else if (!approved || audit.state !== 'READY' || uncheckedRows.length > 0
-    || audit.planIssues.some(issue => REVIEW_CODES.has(issue.code))) state = 'NEEDS_REVIEW';
+  else if (!approved || audit.state !== 'READY' || uncheckedRows.length > 0 || !versionsComplete
+    || planIssues.some(issue => REVIEW_CODES.has(issue.code))) state = 'NEEDS_REVIEW';
   else state = 'READY';
 
-  const caveats = ['Plan check only; not an official registration, timetable, or graduation decision.'];
-  if (!approved) caveats.push('Rule pack is not APPROVED; the cap is not shown and cap and prerequisite warnings are held for review.');
-  if (uncheckedRows.length > 0) caveats.push('Some planned courses were not checked: undecided or past term, or no catalog credits.');
+  const caveats:StudyPlanCaveat[] = ['NOT_OFFICIAL_REGISTRATION', 'NOT_GRADUATION_DECISION'];
+  if (!approved) caveats.push('RULEPACK_UNVERIFIED');
+  if (sectionsUnconfirmed) caveats.push('SECTIONS_UNCONFIRMED');
+  if (uncheckedRows.length > 0) caveats.push('PLAN_PARTIALLY_CHECKED');
 
   const result:StudyPlanCheck = {
     state, asOf:input.asOf, term:input.term, versions,
     termLoadCreditUnits,
-    planIssues:audit.planIssues,
+    planIssues,
     unchecked:uncheckedRows,
     caveats,
   };
