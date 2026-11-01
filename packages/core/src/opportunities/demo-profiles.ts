@@ -67,13 +67,13 @@ export const DEMO_LABEL_REVIEW:Readonly<Record<DemoStudent['subject'], LabelRevi
   S01:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
     ['SYN-OPP-025', 1, 2, '소프트웨어 개발'], ['SYN-OPP-036', 1, 2, '소프트웨어 개발']]},
   S02:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
-    ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장을 위한 것'], ['SYN-OPP-014', 1, 0, '']]},
+    ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장을 위한 것'], ['SYN-OPP-014', 1, 0, '해외영업·무역과 직무가 다르고 리서치 중심 업무']]},
   S03:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
-    ['SYN-OPP-006', 0, 1, '개인 성장 관련'], ['SYN-OPP-010', 1, 2, '정책연구는 관련됨'], ['SYN-OPP-037', 1, 2, '']]},
+    ['SYN-OPP-006', 0, 1, '개인 성장 관련'], ['SYN-OPP-010', 1, 2, '정책연구는 관련됨'], ['SYN-OPP-037', 1, 2, '국제협력·교류 목표와 직접 연결']]},
   S04:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
-    ['SYN-OPP-006', 0, 1, ''], ['SYN-OPP-011', 1, 2, '일본어와 미디어'], ['SYN-OPP-035', 2, 1, '마케팅과 거리가 있음']]},
+    ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장에 도움'], ['SYN-OPP-011', 1, 2, '일본어와 미디어'], ['SYN-OPP-035', 2, 1, '마케팅과 거리가 있음']]},
   S05:{status:'HUMAN_CHECKED', reviewerRole:'TRACK_OWNER_SELF', checkedCount:40, unchecked:[], changes:[
-    ['SYN-OPP-006', 0, 1, ''], ['SYN-OPP-014', 1, 2, '경제연구'], ['SYN-OPP-024', 1, 2, '공공정책 관련']]},
+    ['SYN-OPP-006', 0, 1, '분야와 상관없이 개인 성장에 도움'], ['SYN-OPP-014', 1, 2, '경제연구'], ['SYN-OPP-024', 1, 2, '공공정책 관련']]},
 };
 /** Review date of the human check (2026-11-01, track owner, via the local label review page). */
 export const DEMO_LABEL_REVIEWED_AT = '2026-11-01';

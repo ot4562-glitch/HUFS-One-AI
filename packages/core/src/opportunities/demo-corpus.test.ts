@@ -70,7 +70,8 @@ describe('A12 synthetic demo corpus invariants', () => {
       }
       // every change: corpus id, real change, current label equals "to", non-empty reason, no duplicates
       expect(new Set(r.changes.map(c => c[0])).size).toBe(r.changes.length);
-      for (const [id, from, to] of r.changes) {
+      for (const [id, from, to, note] of r.changes) {
+        expect(note.trim().length).toBeGreaterThan(0);
         expect(ids.has(id)).toBe(true);
         expect(from).not.toBe(to);
         expect(DEMO_LABELS[s.subject][id]).toBe(to);
