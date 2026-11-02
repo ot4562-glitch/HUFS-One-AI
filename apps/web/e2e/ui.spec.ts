@@ -53,6 +53,7 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', {name: '본문으로 건너뛰기'})).toBeFocused();
   await page.keyboard.press('Tab'); // logo
+  await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
   await page.keyboard.press('Tab'); // 설정
   await page.keyboard.press('Tab'); // selector summary
   await expect(page.locator('.selector__summary')).toBeFocused();
@@ -117,6 +118,24 @@ test('#80 application board: keyboard-only advance, self-record badge, no overfl
   await expect(page.getByRole('region', {name: /^지원 완료/}).getByText('내가 기록함 · 확인되지 않음').first()).toBeVisible();
   const o = await noHorizontalOverflow(page);
   expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
+});
+
+test('#124 sidebar at 1440px: whole HUFSAbility menu visible, 🚫 items never take keyboard focus', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
+  await page.goto('/');
+  const nav = page.getByRole('navigation', {name: '전체 메뉴'});
+  await expect(nav).toBeVisible();
+  await expect(nav.locator('.menu__item.is-off')).toHaveCount(23);
+  await expect(nav.locator('a.menu__item')).toHaveCount(10);
+  // Tab through the sidebar: focus only ever lands on real links.
+  await page.keyboard.press('Tab'); // skip link
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('Tab');
+    const tag = await page.evaluate(() => document.activeElement?.tagName);
+    expect(['A', 'BUTTON', 'SUMMARY', 'INPUT']).toContain(tag);
+  }
+  await nav.getByRole('link', {name: '지원 현황'}).click();
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('지원 현황');
 });
 
 test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {

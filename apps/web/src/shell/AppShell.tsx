@@ -1,5 +1,6 @@
 import type {MouseEvent, ReactNode} from 'react';
 import {TABS, activeTab} from './router.js';
+import {MenuTree} from './MenuTree.js';
 
 interface Props {
   readonly path: string;
@@ -27,10 +28,19 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
   return (
     <div className="app">
       <a className="skip-link" href="#main">본문으로 건너뛰기</a>
+      {/* Wide screens: navy sidebar with the whole menu (#124). Phones keep the bottom tabs + /menu. */}
+      <aside className="app__sidebar">
+        <InAppLink to="/" navigate={navigate} className="app__sidebar-logo">HUFS One AI</InAppLink>
+        <nav aria-label="전체 메뉴"><MenuTree path={path} navigate={navigate} variant="sidebar" /></nav>
+      </aside>
+      <div className="app__body">
       <header className="app__header">
         <div className="app__brand">
           <InAppLink to="/" navigate={navigate} className="app__logo">HUFS One AI</InAppLink>
-          <InAppLink to="/settings" navigate={navigate} className="app__settings" current={path === '/settings'}>설정</InAppLink>
+          <span className="app__brand-links">
+            <InAppLink to="/menu" navigate={navigate} className="app__settings app__menu-link" current={path === '/menu'}>전체 메뉴</InAppLink>
+            <InAppLink to="/settings" navigate={navigate} className="app__settings" current={path === '/settings'}>설정</InAppLink>
+          </span>
         </div>
         {transportLabel && <p className="app__transport" role="note">{transportLabel}</p>}
         {selector}
@@ -47,6 +57,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
         </ul>
       </nav>
       <main id="main" className="app__main" tabIndex={-1}>{children}</main>
+      </div>
     </div>
   );
 }
