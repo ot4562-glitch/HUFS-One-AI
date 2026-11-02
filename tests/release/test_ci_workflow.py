@@ -21,6 +21,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/packages/contracts/", "/packages/fixtures/synthetic/",
     "/packages/fixtures/negative/", "/packages/core/", "/apps/api/",
     "/packages/ui/", "/tools/audit_private_git_metadata.py",
+    "/tools/private_registry_io.mjs",
     "/tools/strip_build_sourcemaps.mjs",
     "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
@@ -102,6 +103,7 @@ def audit_ci_boundary(text: str) -> list[str]:
         if not {
             "/tests/release/", "/tests/security/",
             "/packages/ui/", "/tools/audit_private_git_metadata.py",
+            "/tools/private_registry_io.mjs",
             "/tools/strip_build_sourcemaps.mjs",
             "/.github/workflows/task00-contracts.yml",
             "/.github/workflows/ui-browser-e2e.yml",

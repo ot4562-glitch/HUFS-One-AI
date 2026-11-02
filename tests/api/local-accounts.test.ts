@@ -41,6 +41,18 @@ describe('synthetic local account HTTP boundary',()=>{
     const created=await h.app.inject({url:'/api/local-accounts/session'});
     expect(created.statusCode).toBe(200);expect(created.headers['set-cookie']).toBeDefined();
   });
+  it('a revoked bootstrap cookie cannot replace a newer account switch in another tab',async()=>{
+    const h=await setup(),oldCookie=h.headers().cookie;
+    await h.switchTo('SYN_OWNER_1');
+    const stale=await h.app.inject({url:'/api/local-accounts/session',headers:{cookie:oldCookie}});
+    expect(stale.statusCode).toBe(401);
+    expect(stale.json().error).toBe('SESSION_REQUIRED');
+    expect(stale.headers['set-cookie']).toBeUndefined();
+    const valid=await h.app.inject({url:'/api/local-accounts/session',headers:{cookie:h.headers().cookie}});
+    expect(valid.statusCode).toBe(200);
+    expect(valid.json().accountId).toBe('SYN_OWNER_1');
+    expect(valid.headers['set-cookie']).toBeUndefined();
+  });
   it('denies unauthenticated, forged actors, CSRF, hostile origin and hostile host',async()=>{
     const h=await setup(),payload={expectedRevision:0};
     expect((await h.app.inject({url:'/api/local-accounts/snapshot',headers:{'x-actor-id':'SYN_OWNER_1'}})).statusCode).toBe(401);

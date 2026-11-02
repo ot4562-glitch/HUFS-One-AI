@@ -49,6 +49,7 @@ jobs:
             /tools/verify_browser_release_surface.py
             /tools/verify_release_boundary.py
             /tools/audit_private_git_metadata.py
+            /tools/private_registry_io.mjs
             /tools/strip_build_sourcemaps.mjs
             /.github/workflows/release-readiness.yml
             /.dockerignore

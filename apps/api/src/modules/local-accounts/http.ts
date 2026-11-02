@@ -60,8 +60,13 @@ export function createLocalAccountApi(options:{mode:string;environment?:string;a
   app.get(PREFIX+'/session',async(request,reply)=>{
     let current:LocalAccountActor;
     let created=false;
-    try{current=actor(request);}catch(error){
+    const presentedSession=cookieId(request);
+    try{current=store.actor(presentedSession);}catch(error){
       if(!(error instanceof LocalAccountError)||error.status!==401)throw error;
+      // A peer may still be sending a revoked cookie after another tab rotated it.
+      // NEVER mint a new BLANK_DEMO cookie for that stale request: its delayed
+      // Set-Cookie could overwrite the newer selected account in every tab.
+      if(presentedSession!==undefined)throw error;
       current=store.createSession();created=true;
     }
     // A delayed read for a still-valid former session must never overwrite a newer switch cookie.
