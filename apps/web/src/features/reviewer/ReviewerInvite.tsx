@@ -31,13 +31,22 @@ interface Props {
 export function ReviewerInvite({port, holder}: Props) {
   const [step, setStep] = useState<Step>({kind: 'CHECKING'});
   const code = useRef<string | null>(null);
+  // Lifecycle guards: a response that settles after cleanup (unmount, StrictMode re-run, port or
+  // holder change) must not change this page. The in-flight redeem is aborted on unmount.
+  const alive = useRef(true);
+  const redeemAbort = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; redeemAbort.current?.abort(); redeemAbort.current = null; };
+  }, []);
 
   useEffect(() => {
     if (code.current === null) code.current = holder.take();
     if (code.current === null) { setStep({kind: 'NO_CODE'}); return; }
     const abort = new AbortController();
     port.getSession(abort.signal).then(
-      () => setStep({kind: 'READY'}),
+      () => { if (!abort.signal.aborted) setStep({kind: 'READY'}); },
       (e: unknown) => {
         if (abort.signal.aborted) return;
         if (e instanceof HufsApiError && e.code === 'UNAUTHENTICATED') {
@@ -54,10 +63,13 @@ export function ReviewerInvite({port, holder}: Props) {
     code.current = null; // one attempt per opened link
     if (!c) { setStep({kind: 'NO_CODE'}); return; }
     setStep({kind: 'REDEEMING'});
-    port.redeemReviewerInvite(c).then(
-      r => setStep({kind: 'DONE', endsAt: r.accessEndsAt}),
-      (e: unknown) => setStep({kind: 'FAILED', code: e instanceof HufsApiError ? e.code : 'PROVIDER_UNAVAILABLE'}),
-    );
+    const abort = new AbortController();
+    redeemAbort.current = abort;
+    const current = () => alive.current && !abort.signal.aborted && redeemAbort.current === abort;
+    port.redeemReviewerInvite(c, abort.signal).then(
+      r => { if (current()) setStep({kind: 'DONE', endsAt: r.accessEndsAt}); },
+      (e: unknown) => { if (current()) setStep({kind: 'FAILED', code: e instanceof HufsApiError ? e.code : 'PROVIDER_UNAVAILABLE'}); },
+    ).finally(() => { if (redeemAbort.current === abort) redeemAbort.current = null; });
   };
 
   const signIn = <a className="button" href={googleSignInPath('REVIEWER')}>Google로 로그인</a>;
