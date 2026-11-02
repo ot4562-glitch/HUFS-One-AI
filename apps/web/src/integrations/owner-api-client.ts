@@ -10,6 +10,8 @@ import {
   OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
   OpportunityExplanationRequestSchema,OpportunityExplanationResponseSchema,
   OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
+  HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
+  SyntheticClubDetailResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
@@ -78,6 +80,25 @@ export class HufsOwnerApiClient {
     body:unknown,signal?:AbortSignal):Promise<T>{
     const {csrfToken}=await this.csrf(signal);
     return this.request(path,schema,{method,body,csrf:csrfToken,signal});
+  }
+  /** #124: original HUFSAbility menus are informational; no school login or
+   * unverified internal routes are made available through this method.
+   * Invalidate the consuming screen on session/snapshot changes.
+   */
+  getHufsAbilityCapabilities(signal?:AbortSignal){
+    return this.request('/api/hufsability/capabilities',HufsAbilityMenuManifestSchema,{signal});
+  }
+  /** #123: simulated student-specific club recommendations. The server chooses
+   * the synthetic identity and review history; never send actor/profile IDs.
+   */
+  listSyntheticClubs(signal?:AbortSignal){
+    return this.request('/api/synthetic/clubs',SyntheticClubBoardResponseSchema,{signal});
+  }
+  async getSyntheticClub(clubId:string,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^SYN-CLUB-[0-9]{3}$/),clubId);
+    const detail=await this.request('/api/synthetic/clubs/'+id,
+      SyntheticClubDetailResponseSchema,{signal});
+    requireMatchingReceipt(detail.item.post.id===id);return detail;
   }
   getProfile(signal?:AbortSignal){return this.request('/api/profile',ProfileRead,{signal});}
   async updateProfile(change:z.infer<typeof SelfProfilePatchSchema>,signal?:AbortSignal){

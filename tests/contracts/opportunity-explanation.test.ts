@@ -16,6 +16,13 @@ describe('#86 single permitted-candidate explanation contract',()=>{
       {fields:['major']},{otherCandidateIds:['SYN-HIDDEN']}])
       expect(OpportunityExplanationResponseSchema.safeParse({...result,...extra}).success).toBe(false);
   });
+  it('accepts the core-only GROUP_CAP, DIVERSITY and NO_PERSONAL_INPUT reasons without guessing another reason',()=>{
+    for(const reason of ['GROUP_CAP','DIVERSITY','NO_PERSONAL_INPUT']){
+      expect(OpportunityExplanationResponseSchema.safeParse({...result,reason}).success).toBe(true);
+      expect(OpportunityExplanationResponseSchema.safeParse({...result,reason,
+        text:'private details'}).success).toBe(false);
+    }
+  });
   it('does not turn unknown or hidden inputs into a qualification decision',()=>{
     for(const reason of ['HIDDEN_BY_USER','NOT_EVALUATED','ELIGIBILITY_NOT_MET'])
       expect(OpportunityExplanationResponseSchema.safeParse({...result,reason}).success).toBe(false);

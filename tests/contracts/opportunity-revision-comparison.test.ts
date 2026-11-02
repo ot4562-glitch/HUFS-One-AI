@@ -75,6 +75,19 @@ describe('#119 strict reviewed revision comparison contract',()=>{
     expect(first[0]?.value).toEqual(['SEOUL','GLOBAL']);
     expect(second[1]?.value).toEqual(['B','A','A']);
   });
+  it('does not invent an eligibility change when a reviewed conjunction repeats an identical predicate',()=>{
+    const r=ready();
+    const condition={field:'campus',operator:'IN',value:['SEOUL','GLOBAL']};
+    const claims=(value:unknown)=>[{field:'ELIGIBILITY',value,evidenceRefs:['ev1']}];
+    const before=[condition,{...condition,value:['GLOBAL','SEOUL']}];
+    const after=[condition];
+    const response={...r,before:{...r.before,claims:claims(before)},
+      after:{...r.after,claims:claims(after)},
+      comparisons:[{field:'DEADLINE',state:'UNKNOWN'},{field:'STATUS',state:'UNKNOWN'},
+        {field:'ELIGIBILITY',state:'UNCHANGED'}],changes:[]};
+    expect(OpportunityRevisionComparisonResponseSchema.safeParse(response).success).toBe(true);
+    expect(before).toHaveLength(2); // comparison normalization does not mutate reviewed source
+  });
   it('preserves ordered array values for operators other than IN and NOT_IN',()=>{
     const r=ready(),claims=(value:string[])=>[{field:'ELIGIBILITY',value:[{
       field:'teamRole',operator:'EQ',value}],evidenceRefs:['ev1']}];

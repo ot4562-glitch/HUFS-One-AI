@@ -8,7 +8,7 @@ export const OpportunityExplanationRequestSchema=z.strictObject({
 });
 export const OpportunityExplanationReasonSchema=z.enum([
   'HIDDEN_BY_USER','DEADLINE_PASSED','ELIGIBILITY_NOT_MET','SOURCE_NEEDS_REVIEW',
-  'LOW_RELEVANCE','OUTRANKED','NOT_EVALUATED',
+  'LOW_RELEVANCE','OUTRANKED','GROUP_CAP','DIVERSITY','NO_PERSONAL_INPUT','NOT_EVALUATED',
 ]);
 const Base={opportunityId:Ref,...OpportunityExplanationRequestSchema.shape,
   provenance:z.literal('CODE_RULES')};

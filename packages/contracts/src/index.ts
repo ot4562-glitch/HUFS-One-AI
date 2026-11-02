@@ -8,5 +8,6 @@ export * from './intake/index.js';
 export * from './calendar/index.js';
 export * from './evidence/index.js';
 export * from './self/index.js';
+export * from './hufsability/manifest.js';
 export * from './preflight/index.js';
 export * from './demo-overlay/index.js';

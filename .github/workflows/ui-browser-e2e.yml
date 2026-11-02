@@ -1,0 +1,58 @@
+name: Synthetic browser E2E (Chrome, no downloads)
+
+# #126: unprivileged event on *every* PR, including #76 stacked branches.
+# This workflow is local-only until approved; never accesses student originals.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-browser-chrome:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      PW_CHANNEL: chrome
+      NO_PROXY: 127.0.0.1,localhost
+    steps:
+      - name: Checkout allowlisted synthetic UI only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /package.json
+            /package-lock.json
+            /tsconfig.json
+            /packages/contracts/
+            /packages/core/
+            /packages/ui/
+            /apps/api/
+            /apps/web/
+            /.github/workflows/ui-browser-e2e.yml
+      - name: Assert no private student or raw data directories were checked out
+        run: |
+          test ! -d csv
+          test ! -d local_only
+          test ! -d templates/real5-intake
+          test ! -d reference/hufsability/raw
+          test ! -d reference/hufsability
+      - name: Require #76 test script and installed Google Chrome
+        run: |
+          test -f apps/web/playwright.config.ts
+          test -f apps/web/e2e/ui.spec.ts
+          node --input-type=module -e "import p from './package.json' with {type:'json'}; if (!p.scripts['test:e2e:web']) process.exit(1)"
+          command -v google-chrome
+          google-chrome --version
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4 pinned
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install from lockfile without any postinstall browser download
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run loopback-only SYNTHETIC Vite and Playwright Chrome (list reporter)
+        run: npm run test:e2e:web -- --reporter=list

@@ -42,6 +42,15 @@ describe('#86 single permitted candidate explanation projection (no recommendati
       {...report,featuredIds:[binding.opportunityId,binding.opportunityId],items:[]},
     ])expect(projectOpportunityExplanation(raw,binding)).toBeNull();
   });
+  it('maps all extra core reasons to exact safe wire codes instead of dropping a permitted candidate',()=>{
+    for(const reason of ['GROUP_CAP','DIVERSITY','NO_PERSONAL_INPUT']){
+      const mapped=projectOpportunityExplanation({...report,items:[{...item,reason,
+        text:'SYN-PRIVATE-FREE-TEXT',fields:['SYN-PRIVATE-PERSONAL-SECTION']}]},binding);
+      expect(mapped).toEqual({...binding,state:'NOT_FEATURED',reason,
+        notes:[],evidenceRefs:['SYN-EV-1'],provenance:'CODE_RULES'});
+      expect(JSON.stringify(mapped)).not.toContain('SYN-PRIVATE');
+    }
+  });
   it('strictly validates the selected reason and copies only bounded safe evidence',()=>{
     for(const changed of [{...item,reason:'SECRET_REASON'},
       {...item,unknownPersonalField:'SYN-PRIVATE'},

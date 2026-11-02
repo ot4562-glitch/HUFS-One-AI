@@ -56,12 +56,14 @@ function comparableClaimValue(claim:z.infer<typeof OpportunityRevisionComparison
   // Eligibility conditions form a conjunction; their ordering is immaterial.
   // IN/NOT_IN operands are sets, but other operators retain their array order.
   // Build a separate comparison key so reviewed source values stay immutable.
-  return JSON.stringify(claim.value.map(condition=>JSON.stringify({
+  // Conditions form a logical conjunction: repeated identical predicates must not
+  // be reported as changed merely because one revision repeats a predicate.
+  return JSON.stringify([...new Set(claim.value.map(condition=>JSON.stringify({
     field:condition.field,operator:condition.operator,
     value:Array.isArray(condition.value)
       &&(condition.operator==='IN'||condition.operator==='NOT_IN')
       ?[...new Set(condition.value)].sort():condition.value,
-  })).sort());
+  })))].sort());
 }
 /** Missing/unknown claims are epistemic gaps, never evidence that a condition
  * was added or removed. Every supported field carries an explicit state. */
