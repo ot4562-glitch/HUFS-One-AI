@@ -66,6 +66,8 @@ def audit(text: str)->list[str]:
         issues.append("must satisfy locked jsdom and Vite runtime requirements")
     if "test:e2e:web" not in text or "npm run test:e2e:web -- --reporter=list" not in text:
         issues.append("must run traceable browser E2E list reporter")
+    if "npm run test:e2e:accounts" not in text:
+        issues.append("must run account-switch and revoked-session browser E2E")
     if "npm ci --ignore-scripts --no-audit --no-fund" not in text:
         issues.append("must use pinned lockfile without install hooks")
     if "playwright install" in text or "npx playwright install" in text:
@@ -103,6 +105,7 @@ class BrowserE2EWorkflowTests(unittest.TestCase):
             self.workflow.replace("PW_CHANNEL: chrome","PW_CHANNEL: msedge",1),
             self.workflow.replace("    runs-on: ubuntu-24.04","    runs-on: ubuntu-latest",1),
             self.workflow.replace("npm run test:e2e:web -- --reporter=list","echo no-tests",1),
+            self.workflow.replace("npm run test:e2e:accounts","echo skipped",1),
             self.workflow.replace("test ! -d local_only","echo unsafe",1),
         ):
             self.assertTrue(audit(change))

@@ -36,7 +36,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
         {selector}
         {status}
       </header>
-      <main id="main" className="app__main" tabIndex={-1}>{children}</main>
+      {/* DOM order = visual order on wide screens (tabs under the header); fixed to the bottom on phones. */}
       <nav className="app__tabs" aria-label="주요 메뉴">
         <ul>
           {TABS.map(t => (
@@ -46,6 +46,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
           ))}
         </ul>
       </nav>
+      <main id="main" className="app__main" tabIndex={-1}>{children}</main>
     </div>
   );
 }

@@ -56,5 +56,7 @@ jobs:
           cache: npm
       - name: Install from lockfile without any postinstall browser download
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Run loopback-only SYNTHETIC Vite and Playwright Chrome (list reporter)
+      - name: Run legacy shell and reviewer Playwright Chrome E2E (10 scenarios)
         run: npm run test:e2e:web -- --reporter=list
+      - name: Run isolated synthetic account HTTP and Chrome E2E (9 scenarios)
+        run: npm run test:e2e:accounts

@@ -22,6 +22,9 @@ export function DemoSelector({state, onSelect}: Props) {
         <span className="selector__current">{current ? current.label : '선택 안 됨'}</span>
       </summary>
       {result && !result.ok && <p role="alert">시연 대상 목록을 확인할 수 없습니다.</p>}
+      {!result && (state.status === 'IDLE' || state.status === 'LOADING') && (
+        <p className="selector__loading muted" aria-busy="true">시연 대상 목록을 불러오는 중</p>
+      )}
       {slots.length > 0 && (
         <fieldset className="selector__list">
           <legend className="visually-hidden">시연 대상 선택 (5개 중 1개)</legend>

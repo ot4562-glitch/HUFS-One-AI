@@ -30,6 +30,10 @@ try {
       if(reachable)throw new Error(`Port ${port} already in use; stop the local test service first`);
     }
     start(['dist/apps/api/src/dev/local-account-main.js','--synthetic']);
+    // Vite may return a 502 before its API target is listening. Fail closed until
+    // the *actual synthetic backend* responds, then start the browser-facing proxy.
+    await until(async()=>{try{return (await fetch('http://127.0.0.1:3000/api/local-accounts/session',
+      {signal:AbortSignal.timeout(1000)})).ok;}catch{return false;}},Boolean,'synthetic API readiness',45_000);
     start(['node_modules/vite/bin/vite.js','--config','apps/web/vite.config.ts','--mode','synthetic']);
     await until(async()=>{try{return (await fetch(origin,{signal:AbortSignal.timeout(500)})).ok;}catch{return false;}},Boolean,'Vite readiness',45_000);
   }

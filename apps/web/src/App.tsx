@@ -66,10 +66,12 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
 
   // Move focus to the new page heading after in-app navigation (not on first load).
   const heading = useRef<HTMLHeadingElement>(null);
-  const first = useRef(true);
+  // Compare with the last path, not a "first run" flag: StrictMode re-runs effects on mount.
+  const lastPath = useRef(path);
   useEffect(() => {
     document.title = `${page.title} · HUFS One AI`;
-    if (first.current) { first.current = false; return; }
+    if (lastPath.current === path) return;
+    lastPath.current = path;
     heading.current?.focus();
   }, [path, page.title]);
 

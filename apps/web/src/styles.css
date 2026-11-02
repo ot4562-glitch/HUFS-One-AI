@@ -58,7 +58,7 @@ a { color: var(--color-primary); }
 
 @media (min-width: 768px) {
   .app__header, .app__main { padding-left: 24px; padding-right: 24px; }
-  .app__tabs { position: static; order: -1; border-top: 0; border-bottom: 1px solid var(--color-border); }
+  .app__tabs { position: static; border-top: 0; border-bottom: 1px solid var(--color-border); }
   .app__tabs ul { padding: 0 24px; grid-template-columns: repeat(5, minmax(0, 120px)); }
   .tab[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--color-primary); }
   .app__main { padding-bottom: var(--space-6); }
@@ -146,7 +146,7 @@ a { color: var(--color-primary); }
 .cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-2); }
 .cal__weekday { text-align: center; font-size: 14px; line-height: 20px; color: var(--color-text-muted); }
 .cal__day {
-  display: grid; justify-items: center; align-content: start; gap: 2px; min-height: 44px; padding: 4px 0;
+  display: grid; justify-items: center; align-content: start; gap: 2px; min-height: 48px; padding: 4px 0;
   border: 0; border-radius: 10px; background: transparent; color: var(--color-text); font: inherit; cursor: pointer;
 }
 .cal__day.is-asof .cal__date { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
@@ -185,3 +185,4 @@ a { color: var(--color-primary); }
 .topics legend { font-weight: 700; margin-bottom: var(--space-2); }
 .topic { display: flex; align-items: center; gap: var(--space-2); min-height: var(--touch-target); }
 .topic input { width: 20px; height: 20px; accent-color: var(--color-primary); }
+.selector__loading { margin: 0; padding: 0 var(--space-3) var(--space-3); }
