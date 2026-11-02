@@ -8,7 +8,7 @@
 | --- | --- |
 | 코드 | React/Vite + Fastify + TypeScript/Zod + 순수 추천/학업 코어·합성 시험 구현 진행 |
 | 통합 | #137의 합성 독립 계정/인가/자료 검수 게이트는 main. #139·#140 테스트-only 회귀 병합 |
-| 열려 있는 PR | **3개**: #131, #134, #138. 모두 병합 차단 있음 |
+| 열려 있는 PR | **4개**: 기능 #131·#134·#138(병합 차단), 유지관리 [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)(리뷰·CI 대기) |
 | 이슈 | **OPEN 32 / CLOSED 7**(이번 감사 기준). 일반 기능/실자료/출시의 전체 완료 판정 아님 |
 | UI | #129 메뉴 셸 main. 전체 HUFSAbility IA/독립 리디자인 #124·#141 OPEN |
 | 실제 운영 | **RELEASE_BLOCKED** — #46, #89 외부·개인정보 검증 미완료 |
@@ -27,6 +27,7 @@
 | [#131](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | 이의상, CHANGES_REQUESTED | route unmount/remount 중 overlay GET 지연 응답·재진입 로딩 문제, REVIEWER capability 장애를 BETA로 오인하는 fail-open 위험. 최신 HEAD 재검토 필요 |
 | [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | 이의상, COMMENT/선행 대기 | #131 위의 stacked PR. 선행 수정·병합 뒤 main 기준 새 diff/CI/독립 승인, #137 실제 API 연동과 시연 매뉴얼 검증 |
 | [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) | 박준영, DRAFT+CHANGES_REQUESTED | 시간표 저장 HTML 손상 마지막 행 조용한 누락, 행별 학기 근거. 무단 크롤링/원문 외부 업로드 없음 |
+| [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) | 유지관리 도구, 비작성자 리뷰·CI 대기 | 병합 PR 브랜치만 보수적으로 분류하는 **dry-run 기본** CLI. 적용은 별도 명시 및 원격 재검증, 실제 삭제 전 작업자 worktree/복구 확인 |
 
 CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는다. 최신 상태는 각 PR 화면에서 재확인한다.
 
@@ -39,9 +40,9 @@ CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는�
 
 ## GitHub 저장소 유지관리 감사
 
-- 감사 당시 원격 브랜치 **105개 = main 1 + 열린 PR 헤드 3 + 병합 PR에 연결된 헤드 86 + 미병합 종료 PR 헤드 11 + PR 없는 백업/준비 4**. 3개 열린 PR 헤드와 main은 유지. 병합 후 브랜치도 다른 작업자 worktree/후속 커밋/참조가 있으면 삭제하지 않는다.
+- 2026-11-03 재조회 원격 브랜치 **106개 = main 1 + 열린 PR 헤드 4(#131/#134/#138/#142) + 병합 PR 연계 86 + 미병합 종료 PR 연계 11 + PR 없는 백업/준비 4**. 병합 PR 86개는 **조건부 dry-run 후보**일 뿐, 작업자 worktree/후속 사용/복구 검증 전 자동 삭제를 허용하지 않는다.
 - **미병합 종료 11개**는 단순 병합 브랜치로 간주하지 않는다. 이전 조사에서 main 대비 고유 커밋 0개 5개, 별도 고유 커밋이 있는 6개를 확인했으므로 대체 구현/참조 검증 전 보존. 백업·준비 4개도 검수 전 보존.
-- 실제 브랜치 **삭제 0건**, 이번 정리의 **코드/CI 변경 0건**. 삭제 가능한 브랜치의 확인·실행은 [PR 정책](docs/PR_WORKFLOW.md)의 보존/경합 방지 기준을 따른다. GitHub 원격 refs가 줄었다는 주장은 하지 않는다.
+- 실제 원격 브랜치 **삭제 0건**. [PR #142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)에 안전한 후보 분류/명시적 삭제 CLI와 Node 독립 단위 테스트 **4/4 PASS(격리본)**를 제출했고, GitHub PR CI/비작성자 리뷰·실 Private 원격 dry-run은 별도 검증 대기. **main의 제품 코드·CI 변경 없음**. 현재 GitHub 연결에는 refs 삭제 기능이 없어 원격 삭제를 실행했다고 주장하지 않는다.
 
 ## 검증·재현
 
