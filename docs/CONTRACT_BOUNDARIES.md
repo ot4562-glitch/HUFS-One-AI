@@ -37,7 +37,7 @@
 | NoticeResult | A07 | 김채윤 → UI/학업/API | #44 overdue Wire 및 #16 실제 items[].overdue 출력·합성 부정 테스트 **main 병합**; 서버/화면 권한 소비는 별도 |
 | CalendarResult (#53 wire, #50 계산) | A07.3·A13 | 김채윤 계산 #50 → 심민성 서버 #58/브라우저 #77·경합 보호 #95 → 이의상 UI #72 미병합 | asOf/서울 날짜·확정/미정/적용 미확인·grant/철회. **API 코드 main 병합 ≠ 실제 UI 연결**; #72 비합성 port 미연결/동일 context 버전 잔상 CHANGES_REQUESTED, HEAD CI·실브라우저 검증 미완료 |
 | RulePack, AcademicSummary, Outlook | A08~09 | 학업 박준영 → UI/API | 3원장, 정수학점, 검수/미확정, asOf |
-| SafeLlmPacket·증거 | A06 | 심민성(웹 API/DTO·증거 검증) ↔ 이서연(NCP Provider SDK/실제 호출) → 추천·UI | 네 AI 작업, 안전 입력과 quote ID, NCP 외부 호출은 이서연 전담 |
+| SafeLlmPacket·증거 | A06 | **심민성**(웹 API/DTO·검증·NCP OCR/HCX SDK/실제 호출/예산·Laya worker 코드) ↔ **이서연**(NCP 계정·entitlement/endpoint·IAM/비용 한도·실측 환경) → 추천·UI | 네 AI 작업, 안전 입력과 quote ID, **외부 모델 호출 코드와 테스트는 심민성**, 실제 NCP 리소스·서비스 승인·콘솔/비용 운영은 이서연 |
 | Forms 26열/과목 CSV 6열 | A03 | 제한 import → 학업/QA | **4인 입력 whitelist**, 미승인 자동 연결 금지 |
 | 인증·오류 enum·API v1 | A02·A13 | 심민성(API) → 모든 팀 | 401/403/409/422/429/503, requestId |
 | **외대 이메일 확인·Google 로그인 공개 접속 게이트 (P0, 미구현)** | A14.1a·A13 | 심민성 인증 API → 이의상 UI → 이서연 NCP ingress/TLS(환경만) | `외대.온라인.한국`, Google OIDC 토큰의 `sub`/`iss`/`aud`/nonce/PKCE, 검증된 Workspace `hd` 또는 외대 메일 OTP, beta allowlist, 익명 HTML/API·directIP/CDN 차단, 401/403·철회 E2E |
@@ -85,6 +85,6 @@
 ## 2026-10-31 기능·인프라 경계 재확인 (PR #31)
 
 - 심민성 `ot4562-glitch`(#18/#19/#21/#25/#27): 웹·외부 REST/Fastify API, Google OIDC/초대/CSRF/세션, 일반 PostgreSQL·SourceRevision/Temporal RAG·정책/근거 DTO, synthetic REVIEWER actions, CI/통합.
-- 이서연(`lhh42001`, #12/#20/#22; GitHub 이슈 assignee 확인): NCP VPC/VM·DB 호스팅·HTTPS ingress/IAM/키/비용/부하/워크플로, CLOVA Studio/OCR/HCX/Vision/NCP SDK 및 실제 provider API·Laya ONNX worker. 일반 웹 API/Google 애플리케이션 인증 라우트는 소유하지 않는다. 이 배정은 별도의 실제 원본/클라우드 권한 허가를 의미하지 않는다.
+- **이서연(`lhh42001`, #12/#22)는 NCP 비코드 운영만 소유:** VPC/VM·DB 호스팅 환경·HTTPS ingress/IAM·키 관리 권한·서비스 entitlement/SKU·요금/부하 실측/반납. **심민성(`ot4562-glitch`, #20/#88/#143)은 OCR/HCX SDK/실제 provider HTTP adapter·Laya ONNX worker·비용/CPU hard gate·OS/Docker/IaC·CI와 모든 자동화 코드 소유.** 이 배정은 실제 원본/클라우드 권한·비용 사용 승인이 아니다.
 - 이의상 UI #9, 김채윤 추천/공지 #10, 박준영 학사 #11 역할/assignee 변경 없음. 공통 API↔provider 경계는 공급자 비종속 DTO만 공유한다.
 - [공식 SKU/816h 견적](NCP_OPERATIONS_2026.md): KR Linux High Memory-g3 4vCPU/32GB 326원/h, CB 50GB 8원/h, 공인 IP 선택 5.6원/h, 본선 발표 11/16 이후 승인 시 실제 개통.
