@@ -109,6 +109,34 @@ describe('trusted owner academic snapshot adapter (#81)',()=>{
     expect(JSON.stringify(check)).not.toContain('SYN-A');
   });
 
+  it.each(['REDACTED','OWNER_VERIFIED'] as const)(
+    'does not disclose hidden section identities through %s evidence refs or URLs',async mode=>{
+      const loaded=snapshot();
+      loaded.visibility={mode,allowedCourseRefs:mode==='REDACTED'?[]:['SYN-A']};
+      loaded.catalog.sections=loaded.catalog.sections!.map(section=>({...section,
+        meetings:[{day:'MON',startMinute:540,endMinute:600}],
+        evidenceRefs:['SYN-SEC-'+section.canonicalCourseId]}));
+      loaded.evidenceLinks.push(...courses.map(courseId=>({evidenceRef:'SYN-SEC-'+courseId,
+        href:'https://synthetic.invalid/catalog/2027-1/'+courseId,verifiedAt:NOW})));
+      const check=OwnerStudyPlanCheckResponseSchema.parse((await fixture(loaded).inspect()).check);
+      const wire=JSON.stringify(check);
+      expect(wire).not.toContain('SYN-SEC-SYN-B');
+      expect(wire).not.toContain('/SYN-B');
+      if(mode==='REDACTED')expect(wire).not.toContain('SYN-SEC-SYN-A');
+      expect(check.planIssues.find(issue=>issue.reasonCode==='ALL_VERIFIED_SECTIONS_OVERLAP')?.code)
+        .toBe('NEEDS_REVIEW');
+      expect(check.state).toBe('NEEDS_REVIEW');
+    });
+
+  it('fails closed if an approval receipt itself includes course-hidden section evidence',async()=>{
+    const loaded=snapshot();loaded.visibility={mode:'REDACTED',allowedCourseRefs:[]};
+    loaded.catalog.sections![0]!.evidenceRefs=['SYN-SEC-SYN-A'];
+    loaded.approval.officialEvidenceRefs.push('SYN-SEC-SYN-A');
+    loaded.evidenceLinks.push({evidenceRef:'SYN-SEC-SYN-A',
+      href:'https://synthetic.invalid/catalog/SYN-A',verifiedAt:NOW});
+    await expect(fixture(loaded).inspect()).rejects.toThrow();
+  });
+
   it('keeps only actual used grant-scoped course refs and preserves the server grant version',async()=>{
     const loaded=snapshot();
     loaded.visibility={mode:'GRANT_SCOPED',grantVersion:'SYN-GRANT-1',

@@ -1,13 +1,18 @@
 # HUFS One AI | 현재 작업 상태
 
-## 2026-11-02 목표 후속 — 승인 원장과 현재 계획의 PostgreSQL 연결 (로컬)
+## 2026-11-02 현재 정본 — PR #137 게시·소비자 리뷰 반영
+
+사용자 최신 지시로 **기존 PR 업데이트·필요한 PR 생성·PR 점검 및 조건 충족 건 병합·완료 이슈 처리와 문서 갱신**을 승인했다. 비작성자 현재 HEAD 승인·CI·관련 차단 해소 정책은 유지하며 배포·유료 호출·실자료 처리 승인은 확대하지 않는다. 아래 로컬-only 문구는 이전 체크포인트 당시 기록이다.
 
 - [x] #27/#81/#133의 남은 서버 공백을 구현: `PostgresOwnerStudyPlanSnapshotLoader`가 기존 승인 `PLAN_INPUT`과 현재 본인 `STUDY_PLAN`을 같은 read-only repeatable-read 거래에서 읽고 기존 학업 코어에 전달한다. 승인 입력이 없으면 개인 계획도 읽지 않는다. 원장·규칙·계획을 추측하거나 학생 계획을 공식 승인 자료로 승격하지 않는다.
 - [x] 계획 행의 ID·버전·내용·수정 시각으로 `plan-<sha256>`을 계산하고 actor/source/consent/projection/계획의 fingerprint·최대128개 단회 토큰을 결속. 변경·삭제·추가·철회·만료·다른 소유자의 replay를 차단한다. source 기준 `asOf`는 보존하며 권리 인가는 현재 시각으로 재검사한다.
 - [x] 독립 리뷰에서 발견한 **비동기 검사 도중 projection/SQL 자료권리가 먼저 만료되는 경계**를 재현 후 보강. 공유 reader가 현재 유효 SEARCH 권리와 projection의 가장 이른 만료를 반환하고, 카탈로그/계획 토큰 수명과 마지막 응답 시각을 모두 제한한다. 수정 후 에이전트 재검토 추가 지적 없음(사람의 GitHub APPROVED 아님).
 - [x] `createPostgresPlatformServices`의 `ownerCatalog`와 `studyPlanCheck`는 별도 pool/source authority 및 독립 rights/approvalGate를 모두 명시적으로 주입할 때만 연결한다. 일반 서비스·운영 auth/DB를 자동 활성화하지 않는다.
-- [x] WSL Node 22.22.1: 관련 source/catalog/HTTP **5파일 58 PASS**, 타입검사·API build PASS, diff whitespace PASS. 첫 신규 모듈 부재와 TTL/권리 만료 회귀의 실패를 확인한 뒤 구현·수정했다. 이전 전체 1,773 PASS/32 SKIP 및 브라우저 결과는 **이 변경 전 체크포인트**이며 이번 최종 HEAD 전체 검사로 재표시하지 않는다.
-- [ ] PostgreSQL 실행 도구가 없어 **실 DB/RLS/거래 검증 NOT_RUN**. 모의 SQL protocol은 PostgreSQL 실행 증거가 아니다. 공식 RulePack·원장/자료권리·운영 본인 인증·현재 HEAD 독립 사람 승인·#46/#89 출시 게이트는 미완료. UI·학업 순수 알고리즘·NCP/provider는 해당 협업자 소유를 유지한다. 로컬 체크포인트만 작성하며 push·새 PR·main 병합·실자료 import·유료 호출·배포 없음.
+- [x] `2a6618a`를 PR #137에 일반 push하고 설명·검토 요청을 갱신했다. 해당 HEAD GitHub Actions **synthetic-contracts / postgres-integration / synthetic-browser-chrome 3/3 SUCCESS**: 합성 **1,784 PASS / PG opt-in 32 SKIP**, 별도 disposable PG **32 PASS**, 실제 Chrome 기존 UI **12/12**·새 계정 **9/9 PASS**. 기존 PostgreSQL suite 성공을 신규 plan loader의 실제 SQL/RLS 검증으로 확대하지 않는다.
+- [x] 박준영 소비자 리뷰 후속: 가린 과목의 분반/선수 근거 ref·href 누출을 차단하고 근거를 숨긴 확정 경고를 `NEEDS_REVIEW`로 낮춤. 승인 receipt 자체가 가린 근거를 포함하면 503. 종료 학기는 private read 전에 공통 계약 **422 INVALID_INPUT**(400 새 예외를 만들지 않음), 수기 학점은 서버/공통 스키마에서 0.5학점 단위 검증. UI 숫자 표기 파서·step 수정은 이의상 담당 경계로 남긴다.
+- [x] #133 운영자 수동 저장본 입력 추가: `OPERATOR_SAVED` 전용 허가·원본/변환 CSV SHA·저장/검수 시각·converter 버전·재배포 범위와 전후 철회/만료를 검사한다. 이 경로에서만 robots `NOT_APPLICABLE`; 기존 HTTP 수집은 계속 `ALLOWED` 필수. 원본을 반환/저장하거나 네트워크를 호출하지 않으며 #138 변환기는 학업 소유자가 제공한다. `UNKNOWN` 학번·원본 9자리 코드·구분 문자열은 보존하고 공식 학칙으로 승격하지 않는다.
+- [x] 위 소비자 후속 로컬 검증: WSL Node 22.22.1 **6파일 72 PASS**, 타입검사·API build·diff whitespace PASS. 수정 전 5개 회귀 실패를 확인했고, 별도 에이전트 검토 추가 지적 없음. 이 후속 변경의 원격 CI는 새 push 뒤 별도 확인한다.
+- [ ] 신규 plan loader는 **실 DB/RLS/거래 검증 NOT_RUN**. 공식 RulePack·원장/자료권리·운영 본인 인증·현재 HEAD 비작성자 승인·#46/#89 출시 게이트는 미완료. UI·학업 순수 알고리즘·NCP/provider는 해당 협업자 소유를 유지한다. 실자료 import·유료 호출·배포 없음.
 
 ## 2026-11-02 심민성 목표 재개 — 로컬 검증 정본
 

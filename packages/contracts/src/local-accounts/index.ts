@@ -13,7 +13,7 @@ export const LocalAccountRevisionSchema=z.number().int().min(0).max(Number.MAX_S
 export const LocalAccountProfileSchema=z.strictObject({
   displayName:z.string().trim().min(1).max(60),primaryMajor:Text.nullable(),
   doubleMajorStatus:z.enum(['NONE','SELECTED','UNSET']),doubleMajor:Text.nullable(),
-  earnedCredits:z.number().finite().min(0).max(500).nullable(),
+  earnedCredits:z.number().finite().min(0).max(500).multipleOf(0.5).nullable(),
   interestTopics:InterestTopicsSchema.refine(unique),desiredJobTopics:DesiredJobTopicsSchema.refine(unique),
   campus:z.enum(['SEOUL','GLOBAL']).nullable(),cohort:z.number().int().min(1900).max(2100).nullable(),
 }).refine(p=>(p.doubleMajorStatus==='SELECTED')===(p.doubleMajor!==null),{

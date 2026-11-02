@@ -3,6 +3,7 @@ import {
   OwnerStudyPlanCheckRequestSchema,OwnerStudyPlanCheckResponseSchema,
 } from '@hufs-one/contracts';
 import type {OwnerStudyPlanCheckResponse} from '@hufs-one/contracts';
+import {termEndMs} from '../../../../../packages/core/src/academics/ledger.js';
 import {ApiFailure} from '../auth/gates.js';
 import {betaActor,betaRecheck} from './self-account-http.js';
 import type {BetaRouteVerifier} from './self-account-http.js';
@@ -75,8 +76,9 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
   app.post('/api/study-plans/check',async request=>{
     const input=OwnerStudyPlanCheckRequestSchema.parse(request.body);
     const actor=await betaActor(request,session);
-    if(!source||!rights)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const now=session.now();
+    if(termEndMs(input.term)<=Date.parse(now))throw new ApiFailure('INVALID_INPUT');
+    if(!source||!rights)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     // A provider that reads the transcript before checking current independent
     // owner purpose consent would leak private data even if HTTP later returned
     // 403. Preauthorization must precede the first source read.

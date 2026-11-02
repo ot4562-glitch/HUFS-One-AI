@@ -116,13 +116,33 @@ export function createTrustedOwnerStudyPlanSource(options:{
       });
       const permitted=new Set(snapshot.visibility.mode==='REDACTED'
         ?[]:snapshot.visibility.allowedCourseRefs);
+      // Course-specific evidence is an identity channel too: section and
+      // prerequisite refs/URLs may name a course even after courseRefs is empty.
+      const hiddenEvidence=new Set([
+        ...(snapshot.catalog.sections??[]).filter(section=>!permitted.has(section.canonicalCourseId))
+          .flatMap(section=>section.evidenceRefs),
+        ...(snapshot.rulePack.termRules.prerequisites??[]).filter(rule=>
+          !permitted.has(rule.canonicalCourseId)||rule.requiresCourseIds.some(id=>!permitted.has(id)))
+          .flatMap(rule=>rule.evidenceRefs),
+      ]);
+      // Never rewrite the independently reviewed approval into a different proof.
+      // A snapshot whose approval itself reveals a hidden course is unavailable.
+      if(approval.officialEvidenceRefs.some(ref=>hiddenEvidence.has(ref)))
+        throw new Error('Academic approval contains undisclosed course evidence');
       let redacted=false;
-      const planIssues=core.planIssues.map(issue=>({
-        ...issue,courseRefs:issue.courseRefs.filter(ref=>{
-          if(permitted.has(ref))return true;
-          redacted=true;return false;
-        }),
-      }));
+      const planIssues=core.planIssues.map(issue=>{
+        const courseRefs=issue.courseRefs.filter(ref=>permitted.has(ref));
+        const hiddenCourse=courseRefs.length!==issue.courseRefs.length;
+        if(hiddenCourse)redacted=true;
+        // A generic verified cap can remain visible. A partly hidden timetable
+        // or prerequisite cannot be confirmed from only its visible half.
+        const evidenceRefs=hiddenCourse&&issue.code!=='CREDIT_CAP_EXCEEDED'
+          ?[]:issue.evidenceRefs.filter(ref=>!hiddenEvidence.has(ref));
+        const withheld=evidenceRefs.length!==issue.evidenceRefs.length;
+        const code=withheld&&issue.code!=='NEEDS_REVIEW'&&issue.code!=='SEARCH_LIMIT_REVIEW'
+          ?'NEEDS_REVIEW' as const:issue.code;
+        return {...issue,code,courseRefs,evidenceRefs};
+      });
       const unchecked=core.unchecked.map(item=>{
         if(permitted.has(item.courseId))return item;
         redacted=true;return {reason:item.reason};
@@ -137,6 +157,8 @@ export function createTrustedOwnerStudyPlanSource(options:{
       ]);
       const check=OwnerStudyPlanCheckResponseSchema.parse({
         ...core,planIssues,unchecked,
+        state:core.state==='READY'&&planIssues.some(issue=>
+          issue.code==='NEEDS_REVIEW'||issue.code==='SEARCH_LIMIT_REVIEW')?'NEEDS_REVIEW':core.state,
         evidenceLinks:snapshot.evidenceLinks.filter(link=>usedEvidence.has(link.evidenceRef)),
         caveats:[...core.caveats,...(redacted?['COURSE_REFS_REDACTED']:[])],
         disclosure:{mode:snapshot.visibility.mode,visibleCourseRefs,

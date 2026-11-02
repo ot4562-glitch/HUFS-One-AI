@@ -3,11 +3,17 @@ import Papa from 'papaparse';
 import {z} from 'zod';
 const Utc=z.iso.datetime({offset:true});
 const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,128}$/);
-export const CurriculumPermissionSchema=z.strictObject({
+const PermissionBase=z.strictObject({
   sourceUrl:z.string().url(),permissionRef:Ref,permissionVersion:Ref,permissionEvidenceUrl:z.string().url(),
   verifiedAt:Utc,expiresAt:Utc,edition:Ref,sourceKind:z.enum(['CURRICULUM','OFFERINGS']),
-  collection:z.literal('ALLOWED'),retention:z.literal('ALLOWED'),robots:z.literal('ALLOWED'),terms:z.literal('ALLOWED'),revoked:z.literal(false),
+  collection:z.literal('ALLOWED'),retention:z.literal('ALLOWED'),terms:z.literal('ALLOWED'),revoked:z.literal(false),
 });
+const HttpPermission=PermissionBase.extend({robots:z.literal('ALLOWED'),acquisitionMethod:z.literal('HTTP').optional()});
+const SavedPermission=PermissionBase.extend({acquisitionMethod:z.literal('OPERATOR_SAVED'),
+  robots:z.literal('NOT_APPLICABLE'),savedArtifactSha256:z.string().regex(/^[a-f0-9]{64}$/),
+  normalizedCsvSha256:z.string().regex(/^[a-f0-9]{64}$/),capturedAt:Utc,converterVersion:Ref,
+  redistribution:z.enum(['ALLOWED','DENIED'])});
+export const CurriculumPermissionSchema=z.union([HttpPermission,SavedPermission]);
 export type CurriculumPermission=z.infer<typeof CurriculumPermissionSchema>;
 export interface CurriculumAuthority{
   /** Trusted operator evidence, not page assertions. Check exact URL, allowed
@@ -23,6 +29,9 @@ export interface PublicCurriculumCourse{
 export interface CurriculumRevision{
   version:number;sourceSha256:string;previousSha256:string|null;permissionRef:string;permissionVersion:string;
   sourceUrl:string;edition:string;verifiedAt:string;courses:PublicCurriculumCourse[];duplicateRows:number;reused:boolean;
+  lastCheckedAt?:string;
+  manualCapture?:{originalSha256:string;normalizedCsvSha256:string;capturedAt:string;
+    converterVersion:string;redistribution:'ALLOWED'|'DENIED'};
 }
 const digest=(text:string)=>createHash('sha256').update(text).digest('hex');
 function officialUrl(value:string):boolean{
@@ -31,17 +40,19 @@ function officialUrl(value:string):boolean{
     &&!/(?:login|signin|sso|auth|session|password|token)/i.test(u.pathname+u.search);
   }catch{return false;}
 }
-function permission(value:unknown,url:string,now:string):CurriculumPermission{
+function permission(value:unknown,url:string,now:string,method:'HTTP'|'OPERATOR_SAVED'='HTTP'):CurriculumPermission{
   const p=CurriculumPermissionSchema.safeParse(value);
   if(!p.success||!Utc.safeParse(now).success||p.data.sourceUrl!==url
     ||!officialUrl(url)||!officialUrl(p.data.permissionEvidenceUrl)
-    ||Date.parse(p.data.verifiedAt)>Date.parse(now)||Date.parse(p.data.expiresAt)<=Date.parse(now))throw new Error('SOURCE_NOT_PERMITTED');
+    ||(p.data.acquisitionMethod??'HTTP')!==method
+    ||Date.parse(p.data.verifiedAt)>Date.parse(now)||Date.parse(p.data.expiresAt)<=Date.parse(now)
+    ||p.data.acquisitionMethod==='OPERATOR_SAVED'&&Date.parse(p.data.capturedAt)>Date.parse(p.data.verifiedAt))throw new Error('SOURCE_NOT_PERMITTED');
   return p.data;
 }
 /** Parser for an operator-reviewed public CSV export. No inferred PDF/HTML
  * rules, personal columns, login scraping or academic approval is performed. */
 export function normalizeCurriculum(csv:string,policy:CurriculumPermission,now:string){
-  permission(policy,policy.sourceUrl,now);
+  permission(policy,policy.sourceUrl,now,policy.acquisitionMethod??'HTTP');
   if(Buffer.byteLength(csv)>1_000_000)throw new Error('CATALOG_INVALID');
   const parsed=Papa.parse<string[]>(csv.replace(/^\uFEFF/,''),{skipEmptyLines:'greedy'});
   if(parsed.errors.length||parsed.data.length>5001||JSON.stringify(parsed.data[0])!==JSON.stringify(courseCsvHeaders))throw new Error('CATALOG_INVALID');
@@ -58,7 +69,8 @@ export function normalizeCurriculum(csv:string,policy:CurriculumPermission,now:s
     const content=JSON.stringify(cells);
     if(seen.has(content)){duplicateRows++;continue;}seen.add(content);
     const row:PublicCurriculumCourse={courseCode,courseName,creditUnits:Number(credits)*2,category,major,semester,campus,cohort,
-      sourceUrl:policy.sourceUrl,verifiedAt:now,edition:policy.edition,collectionStatus:'COLLECTED',
+      sourceUrl:policy.sourceUrl,verifiedAt:policy.acquisitionMethod==='OPERATOR_SAVED'?policy.verifiedAt:now,
+      edition:policy.edition,collectionStatus:'COLLECTED',
       offeringStatus:policy.sourceKind==='OFFERINGS'&&semester!=='UNKNOWN'?'CONFIRMED':'UNKNOWN',rulesStatus:'NEEDS_REVIEW'};
     const identity=JSON.stringify([courseCode,major,semester,campus,cohort]);
     const collisions=byIdentity.get(identity)??[];
@@ -95,11 +107,43 @@ export async function collectCurriculum(options:{sourceUrl:string;authority:Curr
   const verifiedAt=clock();
   const end=permission(await options.authority.resolve(options.sourceUrl,verifiedAt),options.sourceUrl,verifiedAt);
   if(JSON.stringify(start)!==JSON.stringify(end))throw new Error('SOURCE_NOT_PERMITTED');
-  const normalized=normalizeCurriculum(text,end,verifiedAt),sourceSha256=digest(text),previous=options.previous;
-  if(previous&&(previous.sourceUrl!==end.sourceUrl||!Number.isSafeInteger(previous.version)||previous.version<1))throw new Error('CATALOG_INVALID');
-  const reused=!!previous&&previous.sourceSha256===sourceSha256&&previous.permissionVersion===end.permissionVersion&&previous.edition===end.edition;
+  return revision(text,end,verifiedAt,options.previous);
+}
+function revision(text:string,end:CurriculumPermission,checkedAt:string,previous?:CurriculumRevision,
+  manualCapture?:CurriculumRevision['manualCapture']):CurriculumRevision{
+  const normalized=normalizeCurriculum(text,end,checkedAt),sourceSha256=manualCapture?.originalSha256??digest(text);
+  if(previous&&(previous.sourceUrl!==end.sourceUrl||!Number.isSafeInteger(previous.version)
+    ||previous.version<1||previous.version>=Number.MAX_SAFE_INTEGER))throw new Error('CATALOG_INVALID');
+  const reused=!!previous&&previous.sourceSha256===sourceSha256&&previous.permissionRef===end.permissionRef
+    &&previous.permissionVersion===end.permissionVersion&&previous.edition===end.edition
+    &&JSON.stringify(previous.manualCapture??null)===JSON.stringify(manualCapture??null);
   return {version:previous?(reused?previous.version:previous.version+1):1,sourceSha256,
     previousSha256:reused?previous!.previousSha256:previous?.sourceSha256??null,
-    permissionRef:end.permissionRef,permissionVersion:end.permissionVersion,sourceUrl:end.sourceUrl,edition:end.edition,verifiedAt,
+    permissionRef:end.permissionRef,permissionVersion:end.permissionVersion,sourceUrl:end.sourceUrl,edition:end.edition,
+    verifiedAt:manualCapture?end.verifiedAt:checkedAt,...(manualCapture?{manualCapture,lastCheckedAt:checkedAt}:{}),
     ...normalized,reused};
+}
+
+/** Explicit private operator handoff from an independently reviewed converter
+ * (e.g. #138). No HTTP, browser automation, HTML parser, school login, approval
+ * creation or storage writes occur here. A saved page alone grants no rights. */
+export async function importSavedCurriculum(options:{sourceUrl:string;originalBytes:Uint8Array;csv:string;
+  authority:CurriculumAuthority;now?:()=>string;previous?:CurriculumRevision;
+}):Promise<CurriculumRevision>{
+  const clock=options.now??(()=>new Date().toISOString());
+  const start=permission(await options.authority.resolve(options.sourceUrl,clock()),options.sourceUrl,clock(),'OPERATOR_SAVED');
+  if(start.acquisitionMethod!=='OPERATOR_SAVED')throw new Error('SOURCE_NOT_PERMITTED');
+  if(!(options.originalBytes instanceof Uint8Array)||options.originalBytes.byteLength===0
+    ||options.originalBytes.byteLength>5_000_000||typeof options.csv!=='string'
+    ||Buffer.byteLength(options.csv)>1_000_000)throw new Error('CATALOG_INVALID');
+  const originalSha256=createHash('sha256').update(options.originalBytes).digest('hex');
+  const normalizedCsvSha256=digest(options.csv);
+  if(originalSha256!==start.savedArtifactSha256||normalizedCsvSha256!==start.normalizedCsvSha256)
+    throw new Error('SOURCE_NOT_PERMITTED');
+  const capture={originalSha256,normalizedCsvSha256,capturedAt:start.capturedAt,
+    converterVersion:start.converterVersion,redistribution:start.redistribution};
+  const parsed=revision(options.csv,start,clock(),options.previous,capture);
+  const end=permission(await options.authority.resolve(options.sourceUrl,clock()),options.sourceUrl,clock(),'OPERATOR_SAVED');
+  if(JSON.stringify(start)!==JSON.stringify(end))throw new Error('SOURCE_NOT_PERMITTED');
+  return {...parsed,lastCheckedAt:clock()};
 }

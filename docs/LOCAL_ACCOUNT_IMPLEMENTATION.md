@@ -2,6 +2,10 @@
 
 Spec: owner goal attachment dated 2026-11-02 and GitHub #132/#133. Integration proposal: `feat/owner-integrated-20261102` (review-required PR; no release or deployment). Existing S01–S05, the original dirty checkout and protected private sources remain intact.
 
+Current authority: owner explicitly approved updating #137, then PR creation/review and merging eligible PRs, completed-issue handling and documentation updates. Earlier local-only checkpoints are historical. Current-head nonauthor approval, CI and relevant blockers remain merge gates; no deployment/paid calls/real-data processing is granted.
+
+Consumer follow-up: source/evidence redaction, ended-term 422 and half-credit validation plus explicit permission/hash-bound operator-saved curriculum import are implemented. New regressions failed before fixes; focused 6 files/72 tests, typecheck and API build PASS. UI parser/step and #138 HTML conversion remain collaborator-owned. HTTP robots restrictions are not relaxed by the manual route. PR137's prior head 2a6618a has 3/3 remote jobs SUCCESS; follow-up head CI must be checked separately.
+
 Architecture: add an explicitly SYNTHETIC local account workbench, backed by Fastify HTTP and strict Zod contracts, alongside the existing demo shell. A separate empty account and four synthetic owner fixtures exercise isolation; verified real owners are admitted only through a restricted, explicit identity/import registry. Reuse recommendation, notice and club pure cores. Missing transcripts, approved RulePacks and verified offerings remain UNKNOWN/NEEDS_REVIEW. Confirmed 4/4 consent for selected CLOVA processing, refined private NCP storage and reviewed pseudonymous presentation stays confirmed; identity matching, source reuse permission and historical Git publication are independent gates.
 
 ## Tasks and file boundaries

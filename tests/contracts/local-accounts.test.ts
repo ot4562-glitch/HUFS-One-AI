@@ -4,6 +4,12 @@ import {LocalAccountProfileSchema,LocalAccountWorkspaceSchema,LocalAccountSnapsh
 const blank={displayName:'빈 데모 계정',primaryMajor:null,doubleMajorStatus:'UNSET',doubleMajor:null,
   earnedCredits:null,interestTopics:[],desiredJobTopics:[],campus:null,cohort:null};
 describe('local account input contracts',()=>{
+  it('accepts only half-credit units without coercing numeric strings',()=>{
+    for(const earnedCredits of [0,0.5,3,3.5,500])
+      expect(LocalAccountProfileSchema.parse({...blank,earnedCredits}).earnedCredits).toBe(earnedCredits);
+    for(const earnedCredits of [3.3,0.25,'0x10','1e2'])
+      expect(LocalAccountProfileSchema.safeParse({...blank,earnedCredits}).success).toBe(false);
+  });
   it('preserves unknown credits separately from zero and empty interests',()=>{
     expect(LocalAccountProfileSchema.parse(blank).earnedCredits).toBeNull();
     expect(LocalAccountProfileSchema.parse({...blank,earnedCredits:0}).earnedCredits).toBe(0);

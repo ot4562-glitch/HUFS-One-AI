@@ -99,6 +99,12 @@ function fixture(options?:{source?:boolean;rights?:boolean;approval?:boolean}){
 }
 
 describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
+  it('returns the shared 422 validation error for an ended term before private reads',async()=>{
+    const h=fixture({source:true});
+    const r=await h.post({term:'2026-1'});
+    expect(r.statusCode).toBe(422);
+    expect(h.seen).toEqual([]);
+  });
   it('returns 503 when no independently approved academic core provider is wired',async()=>{
     const h=fixture();
     const r=await h.post();
