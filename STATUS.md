@@ -8,11 +8,19 @@
 | --- | --- |
 | 코드 | React/Vite + Fastify + TypeScript/Zod + 순수 추천/학업 코어·합성 시험 구현 진행 |
 | 통합 | #137의 합성 독립 계정/인가/자료 검수 게이트는 main. #139·#140 테스트-only 회귀 병합 |
-| 열려 있는 PR | **4개**: 기능 #131·#134·#138(병합 차단), 유지관리 [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)(리뷰·CI 대기) |
-| 이슈 | **OPEN 32 / CLOSED 7**(이번 감사 기준). 일반 기능/실자료/출시의 전체 완료 판정 아님 |
-| **담당 범위 진척** | [2026-11-03 증거 원장](docs/TEAM_PROGRESS.md): 심민성 **7/12(58.3%)**, 이의상 **9/12(75.0%)**, 김채윤 **7/12(58.3%)**, 박준영 **8/12(66.7%)**, 이서연 **1/8(12.5%)**. 제품/개인 성과/출시 준비율 아님 |
+| 열려 있는 PR | **4개**: 기능 #131·#134·#138(병합 차단), 유지관리 [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)(CI 3/3 성공, 독립 리뷰 대기) |
+| 이슈 | **OPEN 33 / CLOSED 7**(이번 감사 기준). 일반 기능/실자료/출시의 전체 완료 판정 아님 |
+| **담당 범위 진척** | [2026-11-03 증거 원장](docs/TEAM_PROGRESS.md): 심민성 **7/12(58.3%)**, 이의상 **9/12(75.0%)**, 김채윤 **7/12(58.3%)**, 박준영 **8/12(66.7%)**, 이서연 **NCP 운영 전용 1/5(20.0%, 새 기준선)**. 제품/개인 성과/출시 준비율 아님; 이전 이서연 1/8과 직접 비교 금지 |
 | UI | #129 메뉴 셸 main. 전체 HUFSAbility IA/독립 리디자인 #124·#141 OPEN |
 | 실제 운영 | **RELEASE_BLOCKED** — #46, #89 외부·개인정보 검증 미완료 |
+
+## 2026-11-03 진척률 병목·담당 재배정
+
+- **작성 PR 실적(문서 포함):** 심민성 `ot4562-glitch` **57건/병합 46건**, 김채윤 `qamarrchae` **16건/병합 16건**. 기존 7/12(58.3%)은 코드량 부족/개인 기여도 점수가 아니라 **고정 수락 체크 7개 완료+5개 복합 미충족**. [분리한 병목 표](docs/TEAM_PROGRESS.md) 참고.
+- **심민성의 남은 5개:** 실제 Google/학교 이메일 검증, 운영 PG/TLS/NCP/직접 IP, #46 Private Git 원본 권리/2 FAIL, UI·학업 provider 실 종단, 독립 인적 골드/실출처 평가. **김채윤의 남은 5개:** #61 독립 인적 200 gold(현재 확인 0/200), 기관 공고 권리, 실출처 추천 성능 검증, 인가된 UI 소비, rank-v1.1 채택/사용자 검수. 이미 병합된 합성 코어는 유효하나 실데이터/운영 검증으로 자동 대체되지 않음.
+- **이서연 `lhh42001` = NCP 비코드 운영·영수증만**([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) 계정/크레딧/권한/서비스 한도, [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) 호스트 CPU/RSS/비용·중지/반납). **SDK·worker·OS 스크립트·CI/IaC 코드는 0건 배정.** UI/시연/학업 assignee에서도 해제. 실자료 제공 대상 4인 중 1명인 사실은 불변.
+- **심민성 = NCP AI 소프트웨어 코드 전부**: [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20) General OCR/HCX SDK·bbox·근거, [#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88) fake-provider 429/503·budget/CPU 테스트, [#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143) Laya ONNX worker/queue/cgroup/systemd/Docker/IaC/CI. **3건 모두 OPEN·아직 구현/실호출 완료가 아님**. 새 코드 백로그는 기존 기술/출시 수락 12칸의 분모와 별도.
+- **최신 정본** [WORKSTREAMS](docs/WORKSTREAMS.md) 담당, [TEAM_PROGRESS](docs/TEAM_PROGRESS.md) 분모/병목, [AGENTS](AGENTS.md) 코드 자동화 경계. NCP 유료 리소스/모델 다운로드·학교/학생 원자료 전송은 사용자 별도 승인 전 금지. #46/#89 `RELEASE_BLOCKED`.
 
 ## 최근 병합의 정확한 증거
 
