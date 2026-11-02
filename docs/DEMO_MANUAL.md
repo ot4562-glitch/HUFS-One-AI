@@ -2,9 +2,9 @@
 
 기준: `feat/owner-integrated-20261102` 통합 브랜치(2026-11-02). 이 매뉴얼은 **로컬 합성 시연만** 설명하며 운영 배포·학교 공식 서비스가 아니다. 실제 Google/학교 인증·운영 PostgreSQL·NCP/CLOVA·기관 자료 사용권은 별도 검증 대상이다.
 
-**목표 재개 후 최신 로컬 재현:** 코드 `ce315ed`(main `54a9176` 통합)에서 설치된 Chromium으로 새 계정 9/9 및 기존 UI 12/12 브라우저 검사를 통과했다. 가상 동아리 관리자 승인은 실제 오늘 날짜와 별개인 게시판의 합성 `DEMO_AS_OF`에 기록하고, 실제 세션/관리자 권한 및 조회 토큰 만료는 실제 시계를 사용한다. 전체 테스트 최초 worker timeout·별도 재검증 및 개인정보 경계 실패는 [현재 상태](../STATUS.md)에 그대로 기록한다. 이 회차 결과는 원격 PR #137에 push하지 않았다.
+**현재 통합 재현:** main의 #129 메뉴·#130 합성 동아리를 합친 코드 `346e636`에서 타입/API/웹 build와 실제 Chromium 기존 UI **14/14**·독립 계정 **9/9**를 통과했다. 기존 S01–S05 시연의 `/menus`·`/clubs`·`/applications`는 각각 전체 메뉴, 가상 동아리 추천/필터/상세, 학생 자가기록 지원 단계 보드다. 동아리 SVG는 수작업 합성 그림이며 AI 생성·실제 지원/학교 관리자 승인이 아니다. #131 설정 비교/#134 추가 프로필 화면/#138 변환기는 미병합 상태이므로 현재 main 기능으로 시연하지 않는다. #137의 현재 HEAD 승인·CI는 [STATUS](../STATUS.md)를 확인한다.
 
-**검증 결과:** 최초 Windows Edge 실행의 Playwright 디버깅 파이프 오류는 WSL에서 설치된 Linux Chromium으로 우회했고, API와 함께 실행한 **실제 브라우저 E2E 9/9 PASS**(Chromium 156, 360px, 두 탭의 늦은 응답·취소·초기화·권한 실패 포함)를 통합 브랜치에서도 재현했다. 계정 선택기의 접근성 이름을 수정했다. 타입검사·API/웹 빌드·계정/계약/소비자 중심 회귀 429건 PASS. 다만 이는 합성 루프백 브라우저 검증이지 실 로그인/NCP/학사 데이터 시연 성공이 아니다. 실제 공식 교과목 수집은 `taewangim-alt` 담당이며 [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)에 남아 있다.
+가상 동아리 관리자 승인은 게시판의 합성 `DEMO_AS_OF`에 기록하고 실제 세션·관리자 권한·조회 토큰 만료는 실제 시계를 사용한다. 공식 교과목 수집/변환은 `taewangim-alt` 담당 [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)/#138이며 원본·변환 hash와 실제 이용권 확인 없이 수동 저장본을 수집 완료로 표시하지 않는다.
 
 ## 실행과 표기
 
@@ -57,6 +57,6 @@ npm run dev:web -- --mode synthetic
 
 ## 자동 검증 재현
 
-`npm run typecheck`, `npm run build:api`, `npm run build:web`, `npm test`를 실행한다. 실제 PostgreSQL 선택형 테스트의 SKIP은 성공 수에 넣지 않는다. 브라우저가 설치된 환경에서는 서버 두 개를 종료한 뒤 `PW_CHANNEL=chrome npm run test:e2e:web`를 실행한다. Windows Edge 검증은 `PW_EXECUTABLE_PATH`에 설치된 Edge 경로를 지정한다. 이 검사는 브라우저 바이너리를 다운로드하지 않는다.
+`npm run typecheck`, `npm run build:api`, `npm run build:web`, `npm test`를 실행한다. 실제 PostgreSQL 선택형 테스트의 SKIP은 성공 수에 넣지 않는다. 기존 UI는 설치된 Edge로 `npm run test:e2e:web`, Chrome은 `PW_CHANNEL=chrome npm run test:e2e:web`를 사용한다. 새 계정은 서버 두 개를 종료한 뒤 `npm run test:e2e:accounts`; 기본 Chrome 대신 Edge를 쓰려면 `PW_CHANNEL=msedge` 또는 이 계정 스크립트의 `PW_EXECUTABLE_PATH`를 지정한다. 설치되지 않은 채널은 실패하며 브라우저 바이너리를 자동 다운로드하지 않는다.
 
-검증 근거는 위 실제 합성 브라우저 재현 및 [현재 상태](../STATUS.md)를 따른다. PR의 GitHub Actions 성공·독립 리뷰는 로컬 시험과 별도로 확인해야 한다. `npm run check:privacy`는 기존 Git 추적 보호 자료 6건으로 **171/173 PASS, 2 FAIL**이며 원본을 수정·추가 게시하지 않는다. 실제 스크린리더 사용자 검수·Google/학교메일·운영 PostgreSQL·NCP·DNS/TLS·학교 수집허가는 미검증으로 #46 이력 검토와 #89 `RELEASE_BLOCKED`를 유지한다.
+검증 근거는 위 실제 합성 브라우저 재현 및 [현재 상태](../STATUS.md)를 따른다. PR의 현재 HEAD Actions 성공·비작성자 승인은 로컬 시험과 별도로 확인한다. 개인정보 경계는 기존 Git 추적 보호 자료 6건으로 **178/180 PASS, 2 FAIL**이며 원본을 수정·추가 게시하지 않는다. 실제 스크린리더 사용자 검수·Google/학교메일·운영 PostgreSQL·NCP·DNS/TLS·학교 수집허가는 미검증으로 #46 이력 검토와 #89 `RELEASE_BLOCKED`를 유지한다.
