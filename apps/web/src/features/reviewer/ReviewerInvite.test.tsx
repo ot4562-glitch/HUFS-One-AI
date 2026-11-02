@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import {StrictMode} from 'react';
 import {afterEach, describe, expect, it, vi} from 'vitest';
 import {act, cleanup, fireEvent, render, screen} from '@testing-library/react';
 import {HufsApiError} from '../../integrations/api-client.js';
@@ -82,5 +83,86 @@ describe('/reviewer/invite page', () => {
     fireEvent.click(screen.getByRole('button', {name: '초대 등록하기'}));
     await flush();
     expect(document.body.innerHTML).not.toContain(CODE);
+  });
+});
+
+function deferred<T>() {
+  let resolve!: (v: T) => void, reject!: (e: unknown) => void;
+  const promise = new Promise<T>((a, b) => { resolve = a; reject = b; });
+  return {promise, resolve, reject};
+}
+type Session = {role: 'BETA' | 'REVIEWER'};
+type Redeemed = {accessEndsAt: string; dataMode: 'SYNTHETIC'};
+
+describe('/reviewer/invite lifecycle (late responses after cleanup)', () => {
+  it('StrictMode: the first, cleaned-up getSession succeeding late does not overwrite the current result', async () => {
+    const calls: {d: ReturnType<typeof deferred<Session>>; signal?: AbortSignal}[] = [];
+    const p = port({getSession: (signal?: AbortSignal) => { const d = deferred<Session>(); calls.push({d, signal}); return d.promise; }});
+    render(<StrictMode><ReviewerInvite port={p} holder={holdInviteCode(CODE)} /></StrictMode>);
+    await flush();
+    expect(calls).toHaveLength(2);
+    expect(calls[0]!.signal?.aborted).toBe(true);
+    calls[1]!.d.reject(new HufsApiError('UNAUTHENTICATED', 401));
+    await flush();
+    calls[0]!.d.resolve({role: 'REVIEWER'}); // stale success
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain('먼저 Google로 로그인해 주세요');
+    expect(screen.queryByRole('button', {name: '초대 등록하기'})).toBeNull();
+  });
+
+  it('a getSession for a replaced port that succeeds late does not show the redeem button', async () => {
+    const old = deferred<Session>();
+    const holder = holdInviteCode(CODE);
+    const {rerender} = render(<ReviewerInvite port={port({getSession: () => old.promise})} holder={holder} />);
+    await flush();
+    rerender(<ReviewerInvite port={port({getSession: async () => { throw new HufsApiError('FORBIDDEN', 403); }})} holder={holder} />);
+    await flush();
+    old.resolve({role: 'REVIEWER'});
+    await flush();
+    expect(screen.getByRole('alert').textContent).toContain('만료되었거나 중단되었습니다');
+    expect(screen.queryByRole('button', {name: '초대 등록하기'})).toBeNull();
+  });
+
+  it('getSession settling after unmount is ignored and its request is aborted', async () => {
+    const d = deferred<Session>();
+    let signal: AbortSignal | undefined;
+    const {unmount} = render(<ReviewerInvite port={port({getSession: s => { signal = s; return d.promise; }})} holder={holdInviteCode(CODE)} />);
+    await flush();
+    unmount();
+    expect(signal?.aborted).toBe(true);
+    d.resolve({role: 'REVIEWER'});
+    await flush();
+    expect(document.body.textContent).toBe('');
+  });
+
+  it('redeem in flight: unmount aborts it, and its late success or failure changes nothing', async () => {
+    for (const settle of ['resolve', 'reject'] as const) {
+      const d = deferred<Redeemed>();
+      let signal: AbortSignal | undefined;
+      const calls: string[] = [];
+      const p = port({redeemReviewerInvite: (c: string, s?: AbortSignal) => { calls.push(c); signal = s; return d.promise; }});
+      const {unmount} = render(<ReviewerInvite port={p} holder={holdInviteCode(CODE)} />);
+      await flush();
+      fireEvent.click(screen.getByRole('button', {name: '초대 등록하기'}));
+      expect(screen.getByRole('button', {name: '등록하는 중'})).toBeTruthy();
+      unmount();
+      expect(signal?.aborted).toBe(true);
+      if (settle === 'resolve') d.resolve({accessEndsAt: '2026-12-09T15:00:00.000Z', dataMode: 'SYNTHETIC'});
+      else d.reject(new HufsApiError('FORBIDDEN', 403));
+      await flush();
+      expect(document.body.textContent).toBe('');
+      expect(calls).toEqual([CODE]); // one attempt only
+    }
+  });
+
+  it('a 401 while redeeming shows the failure once and never resends the code', async () => {
+    const p = port({redeemReviewerInvite: async (c: string) => { p.redeemed.push(c); throw new HufsApiError('UNAUTHENTICATED', 401); }});
+    render(<ReviewerInvite port={p} holder={holdInviteCode(CODE)} />);
+    await flush();
+    fireEvent.click(screen.getByRole('button', {name: '초대 등록하기'}));
+    await flush();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(p.redeemed).toEqual([CODE]);
   });
 });

@@ -1,6 +1,27 @@
 # PR 운영과 파일 충돌 예방
 
-## 2026-11-01 후속 코드 리뷰·병합 기록 (최신)
+## 2026-11-02 추가 수정 PR의 실제 병합 결과 (최신)
+
+- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 최초 HEAD `37f0a2e` **CHANGES_REQUESTED**(미래 updatedAt/과거 asOf 노출) → 작성자 수정 HEAD `8e88a4b`에서 **과거 수정·수정 후 재승인·시점 역전/직접 상세 회귀 해결** → 비작성자 **APPROVED**, 동일 HEAD Actions synthetic-contracts/postgres-integration **2/2 SUCCESS** → **main merge `8f76c388`**.
+- [x] 이 회차 코드 PR 실병합 **#122, #72, #125 총 3건**; 남은 OPEN PR **7건** (#73~#76, #117, #120, #121), Issue OPEN 30/기존 CLOSED 5. 다음 진도는 #73 초대 async 성공 콜백, #120 reason enum, #117 별도 UI 리뷰 동의, #76 브라우저 검증 순서.
+- [ ] #125 병합은 core-only이며 실제 서버 관리자 인가/AI 생성 포스터/React 게시판(#123), #124 전체 메뉴 IA/🚫 및 개인정보·출시 #46/#89의 승인/완료를 뜻하지 않음.
+
+뒤의 #125 변경요청/PR 8건/병합 2건은 **이전 HEAD 감사 기록**이다.
+
+## 2026-11-02 실제 리뷰/병합·후속 스택 게이트 (최신)
+
+- [x] **#122** 정정판본·캐시/공지 회귀: HEAD 79a94d3 비작성자 APPROVED + [Actions 41317632398](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41317632398) 2/2 SUCCESS 후 **main merge bb5b76d**.
+- [x] **#72** 미니 캘린더: HEAD e3b04d3 비작성자 APPROVED + [Actions 41376971823](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41376971823) 2/2 SUCCESS 후 **main merge 717ce979**. 실 API port/동일 문맥 snapshot 잔상 수정 확인.
+- [x] **#73**는 #72 병합 후 base를 **main으로 retarget**, HEAD 9b8bd6f 성공한 getSession 비동기 콜백이 effect cleanup 이후 READY를 갱신할 수 있어 **CHANGES_REQUESTED**.
+- [x] **#74** HEAD 1f341c9 및 **#75** HEAD d5f7905는 좁은 코드/UI 범위로 **APPROVED**, 각 HEAD 합성/PG CI 2/2 PASS. **#73 수정·병합 → #74 → #75** 스택 순서 필요. **#76** HEAD 782373a COMMENT: 현재 Actions는 Playwright/설치된 Edge 실제 브라우저 E2E를 실행하지 않음.
+- [x] **#117** HEAD 709d285은 `OUTRANKED` 점수 동점 문구·그룹/다양성 반례 수정으로 비작성자 APPROVED/CI 2/2 SUCCESS. 다른 UI 리뷰어가 이전 HEAD에 남긴 CHANGES_REQUESTED의 최신 수락 전 병합 보류.
+- [ ] **#120** HEAD 6b8e73e는 `GROUP_CAP/DIVERSITY/NO_PERSONAL_INPUT` wire enum 누락으로 소비자 CHANGES_REQUESTED(코어 #117과 API #121의 실제 불일치); #121은 #120 선행 승인/재검증까지 미병합.
+- [ ] **#125** HEAD 37f0a2e 동아리 코어는 과거 asOf 조회에서 미래 updatedAt 게시물 노출 가능성으로 CHANGES_REQUESTED. 합성 APPROVED 플래그는 실제 서버 관리자 인증이 아님.
+- [ ] 지금 **열린 PR 8건·Issue 30건/기존 closed Issue 5건**, 이번 신규 병합 2건/Issue 전체 종료 0. #46 원본 개인정보 검사 153/155 PASS·2 FAIL, #89 RELEASE_BLOCKED.
+
+**일반 규칙 유지:** 코드/계약 PR은 변경 지적 해소+현재 HEAD 비작성자 APPROVED+동일 HEAD 적절한 CI+base/스택·권한 검수 후 병합. 이전 한시적 자기작성자 병합 예외를 재사용하지 않는다. CI PASS와 학교/학생 자료권리·NCP 배포 승인은 완전히 별개다.
+
+## 2026-11-01 후속 코드 리뷰·병합 기록 (당시)
 
 - [x] [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) HEAD `830a8eaf` 비작성자 APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) synthetic-contracts/postgres-integration **2/2 SUCCESS**·expected-head 확인 뒤 **일반 merge `fdf0b09b`**.
 - [x] [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) HEAD `68063d0a` CHANGES_REQUESTED: 순위보다 그룹별 최대 2개·주제 다양성 규칙으로 제외되는 반례를 설명/테스트에 반영해야 함.
