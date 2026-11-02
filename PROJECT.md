@@ -1,5 +1,7 @@
 # HUFS One AI | 제품·화면 기준 안내
 
+**2026-11-02 마지막 동아리 코어 병합 정정:** [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125)는 수정된 HEAD `8e88a4b`에서 미래 게시물 수정 시각·기존 승인 재사용 차단 회귀와 **비작성자 APPROVED/Actions 2/2 성공을 확인한 뒤 main `8f76c388` 병합**. 따라서 이번 병합은 #122 정정 회귀/#72 캘린더 UI/#125 동아리 추천 코어 **3건**, 열린 PR **7건**·Issue **30건**. 단 #123의 게시판 React UI·포스터 이미지 파일·서버 가상 관리자 승인 adapter는 **미구현**, #124 HUFSAbility 전체 메뉴·🚫 IA도 미구현. 아래 #125 CHANGES_REQUESTED/PR 8건은 이전 HEAD 기준 이력, #46/#89 릴리스 차단 유지.
+
 **2026-11-02 서비스 목표 재정의:** **HUFS One AI는 HUFSAbility를 대체한다고 주장하는 별도 대학 포털이 아니라 기존 HUFSAbility를 존중·개인화하는 제품명**이다. 기존 메뉴·하위 기능은 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 정보구조에 나타내고 동작하지 않는 기능에는 **🚫 미지원/검증 전** 표시를 유지한다. 모든 기능 이식·공식 학교 운영/SSO를 주장하지 않는다. 추가 [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 동아리 모집은 **가상 동아리/포스터/추천만 합성 데모**로 제안한다.
 
 **2026-11-02 실제 진척:** #122 정정 회귀 main **bb5b76d**, #72 캘린더 UI/API 연결 main **717ce979**. #73 REVIEWER 초대·#125 동아리 코어 CHANGES_REQUESTED, #74 졸업·#75 합성 sandbox·#117 추천 제외 코어 APPROVED(선행 차단 후 병합 가능), #76 E2E COMMENT, #120 계약 enum 불일치·#121 API 미병합. 열린 PR **8/Issue 30**. 개인정보 #46 검사 2 FAIL·출시 #89 RELEASE_BLOCKED 유지. [STATUS](STATUS.md)·[역할](docs/WORKSTREAMS.md).

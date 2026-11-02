@@ -1,5 +1,11 @@
 # 코딩을 몰라도 알 수 있는 전체 흐름
 
+## 2026-11-02 동아리 기능 담당자용 최신 병합 인수인계
+
+- [x] 김채윤의 [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 가상 동아리 노출·추천 **순수 코어**는 이전 #125 변경요청의 미래시점/수정 후 승인 결함을 고쳐 새 HEAD `8e88a4b` 비작성자 APPROVED·GitHub Actions 2/2 SUCCESS 후 **main `8f76c388` 실제 병합**.
+- [ ] 이의상: 모집 게시판·실제 생성된 AI 가상 포스터 이미지/접근성 UI. 심민성: 서버의 **진짜 가상 관리자 권한 확인/게시 승인 contract·API**. 이서연: 기획·학교 공식성 표현 검토. **#123 상위 Issue OPEN**.
+- [ ] HUFSAbility 메뉴 전체와 🚫 미구현 표시 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 별도 구현. 이번 PR 총 병합 3건·열린 PR 7건/Issue 30, #46/#89 RELEASE_BLOCKED. 아래 '수정 요청 중'은 이전 HEAD 당시 기록.
+
 ## 2026-11-02 새 기능 이슈/담당 및 협업 순서
 
 - **[Issue #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 기존 기능/메뉴 수용(P0):** 이의상(`uisang2004-maker`) UI/메뉴·🚫/360px·접근성, 심민성(`ot4562-glitch`) route/권한/capability manifest·통합, 이서연(`lhh42001`) 기획/정식 학교 연계 주장 검토. 원래 메뉴 5대 분류·24 하위 기능과 공개 진입 4영역 **누락 없이 보이되 구현되지 않은 메뉴는 작동 금지**. 학교 공식 운영 허가/전 기능 이식이 아님.

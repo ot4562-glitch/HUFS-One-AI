@@ -1,5 +1,11 @@
 # Private 저장소의 명시 승인 학생 수강 CSV 예외
 
+## 2026-11-02 동아리 코어의 승인/시점 보안 후속 정정
+
+- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b`의 미래 수정/승인 후 콘텐츠 변경 노출 방지 및 타인 APPROVED/Actions 2/2 SUCCESS를 검증해 **main `8f76c388` 실제 병합**. 제공물은 **SYNTHETIC 클럽 메타/결정론 추천 함수**이며 posterAssetId는 실제 이미지가 아닌 자리표시자.
+- [ ] 순수 코어 `APPROVED` 값과 시각 검사만으로 **학교 또는 임의 사용자의 관리자 자격/게시 승인 권한을 증명하지 않음**. #123의 신뢰된 서버 관리자 권한·불변 revision 저장·권리 철회/접근 통제·실제 AI 창작 포스터/게시판 UI 미구현. 에브리타임/실동아리 게시글·개인 연락처 재사용 금지.
+- [ ] #124 HUFSAbility 전체 IA/🚫는 공개 이름을 참조하는 시연 UX로 제한, 학교 계정/원본 API·디자인의 무단 이식 아님. #46 Private Privacy 2 FAIL·#89 RELEASE_BLOCKED 유지. 이 아래 #125의 과거 CHANGES_REQUESTED는 최신 HEAD 수정 전의 사실 기록.
+
 ## 2026-11-02 새 HUFSAbility 메뉴·동아리 데모 데이터/게시 경계
 
 - [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 메뉴 정보구조 채택은 **공개 이름·대분류의 참조 및 시연 UX 설계**만 허용한다는 제안이다. 공식 학교 시스템의 로그인·SSO·사유지 API·성적/상담·교내 포스터 원본·원본 디자인 규정의 복제나 비공개 자료 수집 권한은 발생하지 않는다. 미이식 메뉴는 🚫 미지원과 확인된 공식 외부 링크를 분리한다.

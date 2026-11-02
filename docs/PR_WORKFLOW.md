@@ -1,5 +1,13 @@
 # PR 운영과 파일 충돌 예방
 
+## 2026-11-02 추가 수정 PR의 실제 병합 결과 (최신)
+
+- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 최초 HEAD `37f0a2e` **CHANGES_REQUESTED**(미래 updatedAt/과거 asOf 노출) → 작성자 수정 HEAD `8e88a4b`에서 **과거 수정·수정 후 재승인·시점 역전/직접 상세 회귀 해결** → 비작성자 **APPROVED**, 동일 HEAD Actions synthetic-contracts/postgres-integration **2/2 SUCCESS** → **main merge `8f76c388`**.
+- [x] 이 회차 코드 PR 실병합 **#122, #72, #125 총 3건**; 남은 OPEN PR **7건** (#73~#76, #117, #120, #121), Issue OPEN 30/기존 CLOSED 5. 다음 진도는 #73 초대 async 성공 콜백, #120 reason enum, #117 별도 UI 리뷰 동의, #76 브라우저 검증 순서.
+- [ ] #125 병합은 core-only이며 실제 서버 관리자 인가/AI 생성 포스터/React 게시판(#123), #124 전체 메뉴 IA/🚫 및 개인정보·출시 #46/#89의 승인/완료를 뜻하지 않음.
+
+뒤의 #125 변경요청/PR 8건/병합 2건은 **이전 HEAD 감사 기록**이다.
+
 ## 2026-11-02 실제 리뷰/병합·후속 스택 게이트 (최신)
 
 - [x] **#122** 정정판본·캐시/공지 회귀: HEAD 79a94d3 비작성자 APPROVED + [Actions 41317632398](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41317632398) 2/2 SUCCESS 후 **main merge bb5b76d**.

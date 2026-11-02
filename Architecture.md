@@ -1,5 +1,7 @@
 # HUFS One AI | Architecture.md
 
+> **2026-11-02 동아리 순수 코어 추가 실병합(최신 정정):** [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b` 가상 클럽 12개 승인·10분야/5 합성 학생 개인화 추천·미공유 입력 분리, `updatedAt > asOf`/수정 후 재승인 필요·시점 역전에서 **목록/추천/상세 공통 fail-closed** 보강. 독립 최신 HEAD APPROVED·Actions 2/2 SUCCESS 후 **main merge `8f76c388`**. 이로써 이번 #122/#72/#125 코드 PR **3건 병합/열린 PR 7건**. [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 게시판 UI/독창적 포스터 실제 생성/관리자 승인 API는 없음, [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 기존 HUFSAbility 메뉴 5분류·24개/🚫 미구현은 기획 단계. 아래 이전 #125 변경요청은 수정 전 감사 이력이며 실 학교 동아리/학생자료·출시 허가는 계속 별개.
+
 > **2026-11-02 제품/정보구조 방향 최신:** **HUFS One AI는 HUFSAbility를 강화하는 서비스명**이다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)에 HUFSAbility 공식 공개 학생 기능 **역량관리·교과/비교과·채용·경력개발·통합상담**(5분류·24기능), 공개 진입의 비교과/장학/공지/채용(4영역) 매핑을 보존한다. **완전 흡수 = 메뉴·학생 여정 존중**이고 모든 기능의 구현/권한/공식 학교 운영 확보가 아니다. 중앙 capability manifest의 `DEMO_AVAILABLE`만 합성 시연에서 실행; `OFFICIAL_LINK_ONLY`, `NOT_IMPLEMENTED/UNVERIFIED`는 **🚫 미지원/검증 전**으로 표시하고 기존 공식 링크를 확인해 별도 연결한다. 실제 원래 HUFSAbility/SSO/저작물/데이터를 무단 복제하지 않는다.
 
 > **2026-11-02 동아리 합성 데모:** [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 가상 동아리·AI 합성 포스터·관심사 추천·가상 관리자 승인 게시판을 계획. [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125)에는 12개 합성 승인 fixture/결정론 코어·placeholder 포스터 ID가 있지만 미래 `updatedAt > asOf`를 과거 시점에 내보내는 결함으로 CHANGES_REQUESTED/미병합. 실제 동아리 게시권한/학교 공식 채널이나 에브리타임 데이터 수집은 없음.

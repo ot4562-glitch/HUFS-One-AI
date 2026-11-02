@@ -1,5 +1,7 @@
 # HUFS One AI | 에이전트 작업 기준
 
+**2026-11-02 #125 최종 검증 정정:** 김채윤의 [동아리 코어 #125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b`에서 시점 이전 변경·수정 후 재승인 결함을 해결하고 **타인 현재 HEAD APPROVED+CI 2/2 SUCCESS 뒤 main merge `8f76c388`**. 이는 **SYNTHETIC 추천 코어 승인**일 뿐 실학교/실동아리 관리자 승인·포스터 실제 생성·UI/API 연동이 아님. #123 OPEN, #124 HUFSAbility 기존 메뉴 5분류·24기능/🚫 UI 미구현, #46/#89 보안·릴리스 차단 계속. 이번 총 병합 3건(#122/#72/#125), 열린 PR 7·Issue 30. 아래 같은 날짜의 #125 변경 요청은 이전 HEAD `37f0a2e` 당시 유효했던 리뷰 이력이다.
+
 **2026-11-02 최신 구현/협업 지시:** HUFS One AI는 **HUFSAbility 강화**를 목표로 한다. 기존 HUFSAbility 공개 학생 메뉴 5분류·24하위 기능을 IA에 보존하고 **미구현 메뉴를 🚫 미지원/검증 전**으로 표시([#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)); 모든 메뉴의 실제 이식·학교 공식 승인·SSO/API 이용 허가를 주장하지 않는다. [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 동아리 기능은 가상 동아리·독창적 AI 포스터·추천 **SYNTHETIC 데모만**, 게시 승인도 가상 관리자 시연임을 표시하고 실제 학생/동아리 연락처·에브리타임 원문 사용 금지. 해당 UI/추천/API의 소유자 경계를 지킨다.
 
 **2026-11-02 실제 PR 상태:** #122 합성 정정 회귀 **main bb5b76d**, #72 캘린더 UI/API 연결 **main 717ce979**(독립 승인·HEAD CI 성공). #73 REVIEWER 비동기 성공 응답/cleanup 경합과 #125 동아리 미래 updatedAt/asOf 누출은 CHANGES_REQUESTED; #74/#75/#117 코드는 APPROVED지만 선행 스택·이전 타인 요청 해소 전 미병합. #76 브라우저 E2E는 독립 실행 근거 없이 COMMENT. #120 공통 reason enum 3개 누락으로 변경 요청, #121 종속 API 미병합. 열린 PR 8·Issue 30, #46 Privacy 2 FAIL·#89 RELEASE_BLOCKED 유지. **비작성자 최신 HEAD APPROVED, 실제 해당 HEAD CI, 유효한 변경 요청/스택/보안 게이트 검증 후 병합**; 문서-only 직접 수정은 별도.

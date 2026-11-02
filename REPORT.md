@@ -1,5 +1,13 @@
 # HUFS One AI | 시연·에이전트 검증 기준
 
+## 2026-11-02 최신 #125 수정 병합·시연 수락 경계
+
+- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 동아리 합성 추천 코어 **새 HEAD `8e88a4b`**는 `updatedAt>asOf` 시점 누출과 승인 후 수정된 게시물 재검토 필수 gate를 수정했고, 비작성자 APPROVED·Actions 2/2 SUCCESS 후 **main merge `8f76c388`**.
+- [x] 같은 회차 실제 신규 main 병합 **#122 정정 회귀 / #72 미니 캘린더 UI / #125 합성 동아리 추천 코어 = 3건**. 열린 PR **7건**, OPEN Issue **30건**.
+- [ ] #123 실제 가상 모집 포스터 이미지/게시판 UI·승인 권한 있는 서버 API, #124 HUFSAbility 원래 메뉴 전체와 🚫 화면은 **미구현**. 새로운 코어 함수를 시연 가능한 웹 화면·공식 학교 서비스로 소개하지 않음. #46·#89 안전/배포 승인 불변.
+
+아래 #125 변경 요청 또는 미병합 언급은 당시 HEAD 리뷰 이력이다.
+
 ## 2026-11-02 최신 심사 시연 진척·검증 게이트
 
 - [x] **main 병합:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) 정정/구판 잔상·권한 철회 회귀 `bb5b76d`; [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 인증 캘린더 UI 포트·동일 context snapshot 격리 `717ce979`. 두 HEAD 모두 비작성자 APPROVED/Actions synthetic+PG 2/2 SUCCESS.

@@ -1,5 +1,7 @@
 # HUFS One AI
 
+**2026-11-02 최종 병합 후 정정:** [동아리 추천 코어 PR #125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125)의 과거 시점 미래 수정·승인 후 변경 노출 결함이 새 HEAD에서 수정되어 **비작성자 APPROVED·Actions 2/2 성공 후 main `8f76c388`로 병합**. 이번 회차 실제 병합은 **#122·#72·#125 총 3건**, 열린 PR **7건**·Issue **30건**(닫힌 5). #123에는 12개 승인된 **가상 모집 게시글/결정론 코어**만 구현; AI 창작 포스터 파일/React 게시판/서버 관리자 승인 검증은 미완료. #124 기존 HUFSAbility 모든 메뉴 존중·🚫 미지원 배치도 UI 구현 전. #46/#89 자료권리·출시 차단 유지. 아래 'PR 8/병합 2/#125 CHANGES_REQUESTED'는 **병합 이전 회차** 기록.
+
 **2026-11-02 최신 정본:** HUFS One AI는 **기존 HUFSAbility 메뉴·학생 경험을 존중하고 AI 개인화로 보강하는 서비스명**이다. 원래 메뉴 전체를 화면 정보구조에 보존하고, 이번 데모에서 실제로 구현하지 않은 기능은 **🚫 미지원**으로 분명하게 표시한다([#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)). [#123 동아리 모집](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123)은 실제 동아리/에브리타임 자료 대신 가상 동아리·AI 합성 포스터·관심사 추천만 시연하는 별도 제안으로, 학교 공식 게시 허가는 없음.
 
 **이번 실제 GitHub 처리:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) 정정 회귀 및 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 인증된 캘린더 UI를 타인 HEAD 승인·Actions 2/2 성공 후 각각 main **bb5b76d·717ce979 병합**. #73 초대·#125 동아리 추천은 CHANGES_REQUESTED, #74 졸업·#75 sandbox·#117 추천 이유는 APPROVED(후행 병합 차단 존재), #76 E2E COMMENT, #120 계약과 #121 API는 미병합. **열린 PR 8, Issue 30, 기존 닫힌 Issue 5, 신규 Issue 전체 종료 0**. #46 Privacy 2 FAIL·#89 RELEASE_BLOCKED. [STATUS](STATUS.md)·[PR 기준](docs/PR_WORKFLOW.md). 아래 2026-11-01 수치는 당시 기록이다.

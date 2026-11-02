@@ -1,5 +1,11 @@
 # apps/web (UI · 이의상)
 
+## 2026-11-02 동아리 core main 병합 이후 UI 인수인계
+
+- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 순수 가상 동아리 추천·승인 시점 안전 코어가 HEAD `8e88a4b` 타인 APPROVED+Actions 2/2 성공 후 **main `8f76c388` 병합**. 12개 가상 승인 글, 10분야, 5개 합성 학생, 포스터 `SYN-POSTER-CLUB-*` **ID만** 있음.
+- [ ] [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 게시판 목록·필터·상세/실제 AI 생성된 창작 합성 포스터·모바일 접근성·현재 서버 승인/권한 API **웹 코드 없음**. 코드가 있다고 가상 포스터가 생성되거나 실제 동아리 글을 게시한 것은 아님.
+- [ ] [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 기존 5대 메뉴·24하위 항목과 **🚫 미지원 UX**는 별도 UI PR 필요. #73 초대 비동기 lifecycle race CHANGES_REQUESTED/후속 #74/#75 승인·스택 대기; Playwright E2E 미병합. 아래 #125 수정 요청 표기는 이전 리뷰 이력.
+
 ## 2026-11-02 UI 현재 수락/다음 구현
 
 - [x] [PR #72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 오늘 하단 2주 미니 캘린더·실 비합성 `liveServices(api)`/권한 GET·snapshot 교체 즉시 소거: **main `717ce979` 병합**(현재 HEAD 비작성자 승인/Actions 2/2 SUCCESS). 개발 synthetic 포트도 S01/S02 개인별 합성 달력 사용.
