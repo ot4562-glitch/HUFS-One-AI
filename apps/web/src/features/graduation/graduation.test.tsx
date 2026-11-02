@@ -48,11 +48,14 @@ describe('졸업 page', () => {
     await open(1);
     expect(screen.getAllByText('아직 준비 중인 정보입니다.')).toHaveLength(2);
     expect(screen.queryByText(/95학점/)).toBeNull();
+    expect(screen.getByRole('note').textContent).toBe('공식 졸업 판정이 아닙니다. 확정은 학과·학사지원팀에서 확인해 주세요.');
   });
 
   it('S03 (academics not shared): out-of-scope text only', async () => {
     await open(2);
     expect(screen.getAllByText('이 항목은 시연 공유 범위 밖입니다.')).toHaveLength(2);
-    expect(screen.queryByRole('note')).toBeNull();
+    // The not-official note stays in every state, but carries nothing from the hidden section.
+    expect(screen.getByRole('note').textContent).toBe('공식 졸업 판정이 아닙니다. 확정은 학과·학사지원팀에서 확인해 주세요.');
+    expect(document.querySelector('.credits')).toBeNull();
   });
 });
