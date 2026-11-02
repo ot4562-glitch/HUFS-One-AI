@@ -30,6 +30,8 @@
     "packages/core/src/**/*.ts",
     "apps/web/src/**/*.ts",
     "apps/web/src/**/*.tsx",
-    "apps/web/vite.config.ts"
+    "apps/web/vite.config.ts",
+    "apps/web/e2e/**/*.ts",
+    "apps/web/playwright.config.ts"
   ]
 }

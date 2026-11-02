@@ -31,9 +31,11 @@
     "test:core": "npm run build:contracts && vitest run packages/core/src",
     "test:web": "npm run build:contracts && vitest run apps/web/src",
     "dev:web": "npm run build:contracts && vite --config apps/web/vite.config.ts",
-    "build:web": "npm run build:contracts && vite build --config apps/web/vite.config.ts"
+    "build:web": "npm run build:contracts && vite build --config apps/web/vite.config.ts",
+    "test:e2e:web": "npm run build:contracts && playwright test -c apps/web/playwright.config.ts"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/node": "22.19.15",

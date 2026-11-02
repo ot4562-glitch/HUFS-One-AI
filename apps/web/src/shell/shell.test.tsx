@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import {afterEach, describe, expect, it} from 'vitest';
+import {StrictMode} from 'react';
 import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import type {DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias} from '@hufs-one/contracts';
 import {DemoController, type DemoClientPort} from '../app/index.js';
@@ -134,6 +135,13 @@ describe('App shell', () => {
     expect(h1.textContent).toBe('졸업');
     expect(document.activeElement).toBe(h1);
     expect(document.title).toBe('졸업 · HUFS One AI');
+  });
+
+  it('StrictMode first load does not steal focus to the heading (keyboard users start at the skip link)', async () => {
+    const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'TEST-RUN-S');
+    render(<StrictMode><App controller={controller} historyPort={memoryHistory('/')} /></StrictMode>);
+    await flush();
+    expect(document.activeElement).toBe(document.body);
   });
 
   it('unknown paths show a not-found page', async () => {

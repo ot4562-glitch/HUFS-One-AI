@@ -1,0 +1,114 @@
+import {expect, test, type Page} from '@playwright/test';
+
+/** SYNTHETIC dev mode only. Selects a demo subject through the accordion like a user would. */
+async function pick(page: Page, index: number) {
+  const accordion = page.locator('details.selector');
+  if (!(await accordion.evaluate(d => (d as HTMLDetailsElement).open))) await page.locator('.selector__summary').click();
+  await page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio').nth(index).check();
+  await page.locator('.selector__summary').click(); // close again
+}
+
+async function noHorizontalOverflow(page: Page) {
+  return page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    width: window.innerWidth,
+    offenders: Array.from(document.querySelectorAll('body *'))
+      .filter(e => e.getBoundingClientRect().right > window.innerWidth + 1)
+      .slice(0, 5).map(e => e.className),
+  }));
+}
+
+const errors: string[] = [];
+test.beforeEach(async ({page}) => {
+  errors.length = 0;
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+});
+test.afterEach(() => expect(errors).toEqual([]));
+
+for (const width of [320, 360, 390, 768, 1440]) {
+  test(`no horizontal overflow at ${width}px on 오늘·졸업·보관함·설정`, async ({page}) => {
+    await page.setViewportSize({width, height: 900});
+    await page.goto('/');
+    await expect(page.getByRole('note').first()).toContainText('합성 모의 연결');
+    await pick(page, 0);
+    await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
+    await expect(page.getByRole('region', {name: '내 주요 일정'}).getByRole('button').first()).toBeVisible();
+    for (const tab of ['졸업', '보관함']) {
+      await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: tab}).click();
+      await expect(page.getByRole('heading', {level: 1})).toHaveText(tab);
+      const o = await noHorizontalOverflow(page);
+      expect(o.offenders, `${tab} @${width}`).toEqual([]);
+      expect(o.scroll).toBeLessThanOrEqual(o.width);
+    }
+    await page.getByRole('link', {name: '설정'}).click();
+    expect((await noHorizontalOverflow(page)).offenders).toEqual([]);
+  });
+}
+
+test('keyboard only: skip link, open selector, choose a subject, reach the tabs', async ({page}) => {
+  await page.setViewportSize({width: 390, height: 844});
+  await page.goto('/');
+  await expect(page.locator('.selector__summary')).toBeVisible(); // app mounted
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', {name: '본문으로 건너뛰기'})).toBeFocused();
+  await page.keyboard.press('Tab'); // logo
+  await page.keyboard.press('Tab'); // 설정
+  await page.keyboard.press('Tab'); // selector summary
+  await expect(page.locator('.selector__summary')).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio').first()).toBeVisible();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
+  const focusRing = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
+  expect(focusRing).not.toBe('none');
+});
+
+test("switching S01 → S02 shows only S02's cards, and a 403 subject shows nothing", async ({page}) => {
+  await page.goto('/');
+  await pick(page, 0);
+  const featured = page.getByRole('region', {name: '나에게 맞춘 공고'}).getByRole('heading', {level: 3});
+  await expect(featured).toHaveCount(3);
+  const s01 = await featured.allTextContents();
+  await pick(page, 1);
+  await expect(page.getByRole('status').first()).toContainText('가상 학생 2');
+  const s02 = await featured.allTextContents();
+  expect(s02.some(t => s01.includes(t))).toBe(false);
+  await pick(page, 3); // dev mode forces SHARING_REVOKED for S04
+  await expect(page.getByRole('alert')).toContainText('공유 허용이 변경되었습니다.');
+  await expect(page.getByRole('region', {name: '나에게 맞춘 공고'})).toHaveCount(0);
+});
+
+test('calendar: choosing a day lists its 마감/일정 with links', async ({page}) => {
+  await page.goto('/');
+  await pick(page, 0);
+  const cal = page.getByRole('region', {name: '내 주요 일정'});
+  const withItems = cal.getByRole('button', {name: /(마감|일정) \d+건/}).first();
+  await withItems.click();
+  await expect(withItems).toHaveAttribute('aria-pressed', 'true');
+  await expect(cal.locator('.cal__day-detail').getByRole('link').first()).toBeVisible();
+});
+
+test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {
+  await page.goto('/');
+  await pick(page, 0);
+  const first = page.getByRole('region', {name: '나에게 맞춘 공고'}).getByRole('link').first();
+  const title = await first.textContent();
+  await first.click();
+  await page.getByRole('button', {name: '보관함에 저장'}).click();
+  await expect(page.getByRole('button', {name: '보관함에서 빼기'})).toBeVisible();
+  await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '보관함'}).click();
+  await expect(page.getByRole('region', {name: '저장한 공고'}).getByRole('link', {name: title!})).toBeVisible();
+  await pick(page, 1);
+  await expect(page.getByRole('region', {name: '저장한 공고'}).getByRole('link')).toHaveCount(0);
+});
+
+test('invite page on a non-canonical origin never renders or uses a fragment code', async ({page}) => {
+  const code = 'A'.repeat(43);
+  await page.goto(`/reviewer/invite#code=${code}`);
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('심사 초대 등록');
+  await expect(page.getByText(/초대 코드가 없습니다/)).toBeVisible();
+  expect(await page.content()).not.toContain(code.slice(0, 20) + 'AAAAAAAAAAAAAAAAAAAAAAA');
+  await expect(page.locator('details.selector')).toHaveCount(0);
+});
