@@ -25,6 +25,9 @@ a { color: var(--color-primary); }
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* #79 D-day: same colour and weight as the text around it; never wraps mid-label. */
+.dday { white-space: nowrap; }
+
 .skip-link { position: absolute; left: -9999px; top: 0; }
 .skip-link:focus { left: var(--space-4); top: var(--space-2); z-index: 10; background: var(--color-surface); padding: var(--space-2) var(--space-3); }
 

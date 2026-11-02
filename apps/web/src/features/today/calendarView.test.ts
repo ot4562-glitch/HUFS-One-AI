@@ -71,8 +71,8 @@ describe('#51 calendar grid', () => {
   it('gives each day a screen-reader summary that does not rely on colour', () => {
     expect(day('2026-11-25').ariaLabel).toBe('11월 25일 수요일, 일정 1건');
     expect(day('2026-11-20').ariaLabel).toBe('11월 20일 금요일 (기준일), 일정 없음');
-    expect(day('2026-11-24').items[0]!.ariaLabel).toBe('필수 마감, 가상 SYN-NOT-001, 09:00');
-    expect(day('2026-11-21').items[0]!.ariaLabel).toBe('관심 공고 마감, 추천, 가상 SYN-OPP-002, 00:30');
+    expect(day('2026-11-24').items[0]!.ariaLabel).toBe('필수 마감, 가상 SYN-NOT-001, 09:00, 4일 남음');
+    expect(day('2026-11-21').items[0]!.ariaLabel).toBe('관심 공고 마감, 추천, 가상 SYN-OPP-002, 00:30, 1일 남음');
   });
 
   it('shows overdue calmly and keeps deadlines before the grid in an earlier list', () => {

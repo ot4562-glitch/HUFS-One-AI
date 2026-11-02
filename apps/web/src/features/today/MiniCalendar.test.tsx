@@ -66,8 +66,12 @@ describe('#51 MiniCalendar on 오늘', () => {
     const link = within(calendar()).getByRole('link', {name: /가상 졸업인증 서류 제출/});
     expect(link.getAttribute('href')).toBe('/notices/SYN-NOT-001');
     expect(link.textContent).toContain('마감 09:00');
+    // #79: visible D-4, spoken "4일 남음"; the event below gets none.
+    expect(link.querySelector('.dday [aria-hidden="true"]')?.textContent).toBe('D-4');
+    expect(link.querySelector('.dday .visually-hidden')?.textContent).toBe('4일 남음');
     fireEvent.click(within(calendar()).getByRole('button', {name: '11월 29일 일요일, 일정 1건'}));
     expect(within(calendar()).getByRole('link', {name: /가상 통상 활동 설명회/}).textContent).toContain('일정 09:00 ~ 11월 30일');
+    expect(within(calendar()).getByRole('link', {name: /가상 통상 활동 설명회/}).querySelector('.dday')).toBeNull();
   });
 
   it('keeps overdue, later, undated and needs-confirmation outside the grid', async () => {
