@@ -1,5 +1,28 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 소비자 리뷰 후속: 비공개 근거·학점·수동 저장본
+
+학업 source는 가린 과목의 분반/선수 근거 ref와 URL도 제거한다. 필요한 근거가 숨겨진 확정 경고는 `NEEDS_REVIEW`이며, 승인 receipt 자체가 가린 근거를 포함하면 응답을 만들지 않는다. 일반 승인 학점 상한은 공개 가능한 경우 유지한다. 종료 학기는 저장소 조회 전에 공통 `422 INVALID_INPUT`으로 거절하고, 로컬 계정 학점은 공통 스키마에서 0.5학점 단위만 받는다. 화면의 십진수 입력 파서와 step은 UI 담당이 이 계약을 소비한다.
+
+`importSavedCurriculum({sourceUrl, originalBytes, csv, authority, now, previous})`는 private operator 전용 수동 저장본 입력이다. 승인된 #138 등의 변환 결과를 받고 HTML을 변환하거나 fetch하지 않는다. authority의 `OPERATOR_SAVED` 정책은 `robots: NOT_APPLICABLE`, 기존 수집/보관/약관 허가·정확한 URL/증거/만료, `savedArtifactSha256`, `normalizedCsvSha256`, `capturedAt`, `converterVersion`, `redistribution: ALLOWED|DENIED`를 모두 요구한다. 원본 5MB/CSV 1MB 한도·두 hash와 전후 권한을 확인하고 원본 검수시각을 보존한다. `DENIED`는 로컬 검수용 보존만 뜻하며 재배포·시연·운영 catalog 등록 권한이 아니다. 이 함수는 원본/이름/경로를 반환하거나 DB/파일에 쓰지 않는다.
+
+자동 `collectCurriculum`은 수동 정책을 거절하고 robots `ALLOWED`를 계속 요구한다. 수동 저장·브라우저 접근 가능 여부가 이용권을 대신하지 않는다. `cohort: UNKNOWN`, 9자리 원본 분반 코드와 category 원문을 허용하며 공식 RulePack을 추론하지 않는다. 실제 변환/수집물·권리 심사·운영 등록은 별도이며 현재 합성 테스트만 수행했다.
+
+## 2026-11-02 로컬 후속: PostgreSQL 본인 수강계획 입력 연결
+
+`createPostgresPlatformServices`의 선택 항목 `ownerCatalog: {pool, authority}`는 기존 승인 카탈로그를, `studyPlanCheck: {pool, authority, rights, approvalGate}`는 `PostgresOwnerStudyPlanSnapshotLoader`와 기존 학업 순수 코어를 연결한다. 모든 인자는 서버 운영자가 독립적으로 제공하며 기본값·실자료 fallback·자동 활성화는 없다. `rights`는 조회 전후 개인 목적·정확한 공개 근거를, `approvalGate`는 학업 코어·RulePack의 현재 승인을 별도로 확인해야 한다.
+
+기존 `20261101_owner_approved_catalog.sql`의 `PLAN_INPUT` projection은 학기(`entity_id`)별 **검수된 원장·교과목 학점/개설·학기 규칙·출처 링크·허용 공개 범위**를 `ApprovedOwnerPlanInputSchema`로 저장하는 private operator 입력이다. 학생 계획은 이 승인 입력에 복사하지 않고 같은 read-only repeatable-read 거래에서 `api_self_workspace_records`의 현재 본인 `STUDY_PLAN`을 읽는다. 편집/삭제/추가를 포함한 행 집합으로 `plan-<sha256>` 버전을 계산하므로 오래된 브라우저 버전은 HTTP 409이며 현재 계획 계산을 대체하지 않는다. 공개 응답에는 원장 행·attempt token을 싣지 않는다. 승인 입력이 없으면 workspace도 읽지 않고 HTTP 503이다.
+
+조회 토큰은 actor와 source/consent/projection/계획 행 fingerprint에 결속되고 128개·단회·최대30초로 제한한다. 카탈로그/계획 모두 승인 projection과 SQL SEARCH 권리의 만료 시각으로 토큰 수명을 추가 제한하고, 마지막 비동기 검사 완료 시에도 만료를 재확인한다. 과거 `asOf`는 원본 시점으로 보존하며 권리 만료/철회는 현재 시각으로 검사한다.
+
+새 migration·학생 자료 import·공식 규칙 자동 승인·운영 프로세스는 추가하지 않았다. 검증은 합성 SQL-protocol 및 Fastify HTTP 테스트이며 **실 PostgreSQL/RLS/운영 로그인 검증은 NOT_RUN**이다. 최신 수치와 이행 경계는 [STATUS](../../STATUS.md)를 따른다.
+
+**2026-11-01 미병합 구현 제안:** #119 정정 비교·#86 추천 제외 이유 계약/API,
+#82 read-only What-if gate, #81 계획 검사 통합/신뢰 snapshot→기존 학업 코어 adapter와
+네 브라우저 메서드를 추가했다. 명시적 source/rights/approval 주입 전에는 503이다.
+[경로·주입 계약·소비 방법·남은 게이트](../../docs/OWNER_API_IMPLEMENTATION_20261101.md).
+
 
 > **2026-11-01 최신 `main` 코드 정본:** 플랫폼 [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 병합, 비동기 REVIEWER 등록/목록 grant 재확인 #105, 출처 원본·문단 정합 검수 #99, 동의 철회/삭제 원자 PG #102/#112, 다중 인스턴스 ingest worker lock #113, 보관함 단계 owner-only HTTP #97/브라우저 #106·#115, 학기계획 read-only 권한 gate #103·[학업 #116 strict 응답 호환](https://github.com/ot4562-glitch/HUFS-One-AI/pull/116), 가상 전공 What-if Zod DTO(계산 아님) #107, 캘린더 늦은 응답 방어 #95, REVIEWER 합성 탭 격리/fragment 보호 #100/#110 모두 main 병합. `createIntegratedApi`의 실제 인증/provider/학사 RulePack/자료 권리 포트를 갖추지 않으면 미검증 학업 READY·실학생 응답을 반환하지 않는다.
 >

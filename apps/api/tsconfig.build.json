@@ -5,7 +5,7 @@
     "rootDir": "../..",
     "outDir": "../../dist",
     "declaration": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "noEmitOnError": true
   },
   "include": [

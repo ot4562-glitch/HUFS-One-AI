@@ -37,8 +37,10 @@ jobs:
             /apps/api/
             /infra/sql/
             /packages/core/
+            /packages/ui/
             /apps/web/
             /.github/workflows/task00-contracts.yml
+            /.github/workflows/ui-browser-e2e.yml
             /tests/release/
             /tests/security/
             /tools/release_entrypoint_gate.mjs
@@ -46,6 +48,9 @@ jobs:
             /tools/release_readiness_gate.py
             /tools/verify_browser_release_surface.py
             /tools/verify_release_boundary.py
+            /tools/audit_private_git_metadata.py
+            /tools/private_registry_io.mjs
+            /tools/strip_build_sourcemaps.mjs
             /.github/workflows/release-readiness.yml
             /.dockerignore
       - name: Prove real-student sources are not in this workspace
@@ -112,6 +117,7 @@ jobs:
             /apps/api/
             /infra/sql/
             /packages/core/
+            /tools/strip_build_sourcemaps.mjs
       - name: Prove real-student sources are not in this workspace
         run: |
           test ! -d csv

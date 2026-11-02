@@ -6,6 +6,7 @@ approval. It deliberately rejects new checkout paths until explicitly reviewed.
 from __future__ import annotations
 
 import re
+import json
 import unittest
 from pathlib import Path
 
@@ -19,6 +20,9 @@ SAFE_SPARSE_PATHS = frozenset({
     "/package.json", "/package-lock.json", "/tsconfig.json", "/vitest.config.ts",
     "/packages/contracts/", "/packages/fixtures/synthetic/",
     "/packages/fixtures/negative/", "/packages/core/", "/apps/api/",
+    "/packages/ui/", "/tools/audit_private_git_metadata.py",
+    "/tools/private_registry_io.mjs",
+    "/tools/strip_build_sourcemaps.mjs",
     "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
@@ -28,6 +32,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/verify_release_boundary.py",
     "/.github/workflows/release-readiness.yml",
     "/.github/workflows/task00-contracts.yml",
+    "/.github/workflows/ui-browser-e2e.yml",
 })
 EXCLUDED_DIRECTORIES = (
     "csv", "local_only", "templates/real5-intake", "reference/hufsability/raw",
@@ -97,7 +102,11 @@ def audit_ci_boundary(text: str) -> list[str]:
                 issues.append(f"checkout {index} exceeds reviewed synthetic paths")
         if not {
             "/tests/release/", "/tests/security/",
+            "/packages/ui/", "/tools/audit_private_git_metadata.py",
+            "/tools/private_registry_io.mjs",
+            "/tools/strip_build_sourcemaps.mjs",
             "/.github/workflows/task00-contracts.yml",
+            "/.github/workflows/ui-browser-e2e.yml",
             "/tools/release_entrypoint_gate.mjs",
             "/tools/release_publication_gate.py",
             "/.dockerignore",
@@ -137,6 +146,12 @@ class WorkflowBoundaryTests(unittest.TestCase):
         self.assertEqual(audit_ci_boundary(self.policy), [])
         self.assertIn("/tools/verify_release_boundary.py",
                       sparse_checkout_lists(self.policy)[0])
+        root = WORKFLOW.parents[2]
+        includes = json.loads((root / 'tsconfig.json').read_text(encoding='utf-8'))['include']
+        vitest = (root / 'vitest.config.ts').read_text(encoding='utf-8')
+        for suffix in ('ts', 'tsx'):
+            self.assertIn(f'packages/ui/src/**/*.{suffix}', includes)
+            self.assertIn(f'packages/ui/src/**/*.test.{suffix}', vitest)
         for name in ("release_entrypoint_gate.test.mjs", "release_session_csrf.test.mjs"):
             self.assertTrue(
                 (WORKFLOW.parents[2] / "tests/security" / name).is_file(),
