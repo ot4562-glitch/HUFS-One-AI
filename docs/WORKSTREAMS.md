@@ -1,5 +1,23 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
+## 2026-11-02 추가 코드 병합 후 인수인계 (최신)
+
+- **김채윤 `qamarrchae`:** [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 가상 동아리 승인 상태·시점·추천 **순수 코어** HEAD `8e88a4b` 독립 APPROVED + Actions 2/2 SUCCESS 후 **main `8f76c388` 병합**. 권한 없는 시점의 수정 포스터/조건을 노출하지 않는 최신 회귀 포함. #122 정정 회귀 main `bb5b76d`, #117 이유 코어 HEAD APPROVED이나 별도 UI 변경요청/계약 #120 불일치로 미병합.
+- **이의상 `uisang2004-maker`:** 동아리 #123 게시판·실제 창작 가상 포스터/검색/모바일 UI **미구현**, HUFSAbility #124 메뉴 IA/🚫 비지원 **미구현**. 기존 #72 달력 main `717ce979`, #73 초대 CHANGES_REQUESTED·#74/#75 코드 APPROVED(스택 대기).
+- **심민성 `ot4562-glitch`:** 합성 동아리 core를 소비할 **권한 있는 관리자 승인 서버/contract/API**는 아직 없음. #120 reason enum 3개 누락, #121 API 후속 스택 미병합. 학교 운영 권리·릴리스 #46/#89 별도.
+- **이서연 `lhh42001`:** 공식 학교 연계 표현 검토는 계획 단계, 유료 NCP/실 AI 포스터 생성 운영 승인 없음. **열린 PR 7·Issue 30, 이번 신규 PR 병합 3건.**
+
+아래 같은 날짜의 #125 CHANGES_REQUESTED는 **수정 전 HEAD 리뷰 이력**이다.
+
+## 2026-11-02 새 제품 과제·담당 및 PR 교차검증 (최신)
+
+- **[Issue #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility IA·메뉴 완전 수용(P0):** 이의상 `uisang2004-maker` = 원래 학생 메뉴 5분류·24기능/공개 진입 4영역의 React·모바일·접근성·🚫 상태 UI, 심민성 `ot4562-glitch` = capability/menu manifest·인가 API·실제 main 구현 상태/외부 링크 검증, 이서연 `lhh42001` = 기획·학교 연계 표현 검토. **모든 기능 이식 아님, 구현 PR 아직 없음**.
+- **[Issue #123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 가상 동아리 모집(P1):** 이의상 = 가상 모집 게시판/포스터 UI·360px·접근성; 김채윤 `qamarrchae` = 승인 후 노출·합성 관심사 추천 순수 코어; 심민성 = 인가된 관리자 승인 gate/합성 DTO·API 통합. 이서연은 사용 가치/기획 보조. 실제 에브리타임 글·실동아리 자료 수집·실관리자/학교 권한이 아닌 합성 데모.
+- **김채윤:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) 정정 회귀 **main bb5b76d**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 현 HEAD 총괄 APPROVED·별도 UI 이전 변경 요청 최신 확인 전 미병합. [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125)은 미래 updatedAt/asOf 노출 차단 보완으로 CHANGES_REQUESTED, 포스터는 ID placeholder뿐.
+- **이의상:** [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 캘린더 UI **main 717ce979**; #73 초대 race CHANGES_REQUESTED → #74 졸업 APPROVED → #75 REVIEWER sandbox APPROVED → #76 Playwright COMMENT/독립 실행 미검증. #73 base는 main.
+- **심민성:** #120 정정 비교/제외 이유 계약은 김채윤 CHANGES_REQUESTED(reason enum 3개), #121 안전 owner API는 #120 후행/인적 승인 대기. 운영 OIDC/NCP/실학생 라이선스 처리·개통은 별개.
+- **출시:** #46 개인정보 2 FAIL·#61 인적 독립 골드 0/200·#89 RELEASE_BLOCKED. 완료 체크는 구현·검증한 **세부 범위**에 한정.
+
 ## 2026-11-01 후속 PR 리뷰·인수인계 최신 상태
 
 - **김채윤(추천/공지):** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전 캐시 키는 총괄의 독립 승인/Actions 2 job 성공 후 **main merge `fdf0b09b`**. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 추천 제외 사유는 조직별 노출 상한과 다양성에서 틀린 `OUTRANKED` 설명이 가능해 **CHANGES_REQUESTED**; 알고리즘과 설명의 반례 회귀 추가 필요.

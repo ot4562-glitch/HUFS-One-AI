@@ -1,5 +1,28 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-02 #125 후속 최종 병합 정정 (가장 최신)
+
+- [x] [#125 동아리 추천 순수 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 최신 HEAD `8e88a4b`가 `updatedAt>asOf`·승인 후 수정/재승인·시점 역전을 목록/추천/상세 모두에서 차단하도록 **수정 완료**. 담당자 외 독립 **APPROVED**, 해당 HEAD GitHub Actions 2/2 SUCCESS 후 **main merge `8f76c388`**. 12개 가상 승인 게시글/5개 합성 학생 추천의 **코어 하위 기능** 완료.
+- [x] 이번 실제 신규 병합은 **3건**: #122 `bb5b76d` + #72 `717ce979` + #125 `8f76c388`. **열린 PR 7건** (#73~#76, #117, #120, #121), 열린 Issue **30건**, 기존 닫힌 5건/신규 Issue 종료 0.
+- [ ] **Issue #123 OPEN:** 포스터 assetId만 존재하고 실제 생성 이미지·모집 게시판 UI·권한 확인된 서버 관리자 승인/REST/브라우저 E2E는 없음. 학교 정식 운영/승인·에브리타임 자료 사용 아님. #124 HUFSAbility 메뉴 5대분류·24기능과 🚫 표시도 여전히 구현 전.
+- [ ] #73 초대 성공 응답 경합, #120 사유 enum 미연결, #121 종속 API, #76 실제 Playwright 독립 브라우저 시험, #46 Privacy 2 FAIL·#89 RELEASE_BLOCKED 미해결.
+
+아래 같은 날짜의 #125 'CHANGES_REQUESTED/미병합'·PR 8건/병합 2건 표현은 **해당 이전 감사 시점의 기록**이다.
+
+## 2026-11-02 PR·Issue 전수 감사 — 최신 정본
+
+- [x] **현재** 열린 PR **8건** (#73~#76, #117, #120~#121, #125), 열린 Issue **30건**(신규 #123 동아리·#124 HUFSAbility 메뉴 포함), 기존 종료 Issue **5건**. 이번 회차 총 10개 PR 확인 후 **2개 실제 병합**.
+- [x] **main 병합 #122**: [정정·권리철회·구판 부활·캐시/공지 합성 회귀](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) HEAD 79a94d3, 타인 APPROVED·Actions 2/2 SUCCESS 후 merge **bb5b76d**. 공고 비교 UI/API 완성은 아님.
+- [x] **main 병합 #72**: [비합성 미니 캘린더 API 포트·동일 문맥 snapshot 교체 잔상 방지](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) HEAD e3b04d3, 타인 APPROVED·Actions 2/2 SUCCESS 후 merge **717ce979**. 합성/가짜 transport 검증만, 운영 인증은 별도.
+- [x] 최신 HEAD 독립 리뷰: [#73 초대](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) **CHANGES_REQUESTED**(취소된 getSession 성공 콜백 race; #72 병합 후 base main으로 변경), [#74 졸업](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) **APPROVED**(HIDDEN/PENDING/SHOW 비공식 판정 문구), [#75 합성 sandbox](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) **APPROVED**(snapshot·미저장 편집 격리), [#76 Playwright](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) **COMMENT**(브라우저 E2E 독립 실행/CI 없음).
+- [x] 추천 [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) HEAD 709d285 **APPROVED**(순위 동점·그룹 상한·다양성 수정), 단 UI 검토자의 이전 CHANGES_REQUESTED 최신 수락 확인 전 **미병합**. 계약 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)은 코어 enum GROUP_CAP/DIVERSITY/NO_PERSONAL_INPUT 누락으로 CHANGES_REQUESTED; 후속 API [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)도 미병합.
+- [x] 동아리 [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 합성 코어 HEAD 37f0a2e **CHANGES_REQUESTED**: updatedAt이 asOf보다 미래인데도 과거 시점의 본문/포스터가 목록·추천·상세에 보일 수 있음. 테스트/fixture 제안이 곧 관리자 승인 또는 포스터 이미지 완성은 아님.
+- [x] 이번 회차 Issue **17개 본문**에 좁은 범위의 리뷰·합성 병합 완료 [x]/미수락 [ ] 기록. Issue 신규 전체 종료 **0건**.
+- [ ] [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) **HUFSAbility 메뉴 5대 분류·24기능을 IA에 보존**, 동작 불가 메뉴는 🚫 표시; 정식 구현 PR 아직 없음. [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 동아리 가상 포스터·게시판·추천은 합성 데모 전용; #125 코어 미병합, 포스터/웹 UI 없음. 학교 공식 운영·인증으로 오인 금지.
+- [ ] **데이터·출시:** #46 Private 전체 153/155 PASS·2 FAIL(보호 추적 경로 6), #61 인적 독립 골드 0/200, #89 RELEASE_BLOCKED. 실 Google/외대메일·NCP/TLS·학교 자료권리·공식 RulePack/학생 동의·실브라우저 배포 미검증.
+
+이후의 2026-11-01 절과 이전 PR 수치는 **당시 이력**이며 위 항목이 최신이다.
+
 ## 2026-11-01 후속 PR/Issue 전수 검증 — 최신 정본
 
 - [x] **실병합:** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 버전 캐시 키는 비작성자 현재 HEAD `830a8eaf` APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) synthetic/PG 2/2 SUCCESS 후 **main merge `fdf0b09b`**.

@@ -1,5 +1,18 @@
 # Private 저장소의 명시 승인 학생 수강 CSV 예외
 
+## 2026-11-02 동아리 코어의 승인/시점 보안 후속 정정
+
+- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b`의 미래 수정/승인 후 콘텐츠 변경 노출 방지 및 타인 APPROVED/Actions 2/2 SUCCESS를 검증해 **main `8f76c388` 실제 병합**. 제공물은 **SYNTHETIC 클럽 메타/결정론 추천 함수**이며 posterAssetId는 실제 이미지가 아닌 자리표시자.
+- [ ] 순수 코어 `APPROVED` 값과 시각 검사만으로 **학교 또는 임의 사용자의 관리자 자격/게시 승인 권한을 증명하지 않음**. #123의 신뢰된 서버 관리자 권한·불변 revision 저장·권리 철회/접근 통제·실제 AI 창작 포스터/게시판 UI 미구현. 에브리타임/실동아리 게시글·개인 연락처 재사용 금지.
+- [ ] #124 HUFSAbility 전체 IA/🚫는 공개 이름을 참조하는 시연 UX로 제한, 학교 계정/원본 API·디자인의 무단 이식 아님. #46 Private Privacy 2 FAIL·#89 RELEASE_BLOCKED 유지. 이 아래 #125의 과거 CHANGES_REQUESTED는 최신 HEAD 수정 전의 사실 기록.
+
+## 2026-11-02 새 HUFSAbility 메뉴·동아리 데모 데이터/게시 경계
+
+- [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 메뉴 정보구조 채택은 **공개 이름·대분류의 참조 및 시연 UX 설계**만 허용한다는 제안이다. 공식 학교 시스템의 로그인·SSO·사유지 API·성적/상담·교내 포스터 원본·원본 디자인 규정의 복제나 비공개 자료 수집 권한은 발생하지 않는다. 미이식 메뉴는 🚫 미지원과 확인된 공식 외부 링크를 분리한다.
+- [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 동아리 게시판은 **AI 창작 가상 이름/가상 모집내용/가상 포스터/합성 프로필만** 사용한다. 실제 동아리명·연락처, 에브리타임 작성자/게시물·포스터를 스크래핑/재사용하지 않는다. 가상 관리자 `APPROVED` 상태는 학교 승인·실운영 게시권한이 아니며, 브라우저가 승인 필드를 임의 설정해도 신뢰하지 않는다.
+- [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 코어의 `updatedAt > asOf` 미래 수정 내용 노출은 **CHANGES_REQUESTED**, 과거 시점/최신 권한 확인 후에만 화면·추천·직접 상세 노출할 수 있다. 포스터 asset id는 지금 합성 이미지 생성완료를 뜻하지 않는다.
+- #46 원본 Git 추적 보호 경로 6개/전체 Privacy 153/155 PASS·2 FAIL 미해결; #89 `RELEASE_BLOCKED`. 합성 CI 성공·신규 Issue 생성/문서화만으로 실제 원본 권리, 개인정보 동의, 외부 AI/NCP 업로드/출시를 승인하지 않는다.
+
 ## 2026-11-01 개인정보 코드 게이트 최신 정본
 
 - **main 코드 검증:** 개인 동의 철회/원장 원자 삭제 [#102](https://github.com/ot4562-glitch/HUFS-One-AI/pull/102), 삭제한 owner workspace의 값 비움·옛 tombstone 정리 [#112](https://github.com/ot4562-glitch/HUFS-One-AI/pull/112), Git index의 `csv/private` 등 보호 경로를 **읽지 않고** 개수만 감지·보고값 해시 처리 [#104](https://github.com/ot4562-glitch/HUFS-One-AI/pull/104), Docker ignore/서버 source map 우회 차단 [#108](https://github.com/ot4562-glitch/HUFS-One-AI/pull/108) 및 공개 합성 아티팩트 검사는 main 병합. 합성/일회용 PG CI PASS는 실제 4인 개인정보의 새로운 동의·기관 권리 부여가 아니다.
