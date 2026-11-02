@@ -103,6 +103,22 @@ test('#79 D-day: calm label on the calendar deadline at 360px, spoken as days le
   expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
 });
 
+test('#80 application board: keyboard-only advance, self-record badge, no overflow at 360px', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 900});
+  await page.goto('/applications');
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('지원 현황');
+  const interested = page.getByRole('region', {name: /^관심/});
+  const first = interested.locator('.board__card').first();
+  const title = await first.locator('h4').innerText();
+  await first.getByRole('button', {name: '준비 시작'}).focus();
+  await page.keyboard.press('Enter');
+  const preparing = page.getByRole('region', {name: /^준비 중/});
+  await expect(preparing.getByRole('listitem', {name: title})).toBeVisible();
+  await expect(page.getByRole('region', {name: /^지원 완료/}).getByText('내가 기록함 · 확인되지 않음').first()).toBeVisible();
+  const o = await noHorizontalOverflow(page);
+  expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
+});
+
 test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {
   await page.goto('/');
   await pick(page, 0);
