@@ -1,5 +1,14 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
+## 2026-11-02 최신 팀 인수인계 — HUDSAbility UI/UX 고도화와 합성 코어 PR
+
+- **이의상 `uisang2004-maker` (UI/UX 주관):** [새 디자인 이슈 #141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) + [기존 메뉴 계약 #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124). [학생용 텍스트 아틀라스](HUFSABILITY_UI_COMPONENT_ATLAS.md)에서 관찰된 **11개 상위 메뉴·76화면(오류1)**을 공식 공개 메뉴 **5분류/24기능+진입4**와 별칭/관찰 범위로 대응하여 **모든 기존 메뉴를 미지원🚫이어도 보이게** 설계. 원래 UI의 구조·사용 목적만 참고하고 **같은 디자인 강요 금지/더 나은 독립 UI/UX**: 데스크톱·모바일 320/360/390/768/1440px, 키보드/스크린리더, 상태 및 direct URL fail-closed. 원본 캡처/HTML/학생정보·학교 로고 반입 금지. #131 remount/REVIEWER 두 결함 CHANGES_REQUESTED, #134는 #131 base의 UI + 합성 포트 PR(리뷰 COMMENT, 머지 보류).
+- **김채윤 `qamarrchae` (순수 추천/공지 코어):** [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 가상 설정·전공 재계산 baseline 회귀 **main `26c559e`**, [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/취소 피드·공지 판본 회귀 **main `41de619`**. 각각 타인 HEAD 승인·합성/PG/Chrome 3/3 SUCCESS. 이는 가상 테스트 데이터로 core-only; 실학생·공식 공고·독립 200 gold 증거 아님.
+- **박준영 `taewangim-alt` (학업 수집·변환):** [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) Draft 시간표 변환기 HEAD `37a1136`는 **손상 마지막 행 조용한 누락/행별 year-term 근거 누락**으로 CHANGES_REQUESTED. 고친 새 HEAD + 회귀·현재 CI·독립 승인 전 main 병합하지 않으며 공식 수집/원본 재배포 권한 별도.
+- **심민성 `ot4562-glitch` (manifest/API/통합·검수):** #141 공개5/24/4와 관찰11그룹/76화면을 단일 #137 capability manifest/안전한 route 표시·지원 상태로 매핑/실제 code owner 리뷰. #119 비교 UI·#132 합성 계정 UI·#133 실4인 계정/수업은 전체 OPEN. 본인이 작성한 코드는 자기 승인으로 병합하지 않음.
+- **이서연 `lhh42001` (기획·서비스 표현/외부 NCP 공급자):** #141의 기존 학생 경험 연결과 독립 서비스/학교 공식 운영 오인 방지 카피를 검토. 학교 원본 UI 파일·학교 기관 인증 자료 또는 실 AI/유료 NCP 사용 허가를 추정하지 않음.
+- **전체 상태** (이번 감사 스냅샷): 열린 PR #131/#134/#138 **3**, OPEN Issue **32**/CLOSED **7**; 기존 OPEN 전체 완료/종결 0. #46 개인정보 2 FAIL·#89 `RELEASE_BLOCKED`/실Google·학교 권리·공식 학칙·200/200 gold 인적 검증 미완료. 아래 같은 날짜의 PR #73~#125 상태는 당시 역사 기록.
+
 ## 2026-11-02 추가 코드 병합 후 인수인계 (최신)
 
 - **김채윤 `qamarrchae`:** [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 가상 동아리 승인 상태·시점·추천 **순수 코어** HEAD `8e88a4b` 독립 APPROVED + Actions 2/2 SUCCESS 후 **main `8f76c388` 병합**. 권한 없는 시점의 수정 포스터/조건을 노출하지 않는 최신 회귀 포함. #122 정정 회귀 main `bb5b76d`, #117 이유 코어 HEAD APPROVED이나 별도 UI 변경요청/계약 #120 불일치로 미병합.
