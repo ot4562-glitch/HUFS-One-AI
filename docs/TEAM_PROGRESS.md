@@ -4,15 +4,26 @@
 
 ## 산정 기준과 현재 결과
 
-**고정 수락 게이트별 [x] 수 ÷ 담당별 고정 분모**를 무가중·소수 첫째 자리로 표시한다. 각각 한 범위의 증거 충족률이지 **제품 완성률, 배포 준비율, 작업량·개인 성과 순위가 아니다.** 병합된 PR이 있더라도 게이트 문장의 **모든 조건**이 충족돼야 체크한다. 합성 테스트, 일회용 PostgreSQL, Chrome E2E, 실제 스크린리더, 운영 클라우드, 학교/학생 데이터의 권리 및 독립 인적 평가는 서로 다른 증거다.
+**수락 게이트별 [x] 수 ÷ 각 담당 스코프의 명시된 분모**를 무가중·소수 첫째 자리로 표시한다. **심민성·이의상·김채윤·박준영의 기존 12칸 분모는 유지**하고, 이서연은 2026-11-03 사용자 지시에 따라 **NCP 비코드 운영 5개 항목으로 새 기준선(1/5)을 설정**한다. 따라서 이서연의 옛 1/8과 새 1/5는 동일한 목표의 퍼센트 증가가 아니다. 각각 한 범위의 증거 충족률이지 **제품 완성률, 배포 준비율, 작업량·개인 성과 순위가 아니다.** 병합된 PR이 있더라도 게이트 문장의 **모든 조건**이 충족돼야 체크한다. 합성 테스트, 일회용 PostgreSQL, Chrome E2E, 실제 스크린리더, 운영 클라우드, 학교/학생 데이터의 권리 및 독립 인적 평가는 서로 다른 증거다.
 
 | 담당 및 확정 범위 | 이전 (11/02) | 현재 (11/03) | 이번 수락 변화 |
 | --- | ---: | ---: | --- |
-| **심민성** — 공통 계약, 인증·인가/PG/API·Temporal RAG, 통합보안 | 7/12 · 58.3% | **7/12 · 58.3%** | 0; #137 통합·#142 유지관리 제안은 기존/별도 범위 |
+| **심민성** — 기존 API/보안·Temporal RAG + 신규 NCP/AI **전체 코드** | 7/12 · 58.3% | **기존 7/12 · 58.3%** | 0; 새 SDK/worker/chaos [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)/[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)/[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)은 분모 밖 신규 미완료 코드 과제 |
 | **이의상** — React UI, 접근성, 합성 시연 화면 | 6/12 · 50.0% | **9/12 · 75.0%** | **+3**: #73 심사자 초대, #74 졸업 뷰, #75 REVIEWER 격리 |
 | **김채윤** — 추천·공지 순수 코어/합성 평가 | 7/12 · 58.3% | **7/12 · 58.3%** | 0; #125/#139/#140은 기존/신규 하위 기능 회귀 |
 | **박준영** — 학점·RulePack·수강계획/전망 순수 코어 | 8/12 · 66.7% | **8/12 · 66.7%** | 0; #135 상한 수정은 기존 코어 보강, #138 Draft |
-| **이서연** — NCP·CLOVA OCR/HCX·Laya 및 운영 계획 | 1/8 · 12.5% | **1/8 · 12.5%** | 0; 기획/안전 정책 외 실 provider·운영 승인 미검증 |
+| **이서연** — **NCP 계정·크레딧·운영·실측만(코드 0건)** | 종전 혼합 1/8 · 12.5% | **운영 전용 1/5 · 20.0%** | 사용자 지시로 SDK·bbox·worker·CI·IaC 코딩 5개 항목 제외, **분모 재정의(이전 값과 직접 비교 불가)** |
+
+### 왜 심민성·김채윤은 코드 병합이 많은데 58.3%인가?
+
+2026-11-03 GitHub PR **전체 기록(문서 PR 포함)** 기준으로 심민성 `ot4562-glitch` **57건 작성·46건 병합**, 김채윤 `qamarrchae` **16건 작성·16건 병합**이 확인됐다. 이는 실제 활동의 출처이지만 **병합 건수는 코드량·완성률·기여도 점수 자체가 아니다.** 각자의 기존 12칸 중 **7개 기술 구현·합성 게이트는 통과했고 나머지 5칸은 성격이 다르다.**
+
+| 담당 | 남은 5개 수락 조건을 가로막는 실제 의존성 | 완화·해결 소유/선행 |
+| --- | --- | --- |
+| **심민성** | ① 실 Google OIDC/JWKS·외대메일·REVIEWER 초대 종단 ② 운영 PG·TLS·NCP 직접IP/preview 보안 ③ Private Git 원본·동의/이력과 privacy **2 FAIL** ④ UI·학업 provider 실제 종단 ⑤ 독립 골드/실출처 추천 검수 | ① owner/실 메일 권한 ② **이서연 NCP 운영 #12/#22** + 심민성 배포/보안 코드 ③ [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 권리·감사 ④ UI/학업 담당과 통합 ⑤ [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 독립 검토/자료권리 |
+| **김채윤** | ① 독립 사람 gold 200/200 (**확인된 0/200**) ② 기관 공고 원본 권리·정정/자격 검수 ③ 실출처 품질·편향·Recall/latency 독립 평가 ④ 실권한 UI/캘린더 종단 ⑤ rank-v1.1 기본 정책 채택/인적 검증 | ① **독립 검토자/owner** #61(김채윤 자체검수 200은 gold와 별개) ② 심민성 source rights #19/#46 ③ 승인 데이터·평가 설계 ④ 이의상 UI·심민성 API ⑤ 최종 제품정책 승인 |
+
+즉 **58.3% = 전체 코드가 58.3% 완성되었다는 뜻이 아니다.** 출시/실데이터·인적 검증을 억지로 [x]로 바꾸지 않고 **개발 구현 증거와 외부/통합 차단 목록을 병렬 관리**한다. 또한 2026-11-03 **NCP SDK/worker/chaos 코딩을 심민성에게 신규 할당**([#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)/[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)/[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143))했지만 기존 고정 12칸의 분모에 가산하거나 아직 미작성인 코드를 완료로 처리하지 않는다.
 
 ### 이번에 새롭게 수락한 UI 3항목의 직접 증거
 
@@ -22,7 +33,7 @@
 
 **부분 진행이지만 이번에 추가로 [x]로 바꾸지 않은 항목:** [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76)은 `main 028f88d` 병합·HEAD 비작성자 APPROVED/합성·PG 2/2 성공. [#126](https://github.com/ot4562-glitch/HUFS-One-AI/issues/126)에서 확인된 [main Chrome Actions 41463272343](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41463272343)은 UI **14/14**·독립 합성 계정 **9/9** 성공. 현재 `apps/web/e2e/ui.spec.ts`는 320/360/390/768/1440px 오버플로, 390px 키보드 포커스와 접근성 이름 일부를 검사하지만 **실제 스크린리더 수락 결과가 없다**. 따라서 원래 **E2E + 360px + 키보드/스크린리더** 복합 게이트는 [ ] 유지.
 
-## 고정 수락 게이트 원장 — 완료 체크는 원래 범위만
+## 수락 게이트 원장 — 4인 개발 고정 범위 + 이서연 NCP 운영 신기준
 
 ### 심민성 `ot4562-glitch` — 7/12 (58.3%)
 
@@ -84,16 +95,17 @@
 - [ ] 승인된 학업 provider→owner `/api/study-plans/check` 실제 연결·UI #81 종단 검증 ([#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), [#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81)). #137 승인 전 자료 gate만 운영.
 - [ ] 타 전공을 가정한 What-if 실제 계산 엔진·공식 학칙 근거·UI 소비 ([#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82)). #107 DTO-only. [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) 저장 시간표 변환기는 **DRAFT·CHANGES_REQUESTED**, 고유 완료 증거 아님.
 
-### 이서연 `lhh42001` — 1/8 (12.5%)
+### 이서연 `lhh42001` — **NCP 운영 전용 1/5 (20.0%)**, 2026-11-03 새 기준선
 
-- [x] 조건부 NCP 비용·운영 아키텍처, Laya worker 기본 OFF·CPU/메모리 안전 정책 **문서 단계** ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [NCP 운영](NCP_OPERATIONS_2026.md)).
-- [ ] General OCR 실제 provider adapter 또는 승인된 독립 fake-provider 계약 시험 ([#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)).
-- [ ] HCX-005 Vision bbox·이미지 원문/인용과 포스터 20개 독립 수락 ([#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#23](https://github.com/ot4562-glitch/HUFS-One-AI/issues/23)).
-- [ ] HCX-007 provider/요금·한도/안전 fallback 확인 ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)).
-- [ ] Laya CPU·ONNX 격리 worker, 실부하·OOM/복구 실험 ([#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)).
-- [ ] 429/503/지연·예산/철회/시점 경계 offline provider chaos 검증 ([#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)).
-- [ ] NCP 권한/크레딧/라이선스·실네트워크/TLS/IAM·배포/롤백 승인 ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)).
-- [ ] 클라우드 p95/RSS·사용비용/중지·실자료/모델 외부전송의 인적·권리 승인 ([#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)).
+> **역할 기준 변경:** 이전 8개 항목에는 General OCR/HCX SDK, bbox, Laya ONNX worker, offline chaos 등 **개발 코드 업무**가 혼합되어 있었다. 모두 **심민성** [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)·[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)·[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)로 이전. 이서연에게 코드/스크립트/CI/IaC 개발 **0건** 배정. 옛 1/8(12.5%)은 역사적 수치일 뿐 지금의 1/5와 직접 비교 금지.
+
+- [x] 조건부 High Memory-g3·NCP 크레딧/시간요금·서버/서비스 비용 상한, Laya 기본 OFF·CPU 보호의 **운영 계획 문서화** ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [NCP 운영](NCP_OPERATIONS_2026.md)). 실 콘솔/과금 승인 아님.
+- [ ] **NCP 계정/리전/SKU/크레딧·요금/과금 기간·서비스 구독 승인**의 실제 콘솔/계약 영수증 확인 ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)).
+- [ ] 사용자 승인 후 NCP **VPC/스토리지/ACL/TLS/DNS/비밀키/IAM·백업/복원·직접 IP/preview** 운영환경 보안 확인. 설정 스크립트/자동화·코드 작성은 심민성 ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)).
+- [ ] **General OCR·HCX-005/007 서비스 이용권·endpoint·quota·실 과금·키 권한/운영 하드 한도** 확인/비코드 영수증. SDK/retry/비용 차단 구현은 심민성 ([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)).
+- [ ] 승인된 **NCP 실제 호스트**의 CPU/RSS/p95/비용·중단/복원/반납/청구 종료 영수증 확보. Laya worker·systemd·측정 스크립트 개발은 심민성 ([#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)). 실제 NCP 미개통 상태를 PASS로 보지 않음.
+
+**NCP 운영 증거 수락 1/5 = 20.0%.** 개인 기여·능력·개발 완성률의 점수가 아니다.
 
 ## 고정 분모 밖 새 구현의 인정 범위
 
@@ -104,6 +116,11 @@
 | 추천 [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) `8f76c38`, [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) `26c559e`, [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) `41de619` | 승인 시점에 따른 가상 동아리 추천 코어, 합성 개인화 재계산·공고 정정 판본 회귀 **테스트-only** | 기존 추천·시점/캐시/평가의 합성 근거를 보강. 인적 평가·실기관 권리·운영 검증 새 수락은 아님 |
 | 통합 [#137](https://github.com/ot4562-glitch/HUFS-One-AI/pull/137) `f593b61` | 빈 독립 합성 계정 및 본인 승인 자료/수강계획 API 경계·capability manifest **코드** | 실 4인 로그인/검수된 공식 RulePack·배포를 뜻하지 않음. 기존 owner 부분 게이트 보강 |
 | 유지관리 [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) OPEN | 브랜치 정리 dry-run 도구 + Node 안전 테스트 4/4. HEAD `53039bd`의 synthetic/PG/Chrome CI 3/3 SUCCESS, **비작성자 리뷰 0건/미병합** | 운영 유지관리 별도 과제이며 제품 기능 게이트 아님. 실제 원격 브랜치 삭제 0건 |
+
+## 2026-11-03 NCP 코드/운영 인계
+
+- **심민성 단독 개발:** [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20) OCR/HCX Vision provider SDK·bbox·근거/비용/권리, [#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88) fake-provider/CPU/429/503 오프라인 chaos, [#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143) ONNX Laya worker·queue/cgroup/systemd/Docker/IaC·모니터링/CI 코드. **3건 모두 OPEN/신규 미수락, 사용료/모델 다운로드·실운영 허가 아님**.
+- **이서연 단독 NCP 비코드 운영:** [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) 환경/서비스 사용권·예산/권한, [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) 호스트 CPU/비용 실측/중단·복원 영수증. UI/합성/학업 개발 이슈 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)·[#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141)·[#132](https://github.com/ot4562-glitch/HUFS-One-AI/issues/132)·[#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)에서 개발 assignee를 해제. **실자료 제공 대상 4명 중 1명이라는 사실은 유지**.
 
 ## 공통 차단 및 기록 주의
 
