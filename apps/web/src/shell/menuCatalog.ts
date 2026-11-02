@@ -51,6 +51,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     ext('ext-experience', '나의 경험', '/experience'),
     ext('ext-saved', '보관함', '/saved'),
     ext('ext-applications', '지원 현황', '/applications'),
+    ext('ext-clubs', '동아리 모집', '/clubs'),
   ]},
   {id: 'competency', label: '역량관리', origin: 'HUFSABILITY', items: [
     off('competency-intro', '핵심역량 소개'),

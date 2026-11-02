@@ -126,7 +126,7 @@ test('#124 sidebar at 1440px: whole HUFSAbility menu visible, 🚫 items never t
   const nav = page.getByRole('navigation', {name: '전체 메뉴'});
   await expect(nav).toBeVisible();
   await expect(nav.locator('.menu__item.is-off')).toHaveCount(23);
-  await expect(nav.locator('a.menu__item')).toHaveCount(10);
+  await expect(nav.locator('a.menu__item')).toHaveCount(11);
   // Tab through the sidebar: focus only ever lands on real links.
   await page.keyboard.press('Tab'); // skip link
   for (let i = 0; i < 12; i++) {
@@ -136,6 +136,24 @@ test('#124 sidebar at 1440px: whole HUFSAbility menu visible, 🚫 items never t
   }
   await nav.getByRole('link', {name: '지원 현황'}).click();
   await expect(page.getByRole('heading', {level: 1})).toHaveText('지원 현황');
+});
+
+test('#123 club board at 360px: recommendations, filter, detail; unapproved post never opens', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 900});
+  await page.goto('/clubs');
+  await pick(page, 0);
+  const rec = page.getByRole('region', {name: '나에게 맞는 동아리'});
+  await expect(rec.locator('.club').first()).toBeVisible();
+  await expect(rec.getByText('가상 관리자 승인(시연)').first()).toBeVisible();
+  await page.getByLabel('검색').fill('공방');
+  await expect(page.getByRole('region', {name: '전체 모집 글'}).locator('.club')).toHaveCount(1);
+  const o = await noHorizontalOverflow(page);
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+  await page.getByRole('region', {name: '전체 모집 글'}).getByRole('link', {name: /번역공방/}).click();
+  await expect(page.getByRole('main')).toContainText('출처: 합성 데이터');
+  await page.goto('/clubs/SYN-CLUB-014');
+  await pick(page, 0);
+  await expect(page.getByRole('main')).toContainText('지금 볼 수 있는 모집 글이 아니에요');
 });
 
 test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {
