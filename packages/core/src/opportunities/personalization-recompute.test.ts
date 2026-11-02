@@ -70,6 +70,8 @@ describe('#132 empty demo account: honest "settings needed" state, no fixture fa
 });
 
 describe('#132 settings A → B actually recompute feed, notices and clubs', () => {
+  // Baselines captured BEFORE any A/B computation, so a residue shared by later runs cannot hide (#139 review).
+  const emptyBaseline = JSON.stringify(recompute(EMPTY));
   const ra = recompute(A);
   const rb = recompute(B);
 
@@ -105,7 +107,9 @@ describe('#132 settings A → B actually recompute feed, notices and clubs', () 
   it('A → B → A and reset → EMPTY return byte-identical results (stateless, no cache residue)', () => {
     recompute(B);
     expect(JSON.stringify(recompute(A))).toBe(JSON.stringify(ra));
-    expect(JSON.stringify(recompute(EMPTY))).toBe(JSON.stringify(recompute({...EMPTY})));
-    expect(featuredIds(recompute(EMPTY))).toEqual([]);
+    // Reset after A and B must equal the empty result captured before them, and still be empty.
+    const reset = recompute(EMPTY);
+    expect(JSON.stringify(reset)).toBe(emptyBaseline);
+    expect([featuredIds(reset), clubIds(reset), personalNotices(reset)]).toEqual([[], [], []]);
   });
 });

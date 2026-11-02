@@ -41,10 +41,13 @@ describe('#133 major / double-major changes recompute notice applicability', () 
     const r = composeNotices(base, NOTICES, {asOf:DEMO_AS_OF}).evaluations;
     expect(r.every(e => e.unknownScope.includes('majors'))).toBe(true);
   });
-  it('removing the double major again returns exactly the primary-only result (no residue)', () => {
-    applies(withDouble);
-    expect(JSON.stringify(composeNotices(primaryOnly, NOTICES, {asOf:DEMO_AS_OF})))
-      .toBe(JSON.stringify(composeNotices({...base, majors:[{major:'가상통계학과', role:'PRIMARY'}]}, NOTICES, {asOf:DEMO_AS_OF})));
+  it('removing the double major again returns exactly the primary-only result captured before (no residue)', () => {
+    // Baseline captured BEFORE the double major is added (#139 review), then compared after removal.
+    const baseline = JSON.stringify(composeNotices(primaryOnly, NOTICES, {asOf:DEMO_AS_OF}));
+    expect(applies(withDouble)).toEqual({M1:'YES', M2:'YES', M3:'YES'});
+    const removed:NoticeStudent = {...base, majors:[{major:'가상통계학과', role:'PRIMARY'}]};
+    expect(JSON.stringify(composeNotices(removed, NOTICES, {asOf:DEMO_AS_OF}))).toBe(baseline);
+    expect(applies(removed)).toEqual({M1:'NO', M2:'YES', M3:'YES'});
   });
 });
 
