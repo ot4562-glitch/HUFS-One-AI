@@ -20,4 +20,11 @@ Ruling: follow the user's explicit implementation directive and minimal-document
 
 ## Current integration checkpoint — 2026-11-02
 
+### Owner goal continuation
+
+- [ ] Reproduce PR #137's approval/board clock mismatch before and after the fixed demo date in `tests/api/synthetic-club-store.test.ts`.
+- [ ] Keep synthetic moderation timestamps and board `asOf` on `DEMO_AS_OF` in the owner server adapter; keep real session checks and receipt expiry on the wall clock. Do not change the collaborator's club core or UI.
+- [ ] Integrate current main without discarding existing local commits, then run focused API regression, typecheck/build and the installed-browser synthetic checks. Record actual results and remaining owner/external dependencies.
+- [ ] Preserve a local reviewable checkpoint; do not push, create PRs or merge main under this goal's current local-only boundary.
+
 Integrated current `main` (reviewer invite/graduation/sandbox and #117 core) with the isolated synthetic account workbench; resolved `App.tsx`/`main.tsx` conflicts. Repaired select accessible names and restored `packages/ui` typecheck/Vitest coverage. Typecheck, API/web builds, 429 focused Vitest tests and Chromium loopback E2E 9/9 PASS; the prior owner checkpoint also recorded API 796 PASS/32 optional live tests skipped. Actual official curriculum collection remains assigned to `taewangim-alt` in #133, pending reuse permission; one malformed original course ledger remains quarantined `NEEDS_REVIEW`. Four restricted real-owner profiles are distinct from four **invented** synthetic UI fixtures. `check:privacy` still blocks 2/173 checks due to six historically tracked protected files. Reviewer CI/approval and real Google/mail/NCP/PG are independent gates; neither #132 nor #133 nor release is 100% complete.

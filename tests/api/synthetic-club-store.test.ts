@@ -13,13 +13,13 @@ const owners={alpha:{...base,role:'BETA' as const,actorId:'alpha-synthetic'},
   admin:{...base,role:'ADMIN' as const,actorId:'demo-operator'}};
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
 afterEach(async()=>{await Promise.all(apps.map(app=>app.close()));apps.length=0;});
-function preview(){
-  const store=new MemorySyntheticClubDemoStore({'alpha-synthetic':'S01','beta-synthetic':'S02'},()=>at);
+function preview(wallClock=at){
+  const store=new MemorySyntheticClubDemoStore({'alpha-synthetic':'S01','beta-synthetic':'S02'},()=>wallClock);
   let principal:typeof owners[keyof typeof owners]=owners.alpha,operatorAllowed=true;
   const app=createIntegratedApi({allowedOrigin:origin,
     repository:new MemoryApiRepository({profiles:[]}),
     auth:{verifySession:async()=>principal,revokeSession:async()=>{}},
-    now:()=>at,adminAuthority:{isApproved:async()=>operatorAllowed},
+    now:()=>wallClock,adminAuthority:{isApproved:async()=>operatorAllowed},
     syntheticClubs:{source:store.source,moderation:store.moderation}});
   apps.push(app);
   return {
@@ -33,6 +33,29 @@ function preview(){
   };
 }
 describe('#123 explicit, ephemeral synthetic server provider',()=>{
+  it.each(['2026-11-02T00:00:00.000Z','2026-11-25T00:00:00.000Z'])(
+    'uses the board synthetic date for approval when the session clock is %s',async wallClock=>{
+      const p=preview(wallClock),id='SYN-CLUB-014';
+      p.choose('admin');
+      expect((await p.decide(id,'APPROVE')).statusCode).toBe(200);
+      p.choose('alpha');
+      const board=SyntheticClubBoardResponseSchema.parse((await p.list()).json());
+      expect(board.asOf).toBe(at);
+      expect(board.items.find(item=>item.post.id===id)?.post.approvedAt).toBe(board.asOf);
+      expect((await p.detail(id)).statusCode).toBe(200);
+      // Revocation remains visible even when the real and replay dates differ.
+      p.choose('admin');
+      expect((await p.decide(id,'REVOKE',1)).statusCode).toBe(200);
+      p.choose('alpha');
+      expect((await p.detail(id)).statusCode).toBe(403);
+    });
+  it('keeps expired real sessions blocked despite the earlier synthetic replay date',async()=>{
+    const p=preview('2026-12-02T00:00:00.000Z');
+    p.choose('admin');
+    expect((await p.decide('SYN-CLUB-014','APPROVE')).statusCode).toBe(401);
+    p.choose('alpha');
+    expect((await p.list()).statusCode).toBe(401);
+  });
   it('separates five fictional user choices through a trusted server mapping and never returns real posts',async()=>{
     const p=preview();
     const first=SyntheticClubBoardResponseSchema.parse((await p.list()).json());

@@ -62,8 +62,11 @@ export class MemorySyntheticClubDemoStore {
   };
   readonly moderation:TrustedSyntheticClubModerationPort={
     decide:async({adminActorId,postId,expectedVersion,decision,now,assertCurrentAdmin})=>{
-      const old=this.records.get(postId),at=Date.parse(now);
-      if(!adminActorId||!old||old.version!==expectedVersion||!Number.isFinite(at))return null;
+      // Fixture facts and simulated decisions share the board's replay date.
+      // Wall time still governs session authorization and read-receipt expiry.
+      const approvedAt=DEMO_AS_OF,at=Date.parse(approvedAt);
+      const old=this.records.get(postId);
+      if(!adminActorId||!old||old.version!==expectedVersion||!Number.isFinite(Date.parse(now)))return null;
       if(decision==='REVOKE'&&old.post.state!=='APPROVED')return null;
       if((decision==='APPROVE'||decision==='REJECT')&&old.post.state!=='REVIEW_PENDING')return null;
       if(decision==='APPROVE'&&Date.parse(old.post.updatedAt)>at)return null;
@@ -71,7 +74,7 @@ export class MemorySyntheticClubDemoStore {
       if(!await assertCurrentAdmin())return null;
       if(this.records.get(postId)!==old||old.version!==expectedVersion)return null;
       const state=decision==='APPROVE'?'APPROVED':decision==='REJECT'?'REJECTED':'REVOKED';
-      const post:ClubPost={...old.post,state,...(decision==='APPROVE'?{approvedAt:now}:{})};
+      const post:ClubPost={...old.post,state,...(decision==='APPROVE'?{approvedAt}:{})};
       this.records.set(postId,{post,version:expectedVersion+1});
       this.revision++;
       this.receipts.clear();
