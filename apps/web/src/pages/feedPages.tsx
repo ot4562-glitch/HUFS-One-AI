@@ -3,6 +3,7 @@ import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
+import {DDayText} from '../features/demo/DDayText.js';
 import {Badges, CompactRow, FeaturedCard, NOT_SHARED_TEXT, NoSnapshot, NoticeRow, Section, screenViewOf} from './parts.js';
 
 /** 오늘: large matched cards (≤3), compact general list (≤6), pinned notices (A11.1). */
@@ -80,7 +81,7 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
         <dl className="facts">
           <dt>모집 상태</dt><dd>{card.lifecycleText}</dd>
           <dt>지원 조건</dt><dd>{card.eligibilityText}</dd>
-          {card.deadlineText && <><dt>마감</dt><dd>{card.deadlineText}</dd></>}
+          {card.deadlineText && <><dt>마감</dt><dd>{card.deadlineText}{card.dday && <> · <DDayText dday={card.dday} /></>}</dd></>}
           {card.topicTexts.length > 0 && <><dt>분야</dt><dd>{card.topicTexts.join(' · ')}</dd></>}
           <dt>근거</dt><dd>{card.evidenceRefs.length}개 확인 자료</dd>
         </dl>
@@ -122,7 +123,7 @@ export const noticeDetailPage: PageRenderer = ({path, state, navigate, sandbox})
         <dl className="facts">
           <dt>중요도</dt><dd>{item.priorityText}</dd>
           <dt>해당 여부</dt><dd>{item.appliesText}</dd>
-          {item.deadlineText && <><dt>학생 마감</dt><dd>{item.deadlineText}{item.overdueText ? ` (${item.overdueText})` : ''}</dd></>}
+          {item.deadlineText && <><dt>학생 마감</dt><dd>{item.deadlineText}{item.dday && <> · <DDayText dday={item.dday} /></>}{item.overdueText ? ` (${item.overdueText})` : ''}</dd></>}
           <dt>근거</dt><dd>{item.evidenceCount}개 확인 자료</dd>
         </dl>
         {sandbox && <NoticeReadToggle sandbox={sandbox} id={item.noticeId} />}

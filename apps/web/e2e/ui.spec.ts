@@ -90,6 +90,19 @@ test('calendar: choosing a day lists its 마감/일정 with links', async ({page
   await expect(cal.locator('.cal__day-detail').getByRole('link').first()).toBeVisible();
 });
 
+test('#79 D-day: calm label on the calendar deadline at 360px, spoken as days left, no overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 900});
+  await page.goto('/');
+  await pick(page, 0);
+  const cal = page.getByRole('region', {name: '내 주요 일정'});
+  await cal.getByRole('button', {name: '11월 24일 화요일, 마감 1건'}).click();
+  const link = cal.locator('.cal__day-detail').getByRole('link').first();
+  await expect(link.locator('.dday [aria-hidden="true"]')).toHaveText('D-4');
+  await expect(link).toHaveAccessibleName(/4일 남음/);
+  const o = await noHorizontalOverflow(page);
+  expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
+});
+
 test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {
   await page.goto('/');
   await pick(page, 0);

@@ -1,5 +1,6 @@
 import type {AcademicSummary, DemoProfileOption, DemoSnapshot, FeedResult, ForecastSummary} from '@hufs-one/contracts';
 import {TOPIC_TEXT} from './topicText.js';
+import {ddayOf, type DDayView} from './dday.js';
 
 type SharedSection = DemoProfileOption['allowedSections'][number];
 type FeedCard = FeedResult['featured'][number];
@@ -24,6 +25,8 @@ export interface FeedCardView {
   readonly relevance: {readonly text: string; readonly disclaimer: string} | null;
   readonly reasons: readonly string[];
   readonly deadlineText: string | null;
+  /** #79: only for a CONFIRMED deadline of a card that is not CLOSED, counted from the feed asOf. */
+  readonly dday: DDayView | null;
 }
 
 export interface FeedView {
@@ -62,8 +65,9 @@ const PROVENANCE_BADGE: Record<DemoSnapshot['aiProvenance'], string | null> = {
 
 const PENDING_TEXT = {NOT_SHARED: '공유되지 않은 정보입니다.', PENDING: '아직 준비 중인 정보입니다.'} as const;
 
-function cardView(card: FeedCard): FeedCardView {
+function cardView(card: FeedCard, asOf: string): FeedCardView {
   const ex = card.explanation;
+  const confirmed = ex?.deadline.kind === 'CONFIRMED' ? ex.deadline.iso : undefined;
   return {
     opportunityId: card.opportunityId,
     title: card.title,
@@ -75,6 +79,7 @@ function cardView(card: FeedCard): FeedCardView {
     relevance: ex ? {text: `관련도 ${ex.relevance.score} · ${ex.relevance.label}`, disclaimer: ex.relevance.disclaimer} : null,
     reasons: ex ? ex.reasons.map(r => r.text) : [],
     deadlineText: ex ? ex.deadline.text : null,
+    dday: confirmed !== undefined && card.lifecycle !== 'CLOSED' ? ddayOf(confirmed, asOf) : null,
   };
 }
 
@@ -101,7 +106,7 @@ export function buildDemoScreenView(snapshot: DemoSnapshot, allowedSections: rea
   return {
     snapshotBadges,
     feed: allow.has('FEED')
-      ? {kind: 'SHOW', data: {featured: snapshot.feed.featured.map(cardView), compact: snapshot.feed.compact.map(cardView), hasMore: snapshot.feed.hasMore}}
+      ? {kind: 'SHOW', data: {featured: snapshot.feed.featured.map(c => cardView(c, snapshot.feed.asOf)), compact: snapshot.feed.compact.map(c => cardView(c, snapshot.feed.asOf)), hasMore: snapshot.feed.hasMore}}
       : {kind: 'HIDDEN'},
     notices: allow.has('NOTICES') ? {kind: 'SHOW', data: snapshot.notices} : {kind: 'HIDDEN'},
     academics: gated<AcademicSummary>(allow.has('ACADEMICS'), snapshot.academics),

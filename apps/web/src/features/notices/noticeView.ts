@@ -1,4 +1,5 @@
 import type {NoticeResult} from '@hufs-one/contracts';
+import {ddayOf, type DDayView} from '../demo/dday.js';
 
 type NoticeItem = NoticeResult['items'][number];
 
@@ -11,6 +12,8 @@ export interface NoticeItemView {
   /** Student submission deadline only; the department's internal report deadline is never shown as one. */
   readonly deadlineText: string | null;
   readonly overdueText: string | null;
+  /** #79: student deadline still ahead of the notices asOf, and not marked as not applying to me. */
+  readonly dday: DDayView | null;
   readonly verificationText: string | null;
   readonly evidenceCount: number;
   readonly path: string;
@@ -56,6 +59,7 @@ export function buildNoticeList(result: NoticeResult): NoticeItemView[] {
     appliesText: APPLIES_TEXT[i.appliesTo],
     deadlineText: i.studentDeadline ? `제출 마감 ${deadlineFmt.format(Date.parse(i.studentDeadline))}` : null,
     overdueText: i.overdue === true ? '기한 경과 · 담당부서 확인' : null,
+    dday: i.studentDeadline && i.overdue !== true && i.appliesTo !== 'NO' ? ddayOf(i.studentDeadline, result.asOf) : null,
     verificationText: VERIFICATION_TEXT[i.verificationState as Exclude<NoticeItem['verificationState'], 'REJECTED'>],
     evidenceCount: i.evidenceRefs.length,
     path: `/notices/${encodeURIComponent(i.noticeId)}`,
