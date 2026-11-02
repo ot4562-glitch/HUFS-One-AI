@@ -50,7 +50,9 @@ describe('local HTTP workbench controls',()=>{
   });
   it('offers labeled native controls at a 360px viewport and explains unknown sections',async()=>{
     Object.defineProperty(window,'innerWidth',{value:360,configurable:true});setup();await screen.findByText('취득학점: 미입력');
-    expect(screen.getByLabelText('로컬 합성 계정').tagName).toBe('SELECT');fireEvent.click(screen.getByRole('button',{name:'계정 설정'}));
+    expect(screen.getByRole('combobox',{name:'로컬 합성 계정'}).tagName).toBe('SELECT');fireEvent.click(screen.getByRole('button',{name:'계정 설정'}));
+    expect(screen.getByRole('combobox',{name:'복수·이중전공 상태'}).tagName).toBe('SELECT');
+    expect(screen.getByRole('combobox',{name:'캠퍼스'}).tagName).toBe('SELECT');
     expect(screen.getByRole('group',{name:'관심 분야 (최대 5개)'})).toBeTruthy();
     expect(screen.getByRole('heading',{name:'AI 상태'})).toBeTruthy();
     expect(screen.getAllByText(/UNKNOWN/).length).toBeGreaterThan(0);

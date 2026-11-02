@@ -25,12 +25,12 @@ function ProfileSettings({profile,onSave,onCancel}:{profile:LocalAccountProfile;
     {error&&<p role="alert">{error}</p>}
     <label>표시 이름<input value={draft.displayName} maxLength={60} required onChange={event=>edit('displayName',event.target.value)}/></label>
     <label>주전공<input value={draft.primaryMajor} maxLength={100} onChange={event=>edit('primaryMajor',event.target.value)}/></label>
-    <label>복수·이중전공 상태<select value={draft.doubleMajorStatus} onChange={event=>setDraft(previous=>({...previous,doubleMajorStatus:event.target.value as ProfileDraft['doubleMajorStatus'],doubleMajor:''}))}>
+    <label>복수·이중전공 상태<select aria-label="복수·이중전공 상태" value={draft.doubleMajorStatus} onChange={event=>setDraft(previous=>({...previous,doubleMajorStatus:event.target.value as ProfileDraft['doubleMajorStatus'],doubleMajor:''}))}>
       <option value="UNSET">미정 · UNSET</option><option value="NONE">없음 · NONE</option><option value="SELECTED">선택함 · SELECTED</option></select></label>
     {draft.doubleMajorStatus==='SELECTED'&&<label>복수·이중전공명<input required value={draft.doubleMajor} maxLength={100} onChange={event=>edit('doubleMajor',event.target.value)}/></label>}
     <label>취득학점<input type="number" min="0" max="500" step="any" inputMode="decimal" value={draft.earnedCredits} onChange={event=>edit('earnedCredits',event.target.value)} aria-describedby="local-credit-help"/></label>
     <p id="local-credit-help" className="muted">빈칸 = 미입력 · 0 = 취득학점 0. 수강 원장이나 공식 졸업 판정으로 인정되지 않습니다.</p>
-    <label>캠퍼스<select value={draft.campus} onChange={event=>edit('campus',event.target.value as ProfileDraft['campus'])}>
+    <label>캠퍼스<select aria-label="캠퍼스" value={draft.campus} onChange={event=>edit('campus',event.target.value as ProfileDraft['campus'])}>
       <option value="">미입력</option><option value="SEOUL">서울</option><option value="GLOBAL">글로벌</option></select></label>
     <label>입학연도<input type="number" min="1900" max="2100" step="1" value={draft.cohort} onChange={event=>edit('cohort',event.target.value)}/></label>
     <TopicChoices legend="관심 분야 (최대 5개)" selected={draft.interestTopics} limit={5} onChange={topics=>edit('interestTopics',topics)}/>
@@ -122,7 +122,7 @@ export function LocalAccountWorkbench({controller:provided}:{controller?:LocalAc
   return <div className="local-account">
     <div inert={reset}>
       <p className="local-account__notice" role="note">SYNTHETIC · 로컬 HTTP 계정 실험실. 실제 로그인·학교 인증이 아닙니다. 실학생 자료를 입력하지 마세요. 서버 메모리는 재시작하면 사라집니다.</p>
-      <div className="local-account__toolbar"><label>로컬 합성 계정<select value={state.session?.accountId??''} disabled={!state.session} onChange={event=>void controller.select(event.target.value as LocalAccountId)}>
+      <div className="local-account__toolbar"><label>로컬 합성 계정<select aria-label="로컬 합성 계정" value={state.session?.accountId??''} disabled={!state.session} onChange={event=>void controller.select(event.target.value as LocalAccountId)}>
         {!state.session&&<option value="">불러오기 필요</option>}{state.session?.accounts.map(account=><option key={account.accountId} value={account.accountId}>{account.label} · SYNTHETIC</option>)}</select></label>
         <button type="button" disabled={!snapshot} aria-expanded={settings} onClick={()=>setSettings(!settings)}>계정 설정</button>
         {snapshot?.accountId==='BLANK_DEMO'&&<button type="button" onClick={()=>setReset(true)}>빈 데모 초기화</button>}

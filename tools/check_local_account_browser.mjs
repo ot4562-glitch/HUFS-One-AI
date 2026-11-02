@@ -37,6 +37,7 @@ try {
   browser=await chromium.launch({headless:true,...(process.env.PW_EXECUTABLE_PATH?
     {executablePath:process.env.PW_EXECUTABLE_PATH}:{channel:process.env.PW_CHANNEL??'chrome'})});
   const context=await browser.newContext({viewport:{width:360,height:800}});
+  context.setDefaultTimeout(12_000); // fail promptly on inaccessible/missing controls
   const page=await context.newPage();
   diagnosticPage=page;
   const pageErrors=[];page.on('pageerror',error=>pageErrors.push(error.message));
