@@ -1,5 +1,7 @@
 import {useEffect, useRef, type ComponentType, type ReactNode} from 'react';
 import type {DemoContext} from '@hufs-one/contracts';
+import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
+import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -13,12 +15,18 @@ export interface PageContext {
   readonly controller: DemoController;
   readonly navigate: (path: string) => void;
   readonly services: AppServices;
+  /** REVIEWER synthetic sandbox for the current context; null when not a REVIEWER session. */
+  readonly sandbox: SandboxApi | null;
 }
 
 /** Optional data ports beyond DemoController. Missing ports render a "not connected" state. */
 export interface AppServices {
   /** Raw CalendarResult for the context (validated by the widget). Real path: liveServices → HufsApiClient.getCalendar. */
   readonly loadCalendar?: (context: DemoContext, signal: AbortSignal) => Promise<unknown>;
+  /** /reviewer/invite: session check + redeem, and the in-memory code captured before render. */
+  readonly reviewerInvite?: {readonly port: InvitePort; readonly holder: InviteCodeHolder};
+  /** Present only for a verified REVIEWER session (or the dev synthetic mode). */
+  readonly sandbox?: SandboxPort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;
@@ -32,6 +40,7 @@ const basePages: PageRenderer = ({path}) => {
   const tab = TABS.find(t => t.path === path);
   if (tab) return placeholder(tab.label);
   if (path === '/notices') return placeholder('공지');
+  if (path === '/settings') return placeholder('설정');
   return null;
 };
 
@@ -48,9 +57,11 @@ interface Props {
 export function App({controller, transportLabel = null, historyPort, pages = [], services = {}, localAccountWorkbench:LocalWorkbench}: Props) {
   const state = useDemo(controller);
   const [path, navigate] = useRoute(historyPort);
-  const ctx: PageContext = {path, state, controller, navigate, services};
-  const page = (path==='/local-demo'&&LocalWorkbench ? {title:'로컬 합성 계정 실험실',body:<LocalWorkbench/>} : null)
-    ?? [...pages, basePages].reduce<ReturnType<PageRenderer>>((found, render) => found ?? render(ctx), null)
+  const sandbox = useSandbox(controller, state, services.sandbox);
+  const ctx: PageContext = {path, state, controller, navigate, services, sandbox};
+  const page = (path === '/local-demo' && LocalWorkbench
+    ? {title: '로컬 합성 계정 실험실', body: <LocalWorkbench/>}
+    : null) ?? [...pages, basePages].reduce<ReturnType<PageRenderer>>((found, render) => found ?? render(ctx), null)
     ?? {title: '페이지를 찾을 수 없습니다', body: <p className="muted">주소를 확인하거나 아래 메뉴를 이용해 주세요.</p>};
 
   // Move focus to the new page heading after in-app navigation (not on first load).
@@ -67,10 +78,12 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       path={path}
       navigate={navigate}
       transportLabel={transportLabel}
-      selector={path==='/local-demo'&&LocalWorkbench
+      // Reviewer enrollment is never a student selector; the local demo remains a separate synthetic-only route.
+      selector={path === '/reviewer/invite' ? null : path === '/local-demo' && LocalWorkbench
         ? <a href="/" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/');}}}>기존 S01–S05 시연으로 돌아가기</a>
         : <><DemoSelector state={state} onSelect={s => void controller.select(s)} />{LocalWorkbench&&<a href="/local-demo" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/local-demo');}}}>로컬 합성 계정 실험실 열기</a>}</>}
-      status={path==='/local-demo'&&LocalWorkbench ? null : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
+      status={path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
+        : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <h1 ref={heading} tabIndex={-1} className="page__title">{page.title}</h1>
       {page.body}

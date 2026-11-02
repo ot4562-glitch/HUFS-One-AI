@@ -1,0 +1,51 @@
+import type {PageRenderer} from '../App.js';
+import {ExperienceEditor, NOT_REVIEWER_TEXT, SandboxNote, SandboxSettings} from '../features/sandbox/SandboxControls.js';
+import {InAppLink} from '../shell/AppShell.js';
+import {NoSnapshot, Section, screenViewOf} from './parts.js';
+
+/** 보관함: bookmarked cards, practice applications and drafts for the current subject. */
+export const savedPage: PageRenderer = ({path, state, sandbox, navigate}) => {
+  if (path !== '/saved') return null;
+  if (!sandbox) return {title: '보관함', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
+  const view = screenViewOf(state);
+  if (!view) return {title: '보관함', body: <NoSnapshot state={state} />};
+  if (!sandbox.ready) return {title: '보관함', body: <p className="muted" aria-busy="true">시연 기록을 불러오는 중</p>};
+  const cards = view.feed.kind === 'SHOW' ? [...view.feed.data.featured, ...view.feed.data.compact] : [];
+  // Titles only from the current subject's snapshot; an id outside it is listed without guessing a title.
+  const title = (id: string) => cards.find(c => c.opportunityId === id)?.title ?? `${id} (지금 화면 목록에 없음)`;
+  const list = (ids: readonly string[]) => (
+    <ul className="rows">{ids.map(id => (
+      <li key={id} className="row">
+        <InAppLink to={`/opportunities/${encodeURIComponent(id)}`} navigate={navigate} className="row__link">
+          <span className="row__title">{title(id)}</span>
+        </InAppLink>
+      </li>
+    ))}</ul>
+  );
+  const saved = [...sandbox.state.bookmarks], applied = [...sandbox.state.simulated], drafts = [...sandbox.state.drafts.keys()];
+  return {
+    title: '보관함',
+    body: (
+      <>
+        <SandboxNote />
+        <Section title="저장한 공고">{saved.length ? list(saved) : <p className="muted">저장한 공고가 없어요. 공고 상세에서 저장할 수 있어요.</p>}</Section>
+        <Section title="모의 지원">{applied.length ? list(applied) : <p className="muted">모의 지원한 공고가 없어요.</p>}</Section>
+        <Section title="지원서 초안">{drafts.length ? list(drafts) : <p className="muted">작성한 초안이 없어요.</p>}</Section>
+      </>
+    ),
+  };
+};
+
+export const experiencePage: PageRenderer = ({path, state, sandbox}) => {
+  if (path !== '/experience') return null;
+  if (!sandbox) return {title: '경험', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
+  if (state.status !== 'READY') return {title: '경험', body: <NoSnapshot state={state} />};
+  return {title: '경험', body: <ExperienceEditor sandbox={sandbox} />};
+};
+
+export const settingsPage: PageRenderer = ({path, state, sandbox}) => {
+  if (path !== '/settings') return null;
+  if (!sandbox) return {title: '설정', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
+  if (state.status !== 'READY') return {title: '설정', body: <NoSnapshot state={state} />};
+  return {title: '설정', body: <SandboxSettings sandbox={sandbox} />};
+};

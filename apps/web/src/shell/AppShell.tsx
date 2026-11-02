@@ -30,6 +30,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
       <header className="app__header">
         <div className="app__brand">
           <InAppLink to="/" navigate={navigate} className="app__logo">HUFS One AI</InAppLink>
+          <InAppLink to="/settings" navigate={navigate} className="app__settings" current={path === '/settings'}>설정</InAppLink>
         </div>
         {transportLabel && <p className="app__transport" role="note">{transportLabel}</p>}
         {selector}
