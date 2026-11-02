@@ -1,5 +1,5 @@
 import type {PageRenderer} from '../App.js';
-import {buildGraduationView, buildOutlookView} from '../features/graduation/graduationView.js';
+import {NOT_OFFICIAL_GRADUATION_TEXT, buildGraduationView, buildOutlookView} from '../features/graduation/graduationView.js';
 import {Badges, NOT_SHARED_TEXT, NoSnapshot, Section, screenViewOf} from './parts.js';
 
 /** 졸업: graduation support + 개설 전망 (A11.1: outlook lives inside the 졸업 tab). */
@@ -14,13 +14,13 @@ export const graduationPage: PageRenderer = ({path, state}) => {
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
         <Section title="졸업 요건 현황">
+          <p className="notice-box" role="note">{NOT_OFFICIAL_GRADUATION_TEXT}</p>
           {a.kind === 'HIDDEN' && <p className="muted">{NOT_SHARED_TEXT}</p>}
           {a.kind === 'PLACEHOLDER' && <p className="muted">{a.text}</p>}
           {a.kind === 'SHOW' && (() => {
             const g = buildGraduationView(a.data);
             return (
               <>
-                <p className="notice-box" role="note">{g.notOfficialText}</p>
                 <p><strong>{g.stateText}</strong> <span className="muted">· {g.rulePackText}</span></p>
                 <dl className="credits">
                   {g.credits.map(c => <div key={c.label}><dt>{c.label}</dt><dd>{c.credits}</dd></div>)}
