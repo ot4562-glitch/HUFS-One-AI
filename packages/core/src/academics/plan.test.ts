@@ -288,6 +288,55 @@ describe('buildAcademicPlan CREDIT-09 verified sections', () => {
   });
 });
 
+describe('buildAcademicPlan with more than 20 courses in a term', () => {
+  const many = (count:number) => Array.from({length:count}, (_, i) => `SYN-M${String(i + 1).padStart(2, '0')}`);
+  const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
+  /** One section per course, each in its own day and hour, so no pair overlaps. */
+  const spread = (courseIds:readonly string[]) =>
+    courseIds.map((courseId, i) => section(courseId, `${courseId}-01`, [at(DAYS[i % 7]!, 8 + Math.floor(i / 7))]));
+  const twentyFive = many(25);
+
+  it('splits a long cap and unconfirmed list into issues of at most 20 courses', () => {
+    const audit = buildAcademicPlan(request(twentyFive.map(id => planned(id)), {sections:[]}));
+    expect(AcademicAuditVNextSchema.safeParse(audit).success).toBe(true);
+    expect(audit.planIssues.map(issue => [issue.code, issue.courseRefs])).toEqual([
+      ['CREDIT_CAP_EXCEEDED', twentyFive.slice(0, 20)],
+      ['CREDIT_CAP_EXCEEDED', twentyFive.slice(20)],
+      ['NEEDS_REVIEW', twentyFive.slice(0, 20)],
+      ['NEEDS_REVIEW', twentyFive.slice(20)],
+    ]);
+  });
+
+  it('reports the all-course timetable search as not done instead of a conflict', () => {
+    const audit = buildAcademicPlan(request(twentyFive.map(id => planned(id)), {sections:spread(twentyFive)}));
+    expect(audit.planIssues.filter(issue => issue.code !== 'CREDIT_CAP_EXCEEDED')).toEqual([
+      {code:'SEARCH_LIMIT_REVIEW', reasonCode:'ALLOCATION_SEARCH_LIMIT', courseRefs:twentyFive.slice(0, 20), evidenceRefs:[CATALOG_REF]},
+      {code:'SEARCH_LIMIT_REVIEW', reasonCode:'ALLOCATION_SEARCH_LIMIT', courseRefs:twentyFive.slice(20), evidenceRefs:[CATALOG_REF]},
+    ]);
+  });
+
+  it('keeps each search-limit group within 30 evidence refs when sections cite their own', () => {
+    const sections = twentyFive.flatMap((courseId, i) => ['01', '02'].map(no =>
+      section(courseId, `${courseId}-${no}`, [at(DAYS[i % 7]!, 8 + Math.floor(i / 7))], {evidenceRefs:[`EV-${courseId}-${no}`]})));
+    const audit = buildAcademicPlan(request(twentyFive.map(id => planned(id)), {sections}));
+    const groups = audit.planIssues.filter(issue => issue.code === 'SEARCH_LIMIT_REVIEW');
+    expect(groups.map(issue => [issue.courseRefs.length, issue.evidenceRefs.length])).toEqual([[15, 30], [10, 20]]);
+    expect(groups.flatMap(issue => issue.courseRefs)).toEqual(twentyFive);
+  });
+
+  it('still reports each overlapping pair', () => {
+    const sections = spread(twentyFive).map(row => (row.canonicalCourseId === 'SYN-M02'
+      ? section('SYN-M02', 'SYN-M02-01', [at('MON', 8)]) : row));
+    const audit = buildAcademicPlan(request(twentyFive.map(id => planned(id)), {sections}));
+    expect(audit.planIssues.filter(issue => issue.code !== 'CREDIT_CAP_EXCEEDED').map(issue => [issue.code, issue.courseRefs]))
+      .toEqual([['TIMETABLE_CONFLICT', ['SYN-M01', 'SYN-M02']]]);
+  });
+
+  it('refuses more than 60 courses in one term', () => {
+    expect(() => buildAcademicPlan(request(many(61).map(id => planned(id)), {sections:[]}))).toThrow(/at most 60/);
+  });
+});
+
 describe('buildAcademicPlan input checks', () => {
   const one = [planned('SYN-A')];
 
