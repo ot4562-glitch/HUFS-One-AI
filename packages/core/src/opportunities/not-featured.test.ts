@@ -181,6 +181,12 @@ describe('#117 review: truthful reasons for the kind+organization cap and topic 
     // C1 ranks below all three cards: that one is honestly OUTRANKED.
     expect(reasonOf(r, 'SYN-C1')).toBe('OUTRANKED');
     expect(r.items.find(i => i.opportunityId === 'SYN-A3')!.text).not.toMatch(/점수가 높은/);
+    // Tie: C1 has the same score as the featured B1 and is behind only by the id tie-break.
+    // The copy must speak of recommendation order, never claim a higher score (#117 UI review).
+    expect(score('SYN-C1')).toBe(score('SYN-B1'));
+    const c1 = r.items.find(i => i.opportunityId === 'SYN-C1')!;
+    expect(c1.text).toMatch(/추천 순서가 앞선/);
+    expect(c1.text).not.toMatch(/점수/);
   });
 
   it('opt-in rank-v1.1 topic diversity: a skipped higher-ranked item is DIVERSITY; v1.0 calls it OUTRANKED', () => {

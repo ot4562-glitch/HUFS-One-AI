@@ -64,7 +64,7 @@ const TEXT:Record<NotFeaturedReason, string> = {
   ELIGIBILITY_NOT_MET:'공고에 적힌 지원 조건이 맞지 않아 “조건 미충족” 영역에 있어요.',
   SOURCE_NEEDS_REVIEW:'공고 정보가 오래됐거나 서로 달라 확인 전에는 상단에 올리지 않아요.',
   LOW_RELEVANCE:'내 관심·희망 직무·승인한 경험과 직접 겹치는 주제가 없어 일반 목록에 있어요.',
-  OUTRANKED:'관련은 있지만 상단 카드 3개가 모두 이 공고보다 점수가 높은 공고로 채워졌어요.',
+  OUTRANKED:'관련은 있지만 상단 카드 3개가 모두 이 공고보다 추천 순서가 앞선 공고로 채워졌어요.',
   GROUP_CAP:'관련은 있지만 같은 기관·같은 종류의 공고가 이미 상단에 최대 개수만큼 있어 다른 공고가 대신 올라갔어요.',
   DIVERSITY:'관련은 있지만 상단 카드는 서로 다른 관심 주제를 고르게 보여주도록 골라 다른 주제의 공고가 대신 올라갔어요.',
   NO_PERSONAL_INPUT:'아직 관심 분야·희망 직무·경험을 입력하지 않아 맞춤 판단 없이 최신순 목록에 있어요.',
@@ -112,7 +112,13 @@ export function explainNotFeatured(
   const featuredRanked = composed.all.filter(r => featured.has(r.opportunity.id));
   const groupCount = new Map<string, number>();
   for (const f of featuredRanked) groupCount.set(featureGroupKey(f.opportunity), (groupCount.get(featureGroupKey(f.opportunity)) ?? 0) + 1);
-  /** Only claims "outranked" when it is literally true for the selection that composeFeed made. */
+  /**
+   * Only claims "outranked" when it is literally true for the selection that composeFeed made. Order is
+   * compareRanked (score → confirmed deadline → id), so the copy says "추천 순서", never "점수가 높은":
+   * a tie broken by deadline or id is still ahead in order, not higher in score (#117 UI review).
+   * GROUP_CAP / DIVERSITY describe the FINAL selection state: an item skipped by the diversity pass whose
+   * group later reaches the cap is reported as GROUP_CAP (true for the final cards, the simpler cause).
+   */
   const relevantReason = (r:RankedOpportunity):NotFeaturedReason => {
     const lowerPicked = featuredRanked.some(f => compareRanked(f, r) > 0);
     if (!lowerPicked && featuredRanked.length >= FEATURED_MAX) return 'OUTRANKED';
