@@ -69,6 +69,38 @@ describe('#123 explicit, ephemeral synthetic server provider',()=>{
     p.denyOperator();
     expect((await p.decide('SYN-CLUB-014','APPROVE')).statusCode).toBe(403);
   });
+  it('expires read receipts, enforces single use and never permits cross-subject replay',async()=>{
+    let clock=at;
+    const store=new MemorySyntheticClubDemoStore({'alpha-synthetic':'S01','beta-synthetic':'S02'},
+      ()=>clock);
+    const one=await store.source.read({actorId:'alpha-synthetic',now:at});
+    expect(one).not.toBeNull();
+    const correct={actorId:'alpha-synthetic',receipt:one!.receipt,
+      revision:one!.revision,now:at};
+    expect(await store.source.revalidate({...correct,actorId:'beta-synthetic'})).toBe(false);
+    expect(await store.source.revalidate(correct)).toBe(false);
+    const second=await store.source.read({actorId:'alpha-synthetic',now:at});
+    expect(second).not.toBeNull();
+    const next={...correct,receipt:second!.receipt,revision:second!.revision};
+    expect(await store.source.revalidate(next)).toBe(true);
+    expect(await store.source.revalidate(next)).toBe(false);
+    const third=await store.source.read({actorId:'alpha-synthetic',now:at});
+    clock=new Date(Date.parse(at)+30_001).toISOString();
+    expect(await store.source.revalidate({...correct,
+      receipt:third!.receipt,revision:third!.revision,now:clock})).toBe(false);
+  });
+  it('bounds unconsumed receipt memory and rejects old evicted tokens',async()=>{
+    const store=new MemorySyntheticClubDemoStore({'alpha-synthetic':'S01'},()=>at);
+    const earliest=await store.source.read({actorId:'alpha-synthetic',now:at});
+    let last=earliest;
+    for(let i=0;i<150;i++){
+      last=await store.source.read({actorId:'alpha-synthetic',now:at});
+    }
+    expect(await store.source.revalidate({actorId:'alpha-synthetic',
+      receipt:earliest!.receipt,revision:earliest!.revision,now:at})).toBe(false);
+    expect(await store.source.revalidate({actorId:'alpha-synthetic',
+      receipt:last!.receipt,revision:last!.revision,now:at})).toBe(true);
+  });
   it('invalidates outstanding read receipts on simulated moderation and denies unknown synthetic subjects',async()=>{
     const p=preview(),before=await p.store.source.read({actorId:'alpha-synthetic',now:at});
     expect(before).not.toBeNull();

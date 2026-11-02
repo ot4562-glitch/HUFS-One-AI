@@ -27,6 +27,12 @@ export interface OwnerCatalogAuthority {
 export function canonicalProjectionHash(value:unknown):string{
   const canonical=(v:unknown):unknown=>{
     if(v===null||typeof v==='string'||typeof v==='boolean')return v;
+    // pg parses timestamptz into Date, including independently reviewed SQL
+    // metadata. Canonicalize a valid instant without trusting locale/timezone.
+    if(v instanceof Date){
+      if(!Number.isFinite(v.getTime()))throw new Error('Invalid PostgreSQL timestamp');
+      return v.toISOString();
+    }
     if(typeof v==='number'&&Number.isFinite(v))return v;
     if(Array.isArray(v))return v.map(canonical);
     if(v&&typeof v==='object'&&Object.getPrototypeOf(v)===Object.prototype)
@@ -159,8 +165,15 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
   }
   private receipt(query:ReadQuery,fingerprint:string):string{
     const now=Date.parse(this.clock());
+    if(!Number.isFinite(now))throw new Error('Owner receipt clock unavailable');
     for(const [key,value] of this.receipts)if(value.expires<=now)this.receipts.delete(key);
-    if(this.receipts.size>=2048)throw new Error('Owner read receipt capacity exceeded');
+    // Browsers can retry reads, including aborted requests. An unconsumed
+    // receipt must never exhaust the shared provider for unrelated students.
+    while(this.receipts.size>=2048){
+      const oldest=this.receipts.keys().next().value;
+      if(oldest===undefined)break;
+      this.receipts.delete(oldest);
+    }
     const token=randomBytes(32).toString('hex');
     this.receipts.set(token,{query,fingerprint,expires:now+60_000});return token;
   }
@@ -217,7 +230,10 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
   }
   async revalidate(input:{actorId:string;scopeToken:string;now:string}):Promise<boolean>{
     const receipt=this.receipts.get(input.scopeToken);
-    if(!receipt||receipt.query.actorId!==input.actorId||receipt.expires<=Date.parse(this.clock()))return false;
+    this.receipts.delete(input.scopeToken); // fail-closed, even cross-actor or replay
+    const now=Date.parse(this.clock());
+    if(!receipt||!Number.isFinite(now)||receipt.query.actorId!==input.actorId
+      ||receipt.expires<=now)return false;
     try{const current=await this.reader.read(receipt.query,input.now);
       return current?.fingerprint===receipt.fingerprint;}catch{return false;}
   }

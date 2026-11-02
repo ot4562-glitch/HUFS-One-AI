@@ -48,6 +48,33 @@ describe('#124 public HUFSAbility menu baseline and disabled feature contract',(
       {...menu.categories[0],items:menu.categories[0]!.items.slice(1)},
       ...menu.categories.slice(1)]}).success).toBe(false);
   });
+  it('rejects convincing forged active menu routes, duplicate order and official deep links',()=>{
+    const menu=getHufsAbilityManifest();
+    const active=structuredClone(menu);
+    active.categories[0]!.items[0]!.state='DEMO_AVAILABLE';
+    active.categories[0]!.items[0]!.internalRoute='/api/profile';
+    active.categories[0]!.items[0]!.dataMode='SYNTHETIC';
+    active.categories[0]!.items[0]!.disabledText=null;
+    expect(HufsAbilityMenuManifestSchema.safeParse(active).success).toBe(false);
+    active.categories[0]!.items[0]!.dataMode='REAL';
+    expect(HufsAbilityMenuManifestSchema.safeParse(active).success).toBe(false);
+    const reordered=structuredClone(menu);
+    reordered.categories.reverse();
+    expect(HufsAbilityMenuManifestSchema.safeParse(reordered).success).toBe(false);
+    const mislabeled=structuredClone(menu);
+    mislabeled.categories[0]!.items[0]!.label='위조된 시스템 메뉴';
+    expect(HufsAbilityMenuManifestSchema.safeParse(mislabeled).success).toBe(false);
+    const deepLink=structuredClone(menu);
+    deepLink.publicEntries[0]!.officialUrl='https://hufsability.hufs.ac.kr/notice';
+    expect(HufsAbilityMenuManifestSchema.safeParse(deepLink).success).toBe(false);
+    const promoted=structuredClone(menu);
+    promoted.publicEntries[0]!.state='DEMO_AVAILABLE';
+    promoted.publicEntries[0]!.internalRoute='/api/profile';
+    promoted.publicEntries[0]!.dataMode='SYNTHETIC';
+    promoted.publicEntries[0]!.disabledText=null;
+    promoted.publicEntries[0]!.officialUrl=null;
+    expect(HufsAbilityMenuManifestSchema.safeParse(promoted).success).toBe(false);
+  });
   it('always returns a newly parsed snapshot rather than reusing mutable caller state',()=>{
     const first=getHufsAbilityManifest();
     first.categories[0]!.items[0]!.label='INJECTED';

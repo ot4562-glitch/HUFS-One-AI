@@ -15,6 +15,22 @@ export class MemorySyntheticClubDemoStore {
   private readonly profiles=new Map<string,ClubProfile>();
   private readonly receipts=new Map<string,{actorId:string;revision:number;expires:number}>();
   private revision=0;
+  private static readonly MAX_OUTSTANDING_RECEIPTS=128;
+  private clockMs():number{
+    const time=Date.parse(this.clock());
+    if(!Number.isFinite(time))throw new Error('Invalid synthetic demo clock');
+    return time;
+  }
+  private pruneReceipts(now:number):void{
+    for(const [receipt,claim] of this.receipts){
+      if(claim.expires<=now)this.receipts.delete(receipt);
+    }
+    while(this.receipts.size>=MemorySyntheticClubDemoStore.MAX_OUTSTANDING_RECEIPTS){
+      const oldest=this.receipts.keys().next().value;
+      if(oldest===undefined)break;
+      this.receipts.delete(oldest);
+    }
+  }
   constructor(actorSubjects:Readonly<Record<string,'S01'|'S02'|'S03'|'S04'|'S05'>>,
     private readonly clock:()=>string=()=>new Date().toISOString()){
     for(const post of DEMO_CLUB_POSTS)this.records.set(post.id,{post:structuredClone(post),version:0});
@@ -28,17 +44,20 @@ export class MemorySyntheticClubDemoStore {
     read:async({actorId})=>{
       const profile=this.profiles.get(actorId);
       if(!profile)return null;
+      const now=this.clockMs();
+      this.pruneReceipts(now);
       const token=randomBytes(20).toString('hex'),rev=this.revision;
-      this.receipts.set(token,{actorId,revision:rev,expires:Date.parse(this.clock())+30_000});
+      this.receipts.set(token,{actorId,revision:rev,expires:now+30_000});
       return {profile:structuredClone(profile),
         posts:structuredClone([...this.records.values()].map(x=>x.post)),
         asOf:DEMO_AS_OF,receipt:token,revision:'syn-club-rev-'+rev};
     },
     revalidate:async({actorId,receipt,revision})=>{
       const claim=this.receipts.get(receipt);
+      this.receipts.delete(receipt); // single use, including cross-actor attempts
       return claim!==undefined&&claim.actorId===actorId
         &&claim.revision===this.revision&&revision==='syn-club-rev-'+claim.revision
-        &&Date.parse(this.clock())<claim.expires;
+        &&this.clockMs()<claim.expires;
     },
   };
   readonly moderation:TrustedSyntheticClubModerationPort={

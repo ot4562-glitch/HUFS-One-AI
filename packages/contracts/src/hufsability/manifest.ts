@@ -1,5 +1,11 @@
 import {z} from 'zod';
 
+/** This version intentionally enables NO original HUFSAbility capability.
+ * Future internal demo features require a separately reviewed exact ID->route
+ * manifest; arbitrary paths or real-student data cannot activate a menu. */
+const REVIEWED_DEMO_CAPABILITIES:Readonly<Record<string,string>>=Object.freeze({});
+const OFFICIAL_HOME='https://hufsability.hufs.ac.kr/';
+
 /** #124 Public HUFSAbility student navigation baseline, not a cloned school portal.
  * None of the original campus systems is implemented or independently licensed
  * by this repository. Only an explicitly verified internal route can be enabled.
@@ -19,14 +25,15 @@ export const HufsAbilityMenuItemSchema=z.strictObject({
   const bad=(field:string)=>ctx.addIssue({code:'custom',path:[field],
     message:'A capability cannot be advertised without its verified route'});
   if(v.state==='DEMO_AVAILABLE'){
-    if(v.internalRoute===null||v.dataMode==='NONE')bad('internalRoute');
+    if(!Object.hasOwn(REVIEWED_DEMO_CAPABILITIES,v.id)
+      ||REVIEWED_DEMO_CAPABILITIES[v.id]!==v.internalRoute
+      ||v.dataMode!=='SYNTHETIC')bad('internalRoute');
     if(v.disabledText!==null||v.officialUrl!==null)bad('disabledText');
   }else{
     if(v.internalRoute!==null||v.dataMode!=='NONE')bad('internalRoute');
     if(v.disabledText===null)bad('disabledText');
     if(v.state==='OFFICIAL_LINK_ONLY'){
-      if(v.officialUrl===null||new URL(v.officialUrl).origin!=='https://hufsability.hufs.ac.kr')
-        bad('officialUrl');
+      if(v.officialUrl!==OFFICIAL_HOME)bad('officialUrl');
     }else if(v.officialUrl!==null)bad('officialUrl');
   }
 });
@@ -37,7 +44,7 @@ export const HufsAbilityMenuManifestSchema=z.strictObject({
     url:z.literal('https://dep.hufs.ac.kr/iei/13534/subview.do'),
     observedOn:z.literal('2026-10-29'),
   }),
-  officialHomepage:z.literal('https://hufsability.hufs.ac.kr/'),
+  officialHomepage:z.literal(OFFICIAL_HOME),
   schoolAffiliation:z.literal('INDEPENDENT_DEMO_NOT_OFFICIAL'),
   categories:z.array(z.strictObject({
     id:z.string().regex(/^[a-z-]+$/),
@@ -52,6 +59,30 @@ export const HufsAbilityMenuManifestSchema=z.strictObject({
     ...v.publicEntries.map(x=>x.id)];
   if(new Set(ids).size!==ids.length)
     ctx.addIssue({code:'custom',path:['categories'],message:'Duplicate menu ID'});
+  for(const [categoryIndex,category] of v.categories.entries()){
+    const expected=specs[categoryIndex];
+    if(!expected||category.id!==expected.id||category.label!==expected.label
+      ||category.items.length!==expected.entries.length){
+      ctx.addIssue({code:'custom',path:['categories',categoryIndex],message:'Original category differs'});
+      continue;
+    }
+    for(const [itemIndex,item] of category.items.entries()){
+      const pair=expected.entries[itemIndex];
+      if(!pair||item.id!==pair[0]||item.label!==pair[1]
+        ||item.state!=='NOT_IMPLEMENTED'||item.dataMode!=='NONE'){
+        ctx.addIssue({code:'custom',path:['categories',categoryIndex,'items',itemIndex],
+          message:'Original menu entry must remain disabled and unchanged'});
+      }
+    }
+  }
+  for(const [index,item] of v.publicEntries.entries()){
+    const pair=publicSpecs[index];
+    if(!pair||item.id!==pair[0]||item.label!==pair[1]
+      ||item.state!=='OFFICIAL_LINK_ONLY'||item.officialUrl!==OFFICIAL_HOME){
+      ctx.addIssue({code:'custom',path:['publicEntries',index],
+        message:'Unreviewed public menu entry'});
+    }
+  }
 });
 export type HufsAbilityMenuManifest=z.infer<typeof HufsAbilityMenuManifestSchema>;
 
@@ -79,6 +110,10 @@ const specs=[
     ['learning-counseling','학습상담'],
   ]},
 ] as const;
+const publicSpecs=[
+  ['public-noncurricular','교내비교과'],['public-scholarships','장학공지'],
+  ['public-notices','공지사항'],['public-jobs','채용정보'],
+] as const;
 function unavailable(id:string,label:string){
   return {id,label,state:'NOT_IMPLEMENTED' as const,dataMode:'NONE' as const,
     internalRoute:null,officialUrl:null,disabledText:'🚫 미지원' as const};
@@ -87,16 +122,13 @@ const baseline={
   version:'hufsability-public-2026-10-29-v1',
   source:{description:'HUFSAbility public student menu introduction; authenticated menus unverified',
     url:'https://dep.hufs.ac.kr/iei/13534/subview.do',observedOn:'2026-10-29'},
-  officialHomepage:'https://hufsability.hufs.ac.kr/',
+  officialHomepage:OFFICIAL_HOME,
   schoolAffiliation:'INDEPENDENT_DEMO_NOT_OFFICIAL',
   categories:specs.map(s=>({id:s.id,label:s.label,
     items:s.entries.map(([id,label])=>unavailable(id,label))})),
-  publicEntries:[
-    ['public-noncurricular','교내비교과'],['public-scholarships','장학공지'],
-    ['public-notices','공지사항'],['public-jobs','채용정보'],
-  ].map(([id,label])=>({
+  publicEntries:publicSpecs.map(([id,label])=>({
     id:id!,label:label!,state:'OFFICIAL_LINK_ONLY' as const,dataMode:'NONE' as const,
-    internalRoute:null,officialUrl:'https://hufsability.hufs.ac.kr/',
+    internalRoute:null,officialUrl:OFFICIAL_HOME,
     disabledText:'🚫 시연 불가' as const,
   })),
 };

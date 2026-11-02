@@ -10,7 +10,7 @@ const course={courseId:'SYN-COURSE',courseCode:'SYN101',title:'Synthetic course'
   creditUnits:6,source:{sourceId:'SYN-SOURCE',revisionId:'SYN-REV',
     permissionRef:'SYN-PERMISSION',status:'SYNTHETIC'}};
 function fixture(){
-  let consent=true,current=true,policy=true,payload:unknown=course;
+  let consent=true,current=true,policy=true,payload:unknown=course,driverDates=false;
   let hash=canonicalProjectionHash(payload),sourceStatus='ACTIVE';
   const calls:string[]=[];
   const source={revision_id:'SYN-REV',source_id:'SYN-SOURCE',permission_ref:'SYN-PERMISSION',
@@ -30,16 +30,21 @@ function fixture(){
       projection_id:'SYN-PROJECTION',actor_id:actorId,kind:'COURSE',entity_id:'SYN-COURSE',
       version:'SYN-CATALOG-1',payload_json:payload,payload_sha256:hash,
       sources_json:[{sourceId:'SYN-SOURCE',revisionId:'SYN-REV',permissionRef:'SYN-PERMISSION'}],
-      reviewed_by:'SYN-INDEPENDENT',reviewed_at:now,as_of:now,
-      starts_at:now,expires_at:'2026-12-01T00:00:00Z'}]:[]};
-    if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:[{...source,status:sourceStatus}]};
+      reviewed_by:'SYN-INDEPENDENT',
+      reviewed_at:driverDates?new Date(now):now,as_of:driverDates?new Date(now):now,
+      starts_at:driverDates?new Date(now):now,
+      expires_at:driverDates?new Date('2026-12-01T00:00:00Z'):'2026-12-01T00:00:00Z'}]:[]};
+    if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:[{...source,
+      ...(driverDates?{fetched_at:new Date(now),last_verified_at:new Date(now),
+        review_checked_at:new Date(now)}:{}),status:sourceStatus}]};
     return {rows:[]};
   },release:()=>{}})};
   const catalog=new PostgresTrustedOwnerCatalog(pool,{resolve:async()=>policy?grants:null},()=>now);
   return {catalog,calls,source,setConsent:(value:boolean)=>{consent=value;},
     setCurrent:(value:boolean)=>{current=value;},setPolicy:(value:boolean)=>{policy=value;},
     setPayload:(value:unknown,rehashed=false)=>{payload=value;if(rehashed)hash=canonicalProjectionHash(value);},
-    setStatus:(value:string)=>{sourceStatus=value;}};
+    setStatus:(value:string)=>{sourceStatus=value;},
+    useDriverDates:(flag:boolean)=>{driverDates=flag;}};
 }
 const query={actorId,now,asOf:now,limit:10};
 describe('approved owner PostgreSQL catalog (SQL protocol tests)',()=>{
@@ -48,6 +53,16 @@ describe('approved owner PostgreSQL catalog (SQL protocol tests)',()=>{
       .toBe(canonicalProjectionHash({a:1,b:[{a:2,z:1}]}));
     expect(canonicalProjectionHash({a:1})).not.toBe(canonicalProjectionHash({a:2}));
   });
+  it('treats PostgreSQL timestamptz Date objects as stable ISO instants in integrity receipts',async()=>{
+    const h=fixture();
+    h.useDriverDates(true);
+    const result=await h.catalog.listCourses(query);
+    expect(result?.result.items).toEqual([course]);
+    expect(await h.catalog.revalidate({actorId,scopeToken:result!.scopeToken,now})).toBe(true);
+    expect(canonicalProjectionHash({at:new Date(now)}))
+      .toBe(canonicalProjectionHash({at:'2026-11-01T00:00:00.000Z'}));
+    expect(()=>canonicalProjectionHash({at:new Date('not-a-date')})).toThrow();
+  });
   it('reads and validates approved source-bound courses and revalidates the exact owner receipt',async()=>{
     const h=fixture(),result=await h.catalog.listCourses(query);
     expect(result?.result).toEqual({asOf:now,nextCursor:null,items:[course]});
@@ -55,6 +70,25 @@ describe('approved owner PostgreSQL catalog (SQL protocol tests)',()=>{
     expect(await h.catalog.revalidate({actorId:'SYN-OTHER',scopeToken:result!.scopeToken,now})).toBe(false);
     expect(h.calls.some(sql=>sql.includes('REPEATABLE READ'))).toBe(true);
     expect(h.calls.some(sql=>sql.includes("set_config('hufs.self_actor'"))).toBe(true);
+  });
+  it('consumes current-read tickets once, including a cross-actor attempt',async()=>{
+    const a=fixture(),first=await a.catalog.listCourses(query);
+    expect(await a.catalog.revalidate({actorId,scopeToken:first!.scopeToken,now})).toBe(true);
+    expect(await a.catalog.revalidate({actorId,scopeToken:first!.scopeToken,now})).toBe(false);
+    const b=fixture(),second=await b.catalog.listCourses(query);
+    expect(await b.catalog.revalidate({actorId:'SYN-OTHER',scopeToken:second!.scopeToken,now}))
+      .toBe(false);
+    expect(await b.catalog.revalidate({actorId,scopeToken:second!.scopeToken,now}))
+      .toBe(false);
+  });
+  it('bounds pending tickets so a burst of abandoned reads cannot block subsequent owners',async()=>{
+    const h=fixture(),first=await h.catalog.listCourses(query);
+    let recent=first!;
+    for(let index=0;index<2050;index++){
+      recent=(await h.catalog.listCourses(query))!;
+    }
+    expect(await h.catalog.revalidate({actorId,scopeToken:first!.scopeToken,now})).toBe(false);
+    expect(await h.catalog.revalidate({actorId,scopeToken:recent.scopeToken,now})).toBe(true);
   });
   it('does not read a projection before current owner consent and independent source authority',async()=>{
     const h=fixture();h.setConsent(false);
