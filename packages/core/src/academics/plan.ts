@@ -318,6 +318,30 @@ function anyFit(courses:readonly Section[][]):Fit {
   return visit(0);
 }
 
+/**
+ * Courses in order, grouped so each issue stays within 20 course refs and 30 evidence refs.
+ * A single course whose own sections cite more than 30 refs is still refused by union().
+ */
+function evidenceGroups(courseIds:readonly string[], sections:ReadonlyMap<string, Section[]>):{courseRefs:string[]; evidenceRefs:string[]}[] {
+  const groups:{courseRefs:string[]; evidenceRefs:string[]}[] = [];
+  let courseRefs:string[] = [];
+  let refs = new Set<string>();
+  for (const courseId of courseIds) {
+    const own = sections.get(courseId)!.flatMap(section => section.evidenceRefs);
+    const merged = new Set([...refs, ...own]);
+    if (courseRefs.length > 0 && (courseRefs.length === MAX_ISSUE_COURSES || merged.size > MAX_EVIDENCE)) {
+      groups.push({courseRefs, evidenceRefs:union([[...refs]])});
+      courseRefs = [];
+      refs = new Set(own);
+    } else {
+      refs = merged;
+    }
+    courseRefs.push(courseId);
+  }
+  if (courseRefs.length > 0) groups.push({courseRefs, evidenceRefs:union([[...refs]])});
+  return groups;
+}
+
 function checkTimetable(plan:TermPlan, load:readonly TermCourse[], asOfMs:number, issues:PlanIssue[]):void {
   const sections = validSections(plan, asOfMs);
   const unconfirmed = load.filter(course => !sections.has(course.courseId)).map(course => course.courseId);
@@ -342,9 +366,8 @@ function checkTimetable(plan:TermPlan, load:readonly TermCourse[], asOfMs:number
   if (!pairConflict && timed.length > MAX_ISSUE_COURSES) {
     // A NO_FIT over every course cannot be split honestly: a group of 20 may still fit.
     // Report the search as not done, each group with its own section evidence.
-    for (const courseRefs of chunks(timed)) {
-      const evidenceRefs = union(courseRefs.flatMap(courseId => sections.get(courseId)!.map(section => section.evidenceRefs)));
-      issues.push({code:'SEARCH_LIMIT_REVIEW', reasonCode:'ALLOCATION_SEARCH_LIMIT', courseRefs, evidenceRefs});
+    for (const group of evidenceGroups(timed, sections)) {
+      issues.push({code:'SEARCH_LIMIT_REVIEW', reasonCode:'ALLOCATION_SEARCH_LIMIT', ...group});
     }
   } else if (!pairConflict && timed.length > 2) {
     const lists = timed.map(courseId => sections.get(courseId)!);

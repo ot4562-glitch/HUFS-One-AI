@@ -315,6 +315,15 @@ describe('buildAcademicPlan with more than 20 courses in a term', () => {
     ]);
   });
 
+  it('keeps each search-limit group within 30 evidence refs when sections cite their own', () => {
+    const sections = twentyFive.flatMap((courseId, i) => ['01', '02'].map(no =>
+      section(courseId, `${courseId}-${no}`, [at(DAYS[i % 7]!, 8 + Math.floor(i / 7))], {evidenceRefs:[`EV-${courseId}-${no}`]})));
+    const audit = buildAcademicPlan(request(twentyFive.map(id => planned(id)), {sections}));
+    const groups = audit.planIssues.filter(issue => issue.code === 'SEARCH_LIMIT_REVIEW');
+    expect(groups.map(issue => [issue.courseRefs.length, issue.evidenceRefs.length])).toEqual([[15, 30], [10, 20]]);
+    expect(groups.flatMap(issue => issue.courseRefs)).toEqual(twentyFive);
+  });
+
   it('still reports each overlapping pair', () => {
     const sections = spread(twentyFive).map(row => (row.canonicalCourseId === 'SYN-M02'
       ? section('SYN-M02', 'SYN-M02-01', [at('MON', 8)]) : row));
