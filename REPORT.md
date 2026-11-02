@@ -30,7 +30,7 @@
 - [ ] 현재 PR HEAD 원격 Actions 검증 0건/병합 0건. #76 본문 Edge E2E 10/10은 작성자 로컬 실행 진술이며 이 감사의 독립 재실행 결과가 아니다. 실제 Google/OIDC·권한 철회·모바일/스크린리더·실서버 E2E 별도.
 - [ ] [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 전체 개인정보 경계 153/155 PASS·2 FAIL, 실자료/기관·동의·NCP 사용승인과 [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 운영 릴리스 게이트 미완료. 현재 `RELEASE_BLOCKED`.
 
-> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
+> **2026-11-03 역할 정정·2026-10-31 NCP 가격 계획:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG 및 NCP OCR/HCX SDK·Laya ONNX worker·OS/CI 자동화 등 **모든 코드** 전담, 이서연은 **NCP 계정/크레딧·실운영/실측·비용·인프라(비코드)** 전담. 독립 UI·추천·학업 소유 불변.
 
 
 상세 기준은 [Architecture.md](Architecture.md) A2·§8·§13~16이다. 심사용 시연 소개는 [Proposal.md](Proposal.md) §04·§09를 따른다.
