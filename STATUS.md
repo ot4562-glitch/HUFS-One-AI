@@ -1,5 +1,14 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-02 목표 후속 — 승인 원장과 현재 계획의 PostgreSQL 연결 (로컬)
+
+- [x] #27/#81/#133의 남은 서버 공백을 구현: `PostgresOwnerStudyPlanSnapshotLoader`가 기존 승인 `PLAN_INPUT`과 현재 본인 `STUDY_PLAN`을 같은 read-only repeatable-read 거래에서 읽고 기존 학업 코어에 전달한다. 승인 입력이 없으면 개인 계획도 읽지 않는다. 원장·규칙·계획을 추측하거나 학생 계획을 공식 승인 자료로 승격하지 않는다.
+- [x] 계획 행의 ID·버전·내용·수정 시각으로 `plan-<sha256>`을 계산하고 actor/source/consent/projection/계획의 fingerprint·최대128개 단회 토큰을 결속. 변경·삭제·추가·철회·만료·다른 소유자의 replay를 차단한다. source 기준 `asOf`는 보존하며 권리 인가는 현재 시각으로 재검사한다.
+- [x] 독립 리뷰에서 발견한 **비동기 검사 도중 projection/SQL 자료권리가 먼저 만료되는 경계**를 재현 후 보강. 공유 reader가 현재 유효 SEARCH 권리와 projection의 가장 이른 만료를 반환하고, 카탈로그/계획 토큰 수명과 마지막 응답 시각을 모두 제한한다. 수정 후 에이전트 재검토 추가 지적 없음(사람의 GitHub APPROVED 아님).
+- [x] `createPostgresPlatformServices`의 `ownerCatalog`와 `studyPlanCheck`는 별도 pool/source authority 및 독립 rights/approvalGate를 모두 명시적으로 주입할 때만 연결한다. 일반 서비스·운영 auth/DB를 자동 활성화하지 않는다.
+- [x] WSL Node 22.22.1: 관련 source/catalog/HTTP **5파일 58 PASS**, 타입검사·API build PASS, diff whitespace PASS. 첫 신규 모듈 부재와 TTL/권리 만료 회귀의 실패를 확인한 뒤 구현·수정했다. 이전 전체 1,773 PASS/32 SKIP 및 브라우저 결과는 **이 변경 전 체크포인트**이며 이번 최종 HEAD 전체 검사로 재표시하지 않는다.
+- [ ] PostgreSQL 실행 도구가 없어 **실 DB/RLS/거래 검증 NOT_RUN**. 모의 SQL protocol은 PostgreSQL 실행 증거가 아니다. 공식 RulePack·원장/자료권리·운영 본인 인증·현재 HEAD 독립 사람 승인·#46/#89 출시 게이트는 미완료. UI·학업 순수 알고리즘·NCP/provider는 해당 협업자 소유를 유지한다. 로컬 체크포인트만 작성하며 push·새 PR·main 병합·실자료 import·유료 호출·배포 없음.
+
 ## 2026-11-02 심민성 목표 재개 — 로컬 검증 정본
 
 이 절은 `feat/owner-integrated-20261102`의 **로컬 코드 `ce315ed`** 기준이다. 원격 PR #137 HEAD `1dbe476` 및 아래 과거 main 기록과 구별한다. 이번 회차는 push·새 PR·main 병합·실자료 처리·배포를 하지 않았다.

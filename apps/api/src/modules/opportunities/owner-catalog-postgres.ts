@@ -46,7 +46,7 @@ const Projection=z.object({projection_id:Id,actor_id:Ref,kind:z.string(),entity_
   payload_json:z.unknown(),payload_sha256:z.string().regex(/^[a-f0-9]{64}$/),sources_json:Sources,
   reviewed_by:Ref,reviewed_at:z.unknown(),as_of:z.unknown(),starts_at:z.unknown(),expires_at:z.unknown()});
 export type ApprovedOwnerProjection=z.infer<typeof Projection>;
-export type ApprovedOwnerRead={rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string};
+export type ApprovedOwnerRead={rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;validUntil:string};
 type ReadQuery={actorId:string;kind:ApprovedProjectionKind;entityId?:string;asOf:string};
 
 /** Shared actual SQL reader for catalog and academic loader. There is no writer,
@@ -54,7 +54,8 @@ type ReadQuery={actorId:string;kind:ApprovedProjectionKind;entityId?:string;asOf
 export class PostgresApprovedOwnerReader {
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){}
-  async read(query:ReadQuery,now:string,extra?:(connection:ReviewerSqlConnection)=>Promise<unknown>):
+  async read(query:ReadQuery,now:string,extra?:(connection:ReviewerSqlConnection,
+    projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>):
     Promise<(ApprovedOwnerRead&{extra?:unknown})|null>{
     Ref.parse(query.actorId);Utc.parse(query.asOf);Utc.parse(now);const clock=timestamp(this.clock());
     if(Date.parse(query.asOf)>Math.min(Date.parse(now),Date.parse(clock)))return null;
@@ -87,7 +88,13 @@ export class PostgresApprovedOwnerReader {
       if(loaded.rows.length>500)throw new Error('Approved owner catalog exceeds read bound');
       const rows=loaded.rows.map(row=>Projection.parse(row));
       const sourceProofs:unknown[]=[];
+      let validUntil='9999-12-31T23:59:59.999Z';
+      const bound=(until:unknown)=>{
+        const end=timestamp(until);
+        if(Date.parse(end)<Date.parse(validUntil))validUntil=end;
+      };
       for(const p of rows){
+        bound(p.expires_at);
         if(p.actor_id!==query.actorId||p.kind!==query.kind||p.reviewed_by===p.actor_id
           ||query.entityId!==undefined&&p.entity_id!==query.entityId
           ||canonicalProjectionHash(p.payload_json)!==p.payload_sha256)
@@ -100,21 +107,22 @@ export class PostgresApprovedOwnerReader {
         for(const ref of p.sources_json){
           if(!grants.permissionRefs.has(ref.permissionRef)||grants.sourceIds&&!grants.sourceIds.has(ref.sourceId))
             return await this.deny(c,()=>{open=false;});
-          const proof=await c.query(`SELECT s.*,o.original_sha256 AS stored_original_sha256,
+          const proof=await c.query(`SELECT s.*,rights.rights_expires_at,o.original_sha256 AS stored_original_sha256,
             a.original_sha256 AS review_original_sha256,a.content_sha256 AS review_content_sha256,
             a.decision AS review_decision,a.checked_at AS review_checked_at,a.reviewer_id
             FROM source_effective_revisions_vnext s
             JOIN source_ingest_heads h ON h.source_id=s.source_id AND h.revision_id=s.revision_id
             JOIN source_originals_vnext o ON o.revision_id=s.revision_id
             JOIN source_review_attestations_vnext a ON a.revision_id=s.revision_id
-            WHERE s.source_id=$1 AND s.revision_id=$2 AND s.permission_ref=$3
-            AND EXISTS(SELECT 1 FROM source_rights_receipts g
+            JOIN LATERAL(SELECT min(g.expires_at) AS rights_expires_at FROM source_rights_receipts g
               WHERE g.actor_id=$4 AND g.source_id=s.source_id AND g.permission_ref=s.permission_ref
               AND 'SEARCH'=ANY(g.purposes) AND g.reviewed_by<>g.actor_id
               AND g.reviewed_at<=LEAST($5::timestamptz,$6::timestamptz,clock_timestamp())
               AND g.starts_at<=LEAST($5::timestamptz,$6::timestamptz,clock_timestamp())
               AND g.expires_at>GREATEST($5::timestamptz,$6::timestamptz,clock_timestamp())
-              AND NOT EXISTS(SELECT 1 FROM source_rights_revocations x WHERE x.receipt_id=g.receipt_id))`,
+              AND NOT EXISTS(SELECT 1 FROM source_rights_revocations x WHERE x.receipt_id=g.receipt_id)) rights
+              ON rights.rights_expires_at IS NOT NULL
+            WHERE s.source_id=$1 AND s.revision_id=$2 AND s.permission_ref=$3`,
           [ref.sourceId,ref.revisionId,ref.permissionRef,query.actorId,now,clock]);
           const s=proof.rows[0];
           if(proof.rows.length!==1||!s||s.revision_id!==ref.revisionId||s.source_id!==ref.sourceId
@@ -127,17 +135,20 @@ export class PostgresApprovedOwnerReader {
             ||s.valid_from&&Date.parse(timestamp(s.valid_from))>Date.parse(query.asOf)
             ||s.valid_until&&Date.parse(timestamp(s.valid_until))<=Date.parse(query.asOf)
             ||!matchesEvidenceScope(this.scope(s),grants))return await this.deny(c,()=>{open=false;});
+          bound(s.rights_expires_at);
           sourceProofs.push(s);
         }
       }
-      const extraValue=extra?await extra(c):undefined;
+      const extraValue=extra?await extra(c,rows):undefined;
       const fingerprint=canonicalProjectionHash({query,consentVersion,policy,rows,sourceProofs,
         ...(extraValue===undefined?{}:{extra:extraValue})});
-      result={rows,consentVersion,fingerprint,...(extraValue===undefined?{}:{extra:extraValue})};
+      result={rows,consentVersion,fingerprint,validUntil,...(extraValue===undefined?{}:{extra:extraValue})};
       await c.query('COMMIT');open=false;
     }finally{if(open)try{await c.query('ROLLBACK');}catch{/* deny failed read */}c.release();}
     const after=await this.authority.resolve({actorId:query.actorId,now:timestamp(this.clock())});
-    return after&&policyFingerprint(after)===policy?result:null;
+    const completed=timestamp(this.clock());
+    return after&&policyFingerprint(after)===policy&&result
+      &&Date.parse(completed)>=Date.parse(clock)&&Date.parse(completed)<Date.parse(result.validUntil)?result:null;
   }
   private async deny(c:ReviewerSqlConnection,done:()=>void):Promise<null>{
     await c.query('COMMIT');done();return null;
@@ -163,7 +174,7 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
     private readonly clock:()=>string=()=>new Date().toISOString()){
     this.reader=new PostgresApprovedOwnerReader(pool,authority,clock);
   }
-  private receipt(query:ReadQuery,fingerprint:string):string{
+  private receipt(query:ReadQuery,fingerprint:string,validUntil:string):string{
     const now=Date.parse(this.clock());
     if(!Number.isFinite(now))throw new Error('Owner receipt clock unavailable');
     for(const [key,value] of this.receipts)if(value.expires<=now)this.receipts.delete(key);
@@ -175,7 +186,9 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
       this.receipts.delete(oldest);
     }
     const token=randomBytes(32).toString('hex');
-    this.receipts.set(token,{query,fingerprint,expires:now+60_000});return token;
+    const expires=Math.min(now+60_000,Date.parse(validUntil));
+    if(expires<=now)throw new Error('Approved catalog authorization expired');
+    this.receipts.set(token,{query,fingerprint,expires});return token;
   }
   private bindSource(p:ApprovedOwnerProjection,item:{source:{sourceId:string;revisionId:string;permissionRef:string}}){
     if(!p.sources_json.some(ref=>ref.sourceId===item.source.sourceId
@@ -189,7 +202,7 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
     if(!p.sources_json.some(ref=>ref.revisionId===result.sourceRevisionId)
       ||Date.parse(result.reviewedAt)>Date.parse(result.asOf)||Date.parse(result.asOf)>Date.parse(input.now))
       throw new Error('Transcript is outside its reviewed source');
-    return {result,scopeToken:this.receipt(query,read.fingerprint)};
+    return {result,scopeToken:this.receipt(query,read.fingerprint,read.validUntil)};
   }
   private async page<T extends {source:{sourceId:string;revisionId:string;permissionRef:string}}>(
     kind:'COURSE'|'OFFERING'|'OPPORTUNITY',input:CatalogRequest,parse:(raw:unknown)=>T,
@@ -205,7 +218,7 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
     if(new Set(filtered.map(id)).size!==filtered.length)throw new Error('Ambiguous approved catalog entities');
     const items=filtered.slice(0,input.limit),last=items[items.length-1];
     return {result:{asOf:input.asOf,items,nextCursor:filtered.length>items.length&&last?id(last):null},
-      scopeToken:this.receipt(query,read.fingerprint)};
+      scopeToken:this.receipt(query,read.fingerprint,read.validUntil)};
   }
   async listCourses(input:CatalogRequest){
     const value=await this.page('COURSE',input,x=>CatalogCourseSchema.parse(x),x=>x.courseId,x=>x.title+' '+x.courseCode);
@@ -226,7 +239,7 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
     const read=await this.reader.read(query,input.now);if(!read||read.rows.length!==1)return null;
     const p=read.rows[0]!,result=OpportunityCatalogDetailSchema.parse(p.payload_json);this.bindSource(p,result);
     if(result.opportunity.id!==input.id)throw new Error('Catalog opportunity binding mismatch');
-    return {result,scopeToken:this.receipt(query,read.fingerprint)};
+    return {result,scopeToken:this.receipt(query,read.fingerprint,read.validUntil)};
   }
   async revalidate(input:{actorId:string;scopeToken:string;now:string}):Promise<boolean>{
     const receipt=this.receipts.get(input.scopeToken);
@@ -235,6 +248,8 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
     if(!receipt||!Number.isFinite(now)||receipt.query.actorId!==input.actorId
       ||receipt.expires<=now)return false;
     try{const current=await this.reader.read(receipt.query,input.now);
-      return current?.fingerprint===receipt.fingerprint;}catch{return false;}
+      const completed=Date.parse(timestamp(this.clock()));
+      return current?.fingerprint===receipt.fingerprint&&completed>=now
+        &&completed<receipt.expires&&completed<Date.parse(current.validUntil);}catch{return false;}
   }
 }

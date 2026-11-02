@@ -1,5 +1,15 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 2026-11-02 로컬 후속: PostgreSQL 본인 수강계획 입력 연결
+
+`createPostgresPlatformServices`의 선택 항목 `ownerCatalog: {pool, authority}`는 기존 승인 카탈로그를, `studyPlanCheck: {pool, authority, rights, approvalGate}`는 `PostgresOwnerStudyPlanSnapshotLoader`와 기존 학업 순수 코어를 연결한다. 모든 인자는 서버 운영자가 독립적으로 제공하며 기본값·실자료 fallback·자동 활성화는 없다. `rights`는 조회 전후 개인 목적·정확한 공개 근거를, `approvalGate`는 학업 코어·RulePack의 현재 승인을 별도로 확인해야 한다.
+
+기존 `20261101_owner_approved_catalog.sql`의 `PLAN_INPUT` projection은 학기(`entity_id`)별 **검수된 원장·교과목 학점/개설·학기 규칙·출처 링크·허용 공개 범위**를 `ApprovedOwnerPlanInputSchema`로 저장하는 private operator 입력이다. 학생 계획은 이 승인 입력에 복사하지 않고 같은 read-only repeatable-read 거래에서 `api_self_workspace_records`의 현재 본인 `STUDY_PLAN`을 읽는다. 편집/삭제/추가를 포함한 행 집합으로 `plan-<sha256>` 버전을 계산하므로 오래된 브라우저 버전은 HTTP 409이며 현재 계획 계산을 대체하지 않는다. 공개 응답에는 원장 행·attempt token을 싣지 않는다. 승인 입력이 없으면 workspace도 읽지 않고 HTTP 503이다.
+
+조회 토큰은 actor와 source/consent/projection/계획 행 fingerprint에 결속되고 128개·단회·최대30초로 제한한다. 카탈로그/계획 모두 승인 projection과 SQL SEARCH 권리의 만료 시각으로 토큰 수명을 추가 제한하고, 마지막 비동기 검사 완료 시에도 만료를 재확인한다. 과거 `asOf`는 원본 시점으로 보존하며 권리 만료/철회는 현재 시각으로 검사한다.
+
+새 migration·학생 자료 import·공식 규칙 자동 승인·운영 프로세스는 추가하지 않았다. 검증은 합성 SQL-protocol 및 Fastify HTTP 테스트이며 **실 PostgreSQL/RLS/운영 로그인 검증은 NOT_RUN**이다. 최신 수치와 이행 경계는 [STATUS](../../STATUS.md)를 따른다.
+
 **2026-11-01 미병합 구현 제안:** #119 정정 비교·#86 추천 제외 이유 계약/API,
 #82 read-only What-if gate, #81 계획 검사 통합/신뢰 snapshot→기존 학업 코어 adapter와
 네 브라우저 메서드를 추가했다. 명시적 source/rights/approval 주입 전에는 503이다.

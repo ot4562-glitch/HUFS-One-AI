@@ -20,7 +20,16 @@ Ruling: follow the user's explicit implementation directive and minimal-document
 
 ## Current integration checkpoint — 2026-11-02
 
-### Owner goal continuation
+### Durable owner plan input handoff (#27/#81/#133)
+
+The existing `PLAN_INPUT` approved projection is the private operator's reviewed transcript/catalog/term RulePack input, not an approval of a student's editable draft plan. `apps/api/src/modules/academics/owner-study-plan-postgres.ts` reads that input and the current owner STUDY_PLAN rows in one repeatable-read snapshot through `PostgresApprovedOwnerReader`. The existing pure academic core computes the check. No new table, automatic review/import, academic algorithm, model or operational launcher is introduced.
+
+- [x] Focused SQL-protocol/HTTP tests cover persisted plan recomputation, null/malformed/foreign input, plan edits/deletion/addition, consent/source withdrawal, receipt expiry/replay and independent gate denial. Projection/SQL-rights-expiry-during-await regressions failed before the deadline fix. Five focused files / 58 tests PASS.
+- [x] Strictly validate the bounded reviewed payload and current workspace rows; derive a server plan version from the exact rows, never a browser expectation. Re-read source/consent/projection/workspace fingerprint before response. Catalog and plan receipts also expire at the earliest approved projection/SQL rights deadline and check completion time after awaits.
+- [x] Opt-in platform assembly for the approved owner catalog and study-plan source requires independent source authority, rights and approval gate. With no configuration the paths remain unavailable. Independent agent re-review found the deadline issue resolved and no further actionable finding; this is not a human GitHub approval.
+- [x] Focused regression, typecheck and API build PASS. Preserve a local checkpoint. This turn does not repeat the prior full suite/browser matrix; actual PostgreSQL binaries are absent, and SQL protocol fixtures do not prove real PostgreSQL/RLS behavior. Official RulePack, source rights, real owner identity/consent operation, independent current-HEAD human approval and release remain separate gates.
+
+### Earlier owner goal continuation checkpoint
 
 - [x] Reproduce PR #137's approval/board clock mismatch before and after the fixed demo date in `tests/api/synthetic-club-store.test.ts` (both failed before the fix).
 - [x] Keep synthetic moderation timestamps and board `asOf` on `DEMO_AS_OF` in the owner server adapter; keep real session checks and receipt expiry on the wall clock. Club core and collaborator UI unchanged by the fix. Focused API 15 PASS; independent agent static review found no actionable issue.

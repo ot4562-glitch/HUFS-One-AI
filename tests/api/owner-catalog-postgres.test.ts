@@ -19,7 +19,7 @@ function fixture(){
     original_sha256:'a'.repeat(64),stored_original_sha256:'a'.repeat(64),
     review_original_sha256:'a'.repeat(64),content_sha256:'b'.repeat(64),
     review_content_sha256:'b'.repeat(64),review_decision:'APPROVED',reviewer_id:'SYN-INDEPENDENT',
-    review_checked_at:now,scope_campuses:['SEOUL'],scope_majors:null,
+    review_checked_at:now,rights_expires_at:'2026-12-01T00:00:00Z',scope_campuses:['SEOUL'],scope_majors:null,
     scope_colleges:null,scope_major_roles:null,scope_admission_types:null,
     scope_enrollment_states:null,scope_graduation_terms:null,cohort_min:null,cohort_max:null};
   const pool:ReviewerSqlPool={connect:async()=>({query:async(sql)=>{
