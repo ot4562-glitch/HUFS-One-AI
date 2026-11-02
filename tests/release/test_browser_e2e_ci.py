@@ -12,7 +12,7 @@ CHECKOUT="actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 SETUP="actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 ALLOWED={
     "/package.json","/package-lock.json","/tsconfig.json",
-    "/packages/contracts/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
+    "/packages/contracts/","/packages/fixtures/synthetic/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
     "/.github/workflows/ui-browser-e2e.yml",
     "/tools/check_local_account_browser.mjs","/tools/strip_build_sourcemaps.mjs",
 }

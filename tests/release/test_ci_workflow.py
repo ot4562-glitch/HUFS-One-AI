@@ -31,6 +31,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/verify_release_boundary.py",
     "/.github/workflows/release-readiness.yml",
     "/.github/workflows/task00-contracts.yml",
+    "/.github/workflows/ui-browser-e2e.yml",
 })
 EXCLUDED_DIRECTORIES = (
     "csv", "local_only", "templates/real5-intake", "reference/hufsability/raw",
@@ -103,6 +104,7 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/packages/ui/", "/tools/audit_private_git_metadata.py",
             "/tools/strip_build_sourcemaps.mjs",
             "/.github/workflows/task00-contracts.yml",
+            "/.github/workflows/ui-browser-e2e.yml",
             "/tools/release_entrypoint_gate.mjs",
             "/tools/release_publication_gate.py",
             "/.dockerignore",
