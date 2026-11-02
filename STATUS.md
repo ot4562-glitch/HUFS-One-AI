@@ -1,5 +1,48 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-02 현재 정본 — PR #137 게시·소비자 리뷰 반영
+
+사용자 최신 지시로 **기존 PR 업데이트·필요한 PR 생성·PR 점검 및 조건 충족 건 병합·완료 이슈 처리와 문서 갱신**을 승인했다. 비작성자 현재 HEAD 승인·CI·관련 차단 해소 정책은 유지하며 배포·유료 호출·실자료 처리 승인은 확대하지 않는다. 아래 로컬-only 문구는 이전 체크포인트 당시 기록이다.
+
+- [x] 이번 PR 점검의 실제 main 병합 **3건**: 문서-only #136 → `d840136`, 비작성자 현재 HEAD 승인·해당 HEAD CI 뒤 UI #129 → `45ced48`, #130 → `5bf72fa` (스택 보존 merge commit). #120/#121은 #137로 대체해 **CLOSED / NOT MERGED**. 이슈 전체 완료나 원본 자료 승인을 뜻하지 않는다.
+- [ ] #131 설정 remount 중 overlay GET 경합·REVIEWER capability 실패를 BETA로 해석하는 fallback, #138 불량 마지막 행 누락·행별 학기 근거 누락에 **REQUEST_CHANGES**. #134 고유 변경에 추가 차단은 없으나 #131 대기. 협업자 코어/UI를 대신 고치지 않았다. #137은 자신의 PR이므로 본인 승인/에이전트 리뷰로 비작성자 승인을 대체하지 않는다.
+- [x] 최신 main을 owner 브랜치에 통합한 코드 **`346e636`**: 타입검사·API/웹 build PASS, 설치 Chromium 실제 기존 UI **14/14**(새 메뉴·동아리 포함)와 독립 새 계정 **9/9 PASS**. 이전 `40fb5cf`의 원격 CI 3/3 성공과 이 통합 코드/후속 문서 HEAD의 CI는 구별한다.
+- [ ] 문서 갱신 후 개인정보 경계 **178/180 PASS·2 FAIL**, 보호 추적/게시 후보 6건은 그대로다. 합성 CI와 코드 병합은 해당 Git 게시·공유 이력/운영 자료권리 차단을 해소하지 않는다.
+
+- [x] #27/#81/#133의 남은 서버 공백을 구현: `PostgresOwnerStudyPlanSnapshotLoader`가 기존 승인 `PLAN_INPUT`과 현재 본인 `STUDY_PLAN`을 같은 read-only repeatable-read 거래에서 읽고 기존 학업 코어에 전달한다. 승인 입력이 없으면 개인 계획도 읽지 않는다. 원장·규칙·계획을 추측하거나 학생 계획을 공식 승인 자료로 승격하지 않는다.
+- [x] 계획 행의 ID·버전·내용·수정 시각으로 `plan-<sha256>`을 계산하고 actor/source/consent/projection/계획의 fingerprint·최대128개 단회 토큰을 결속. 변경·삭제·추가·철회·만료·다른 소유자의 replay를 차단한다. source 기준 `asOf`는 보존하며 권리 인가는 현재 시각으로 재검사한다.
+- [x] 독립 리뷰에서 발견한 **비동기 검사 도중 projection/SQL 자료권리가 먼저 만료되는 경계**를 재현 후 보강. 공유 reader가 현재 유효 SEARCH 권리와 projection의 가장 이른 만료를 반환하고, 카탈로그/계획 토큰 수명과 마지막 응답 시각을 모두 제한한다. 수정 후 에이전트 재검토 추가 지적 없음(사람의 GitHub APPROVED 아님).
+- [x] `createPostgresPlatformServices`의 `ownerCatalog`와 `studyPlanCheck`는 별도 pool/source authority 및 독립 rights/approvalGate를 모두 명시적으로 주입할 때만 연결한다. 일반 서비스·운영 auth/DB를 자동 활성화하지 않는다.
+- [x] `2a6618a`를 PR #137에 일반 push하고 설명·검토 요청을 갱신했다. 해당 HEAD GitHub Actions **synthetic-contracts / postgres-integration / synthetic-browser-chrome 3/3 SUCCESS**: 합성 **1,784 PASS / PG opt-in 32 SKIP**, 별도 disposable PG **32 PASS**, 실제 Chrome 기존 UI **12/12**·새 계정 **9/9 PASS**. 기존 PostgreSQL suite 성공을 신규 plan loader의 실제 SQL/RLS 검증으로 확대하지 않는다.
+- [x] 박준영 소비자 리뷰 후속: 가린 과목의 분반/선수 근거 ref·href 누출을 차단하고 근거를 숨긴 확정 경고를 `NEEDS_REVIEW`로 낮춤. 승인 receipt 자체가 가린 근거를 포함하면 503. 종료 학기는 private read 전에 공통 계약 **422 INVALID_INPUT**(400 새 예외를 만들지 않음), 수기 학점은 서버/공통 스키마에서 0.5학점 단위 검증. UI 숫자 표기 파서·step 수정은 이의상 담당 경계로 남긴다.
+- [x] #133 운영자 수동 저장본 입력 추가: `OPERATOR_SAVED` 전용 허가·원본/변환 CSV SHA·저장/검수 시각·converter 버전·재배포 범위와 전후 철회/만료를 검사한다. 이 경로에서만 robots `NOT_APPLICABLE`; 기존 HTTP 수집은 계속 `ALLOWED` 필수. 원본을 반환/저장하거나 네트워크를 호출하지 않으며 #138 변환기는 학업 소유자가 제공한다. `UNKNOWN` 학번·원본 9자리 코드·구분 문자열은 보존하고 공식 학칙으로 승격하지 않는다.
+- [x] 위 소비자 후속 로컬 검증: WSL Node 22.22.1 **6파일 72 PASS**, 타입검사·API build·diff whitespace PASS. 수정 전 5개 회귀 실패를 확인했고, 별도 에이전트 검토 추가 지적 없음. 이 후속 변경의 원격 CI는 새 push 뒤 별도 확인한다.
+- [ ] 신규 plan loader는 **실 DB/RLS/거래 검증 NOT_RUN**. 공식 RulePack·원장/자료권리·운영 본인 인증·현재 HEAD 비작성자 승인·#46/#89 출시 게이트는 미완료. UI·학업 순수 알고리즘·NCP/provider는 해당 협업자 소유를 유지한다. 실자료 import·유료 호출·배포 없음.
+
+## 2026-11-02 심민성 목표 재개 — 로컬 검증 정본
+
+이 절은 `feat/owner-integrated-20261102`의 **로컬 코드 `ce315ed`** 기준이다. 원격 PR #137 HEAD `1dbe476` 및 아래 과거 main 기록과 구별한다. 이번 회차는 push·새 PR·main 병합·실자료 처리·배포를 하지 않았다.
+
+- [x] 최신 GitHub의 심민성 할당 OPEN Issue **21건**과 관련 문서·기존 통합 PR #137 리뷰를 대조. 원래 dirty checkout과 별도 `owner/full-scope-local-20261102` 작업을 보존하고 기존 owner 통합 작업 트리를 재사용.
+- [x] **#123/#137 서버 리뷰 수정 `8777b79`:** 실제 시계가 11/02이면 승인 거부, 11/25이면 승인 성공 뒤 게시판에서 숨겨지는 오류를 먼저 두 테스트로 재현. 합성 승인 시각·수정 시점 검사는 게시판의 `DEMO_AS_OF`에 결속하고, 실제 세션/관리자 인가와 단회 receipt 30초 만료는 실제 시계를 유지. 승인→목록/상세→철회와 만료 세션 포함 동아리 API **15 PASS**. 별도 에이전트 정적 리뷰 추가 지적 없음(사람의 GitHub APPROVED 아님).
+- [x] 최신 main `54a9176`을 로컬 owner 브랜치에 병합(`ce315ed`). 협업자의 D-day·지원 현황 보드 코드는 원래 main에서 가져왔으며 추천·학업·제공자 알고리즘을 임의 수정하지 않음.
+- [x] WSL **Node 22.22.1/npm 9.2.0**에서 타입검사, API/웹 build PASS. 실제 설치 Chromium **156.0.8078.4**로 Fastify+Vite 새 계정 **9/9 PASS**, 기존 UI Playwright **12/12 PASS**(320~1440px·키보드·대상 격리·일정·D-day·지원 단계·초대 origin 거부). 브라우저 다운로드 없음; 실제 Google/학교메일/NCP 성공을 뜻하지 않음.
+- [x] 최초 `npm run check`: **1,707 PASS / 실PG opt-in 32 SKIP**, UI 파일 7개의 fork worker 시작 timeout으로 명령 전체 **FAIL**. 누락 7개 파일만 `vitest run <해당 파일들> --maxWorkers=1 --reporter=dot`으로 재실행해 **66/66 PASS, 오류 0**. 두 실행을 합친 전체 대상은 **174 파일/1,773 테스트 PASS + 3 파일/32 테스트 SKIP**이며 최초 명령 자체를 성공으로 덮어쓰지 않음. 재실행 환경 초기화가 약 81%/worker당 약 44초를 차지했으며 제품 코드 변경으로 timeout을 숨기지 않음.
+- [x] 릴리스 정책 Python **63 PASS**, Node 보안 회귀 **17 PASS**. 문서 링크 갱신 후 개인정보 경계는 **177/179 PASS, 2 FAIL**(기존 보호 Git 추적·게시 후보 **6건**). 원문을 읽지 않은 Git 메타데이터 감사로 6건 모두 최초 추가 이력을 찾았지만, Git 게시·팀 공유 동의 및 clone/회수 이력을 승인하거나 확인한 것은 아님. `RELEASE_BLOCKED` 유지.
+
+**할당 이슈의 남은 의존성:** #8/#18/#19/#21/#39/#119의 계약·출처/RAG·비교 API는 실제 승인 원문/claim·현재 자료권리/독립 검수를 제공하는 운영 어댑터가 필요하다. #25/#27/#52는 실 Google/학교메일·영속 운영 DB·실 계정 철회/HTTPS 검증이 남는다. #80/#81/#82의 owner API/권한 경계와 실제 UI·공식 RulePack/What-if 학업 계산은 별도이며 학업 코어는 박준영 소유다. #123/#124/#126/#132/#133의 로컬 합성 API·manifest·브라우저 CI/시연 계정 구현을 실제 UI 스택·공식 교과목 수집·4인 운영 로그인 완료로 확대하지 않는다. 공식 교과목 수집은 박준영, UI는 이의상, 추천은 김채윤, NCP/OCR/HCX/Laya는 이서연 소유를 유지한다. #46 역사적 Git 공유 감사, #61 독립 사람 gold 200건, #89 실제 ingress/출시 승인 및 총괄 #23은 **OPEN**이다. 확인된 목적별 4/4 동의와 아직 미확인인 Git 게시·운영 권한을 혼동하지 않는다.
+
+이전 날짜의 병합/미구현·테스트 수치는 당시 기록이다. 새 계정의 실행 절차는 [시연 매뉴얼](docs/DEMO_MANUAL.md), 구현 경계는 [로컬 계정 구현 계획](docs/LOCAL_ACCOUNT_IMPLEMENTATION.md)을 따른다.
+
+## 2026-11-02 계정/자료/시연 통합 최신 검증 (우선 읽기)
+
+- [x] 기술 총괄 통합 브랜치 `feat/owner-integrated-20261102`: 별도의 **빈 SYNTHETIC 시연 계정 1개 + 가상 비교용 4개**의 설정·저장·초기화·추천/공지/동아리 재계산, HUFSAbility 5분류/24개 원본 메뉴의 미지원 고지, 권한 게이트, 검수 전 공식 수업 수집 차단기 및 제한된 4인 자가 조회 seam. 실제 개인 계정과 가상 시연 계정은 별개. 기존 심사 초대/졸업/REVIEWER sandbox UI를 유지하며 최신 main과 통합.
+- [x] 해당 통합 HEAD에서 TypeScript/API·웹 빌드 PASS, 계약·소비자·로컬계정 중심 Vitest 429/429 PASS, 실제 Linux Chromium 합성 E2E **9/9 PASS**. 기존 owner checkpoint 전체 API 796 PASS/선택형 운영 PostgreSQL 32 SKIP. `packages/ui` TS/Vitest 검증 누락을 발견해 통합 브랜치에서 수정. 릴리스 정책 단위 테스트는 수정 후 재검증 대상.
+- [x] GitHub `main`에 #117 추천 사유, #73 REVIEWER 초대, #74 졸업 화면, #75 합성 sandbox가 독립 승인 및 당시 HEAD Actions 성공 후 병합됨. 후속 UI #76/#127~#134 및 총괄 #120/#121은 스택·중복·승인 확인 전 독립 완료로 취급하지 않음.
+- [ ] **릴리스/자료권리 차단:** 개인정보 경계 171/173 PASS·2 FAIL(과거 Git에 추적된 보호 원본 6건, 신규 파일 게시 없음). 4인의 목적별 응답은 4/4 확인, 그러나 과거 Git 게시·학교 내 자료 수집/재사용 권한은 별도. 실제 Google/외대메일/NCP/운영 PostgreSQL/학교 학칙·개설 정보 권리·인증 시연은 미검증. #46·#89 유지. #132 합성 시연과 #133 4인 자료 연계는 미완료 항목이 남아 있어 종료 금지. [절차](docs/DEMO_MANUAL.md) · [작업 범위](docs/LOCAL_ACCOUNT_IMPLEMENTATION.md).
+
+이 아래의 '최신' 표제와 PR·Issue 수치는 작성 당시 기록이며 이 절이 2026-11-02 통합 브랜치의 최신 검증 기준이다.
+
 ## 2026-11-02 #125 후속 최종 병합 정정 (가장 최신)
 
 - [x] [#125 동아리 추천 순수 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 최신 HEAD `8e88a4b`가 `updatedAt>asOf`·승인 후 수정/재승인·시점 역전을 목록/추천/상세 모두에서 차단하도록 **수정 완료**. 담당자 외 독립 **APPROVED**, 해당 HEAD GitHub Actions 2/2 SUCCESS 후 **main merge `8f76c388`**. 12개 가상 승인 게시글/5개 합성 학생 추천의 **코어 하위 기능** 완료.
