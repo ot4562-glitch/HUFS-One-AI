@@ -1,5 +1,18 @@
 # 코딩을 몰라도 알 수 있는 전체 흐름
 
+## 2026-11-02 동아리 기능 담당자용 최신 병합 인수인계
+
+- [x] 김채윤의 [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 가상 동아리 노출·추천 **순수 코어**는 이전 #125 변경요청의 미래시점/수정 후 승인 결함을 고쳐 새 HEAD `8e88a4b` 비작성자 APPROVED·GitHub Actions 2/2 SUCCESS 후 **main `8f76c388` 실제 병합**.
+- [ ] 이의상: 모집 게시판·실제 생성된 AI 가상 포스터 이미지/접근성 UI. 심민성: 서버의 **진짜 가상 관리자 권한 확인/게시 승인 contract·API**. 이서연: 기획·학교 공식성 표현 검토. **#123 상위 Issue OPEN**.
+- [ ] HUFSAbility 메뉴 전체와 🚫 미구현 표시 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 별도 구현. 이번 PR 총 병합 3건·열린 PR 7건/Issue 30, #46/#89 RELEASE_BLOCKED. 아래 '수정 요청 중'은 이전 HEAD 당시 기록.
+
+## 2026-11-02 새 기능 이슈/담당 및 협업 순서
+
+- **[Issue #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 기존 기능/메뉴 수용(P0):** 이의상(`uisang2004-maker`) UI/메뉴·🚫/360px·접근성, 심민성(`ot4562-glitch`) route/권한/capability manifest·통합, 이서연(`lhh42001`) 기획/정식 학교 연계 주장 검토. 원래 메뉴 5대 분류·24 하위 기능과 공개 진입 4영역 **누락 없이 보이되 구현되지 않은 메뉴는 작동 금지**. 학교 공식 운영 허가/전 기능 이식이 아님.
+- **[Issue #123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 가상 동아리 모집(P1):** 이의상 UI·독창적 합성 포스터, 김채윤(`qamarrchae`) 승인된 가상 동아리만 추천하는 코어, 심민성 가상 관리자 승인 gate·합성 DTO/API·안전 검토. 실동아리/에브리타임 원문·학생 개인정보 사용 금지. [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 코어는 과거 asOf/미래 updatedAt 가드 수정 요청 중이고 실제 포스터 asset은 없음.
+- **현재 통합:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) source revision 회귀 main `bb5b76d`, [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) calendar UI main `717ce979`. #73 초대 비동기 race CHANGES_REQUESTED → #74/75 code APPROVED 순서, #76 E2E 독립 재현 전. #117 코어 리뷰자 최종 재확인, #120(현재 reason enum 불일치)→#121 안전 계약/API 스택 정리 필요.
+- **해결 정책:** 구현·검증된 세부 항목만 [x], 상위 서비스/배포/학교 공식 자료·Google/학생 동의·#46/#89은 계속 별도 검증. 코드 PR에는 타인 최신 HEAD APPROVED와 동일 HEAD 성공한 관련 CI가 필요.
+
 
 **담당 GitHub 작업 계정(현재 이슈 배정 확인):** 심민성 `ot4562-glitch`(계약·일반 API), 이의상 `uisang2004-maker`(UI), 김채윤 `qamarrchae`(추천·공지), 박준영 `taewangim-alt`(학업), 이서연 `lhh42001`(NCP·CLOVA/OCR·Laya 제공자·운영). **일반 웹/외부 API는 심민성 담당**이며 실제 서버·Google OIDC/DB/OCR·모델·클라우드 개통은 별도 검증/승인 전 완료로 표시하지 않는다. 역할/근거: [WORKSTREAMS.md](WORKSTREAMS.md).
 

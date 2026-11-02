@@ -9,3 +9,5 @@ export * from './demo-corpus.js';
 export * from './demo-profiles.js';
 export * from './demo-snapshot.js';
 export * from './not-featured.js';
+export * from './clubs.js';
+export * from './demo-clubs.js';

@@ -62,6 +62,16 @@ describe('synthetic dev client: each subject has its own generated data (#68 rev
     expect(controller.getState().snapshot).toBeNull();
   });
 
+  it("each context's calendar is that subject's own (S01 ≠ S02), at the snapshot asOf", async () => {
+    const client = new SyntheticDemoClient({delayMs: 0});
+    const c1 = await client.createContext('S01', 'RUN'), c2 = await client.createContext('S02', 'RUN');
+    const [k1, k2] = [await client.getCalendar(c1.contextId), await client.getCalendar(c2.contextId)];
+    expect(k1).toEqual(subjects.get('S01')!.calendar);
+    expect(k2).toEqual(subjects.get('S02')!.calendar);
+    expect(k1.entries.map(e => e.id)).not.toEqual(k2.entries.map(e => e.id));
+    expect(k1.asOf).toBe((await client.getSnapshot(c1.contextId)).asOf);
+  });
+
   it('unknown or cleared contexts are refused (403), e.g. after logout', async () => {
     const client = new SyntheticDemoClient({delayMs: 0});
     const c = await client.createContext('S01', 'RUN');
