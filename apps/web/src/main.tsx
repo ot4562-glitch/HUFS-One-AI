@@ -62,6 +62,11 @@ async function start() {
       // #80: the real HufsApiClient over an in-memory fictitious owner (dev only).
       applications: boardPort(new HufsApiClient(new owner.SyntheticOwnerServer().fetch)),
       clubs: clubs.syntheticClubPort(),
+      overlay: {
+        get: (ctx, signal) => synthetic.getDemoOverlay(ctx, signal),
+        set: (ctx, change, signal) => synthetic.setDemoOverlay(ctx, change, signal),
+        reset: (ctx, version, signal) => synthetic.resetDemoOverlay(ctx, version, signal),
+      },
       sandbox: {
         allowedActions: ALL_SANDBOX_ACTIONS,
         read: (ctx, signal) => synthetic.readActions(ctx.contextId, signal),
@@ -70,7 +75,12 @@ async function start() {
     };
   } else {
     const reviewer = await reviewerSandbox(api);
-    if (reviewer) services = {...services, sandbox: reviewer};
+    // REVIEWER: synthetic sandbox only. Otherwise (BETA) the #85 overlay; the server checks the role anyway.
+    services = reviewer ? {...services, sandbox: reviewer} : {...services, overlay: {
+      get: (ctx, signal) => api.getDemoOverlay(ctx, signal),
+      set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
+      reset: (ctx, version, signal) => api.resetDemoOverlay(ctx, version, signal),
+    }};
   }
   // One controller per tab, in memory only.
   const controller = new DemoController(client, newTabDemoRunId());
