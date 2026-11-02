@@ -1,5 +1,12 @@
 # HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
 
+## 2026-11-02 REVIEWER UI 최신 후속 수락/미완료
+
+- [x] [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 Calendar GET/같은 context snapshot 무효화 **main merge `717ce979`**. 401/403/409/동일문맥 overlay·늦은 응답 합성 테스트 PASS.
+- [ ] [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) 초대 UI HEAD `9b8bd6f`는 원래 부모 #72 병합 후 **main으로 retarget**. 현재 `getSession` 성공 Promise의 abort/lifecycle 확인 누락으로 독립 CHANGES_REQUESTED. 화면 unmount·로그아웃·StrictMode에서 늦은 성공 응답이 READY를 만들면 안 됨.
+- [x] [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) 합성 sandbox HEAD `d5f7905`의 정확한 snapshot/log 결속과 미저장 초안·경험·관심/초기화 확인의 S01/S02 격리 개선에 **비작성자 APPROVED**. **코드 승인만**: 아직 미병합이며 #73→#74 선행해야 함.
+- [ ] [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) Playwright Edge 테스트는 작성자의 로컬 결과와 원격 Actions 합성·PG 2개를 혼동하지 않으며 별도 브라우저 재현이 필요. 실제 초대 메일·Google OIDC·TLS·REVIEWER 운영 세션 권한 검증/학생원본·NCP 처리 허가 없음. #46/#89 `RELEASE_BLOCKED`.
+
 ## 2026-11-01 심사자 UI 최신 HEAD 안전 리뷰
 
 - [x] [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) `1cfc61f` 초대 화면 및 [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) `0a19d1e` 합성 sandbox 독립 코드 리뷰를 등록. 이는 리뷰 완료 체크일 뿐 기능 수락·운영 초대 발송 완료가 아니다.
