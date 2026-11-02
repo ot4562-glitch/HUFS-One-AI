@@ -20,12 +20,13 @@
 | [#131 설정 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | 두 가지 fail-closed·remount 지적 `CHANGES_REQUESTED` → 작성자 보완·실 브라우저/회귀·최신 HEAD 재승인 |
 | [#134 빈 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | #131을 base로 쌓인 PR. 선행 수정·병합 및 main diff 복원 후 독립 최신 HEAD CI/리뷰 |
 | [#138 강의시간표 변환](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) | `DRAFT` + 잘못된 마지막 데이터행 누락·행별 학기 근거 수정 요청. 학교 실제 사이트 무단 수집/원본 공개 금지 |
+| [#142 브랜치 정리 CLI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) | 별도 유지관리 코드 PR, 격리 Node 테스트 4/4 PASS. 원격 삭제는 0건, 최신 HEAD CI/독립 리뷰/실 dry-run 확인 전 병합·apply 금지 |
 
 [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 합성 개인화/전공 재계산 테스트(`26c559e`)와 [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/피드 판본 테스트(`41de619`)는 HEAD 비작성자 승인·관련 CI 3/3 뒤 **main 병합 완료**. 실서비스 기능 완료와 구별합니다.
 
 ## 원격 브랜치 정리 절차
 
-이번 감사의 기준은 **총 105개**입니다(main 1/열린 PR 3/병합 PR 연계 86/닫힌 미병합 PR 연계 11/PR 없는 백업·준비 4). 수치는 매번 GitHub 조회로 갱신합니다.
+2026-11-03 최신 조회 기준 **총 106개**입니다(main 1/열린 PR 4/병합 PR 연계 86/닫힌 미병합 PR 연계 11/PR 없는 백업·준비 4). 수치는 매번 GitHub 조회로 갱신합니다. [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)는 **dry-run 기본/삭제 명시적** 도구 제안이며 HEAD 비작성자 리뷰·CI 전 **미병합**, 원격 실제 삭제 **0건**입니다.
 
 1. **무조건 보존:** `main`, 보호 브랜치, 열려 있는 PR의 head/base, 다른 사용자 worktree·운영 참조, 미확인 백업/준비 브랜치.
 2. **1차 삭제 후보:** 최종 `merged_at`가 실제 기록된 **그 PR의 현재 head 브랜치**이며 지금 원격 SHA가 병합 PR head SHA와 같고, 이 브랜치를 사용하는 열린 PR이 **하나도** 없고, 별도 후속 작업/복구 용도가 없는 것. squash/rebase는 Git 부모조상 관계만으로 삭제를 결정하지 않습니다.
