@@ -54,6 +54,7 @@ async function start() {
     const dev = await import('./dev/syntheticDemoClient.js');
     const synthetic = new dev.SyntheticDemoClient({snapshotErrors: {S04: 'SHARING_REVOKED'}});
     const owner = await import('./dev/syntheticOwnerServer.js');
+    const clubs = await import('./dev/syntheticClubs.js');
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
     services = {
@@ -61,6 +62,7 @@ async function start() {
       loadCalendar: (ctx, signal) => synthetic.getCalendar(ctx.contextId, signal),
       // #80: the real HufsApiClient over an in-memory fictitious owner (dev only).
       applications: boardPort(new HufsApiClient(new owner.SyntheticOwnerServer().fetch)),
+      clubs: clubs.syntheticClubPort(),
       sandbox: {
         allowedActions: ALL_SANDBOX_ACTIONS,
         read: (ctx, signal) => synthetic.readActions(ctx.contextId, signal),
