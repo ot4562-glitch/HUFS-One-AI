@@ -4,9 +4,10 @@ import {reviewerInvitePage} from './reviewerPages.js';
 import {graduationPage} from './graduationPage.js';
 import {experiencePage, savedPage, settingsPage} from './sandboxPages.js';
 import {applicationsPage} from './applicationsPage.js';
+import {menuPage} from './menuPage.js';
 
 /** Feature pages, checked in order before the shell's placeholders. */
 export const appPages: readonly PageRenderer[] = [
   todayPage, opportunitiesPage, opportunityDetailPage, noticesPage, noticeDetailPage, reviewerInvitePage, graduationPage,
-  savedPage, experiencePage, settingsPage, applicationsPage,
+  savedPage, experiencePage, settingsPage, applicationsPage, menuPage,
 ];
