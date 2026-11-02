@@ -1,6 +1,18 @@
 # PR 운영과 파일 충돌 예방
 
-## 2026-11-02 추가 수정 PR의 실제 병합 결과 (최신)
+## 2026-11-02 최신 PR 리뷰·병합·미완료 판정
+
+- [x] 김채윤 [**#139**](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 현재 HEAD `6f7496e` 이전 CHANGES_REQUESTED baseline 반례 수정 재검토 → **비작성자 APPROVED**, Actions `41464083751` (합성/PG) + `41464083737` (Chrome) **3/3 SUCCESS**, expected-head 확인 후 **squash merge `26c559e`**.
+- [x] 김채윤 [**#140**](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) HEAD `e4e8599` 필드 정정·현재 판본/피드/공지 합성 회귀 diff 검토 → **비작성자 APPROVED**, Actions `41464574518` (합성/PG) + `41464574361` (Chrome) **3/3 SUCCESS**, expected-head 확인 후 **squash merge `41de619`**. 두 병합 모두 테스트-only, 공식 공고/학생 데이터 또는 운영 구현 아님.
+- [x] 이번 시점의 열린 PR 5건 (#131/#134/#138/#139/#140) 메타·코드 diff·기존 리뷰·각 HEAD CI/스택 검토. [**#134**](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) HEAD `ab565d0`에 **COMMENT 리뷰** 및 합성/PG Actions 2/2 SUCCESS 확인. 승인·병합 아님.
+- [ ] **남은 OPEN PR 3**: [#131](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) HEAD `35cdaf3` CHANGES_REQUESTED (GET 중 route unmount/remount 응답 경합과 REVIEWER+capabilities 오류 BETA 잘못 판별); #134는 #131을 base로 하는 **stacked PR**으로 선행 수정/메인 기준 재검토 전 병합 불가; [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) HEAD `37a1136` **DRAFT+CHANGES_REQUESTED** (손상 마지막 행 무음 누락, 행별 학기 출처 누락). #131/#134/#138 합성·PG CI 2/2 성공은 리뷰 차단 해제나 실제 교과 수집 허가를 뜻하지 않음.
+- [x] 기준 이슈 **OPEN 32 / CLOSED 7**, 이번 회차 기존 OPEN 이슈 신규 종결 **0**; [#9/#10/#85/#119/#124/#132/#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 하위 검토·병합/과제 배정만 [x], 전체 수락 부족으로 OPEN 유지.
+- [x] 아틀라스 기반 **더 나은 독립 HUFS One AI UI/UX** [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 신규 발행/담당 할당; #124 공개 5/24/4와 학생 UI 관찰 11그룹/76화면의 IA 대응, 미지원 🚫 텍스트/키보드·직접 URL fail-closed, 임의 원본 픽셀/자산 복제 금지.
+- [ ] #46 원본 Git 이력/개인정보 경계 2 FAIL·#89 `RELEASE_BLOCKED`는 오프라인 CI와 독립. **문서 직접 main 수정만** 사용자 지시의 예외, 코드/공통 계약·데이터/배포는 아래 기존 HEAD 비작성자 승인 정책을 유지한다.
+
+이 절을 아래 2026-11-02/11-01 중간 체크포인트보다 우선한다.
+
+## 2026-11-02 #125 병합 기록 (이전 체크포인트)
 
 - [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 최초 HEAD `37f0a2e` **CHANGES_REQUESTED**(미래 updatedAt/과거 asOf 노출) → 작성자 수정 HEAD `8e88a4b`에서 **과거 수정·수정 후 재승인·시점 역전/직접 상세 회귀 해결** → 비작성자 **APPROVED**, 동일 HEAD Actions synthetic-contracts/postgres-integration **2/2 SUCCESS** → **main merge `8f76c388`**.
 - [x] 이 회차 코드 PR 실병합 **#122, #72, #125 총 3건**; 남은 OPEN PR **7건** (#73~#76, #117, #120, #121), Issue OPEN 30/기존 CLOSED 5. 다음 진도는 #73 초대 async 성공 콜백, #120 reason enum, #117 별도 UI 리뷰 동의, #76 브라우저 검증 순서.
