@@ -1,6 +1,6 @@
 # HUFS One AI | 확정 5인 분업과 에이전트 작업 경계
 
-## 2026-11-02 최신 팀 인수인계 — HUDSAbility UI/UX 고도화와 합성 코어 PR
+## 2026-11-02 최신 팀 인수인계 — HUFSAbility UI/UX 고도화와 합성 코어 PR
 
 - **이의상 `uisang2004-maker` (UI/UX 주관):** [새 디자인 이슈 #141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) + [기존 메뉴 계약 #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124). [학생용 텍스트 아틀라스](HUFSABILITY_UI_COMPONENT_ATLAS.md)에서 관찰된 **11개 상위 메뉴·76화면(오류1)**을 공식 공개 메뉴 **5분류/24기능+진입4**와 별칭/관찰 범위로 대응하여 **모든 기존 메뉴를 미지원🚫이어도 보이게** 설계. 원래 UI의 구조·사용 목적만 참고하고 **같은 디자인 강요 금지/더 나은 독립 UI/UX**: 데스크톱·모바일 320/360/390/768/1440px, 키보드/스크린리더, 상태 및 direct URL fail-closed. 원본 캡처/HTML/학생정보·학교 로고 반입 금지. #131 remount/REVIEWER 두 결함 CHANGES_REQUESTED, #134는 #131 base의 UI + 합성 포트 PR(리뷰 COMMENT, 머지 보류).
 - **김채윤 `qamarrchae` (순수 추천/공지 코어):** [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 가상 설정·전공 재계산 baseline 회귀 **main `26c559e`**, [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/취소 피드·공지 판본 회귀 **main `41de619`**. 각각 타인 HEAD 승인·합성/PG/Chrome 3/3 SUCCESS. 이는 가상 테스트 데이터로 core-only; 실학생·공식 공고·독립 200 gold 증거 아님.
