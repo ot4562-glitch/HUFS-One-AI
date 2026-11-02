@@ -2,6 +2,7 @@ import {useEffect, useRef, type ReactNode} from 'react';
 import type {DemoContext} from '@hufs-one/contracts';
 import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
+import type {DemoProfilePort} from './features/profile/demoProfile.js';
 import type {BoardPort} from './features/applications/boardPort.js';
 import type {ClubPort} from './features/clubs/useClubBoard.js';
 import type {OverlayPort} from './features/settings/overlayCompare.js';
@@ -36,6 +37,8 @@ export interface AppServices {
   readonly clubs?: ClubPort;
   /** #85 BETA temporary choices; never set for a REVIEWER session (sandbox settings instead). */
   readonly overlay?: OverlayPort;
+  /** #132 separate blank demo account profile; dev synthetic only until the shared contract/API exists. */
+  readonly demoProfile?: DemoProfilePort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;

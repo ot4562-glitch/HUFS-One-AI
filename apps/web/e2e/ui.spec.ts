@@ -54,8 +54,12 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await expect(page.getByRole('link', {name: '본문으로 건너뛰기'})).toBeFocused();
   await page.keyboard.press('Tab'); // logo
   await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
-  await page.keyboard.press('Tab'); // 설정
   await page.keyboard.press('Tab'); // selector summary
+  await expect(page.locator('.selector__summary')).toBeFocused();
+  // #132: 설정 comes right after the account switcher.
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.app__account').getByRole('link', {name: '설정'})).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await expect(page.locator('.selector__summary')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio').first()).toBeVisible();

@@ -39,11 +39,14 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
           <InAppLink to="/" navigate={navigate} className="app__logo">HUFS One AI</InAppLink>
           <span className="app__brand-links">
             <InAppLink to="/menu" navigate={navigate} className="app__settings app__menu-link" current={path === '/menu'}>전체 메뉴</InAppLink>
-            <InAppLink to="/settings" navigate={navigate} className="app__settings" current={path === '/settings'}>설정</InAppLink>
           </span>
         </div>
         {transportLabel && <p className="app__transport" role="note">{transportLabel}</p>}
-        {selector}
+        {/* #132: '설정' sits right next to the account (demo subject) switcher. */}
+        <div className="app__account">
+          {selector}
+          <InAppLink to="/settings" navigate={navigate} className="app__settings app__account-settings" current={path === '/settings'}>설정</InAppLink>
+        </div>
         {status}
       </header>
       {/* DOM order = visual order on wide screens (tabs under the header); fixed to the bottom on phones. */}

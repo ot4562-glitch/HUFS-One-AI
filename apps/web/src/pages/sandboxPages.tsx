@@ -2,6 +2,7 @@ import type {PageRenderer} from '../App.js';
 import {ExperienceEditor, NOT_REVIEWER_TEXT, SandboxNote, SandboxSettings} from '../features/sandbox/SandboxControls.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {OverlaySettings} from '../features/settings/OverlaySettings.js';
+import {DemoProfileSettings} from '../features/profile/DemoProfileSettings.js';
 import {NoSnapshot, Section, screenViewOf} from './parts.js';
 
 /** 보관함: bookmarked cards, practice applications and drafts for the current subject. */
@@ -51,12 +52,15 @@ export const experiencePage: PageRenderer = ({path, state, sandbox}) => {
 
 export const settingsPage: PageRenderer = ({path, state, sandbox, services, controller}) => {
   if (path !== '/settings') return null;
-  if (!sandbox && !services.overlay) return {title: '설정', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
-  if (state.status !== 'READY') return {title: '설정', body: <NoSnapshot state={state} />};
+  // #132: the blank demo account profile is account-level, so it shows without a selected subject.
+  const profile = services.demoProfile ? <DemoProfileSettings port={services.demoProfile} /> : null;
+  if (!sandbox && !services.overlay) return {title: '설정', body: profile ?? <p className="muted">{NOT_REVIEWER_TEXT}</p>};
+  if (state.status !== 'READY') return {title: '설정', body: <>{profile}<NoSnapshot state={state} /></>};
   // Keyed by subject/context so unsaved topic picks never carry to another student.
   const scope = `${state.epoch}:${state.context?.contextId ?? ''}`;
   return {title: '설정', body: (
     <>
+      {profile}
       {services.overlay && <OverlaySettings key={scope} controller={controller} state={state} port={services.overlay} />}
       {sandbox && <SandboxSettings sandbox={sandbox} />}
     </>
