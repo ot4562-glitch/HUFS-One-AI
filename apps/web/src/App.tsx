@@ -1,5 +1,6 @@
 import {useEffect, useRef, type ReactNode} from 'react';
 import type {DemoContext} from '@hufs-one/contracts';
+import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -19,6 +20,8 @@ export interface PageContext {
 export interface AppServices {
   /** Raw CalendarResult for the context (validated by the widget). Real path: liveServices → HufsApiClient.getCalendar. */
   readonly loadCalendar?: (context: DemoContext, signal: AbortSignal) => Promise<unknown>;
+  /** /reviewer/invite: session check + redeem, and the in-memory code captured before render. */
+  readonly reviewerInvite?: {readonly port: InvitePort; readonly holder: InviteCodeHolder};
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;
@@ -64,8 +67,9 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       path={path}
       navigate={navigate}
       transportLabel={transportLabel}
-      selector={<DemoSelector state={state} onSelect={s => void controller.select(s)} />}
-      status={<StatusBanner state={state} onRetry={() => void controller.retry()} />}
+      // The invite page is about enrolment, not a demo subject: no selector or demo status there.
+      selector={path === '/reviewer/invite' ? null : <DemoSelector state={state} onSelect={s => void controller.select(s)} />}
+      status={path === '/reviewer/invite' ? null : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <h1 ref={heading} tabIndex={-1} className="page__title">{page.title}</h1>
       {page.body}
