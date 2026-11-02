@@ -18,6 +18,8 @@ const TRANSCRIPT:LedgerAttempt[] = [
 ];
 
 const SEVEN = ['SYN-P1', 'SYN-P2', 'SYN-P3', 'SYN-P4', 'SYN-P5', 'SYN-P6', 'SYN-P7'];
+/** More courses than one plan issue can carry. */
+const MANY = Array.from({length:25}, (_, i) => `SYN-M${String(i + 1).padStart(2, '0')}`);
 const CATALOG:Record<string, number> = Object.fromEntries(
   [...SEVEN, 'SYN-ADV', 'SYN-ADV2', 'SYN-ADV3', 'SYN-X', 'SYN-Y', 'SYN-C', 'SYN-D'].map(id => [id, 6]),
 );
@@ -143,9 +145,10 @@ describe('simulateStudyPlan', () => {
       simulateStudyPlan(request([item('SYN-ADV')], {rulePack:draft, termRules:{creditCapUnits:36, capEvidenceRefs:[CAP_REF], prerequisites}})),
       simulateStudyPlan(request([item('SYN-C'), item('SYN-D', 'UNDECIDED'), item('SYN-NOT-IN-CATALOG')], {sections:[]})),
       simulateStudyPlan(request([item('SYN-C')], {rulePack:{version:'SYN-PACK-1', state:'MISSING'}})),
+      simulateStudyPlan(request(MANY.map(id => item(id)), {courseCreditUnits:{...CATALOG, ...Object.fromEntries(MANY.map(id => [id, 2]))}, sections:[]})),
     ];
     expect(cases.map(check => check.state)).toEqual(
-      ['READY', 'READY', 'NEEDS_REVIEW', 'READY', 'NEEDS_REVIEW', 'READY', 'NEEDS_REVIEW', 'NEEDS_REVIEW', 'INSUFFICIENT_DATA']);
+      ['READY', 'READY', 'NEEDS_REVIEW', 'READY', 'NEEDS_REVIEW', 'READY', 'NEEDS_REVIEW', 'NEEDS_REVIEW', 'INSUFFICIENT_DATA', 'NEEDS_REVIEW']);
     for (const check of cases) {
       const parsed = onTheWire(check);
       expect(parsed.success, parsed.success ? '' : JSON.stringify(parsed.error.issues)).toBe(true);

@@ -70,7 +70,10 @@ export interface AcademicPlanRequest extends AcademicLedgerRequest {
 
 const WEEKDAYS:ReadonlySet<string> = new Set(['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']);
 const MINUTES_PER_DAY = 24 * 60;
-const MAX_TERM_COURSES = 20;
+/** Matches the #103 wire, which shows at most 60 course refs per check. */
+const MAX_TERM_COURSES = 60;
+/** AcademicPlanIssueVNext carries at most 20 course refs; longer lists are split. */
+const MAX_ISSUE_COURSES = 20;
 const MAX_PREREQUISITES = 100;
 const MAX_SECTIONS = 200;
 const MAX_MEETINGS = 10;
@@ -104,6 +107,13 @@ function union(lists:readonly (readonly string[])[]):string[] {
   return refs;
 }
 
+/** Sorted course refs in groups the wire accepts, so a long list becomes several issues of one kind. */
+function chunks(courseRefs:readonly string[]):string[][] {
+  const groups:string[][] = [];
+  for (let i = 0; i < courseRefs.length; i += MAX_ISSUE_COURSES) groups.push(courseRefs.slice(i, i + MAX_ISSUE_COURSES));
+  return groups;
+}
+
 interface TermCourse {
   courseId:string;
   units:number;
@@ -131,13 +141,8 @@ function termLoad(attempts:readonly LedgerAttempt[], term:string, issues:PlanIss
     });
   }
   if (byCourse.size > MAX_TERM_COURSES) throw new RangeError(`a term plan accepts at most ${MAX_TERM_COURSES} courses`);
-  if (repeated.size > 0) {
-    issues.push({
-      code:'NEEDS_REVIEW',
-      reasonCode:'UNKNOWN',
-      courseRefs:[...repeated].sort(byCodeUnit),
-      evidenceRefs:[],
-    });
+  for (const courseRefs of chunks([...repeated].sort(byCodeUnit))) {
+    issues.push({code:'NEEDS_REVIEW', reasonCode:'UNKNOWN', courseRefs, evidenceRefs:[]});
   }
   return [...byCourse.values()].sort((a, b) => byCodeUnit(a.courseId, b.courseId));
 }
@@ -149,10 +154,11 @@ function checkCap(plan:TermPlan, load:readonly TermCourse[], packApproved:boolea
   let total = 0;
   for (const course of load) total = addUnits(total, course.units);
   if (total <= plan.creditCapUnits) return total;
-  const courseRefs = load.map(course => course.courseId);
-  issues.push(packApproved
-    ? {code:'CREDIT_CAP_EXCEEDED', reasonCode:'EXCEEDS_APPROVED_LIMIT', courseRefs, evidenceRefs}
-    : {code:'NEEDS_REVIEW', reasonCode:'UNKNOWN', courseRefs, evidenceRefs});
+  for (const courseRefs of chunks(load.map(course => course.courseId))) {
+    issues.push(packApproved
+      ? {code:'CREDIT_CAP_EXCEEDED', reasonCode:'EXCEEDS_APPROVED_LIMIT', courseRefs, evidenceRefs}
+      : {code:'NEEDS_REVIEW', reasonCode:'UNKNOWN', courseRefs, evidenceRefs});
+  }
   return total;
 }
 
@@ -333,7 +339,14 @@ function checkTimetable(plan:TermPlan, load:readonly TermCourse[], asOfMs:number
     }
   }
 
-  if (!pairConflict && timed.length > 2) {
+  if (!pairConflict && timed.length > MAX_ISSUE_COURSES) {
+    // A NO_FIT over every course cannot be split honestly: a group of 20 may still fit.
+    // Report the search as not done, each group with its own section evidence.
+    for (const courseRefs of chunks(timed)) {
+      const evidenceRefs = union(courseRefs.flatMap(courseId => sections.get(courseId)!.map(section => section.evidenceRefs)));
+      issues.push({code:'SEARCH_LIMIT_REVIEW', reasonCode:'ALLOCATION_SEARCH_LIMIT', courseRefs, evidenceRefs});
+    }
+  } else if (!pairConflict && timed.length > 2) {
     const lists = timed.map(courseId => sections.get(courseId)!);
     const fit = anyFit(lists);
     if (fit !== 'FITS') {
@@ -344,8 +357,8 @@ function checkTimetable(plan:TermPlan, load:readonly TermCourse[], asOfMs:number
     }
   }
 
-  if (unconfirmed.length > 0) {
-    issues.push({code:'NEEDS_REVIEW', reasonCode:'COURSE_NOT_CONFIRMED', courseRefs:unconfirmed, evidenceRefs:[]});
+  for (const courseRefs of chunks(unconfirmed)) {
+    issues.push({code:'NEEDS_REVIEW', reasonCode:'COURSE_NOT_CONFIRMED', courseRefs, evidenceRefs:[]});
   }
 }
 
