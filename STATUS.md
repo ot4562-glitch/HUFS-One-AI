@@ -1,5 +1,14 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-02 계정/자료/시연 통합 최신 검증 (우선 읽기)
+
+- [x] 기술 총괄 통합 브랜치 `feat/owner-integrated-20261102`: 별도의 **빈 SYNTHETIC 시연 계정 1개 + 가상 비교용 4개**의 설정·저장·초기화·추천/공지/동아리 재계산, HUFSAbility 5분류/24개 원본 메뉴의 미지원 고지, 권한 게이트, 검수 전 공식 수업 수집 차단기 및 제한된 4인 자가 조회 seam. 실제 개인 계정과 가상 시연 계정은 별개. 기존 심사 초대/졸업/REVIEWER sandbox UI를 유지하며 최신 main과 통합.
+- [x] 해당 통합 HEAD에서 TypeScript/API·웹 빌드 PASS, 계약·소비자·로컬계정 중심 Vitest 429/429 PASS, 실제 Linux Chromium 합성 E2E **9/9 PASS**. 기존 owner checkpoint 전체 API 796 PASS/선택형 운영 PostgreSQL 32 SKIP. `packages/ui` TS/Vitest 검증 누락을 발견해 통합 브랜치에서 수정. 릴리스 정책 단위 테스트는 수정 후 재검증 대상.
+- [x] GitHub `main`에 #117 추천 사유, #73 REVIEWER 초대, #74 졸업 화면, #75 합성 sandbox가 독립 승인 및 당시 HEAD Actions 성공 후 병합됨. 후속 UI #76/#127~#134 및 총괄 #120/#121은 스택·중복·승인 확인 전 독립 완료로 취급하지 않음.
+- [ ] **릴리스/자료권리 차단:** 개인정보 경계 171/173 PASS·2 FAIL(과거 Git에 추적된 보호 원본 6건, 신규 파일 게시 없음). 4인의 목적별 응답은 4/4 확인, 그러나 과거 Git 게시·학교 내 자료 수집/재사용 권한은 별도. 실제 Google/외대메일/NCP/운영 PostgreSQL/학교 학칙·개설 정보 권리·인증 시연은 미검증. #46·#89 유지. #132 합성 시연과 #133 4인 자료 연계는 미완료 항목이 남아 있어 종료 금지. [절차](docs/DEMO_MANUAL.md) · [작업 범위](docs/LOCAL_ACCOUNT_IMPLEMENTATION.md).
+
+이 아래의 '최신' 표제와 PR·Issue 수치는 작성 당시 기록이며 이 절이 2026-11-02 통합 브랜치의 최신 검증 기준이다.
+
 ## 2026-11-02 #125 후속 최종 병합 정정 (가장 최신)
 
 - [x] [#125 동아리 추천 순수 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 최신 HEAD `8e88a4b`가 `updatedAt>asOf`·승인 후 수정/재승인·시점 역전을 목록/추천/상세 모두에서 차단하도록 **수정 완료**. 담당자 외 독립 **APPROVED**, 해당 HEAD GitHub Actions 2/2 SUCCESS 후 **main merge `8f76c388`**. 12개 가상 승인 게시글/5개 합성 학생 추천의 **코어 하위 기능** 완료.
