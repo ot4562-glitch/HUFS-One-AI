@@ -1,10 +1,11 @@
 import type {PageRenderer} from '../App.js';
 import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
+import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {Badges, CompactRow, FeaturedCard, NOT_SHARED_TEXT, NoSnapshot, NoticeRow, Section, screenViewOf} from './parts.js';
 
 /** 오늘: large matched cards (≤3), compact general list (≤6), pinned notices (A11.1). */
-export const todayPage: PageRenderer = ({path, state, navigate}) => {
+export const todayPage: PageRenderer = ({path, state, navigate, controller, services}) => {
   if (path !== '/') return null;
   const view = screenViewOf(state);
   if (!view) return {title: '오늘', body: <NoSnapshot state={state} />};
@@ -36,6 +37,7 @@ export const todayPage: PageRenderer = ({path, state, navigate}) => {
             <ul className="rows">{notices.map(n => <NoticeRow key={n.noticeId} item={n} navigate={navigate} />)}</ul>
           </Section>
         )}
+        <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />
       </>
     ),
   };

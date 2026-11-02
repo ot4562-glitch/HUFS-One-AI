@@ -1,6 +1,6 @@
 import {
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema,
-  type ApiErrorCode, type DemoContext, type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
+  type ApiErrorCode, type CalendarResult, type DemoContext, type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
 } from '@hufs-one/contracts';
 import {HufsApiError} from '../integrations/api-client.js';
 import type {DemoClientPort} from '../app/demo-controller.js';
@@ -67,7 +67,8 @@ export class SyntheticDemoClient implements DemoClientPort {
     return DemoContextSchema.parse({
       contextId, actorId: 'SYN-ACTOR-DEV', demoSubjectId: subject, demoRunId: runId, sessionIdHash: 'SYN-HASH-DEV',
       datasetVersion: data.snapshot.versions.dataset, projectionVersion: data.snapshot.versions.projection,
-      sharingGrantVersion: 'SYN-GRANT-1', expiresAt: new Date(Date.parse(data.snapshot.asOf) + 86_400_000).toISOString(),
+      // Same value as the snapshot's consent version, as the real server binds them (overlay writes check it).
+      sharingGrantVersion: data.snapshot.versions.consent, expiresAt: new Date(Date.parse(data.snapshot.asOf) + 86_400_000).toISOString(),
     });
   }
 
@@ -79,6 +80,15 @@ export class SyntheticDemoClient implements DemoClientPort {
     const forced = this.snapshotErrors[subject];
     if (forced) throw new HufsApiError(forced, ERROR_STATUS[forced]);
     return DemoSnapshotSchema.parse({...data.snapshot, contextId});
+  }
+
+  /** Synthetic stand-in for the pending HufsApiClient.getCalendar (#71): the subject's own calendar. */
+  async getCalendar(contextId: string, signal?: AbortSignal): Promise<CalendarResult> {
+    await wait(this.delayMs, signal);
+    const subject = this.contexts.get(contextId);
+    const data = subject && this.subjects.get(subject);
+    if (!data) throw new HufsApiError('FORBIDDEN', 403);
+    return data.calendar;
   }
 
   async logout(): Promise<void> {
