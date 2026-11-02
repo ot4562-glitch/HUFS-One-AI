@@ -25,6 +25,11 @@ import {PostgresExperienceApprovalStore} from './modules/profiles/experience-app
 import type {ExperienceApprovalAuthority} from './modules/profiles/experience-approval-postgres.js';
 import {PostgresDemoOverlayStore} from './modules/demo-overlay-postgres.js';
 import {DemoOverlayService} from './modules/demo-overlay.js';
+import {PostgresTrustedOwnerCatalog} from './modules/opportunities/owner-catalog-postgres.js';
+import type {OwnerCatalogAuthority} from './modules/opportunities/owner-catalog-postgres.js';
+import {PostgresOwnerStudyPlanSnapshotLoader} from './modules/academics/owner-study-plan-postgres.js';
+import {createTrustedOwnerStudyPlanSource} from './modules/academics/owner-study-plan-source.js';
+import type {TrustedOwnerStudyPlanRights,ApprovedStudyPlanGate} from './modules/profiles/owner-study-plan-check-http.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -50,6 +55,11 @@ export interface PostgresPlatformConfig {
   demoOverlay?:{pool:ReviewerSqlPool};
   /** Private operator-only service; never automatically approved or exposed as HTTP. */
   sourceReview?:{pool:ReviewerSqlPool;authority:SourceReviewAuthority};
+  /** SELECT-only approved owner projections; no intake promotion or default authority. */
+  ownerCatalog?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  /** Separate source/permission and academic activation authorities remain mandatory. */
+  studyPlanCheck?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
+    rights:TrustedOwnerStudyPlanRights;approvalGate:ApprovedStudyPlanGate};
   now?:()=>string;
 }
 
@@ -66,6 +76,14 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.ownerCatalog?{
+      ownerCatalog:new PostgresTrustedOwnerCatalog(config.ownerCatalog.pool,config.ownerCatalog.authority,now),
+    }:{}),
+    ...(config.studyPlanCheck?{studyPlanCheck:{
+      source:createTrustedOwnerStudyPlanSource({snapshots:new PostgresOwnerStudyPlanSnapshotLoader(
+        config.studyPlanCheck.pool,config.studyPlanCheck.authority,now)}),
+      rights:config.studyPlanCheck.rights,approvalGate:config.studyPlanCheck.approvalGate,
+    }}:{}),
     ...(config.experienceApproval?{
       experienceApproval:new PostgresExperienceApprovalStore(config.experienceApproval.pool,
         config.experienceApproval.authority,now),
