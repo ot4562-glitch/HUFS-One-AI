@@ -15,6 +15,13 @@
 - [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141)은 **동일 디자인 복제**가 아닌 더 나은 독립 UI/UX·모바일·접근성 구현 과제입니다. 학교 저작물·원본 HTML/CSS/JS/캡처·세션을 사용하지 않습니다.
 - 합성 데모(다섯 시연 슬롯/별도 빈 계정)는 **실제 자료 제공 대상 4명과 REVIEWER로 가장하지 않습니다**. 학생별 데이터 섞임·지연 응답·빈 값/UNKNOWN 위조 금지.
 
+## NCP 역할 경계 — 2026-11-03 사용자 최신 지시
+
+- **심민성 `ot4562-glitch` = NCP와 관계된 모든 소프트웨어 코드의 단독 소유자.** General OCR/HCX provider SDK·HTTP, bbox/원본 검증, 429/503/budget/권한 gate, Laya ONNX runtime·worker/queue·cgroup/systemd/Docker/IaC/CI·자동화·계측 코드는 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)·[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)·[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)으로 구현한다. 사용자 허락 없는 클라우드 적용 금지.
+- **이서연 `lhh42001` = NCP 비코드 운영 전담.** 계정·요금·SKU/크레딧·VPC/서버/스토리지·TLS/네트워크/보안 권한·CLOVA 사용권/quota·실호스트 자원/요금·종료·반납 영수증만 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)·[#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)에서 담당한다. **코드·스크립트·YAML·IaC·CI·SDK/worker 구현은 0건 배정.** 코딩이 필요한 환경 준비는 심민성이 코드를 제공하고, 실제 적용은 사용자 사전 승인/이서연 운영 검증 뒤.
+- 이서연은 UI·학업·추천·시연 관련 코드 이슈의 assignee가 아니다. 팀원 4인의 실제 자료 제공 대상이라는 사실과 **개발 담당 배정**은 별개. 과거 이슈/문서가 이서연에게 provider SDK/worker를 배정했어도 **본 문서와 2026-11-03 최신 이슈/WORKSTREAMS가 우선**한다.
+- **개발 진척과 출시/외부 인적 검증은 별도로 기록**한다. PR 건수/커밋량은 규모 자료이며, 고정된 수락 조건을 충족했다는 증거로 자동 승격하지 않는다. 증거 원장은 [TEAM_PROGRESS](docs/TEAM_PROGRESS.md).
+
 ## 개발·리뷰·병합
 
 - 한 작업 = 가급적 한 브랜치·소유자·PR. 공용 계약/lockfile/migration/인증 경계는 기술 총괄이 조정하고 관련 소비자 팀원에게 변경 사실을 알립니다. 타인의 dirty worktree/브랜치에는 reset·clean·force push를 하지 않습니다.
