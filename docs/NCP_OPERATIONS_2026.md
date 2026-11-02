@@ -1,15 +1,15 @@
 # HUFS One AI — NCP 최종 서버·예산·운영 게이트 (2026-10-31)
 
-> **상태: 공식 공개 단가에 기반한 운영 설계 · 개통 승인 전.** NCP SKU·일정·요금은 이 문서를 정본으로 사용하고, 2026-10-28 서버·VPN 비교는 참고 자료로 유지한다. 대외 발표는 [Proposal.md](../Proposal.md), 기술 계약은 [Architecture.md](../Architecture.md).
+> **2026-11-03 역할 변경 반영 · 개통 승인 전.** 가격은 2026-10-31 조사 시나리오이며 실제 SKU·원화 단가/적용 권리는 사용 전에 콘솔/공식 문서로 재검증한다. **NCP 비코드 운영 = 이서연; 모든 provider/worker/CI/IaC/OS 자동화 코드 = 심민성.** NCP SKU·일정·요금은 이 문서를 정본으로 사용하고, 2026-10-28 서버·VPN 비교는 참고 자료로 유지한다. 대외 발표는 [Proposal.md](../Proposal.md), 기술 계약은 [Architecture.md](../Architecture.md).
 
 ## 1. 실제 책임 및 작업 분리 — GitHub issues 검증
 
-2026-10-31 현재 이슈 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10), [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#18](https://github.com/ot4562-glitch/HUFS-One-AI/issues/18), [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), [#29](https://github.com/ot4562-glitch/HUFS-One-AI/issues/29) 담당·assignee 대조. **기존 UI 이의상 `uisang2004-maker`·추천/공지 김채윤 `qamarrchae`·학업 박준영 `taewangim-alt`은 변경하지 않는다.** 이서연 GitHub ID 미확인: 임의 assignee 지정 금지.
+2026-11-03 현재 이슈 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10), [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#18](https://github.com/ot4562-glitch/HUFS-One-AI/issues/18), [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19), [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20), [#21](https://github.com/ot4562-glitch/HUFS-One-AI/issues/21), [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), [#29](https://github.com/ot4562-glitch/HUFS-One-AI/issues/29) 담당·assignee 대조. **기존 UI 이의상 `uisang2004-maker`·추천/공지 김채윤 `qamarrchae`·학업 박준영 `taewangim-alt`은 변경하지 않는다.** 이서연 GitHub assignee는 `lhh42001`으로 확인되며 NCP **운영 이슈 #12/#22만** 담당한다. AI 코드 이슈 #20/#88/#143은 `ot4562-glitch` 단독 담당.
 
 | 소유자 | 범위 | 경계 |
 |---|---|---|
-| **심민성** | 웹·외부 REST/HTTP API, Fastify, 일반 OAuth/세션/인가/동의, PostgreSQL 일반 CRUD, 합성 REVIEWER API, SourceRevision 수집·Temporal RAG 읽기/인용/검증, provider-neutral DTO·Zod·CI·통합 | NCP SDK/클라우드 계정·CLOVA 호출/토큰·모델 워커·클라우드 비용 직접 구현 금지 |
-| **이서연** | 모든 NCP 계정·크레딧·SKU·VPC/ACG·서버·OS/TLS/배포/스냅샷·스토리지/키/모니터링/비용, CLOVA General OCR·HCX Vision/Studio/NCP AI HTTP SDK·quota/retry/cost·Laya ONNX CPU 분리 워커 전체 | 일반 웹 API 라우트·Google 앱 세션·일반 DB/검색계약/사용자 권한 로직은 심민성의 API 소유 |
+| **심민성** | 모든 애플리케이션/API/DB/RAG 및 **NCP SDK·CLOVA OCR/HCX HTTP 호출/재시도/비용 hard-gate·VISION bbox·Laya ONNX worker/queue·CPU 자동 가드·fake-provider chaos/CI·OS/systemd/Docker·IaC/배포 스크립트 코드** | NCP 계정/유료 VM 직접 개통은 승인·운영 절차와 별개. 운영 자원·권한/요금/크레딧 확인은 이서연의 비코드 담당 (#12/#22) |
+| **이서연** | **코딩 없이 NCP 계정/크레딧/SKU·VPC/ACG·서버/스토리지/비밀키/IAM/TLS/백업/모니터링/비용, CLOVA/OCR/HCX 서비스 이용권·endpoint/quotas/청구·허가된 실제 호스트 CPU/RSS/요금 관찰/중지·반납** | SDK·HTTP adapter·worker/ONNX·queue·bbox·Docker·CI·IaC·OS/cgroup 설정 스크립트·배포 자동화 등은 **모두 심민성의 코드**. 승인 전 유료 실행 금지 |
 | **이의상 / 김채윤 / 박준영** | 각각 UI·모바일 / 추천·공지 / 학점·졸업·개설전망 | 기존 담당 유지, 변경 시 본인 이슈 및 독립 PR 리뷰 |
 
 ## 2. 공식 가격과 최적 서버 (한국 리전 VPC Linux, VAT 제외)
@@ -41,7 +41,7 @@
 
 **리스크 한도 제안(816h 전체를 가정한 경우, 실제 승인 전 미적용):** VM+CB+IP+약 10% VAT에 최대 305,000원 예상, 호출형 CLOVA/HCX 합계 상한 80,000원, OCR 20,000원, 네트워크/백업 등 25,000원, 미예상 비용 예비 70,000원 → 합계 500,000원 **내부 계획 모델**. VAT/크레딧 적용 범위·운영 방식에 따라 재산정. 토큰 API 별 hard quota/중단, 크레딧 초과 위험 모니터링, 사용승인 없는 인프라 자동 생성/재시작 금지.
 
-## 4. NCP 개통·안전·승인 체크리스트 (이서연 담당)
+## 4. NCP 개통·안전·승인 체크리스트 (이서연 비코드 운영 담당; 측정/배포 자동화 코드는 심민성)
 
 - [ ] 본선 선정·크레딧 수령 및 범위·리전·서비스 정식 이용자 요금계산기 캡처 확인, 권한 있는 심민성 승인
 - [ ] KR VPC/Linux High Memory-g3 4/32 SKU 재고·할인/중지/시간계산 확인, 50GB CB1 기본 OS 디스크/공인 IP/ACG/TLS 설계
@@ -53,4 +53,4 @@
 
 ## 5. 코드·PR 의존과 기록
 
-**이 문서는 2026-10-31 운영 설계 정본이며, NCP 자원이나 키 개통·실측 완료를 뜻하지 않는다.** Cloud/Provider 실행은 이서연 #12/#20/#22의 독립 운영 승인·PR로 수행하며, 일반 웹/REST API·DB·RAG는 심민성 #19/#21/#27 소유다. UI #9, 추천 #10(#15→#16→#40→#41), 학업 #11 소유는 그대로다. 공통 root CI는 #29에서 반영됐고, 모든 신규 코드는 현재 `main` 기준 의존성과 최신 독립 리뷰·CI를 확인한 뒤 병합한다. 실제 학생 CSV·Forms 원본은 어떤 합성 회귀에도 사용하지 않는다.
+**이 문서는 2026-10-31 운영 가격 가정의 보존본이며, 2026-11-03 최신 소유 배정을 반영한다. NCP 자원·키 개통/실측 완료 증거가 아니다.** 클라우드 계약·권한/콘솔·인프라 준비/CPU/비용 관찰은 이서연 #12/#22, **일체의 NCP/AI 앱/SDK/ONNX/worker/CI/OS 자동화 코딩은 심민성 #20/#88/#143 및 일반 API #19/#21/#27** 소유다. UI #9, 추천 #10(#15→#16→#40→#41), 학업 #11 소유는 그대로다. 공통 root CI는 #29에서 반영됐고, 모든 신규 코드는 현재 `main` 기준 의존성과 최신 독립 리뷰·CI를 확인한 뒤 병합한다. 실제 학생 CSV·Forms 원본은 어떤 합성 회귀에도 사용하지 않는다.
