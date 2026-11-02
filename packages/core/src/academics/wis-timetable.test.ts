@@ -12,7 +12,7 @@ const HEADER = ['No.', '개설영역', '학년', '학수번호', '교과목명',
 interface Row {no?:number; area?:string; grade?:string; code:string; title:string; attrs?:string[];
   credits?:string; hours?:string; time?:string; note?:string; year?:string; sessn?:string;
   /** Syllabus cell: a link (default), empty (no syllabus), or other text. */
-  syllabus?:'LINK'|'NONE'|'TEXT'; linkCode?:string; dropLastCell?:boolean; dropNumberCell?:boolean}
+  syllabus?:'LINK'|'NONE'|'TEXT'; linkCode?:string; titleLinkCode?:string; dropLastCell?:boolean; dropNumberCell?:boolean}
 
 const ATTR_CLASS:Record<string, string> = {'전필':'req', 'R':'req', 'ENG':'eng', 'FRE':'eng', 'F':'eng', '팀티칭':'team', '온라인':'online', 'P/F':'pf'};
 const link = (row:Row, code = row.code) =>
@@ -20,7 +20,10 @@ const link = (row:Row, code = row.code) =>
 const syllabusCell = (row:Row) =>
   row.syllabus === 'NONE' ? '' : row.syllabus === 'TEXT' ? '준비중' : link(row, row.linkCode ?? row.code);
 const tr = (row:Row, index:number) => {
-  const cells = [`${row.no ?? index + 1}`, row.area ?? '전공', row.grade ?? '2', row.code, row.title, syllabusCell(row),
+  // Like the real page, the title cell also opens the syllabus, except for a course without one.
+  const title = row.syllabus === 'NONE' ? row.title
+    : `<div onclick="javascript:lecture_open('${row.year ?? '2026'}','${row.sessn ?? '3'}','A','${row.titleLinkCode ?? row.code}')">${row.title}</div>`;
+  const cells = [`${row.no ?? index + 1}`, row.area ?? '전공', row.grade ?? '2', row.code, title, syllabusCell(row),
     row.attrs?.length ? `<div class="attr-cell">${row.attrs.map(a => `<span class="attr attr--${ATTR_CLASS[a] ?? 'x'}">${a}</span>`).join('')}</div>` : '<span class="attr-none">–</span>',
     '가상 교수', row.credits ?? '3', row.hours ?? '3', row.time ?? '화 3 4 5 (0101)', '10 / 30', `<span class="col-note">${row.note ?? ''}</span>`];
   const kept = cells.slice(row.dropNumberCell ? 1 : 0, row.dropLastCell ? -1 : undefined);
@@ -192,7 +195,9 @@ describe('importWisTimetable', () => {
     expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상', syllabus:'TEXT'}]))))
       .toThrow(/without a readable term link/);
     expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상', linkCode:'SYN010101'}]))))
-      .toThrow(/does not name its own course code/);
+      .toThrow(/row 4 has a link that does not name its own course code/);
+    expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상', titleLinkCode:'SYN010101'}]))))
+      .toThrow(/row 4 has a link that does not name its own course code/);
   });
 
   it('refuses a card list left over from another term', () => {

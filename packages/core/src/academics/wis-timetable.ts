@@ -144,8 +144,13 @@ const LINK = /lecture_open\('(\d{4})','(\d)','[A-Z]','([^']*)'\)/g;
 function pageTerm(rows:readonly string[][], html:string):{year:number; session:TimetableSession; linkless:Set<number>} {
   const linkless = new Set<number>();
   rows.forEach((row, index) => {
-    const links = [...row[COL.syllabus]!.matchAll(LINK)];
     const no = cellText(row[COL.no]!);
+    // The title cell links the same course too; any link in the row must name the row's own code.
+    const own = cellText(row[COL.code]!).toUpperCase();
+    if (row.some(cell => [...cell.matchAll(LINK)].some(match => match[3]!.toUpperCase() !== own))) {
+      throw new TypeError(`row ${no} has a link that does not name its own course code`);
+    }
+    const links = [...row[COL.syllabus]!.matchAll(LINK)];
     if (links.length === 0) {
       if (cellText(row[COL.syllabus]!) !== '') throw new TypeError(`row ${no} has a syllabus cell without a readable term link`);
       linkless.add(index);
