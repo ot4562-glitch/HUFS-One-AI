@@ -3,6 +3,7 @@ import type {DemoViewState} from '../app/index.js';
 import {buildDemoScreenView, type DemoScreenView, type FeedCardView} from '../features/demo/sectionView.js';
 import type {NoticeItemView} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
+import {DDayText} from '../features/demo/DDayText.js';
 
 export const NOT_SHARED_TEXT = '이 항목은 시연 공유 범위 밖입니다.';
 
@@ -43,7 +44,7 @@ export function FeaturedCard({card, navigate}: {card: FeedCardView; navigate: Na
         <InAppLink to={`/opportunities/${encodeURIComponent(card.opportunityId)}`} navigate={navigate}>{card.title}</InAppLink>
       </h3>
       <p className="card__meta">
-        <span className="status-text">{card.lifecycleText}</span>
+        <span className="status-text">{card.lifecycleText}{card.dday && <> · <DDayText dday={card.dday} /></>}</span>
         <span className="status-text">{card.eligibilityText}</span>
       </p>
       {card.topicTexts.length > 0 && <p className="card__topics">{card.topicTexts.join(' · ')}</p>}
@@ -61,7 +62,7 @@ export function CompactRow({card, navigate}: {card: FeedCardView; navigate: Nav}
     <li className="row">
       <InAppLink to={`/opportunities/${encodeURIComponent(card.opportunityId)}`} navigate={navigate} className="row__link">
         <span className="row__title">{card.title}</span>
-        <span className="row__meta">{card.lifecycleText} · {card.eligibilityText}{card.badges.length ? ` · ${card.badges.join(' · ')}` : ''}</span>
+        <span className="row__meta">{card.lifecycleText}{card.dday && <> · <DDayText dday={card.dday} /></>} · {card.eligibilityText}{card.badges.length ? ` · ${card.badges.join(' · ')}` : ''}</span>
       </InAppLink>
     </li>
   );
@@ -73,7 +74,9 @@ export function NoticeRow({item, navigate}: {item: NoticeItemView; navigate: Nav
       <InAppLink to={item.path} navigate={navigate} className="row__link">
         <span className="row__title">{item.pinned && <span className="badge">고정</span>} {item.title}</span>
         <span className="row__meta">
-          {[item.priorityText, item.appliesText, item.deadlineText, item.overdueText, item.verificationText].filter(Boolean).join(' · ')}
+          {[item.priorityText, item.appliesText, item.deadlineText].filter(Boolean).join(' · ')}
+          {item.dday && <> · <DDayText dday={item.dday} /></>}
+          {[item.overdueText, item.verificationText].filter(Boolean).map(t => ` · ${t}`).join('')}
         </span>
       </InAppLink>
     </li>

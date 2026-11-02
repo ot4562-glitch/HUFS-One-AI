@@ -1,4 +1,5 @@
 import {validateCalendarWire, type CalendarEntry, type CalendarResult} from '@hufs-one/contracts';
+import {ddayOf, type DDayView} from '../demo/dday.js';
 
 /**
  * #51 "내 주요 일정" mini calendar view model. Pure: no fetch, clock or storage.
@@ -32,6 +33,8 @@ export interface CalendarItemView {
   readonly endText: string | null;
   /** Calm wording, no alarm styling (Architecture feed principle). */
   readonly overdueText: string | null;
+  /** #79: deadlines only (never EVENT), not overdue, counted from the calendar asOf. */
+  readonly dday: DDayView | null;
   readonly link: {readonly source: CalendarEntry['source']; readonly refId: string; readonly path: string};
   readonly ariaLabel: string;
 }
@@ -111,7 +114,7 @@ function weekStart(asOfSeoulDate: string): number {
   return noon - weekday * DAY_MS;
 }
 
-function itemView(e: CalendarEntry): CalendarItemView {
+function itemView(e: CalendarEntry, asOf: string): CalendarItemView {
   const category = categoryOf(e);
   const kindText = e.kind === 'EVENT' ? '일정' : '마감';
   const timeText = timeFmt.format(Date.parse(e.at));
@@ -120,11 +123,12 @@ function itemView(e: CalendarEntry): CalendarItemView {
     : `~ ${shortDateFmt.format(Date.parse(e.end))}`;
   const overdueText = e.overdue ? '기한 경과 · 담당부서 확인' : null;
   const importanceText = IMPORTANCE_TEXT[e.importance];
+  const dday = e.kind === 'EVENT' || e.overdue ? null : ddayOf(e.at, asOf);
   return {
-    id: e.id, title: e.title, category, kindText, importanceText, timeText, endText, overdueText,
+    id: e.id, title: e.title, category, kindText, importanceText, timeText, endText, overdueText, dday,
     link: {source: e.source, refId: e.refId, path: pathFor(e.source, e.refId)},
     ariaLabel: [MARKERS[category].text, category === 'MY_DEADLINE' ? importanceText : null, e.title,
-      `${timeText}${endText ? ' ' + endText : ''}`, overdueText].filter(Boolean).join(', '),
+      `${timeText}${endText ? ' ' + endText : ''}`, overdueText, dday?.spoken].filter(Boolean).join(', '),
   };
 }
 
@@ -152,7 +156,7 @@ export function buildCalendarView(payload: unknown, expectedAsOf: string, weeks 
     else laterCount++;
   }
   const days = dayDates.map((seoulDate): CalendarDayView => {
-    const items = byDay.get(seoulDate)!.map(itemView);
+    const items = byDay.get(seoulDate)!.map(e => itemView(e, cal.asOf));
     const markers = MARKER_ORDER.filter(m => items.some(i => i.category === m));
     const dayLabel = dateFmt.format(seoulNoon(seoulDate));
     const deadlines = items.filter(i => i.kindText === '마감').length;
@@ -169,7 +173,7 @@ export function buildCalendarView(payload: unknown, expectedAsOf: string, weeks 
     view: {
       asOfText: `기준 시각 ${dateTimeFmt.format(Date.parse(cal.asOf))}`,
       days,
-      earlier: earlier.map(itemView),
+      earlier: earlier.map(e => itemView(e, cal.asOf)),
       laterCount,
       undated: cal.undated.map(u => ({title: u.title, reasonText: UNDATED_TEXT[u.reason], path: pathFor(u.source, u.refId)})),
       needsConfirmation: cal.needsConfirmation.map(n => ({

@@ -3,6 +3,7 @@ import type {DemoController, DemoViewState} from '../../app/index.js';
 import type {DemoSnapshot} from '@hufs-one/contracts';
 import type {AppServices} from '../../App.js';
 import {InAppLink} from '../../shell/AppShell.js';
+import {DDayText} from '../demo/DDayText.js';
 import {buildCalendarView, MARKERS, type CalendarItemView, type CalendarScreenView, type MarkerCategory} from './calendarView.js';
 
 interface Props {
@@ -34,7 +35,7 @@ function ItemList({items, navigate}: {items: readonly CalendarItemView[]; naviga
           <InAppLink to={i.link.path} navigate={navigate} className="cal__item">
             <span className="cal__item-head"><Marker category={i.category} /> {MARKERS[i.category].text}{i.category === 'MY_DEADLINE' ? ` · ${i.importanceText}` : ''}</span>
             <span className="cal__item-title">{i.title}</span>
-            <span className="cal__item-time">{i.kindText} {i.timeText}{i.endText ? ` ${i.endText}` : ''}{i.overdueText ? ` · ${i.overdueText}` : ''}</span>
+            <span className="cal__item-time">{i.kindText} {i.timeText}{i.endText ? ` ${i.endText}` : ''}{i.overdueText ? ` · ${i.overdueText}` : ''}{i.dday && <> · <DDayText dday={i.dday} /></>}</span>
           </InAppLink>
         </li>
       ))}

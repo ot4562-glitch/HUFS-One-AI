@@ -8,6 +8,7 @@ import {ReviewerSandboxClientActionSchema} from './integrations/reviewer-sandbox
 import {cssVariables} from './design/tokens.js';
 import {App, type AppServices} from './App.js';
 import {liveServices} from './liveServices.js';
+import {boardPort} from './features/applications/boardPort.js';
 import {appPages} from './pages/index.js';
 import './styles.css';
 
@@ -52,11 +53,14 @@ async function start() {
     && (location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
     const dev = await import('./dev/syntheticDemoClient.js');
     const synthetic = new dev.SyntheticDemoClient({snapshotErrors: {S04: 'SHARING_REVOKED'}});
+    const owner = await import('./dev/syntheticOwnerServer.js');
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
     services = {
       ...services,
       loadCalendar: (ctx, signal) => synthetic.getCalendar(ctx.contextId, signal),
+      // #80: the real HufsApiClient over an in-memory fictitious owner (dev only).
+      applications: boardPort(new HufsApiClient(new owner.SyntheticOwnerServer().fetch)),
       sandbox: {
         allowedActions: ALL_SANDBOX_ACTIONS,
         read: (ctx, signal) => synthetic.readActions(ctx.contextId, signal),
