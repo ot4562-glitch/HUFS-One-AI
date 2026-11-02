@@ -42,7 +42,7 @@
 - `POST/GET /api/demo/contexts/:id/personal`, `GET/PUT/DELETE .../personal/:itemId`: actor는 인증 세션에서만 도출, 쓰기는 Origin/CSRF와 expectedVersion 검사, 개인자료 동의·검증된 합성 승인 별도. POST `{itemId,value}`, PUT `{expectedVersion,value}`, DELETE `{kind,expectedVersion}`, GET `?kind=...`(목록은 afterId/limit 가능).
 - `GET /api/evidence/sources/:sourceId/revisions`는 통합 DI가 명시적으로 설치할 때만 노출한다. BETA 세션 및 현재 permission/source/head/검증된 학사 scope를 SQL 조회 전후 검사하고, 최신 정정·취소/미검수 판본의 **메타데이터만** 반환한다. 원본 텍스트·개인 학적 자료·OCR 이미지·권한 토큰은 반환하지 않는다.
 - `PostgresSourceIngestionQueue` (`src/modules/opportunities/source-ingestion-queue-postgres.ts`): 운영자가 별도 trusted authority+durable draft executor+전용 DB pool을 주입할 때만 `enqueue`/`runOne`으로 작동한다. 큐 최대 16, DB 전역 동시 lease 1, 멱등 키, 30초 초과·오류/모호한 처리결과는 **인적 재검토 격리, 자동 재시도 금지**. 비동기 타이머·외부 fetch·OCR·모델 호출/실제 크롤링을 시작하지 않는다. `20261101_source_ingest_queue.sql` 적용 및 소유자 권한 검토가 선행되어야 한다.
-- `createApprovedDurableSourceExecutor` + `ApprovedPlainTextExtractor` (`src/modules/opportunities/`): 관리자가 exact HTTPS URL/rights/주입된 pinned network transport를 별도 승인한 후에만 원문 SHA/본문 해시, revision current head와 PG 불변 초안을 연결한다. 200 OK 동일 원문 및 **버전·URL에 묶여 PostgreSQL에 보관한 ETag/Last-Modified 기반 304**는 verification 날짜를 승격하지 않고 `observeUnchanged`; 새판은 `NEEDS_REVIEW`. 조건부 응답이 원본의 최신 head와 맞지 않으면 거부한다. 텍스트/HTML/RSS/Atom은 보수적 문단 파싱; PDF/image OCR은 **이서연이 관리하는 별도 승인 extractor**가 필요하다. 동작 시 실제 네트워크를 임의 시작하지 않는다.
+- `createApprovedDurableSourceExecutor` + `ApprovedPlainTextExtractor` (`src/modules/opportunities/`): 관리자가 exact HTTPS URL/rights/주입된 pinned network transport를 별도 승인한 후에만 원문 SHA/본문 해시, revision current head와 PG 불변 초안을 연결한다. 200 OK 동일 원문 및 **버전·URL에 묶여 PostgreSQL에 보관한 ETag/Last-Modified 기반 304**는 verification 날짜를 승격하지 않고 `observeUnchanged`; 새판은 `NEEDS_REVIEW`. 조건부 응답이 원본의 최신 head와 맞지 않으면 거부한다. 텍스트/HTML/RSS/Atom은 보수적 문단 파싱; PDF/image OCR은 **심민성이 구현·검증하는 별도 승인 extractor/provider adapter**가 필요하다(이서연은 NCP 서비스 계정/키 권한·비용/환경 준비만 담당). 동작 시 실제 네트워크를 임의 시작하지 않는다.
 - `PostgresReviewerSandboxStore` (`src/modules/auth/reviewer-sandbox-postgres.ts`): 별도 최소권한 pool + `20261101_reviewer_sandbox.sql`의 활성 초대 검사/철회 직렬화 SQL 함수로 invite/actor/S01–S05별 행동을 PG 영속화. `RESET_SANDBOX`/200 액션 한도, 실 학생 DB와 격리. `createIntegratedApi`의 `reviewer.sandbox`에 명시적 제공 필요.
 - `PostgresRestrictedIntakeImport` (`src/modules/academics/intake-postgres.ts`): A03.3의 **비공개 운영자 전용 포트**, 실제 CSV/Forms 자동 수집·HTTP 업로드 기능 없음. 목적별 권한 주입 후 4인 Forms(26열)+CSV(6열)의 preview, 정확한 subject/file binding·학점 자기보고 차이(UNKNOWN/MISMATCH/MATCH), SHA receipt, APPLY에서 모든 학생 CAS/멱등/불변 `STUDENT_REVIEW_PENDING` 원장을 단일 PG 트랜잭션으로 저장. 목적별 당사자 동의 없이는 불가하고 DEMO_READY/공식 졸업 인정으로 자동 승격하지 않는다.
 - `createPostgresPlatformServices` (`src/platform-postgres.ts`): 검증된 역할별 pool과 서버 EvidenceRightsResolver를 받아 ScopedApiRepository·calendarSource·personalState·temporalEvidence를 구성한다. `createIntegratedApi({...services, googleAuth, allowedOrigin, reviewer})`로 인증/provider-neutral 포트를 연결한다. 이 조립은 연결/마이그레이션/키 생성이나 production 차단 해제를 수행하지 않는다. REVIEWER calendar는 별도 합성 source가 필요하며 team source로 fallback하지 않는다.
@@ -54,7 +54,7 @@
 아래 2026-10-31 설명은 기존 모듈·설계 기록이다. 현재 브랜치 구현과 당시 미구현 상태는 위 절을 우선한다.
 
 
-심민성 담당 Fastify 합성 API는 `main`에 반영됐다. Google OAuth·외대 메일 증빙·영속 DB 연결은 별도 출시 검증 대상이며, NCP·CLOVA·OCR/Vision 제공자 연동은 이서연 트랙에서 담당한다.
+심민성 담당 Fastify 합성 API는 `main`에 반영됐다. Google OAuth·외대 메일 증빙·영속 DB 연결은 별도 출시 검증 대상이며, NCP·CLOVA·OCR/Vision SDK/HTTP·Laya ONNX worker 등 모든 공급자 코딩은 **심민성** 담당이며, 이서연은 **NCP 비코드 운영 #12/#22** 전담이다.
 
 ## 구현한 코드
 
