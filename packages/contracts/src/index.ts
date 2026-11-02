@@ -11,3 +11,4 @@ export * from './self/index.js';
 export * from './hufsability/manifest.js';
 export * from './preflight/index.js';
 export * from './demo-overlay/index.js';
+export * from './local-accounts/index.js';

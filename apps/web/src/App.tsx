@@ -1,4 +1,4 @@
-import {useEffect, useRef, type ReactNode} from 'react';
+import {useEffect, useRef, type ComponentType, type ReactNode} from 'react';
 import type {DemoContext} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
@@ -41,13 +41,16 @@ interface Props {
   readonly historyPort?: HistoryPort;
   readonly pages?: readonly PageRenderer[];
   readonly services?: AppServices;
+  /** Supplied only by the DEV synthetic loopback entrypoint; absent in production. */
+  readonly localAccountWorkbench?: ComponentType;
 }
 
-export function App({controller, transportLabel = null, historyPort, pages = [], services = {}}: Props) {
+export function App({controller, transportLabel = null, historyPort, pages = [], services = {}, localAccountWorkbench:LocalWorkbench}: Props) {
   const state = useDemo(controller);
   const [path, navigate] = useRoute(historyPort);
   const ctx: PageContext = {path, state, controller, navigate, services};
-  const page = [...pages, basePages].reduce<ReturnType<PageRenderer>>((found, render) => found ?? render(ctx), null)
+  const page = (path==='/local-demo'&&LocalWorkbench ? {title:'로컬 합성 계정 실험실',body:<LocalWorkbench/>} : null)
+    ?? [...pages, basePages].reduce<ReturnType<PageRenderer>>((found, render) => found ?? render(ctx), null)
     ?? {title: '페이지를 찾을 수 없습니다', body: <p className="muted">주소를 확인하거나 아래 메뉴를 이용해 주세요.</p>};
 
   // Move focus to the new page heading after in-app navigation (not on first load).
@@ -64,8 +67,10 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       path={path}
       navigate={navigate}
       transportLabel={transportLabel}
-      selector={<DemoSelector state={state} onSelect={s => void controller.select(s)} />}
-      status={<StatusBanner state={state} onRetry={() => void controller.retry()} />}
+      selector={path==='/local-demo'&&LocalWorkbench
+        ? <a href="/" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/');}}}>기존 S01–S05 시연으로 돌아가기</a>
+        : <><DemoSelector state={state} onSelect={s => void controller.select(s)} />{LocalWorkbench&&<a href="/local-demo" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/local-demo');}}}>로컬 합성 계정 실험실 열기</a>}</>}
+      status={path==='/local-demo'&&LocalWorkbench ? null : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <h1 ref={heading} tabIndex={-1} className="page__title">{page.title}</h1>
       {page.body}

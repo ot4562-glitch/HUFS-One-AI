@@ -7,6 +7,7 @@ export * from './opportunity-revision-comparison.js';
 export * from './synthetic-clubs.js';
 export * from './workspace.js';
 export * from './experience-approval.js';
+export * from './private-owner-intake.js';
 import {DesiredJobTopicsSchema,InterestTopicsSchema} from '../topics/index.js';
 import {AcademicTermVNextSchema,CourseRecordSchema} from '../academics/index.js';
 import {OpportunitySchema} from '../corpus/index.js';

@@ -1,7 +1,7 @@
 """#126: fail-closed static contract for the opt-in, synthetic Chrome E2E job.
 
-The PR #76 browser spec is not in main yet; this tests CI configuration,
-not an actual GitHub-run browser result. It never checks out private data.
+The executable local-account browser suite ships with this branch. This tests CI
+configuration, not a GitHub-run browser result. It never checks out private data.
 """
 import re
 import unittest
@@ -14,6 +14,7 @@ ALLOWED={
     "/package.json","/package-lock.json","/tsconfig.json",
     "/packages/contracts/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
     "/.github/workflows/ui-browser-e2e.yml",
+    "/tools/check_local_account_browser.mjs","/tools/strip_build_sourcemaps.mjs",
 }
 PROTECTED=("csv","local_only","templates/real5-intake","reference/hufsability/raw",
     "reference/hufsability")
@@ -59,8 +60,10 @@ def audit(text: str)->list[str]:
         issues.append("must disable Playwright browser download")
     if "PW_CHANNEL: chrome" not in text or "command -v google-chrome" not in text:
         issues.append("must use runner-installed Chrome")
-    if "test -f apps/web/playwright.config.ts" not in text or "test -f apps/web/e2e/ui.spec.ts" not in text:
-        issues.append("must fail if #76 E2E inputs are not present")
+    if "test -f tools/check_local_account_browser.mjs" not in text:
+        issues.append("must fail if executable browser checks are not present")
+    if "node-version: '24.15.0'" not in text:
+        issues.append("must satisfy locked jsdom and Vite runtime requirements")
     if "test:e2e:web" not in text or "npm run test:e2e:web -- --reporter=list" not in text:
         issues.append("must run traceable browser E2E list reporter")
     if "npm ci --ignore-scripts --no-audit --no-fund" not in text:

@@ -1,4 +1,4 @@
-import {StrictMode} from 'react';
+import {StrictMode, type ComponentType} from 'react';
 import {createRoot} from 'react-dom/client';
 import {DemoController, newTabDemoRunId, type DemoClientPort} from './app/index.js';
 import {HufsApiClient} from './integrations/index.js';
@@ -17,6 +17,7 @@ async function start() {
   let client: DemoClientPort = api;
   let transportLabel: string | null = null;
   let services: AppServices = liveServices(api);
+  let localAccountWorkbench:ComponentType|undefined;
   // Synthetic transport only for `vite --mode synthetic` on a loopback host. The literal
   // import.meta.env.DEV check lets the production build drop this branch and its chunk.
   if (import.meta.env.DEV && import.meta.env.MODE === 'synthetic'
@@ -26,13 +27,14 @@ async function start() {
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
     services = {loadCalendar: (ctx, signal) => synthetic.getCalendar(ctx.contextId, signal)};
+    localAccountWorkbench = (await import('./features/local-accounts/LocalAccountWorkbench.js')).LocalAccountWorkbench;
   }
   // One controller per tab, in memory only.
   const controller = new DemoController(client, newTabDemoRunId());
   const root = document.getElementById('root');
   if (root) {
     createRoot(root).render(
-      <StrictMode><App controller={controller} transportLabel={transportLabel} pages={appPages} services={services} /></StrictMode>,
+      <StrictMode><App controller={controller} transportLabel={transportLabel} pages={appPages} services={services} {...(localAccountWorkbench?{localAccountWorkbench}:{})} /></StrictMode>,
     );
   }
 }

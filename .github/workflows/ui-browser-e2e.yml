@@ -33,6 +33,8 @@ jobs:
             /packages/ui/
             /apps/api/
             /apps/web/
+            /tools/check_local_account_browser.mjs
+            /tools/strip_build_sourcemaps.mjs
             /.github/workflows/ui-browser-e2e.yml
       - name: Assert no private student or raw data directories were checked out
         run: |
@@ -41,16 +43,15 @@ jobs:
           test ! -d templates/real5-intake
           test ! -d reference/hufsability/raw
           test ! -d reference/hufsability
-      - name: Require #76 test script and installed Google Chrome
+      - name: Require executable browser checks and installed Google Chrome
         run: |
-          test -f apps/web/playwright.config.ts
-          test -f apps/web/e2e/ui.spec.ts
+          test -f tools/check_local_account_browser.mjs
           node --input-type=module -e "import p from './package.json' with {type:'json'}; if (!p.scripts['test:e2e:web']) process.exit(1)"
           command -v google-chrome
           google-chrome --version
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4 pinned
         with:
-          node-version: '22'
+          node-version: '24.15.0'
           cache: npm
       - name: Install from lockfile without any postinstall browser download
         run: npm ci --ignore-scripts --no-audit --no-fund

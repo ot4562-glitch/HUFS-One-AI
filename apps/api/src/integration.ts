@@ -1,6 +1,7 @@
 import {createApi} from './server.js';
 import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
 import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
+import {registerRestrictedOwnerIntakeRoute,type RestrictedOwnerDirectoryPort} from './modules/profiles/restricted-owner-http.js';
 import {registerOwnerCatalogRoutes} from './modules/opportunities/owner-catalog-http.js';
 import {registerHufsAbilityCapabilitiesRoute} from './modules/hufsability/manifest-http.js';
 import {registerSyntheticClubRoutes} from './modules/opportunities/synthetic-clubs-http.js';
@@ -74,6 +75,8 @@ interface SharedDependencies {
   personalState?:ApiOptions['personalState'];
   /** Independent owner-private storage, NEVER the shared demo/REVIEWER DB. */
   selfAccount?:SelfAccountPort;
+  /** Explicit restricted identity-bound local intake directory; no demo or public-data fallback. */
+  restrictedOwnerDirectory?:RestrictedOwnerDirectoryPort;
   /** Approved server-owned source+grant head adapter; no demo/raw data fallback. */
   ownerCatalog?:TrustedCatalogPort;
   /** Owner-private self workspace; does not reuse a demo SharingGrant. */
@@ -168,6 +171,8 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   };
   const app=createApi(options);
   const ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
+  registerRestrictedOwnerIntakeRoute({app,session:ownerSession,
+    ...(deps.restrictedOwnerDirectory?{directory:deps.restrictedOwnerDirectory}:{})});
   registerHufsAbilityCapabilitiesRoute(app,ownerSession);
   registerSyntheticClubRoutes({...deps.syntheticClubs,app,session:ownerSession,
     ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{})});
