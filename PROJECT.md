@@ -10,7 +10,7 @@
 
 **2026-11-01 구현/리뷰 상태:** #83 플랫폼과 #116 학업 응답 계약 등은 main의 **합성/일회용 DB 검증된 코드 단계**이고, #72→#76 UI 스택은 최신 HEAD 리뷰 5건 후에도 미병합(0건), #72/#75 변경 요청 차단 상태다. 실제 기관/학생 자료·외대 메일/OIDC·NCP/HTTPS 검증은 미완료이며 공개 웹은 `RELEASE_BLOCKED`. [STATUS](STATUS.md)와 [PR_WORKFLOW](docs/PR_WORKFLOW.md) 우선.
 
-> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
+> **2026-11-03 최신 소유 정정·2026-10-31 가격 시나리오:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG와 **모든 NCP OCR/HCX/provider SDK·Laya worker·CI/Docker/IaC/OS 자동화 코드**, 이서연은 **NCP 계정·크레딧·VPC/인프라/서비스 entitlement·비용·실호스트 비코드 운영** 전담. 독립 UI·추천·학업 소유 불변.
 
 
 **팀/심사자용 제안은 [Proposal.md](Proposal.md), 구현 상세 기준은 [Architecture.md](Architecture.md)다.** **첫 목표는 기존 HUFSAbility의 취업·역량·비교과·채용 정보에서 학생별로 관련성 높은 내용을 더 크게·먼저 보이게 하는 AI 개인화**이며, **졸업요건 점검·수강계획은 그 위에 더하는 기능**이다.
