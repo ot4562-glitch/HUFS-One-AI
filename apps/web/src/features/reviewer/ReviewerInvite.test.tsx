@@ -96,7 +96,7 @@ type Redeemed = {accessEndsAt: string; dataMode: 'SYNTHETIC'};
 
 describe('/reviewer/invite lifecycle (late responses after cleanup)', () => {
   it('StrictMode: the first, cleaned-up getSession succeeding late does not overwrite the current result', async () => {
-    const calls: {d: ReturnType<typeof deferred<Session>>; signal?: AbortSignal}[] = [];
+    const calls: {d: ReturnType<typeof deferred<Session>>; signal: AbortSignal | undefined}[] = [];
     const p = port({getSession: (signal?: AbortSignal) => { const d = deferred<Session>(); calls.push({d, signal}); return d.promise; }});
     render(<StrictMode><ReviewerInvite port={p} holder={holdInviteCode(CODE)} /></StrictMode>);
     await flush();
