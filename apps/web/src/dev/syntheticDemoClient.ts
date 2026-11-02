@@ -29,6 +29,8 @@ export interface SyntheticClientOptions {
   readonly snapshotErrors?: Partial<Record<SubjectAlias, ApiErrorCode>>;
 }
 
+const ACADEMIC_SHARERS: ReadonlySet<SubjectAlias> = new Set(['S01', 'S02']);
+
 function wait(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new DOMException('Aborted', 'AbortError'));
@@ -49,12 +51,20 @@ export class SyntheticDemoClient implements DemoClientPort {
     this.snapshotErrors = options.snapshotErrors ?? {};
   }
 
-  /** Slots/readiness from the shared fixture (S05 stays PENDING); labels from each subject's own data. */
+  /**
+   * Slots/readiness from the shared fixture (S05 stays PENDING); labels from each subject's own data.
+   * S01/S02 also share ACADEMICS+FORECAST so the 졸업 screen shows data (S01), pending (S02) and
+   * out-of-scope (S03/S04) cases.
+   */
   async listProfiles(signal?: AbortSignal): Promise<DemoProfileOption[]> {
     await wait(this.delayMs, signal);
     const {profiles} = DemoProfilesResponseSchema.parse(profilesJson);
     return DemoProfilesResponseSchema.parse({
-      profiles: profiles.map(p => ({...p, displayLabel: this.subjects.get(p.demoSubjectId)?.label ?? p.displayLabel})),
+      profiles: profiles.map(p => ({
+        ...p,
+        displayLabel: this.subjects.get(p.demoSubjectId)?.label ?? p.displayLabel,
+        allowedSections: ACADEMIC_SHARERS.has(p.demoSubjectId) ? [...p.allowedSections, 'ACADEMICS', 'FORECAST'] : p.allowedSections,
+      })),
     }).profiles;
   }
 
