@@ -56,10 +56,13 @@ export function creditsText(units: number): string {
   return `${units % 2 === 0 ? units / 2 : (units / 2).toFixed(1)}학점`;
 }
 
+/** Shown on the 졸업 section in every state (shown, pending, not shared), not only with numbers. */
+export const NOT_OFFICIAL_GRADUATION_TEXT = '공식 졸업 판정이 아닙니다. 확정은 학과·학사지원팀에서 확인해 주세요.';
+
 export function buildGraduationView(s: AcademicSummary): GraduationView {
   return {
     stateText: STATE_TEXT[s.state],
-    notOfficialText: '공식 졸업 판정이 아닙니다. 확정은 학과·학사지원팀에서 확인해 주세요.',
+    notOfficialText: NOT_OFFICIAL_GRADUATION_TEXT,
     // Kept separate on purpose: earned, in progress and planned are never summed into one number.
     credits: [
       {label: '취득', credits: creditsText(s.earnedCreditUnits)},

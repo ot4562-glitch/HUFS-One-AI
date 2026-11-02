@@ -115,7 +115,7 @@ describe('#51 MiniCalendar on 오늘', () => {
     const s = before.snapshot!;
     const receipt = DemoOverlayResultSchema.parse({
       overlay: {version: 1, value: {interestTopics: ['AI_ML']}, updatedAt: s.asOf},
-      snapshot: DemoSnapshotSchema.parse({...s, versions: {...s.versions, consent: before.context!.sharingGrantVersion, overlay: 'BETA_OVERLAY:1'}}),
+      snapshot: DemoSnapshotSchema.parse({...s, versions: {...s.versions, overlay: 'BETA_OVERLAY:1'}}),
       calendar: buildSyntheticCalendar(s.asOf),
     });
     await act(async () => { expect(await controller.runOverlayOperation(async () => receipt)).not.toBeNull(); });
