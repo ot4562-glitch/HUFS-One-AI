@@ -6,7 +6,8 @@ import {DEMO_STUDENTS, type DemoStudent} from './demo-profiles.js';
 /**
  * #123 SYNTHETIC club recruiting demo. Every club, name, summary and poster id is invented for the demo
  * ("가상동아리 …"): no real HUFS club, student contact, Everytime post or image is copied or implied.
- * 12 APPROVED posts in 10 categories (shown) + 5 posts in other states that must never be shown.
+ * 12 APPROVED posts in 10 categories (shown) + 6 posts that must never be shown (other states, approved
+ * after asOf, or edited after approval).
  * Dates are relative to DEMO_AS_OF. Poster ids are placeholders for the UI track's synthetic assets.
  */
 export const DEMO_CLUB_CORPUS_VERSION = 'syn-clubs-v1';
@@ -17,6 +18,7 @@ interface Spec {
   n:string; name:string; summary:string; category:ClubCategory; campus:ClubCampus; topics:TopicCode[]; activities:ClubActivity[];
   state?:ClubPostState; approvedAt?:number|null; opens?:number; closes?:number|null; created?:number;
   conditions?:ClubPost['conditions'];
+  updated?:number;
 }
 const post = (s:Spec):ClubPost => {
   const created = s.created ?? -14;
@@ -25,7 +27,7 @@ const post = (s:Spec):ClubPost => {
   const out:ClubPost = {
     id:`SYN-CLUB-${s.n}`, clubName:`가상동아리 ${s.name}`, summary:s.summary, category:s.category, campus:s.campus,
     topicCodes:s.topics, activities:s.activities, conditions:s.conditions ?? [], state,
-    createdAt:d(created), updatedAt:d(created + 1), posterAssetId:`SYN-POSTER-CLUB-${s.n}`, dataMode:'SYNTHETIC',
+    createdAt:d(created), updatedAt:d(s.updated ?? created + 1), posterAssetId:`SYN-POSTER-CLUB-${s.n}`, dataMode:'SYNTHETIC',
   };
   if (approved !== undefined) out.approvedAt = d(approved);
   if (s.opens !== undefined) out.recruitOpensAt = d(s.opens);
@@ -68,6 +70,8 @@ export const DEMO_CLUB_POSTS:readonly ClubPost[] = [
   post({n:'015', name:'반려된 모임', summary:'반려된 글', category:'CAREER', campus:'BOTH', topics:['GLOBAL_SALES'], activities:['NETWORKING'], state:'REJECTED'}),
   post({n:'016', name:'철회된 모임', summary:'승인이 취소된 글', category:'LANGUAGE', campus:'GLOBAL', topics:['LANGUAGE_TRANSLATION'], activities:['STUDY'], state:'REVOKED'}),
   post({n:'017', name:'내일 승인될 모임', summary:'asOf 이후에 승인되는 글', category:'CULTURE_ART', campus:'SEOUL', topics:['MEDIA_CONTENT'], activities:['CREATION'], approvedAt:1}),
+  post({n:'018', name:'승인 후 수정된 모임', summary:'승인 뒤 내용이 바뀌어 재검토가 필요한 글', category:'IT_AI', campus:'SEOUL',
+    topics:['DATA_ANALYTICS', 'AI_ML'], activities:['PROJECT'], approvedAt:-10, updated:-3}),
 ];
 
 /** Club-side choices for the five synthetic students (explicit activity / campus picks only). */

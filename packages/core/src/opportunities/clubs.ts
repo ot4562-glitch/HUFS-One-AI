@@ -12,6 +12,13 @@ import {evaluateCondition, type ConditionField, type FactValue} from './evaluate
  * - Only APPROVED posts whose approval and creation are known at asOf are visible — in the list, the
  *   recommendations AND a direct lookup. DRAFT / REVIEW_PENDING / REJECTED / EXPIRED / REVOKED never are.
  *   "APPROVED" here is a simulated admin decision (가상 관리자 승인(시연)), never a real school approval.
+ * - The post is one immutable reviewed revision: it is visible at asOf only if it was created, last edited
+ *   AND approved by then, and the approval came after the last edit. A later edit (summary, poster,
+ *   conditions) is never shown under an older approval or in an earlier asOf replay — fail closed.
+ * - Trust boundary: the core only consumes a server-built, trusted snapshot. `state` and `approvedAt` must
+ *   come from the server's own admin approval record; a client-supplied flag or time never authorizes
+ *   publication. These checks are a second line, not proof of an administrator's grant.
+ * - `posterAssetId` is a placeholder id until the UI track supplies synthetic poster assets (#123).
  * - Relevance comes only from explicit interests, shared approved-experience topics and chosen activities.
  *   No grades, no popularity, no model confidence. Unknown conditions are "확인 필요", never assumed.
  * - Recommendations highlight up to 3; the full visible list is always kept.
@@ -66,7 +73,11 @@ export interface ClubProfile {
 
 export type ClubLifecycle = 'UPCOMING'|'OPEN'|'CLOSED'|'OPEN_NO_DEADLINE';
 export type ClubEligibility = 'ELIGIBLE'|'INELIGIBLE'|'UNKNOWN';
-export type ClubHiddenReason = 'NOT_APPROVED'|'APPROVAL_AFTER_ASOF'|'CREATED_AFTER_ASOF'|'INVALID_TIME';
+export type ClubHiddenReason =
+  | 'NOT_APPROVED' | 'CREATED_AFTER_ASOF' | 'EDITED_AFTER_ASOF' | 'APPROVAL_AFTER_ASOF'
+  | 'EDITED_AFTER_APPROVAL'  // content changed after the approval: needs a new review
+  | 'INVALID_CHRONOLOGY'     // edited or approved before it was created
+  | 'INVALID_TIME';
 
 export interface ClubReason {
   code:'INTEREST_MATCH'|'EXPERIENCE_MATCH'|'ACTIVITY_MATCH'|'CAMPUS_MATCH'|'CHECK_NEEDED'|'DEADLINE_UNKNOWN'|'NO_PERSONAL_MATCH';
@@ -121,8 +132,12 @@ export function clubHiddenReason(post:ClubPost, asOf:string):ClubHiddenReason|un
   const times = [post.createdAt, post.updatedAt, post.approvedAt, post.recruitOpensAt, post.recruitClosesAt];
   if (times.some(t => t !== undefined && !Number.isFinite(Date.parse(t)))) return 'INVALID_TIME';
   if (post.state !== 'APPROVED' || post.approvedAt === undefined) return 'NOT_APPROVED';
-  if (ms(post.createdAt)! > now) return 'CREATED_AFTER_ASOF';
-  if (ms(post.approvedAt)! > now) return 'APPROVAL_AFTER_ASOF';
+  const created = ms(post.createdAt)!, updated = ms(post.updatedAt)!, approved = ms(post.approvedAt)!;
+  if (updated < created || approved < created) return 'INVALID_CHRONOLOGY';
+  if (created > now) return 'CREATED_AFTER_ASOF';
+  if (updated > now) return 'EDITED_AFTER_ASOF';
+  if (approved > now) return 'APPROVAL_AFTER_ASOF';
+  if (updated > approved) return 'EDITED_AFTER_APPROVAL';
   return undefined;
 }
 

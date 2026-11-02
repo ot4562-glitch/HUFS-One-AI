@@ -30,11 +30,11 @@ describe('#123 synthetic club corpus', () => {
 });
 
 describe('#123 approval gate: only APPROVED, known at asOf — list, recommendation and direct URL', () => {
-  const hidden = ['SYN-CLUB-013', 'SYN-CLUB-014', 'SYN-CLUB-015', 'SYN-CLUB-016', 'SYN-CLUB-017'];
+  const hidden = ['SYN-CLUB-013', 'SYN-CLUB-014', 'SYN-CLUB-015', 'SYN-CLUB-016', 'SYN-CLUB-017', 'SYN-CLUB-018'];
 
   it('DRAFT / REVIEW_PENDING / REJECTED / REVOKED / approved-after-asOf never appear anywhere', () => {
     expect(hidden.map(id => clubHiddenReason(DEMO_CLUB_POSTS.find(p => p.id === id)!, DEMO_AS_OF)))
-      .toEqual(['NOT_APPROVED', 'NOT_APPROVED', 'NOT_APPROVED', 'NOT_APPROVED', 'APPROVAL_AFTER_ASOF']);
+      .toEqual(['NOT_APPROVED', 'NOT_APPROVED', 'NOT_APPROVED', 'NOT_APPROVED', 'APPROVAL_AFTER_ASOF', 'EDITED_AFTER_APPROVAL']);
     for (const {profile} of DEMO_CLUB_PROFILES) {
       const b = composeClubBoard(profile, DEMO_CLUB_POSTS, opts);
       for (const id of hidden) {
@@ -56,8 +56,31 @@ describe('#123 approval gate: only APPROVED, known at asOf — list, recommendat
     expect(clubHiddenReason(selfFlag, DEMO_AS_OF)).toBe('NOT_APPROVED');
     // Replay before the approval: hidden at that asOf.
     expect(clubHiddenReason(approved, at(-2))).toBe('APPROVAL_AFTER_ASOF');
-    expect(clubHiddenReason({...approved, createdAt:at(1)}, DEMO_AS_OF)).toBe('CREATED_AFTER_ASOF');
+    expect(clubHiddenReason({...approved, createdAt:at(1), updatedAt:at(1), approvedAt:at(2)}, DEMO_AS_OF)).toBe('CREATED_AFTER_ASOF');
     expect(clubHiddenReason({...approved, recruitClosesAt:'not-a-date'}, DEMO_AS_OF)).toBe('INVALID_TIME');
+  });
+
+  it('#125 review: a post edited after asOf or after its approval is absent from the list, highlights and direct lookup', () => {
+    const base = DEMO_CLUB_POSTS.find(p => p.id === 'SYN-CLUB-005')!; // approved, recommended for S01
+    const s01 = profileOf('S01');
+    expect(ids(composeClubBoard(s01, [base], opts).recommended)).toEqual(['SYN-CLUB-005']);
+    const cases:[string, ClubPost, string][] = [
+      // Replaying an earlier asOf must not serve the later-edited summary/poster/conditions.
+      ['future edit', {...base, updatedAt:at(1), summary:'나중에 바뀐 소개', posterAssetId:'SYN-POSTER-CLUB-005-v2'}, 'EDITED_AFTER_ASOF'],
+      // Edited after the approval it claims: the new content was never reviewed.
+      ['edit after approval', {...base, approvedAt:at(-5), updatedAt:at(-1)}, 'EDITED_AFTER_APPROVAL'],
+      ['approved before created', {...base, approvedAt:at(-30)}, 'INVALID_CHRONOLOGY'],
+      ['edited before created', {...base, updatedAt:at(-30)}, 'INVALID_CHRONOLOGY'],
+    ];
+    for (const [name, post, reason] of cases) {
+      expect([name, clubHiddenReason(post, DEMO_AS_OF)]).toEqual([name, reason]);
+      const b = composeClubBoard(s01, [post], opts);
+      expect([name, ids(b.all), ids(b.recommended)]).toEqual([name, [], []]);
+      expect([name, findVisibleClubPost([post], post.id, DEMO_AS_OF)]).toEqual([name, undefined]);
+    }
+    // Re-approved after the edit: visible again with the new content.
+    const reapproved:ClubPost = {...base, updatedAt:at(-1), approvedAt:at(-1)};
+    expect(findVisibleClubPost([reapproved], base.id, DEMO_AS_OF)).toBe(reapproved);
   });
 });
 
