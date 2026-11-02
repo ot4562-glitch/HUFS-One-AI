@@ -1,5 +1,11 @@
 # HUFS One AI
 
+> **2026-11-02 핵심 심사 메시지:** HUFS One AI는 기존 **HUFSAbility에 이미 존재하는 비교과·채용·경력개발·역량·상담 등 학생 기능을 존중하면서** 학생별 관련도를 높이고 공고 본문/조건/시점을 설명해 다음 행동을 돕는 개선 제안이다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 원래 메뉴 5분류·24개와 공개 4영역을 화면에 보존하되 **이식하지 않은 기능은 🚫 미지원** 표시하고 시연 가능한 자체 기능만 동작시킨다. 학교 공인 HUFSAbility 운영/전체 기능 제공을 주장하지 않는다.
+
+> **동아리 신규 제안 [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123):** 에브리타임 등 외부 커뮤니티에 반복해서 모집글을 올려야 하는 학생 홍보 문제를 개선 가설로 보고, 장기적으로 학교 승인형 공식 동아리 모집 채널을 제안한다. 공모전 범위는 **AI 창작 가상 동아리·독창적 합성 포스터·합성 관심사 추천·가상 관리자 승인 시뮬레이션**뿐이다. [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 코어 PR은 시점 노출 오류 수정 요청/미병합, 실제 UI·포스터 제작/학교 허가 없음.
+
+> **2026-11-02 통합 상태:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) 정정 회귀와 [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 캘린더 UI는 독립 승인·CI 통과 후 main 병합. #73 초대 race/후속 UI 스택, #117–#121 이유/비교 API 계약, #125 클럽 시점 안전, #46 원본 개인정보·#89 릴리스 차단은 미완료. 합성 기능을 실제 학교 서비스/합격·졸업·지원 결과로 표기하지 않는다.
+
 > **2026-11-01 추가 UX 후속 구현·검증 상태:** [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 권한 정책 변경 시 추천/공지 결과 캐시 분리 개선은 독립 승인/Actions 후 main 병합. [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 비교/[#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) 제외 이유는 계약 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)·인가 API [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)이 작성자 COMMENT 리뷰·독립 승인 요청/미병합 단계다. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 코어는 설명의 순위·다양성 반례 수정 요청 중. #82 What-if 공식 RulePack 기반 실제 계산 및 #80 지원보드 React UI는 미완료. 합성 코드 및 미병합 API를 본선 실제 시연 완성으로 말하지 않으며 #46·#89 출시 차단 유지.
 
 > **2026-11-01 추가 UX 기능 4건 최초 제안/이슈 기록:** **P0 제안** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) 공고 정정 전후 비교(변경값·검수 시각·원문 근거, 이의상 UI/심민성 API/김채윤 추천), **P1 제안** [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86) 추천 제외·보류 이유(기존 issue 보강), [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) 지원 준비 보드(기존 owner 단계 API 구현, 실제 UI 미완료), **P2 제안** [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) 복수·이중전공 가상 졸업 비교(#107은 DTO만 구현). P0/P1/P2는 착수 추천 순서이지 완료/공식 일정이 아니다. 검증된 기관 자료·학생 동의·RulePack·CI/실브라우저가 없는 부분은 모두 차단하며 합성 자료로만 설계한다.

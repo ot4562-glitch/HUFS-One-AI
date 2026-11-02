@@ -1,5 +1,14 @@
 # HUFS One AI | 시연·에이전트 검증 기준
 
+## 2026-11-02 최신 심사 시연 진척·검증 게이트
+
+- [x] **main 병합:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) 정정/구판 잔상·권한 철회 회귀 `bb5b76d`; [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 인증 캘린더 UI 포트·동일 context snapshot 격리 `717ce979`. 두 HEAD 모두 비작성자 APPROVED/Actions synthetic+PG 2/2 SUCCESS.
+- [x] UI #74 졸업 비공식 판정 문구·#75 sandbox 미저장 입력 격리는 최신 HEAD APPROVED, **미병합**(선행 #73 초대 비동기 성공 콜백 CHANGES_REQUESTED). #117 코어 최신 HEAD APPROVED이나 다른 리뷰어의 이전 변경 요청 확인/계약 #120 불일치로 미병합. #76 Playwright는 독립 browser CI 증거 없음.
+- [ ] [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 기존 HUFSAbility 원래 메뉴 5분류·24하위 기능·공개 4영역 전면 배치와 **🚫 미지원** IA/UI 구현, [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 실제 생성된 가상 포스터/게시판/추천 화면 시연 미완료. #125 클럽 코어의 과거 asOf/미래 updatedAt 누출 문제 해결 전.
+- [ ] 기존 학교 데이터·SSO/학생 동의/실독립 200골드·기관자료 원문·실 REVEIWER 브라우저·NCP/TLS/릴리스 허가 미검증. #46 Privacy 153/155 PASS·2 FAIL, #89 `RELEASE_BLOCKED`. 과거 2026-11-01의 PR/Issue 개수는 당시 이력.
+
+**데모 설명 순서 제안:** 기존 HUFSAbility 기능/🚫 표시 → 구현된 합성 개인화 공고·달력 → 승인된 범위의 졸업지원 → 가상 동아리 모집 신규 제안. 실제 구현되지 않은 화면을 완성된 것으로 시연하지 않는다.
+
 ## 2026-11-01 후속 PR 리뷰·심사 검증 정본
 
 - [x] [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118) 정책 버전 결과 캐시 키는 최신 HEAD 타인 APPROVED·[Actions #41307796839](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41307796839) 합성/PG 2 job SUCCESS 후 main merge `fdf0b09b`.

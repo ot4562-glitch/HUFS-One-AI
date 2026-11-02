@@ -1,5 +1,9 @@
 # HUFS One AI | 제품·화면 기준 안내
 
+**2026-11-02 서비스 목표 재정의:** **HUFS One AI는 HUFSAbility를 대체한다고 주장하는 별도 대학 포털이 아니라 기존 HUFSAbility를 존중·개인화하는 제품명**이다. 기존 메뉴·하위 기능은 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 정보구조에 나타내고 동작하지 않는 기능에는 **🚫 미지원/검증 전** 표시를 유지한다. 모든 기능 이식·공식 학교 운영/SSO를 주장하지 않는다. 추가 [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 동아리 모집은 **가상 동아리/포스터/추천만 합성 데모**로 제안한다.
+
+**2026-11-02 실제 진척:** #122 정정 회귀 main **bb5b76d**, #72 캘린더 UI/API 연결 main **717ce979**. #73 REVIEWER 초대·#125 동아리 코어 CHANGES_REQUESTED, #74 졸업·#75 합성 sandbox·#117 추천 제외 코어 APPROVED(선행 차단 후 병합 가능), #76 E2E COMMENT, #120 계약 enum 불일치·#121 API 미병합. 열린 PR **8/Issue 30**. 개인정보 #46 검사 2 FAIL·출시 #89 RELEASE_BLOCKED 유지. [STATUS](STATUS.md)·[역할](docs/WORKSTREAMS.md).
+
 **2026-11-01 후속 코드·검수 상태:** 권한 정책 버전 캐시 무효화 [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118)은 독립 승인·Actions 성공 후 main **`fdf0b09b`** 병합. 추천 제외 사유 [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117)은 CHANGES_REQUESTED; 정정 비교/설명 계약 [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)→권한 있는 API·owner 클라이언트 [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)은 작성자 COMMENT+비작성자 승인 요청 단계로 미병합. UI #72~#76 차단 유지. **열린 PR 8·Issue 28**, #46 Privacy 2 FAIL·#89 `RELEASE_BLOCKED`. 합성 코드 수락/운영 서비스 수락을 구분한다. [STATUS](STATUS.md).
 
 **2026-11-01 구현/리뷰 상태:** #83 플랫폼과 #116 학업 응답 계약 등은 main의 **합성/일회용 DB 검증된 코드 단계**이고, #72→#76 UI 스택은 최신 HEAD 리뷰 5건 후에도 미병합(0건), #72/#75 변경 요청 차단 상태다. 실제 기관/학생 자료·외대 메일/OIDC·NCP/HTTPS 검증은 미완료이며 공개 웹은 `RELEASE_BLOCKED`. [STATUS](STATUS.md)와 [PR_WORKFLOW](docs/PR_WORKFLOW.md) 우선.

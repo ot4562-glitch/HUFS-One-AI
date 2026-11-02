@@ -1,5 +1,13 @@
 # apps/web (UI · 이의상)
 
+## 2026-11-02 UI 현재 수락/다음 구현
+
+- [x] [PR #72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 오늘 하단 2주 미니 캘린더·실 비합성 `liveServices(api)`/권한 GET·snapshot 교체 즉시 소거: **main `717ce979` 병합**(현재 HEAD 비작성자 승인/Actions 2/2 SUCCESS). 개발 synthetic 포트도 S01/S02 개인별 합성 달력 사용.
+- [ ] [PR #73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) REVIEWER 초대의 성공 `getSession`가 unmount/StrictMode cleanup 뒤 `READY`를 만들 수 있어 CHANGES_REQUESTED. 해당 PR base를 main으로 변경. #74 졸업·#75 sandbox는 현 HEAD APPROVED지만 #73 선행 병합/재검증 필요.
+- [ ] [PR #76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76)의 Playwright 1.64.1/Edge 브라우저 E2E는 아직 **미병합**: `npm run test:e2e:web`를 현재 main의 사용 가능한 명령이라고 안내하지 않는다. 합성/PG Actions 성공은 독립 실제 브라우저 실행이 아님.
+- [ ] [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 기존 5분류·24기능 메뉴/4개 공개 영역 전면 배치+미구현 🚫 UX, [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) AI 합성 동아리 포스터·모집판/추천 UI는 아직 미구현. 동아리 #125 순수 코어도 수정 요청 중.
+- 실제 Google/학교 SSO·기관 권리·운영 배포는 승인하지 않았으며 #46/#89 `RELEASE_BLOCKED` 유지.
+
 React 19 + Vite 8. 의존성은 루트 `package.json`(#63/#66)에 있습니다.
 
 | 명령 | 용도 |
