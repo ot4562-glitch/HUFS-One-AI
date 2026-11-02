@@ -72,12 +72,17 @@ export interface TimetableRow {
   note:string;
   /** equivalent: the note names a same or substitute course (동일과목, 대체), e.g. after a curriculum change. */
   noteHints:{prerequisite:boolean; cohort:boolean; restriction:boolean; equivalent:boolean};
+  /**
+   * ROW_LINK: the row's own syllabus link names the term. PAGE_ONLY: the course has no syllabus,
+   * so its cell is empty and only the other rows of the same saved page name the term.
+   */
+  termEvidence:'ROW_LINK'|'PAGE_ONLY';
   needsReview:boolean;
 }
 
 export interface TimetableIssue {
   row?:number;
-  code:'NO_ROWS'|'ROW_NUMBER_GAP'|'BAD_CODE'|'BAD_GRADE'|'BAD_CREDITS'|'BAD_HOURS'|'BAD_MEETINGS'|'UNKNOWN_AREA'|'UNKNOWN_ATTRIBUTE'|'NOTE_NEEDS_REVIEW';
+  code:'NO_ROWS'|'ROW_NUMBER_GAP'|'BAD_CODE'|'BAD_GRADE'|'BAD_CREDITS'|'BAD_HOURS'|'BAD_MEETINGS'|'UNKNOWN_AREA'|'UNKNOWN_ATTRIBUTE'|'NOTE_NEEDS_REVIEW'|'TERM_FROM_PAGE';
   detail:string;
 }
 
@@ -129,17 +134,56 @@ function savedFromUrl(html:string):string {
   return `${url.origin}${url.pathname}`;
 }
 
-/** The syllabus links carry the queried year and session; every row must agree. */
-function pageTerm(rows:readonly string[][]):{year:number; session:TimetableSession} {
-  const seen = new Set<string>();
-  for (const row of rows) {
-    for (const match of row[COL.syllabus]!.matchAll(/lecture_open\('(\d{4})','(\d)'/g)) seen.add(`${match[1]}:${match[2]}`);
-  }
-  if (seen.size !== 1) throw new TypeError(`page rows name ${seen.size === 0 ? 'no' : 'more than one'} year and session`);
+const LINK = /lecture_open\('(\d{4})','(\d)','[A-Z]','([^']*)'\)/g;
+
+/**
+ * Each row's syllabus cell holds one link naming the queried year, session, and the row's own
+ * code, or is empty when the course has no syllabus. Any other content means the layout changed.
+ * Every link on the page, card list included, must name the same term.
+ */
+function pageTerm(rows:readonly string[][], html:string):{year:number; session:TimetableSession; linkless:Set<number>} {
+  const linkless = new Set<number>();
+  rows.forEach((row, index) => {
+    const links = [...row[COL.syllabus]!.matchAll(LINK)];
+    const no = cellText(row[COL.no]!);
+    if (links.length === 0) {
+      if (cellText(row[COL.syllabus]!) !== '') throw new TypeError(`row ${no} has a syllabus cell without a readable term link`);
+      linkless.add(index);
+      return;
+    }
+    if (links.length > 1 || links[0]![3]!.toUpperCase() !== cellText(row[COL.code]!).toUpperCase()) {
+      throw new TypeError(`row ${no} syllabus link does not name its own course code`);
+    }
+  });
+  const seen = new Set([...html.matchAll(LINK)].map(match => `${match[1]}:${match[2]}`));
+  if (seen.size !== 1) throw new TypeError(`page links name ${seen.size === 0 ? 'no' : 'more than one'} year and session`);
   const [year, code] = [...seen][0]!.split(':') as [string, string];
   const session = SESSIONS[code];
   if (!session) throw new TypeError(`unknown session code ${code}`);
-  return {year:Number(year), session};
+  return {year:Number(year), session, linkless};
+}
+
+/** Course codes in the card list, which the page draws once per table row. */
+function cardCodes(html:string):string[] {
+  return [...html.matchAll(/<div\b[^>]*class="sch-card-code"[^>]*>([\s\S]*?)<\/div>/gi)]
+    .map(match => cellText(match[1]!).split('·')[0]!.trim().toUpperCase());
+}
+
+/** The table must list exactly the courses the card list shows, so a dropped row cannot go unnoticed. */
+function assertComplete(rows:readonly string[][], html:string):void {
+  const count = (codes:readonly string[]) => {
+    const map = new Map<string, number>();
+    for (const code of codes) map.set(code, (map.get(code) ?? 0) + 1);
+    return map;
+  };
+  const table = count(rows.map(row => cellText(row[COL.code]!).toUpperCase()));
+  const cards = count(cardCodes(html));
+  const missing = [...cards].filter(([code, n]) => (table.get(code) ?? 0) < n).map(([code]) => code);
+  const extra = [...table].filter(([code, n]) => (cards.get(code) ?? 0) < n).map(([code]) => code);
+  if (missing.length > 0 || extra.length > 0) {
+    throw new TypeError(`table and card list disagree (${missing.length} course(s) missing from the table, `
+      + `${extra.length} only in the table); save the page again`);
+  }
 }
 
 function fileTerm(fileName:string):string|undefined {
@@ -184,7 +228,11 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
   if (!header || header.length !== EXPECTED_HEADER.length || header.some((label, i) => label !== EXPECTED_HEADER[i])) {
     throw new TypeError('timetable header differs from the known layout; refusing to guess columns');
   }
-  const raw = rowsHtml.map(row => cells(row, 'td')).filter(row => row.length === ROW_CELLS && /^\d+$/.test(cellText(row[COL.no]!)));
+  // A data row starts with its number. One with the wrong number of cells is refused, not skipped.
+  const raw = rowsHtml.map(row => cells(row, 'td')).filter(row => row.length > 0 && /^\d+$/.test(cellText(row[0]!)));
+  for (const row of raw) {
+    if (row.length !== ROW_CELLS) throw new TypeError(`row ${cellText(row[0]!)} has ${row.length} cells, not ${ROW_CELLS}; save the page again`);
+  }
 
   const issues:TimetableIssue[] = [];
   const departmentLabel = input.departmentLabel ?? input.fileName.split(/[_\s]/)[0]!;
@@ -193,9 +241,9 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
   if (raw.length === 0) {
     // The page also draws a card list. An empty table next to course links means the table was
     // saved before it finished drawing; reporting NO_ROWS would read as "nothing offered".
-    const elsewhere = [...html.matchAll(/lecture_open\(/g)].length;
+    const elsewhere = Math.max([...html.matchAll(/lecture_open\(/g)].length, cardCodes(html).length);
     if (elsewhere > 0) {
-      throw new TypeError(`the table is empty but the page links ${elsewhere} courses elsewhere; save the page again once the table shows them`);
+      throw new TypeError(`the table is empty but the page lists ${elsewhere} courses elsewhere; save the page again once the table shows them`);
     }
     const term = fileTerm(input.fileName);
     if (!term) throw new TypeError('page lists no rows and the file name names no term');
@@ -205,7 +253,8 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
     return result(url, input, {year:Number(year), session:mapped}, departmentLabel, [], issues);
   }
 
-  const term = pageTerm(raw);
+  assertComplete(raw, html);
+  const {linkless, ...term} = pageTerm(raw, html);
   const named = fileTerm(input.fileName);
   const pageLabel = `${term.year}-${term.session === 'SUMMER' ? 'S' : term.session === 'WINTER' ? 'W' : term.session}`;
   if (named !== undefined && named !== pageLabel) throw new TypeError(`file name says ${named} but the page lists ${pageLabel}`);
@@ -215,6 +264,8 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
     const no = Number(text[COL.no]);
     const flag = (code:TimetableIssue['code'], detail:string) => issues.push({row:no, code, detail});
     if (no !== index + 1) flag('ROW_NUMBER_GAP', `row ${index + 1} is numbered ${no}`);
+    const termEvidence = linkless.has(index) ? 'PAGE_ONLY' : 'ROW_LINK';
+    if (termEvidence === 'PAGE_ONLY') flag('TERM_FROM_PAGE', 'no syllabus link; the term comes only from the other rows of this page');
 
     const rawCode = text[COL.code]!.toUpperCase();
     if (!/^[A-Z0-9]{9}$/.test(rawCode)) flag('BAD_CODE', `course code "${text[COL.code]}"`);
@@ -269,7 +320,7 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
       otherAttributes,
       creditUnits, hours,
       meetings:parsedMeetings ?? [],
-      note, noteHints,
+      note, noteHints, termEvidence,
       needsReview:issues.some(issue => issue.row === no && issue.code !== 'NOTE_NEEDS_REVIEW'),
     };
   });

@@ -10,22 +10,33 @@ const HEADER = ['No.', '개설영역', '학년', '학수번호', '교과목명',
   '학점', '시간', '강의시간/<br>강의실', '수강인원/<br>제한인원', '사전수강신청/관심강좌신청<br>(Course Wishlist)', '비고'];
 
 interface Row {no?:number; area?:string; grade?:string; code:string; title:string; attrs?:string[];
-  credits?:string; hours?:string; time?:string; note?:string; year?:string; sessn?:string}
+  credits?:string; hours?:string; time?:string; note?:string; year?:string; sessn?:string;
+  /** Syllabus cell: a link (default), empty (no syllabus), or other text. */
+  syllabus?:'LINK'|'NONE'|'TEXT'; linkCode?:string; dropLastCell?:boolean; dropNumberCell?:boolean}
 
 const ATTR_CLASS:Record<string, string> = {'전필':'req', 'R':'req', 'ENG':'eng', 'FRE':'eng', 'F':'eng', '팀티칭':'team', '온라인':'online', 'P/F':'pf'};
-const tr = (row:Row, index:number) => `<tr>
-  <td>${row.no ?? index + 1}</td><td>${row.area ?? '전공'}</td><td>${row.grade ?? '2'}</td>
-  <td class="col-code">${row.code}</td><td class="align_left">${row.title}</td>
-  <td><a class="btn-plan" href="javascript:lecture_open('${row.year ?? '2026'}','${row.sessn ?? '3'}','A','${row.code}')">▤</a></td>
-  <td>${row.attrs?.length ? `<div class="attr-cell">${row.attrs.map(a => `<span class="attr attr--${ATTR_CLASS[a] ?? 'x'}">${a}</span>`).join('')}</div>` : '<span class="attr-none">–</span>'}</td>
-  <td>가상 교수</td><td>${row.credits ?? '3'}</td><td>${row.hours ?? '3'}</td><td>${row.time ?? '화 3 4 5 (0101)'}</td>
-  <td>10 / 30</td><td><span class="col-note">${row.note ?? ''}</span></td></tr>`;
+const link = (row:Row, code = row.code) =>
+  `<a class="btn-plan" href="javascript:lecture_open('${row.year ?? '2026'}','${row.sessn ?? '3'}','A','${code}')">▤</a>`;
+const syllabusCell = (row:Row) =>
+  row.syllabus === 'NONE' ? '' : row.syllabus === 'TEXT' ? '준비중' : link(row, row.linkCode ?? row.code);
+const tr = (row:Row, index:number) => {
+  const cells = [`${row.no ?? index + 1}`, row.area ?? '전공', row.grade ?? '2', row.code, row.title, syllabusCell(row),
+    row.attrs?.length ? `<div class="attr-cell">${row.attrs.map(a => `<span class="attr attr--${ATTR_CLASS[a] ?? 'x'}">${a}</span>`).join('')}</div>` : '<span class="attr-none">–</span>',
+    '가상 교수', row.credits ?? '3', row.hours ?? '3', row.time ?? '화 3 4 5 (0101)', '10 / 30', `<span class="col-note">${row.note ?? ''}</span>`];
+  const kept = cells.slice(row.dropNumberCell ? 1 : 0, row.dropLastCell ? -1 : undefined);
+  return `<tr>${kept.map(cell => `<td>${cell}</td>`).join('')}</tr>`;
+};
+/** The real page also draws one card per course, with the same code and, if any, the syllabus link. */
+const card = (row:Row) => `<div class="sch-card"><div class="sch-card-top"><div>
+  <div class="sch-card-code">${row.code} · ${row.area ?? '전공'} ${row.grade ?? '2'}</div><div class="sch-card-name">${row.title}</div></div>
+  ${row.syllabus === 'NONE' ? '' : link(row)}</div></div>`;
 
-const page = (rows:readonly Row[], over:{header?:string[]; saved?:string} = {}) => `<!DOCTYPE html>
+const page = (rows:readonly Row[], over:{header?:string[]; saved?:string; cards?:readonly Row[]} = {}) => `<!DOCTYPE html>
 ${over.saved ?? SAVED}
 <html><body><script>var tpl = '<tr><td>'+(i+1)+'</td><td>x</td></tr>';</script>
 <table><thead><tr>${(over.header ?? HEADER).map(h => `<th>${h}</th>`).join('')}</tr></thead>
-<tbody>${rows.map(tr).join('\n')}</tbody></table></body></html>`;
+<tbody>${rows.map(tr).join('\n')}</tbody></table>
+<div class="sch-cards">${(over.cards ?? rows).map(card).join('\n')}</div></body></html>`;
 
 const ROWS:Row[] = [
   {code:'SYN010101', title:'가상 영어작문', grade:'1', credits:'2', hours:'2', attrs:['전필', 'ENG'], time:'수 1 2 (0101)',
@@ -54,7 +65,7 @@ describe('importWisTimetable', () => {
       title:'가상 영어작문', attributes:['REQUIRED', 'FOREIGN_LANGUAGE'], instructionLanguage:'ENG', otherAttributes:[], creditUnits:4, hours:2,
       meetings:[{day:'WED', periods:[1, 2], room:'0101'}],
       note:'21학번부터 전필. 가상 배치고사 미응시자 수강 불가.',
-      noteHints:{prerequisite:false, cohort:true, restriction:true, equivalent:false}, needsReview:false,
+      noteHints:{prerequisite:false, cohort:true, restriction:true, equivalent:false}, termEvidence:'ROW_LINK', needsReview:false,
     });
     expect(result.rows[1]).toMatchObject({attributes:['REQUIRED', 'FOREIGN_LANGUAGE'], otherAttributes:[],
       noteHints:{prerequisite:false, cohort:false, restriction:false, equivalent:false}});
@@ -153,5 +164,39 @@ describe('importWisTimetable', () => {
     const cards = `<div class="sch-card"><a href="javascript:lecture_open('2026','3','A','SYN010101')">▤</a></div>`;
     const half = page([]).replace('</body>', `${cards}</body>`);
     expect(() => importWisTimetable(request(half))).toThrow(/save the page again/);
+  });
+
+  it('refuses a data row with missing cells instead of dropping it', () => {
+    expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상 마지막', dropLastCell:true}]))))
+      .toThrow(/row 4 has 12 cells/);
+  });
+
+  it('refuses a table that lists fewer courses than its card list', () => {
+    expect(() => importWisTimetable(request(page(ROWS.slice(0, 2), {cards:ROWS})))).toThrow(/1 course\(s\) missing from the table/);
+    // A last row that lost its number cell is not a data row, so the card list is what catches it.
+    expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상 마지막', dropNumberCell:true}]))))
+      .toThrow(/table and card list disagree/);
+    expect(() => importWisTimetable(request(page(ROWS, {cards:ROWS.slice(0, 2)})))).toThrow(/1 only in the table/);
+  });
+
+  it('keeps a course without a syllabus but marks its term as taken from the page', () => {
+    const result = importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상 무계획서', syllabus:'NONE'}])));
+    expect(result.rows[3]).toMatchObject({rawCode:'SYN090101', termEvidence:'PAGE_ONLY', needsReview:true});
+    expect(result.rows.slice(0, 3).every(row => row.termEvidence === 'ROW_LINK')).toBe(true);
+    expect(result.issues.filter(issue => issue.code === 'TERM_FROM_PAGE').map(issue => issue.row)).toEqual([4]);
+    expect(() => importWisTimetable(request(page(ROWS.map(row => ({...row, syllabus:'NONE' as const}))))))
+      .toThrow(/no year and session/);
+  });
+
+  it('refuses a syllabus cell it cannot read or a link for another course', () => {
+    expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상', syllabus:'TEXT'}]))))
+      .toThrow(/without a readable term link/);
+    expect(() => importWisTimetable(request(page([...ROWS, {code:'SYN090101', title:'가상', linkCode:'SYN010101'}]))))
+      .toThrow(/does not name its own course code/);
+  });
+
+  it('refuses a card list left over from another term', () => {
+    const stale = ROWS.map(row => ({...row, year:'2026', sessn:'1'}));
+    expect(() => importWisTimetable(request(page(ROWS, {cards:stale})))).toThrow(/more than one year and session/);
   });
 });
