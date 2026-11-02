@@ -2,6 +2,7 @@ import {useEffect, useRef, type ReactNode} from 'react';
 import type {DemoContext} from '@hufs-one/contracts';
 import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
+import type {BoardPort} from './features/applications/boardPort.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -27,6 +28,8 @@ export interface AppServices {
   readonly reviewerInvite?: {readonly port: InvitePort; readonly holder: InviteCodeHolder};
   /** Present only for a verified REVIEWER session (or the dev synthetic mode). */
   readonly sandbox?: SandboxPort;
+  /** #80 owner-private application board (BETA owner session; the server checks every call). */
+  readonly applications?: BoardPort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;

@@ -4,9 +4,14 @@ import {InAppLink} from '../shell/AppShell.js';
 import {NoSnapshot, Section, screenViewOf} from './parts.js';
 
 /** 보관함: bookmarked cards, practice applications and drafts for the current subject. */
-export const savedPage: PageRenderer = ({path, state, sandbox, navigate}) => {
+export const savedPage: PageRenderer = ({path, state, sandbox, navigate, services}) => {
   if (path !== '/saved') return null;
-  if (!sandbox) return {title: '보관함', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
+  if (!sandbox) return {title: '보관함', body: (
+    <>
+      <p className="muted">{NOT_REVIEWER_TEXT}</p>
+      {services.applications && <p><InAppLink to="/applications" navigate={navigate} className="button button--quiet">내 지원 현황 보드</InAppLink></p>}
+    </>
+  )};
   const view = screenViewOf(state);
   if (!view) return {title: '보관함', body: <NoSnapshot state={state} />};
   if (!sandbox.ready) return {title: '보관함', body: <p className="muted" aria-busy="true">시연 기록을 불러오는 중</p>};
