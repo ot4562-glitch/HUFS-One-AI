@@ -1,6 +1,20 @@
 # HUFS One AI | 현재 작업 상태
 
-## 2026-11-02 현재 정본 — PR #137 게시·소비자 리뷰 반영
+## 2026-11-02 최신 GitHub 감사·이슈/디자인 인수인계 (우선 읽기)
+
+> **main 확인 기준:** PR #139 병합 `26c559e` → PR #140 병합 **`41de619`**. 이후 **문서 전용 변경은 main 위에 별도 커밋**되며 코드 커밋 SHA와 구별한다. 아래 여러 '최신' 표기는 각각 작성 당시의 스냅샷이다. 코드/계약 변경·학생 원본 공개/실 NCP 배포를 승인하지 않았다.
+
+- [x] **열린 PR 5건 전수 HEAD diff/기존 리뷰/CI 확인**. 김채윤 [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) `6f7496e`는 이전 baseline 결함 수정 확인 후 비작성자 APPROVED, 합성·PG·Chrome E2E **3/3 SUCCESS**, **main `26c559e`** squash 병합. EMPTY→A→B→RESET 추천·공지·동아리 및 전공 변경/제거 **합성 코어 재계산 테스트** 완료.
+- [x] 김채윤 [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) `e4e8599`는 정정 전후 마감/상태/조건과 현행 피드·공지 판본 합성 회귀를 비작성자 APPROVED, 합성·PG·Chrome **3/3 SUCCESS**, **main `41de619`** squash 병합. 실제 API/학교 원문 판본 비교 UI는 미구현.
+- [x] 이의상 [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) `ab565d0` 코드는 리뷰 COMMENT/합성·PG CI **2/2 SUCCESS** 확인(승인/병합 아님). 현재 base는 #131 feature branch이며 **#131의 변경 요청 해결까지 보류**.
+- [ ] **열린 PR 3건**: [#131](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) `35cdaf3` CHANGES_REQUESTED(설정 GET 중 라우트 unmount/remount 로딩 경합, REVIEWER capabilities 실패→BETA 잘못 연결), [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) 선행 의존성/운영 연동·재승인 대기, [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) `37a1136` DRAFT·CHANGES_REQUESTED(시간표 손상 마지막 행 조용한 누락, 각 행 학기 증거 누락). #131/#138도 해당 HEAD 합성/PG CI는 성공했으나 결함 해소/승인이 아니므로 미병합.
+- [x] **이슈 전수 상태 점검**: 2026-11-02 이 회차 기준 OPEN **32건** / CLOSED **7건**. [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10), [#85](https://github.com/ot4562-glitch/HUFS-One-AI/issues/85), [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119), [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124), [#132](https://github.com/ot4562-glitch/HUFS-One-AI/issues/132), [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)에는 **실제 리뷰·테스트·과제 배정 하위 완료만 [x]**. 전체 수락조건을 모두 충족한 기존 OPEN 이슈는 확인되지 않아 추가 종료 0건.
+- [x] **HUFSAbility UI/UX 고도화 [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) OPEN·실제 배정 완료**: 이의상(정보구조·독립 UI/모바일·접근성), 이서연(기획/공식 오인 방지), 심민성(단일 capability manifest/API·보안). [텍스트 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)의 본인 권한 데스크톱 **76화면·관찰 11개 상위 그룹**을 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 공개 공식 안내 **5분류·24기능+비로그인 4영역**과 별칭/출처별 대응. **모든 기존 메뉴는 미지원이어도 보여 주되 기능 미연동·검증 전을 명확히 표시**하고, HUFSAbility와 동일한 픽셀/화면이 아닌 **더 사용하기 좋은 독립 디자인**으로 개선. 원본 수집본/학생정보/학교 자산 전달 금지.
+- [ ] **출시/실데이터 차단 불변**: [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 보호 원장 Git 이력·사용 권리/목적 확인과 privacy **2 FAIL**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) `RELEASE_BLOCKED`; 실제 Google/학교메일·TLS/NCP/권한·공식 학칙/기관 원문·독립 추천 골드 **0/200**. 합성 CI·문서 수정으로 승인 처리하지 않음.
+
+후속 설계/시연 카피의 책임 범위는 [Architecture.md](Architecture.md), [docs/PR_WORKFLOW.md](docs/PR_WORKFLOW.md), [docs/WORKSTREAMS.md](docs/WORKSTREAMS.md) 및 이슈 #141이 정본이며 아틀라스는 텍스트 관찰 문서로만 사용한다.
+
+## 2026-11-02 #137 구현·PR 감사 (당시 기준)
 
 사용자 최신 지시로 **기존 PR 업데이트·필요한 PR 생성·PR 점검 및 조건 충족 건 병합·완료 이슈 처리와 문서 갱신**을 승인했다. 비작성자 현재 HEAD 승인·CI·관련 차단 해소 정책은 유지하며 배포·유료 호출·실자료 처리 승인은 확대하지 않는다. 아래 로컬-only 문구는 이전 체크포인트 당시 기록이다.
 
