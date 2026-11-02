@@ -10,6 +10,7 @@
 | 통합 | #137의 합성 독립 계정/인가/자료 검수 게이트는 main. #139·#140 테스트-only 회귀 병합 |
 | 열려 있는 PR | **4개**: 기능 #131·#134·#138(병합 차단), 유지관리 [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)(리뷰·CI 대기) |
 | 이슈 | **OPEN 32 / CLOSED 7**(이번 감사 기준). 일반 기능/실자료/출시의 전체 완료 판정 아님 |
+| **담당 범위 진척** | [2026-11-03 증거 원장](docs/TEAM_PROGRESS.md): 심민성 **7/12(58.3%)**, 이의상 **9/12(75.0%)**, 김채윤 **7/12(58.3%)**, 박준영 **8/12(66.7%)**, 이서연 **1/8(12.5%)**. 제품/개인 성과/출시 준비율 아님 |
 | UI | #129 메뉴 셸 main. 전체 HUFSAbility IA/독립 리디자인 #124·#141 OPEN |
 | 실제 운영 | **RELEASE_BLOCKED** — #46, #89 외부·개인정보 검증 미완료 |
 
@@ -20,6 +21,12 @@
 - [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140): 정정/취소 공고의 DEADLINE·STATUS·ELIGIBILITY와 현재 검수 피드·공지 판본 합성 일치 회귀. HEAD `e4e8599`, 비작성자 승인, 해당 HEAD synthetic/PG/Chrome CI **3/3 SUCCESS**, `main 41de619` 병합.
 - #139·#140은 **테스트-only**. 운영 DB, 실학생·실공고, UI 실제 기능, 독립 추천 평가 성능의 완료 증거로 승격하지 않는다.
 
+## 2026-11-03 담당별 수락 변경의 근거
+
+- [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) 초대 UI (main `3205063`), [#74](https://github.com/ot4562-glitch/HUFS-One-AI/pull/74) 졸업 화면 (`fba53ba`), [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) REVIEWER 합성 샌드박스 (`1cbd771`)는 최종 HEAD 비작성자 **APPROVED**, 해당 HEAD 합성/PG 각 **2/2 SUCCESS**, main 병합 확인. **UI 고정 게이트 +3**로 6/12→9/12. [담당 게이트별 상세 증거](docs/TEAM_PROGRESS.md).
+- [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) Playwright는 병합됐고 [#126](https://github.com/ot4562-glitch/HUFS-One-AI/issues/126)으로 확인한 [main Chrome Actions 41463272343](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41463272343) UI 14/14·독립 합성 계정 9/9 성공. 다만 실제 **스크린리더**의 별도 수락 결과가 없어 고정 복합 게이트는 여전히 [ ].
+- [#127](https://github.com/ot4562-glitch/HUFS-One-AI/pull/127) D-day, [#128](https://github.com/ot4562-glitch/HUFS-One-AI/pull/128) 지원 보드, [#129](https://github.com/ot4562-glitch/HUFS-One-AI/pull/129) 공개 메뉴 5/24/4, [#130](https://github.com/ot4562-glitch/HUFS-One-AI/pull/130) 합성 동아리 UI도 main. 새 UI/기존 메뉴/What-if 전체 범위 수락과는 구별. 다른 트랙의 새 합성 테스트/개선은 고정 분모를 늘리지 않음.
+
 ## 열린 PR — 수정·재검증 전 병합 금지
 
 | PR | 담당/현 상태 | 반드시 해결할 문제 |
@@ -27,7 +34,7 @@
 | [#131](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | 이의상, CHANGES_REQUESTED | route unmount/remount 중 overlay GET 지연 응답·재진입 로딩 문제, REVIEWER capability 장애를 BETA로 오인하는 fail-open 위험. 최신 HEAD 재검토 필요 |
 | [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | 이의상, COMMENT/선행 대기 | #131 위의 stacked PR. 선행 수정·병합 뒤 main 기준 새 diff/CI/독립 승인, #137 실제 API 연동과 시연 매뉴얼 검증 |
 | [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) | 박준영, DRAFT+CHANGES_REQUESTED | 시간표 저장 HTML 손상 마지막 행 조용한 누락, 행별 학기 근거. 무단 크롤링/원문 외부 업로드 없음 |
-| [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) | 유지관리 도구, 비작성자 리뷰·CI 대기 | 병합 PR 브랜치만 보수적으로 분류하는 **dry-run 기본** CLI. 적용은 별도 명시 및 원격 재검증, 실제 삭제 전 작업자 worktree/복구 확인 |
+| [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) | 유지관리 도구, **HEAD 53039bd CI 3/3 SUCCESS · 독립 리뷰 0건, 미병합** | 병합 PR 브랜치만 보수적으로 분류하는 **dry-run 기본** CLI. 적용은 별도 명시 및 원격 재검증, 실제 삭제 전 작업자 worktree/복구 확인 |
 
 CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는다. 최신 상태는 각 PR 화면에서 재확인한다.
 
@@ -42,7 +49,7 @@ CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는�
 
 - 2026-11-03 재조회 원격 브랜치 **106개 = main 1 + 열린 PR 헤드 4(#131/#134/#138/#142) + 병합 PR 연계 86 + 미병합 종료 PR 연계 11 + PR 없는 백업/준비 4**. 병합 PR 86개는 **조건부 dry-run 후보**일 뿐, 작업자 worktree/후속 사용/복구 검증 전 자동 삭제를 허용하지 않는다.
 - **미병합 종료 11개**는 단순 병합 브랜치로 간주하지 않는다. 이전 조사에서 main 대비 고유 커밋 0개 5개, 별도 고유 커밋이 있는 6개를 확인했으므로 대체 구현/참조 검증 전 보존. 백업·준비 4개도 검수 전 보존.
-- 실제 원격 브랜치 **삭제 0건**. [PR #142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)에 안전한 후보 분류/명시적 삭제 CLI와 Node 독립 단위 테스트 **4/4 PASS(격리본)**를 제출했고, GitHub PR CI/비작성자 리뷰·실 Private 원격 dry-run은 별도 검증 대기. **main의 제품 코드·CI 변경 없음**. 현재 GitHub 연결에는 refs 삭제 기능이 없어 원격 삭제를 실행했다고 주장하지 않는다.
+- 실제 원격 브랜치 **삭제 0건**. [PR #142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)에 안전한 후보 분류/명시적 삭제 CLI와 Node 독립 단위 테스트 **4/4 PASS(격리본)**를 제출했고, 최신 PR HEAD `53039bd`는 GitHub 합성·PG·Chrome **3/3 SUCCESS**. 독립 리뷰/실 Private 원격 dry-run은 별도 검증 대기. **이 정리 회차의 main 제품 코드·CI 변경 없음**. 현재 GitHub 연결에는 refs 삭제 기능이 없어 원격 삭제를 실행했다고 주장하지 않는다.
 
 ## 검증·재현
 
