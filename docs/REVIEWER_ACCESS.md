@@ -27,7 +27,7 @@
 - 신규 `GET /api/reviewer/capabilities`는 **활성 초대가 검증된 REVIEWER에게만** 학생용 10개 화면 범주(TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS)를 반환한다. 웹 화면과의 실제 연결은 이의상 UI 트랙의 후속 작업으로 관리한다.
 - 기존 BOOKMARK/MARK_READ/CHECKLIST/EXPERIENCE/APPLICATION_DRAFT/SIMULATE_APPLICATION 외에 SET_INTERESTS(공유 24 TopicCode), SET_DESIRED_JOBS, PLAN_COURSE, SET_SEARCH, SET_NOTIFICATIONS, RESET_SANDBOX를 각 reviewer·invite·합성 프로필별로 격리한다. 초기 구현은 메모리 샌드박스이고 **심민성 통합 PR #58에 옵션형 PostgreSQL 영속 adapter**를 추가했다(실 운영 DB 적용·실 Google 로그인은 별도). 타 계정/실제 학생 데이터·실제 지원·외부 요금 호출은 차단.
 - session/redeem의 `readOnly:false,sandboxOnly:true`는 **합성 sandbox 안에서만 수정 가능**한 접근을 뜻한다. `actualBrowserUiVerified:false`가 표시되는 한 공개 사용 준비 완료로 판정하지 않는다.
-- 이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)가 웹 프런트 화면/인증 흐름/접근성 담당, 심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)이 OIDC·REST·DB·sandbox/권한 담당, 이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)가 Cloud 및 모든 NCP provider 호출/운영 담당. [운영 요금·시기](NCP_OPERATIONS_2026.md).
+- 이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)가 웹 프런트 화면/인증 흐름/접근성 담당, 심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)이 OIDC·REST·DB·sandbox/권한 담당, 이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)는 **비코드 Cloud 계정·크레딧/권한·요금·운영** 담당. 모든 NCP SDK·provider HTTP 호출·Laya worker 및 운영 자동화 코드는 **심민성 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)/[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)/[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)** 전담. [운영 요금·시기](NCP_OPERATIONS_2026.md).
 
 ## 1. 심사자 이메일을 사전에 모르는 공용 초대장
 
