@@ -5,7 +5,12 @@
 import {readFileSync} from 'node:fs';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
+import {createLocalJWKSet,exportJWK,generateKeyPair,SignJWT} from 'jose';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import {createPostgresGoogleAuth} from '../../apps/api/src/auth-postgres.js';
+import {createIntegratedApi} from '../../apps/api/src/integration.js';
+import {closedRepository} from '../../apps/api/src/repository.js';
+import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
 import {PostgresPersonalStateStore,PersonalStateDenied} from '../../apps/api/src/db/personal-state-postgres.js';
 import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-postgres.js';
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
@@ -955,4 +960,87 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_inputs`)).rows[0]?.n).toBe(0);
   });
 
+  it('restores PostgreSQL BETA auth across API instances and enforces shared revocation, limits and CSRF',async()=>{
+    await admin.query(`
+      CREATE ROLE hufs_test_auth_sessions LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_auth_admission LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      GRANT USAGE ON SCHEMA public TO hufs_test_auth_sessions,hufs_test_auth_admission;
+      GRANT SELECT,INSERT,DELETE ON google_login_attempts TO hufs_test_auth_sessions;
+      GRANT SELECT,INSERT,UPDATE ON google_app_sessions TO hufs_test_auth_sessions;
+      GRANT SELECT ON beta_school_proofs TO hufs_test_auth_admission;
+    `);
+    const sessions=poolFor(connectionUrl(),'hufs_test_auth_sessions');
+    const admission=poolFor(connectionUrl(),'hufs_test_auth_admission');
+    const at=new Date(),expires=new Date(at.getTime()+600_000).toISOString();
+    const origin='https://synthetic-auth.example.test',clientId='synthetic.apps.googleusercontent.com';
+    const subject='SYN-PG-AUTH',email='synthetic-pg-auth@hufs.ac.kr';
+    const pair=await generateKeyPair('RS256',{extractable:true});
+    const jwks=createLocalJWKSet({keys:[{...await exportJWK(pair.publicKey),kid:'synthetic-pg-auth',alg:'RS256',use:'sig'}]});
+    let nonce='',exchanges=0;
+    const config={pools:{sessions:adapter(sessions),admission:adapter(admission),attempts:adapter(limiter)},
+      attemptDigestKey:randomBytes(32),google:{clientId,allowedOrigin:origin,
+        redirectUri:origin+'/api/auth/google/callback',now:()=>at,
+        verifyIdToken:createGoogleIdTokenVerifier({clientId,jwks,now:()=>at}),
+        exchangeCode:async()=>{
+          exchanges++;return new SignJWT({sub:subject,email,email_verified:true,hd:'hufs.ac.kr',nonce})
+            .setProtectedHeader({alg:'RS256',kid:'synthetic-pg-auth'}).setIssuer('https://accounts.google.com')
+            .setAudience(clientId).setIssuedAt(Math.floor(at.getTime()/1000)-1)
+            .setExpirationTime(Math.floor(at.getTime()/1000)+600).sign(pair.privateKey);
+        }}};
+    const make=()=>createIntegratedApi({allowedOrigin:origin,repository:closedRepository,
+      googleAuth:createPostgresGoogleAuth(config),now:()=>at.toISOString()});
+    const first=make();let second=make();
+    const cookie=(response:{headers:Record<string,unknown>},name:string)=>{
+      const raw=response.headers['set-cookie'],all=Array.isArray(raw)?raw:[raw];
+      return String(all.find(v=>typeof v==='string'&&v.startsWith(name+'='))??'').split(';')[0]!;
+    };
+    const begin=async()=>{
+      const response=await first.inject({url:'/api/auth/google/start?intent=BETA',remoteAddress:'127.0.0.81'});
+      expect(response.statusCode).toBe(303);
+      const url=new URL(String(response.headers.location));nonce=url.searchParams.get('nonce')!;
+      return {url:'/api/auth/google/callback?state='+url.searchParams.get('state')+'&code=SYN-CODE',
+        headers:{cookie:cookie(response,'__Host-hufs_login')}};
+    };
+    try{
+      // Signed Workspace hd alone cannot grant BETA without a pre-existing approval.
+      expect((await first.inject(await begin())).statusCode).toBe(403);
+      await admin.query(`INSERT INTO beta_school_proofs(google_subject,school_email,method,
+        proof_verified_at,proof_expires_at,approved_at,approved_until)
+        VALUES($1,$2,'SIGNED_WORKSPACE',$3,$4,$3,$4)`,[subject,email,at.toISOString(),expires]);
+      const pending=await begin(),login=await first.inject(pending);
+      expect(login.statusCode).toBe(303);
+      await second.close();second=make(); // reconstruct using only durable state
+      const bearer=cookie(login,'__Host-hufs_session'),headers={cookie:bearer};
+      expect(String(login.headers['set-cookie'])).toContain('HttpOnly; Secure; SameSite=Lax');
+      expect(String(login.headers['set-cookie'])).not.toContain('Domain=');
+      expect((await second.inject({url:'/api/auth/session',headers})).json()).toMatchObject({role:'BETA',actorId:'google:'+subject});
+      const before=exchanges;
+      expect((await second.inject(pending)).statusCode).toBe(403);
+      expect(exchanges).toBe(before); // one-time state consumed across replicas
+      expect((await second.inject({method:'POST',url:'/api/auth/logout',headers,payload:{}})).statusCode).toBe(403);
+      expect((await first.inject({url:'/api/auth/session',headers})).statusCode).toBe(200);
+      await expect(admission.query('UPDATE beta_school_proofs SET revoked_at=clock_timestamp()'))
+        .rejects.toMatchObject({code:'42501'});
+      await admin.query('UPDATE beta_school_proofs SET proof_expires_at=$2 WHERE google_subject=$1',
+        [subject,new Date(at.getTime()+1).toISOString()]);
+      config.google.now=()=>new Date(at.getTime()+2);
+      const expired=make();
+      try{expect((await expired.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);}
+      finally{await expired.close();}
+      config.google.now=()=>at;
+      await admin.query('UPDATE beta_school_proofs SET proof_expires_at=$2 WHERE google_subject=$1',[subject,expires]);
+      await admin.query('UPDATE beta_school_proofs SET revoked_at=$2 WHERE google_subject=$1',[subject,at.toISOString()]);
+      expect((await second.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);
+      expect((await first.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);
+      // Restore only this synthetic operator fixture to exercise durable logout separately.
+      await admin.query('UPDATE beta_school_proofs SET revoked_at=NULL WHERE google_subject=$1',[subject]);
+      const csrf=(await second.inject({url:'/api/auth/csrf',headers})).json().csrfToken as string;
+      expect((await second.inject({method:'POST',url:'/api/auth/logout',payload:{},
+        headers:{...headers,origin,'x-csrf-token':csrf}})).statusCode).toBe(204);
+      expect((await first.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);
+      const start={url:'/api/auth/google/start?intent=BETA',remoteAddress:'127.0.0.82'};
+      for(let i=0;i<10;i++)expect((await (i%2?first:second).inject(start)).statusCode).toBe(303);
+      expect((await first.inject(start)).statusCode).toBe(429);
+    }finally{await first.close();await second.close();}
+  });
 });
