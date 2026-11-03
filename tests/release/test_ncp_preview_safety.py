@@ -105,5 +105,56 @@ class NcpPreviewSafetyTests(unittest.TestCase):
         self.assertIn("Source port 5174", self.deploy)
 
 
+
+    def test_real_zip_validator_accepts_allowlist_and_denies_malicious_members(self):
+        """Run only the embedded pure-Python ZIP validator, never privileged deploy."""
+        import stat
+        import sys
+        import tempfile
+        import warnings
+        import zipfile
+        with tempfile.TemporaryDirectory() as directory:
+            validator = self.deploy.split("python3 - \\"$sealed\\" <<'PY'\\n", 1)[1].split("\\nPY\\n", 1)[0]
+            for kind in ("valid", "duplicate", "traversal", "symlink"):
+                path = Path(directory) / f"{kind}.zip"
+                with zipfile.ZipFile(path, "w") as archive:
+                    archive.writestr("package-lock.json", "{}")
+                    archive.writestr("apps/web/src/main.tsx", "export {}")
+                    archive.writestr("infra/ncp/deploy-preview.sh", "# synthetic")
+                    if kind == "duplicate":
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore", UserWarning)
+                            archive.writestr("package-lock.json", "forbidden overwrite")
+                    elif kind == "traversal":
+                        archive.writestr("apps/web/src/../../../outside", "forbidden path")
+                    elif kind == "symlink":
+                        entry = zipfile.ZipInfo("apps/web/src/linked")
+                        entry.create_system = 3
+                        entry.external_attr = (stat.S_IFLNK | 0o777) << 16
+                        archive.writestr(entry, "../private")
+                result = subprocess.run([sys.executable, "-c", validator, str(path)],
+                                        capture_output=True, text=True, check=False)
+                with self.subTest(kind=kind):
+                    self.assertEqual(result.returncode == 0, kind == "valid",
+                                     result.stdout + result.stderr)
+                    if kind != "valid":
+                        self.assertNotIn("Allowlisted ZIP paths", result.stdout)
+
+    def test_default_windows_plan_never_requires_host_keys_or_processes(self):
+        source = self.windows_deploy
+        plan = source.index("if (-not $Apply)")
+        self.assertLess(plan, source.index("$key = [System.IO.Path]::GetFullPath"))
+        self.assertLess(plan, source.index("Find-Exe $WinSCPExe"))
+        self.assertLess(plan, source.index("Prepare-NcpPreview.ps1') -Ref $Ref"))
+        self.assertIn("No resources, account, IP, SSH key, package, network", source)
+
+    def test_root_owns_preview_pointer_directory_not_untrusted_service(self):
+        self.assertIn("install -d -m 0755 -o root -g root /opt/hufs-one/preview/releases", self.bootstrap)
+        self.assertIn("sealed=$(mktemp", self.deploy)
+        self.assertIn('install -m 0600 -- "$archive" "$sealed"', self.deploy)
+        self.assertIn('unzip -q "$sealed"', self.deploy)
+        self.assertIn("Duplicate ZIP member names forbidden.", self.deploy)
+
+
 if __name__ == "__main__":
     unittest.main()
