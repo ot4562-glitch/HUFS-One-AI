@@ -8,6 +8,11 @@ import {blankDemoProfileValue,type DemoProfileValue} from '@hufs-one/contracts';
 import {PostgresDemoProfileStore} from '../../apps/api/src/modules/profiles/demo-profile-postgres.js';
 import {DemoProfileService,DemoProfileConflict} from '../../apps/api/src/modules/profiles/demo-profile.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
+import {createIntegratedApi} from '../../apps/api/src/integration.js';
+import {MemoryApiRepository} from '../../apps/api/src/repository.js';
+import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
+import {OwnerSessionController} from '../../apps/web/src/app/owner-session-controller.js';
+import type {VerifiedActor} from '../../apps/api/src/types.js';
 
 const RUN=process.env.HUFS_PG_DEMO_PROFILE_LIVE==='1';
 const role='hufs_test_demo_profile',password=randomBytes(24).toString('hex'),pools:Pool[]=[];
@@ -88,4 +93,67 @@ describe.skipIf(!RUN)('REAL PG18 independent synthetic demo-profile persistence'
     await expect(limited.query('DELETE FROM api_demo_profiles')).rejects.toMatchObject({code:'42501'});
     expect((await admin.query("SELECT to_regclass('api_self_profiles') AS personal")).rows[0]?.personal).toBeNull();
   });
+  it('proves browser → authenticated Fastify → actual PG18 → HTTP restart → actor revocation',async()=>{
+    const origin='https://synthetic.invalid',clock='2026-11-03T00:00:00.000Z';
+    const team={role:'BETA' as const,actorId:'SYN-DEMO-REAL-E2E-A',
+      sessionIdHash:'H'.repeat(32),csrfToken:'C'.repeat(32),betaAllowed:true,
+      schoolMailProofExpiresAt:'2026-12-01T00:00:00.000Z',
+      sessionExpiresAt:'2026-12-01T00:00:00.000Z'};
+    let identity:VerifiedActor|null=team;
+    const launch=()=>createIntegratedApi({allowedOrigin:origin,
+      repository:new MemoryApiRepository({profiles:[]}),
+      auth:{verifySession:async()=>identity,revokeSession:async()=>{identity=null;}},
+      now:()=>clock,
+      demoProfile:new DemoProfileService(new PostgresDemoProfileStore(adapter(limited))),
+    });
+    let app=launch();
+    // Browser API uses the real integrated Fastify handler. Only host fetch is
+    // adapted to Fastify inject; storage is PostgreSQL18, not a memory fake.
+    const browser=()=>new HufsApiClient(async(url,init)=>{
+      const headers:Record<string,string>={};
+      new Headers(init.headers).forEach((v,k)=>{headers[k]=v;});
+      const response=await app.inject({url,method:init.method??'GET',
+        headers:{...headers,origin,cookie:'SYN-HTTP-SESSION'},
+        ...(init.body===undefined?{}:{payload:JSON.parse(String(init.body))})});
+      return new Response(response.body,{status:response.statusCode,
+        headers:{'content-type':'application/json'}});
+    });
+    try{
+      const a=browser(),guard=new OwnerSessionController(a);
+      await guard.initialize();expect(guard.getState().status).toBe('READY');
+      const first=await guard.runLatest('empty-demo',signal=>a.owner.readDemoProfile(signal));
+      expect(first?.profile).toMatchObject({version:0,value:blankDemoProfileValue()});
+      const written=await guard.runMutation(signal=>a.owner.saveDemoProfile({
+        expectedVersion:0,value:A},signal));
+      expect(written?.profile.version).toBe(1);
+      expect(written?.profile.value.earnedCreditUnits).toBe(0);
+      expect(written?.snapshot.version).toBe(1);
+      expect(written?.snapshot.namespace).toBe('EMPTY_DEMO');
+      // Session flips while the A controller remains open. A's session scope
+      // must refuse before trying to read actor B's new empty row.
+      identity={...team,actorId:'SYN-DEMO-REAL-E2E-B'};
+      expect(await guard.runLatest('empty-demo',signal=>a.owner.readDemoProfile(signal))).toBeNull();
+      expect(guard.getState().status).toBe('SIGNED_OUT');
+      expect((await browser().owner.readDemoProfile()).profile.version).toBe(0);
+      // HTTP server restarted; PG connection/actor data survives the process.
+      await app.close();app=launch();
+      identity=team;
+      const restarted=browser(),saved=await restarted.owner.readDemoProfile();
+      expect(saved.profile).toEqual(written?.profile);
+      expect(saved.snapshot).toEqual(written?.snapshot);
+      const reset=await restarted.owner.resetDemoProfile({expectedVersion:1});
+      expect(reset.profile.version).toBe(2);
+      expect(reset.profile.value).toEqual(blankDemoProfileValue());
+      expect((await browser().owner.readDemoProfile()).profile.version).toBe(2);
+      // Revocation and REVIEWER never fall back to owner storage.
+      identity=null;
+      await expect(browser().owner.readDemoProfile()).rejects.toMatchObject({code:'UNAUTHENTICATED'});
+      identity={role:'REVIEWER',actorId:'SYN-E2E-REVIEWER',
+        sessionIdHash:'R'.repeat(32),csrfToken:'C'.repeat(32),
+        sessionExpiresAt:team.sessionExpiresAt,verifiedEmail:'reviewer@example.invalid',
+        identityProofExpiresAt:team.sessionExpiresAt};
+      await expect(browser().owner.readDemoProfile()).rejects.toMatchObject({code:'FORBIDDEN'});
+    }finally{await app.close();}
+  });
+
 });

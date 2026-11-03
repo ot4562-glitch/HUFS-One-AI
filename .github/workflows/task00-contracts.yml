@@ -125,6 +125,7 @@ jobs:
             /packages/fixtures/negative/
             /tests/api/
             /apps/api/
+            /apps/web/
             /infra/sql/
             /packages/core/
             /tools/strip_build_sourcemaps.mjs
@@ -192,6 +193,7 @@ jobs:
             /packages/core/
             /tests/api/
             /apps/api/
+            /apps/web/
             /infra/sql/
       - name: Refuse private student input in revision SQL job
         run: |

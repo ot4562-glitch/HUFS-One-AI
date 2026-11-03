@@ -5,6 +5,7 @@ import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/
 import type {BoardPort} from './features/applications/boardPort.js';
 import type {ClubPort} from './features/clubs/useClubBoard.js';
 import type {OverlayPort} from './features/settings/overlayCompare.js';
+import type {OwnerDemoProfilePort} from './features/owner-demo/OwnerDemoProfile.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -36,6 +37,8 @@ export interface AppServices {
   readonly clubs?: ClubPort;
   /** #85 BETA temporary choices; never set for a REVIEWER session (sandbox settings instead). */
   readonly overlay?: OverlayPort;
+  /** #132 verified BETA owner, independent of S01–S05 and REVIEWER. */
+  readonly ownerDemoProfile?: OwnerDemoProfilePort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;
@@ -90,10 +93,11 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       navigate={navigate}
       transportLabel={transportLabel}
       // Reviewer enrollment is never a student selector; the local demo remains a separate synthetic-only route.
-      selector={path === '/reviewer/invite' ? null : path === '/local-demo' && LocalWorkbench
+      selector={path === '/demo-profile' && services.ownerDemoProfile ? null
+        : path === '/reviewer/invite' ? null : path === '/local-demo' && LocalWorkbench
         ? <a href="/" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/');}}}>기존 S01–S05 시연으로 돌아가기</a>
         : <><DemoSelector state={state} onSelect={s => void controller.select(s)} />{LocalWorkbench&&<a href="/local-demo" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/local-demo');}}}>로컬 합성 계정 실험실 열기</a>}</>}
-      status={path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
+      status={(path === '/demo-profile' && services.ownerDemoProfile) || path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <h1 ref={heading} tabIndex={-1} className="page__title">{page.title}</h1>
