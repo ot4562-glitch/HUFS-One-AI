@@ -30,6 +30,8 @@
 
 **심민성 #27 현재 선행 연결:** [#168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) PostgreSQL 인증 factory·새 API 인스턴스/철회 HTTP 시험, 현 HEAD CI 3/3 PASS·qamarrchae 독립 승인 대기/미병합. [검증 범위](../STATUS.md). 타인 UI/추천/학업 브랜치·이서연 비코드 운영 배정 및 고정 수락률 변경 없음.
 
+**#162 실제 SQL 검증 보완:** 심민성이 HEAD `4699269`에서 기존 Owner opt-in PG 시험 4개를 필수 CI로 연결했다(포트/빈 DB 보호 유지). Owner 4/4·전체 PG 46/46 PASS, 새 HEAD 독립 재승인 전 미병합. [검증 범위](../STATUS.md). UI #152·공식 RulePack/운영 수락과 구분한다.
+
 **팀원 5명 ≠ 실자료 제출 5명.** 실제 학업/Forms 자료 제출 대상은 **심민성·이의상·김채윤·이서연 4명**으로, 박준영은 학업 코어 담당일 뿐 이번 실 4인 자료 제출 대상이 아닙니다. 별도의 빈 SYNTHETIC 계정·S01~S05·REVIEWER도 실 4인과 섞지 않습니다. 당사자 목적별 동의 확인과 Git 게시/클라우드/공개 사용 동의는 [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 기준으로 구분합니다.
 
 <!-- full-issue-roster-20261103:start -->
