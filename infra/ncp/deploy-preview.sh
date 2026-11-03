@@ -110,5 +110,5 @@ if [[ "$ok" != yes ]]; then
   exit 1
 fi
 echo "OK: SYNTHETIC PREVIEW listens ONLY on 127.0.0.1:5173."
-echo "Windows PuTTY tunnel: Source port 5173 -> Destination 127.0.0.1:5173, then browse http://127.0.0.1:5173"
+echo "Windows PuTTY tunnel: Source port 5174 -> Destination 127.0.0.1:5173, then browse http://127.0.0.1:5174"
 echo "NO public domain, production OIDC, real data, NCP OCR, Laya or paid AI was enabled."
