@@ -16,13 +16,19 @@ command -v node >/dev/null && command -v npm >/dev/null || { echo "Run bootstrap
 archive=/home/hufs-admin/ncp-preview.zip
 [[ -f "$archive" && ! -L "$archive" ]] || { echo "Expected WinSCP ZIP at $archive (not a link)." >&2; exit 1; }
 [[ $(stat -c '%U' "$archive") == 'hufs-admin' ]] || { echo "The ZIP must belong to hufs-admin." >&2; exit 1; }
+[[ $(stat -c '%s' "$archive") -le 33554432 ]] || { echo "ZIP size limit exceeded." >&2; exit 1; }
+# The SFTP owner can mutate the upload. Freeze bytes in a root-only temp file
+# BEFORE digest verification, ZIP inspection and extraction (TOCTOU defense).
+sealed=$(mktemp /tmp/hufs-preview-reviewed.XXXXXXXX.zip)
+trap 'rm -f -- "$sealed"' EXIT
+install -m 0600 -- "$archive" "$sealed"
 expected=$(echo "$1" | tr 'A-F' 'a-f')
-actual=$(sha256sum "$archive")
+actual=$(sha256sum "$sealed")
 actual=$(echo "$actual" | cut -d ' ' -f 1)
 [[ "$actual" == "$expected" ]] || { echo "ZIP SHA256 MISMATCH. Refusing deploy." >&2; exit 1; }
 
 # Do not unzip until every entry has passed allowlist, traversal, symlink and size checks.
-python3 - "$archive" <<'PY'
+python3 - "$sealed" <<'PY'
 import pathlib, stat, sys, zipfile
 p=pathlib.Path(sys.argv[1])
 if p.stat().st_size>32*1024*1024:
@@ -43,6 +49,8 @@ with zipfile.ZipFile(p) as z:
     if len(entries)>1200 or sum(i.file_size for i in entries)>150*1024*1024:
         sys.exit("ZIP content too large.")
     names={i.filename for i in entries}
+    if len(names)!=len(entries):
+        sys.exit("Duplicate ZIP member names forbidden.")
     for needed in ("package-lock.json","apps/web/src/main.tsx","infra/ncp/deploy-preview.sh"):
         if needed not in names:
             sys.exit("Missing required allowlisted file: "+needed)
@@ -71,7 +79,7 @@ old=''
 if [[ -L "$base/current" ]]; then old=$(readlink "$base/current"); fi
 if [[ ! -d "$release" ]]; then
   mkdir -p "$release"
-  unzip -q "$archive" -d "$release"
+  unzip -q "$sealed" -d "$release"
   chown -R hufs-preview:hufs-preview "$release"
 fi
 cd "$release"
