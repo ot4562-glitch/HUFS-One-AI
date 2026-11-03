@@ -6,6 +6,7 @@ import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
 import {PostgresProviderResults} from '../../apps/api/src/modules/ai/provider-results-postgres.js';
+import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const RUN=process.env.HUFS_PG_PROVIDER_INTEGRATION_LIVE==='1';
@@ -177,4 +178,42 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     await expect(results.query('SELECT ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
     await expect(budget.query('SELECT * FROM ai_budget_jobs')).rejects.toMatchObject({code:'42501'});
   });
+  it('proves BETA browser client → approved metadata → real HTTP → actual PG budget → restart → revoked denial',async()=>{
+    const f=await seed('BROWSER'),s=await start(f.subject),auth=await login(s);
+    const browser=(srv:TestServer)=>new HufsApiClient(async(path,init)=>{
+      const headers:Record<string,string>={cookie:auth.cookie,origin};
+      new Headers(init.headers).forEach((value,name)=>{headers[name]=value;});
+      return fetch(srv.base+path,{method:init.method,headers,
+        ...(init.body===undefined?{}:{body:String(init.body)}),redirect:'manual'});
+    });
+    const api=browser(s);
+    const approved=await api.owner.getApprovedProviderInputs();
+    expect(approved).toMatchObject({items:[{inputRef:'SYN-INPUT',operation:'HCX_007',
+      task:'opportunity_terms',asOf:f.asOf}]});
+    const selection=approved.items[0]!;
+    expect(JSON.stringify(approved)).not.toMatch(/safe_packet|media_bytes|privacy_review_ref|source_refs|actor_id/);
+    const first=await api.owner.submitApprovedProvider(selection,'opportunity-terms','KEY-BROWSER-UI');
+    expect(first).toMatchObject({state:'NEEDS_REVIEW',provenance:'LIVE'});
+    const saved=await api.owner.readApprovedProviderJob(first.jobId,'opportunity-terms');
+    expect(saved).toMatchObject({state:'NEEDS_REVIEW',billing:'SETTLED',
+      provenance:'CANDIDATE_CACHE',candidate:{task:'opportunity_terms',
+        reviewState:'NEEDS_REVIEW',reviewRequired:true}});
+    expect(saved.candidate.citations[0]!.quote).toBe('Synthetic approved notice');
+    expect(s.calls).toEqual(['TOKENIZE','INFER']);
+    expect(await job(f.actor,'KEY-BROWSER-UI')).toMatchObject({state:'SETTLED',charged_units:'143'});
+    await s.stop();
+    const restarted=await start(f.subject),again=browser(restarted);
+    expect(await again.owner.readApprovedProviderJob(first.jobId,'opportunity-terms')).toEqual(saved);
+    expect((await again.owner.submitApprovedProvider(selection,'opportunity-terms','KEY-BROWSER-UI'))
+      .state).toBe('NEEDS_REVIEW');
+    expect(restarted.calls).toEqual([]);
+    await admin.query(`INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref)
+      VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-REVOKED')`,[f.subject+'-RIGHTS']);
+    expect(await again.owner.getApprovedProviderInputs()).toEqual({items:[]});
+    await expect(again.owner.readApprovedProviderJob(first.jobId,'opportunity-terms'))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(restarted.calls).toEqual([]);
+    await restarted.stop();
+  },30000);
+
 });
