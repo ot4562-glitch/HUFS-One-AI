@@ -2,6 +2,17 @@
 
 **2026-11-03 조사본 · 목적: ‘코드를 많이 만들었다’가 아니라 ‘실제 사용 가능한 서비스를 안전하게 완성하고, NCP에서 복원 가능하게 운영한다’.** 비용/실학생·학교 자료/외부 AI/배포는 사용자 사전 승인 전 실행 금지. 현 상태의 최종 운영 승인 여부는 [STATUS](../STATUS.md)·[#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)·[#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)로 판단한다.
 
+## 2026-11-03 실제 PR 검토 후 최우선 코드 경로
+
+- [x] [#153](https://github.com/ot4562-glitch/HUFS-One-AI/pull/153) **중앙 메뉴 매니페스트 UI 하위 완료:** 현재 HEAD 비작성자 승인·3/3 CI 뒤 main `9b5cb81a` 병합. 기존 HUFSAbility 24개 기능 오활성화는 정정했지만 6개 관찰 영역 누락/스크린리더·운영 인수는 여전히 #124/#141 OPEN.
+- [ ] [#152](https://github.com/ot4562-glitch/HUFS-One-AI/pull/152) **P2 REQUEST_CHANGES:** 불량 `overlap.rowImpacts` 원소를 Zod/구조 검증 없이 사용하여 NULL payload 등에서 화면 예외 가능. 작성자가 음성 테스트/검증 후 [#151](https://github.com/ot4562-glitch/HUFS-One-AI/pull/151)·[#154](https://github.com/ot4562-glitch/HUFS-One-AI/pull/154)·[#155](https://github.com/ot4562-glitch/HUFS-One-AI/pull/155)와 **최신 main 기반 통합**, CI·비작성자 새 HEAD 리뷰. 원래 3/3 CI는 병합 충돌/새 결과를 자동 수락하지 않는다.
+- [ ] [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) **직접적인 owner/AI 런타임 코드 병목:** 83개 파일/+6,757줄 Draft·merge conflict, 이전 #145/#148/#131과 중복. 기존 로컬 worktree/기존 브랜치 보존·중복 분리 후 provider authority/PG 원자 비용→owner APIs→격리 worker/Laya→private deployment를 작은 독립 PR로 만들고 실제 CI/인적 승인 받기.
+- [ ] [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27) **운영 동작의 근본 병목:** `APP_ENV=production`에서 API fail-closed. 실제 Google OIDC/외대 메일 OTP·초대/세션·CSRF·영속 PG/RLS/철회·HTTPS 및 원본 보안 증거 없이는 throw를 단순 제거하지 않는다.
+- [ ] **개발로만 못 푸는 출시 결정:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 보호 Git 파일 6경로/기존 privacy 2 FAIL의 게시·공유 권리, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 별도 독립 사람 gold 0/200, [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)/[#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) 승인된 NCP 크레딧·콘솔/호스트 영수증과 [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 운영 종단 실증. **RELEASE_BLOCKED** 유지.
+- [ ] **#156 NCP Preview Draft:** Windows PowerShell 원커맨드 opt-in/SFTP·Ubuntu bootstrap·한국 Geo 설계 HEAD CI 3/3 성공이나 비작성자 APPROVED 0, 실제 Windows·Ubuntu·NCP 과금/네트워크 실행 **NOT_RUN**. 추후 별도 실증 승인 전 production 출시로 표시 금지.
+
+**즉시 실행 전략:** Codex는 우선 코딩으로 해결 가능한 `#150` 통합/분해 및 `#27` 실 인증·영속 API의 **검증 가능한 최소 단위**를 진행하고, 동시에 UI 담당자는 현재 자신의 #152 P2·공통 브랜치 충돌을 해소한다. 자료 접근/운영 승인이 없는 부분은 `UNKNOWN/PENDING/RELEASE_BLOCKED`로 남기며 영수증 담당자에게 의사결정만 요청한다. **서비스 완성 → 승인된 NCP 배포 → 운영 유지보수** 순서를 유지한다.
+
 ## 왜 50%대가 오래 지속되는가?
 
 [TEAM_PROGRESS](TEAM_PROGRESS.md) 숫자는 소프트웨어·제품 완성도 점수가 아니라 **담당자별 고정 ‘복합 수락 게이트’ 통과 수 / 분모**이다. 일부라도 미완료면 0점이어서 PR·코드·테스트가 추가되어도 증가하지 않는다.
@@ -22,7 +33,7 @@
 
 | 축 | 관찰한 현재 상태 | 수락하려면 |
 | --- | --- | --- |
-| **A 코드 기능(합성 기준)** | 여러 코어·계약·UI main, #149 WIS CSV main. **#134**는 CLOSED/미병합, **#151–155**는 열린 UI PR, **#150** provider/owner/Laya 대형 Draft·main 충돌 | 깨끗한 고유 diff·공유 스키마 검증·비작성자 승인·같은 HEAD CI; 모든 필수 데모 메뉴에 실제 기능 또는 명확한 🚫 상태, 재현 가능한 합성 전체 시나리오 |
+| **A 코드 기능(합성 기준)** | 여러 코어·계약·UI main, #149 WIS CSV main. **#134**는 CLOSED/미병합, **#153은 main 병합**; **#151/#152/#154/#155**는 열린 충돌 UI PR, **#150** provider/owner/Laya 대형 Draft·main 충돌 | 깨끗한 고유 diff·공유 스키마 검증·비작성자 승인·같은 HEAD CI; 모든 필수 데모 메뉴에 실제 기능 또는 명확한 🚫 상태, 재현 가능한 합성 전체 시나리오 |
 | **B 실제 연동(운영 전)** | 현재 `apps/api/src/main.ts`가 `APP_ENV=production`에서 **실행 중단**. Google OIDC/학교메일·운영 PG/검증된 owner Laya/AI 서비스·TLS 실측 불가 | 운영 composition root/인가/RLS·OIDC 메일 소유·HTTPS·접근권·영속 이력·한국 IP Web Edge/원본 차단 실증과 CI/실기기 |
 | **C 품질/원본 권리** | #46 privacy **2 FAIL**, 기관 원본/전송 이용허가 및 실제 동의/철회 미확정, #61 독립 gold **0/200**, OCR 실검 20/시간 근거 12 시나리오 미수락 | 인적 권리 증거, 재현 가능한 데이터 lineage/철회, 독립 추천·OCR/Temporal 평가, 실제 권한 철회/동시 사용자/차단 실패 방어 |
 | **D NCP 배포/유지보수** | NCP 운영 콘솔·호스트/키/실비용·SSL/DB·백업/rollback 증거 미확정. [NCP 실행서](../infra/ncp/README.md)와 [Windows 원커맨드 합성 미리보기](../infra/ncp/Deploy-NcpPreview.ps1)(기본 계획-only, 명시적 -Apply) 모두 **미병합 PR 코드/실서버 NOT_RUN** | 실제 계정/크레딧·ACG/NACL·도메인/TLS·원본 직접IP 차단·배포/복원·비밀 관리·모니터링/비용·정기 패치·장애 대응 영수증 |
@@ -43,7 +54,7 @@
 
 1. **심민성/이의상 — #150 충돌과 #134 CLOSED/미병합 기능 이관 검증:** 선행 #145/#148/#131 squash 병합분을 재포함하지 않고 별도 고유 diff로 분리, actual main 통합·권한/SQL/worker 교차 PR 리뷰, CI. **큰 PR을 무조건 병합하지 않는다**. 실 API 재사용과 UI contract 완성이 실제 진척.
 2. **심민성 — 먼저 운영 API entrypoint/인증·권한/영속 DB 계약:** prod throw를 무단 제거하지 말고 Google OIDC/JWKS/외대메일·초대/세션·RLS, 철회/actor/asOf, 실제 HTTPS에서 모든 HTML/JS/asset 접근경계까지 비작성자 검수.
-3. **이의상·박준영 — UI/학업 필수 마감 경계:** #124/#141 메뉴 전수·접근성, #81 나란히 계획/#82 What-if/#144 현재 이중전공 구분·#134 빈 시연 계정. 박준영은 공식 RulePack·중복 인정 검수, #149 CSV는 로컬 하위 완료이며 **#27/#133 저장본별 권리**는 미완료.
+3. **이의상·박준영 — UI/학업 필수 마감 경계:** #124/#141 남은 6개 영역·접근성 (#153 중앙 메뉴 하위 완료), #81 나란히 계획/#82 What-if/#144 현재 이중전공 구분·#134 빈 시연 계정. 박준영은 공식 RulePack·중복 인정 검수, #149 CSV는 로컬 하위 완료이며 **#27/#133 저장본별 권리**는 미완료.
 4. **김채윤 + 심민성·이의상 독립 검수 — 추천 실품질:** 소스 권리/기한·독립 gold 200건(#61). 김채윤 작성 라벨과 **독립 수락 라벨**은 다른 증거.
 5. **심민성 #46, 이서연 #12/#22 — 동시에 처리할 외부 의존:** 원본의 최초 Git 게시·현행 목적별 동의/학과 자료 이용권(실기관/당사자 확인)과 NCP 요금·VM/키·IAM/TLS/실호스트(승인 후) 영수증 확보. **코드와 콘솔 실측은 각 담당 분리**.
 6. **서비스 게이트 #89 — 독립 QA·운영:** 네트워크·한국 IP wall·원본 bypass·Google 로그인 실패/철회·동시성·429/503/과금 불명·CPU/OOM, 백업/복원·로그/보안 패치·오프라인 승인, 합격 시에만 공개 443과 유지보수 모드 진입.
