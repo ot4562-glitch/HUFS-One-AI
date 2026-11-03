@@ -14,6 +14,15 @@
 
 **2026-11-03 최신 GitHub 교차 검증:** [#153](https://github.com/ot4562-glitch/HUFS-One-AI/pull/153) 중앙 메뉴 매니페스트 UI는 비작성자 APPROVED·HEAD CI 3/3 후 **main `9b5cb81a` 병합**(이의상 #124/#141 하위 [x]). [#151](https://github.com/ot4562-glitch/HUFS-One-AI/pull/151)·[#154](https://github.com/ot4562-glitch/HUFS-One-AI/pull/154)·[#155](https://github.com/ot4562-glitch/HUFS-One-AI/pull/155)는 #153 병합 이후 merge conflict와 COMMENT, [#152](https://github.com/ot4562-glitch/HUFS-One-AI/pull/152)는 부정 `rowImpacts` P2 **REQUEST_CHANGES**. 이의상이 최신 main/서로 겹치는 화면을 통합하고 새 HEAD CI/리뷰를 받아야 함. [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134)는 **CLOSED/미병합**; 고유 기능은 #132에서 별도. 심민성 [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) provider/PG/Laya 대형 WIP Draft/충돌, [#156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156) Ubuntu/Windows 합성 SSH Preview Draft/독립 승인 대기(실 NCP NOT_RUN). 이서연 NCP 비코드 역할/모든 하위 이슈 assignee 변경 없음. 전체 34개 이슈 중 근거로 **종결 가능 0**, 부분 완료만 해당 이슈 [x]로 기록.
 
+**2026-11-03 #150 분리·통합 의존성 (최신 코드 기준):** 모든 새 코드는 심민성 소유, 타인 UI 작업 트리는 보존한다. #145 wire·#148 budget SQL/adapter는 이미 main에 병합되어 재구현하지 않는다.
+
+1. **Provider 권한 → 원장 → 결과:** [#157](https://github.com/ot4562-glitch/HUFS-One-AI/pull/157) `provider-authority-postgres.ts`·`20261103_ai_provider_inputs.sql`의 actor/session·consent·SourceRevision/asOf·권리 철회 재검증을 먼저 수락. 이후 `provider-results-postgres.ts`·`20261103_ai_provider_results.sql`의 actor/session/epoch·`SETTLED` 결과 쓰기 및 RLS 부정시험을 독립 PR로; 마지막에 `provider-runtime.ts`·`provider-transport.ts`·`provider-postgres.ts`를 기존 `budget-postgres.ts`와 연결해 cancel/timeout/429/503/UNKNOWN_BILLING·replay를 합성 시험한다. **승인 없는 provider IO 기본 0건.**
+2. **Owner UI↔API:** `owner-double-major-{http,source,postgres}.ts`, `approved-revision-claims-postgres.ts`, `demo-profile-{http,postgres}.ts`, 관련 SQL/DTO는 #157 이후 권한·출처/학사 승인 계약과 서비스 세션 종단을 선행. #144 현재 이중전공과 #82 What-if는 별도.
+3. **Raster/OCR·Laya:** `packages/ai/src/{raster*,ocr-evidence,laya-*}.ts`, `infra/ai/raster-worker.mjs`, `infra/laya/*`는 승인 입력/결과 프로토콜 이후 worker 격리·CPU/RSS·취소/시간초과·late result·kill switch 단독 검증. 타 팀 core/UI 덮어쓰기 없음.
+4. **운영 composition root/배포:** `apps/api/src/main.ts` production 차단을 유지한 채 기존 OIDC/OTP/PG adapter를 실세션·CSRF·영속 철회·TLS/익명 자산 정책으로 안전하게 조립하는 별도 #27 PR; `infra/deploy/*` 및 #156 SSH-only preview는 그 이후 #46/#89·NCP 운영 #12/#22의 사람 승인까지 production 적용 금지.
+
+**현재 #157 상태:** 새 HEAD `93817f24` 합성 계약·일회용 PG·Chrome CI 3/3 SUCCESS, **최신 HEAD 비작성자 재승인 대기·OPEN/미병합**. #150 원본 83파일 Draft는 유지한다. UI 통합 권장 순서 #151 → #152(P2 strict schema) → #154 → #155, 각 담당자 새 HEAD CI·승인 필요.
+
 **2026-11-03 최신 역할 우선:** 이서연은 NCP 운영 담당만 유지하고 OCR/HCX/Laya 코드 등 모든 개발작업은 심민성에게 재배정했다. 기존 작업 이슈 #12/#22의 운영 범위와 #20/#88/#143의 구현 범위를 엄격히 구분한다. 이전 문서/과거 이슈의 혼합 배정은 효력 없음.
 
 **팀원 5명 ≠ 실자료 제출 5명.** 실제 학업/Forms 자료 제출 대상은 **심민성·이의상·김채윤·이서연 4명**으로, 박준영은 학업 코어 담당일 뿐 이번 실 4인 자료 제출 대상이 아닙니다. 별도의 빈 SYNTHETIC 계정·S01~S05·REVIEWER도 실 4인과 섞지 않습니다. 당사자 목적별 동의 확인과 Git 게시/클라우드/공개 사용 동의는 [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 기준으로 구분합니다.
