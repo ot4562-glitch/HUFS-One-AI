@@ -1,0 +1,43 @@
+# Local account implementation plan — #132 / #133
+
+Spec: owner goal attachment dated 2026-11-02 and GitHub #132/#133. Integration proposal: `feat/owner-integrated-20261102` (review-required PR; no release or deployment). Existing S01–S05, the original dirty checkout and protected private sources remain intact.
+
+Current authority: owner explicitly approved updating #137, then PR creation/review and merging eligible PRs, completed-issue handling and documentation updates. Earlier local-only checkpoints are historical. Current-head nonauthor approval, CI and relevant blockers remain merge gates; no deployment/paid calls/real-data processing is granted.
+
+Consumer follow-up: source/evidence redaction, ended-term 422 and half-credit validation plus explicit permission/hash-bound operator-saved curriculum import are implemented. New regressions failed before fixes; focused 6 files/72 tests, typecheck and API build PASS. UI parser/step and #138 HTML conversion remain collaborator-owned. HTTP robots restrictions are not relaxed by the manual route. PR137's prior head 2a6618a has 3/3 remote jobs SUCCESS; follow-up head CI must be checked separately.
+
+Architecture: add an explicitly SYNTHETIC local account workbench, backed by Fastify HTTP and strict Zod contracts, alongside the existing demo shell. A separate empty account and four synthetic owner fixtures exercise isolation; verified real owners are admitted only through a restricted, explicit identity/import registry. Reuse recommendation, notice and club pure cores. Missing transcripts, approved RulePacks and verified offerings remain UNKNOWN/NEEDS_REVIEW. Confirmed 4/4 consent for selected CLOVA processing, refined private NCP storage and reviewed pseudonymous presentation stays confirmed; identity matching, source reuse permission and historical Git publication are independent gates.
+
+## Tasks and file boundaries
+
+- [x] Synthetic account API/contracts implemented and tested:  `packages/contracts/src/local-accounts/`, `apps/api/src/modules/local-accounts/`, `apps/api/src/dev/local-account-main.ts`, focused API/contracts tests. Strict nullable inputs; revision CAS; server-authorized actor; CSRF; reset only empty demo; workspace cleanup; server recomputation using existing pure cores. Provide a loopback, explicit synthetic harness, disabled in production. Send final wire interface to UI implementer before UI integration.
+- [x] Synthetic local account UI implemented and browser-tested:  `apps/web/src/features/local-accounts/`, minimal shell/main integration, scoped CSS and UI tests. Entry next to selector; account switch and adjacent settings; save/cancel/reset confirmation; all derived views and reasons; errors/abort/epoch/revision checks; cross-tab invalidation; 360px/keyboard labels. HTTP client consumes API contract, no fixture-derived personalization fallback.
+- [x] Restricted intake and permission-gated public curriculum collector **implementation only** (actual collection BLOCKED):  new focused modules/scripts/tests under owning API/core/tools paths. Explicit identity attestation, hashes/versions and revocation; safe restricted registry; source-permission checked collection/normalization; course identity, credits, major, category, campus, cohort, term, URL, verified time, edition and collection status. Never infer identity from filenames/order/nicknames. Synthetic tests only; real source processing writes ignored local paths and logs aggregate counts.
+- [x] Synthetic integration and browser verification (not real auth/PG/NCP):  real HTTP and browser when available, focused tests then one integrated typecheck/API+web build/regression pass; preserve pre-existing `tsconfig.json`/`vitest.config.ts` edits. Review changed paths and checkpoint explicit files locally.
+- [x] Deliver one concise `docs/DEMO_MANUAL.md` and update the existing ignored owner acceptance ledger, with exact tested/skipped/blocked evidence.
+
+## Review focus
+
+Null credits versus zero; inconsistent double-major states; stale writes/reset replay; cross-account late reads; reset versus concurrent writes and multi-tab invalidation; revoked sessions and direct URL access; no confirmed offering/graduation inference; no identity mapping or personal records in Git/logs/browser assets. Tests exercise these at their owning boundary.
+
+Ruling: follow the user's explicit implementation directive and minimal-document preference; the supplied objective is the execution specification. No additional design approval round or interim PR.
+
+## Current integration checkpoint — 2026-11-02
+
+### Durable owner plan input handoff (#27/#81/#133)
+
+The existing `PLAN_INPUT` approved projection is the private operator's reviewed transcript/catalog/term RulePack input, not an approval of a student's editable draft plan. `apps/api/src/modules/academics/owner-study-plan-postgres.ts` reads that input and the current owner STUDY_PLAN rows in one repeatable-read snapshot through `PostgresApprovedOwnerReader`. The existing pure academic core computes the check. No new table, automatic review/import, academic algorithm, model or operational launcher is introduced.
+
+- [x] Focused SQL-protocol/HTTP tests cover persisted plan recomputation, null/malformed/foreign input, plan edits/deletion/addition, consent/source withdrawal, receipt expiry/replay and independent gate denial. Projection/SQL-rights-expiry-during-await regressions failed before the deadline fix. Five focused files / 58 tests PASS.
+- [x] Strictly validate the bounded reviewed payload and current workspace rows; derive a server plan version from the exact rows, never a browser expectation. Re-read source/consent/projection/workspace fingerprint before response. Catalog and plan receipts also expire at the earliest approved projection/SQL rights deadline and check completion time after awaits.
+- [x] Opt-in platform assembly for the approved owner catalog and study-plan source requires independent source authority, rights and approval gate. With no configuration the paths remain unavailable. Independent agent re-review found the deadline issue resolved and no further actionable finding; this is not a human GitHub approval.
+- [x] Focused regression, typecheck and API build PASS. Preserve a local checkpoint. This turn does not repeat the prior full suite/browser matrix; actual PostgreSQL binaries are absent, and SQL protocol fixtures do not prove real PostgreSQL/RLS behavior. Official RulePack, source rights, real owner identity/consent operation, independent current-HEAD human approval and release remain separate gates.
+
+### Earlier owner goal continuation checkpoint
+
+- [x] Reproduce PR #137's approval/board clock mismatch before and after the fixed demo date in `tests/api/synthetic-club-store.test.ts` (both failed before the fix).
+- [x] Keep synthetic moderation timestamps and board `asOf` on `DEMO_AS_OF` in the owner server adapter; keep real session checks and receipt expiry on the wall clock. Club core and collaborator UI unchanged by the fix. Focused API 15 PASS; independent agent static review found no actionable issue.
+- [x] Integrate main `54a9176` without discarding existing local commits (local merge `ce315ed`), then verify typecheck, API/web builds, installed Chromium synthetic account 9/9 and existing UI 12/12 browser checks. Python release 63 PASS / Node security 17 PASS. Actual initial full check and worker-timeout recovery are recorded in STATUS.md.
+- [x] Preserve a local reviewable checkpoint; no push, new PR or merge into main under this goal's current local-only boundary. The initial full check's 7 worker-start errors were recovered by running only the missing files with one worker: 66 PASS. Combined suite coverage: 1,773 PASS / 32 opt-in PG SKIP; retain the initial command failure in STATUS.md.
+
+Integrated current `main` (reviewer invite/graduation/sandbox and #117 core) with the isolated synthetic account workbench; resolved `App.tsx`/`main.tsx` conflicts. Repaired select accessible names and restored `packages/ui` typecheck/Vitest coverage. Typecheck, API/web builds, 429 focused Vitest tests and Chromium loopback E2E 9/9 PASS; the prior owner checkpoint also recorded API 796 PASS/32 optional live tests skipped. Actual official curriculum collection remains assigned to `taewangim-alt` in #133, pending reuse permission; one malformed original course ledger remains quarantined `NEEDS_REVIEW`. Four restricted real-owner profiles are distinct from four **invented** synthetic UI fixtures. `check:privacy` still blocks 2/173 checks due to six historically tracked protected files. Reviewer CI/approval and real Google/mail/NCP/PG are independent gates; neither #132 nor #133 nor release is 100% complete.

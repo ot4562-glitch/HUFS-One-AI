@@ -1,5 +1,9 @@
 # HUFS One AI | Architecture.md
 
+> **2026-11-02 UI/IA 설계 최신 결정(우선):** [텍스트 학생용 HUFSAbility 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)는 데스크톱 **76개 관찰 화면·11개 상위 탐색 영역**(검증 전 리다이렉트 1건)을 형태·치수·목적별로 정리한 참고 증거다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 공식 공개 안내 **5분류/24기능+비로그인 4영역**과 **동일한 목록이라고 가정하지 말고** 명칭·계층·관찰 범위·별칭·미확인 경로를 대응한다. [UI 현대화 담당 이슈 #141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 기능을 모두 찾을 수 있는 전체 메뉴로 보존하되 `NOT_IMPLEMENTED/UNVERIFIED`는 실제 비활성 **🚫 미지원/검증 전**(텍스트+접근성), `DEMO_AVAILABLE`만 실제 main에 검증된 기능 route로 연결, `OFFICIAL_LINK_ONLY`는 별도 공식 링크. 사용자에게 HUFSAbility의 자연스러운 발전처럼 **익숙한 정보/사용자 여정**을 제공하되 화면/색/레이아웃·자산을 똑같이 구현하는 것이 아니라 **명료한 정보 계층, 탐색, 개인화·기한 근거, 모바일·키보드·스크린리더가 더 좋은 독립 UI**를 설계한다. 학교 정식 서비스/업데이트·SSO/API/소스/학생 개인정보 허가가 있다는 암시는 금지. 중앙 #137 manifest 소비 연결, 실제 route/권한/동의·연결 해제의 실패-닫힘과 자체 제품 색/디자인 토큰/사용자 안내 기준을 우선한다.
+
+> **2026-11-02 구현 검증 범위:** #139 합성 계정·전공 변경 재계산 테스트 main `26c559e` 및 #140 판본 정정·피드 일치 테스트 main `41de619`, 각 HEAD 타인 APPROVED+합성/PG/Chrome CI 3/3. UI/실자료/운영 구현이 아님. #131 CHANGES_REQUESTED, #134 #131 종속/미병합, #138 Draft+CHANGES_REQUESTED. 최신 이슈/문서 결과는 [STATUS.md](STATUS.md) 참조; #46/#89 RELEASE_BLOCKED.
+
 > **2026-11-02 동아리 순수 코어 추가 실병합(최신 정정):** [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b` 가상 클럽 12개 승인·10분야/5 합성 학생 개인화 추천·미공유 입력 분리, `updatedAt > asOf`/수정 후 재승인 필요·시점 역전에서 **목록/추천/상세 공통 fail-closed** 보강. 독립 최신 HEAD APPROVED·Actions 2/2 SUCCESS 후 **main merge `8f76c388`**. 이로써 이번 #122/#72/#125 코드 PR **3건 병합/열린 PR 7건**. [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 게시판 UI/독창적 포스터 실제 생성/관리자 승인 API는 없음, [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 기존 HUFSAbility 메뉴 5분류·24개/🚫 미구현은 기획 단계. 아래 이전 #125 변경요청은 수정 전 감사 이력이며 실 학교 동아리/학생자료·출시 허가는 계속 별개.
 
 > **2026-11-02 제품/정보구조 방향 최신:** **HUFS One AI는 HUFSAbility를 강화하는 서비스명**이다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)에 HUFSAbility 공식 공개 학생 기능 **역량관리·교과/비교과·채용·경력개발·통합상담**(5분류·24기능), 공개 진입의 비교과/장학/공지/채용(4영역) 매핑을 보존한다. **완전 흡수 = 메뉴·학생 여정 존중**이고 모든 기능의 구현/권한/공식 학교 운영 확보가 아니다. 중앙 capability manifest의 `DEMO_AVAILABLE`만 합성 시연에서 실행; `OFFICIAL_LINK_ONLY`, `NOT_IMPLEMENTED/UNVERIFIED`는 **🚫 미지원/검증 전**으로 표시하고 기존 공식 링크를 확인해 별도 연결한다. 실제 원래 HUFSAbility/SSO/저작물/데이터를 무단 복제하지 않는다.
@@ -20,7 +24,7 @@
 
 > **2026-11-01 최신 구현 상태 (이하 상세 설계/과거 기록과 구분):** API/인증·일반 PG·Temporal RAG·권한·캘린더 서버 #58, UI 공통 셸 #68에 이어 **문서 이력 #78(`83b4dab8`), 브라우저 캘린더 GET #77(`552ad35e`), 오늘·기회·공지 UI #69(`5617222f`) main 병합 완료**. #69 작성자가 force push 없이 main 일반 merge로 #68 조상 문제를 해소하여 #69 본문만 clean diff임을 확인했고 merge commit으로 후속 스택을 보호했다. #71 API 메서드 이슈 CLOSED. #72(현재 main base, 비합성 `loadCalendar` 미연결·CHANGES_REQUESTED) → #73 초대 → #74 졸업 → #75 합성 REVIEWER → #76 브라우저 E2E는 OPEN. owner [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 추가 PG/권한/원본 검수/overlay 코드는 Ready for review / 3명 독립 리뷰 요청/합성 CI 성공이나 신규 실제 PG opt-in 30 SKIP·타인 APPROVED/최신 main 정렬 전이라 미병합. 학업 #70 activation은 `0a8d44bd` main 병합. 공식 학칙·실학생 동의/기관 출처권리·Google/SMTP/TLS/운영 PG/NCP/CLOVA/실기기 E2E·공개 배포는 검증/승인 전. [STATUS](STATUS.md)·[PR 병합 게이트](docs/PR_WORKFLOW.md)를 현재 기준으로 따른다.
 
-> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
+> **2026-11-03 최종 소유 정정·2026-10-31 가격 시나리오:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG 및 **NCP/CLOVA OCR/HCX provider SDK/호출·Laya ONNX worker·비용/CPU/CI/Docker/IaC/OS 설정 자동화 등 모든 코딩**, 이서연은 **NCP 계정·인프라·서비스 entitlement/비용·호스트/실측·종료 운영(비코드)** 전담. 독립 UI·추천·학업 소유 불변.
 
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
@@ -287,7 +291,7 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 
 ### A03.4 확정 팀 구성과 4인 실제 자료 매칭 (2026-10-30)
 
-**5인 개발팀:** 심민성=GitHub/공통 계약·기술 통합, 김채윤=추천·공지, 이의상=UI·모바일, 박준영=졸업·전망(개인 원장 제출 제외), 이서연=팀 결성·기획 리드 및 NCP·CLOVA·OCR/Vision·Laya 모델/Provider 구현 및 운영 전체 전담(심민성=API 코드). 자세한 구독·편집 소유권은 `docs/WORKSTREAMS.md`가 정본이다.
+**5인 개발팀:** 심민성=GitHub/공통 계약·기술 통합, 김채윤=추천·공지, 이의상=UI·모바일, 박준영=졸업·전망(개인 원장 제출 제외), 이서연=NCP 계정·VPC/인프라·서비스 권한·크레딧/요금·호스트 실측/종료 등 **비코드 운영 전담**(구현/SDK/worker/CI/IaC 코드 작성 0건); **심민성=API·계약·OCR/HCX provider·Laya ONNX/worker·오프라인 테스트·OS 자동화·NCP 관련 모든 코드**. 자세한 구독·편집 소유권은 `docs/WORKSTREAMS.md`가 정본이다.
 
 - **4인 수집 목표와 형식 결과:** Forms 통합 1파일(26열·응답 4행) + 과목 CSV 4파일(각 6열)의 **Private `main` 파일 존재와 문법적 구조**를 확인했다. 각 행의 개인별 소유자·중복 응답·표시이름/본인 대조와 팀 공유·외부 처리 동의는 아직 `PENDING`; 실제 제출 완료/사용 승인으로 해석하지 않는다.
 - **이전 확인된 별명:** 요청자가 `이수과목_까마르.csv`가 **김채윤 제출물**임을 확인했다. 추가 이서연 명의 파일은 현재 GitHub Private에 존재하나 최초 업로드의 당사자 승인과 학사 내용·Forms 연결 검토는 별도로 남는다. 이름↔내부 ID 매핑을 코드·합성 fixture·이슈 본문에 복사하지 않고 승인된 비공개 import registry에서만 관리한다.
@@ -1092,7 +1096,7 @@ Claude 기반 에이전트는 UI·UX·모바일·접근성·시각 검수60%, �
 
 ### A16.2 모듈 소유권·병합
 
-통합 담당자(심민성, 기술 총괄/저장소 소유자)만 공통 contracts index·lockfile·공용 설정·migration 순서를 최종 병합한다. 팀 결성과 기획을 이끈 이서연은 NCP·CLOVA 클라우드 환경만 책임지고, 심민성은 API·인증·DB·RAG 코드 구현을 책임지며, 확정 팀별 경로·구독 현황은 docs/WORKSTREAMS.md를 따른다. UI 담당은 web/features, 기회 담당은 core/opportunities, 학사 담당은 core/academics·forecast, API 담당은 api/modules, 독립 검증자는 tests/evaluation·security를 우선 소유한다. branch/worktree/포트/testDB를 분리하고 같은 파일을 동시에 덮어쓰지 않는다.
+통합 담당자(심민성, 기술 총괄/저장소 소유자)만 공통 contracts index·lockfile·공용 설정·migration 순서를 최종 병합한다. 팀 결성과 기획을 이끈 이서연은 NCP·CLOVA **비코드 계정/운영 환경·요금/실측**만 책임지고, 심민성은 API·인증·DB·RAG 및 **CLOVA/OCR/HCX SDK·Laya worker/ONNX·systemd/cgroup/IaC/CI/배포 자동화 코드 전체**를 책임지며, 확정 팀별 경로·구독 현황은 docs/WORKSTREAMS.md를 따른다. UI 담당은 web/features, 기회 담당은 core/opportunities, 학사 담당은 core/academics·forecast, API 담당은 api/modules, 독립 검증자는 tests/evaluation·security를 우선 소유한다. branch/worktree/포트/testDB를 분리하고 같은 파일을 동시에 덮어쓰지 않는다.
 
 API 모의 응답을 먼저 합의해 화면을 만들고, 같은 계약의 실제 backend로 교체한다. 각 인수인계는 scope, ownedPaths, input/outputContract, fixtures, testsRun, testsFailed, notTested, privacyImpact, rollback, **teamExplanation**을 포함한다. 마지막 항목은 기술용어를 줄인 5문장과 요청 흐름 하나다.
 

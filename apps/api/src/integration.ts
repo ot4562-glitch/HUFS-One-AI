@@ -1,8 +1,15 @@
 import {createApi} from './server.js';
 import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
 import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
+import {registerRestrictedOwnerIntakeRoute,type RestrictedOwnerDirectoryPort} from './modules/profiles/restricted-owner-http.js';
 import {registerOwnerCatalogRoutes} from './modules/opportunities/owner-catalog-http.js';
+import {registerHufsAbilityCapabilitiesRoute} from './modules/hufsability/manifest-http.js';
+import {registerSyntheticClubRoutes} from './modules/opportunities/synthetic-clubs-http.js';
 import {registerOwnerWorkspaceRoutes} from './modules/profiles/self-workspace-http.js';
+import {registerOwnerStudyPlanCheckRoutes} from './modules/profiles/owner-study-plan-check-http.js';
+import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
+import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
+import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
 import {registerExperienceApprovalRoutes} from './modules/profiles/experience-approval-http.js';
 import type {ExperienceApprovalPort} from './modules/profiles/experience-approval-postgres.js';
@@ -39,6 +46,13 @@ export interface TrustedSchoolMailPort {
 }
 
 interface SharedDependencies {
+  /** Explicit approved provider ports only. Absence keeps these reads at 503. */
+  studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
+  majorWhatIf?:Omit<Parameters<typeof registerOwnerMajorWhatIfRoutes>[0],'app'|'session'>;
+  opportunityExplanation?:Omit<Parameters<typeof registerOpportunityExplanationRoutes>[0],'app'|'session'>;
+  revisionComparison?:Omit<Parameters<typeof registerOpportunityRevisionComparisonRoutes>[0],'app'|'session'>;
+  /** #123 server-authorized synthetic board and optional simulated moderator. */
+  syntheticClubs?:Omit<Parameters<typeof registerSyntheticClubRoutes>[0],'app'|'session'|'adminAuthority'>;
   experienceApproval?:ExperienceApprovalPort;
   demoOverlay?:ApiOptions['demoOverlay'];
   adminAuthority?:ApiOptions['adminAuthority'];
@@ -61,6 +75,8 @@ interface SharedDependencies {
   personalState?:ApiOptions['personalState'];
   /** Independent owner-private storage, NEVER the shared demo/REVIEWER DB. */
   selfAccount?:SelfAccountPort;
+  /** Explicit restricted identity-bound local intake directory; no demo or public-data fallback. */
+  restrictedOwnerDirectory?:RestrictedOwnerDirectoryPort;
   /** Approved server-owned source+grant head adapter; no demo/raw data fallback. */
   ownerCatalog?:TrustedCatalogPort;
   /** Owner-private self workspace; does not reuse a demo SharingGrant. */
@@ -154,6 +170,16 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options);
+  const ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
+  registerRestrictedOwnerIntakeRoute({app,session:ownerSession,
+    ...(deps.restrictedOwnerDirectory?{directory:deps.restrictedOwnerDirectory}:{})});
+  registerHufsAbilityCapabilitiesRoute(app,ownerSession);
+  registerSyntheticClubRoutes({...deps.syntheticClubs,app,session:ownerSession,
+    ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{})});
+  registerOwnerStudyPlanCheckRoutes({...deps.studyPlanCheck,app,session:ownerSession});
+  registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
+  registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
+  registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});
   if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,{
     verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString()),
   });

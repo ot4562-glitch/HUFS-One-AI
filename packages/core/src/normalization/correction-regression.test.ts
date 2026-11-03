@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
 import {OpportunitySchema, type Opportunity} from '@hufs-one/contracts';
 import {gateBySourceRevision, resultCacheKey, selectCurrentRevisions, type ResultCacheParts, type RevisionRecord} from './index.js';
-import {composeFeed, type RecommendationProfile} from '../opportunities/index.js';
+import {composeFeed, explainRecommendation, type RecommendationProfile} from '../opportunities/index.js';
 import {composeNotices, type Notice, type NoticeStudent} from '../notices/index.js';
 
 /**
@@ -57,6 +57,8 @@ describe('#119 correction regressions: the current reviewed revision only, never
     const {feed, ids} = feedFor([r1, r2({changeKind:'CORRECTED'})], [OLD, SHORT]);
     expect(ids).toEqual(['SYN-OPP-CORR@SYN-REV-2']);
     expect(feed.closed.map(r => r.opportunity.sourceSnapshotId)).toEqual(['SYN-REV-2']);
+    // The deadline shown for the corrected posting is the shortened one, not the old 11/20 (#122 UI review).
+    expect(explainRecommendation(feed.closed[0]!).deadline.iso).toBe(KST('11-15'));
     expect(feed.feed.featured).toEqual([]);
   });
 
@@ -103,10 +105,14 @@ describe('#119 correction regressions: the current reviewed revision only, never
     const student:NoticeStudent = {openRequirementIds:['SYN-REQ-1'], courseIds:[], interestTopics:[]};
     const n = (revisionId:string):Notice => ({id:'SYN-NOT-CORR', sourceSnapshotId:revisionId, title:'가상 졸업서류 제출 안내', issuer:'시연가상학과',
       category:'ACADEMIC', requirementRefs:['SYN-REQ-1'], verificationState:'VERIFIED', evidenceRefs:['EV-SYN-NOT-CORR'], studentDeadline:KST('11-25')});
-    const show = (revisions:RevisionRecord[]) => composeNotices(student,
-      gateBySourceRevision([n('SYN-REV-1'), n('SYN-REV-2')], selectCurrentRevisions(revisions, ASOF)).usable, {asOf:ASOF}).result.items.length;
-    expect(show([r1, r2()])).toBe(1);
-    expect(show([r1, unreviewed()])).toBe(0);
-    expect(show([r1, r2({changeKind:'CANCELLED', status:'RETRACTED'})])).toBe(0);
+    // Returns the revision behind each shown notice, so "one notice shown" cannot hide the OLD one (#122 UI review).
+    const show = (revisions:RevisionRecord[]) => {
+      const usable = gateBySourceRevision([n('SYN-REV-1'), n('SYN-REV-2')], selectCurrentRevisions(revisions, ASOF)).usable;
+      const shown = new Set(composeNotices(student, usable, {asOf:ASOF}).result.items.map(i => i.noticeId));
+      return usable.filter(x => shown.has(x.id)).map(x => x.sourceSnapshotId);
+    };
+    expect(show([r1, r2()])).toEqual(['SYN-REV-2']);
+    expect(show([r1, unreviewed()])).toEqual([]);
+    expect(show([r1, r2({changeKind:'CANCELLED', status:'RETRACTED'})])).toEqual([]);
   });
 });

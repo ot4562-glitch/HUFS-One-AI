@@ -22,10 +22,13 @@ const review={
 };
 const apps:Array<ReturnType<typeof createApi>>=[];
 afterEach(async()=>{await Promise.all(apps.map(app=>app.close()));apps.length=0;});
-function fixture(options?:{source?:boolean;rights?:boolean}){
+function fixture(options?:{source?:boolean;rights?:boolean;approval?:boolean}){
   let enabled=true,canRead=true,mayInspect=true,mayDisclose=true,mayRevalidate=true;
+  let approved=true;
   let check:unknown=review;
   const seen:string[]=[];
+  const approvalInputs:unknown[]=[];
+  const hooks:{pre?:()=>void;sourceRecheck?:()=>void}={};
   const source:TrustedOwnerStudyPlanSource={
     inspect:async input=>{
       seen.push('source:'+input.actorId);
@@ -33,12 +36,14 @@ function fixture(options?:{source?:boolean;rights?:boolean}){
     },
     revalidate:async input=>{
       seen.push('source-recheck:'+input.actorId);
+      hooks.sourceRecheck?.();
       return canRead;
     },
   };
   const rights:TrustedOwnerStudyPlanRights={
     mayInspect:async input=>{
       seen.push('pre:'+input.actorId);
+      hooks.pre?.();
       return mayInspect&&input.actorId===actor.actorId;
     },
     authorize:async input=>{
@@ -49,6 +54,8 @@ function fixture(options?:{source?:boolean;rights?:boolean}){
         allowed:mayDisclose
           &&input.courseRefs.every(x=>permittedCourses.has(x))
           &&input.evidenceRefs.every(x=>permittedEvidence.has(x))
+          &&input.evidenceLinks.every(link=>link.evidenceRef==='SYN-EV-A'
+            &&link.href==='https://synthetic.invalid/source'&&link.verifiedAt===NOW)
           &&(input.disclosureMode!=='GRANT_SCOPED'
             ||input.sharingGrantVersion==='SYN-GRANT-1'),
         rightsReceipt:'SYN-RIGHTS-CURRENT',
@@ -68,20 +75,36 @@ function fixture(options?:{source?:boolean;rights?:boolean}){
     app,session:{verify,now:()=>NOW},
     ...(options?.source?{source}:{}),
     ...(options?.rights===false?{}:{rights}),
+    ...(options?.approval?{approvalGate:{isApproved:async input=>{
+      seen.push('approval');
+      approvalInputs.push(input);
+      return approved&&input.sourceReceipt==='SYN-RECEIPT-CURRENT'
+        &&input.approval.verifiedAt===NOW
+        &&input.approval.rulePackVersion==='SYN-RULE-1'
+        &&input.evidenceLinks.every(link=>link.evidenceRef==='SYN-EV-A'
+          &&link.href==='https://synthetic.invalid/source'&&link.verifiedAt===NOW);
+    }}}:{}),
   });
   apps.push(app);
   const post=(body:Record<string,unknown>={term:'2026-2'})=>app.inject({
     method:'POST',url:'/api/study-plans/check',headers:HEADERS,payload:body,
   });
-  return {app,post,seen,setCheck:(v:unknown)=>{check=v;},
+  return {app,post,seen,hooks,approvalInputs,setCheck:(v:unknown)=>{check=v;},
     revokeRights:()=>{canRead=false;},logout:()=>{enabled=false;},
     denyBeforeRead:()=>{mayInspect=false;},
     denyDisclosure:()=>{mayDisclose=false;},
     revokeGrantAfterRead:()=>{mayRevalidate=false;},
+    revokeApproval:()=>{approved=false;},
   };
 }
 
 describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
+  it('returns the shared 422 validation error for an ended term before private reads',async()=>{
+    const h=fixture({source:true});
+    const r=await h.post({term:'2026-1'});
+    expect(r.statusCode).toBe(422);
+    expect(h.seen).toEqual([]);
+  });
   it('returns 503 when no independently approved academic core provider is wired',async()=>{
     const h=fixture();
     const r=await h.post();
@@ -196,5 +219,43 @@ describe('A05 #81 owner study-plan read-only HTTP gate (no unmerged core)',()=>{
       expect(r.body).not.toContain('SYN-PRIVATE-COURSE');
       expect(r.body).not.toContain('SYN-ATTEMPT-1');
     }
+  });
+  it('rechecks the session after awaited preauthorization before reading a transcript',async()=>{
+    const h=fixture({source:true});
+    h.hooks.pre=()=>h.logout();
+    expect((await h.post()).statusCode).toBe(401);
+    expect(h.seen).toEqual(['pre:'+actor.actorId]);
+  });
+  it('denies a substituted URL under an otherwise permitted evidence ref',async()=>{
+    const h=fixture({source:true});
+    h.setCheck({...review,evidenceLinks:[{evidenceRef:'SYN-EV-A',
+      href:'https://unapproved.invalid/forged',verifiedAt:NOW}]});
+    const r=await h.post();
+    expect(r.statusCode).toBe(403);
+    expect(r.body).not.toContain('unapproved.invalid');
+  });
+  it('rechecks full approval after source and rights work so a late revoke blocks READY',async()=>{
+    const h=fixture({source:true,approval:true});
+    h.setCheck({...review,state:'READY',creditCapUnits:36,
+      versions:{plan:'SYN-PLAN-1',rulePack:'SYN-RULE-1',
+        catalog:'SYN-CATALOG-1',transcript:'SYN-TRANSCRIPT-1'},
+      caveats:['NOT_OFFICIAL_REGISTRATION','NOT_GRADUATION_DECISION'],
+      evidenceLinks:[{evidenceRef:'SYN-EV-A',
+        href:'https://synthetic.invalid/source',verifiedAt:NOW}],
+      approval:{rulePackState:'APPROVED',rulePackVersion:'SYN-RULE-1',
+        officialEvidenceRefs:['SYN-EV-A'],verifiedAt:NOW,sourceRightsVersion:'SYN-RIGHTS-1',
+        consentVersion:'SYN-CONSENT-1',coreVersion:'SYN-CORE-116'},
+    });
+    expect((await h.post()).statusCode).toBe(200);
+    h.hooks.sourceRecheck=()=>h.revokeApproval();
+    const r=await h.post();
+    expect(r.statusCode).toBe(503);
+    expect(r.body).not.toContain('SYN-RULE-1');
+    expect(h.approvalInputs[0]).toMatchObject({
+      sourceReceipt:'SYN-RECEIPT-CURRENT',
+      approval:{rulePackVersion:'SYN-RULE-1',verifiedAt:NOW},
+      evidenceLinks:[{evidenceRef:'SYN-EV-A',
+        href:'https://synthetic.invalid/source',verifiedAt:NOW}],
+    });
   });
 });
