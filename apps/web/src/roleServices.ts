@@ -52,6 +52,13 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
       reset: (ctx, version, signal) => api.resetDemoOverlay(ctx, version, signal),
     },
+    ownerProvider: {
+      session: ownerSession,
+      list: signal => api.owner.getApprovedProviderInputs(signal),
+      submit: (entry,taskPath,idempotencyKey,signal) =>
+        api.owner.submitApprovedProvider(entry,taskPath,idempotencyKey,signal),
+      read: (jobId,taskPath,signal) => api.owner.readApprovedProviderJob(jobId,taskPath,signal),
+    },
     ownerDemoProfile: {
       session: ownerSession,
       read: signal => api.owner.readDemoProfile(signal),

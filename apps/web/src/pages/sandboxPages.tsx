@@ -51,21 +51,27 @@ export const experiencePage: PageRenderer = ({path, state, sandbox}) => {
 
 export const settingsPage: PageRenderer = ({path, state, sandbox, services, controller, navigate}) => {
   if (path !== '/settings') return null;
+  const providerLink = services.ownerProvider && <p>
+    <InAppLink to="/owner-ai" navigate={navigate} className="button button--quiet">
+      승인된 AI 후보 실행·재조회 (BETA)
+    </InAppLink>
+  </p>;
   const ownerDemoLink = services.ownerDemoProfile && <p>
     <InAppLink to="/demo-profile" navigate={navigate} className="button button--quiet">
       독립 빈 시연 계정 설정 (BETA)
     </InAppLink>
   </p>;
-  if (!sandbox && !services.overlay && !ownerDemoLink)
+  if (!sandbox && !services.overlay && !ownerDemoLink && !providerLink)
     return {title: '설정', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
   // The independent BETA account must be reachable WITHOUT selecting S01–S05.
   if (state.status !== 'READY') return {title: '설정', body:
-    ownerDemoLink ?? <NoSnapshot state={state} />};
+    <>{ownerDemoLink}{providerLink}{!ownerDemoLink&&!providerLink&&<NoSnapshot state={state} />}</>};
   // Keyed by subject/context so unsaved topic picks never carry to another student.
   const scope = `${state.epoch}:${state.context?.contextId ?? ''}`;
   return {title: '설정', body: (
     <>
       {ownerDemoLink}
+      {providerLink}
       {services.overlay && <OverlaySettings key={scope} controller={controller} state={state} port={services.overlay} />}
       {sandbox && <SandboxSettings sandbox={sandbox} />}
     </>

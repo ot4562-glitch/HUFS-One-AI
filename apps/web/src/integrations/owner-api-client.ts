@@ -12,9 +12,12 @@ import {
   OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
   DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
+  ApprovedProviderInputsSchema,ApprovedProviderInputSchema,ProviderRunRequestSchema,
+  ProviderAcceptedSchema,ProviderStoredJobSchema,AI_TASK_PATHS,AiTaskPathSchema,
   SyntheticClubDetailResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
+import type {ApprovedProviderInput,AiTaskPath} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
 
 export interface BrowserRequestOptions {
@@ -262,6 +265,28 @@ export class HufsOwnerApiClient {
     const result=await this.mutate('/api/demo-profile/reset',DemoProfileResponseSchema,'POST',input,signal);
     requireMatchingReceipt(result.profile.version===input.expectedVersion+1
       &&same(result.profile.value,blankDemoProfileValue()));
+    return result;
+  }
+
+  /** Separate from REVIEWER MOCK. Only a currently authorized BETA owner may use
+   * these operations; a listed ref is metadata, NOT execution authorization. */
+  getApprovedProviderInputs(signal?:AbortSignal){
+    return this.request('/api/ai/approved-inputs',ApprovedProviderInputsSchema,{signal});
+  }
+  async submitApprovedProvider(input:ApprovedProviderInput,taskPath:AiTaskPath,
+    idempotencyKey:string,signal?:AbortSignal){
+    const approved=clientInput(ApprovedProviderInputSchema,input);
+    const path=clientInput(AiTaskPathSchema,taskPath);
+    if(AI_TASK_PATHS[path]!==approved.task)throw new HufsApiError('INVALID_INPUT',422);
+    const payload=clientInput(ProviderRunRequestSchema,{packetRef:approved.inputRef,
+      asOf:approved.asOf,idempotencyKey});
+    const result=await this.mutate('/api/ai/'+path,ProviderAcceptedSchema,'POST',payload,signal);
+    return result;
+  }
+  async readApprovedProviderJob(jobId:string,taskPath:AiTaskPath,signal?:AbortSignal){
+    const id=clientInput(z.uuid(),jobId),task=clientInput(AiTaskPathSchema,taskPath);
+    const result=await this.request('/api/ai/jobs/'+id,ProviderStoredJobSchema,{signal});
+    requireMatchingReceipt(result.candidate.task===AI_TASK_PATHS[task]);
     return result;
   }
 
