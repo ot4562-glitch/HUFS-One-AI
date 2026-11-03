@@ -7,10 +7,10 @@
 **GitHub 개발의 최종 목표는 사용 가능한 HUFS One AI 서비스의 완성**이다. 단순 PR 개수·기능 코드 추가·합성 데모가 출시를 뜻하지 않는다. **서비스 완성 및 검증 → 사용자 승인에 따른 NCP 배포 → NCP 배포 후 지속적인 유지보수·품질 개선**으로 단계가 바뀐다.
 
 1. **서비스 완성:** 허용·동의된 사용자와 자료만으로 학생 주요 여정(맞춤 기회/공지/학업/일정/시연)을 실제 UI↔API↔영속 DB까지 연결하고, 인가·로그인(실 Google OIDC/외대 메일 확인)·접근성·원본 권리·독립 품질 평가를 수락 기준대로 통과한다. 안 된 항목을 합성 테스트 통과로 완료 처리하지 않는다.
-2. **NCP 배포 준비와 운영 전환:** 실제 서버는 사용자 **별도 과금/배포 승인**, [#46 개인정보 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)와 [#89 릴리스 보안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 해제, 실 Google/TLS/PG·영속 철회/직접 IP/GeoIP 경계 등 독립 검증이 선행되어야 한다. 서버 생성·공인/사설 IP·VPC/ACG/NACL·포트·NCP 인증키/초기 암호·PuTTY/WinSCP·한국 IP Wall·시스템 설치는 [NCP 운영 정본](docs/NCP_OPERATIONS_2026.md)과 [Draft PR #156의 단계별 서버 실행서](https://github.com/ot4562-glitch/HUFS-One-AI/blob/feat/ncp-safe-bootstrap-preview-20261103/infra/ncp/README.md)에 기록했다. **PR #156은 아직 미병합이며 자동화는 SSH 전용 합성 미리보기까지만**이다. 실제 production 자동 배포가 이미 가능하다고 주장하지 않는다.
+2. **NCP 배포 준비와 운영 전환:** 실제 서버는 사용자 **별도 과금/배포 승인**, [#46 개인정보 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)와 [#89 릴리스 보안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 해제, 실 Google/TLS/PG·영속 철회/직접 IP/GeoIP 경계 등 독립 검증이 선행되어야 한다. 서버 생성·공인/사설 IP·VPC/ACG/NACL·포트·NCP 인증키/초기 암호·PuTTY/WinSCP·한국 IP Wall·시스템 설치는 [NCP 운영 정본](docs/NCP_OPERATIONS_2026.md)과 [병합된 #156 서버 실행서](infra/ncp/README.md)에 기록했다. **PR #156은 main `2e39c86a` 병합됐으며 자동화는 SSH 전용 합성 미리보기까지만**이다. 실제 production 자동 배포가 이미 가능하다고 주장하지 않는다.
 3. **배포 후 유지보수:** 출시 뒤 GitHub의 일차 목표를 안정 운영으로 전환한다. OS/Node/의존성 보안 패치, 신뢰·접근성/오류 회귀, 로그인/권한 철회, API p95/CPU·메모리·디스크, NCP 크레딧·청구·비밀키 회전, 데이터 백업·복원·롤백/장애 대응, 출처·개인정보 권리/삭제 요청과 운영 종료·반납을 실제 영수증으로 관리한다. 변경은 이슈→PR→독립 리뷰/CI→배포/롤백 증거 순으로 기록한다.
 
-현재 승인·진행 상태와 출시 차단은 [STATUS](STATUS.md) 및 [서비스 완성/유지보수 계획(PR #156)](https://github.com/ot4562-glitch/HUFS-One-AI/blob/feat/ncp-safe-bootstrap-preview-20261103/docs/SERVICE_DELIVERY_PLAN.md)을 참조한다. 서버/비밀키/실학생 자료/유료 API를 PR, CI, 에이전트 메시지에 넣지 않는다.
+현재 승인·진행 상태와 출시 차단은 [STATUS](STATUS.md) 및 [서비스 완성/유지보수 계획(#156 병합)](docs/SERVICE_DELIVERY_PLAN.md)을 참조한다. 서버/비밀키/실학생 자료/유료 API를 PR, CI, 에이전트 메시지에 넣지 않는다.
 
 ## 제품 방향
 
@@ -26,16 +26,16 @@
 | 공개 원격 저장소 | **Private** |
 | 실제 코드 | TypeScript/Zod 계약, 추천·공지/학업 코어, Fastify API, React/Vite UI, 합성 테스트 |
 | 검증된 최근 병합 | [#153 중앙 메뉴](https://github.com/ot4562-glitch/HUFS-One-AI/pull/153) `9b5cb81a`, [#157 Provider 사전권한·PG RLS](https://github.com/ot4562-glitch/HUFS-One-AI/pull/157) `7ac5a06c`, [#159 Laya 기본 OFF 스케줄러](https://github.com/ot4562-glitch/HUFS-One-AI/pull/159) `638ed77a` 등. 각각 최신 HEAD 비작성자 APPROVED·CI 3/3 후 main. 실제 유료 AI/운영 NCP/실기관 원본 검증 아님 |
-| 진행 중 PR | **16건 OPEN (2026-11-03 GitHub 재조회):** #150/#166 Draft, #158 SETTLED 결과·#156 SSH-only preview는 과거 HEAD 승인 이후 재정렬돼 **현재 HEAD 재승인 요청**, #160→#165→#167 스택과 #161/#162/#163/#164 독립 PR 리뷰 중, UI #151/#152/#154/#155 충돌(#152 P2 REQUEST_CHANGES). [실시간 PR 현황](https://github.com/ot4562-glitch/HUFS-One-AI/pulls) 및 [STATUS](STATUS.md) 우선 |
+| 진행 중 PR | **14건 OPEN**: #150/#166 Draft, #160→#165→#167 및 #161~#164·#168 독립 리뷰/통합 대기, UI #151/#152/#154/#155 충돌(#152 P2). #156/#158은 현 HEAD 새 승인·CI 후 병합. [STATUS](STATUS.md) 우선 |
 | 운영/실자료 | **RELEASE_BLOCKED** — [#46 개인정보/자료 이력](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), [#89 공개 노출·인증·인프라](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) |
 
-**2026-11-03 최신 검토:** #157 Provider 입력·권한 PG RLS 및 #159 Laya OFF 스케줄러는 독립 승인·3/3 CI 후 main에 병합했습니다. 기존 #145/#148/#131/#149/#153 하위 구현도 main입니다. #158/#156의 과거 HEAD 비작성자 승인은 **현 HEAD 승인이 아니며**, 아직 영속 결과 통합·실 provider/HTTP·Owner API/Chrome 사용 경로·Google OIDC/학교 메일·TLS·운영 NCP 증거는 미완료입니다. 일반 이슈 OPEN 34 / CLOSED 7; 담당 원장은 [WORKSTREAMS](docs/WORKSTREAMS.md) 34건(심민성 17·이의상 11·김채윤 2·박준영 2·이서연 2) 그대로. #46의 기존 privacy 2 FAIL / #61 독립 사람 gold 0/200 / #89 RELEASE_BLOCKED와 사용자 승인 없는 유료·실학생·학교 데이터 사용 금지는 불변.
+**2026-11-03 현재 병합·승인:** #158 HEAD `fb135017`→main `6e2b57de`, #156 HEAD `6a26e8f`→main `2e39c86a`는 각각 **새 현 HEAD qamarrchae APPROVED·필수 CI 3/3·clean** 확인 후 squash 병합했다. #158은 SETTLED 결과 저장 하위, #156은 SSH-only 합성 Preview 도구만 수락. **OPEN PR 14 / 일반 이슈 OPEN 34·CLOSED 7**, #160→#165→#167·Owner/Laya 및 #168은 독립 승인/통합 대기, #150/#166 Draft·UI #152 P2/충돌 유지. #46/#61/#89와 고정 수락률 불변.
 
 최근 #139/#140의 GitHub Actions 합성/일회용 PostgreSQL/Chrome **각 3/3 성공**은 해당 PR HEAD의 **합성 회귀**에 대한 증거입니다. 실제 HUFSAbility 데이터·공식 학칙·학생 4인 로그인, 운영 NCP/CLOVA·실제 기관/자료 권리, 배포/보안을 검증 완료했다는 의미가 아닙니다. 상세 증거 및 차단 사항은 [STATUS.md](STATUS.md)를 봅니다.
 
-**이번 코드 통합:** [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) 83파일 Draft를 #157·#159 **main 하위 완료**, #158 PG SETTLED 결과(현 HEAD 재승인 대기), #160 raster/OCR → #165 provider executor → #167 BETA HTTP(스택), #161 Laya IPC·#162 현재 이중전공 owner·#163 빈 합성 계정·#164 승인 정정 claim, #166 보안 배포 Draft로 분해했습니다. [#156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156)은 NCP 운영 서비스가 아닌 승인된 호스트에서만 실행하는 SSH-only 합성 미리보기 제안입니다. UI #153 메뉴 정본화는 병합됐지만 #152 부정입력 P2와 #151/#154/#155의 main 충돌이 남았습니다. 현재 주요 병목과 증거는 [STATUS](STATUS.md)에만 유지합니다.
+**이번 코드 통합:** [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) 83파일 Draft를 #157·#159 **main 하위 완료**, #158 PG SETTLED 결과(main `6e2b57de` 하위 완료), #160 raster/OCR → #165 provider executor → #167 BETA HTTP(스택), #161 Laya IPC·#162 현재 이중전공 owner·#163 빈 합성 계정·#164 승인 정정 claim, #166 보안 배포 Draft로 분해했습니다. [#156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156)은 NCP 운영 서비스가 아닌 승인된 호스트에서만 실행하는 SSH-only 합성 미리보기 도구입니다. UI #153 메뉴 정본화는 병합됐지만 #152 부정입력 P2와 #151/#154/#155의 main 충돌이 남았습니다. 현재 주요 병목과 증거는 [STATUS](STATUS.md)에만 유지합니다.
 
-**#27 인증 선행 연결:** [PR #168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168)은 기존 PostgreSQL 세션·공유 제한·BETA 승인/철회를 조립하는 3파일 미병합 구현이다. 현 HEAD CI 3/3 PASS·독립 승인 대기이며 production 차단 유지. 열린 PR **16건**, 일반 이슈 OPEN 34/CLOSED 7; [실패를 포함한 검증 근거](STATUS.md)를 따른다.
+**#27 인증 선행 연결:** [PR #168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168)은 기존 PostgreSQL 세션·공유 제한·BETA 승인/철회를 조립하는 3파일 미병합 구현이다. 현 HEAD CI 3/3 PASS·독립 승인 대기이며 production 차단 유지. 열린 PR **14건**, 일반 이슈 OPEN 34/CLOSED 7; [실패를 포함한 검증 근거](STATUS.md)를 따른다.
 
 ## 로컬 합성 개발
 

@@ -15,15 +15,15 @@
 
 ## 2026-11-03 현재 PR 인수 점검 — 변경 가능한 사실은 STATUS/GitHub 우선
 
-- **GitHub 일반 이슈 OPEN 34 / CLOSED 7, PR OPEN 16.** #157 Provider 권한·PG RLS(`7ac5a06c`)와 #159 Laya OFF scheduler(`638ed77a`)는 비작성자 최신 HEAD 승인·CI 3/3 뒤 병합 완료. 앞선 #153 메뉴 정본화(`9b5cb81a`)도 main.
-- **#158 SETTLED-only PG 결과(HEAD `fb135017`)와 #156 NCP 합성 SSH-preview(HEAD `6a26e8f`)**는 변경 전 이전 HEAD에 김채윤 APPROVED가 있으나 현재 HEAD에는 새 승인 없음. 현재 HEAD 3/3 CI SUCCESS와 clean은 확인. **김채윤에게 현 HEAD 재승인 요청**, 승인 확인 전 병합하지 않음.
+- **GitHub 일반 이슈 OPEN 34 / CLOSED 7, PR OPEN 14.** #157 Provider 권한·PG RLS(`7ac5a06c`)와 #159 Laya OFF scheduler(`638ed77a`)는 비작성자 최신 HEAD 승인·CI 3/3 뒤 병합 완료. 앞선 #153 메뉴 정본화(`9b5cb81a`)도 main.
+- **#158/#156 병합 완료:** **MERGED `6e2b57de`** — HEAD `fb135017`의 qamarrchae 새 독립 APPROVED·CI 3/3 SUCCESS·미해결 요청 없음 후 squash. SETTLED 결과 저장/RLS·철회 제거 하위만 수락; **MERGED `2e39c86a`** — HEAD `6a26e8f`의 qamarrchae 새 독립 APPROVED·CI 3/3 SUCCESS·미해결 요청 없음 후 squash. SSH-only 합성 Preview 도구만 수락; PowerShell plan-only 실행 PASS, 실 SSH/UFW/NCP 운영은 NOT_RUN.
 - **#160 Raster/OCR → #165 Provider 실행기 → #167 BETA-only HTTP**는 스택 의존 관계이며 각각 CI3/3 성공/독립 최신 승인 대기. #160 main 병합 후 #165의 고유 diff/새 base·CI·리뷰, 이후 #167을 차례로 검증한다. squash로 선행 커밋 ancestry가 달라지는 상황에 주의한다.
 - **#161 Laya IPC**는 #159 이후 main restack CI3/3/승인 대기. **#162 현재 이중전공, #163 EMPTY_DEMO, #164 SourceRevision PG**도 독립 리뷰/CI 통과 후만 병합. **#166** ingress/compose는 Draft·`RELEASE_BLOCKED`; **#150** 대형 WIP 83파일 Draft/충돌이며 분해 없이 병합 금지.
 - **UI #151/#152/#154/#155**는 #153 이후 공통 App/main/graduation/E2E 충돌. #152의 `rowImpacts` malformed array elements 런타임 오류 가능성은 `CHANGES_REQUESTED`로 남아 있어 author의 strict 검증·음성회귀·safe rebase가 필요하다.
 - **GitHub `main` 브랜치 보호는 마지막 관측 `protected=false`**. UI에서 설정이 강제되지 않더라도 위 리뷰·CI·최신 HEAD 규칙을 직접 준수하고, 보안 규칙 변경/우회로 병합을 성사시키지 않는다.
 - 각 PR·이슈의 **부분 완료**는 `main` 병합 및 검증된 범위만 [x]로 표시한다. 사람/기관 원본 권리 #46(기존 privacy 2 FAIL), 독립 gold #61(0/200), 실 OIDC·학교메일·TLS/direct IP/NCP #89(`RELEASE_BLOCKED`)를 합성 CI로 대체하지 않는다. 상세 이력은 Git/PR 기록, 현재 결론은 [STATUS](../STATUS.md).
 
-**#27 신규 선행 PR:** [#168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) HEAD `0eceae7`, PostgreSQL 인증 조립 3파일·CI 3/3 PASS·현재 HEAD 사람 독립 승인 대기/미병합. 작성자 및 독립 에이전트 검토는 GitHub 사람 APPROVED의 대체가 아니다. [실패/범위 근거](../STATUS.md); #158·#156 현 HEAD 재승인과 #160→#165→#167 순서 유지.
+**#27 신규 선행 PR:** [#168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) HEAD `0eceae7`, PostgreSQL 인증 조립 3파일·CI 3/3 PASS·현재 HEAD 사람 독립 승인 대기/미병합. 작성자 및 독립 에이전트 검토는 GitHub 사람 APPROVED의 대체가 아니다. [실패/범위 근거](../STATUS.md); #158/#156은 현 HEAD 재승인 후 병합 완료; #160→#165→#167 순서 유지.
 
 ## 원격 브랜치 정리 절차
 
