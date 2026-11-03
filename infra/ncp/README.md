@@ -51,11 +51,24 @@
 
 공식: [ACG](https://guide.ncloud-docs.com/docs/server-acg-vpc) / [Network ACL stateless](https://guide.ncloud-docs.com/docs/vpc-nacl-vpc) / [VPC 서버 접속](https://guide.ncloud-docs.com/docs/server-ts-access-architecture-vpc).
 
-### 한국 IP 전용 Wall
+### 한국 IP 전용 Wall — NCP Global Edge로 구성 (운영 게이트: 아직 미적용)
 
-**한국 리전 서버 = 한국 IP만 접속 가능**은 아니다. ACG는 IP/CIDR 단위이므로 국가 선택 스위치로 착각하면 안 된다. **관리자 SSH는 한국 전체가 아니라 운영자 실제 공인IP/32만** 허용한다. **시연 웹은 공개 포트 자체가 없다.**
+**한국 리전/한국 Edge 서버 선택만으로 한국 방문자 전용 정책이 되지는 않는다.** 현재 미리보기는 외부 80/443/5173 포트가 모두 닫혀 있고 SSH 자체도 운영자 IPv4/32만 허용한다. **운영 공개 승인 전 Geo 정책을 실행·적용하지 않는다.**
 
-실제 서비스 공개 승인 이후 **국가 GeoIP 필터 기능이 있는 신뢰된 WAF/CDN/Reverse Proxy에서 KR만 허용** + **원본 서버 IP로 직접 우회하지 못하도록 NCP ACG/LB/WAF 원본 제한** + **TLS·Google/학교메일/초대 인증**이 모두 필요하다. GeoIP는 VPN·해외 로밍·IP DB 오류를 막지 못한다. 클라이언트가 제시한 `X-Forwarded-For`나 다운로드 출처가 불분명한 국가 CIDR 목록을 신뢰해 자동 적용하지 않는다. **NCP WAF(V2) 국가별 차단 제공 여부는 실제 상품과 콘솔에서 확인**(일부 NCP 상품 FAQ에서는 기본 국가 필터 미지원). 검증 전에는 한국 IP Wall을 구현했다고 표시하지 않는다.
+**확인된 공식 NCP 선택지: [Global Edge Self Integration](https://guide.ncloud-docs.com/docs/globaledge-create)의 `Access control > Whitelist > Geo`.** NCP [WAF(V2) 공식 FAQ](https://www.gov-ncloud.com/support/faq/prod/4709?categoryCode2=SEC&categoryCode3=SV_0024)는 **국가 단위 IP 차단을 기본 제공하지 않는다**고 설명한다. NCP WAF의 패턴 방어와 Global Edge의 국가 접근 제한은 다른 기능이며, 둘의 비용·이용권도 별도 확인한다.
+
+운영 전환 시 **승인 후** 콘솔 작업 순서:
+
+1. **Console > Content Delivery > Global Edge > Management**에서 프로필 생성 > **Edge 생성 > Self Integration** (Quick Start는 이 앱의 쿠키/API 요구에 안전한 기본값이 아님). 서비스 도메인은 승인된 도메인으로 지정하고 TLS 인증서·갱신/도메인 검증을 준비한다.
+2. **원본 설정**에서 승인된 NCP Load Balancer/API Gateway 등 운영 진입점을 선택한다. 처음부터 단일 VM 공인 IP를 무제한 원본으로 두지 말고, Edge 경유 전용으로 **origin 주소 직접 접근을 차단할 수 있는 구조**를 먼저 확정한다.
+3. **접근제어 > Whitelist > Geo > Add Geo > 대한민국(Korea)**만 선택하고 정책을 저장·배포한다. **Global Edge의 서비스 지역 '한국'은 Edge 인프라 지역을 고르는 옵션이며 이 국가 화이트리스트와 다르다.** IPv4/IPv6 및 정책 예외를 별도로 점검한다.
+4. **캐시 규칙은 기본값 그대로 사용 금지.** 공식 Quick Start 예시는 30일 캐시/쿼리 무시가 기본이므로, 사용자별 HTML·JS 진입 경계, `/api`, 로그인·callback·OTP·계정·개인응답·REVIEWER 초대·세션/권한 철회에 **Edge/브라우저/중간 캐시 금지**를 설계한다. 개인응답의 `Cache-Control: no-store`뿐 아니라 Edge 실제 우회 동작을 테스트하고, 익명 응답에서 보호 번들·민감 데이터가 새지 않도록 별도 릴리스 검증한다.
+5. **원본 우회 차단이 선행**: DNS만 Edge로 돌려도 공인 origin IP·LB 주소·IPv6·staging/preview가 열려 있으면 비한국 IP가 직접 접속할 수 있다. 승인된 구조에서 ACG/NACL/LB/프록시 원본 접근을 Edge에서만 허용하도록 검증하고, 네트워크상 검증된 프록시로부터의 클라이언트 IP만 신뢰한다. 임의 요청의 `X-Forwarded-For`를 국가 판정에 직접 사용하지 않는다. Edge 원본 IP 대역·사설 접근 가능성이 확인되지 않으면 **공개 443 개통을 보류**한다.
+6. **수락 시험**: 국내 정상 접속, 해외 IP 차단(가능한 독립 환경), VPN/프록시·GeoIP 오분류, 직접 공인 IP/LB/다른 호스트 헤더/AAAA/Preview·원본 스토리지 우회, 사용자별 데이터/쿠키 캐시 누출, 로그·정책 변경 시 롤백을 검증한다. **국내 IP라는 사실은 인증/동의/접근 권한의 대체가 아니다.** NCP 정책 스크린샷/테스트와 비용 증빙을 [운영 인수인계 서식](OPERATIONS_HANDOFF_TEMPLATE.md)에 기록한다.
+
+한국의 모든 네트워크/해외 로밍·VPN을 정확히 판별한다는 보장은 없으며, 비KR 사용자가 한국 VPN 경유로 접속할 수 있다. 국가 제한은 **방어층 하나**일 뿐 Google OIDC·외대 이메일 증명·초대 allowlist·owner/SharingGrant·로그인 전 보호를 대체하지 않는다.
+
+공식 근거: [NCP Global Edge 생성 및 Geo 접근제어](https://guide.ncloud-docs.com/docs/globaledge-create) · [Global Edge 과금/쿼터](https://guide.ncloud-docs.com/docs/globaledge-quotas) · [NCP WAF(V2) 국가별 차단 기본 미지원 FAQ](https://www.gov-ncloud.com/support/faq/prod/4709?categoryCode2=SEC&categoryCode3=SV_0024).
 
 ## 3. Windows에서 PuTTY·WinSCP·SSH 공개키를 안전하게 사용하는 방법
 
