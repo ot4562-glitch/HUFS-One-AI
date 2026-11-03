@@ -52,6 +52,14 @@ const Source=z.object({source_id:Ref,revision_id:Ref,permission_ref:Ref,original
   receipt_id:Ref,rights_actor_id:Ref,reviewed_by:Ref,reviewed_at:Time,starts_at:Time,expires_at:Time,policy_version:Ref,
   canonical_url:z.string().min(9).max(2048),purposes:z.array(z.enum(['COLLECT','STORE','SEARCH','EXTERNAL_TRANSFER'])).min(1).max(4),revoked_at:Time.nullable()});
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
+/** Both fresh reads independently hash-check the media bytes against originalSha256.
+ * Compare only bound metadata here: JSON.stringify(Buffer) otherwise expands a 5 MB
+ * image into tens of MB twice, which is unnecessary and avoidable memory pressure. */
+function snapshotFingerprint(value:ProviderSnapshot):string{
+  const media=value.media;
+  return hash({...value,...(media?{media:{sourceRevisionId:media.sourceRevisionId,
+    assetId:media.assetId,originalSha256:media.originalSha256}}:{})});
+}
 const denied=()=>new Error('Provider authority unavailable');
 function requireThat(value:unknown):asserts value {if(!value)throw new Denied();}
 class Denied extends Error{}
@@ -110,7 +118,7 @@ export class PostgresProviderAuthority {
       // REPEATABLE READ intentionally cannot see inside the first transaction.
       const second=await this.snapshot(req);
       const after=await this.current(req);
-      requireThat(hash(first)===hash(second)&&Date.parse(second.expiresAt)>Date.parse(after));
+      requireThat(snapshotFingerprint(first)===snapshotFingerprint(second)&&Date.parse(second.expiresAt)>Date.parse(after));
       return second;
     }catch(error){if(error instanceof Denied||error instanceof z.ZodError)return null;
       // Session denial is deliberately indistinguishable from missing input.
