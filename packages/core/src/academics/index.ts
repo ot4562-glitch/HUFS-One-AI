@@ -26,9 +26,12 @@ export type {
   TrustedSourceInventory,
 } from './rule-approval.js';
 export {importWisTimetable, WIS_TIMETABLE_PATH} from './wis-timetable.js';
+export {SAVED_CURRICULUM_CSV_HEADERS, toSavedCurriculumCsv, WIS_TIMETABLE_CONVERTER_VERSION} from './wis-timetable-csv.js';
+export type {SavedCurriculumCsv, SavedCurriculumDetail, WithheldReason} from './wis-timetable-csv.js';
 export type {
   TimetableArea,
   TimetableAttribute,
+  TimetableCampus,
   TimetableImport,
   TimetableImportRequest,
   TimetableIssue,
