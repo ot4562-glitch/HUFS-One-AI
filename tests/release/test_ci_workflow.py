@@ -144,6 +144,8 @@ def audit_ci_boundary(text: str) -> list[str]:
             issues.append("synthetic job omits release policy tests or workflow")
         if any("/infra/sql/" not in paths or "/tests/api/" not in paths for paths in sparse[1:]):
             issues.append("disposable PostgreSQL checkout lacks tests/migrations")
+        if "/apps/web/" not in sparse[-1]:
+            issues.append("real EMPTY_DEMO PG browser E2E must include the owned browser client source")
 
     for directory in EXCLUDED_DIRECTORIES:
         if text.count(f"test ! -d {directory}") != 3:
@@ -222,6 +224,14 @@ class WorkflowBoundaryTests(unittest.TestCase):
             with self.subTest(proof=proof):
                 self.assertIn(proof, self.policy)
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_real_empty_demo_browser_source_cannot_be_excluded(self) -> None:
+        self.assertIn("/apps/web/", sparse_checkout_lists(self.policy)[-1])
+        before, job = self.policy.split("  revision-claims-real-postgres:", 1)
+        changed = before + "  revision-claims-real-postgres:" + job.replace(
+            "            /apps/web/\n", "", 1
+        )
+        self.assertTrue(audit_ci_boundary(changed))
 
     def test_path_filtered_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
