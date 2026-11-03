@@ -73,22 +73,28 @@ export function OverlaySettings({controller, state, port}: Props) {
   // While our own write is in flight its new snapshot arrives before `current` is updated; that is not
   // staleness and must not trigger a reload (a reload would replace the snapshot again).
   const writing = useRef(false);
+  // Our own get also publishes a new snapshot before its result reaches `current`; same rule as `writing`.
+  const loading = useRef(false);
   const contextId = state.status === 'READY' ? state.context?.contextId ?? null : null;
   // The loaded overlay belongs to the snapshot it produced; any other snapshot (another write, revalidation,
   // subject) means it is stale until reloaded. Reload only then: a get also replaces the snapshot.
   const fresh = current !== null && snapshot !== null && current.snapshot === snapshot;
 
   useEffect(() => {
-    if (!contextId || fresh || writing.current) return;
+    if (!contextId || fresh || writing.current || loading.current) return;
     // No "live" flag: runOverlayOperation already returns null for any other epoch/context, and StrictMode's
     // second run is refused while the first get is in flight — dropping the first result would hang here.
+    // A get refused because an earlier mount's operation is still in flight is retried when that operation
+    // ends: it either publishes a new snapshot (re-runs this effect) or clears the context (unmounts us).
+    loading.current = true;
     void controller.runOverlayOperation((ctx, s) => port.get(ctx, s)).then(r => {
+      loading.current = false;
       if (!r) return;
       setCurrent(r);
       setInterests([...(r.overlay.value.interestTopics ?? [])]);
       setJobs([...(r.overlay.value.desiredJobTopics ?? [])]);
     });
-  }, [controller, port, contextId, fresh]);
+  }, [controller, port, contextId, fresh, snapshot]);
 
   if (!snapshot) return null;
   const shownChange = change && change.snapshot === snapshot ? change : null;

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import {StrictMode} from 'react';
+import {StrictMode, useSyncExternalStore} from 'react';
 import {afterEach, describe, expect, it} from 'vitest';
 import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import {DemoController} from '../../app/index.js';
@@ -7,7 +7,8 @@ import {SyntheticDemoClient} from '../../dev/syntheticDemoClient.js';
 import {App, type AppServices} from '../../App.js';
 import {appPages} from '../../pages/index.js';
 import type {HistoryPort} from '../../shell/router.js';
-import {compareFeeds} from './overlayCompare.js';
+import {compareFeeds, type OverlayPort} from './overlayCompare.js';
+import {OverlaySettings} from './OverlaySettings.js';
 
 afterEach(cleanup);
 const flush = () => act(async () => { for (let i = 0; i < 12; i++) await new Promise(r => setTimeout(r, 0)); });
@@ -120,5 +121,44 @@ describe('#85 맞춤 설정 바꿔 보기 (BETA overlay, synthetic)', () => {
   it('loads under StrictMode (the cleaned-up first effect must not leave the form stuck loading)', async () => {
     await open(true);
     expect(screen.getByText(/현재 설정 버전 0/)).toBeTruthy();
+  });
+});
+
+describe('#85 real route leave/return while the overlay GET is in flight', () => {
+  it('a remount refused by the earlier mount\'s GET reloads once that GET ends — no stuck skeleton', async () => {
+    const client = new SyntheticDemoClient({delayMs: 0});
+    const controller = new DemoController(client, 'RUN');
+    await controller.loadProfiles();
+    await controller.select('S01');
+    let release!: () => void;
+    const gate = new Promise<void>(r => { release = r; });
+    let gets = 0;
+    const port: OverlayPort = {
+      get: async (c, s) => { gets++; if (gets === 1) await gate; return client.getDemoOverlay(c, s); },
+      set: (c, ch, s) => client.setDemoOverlay(c, ch, s),
+      reset: (c, v, s) => client.resetDemoOverlay(c, v, s),
+    };
+    function Route({show}: {show: boolean}) {
+      const state = useSyncExternalStore(controller.subscribe, controller.getState);
+      return show ? <OverlaySettings controller={controller} state={state} port={port} /> : <p>다른 화면</p>;
+    }
+    const view = render(<Route show />);
+    await flush();
+    expect(gets).toBe(1);
+    view.rerender(<Route show={false} />); // leave /settings: a real unmount, not a StrictMode replay
+    view.rerender(<Route show />); // come back while the first GET is still pending
+    await flush();
+    expect(screen.getByLabelText('현재 설정을 불러오는 중')).toBeTruthy();
+    release();
+    await flush();
+    expect(screen.queryByLabelText('현재 설정을 불러오는 중')).toBeNull();
+    expect(screen.getByText(/현재 설정 버전 0/)).toBeTruthy();
+    expect(gets).toBe(2);
+    // The reloaded overlay belongs to the snapshot now on screen, so a write works.
+    chooseTrade();
+    fireEvent.click(screen.getByRole('button', {name: '바꿔서 비교하기'}));
+    await flush();
+    expect(screen.getByRole('region', {name: '바꾸기 전과 후'}).textContent).toContain('BETA_OVERLAY:0 → BETA_OVERLAY:1');
+    controller.dispose();
   });
 });
