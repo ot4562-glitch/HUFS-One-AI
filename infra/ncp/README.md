@@ -106,6 +106,23 @@ WinSCP SFTP로 **ZIP 한 개**를 `/home/hufs-admin/ncp-preview.zip`로 올린�
 
 **Windows PuTTY SSH 터널:** 새 PuTTY 세션 > Connection > SSH > Tunnels > Source port **5174**, Destination **127.0.0.1:5173**, Local > Add. `hufs-admin`으로 연결한 채 Windows 웹 브라우저에서 **http://127.0.0.1:5174**를 열면 합성 시연 화면이 열린다. Windows에서 5174 포트를 이미 쓰고 있다면 다른 빈 로컬 포트로 변경 가능. Windows 웹 주소를 공인 NCP IP/5173으로 열지 말 것.
 
+### 선택: Windows에서 ZIP 생성·SFTP 전송·Ubuntu 배포를 한 명령으로
+
+**Ubuntu 서버가 이미 승인·생성·bootstrap/SSH hardening 완료**된 경우, [`Deploy-NcpPreview.ps1`](Deploy-NcpPreview.ps1)이 기존 세 단계(허용 목록 ZIP 패키징 → WinSCP SFTP 전송 → plink SSH에서 제한 sudo 배포)를 하나로 묶는다. **기본값은 계획만 출력하고 아무것도 배포하지 않으며**, `-Apply`를 명시해야 원격 업로드·배포한다. NCP 서버 생성·유료 AI/Google/PG·공개 운영은 지원하지 않는다.
+
+준비: **Windows 10/11 PowerShell 5.1+, Git for Windows, WinSCP.com, plink.exe (PuTTY)** 설치, 운영자 검증된 NCP 서버 공인 IPv4·고정 SSH 서버 host-key 지문, `hufs-admin` 키 로그인, passphrase가 있는 로컬 `.ppk`. 필요하면 **Pageant**에 암호가 걸린 로컬 키를 미리 로드하되 passphrase를 명령 인자·파일·GitHub/에이전트에 넣지 않는다. WinSCP/plink 경로가 PATH 밖이면 `-WinSCPExe`/`-PlinkExe`로 절대 경로를 지정한다.
+
+```powershell
+# 프로젝트 루트의 PowerShell에서 실행. 각 대괄호 자리는 운영자가 직접 확인한 실제 값으로 교체.
+# PLAN: 검증/경로 확인만 하고 원격 작업은 하지 않음
+powershell -ExecutionPolicy Bypass -File .\infra\ncp\Deploy-NcpPreview.ps1 -ServerIPv4 "SERVER_PUBLIC_IPV4" -PrivateKeyPath "C:\secure\hufs-admin.ppk" -HostKeyFingerprint "ssh-ed25519 256 SHA256:VERIFIED_FINGERPRINT"
+
+# 서버·비용/네트워크 승인, bootstrap, 본인 SSH 키 테스트 완료 뒤에만:
+powershell -ExecutionPolicy Bypass -File .\infra\ncp\Deploy-NcpPreview.ps1 -ServerIPv4 "SERVER_PUBLIC_IPV4" -PrivateKeyPath "C:\secure\hufs-admin.ppk" -HostKeyFingerprint "ssh-ed25519 256 SHA256:VERIFIED_FINGERPRINT" -Apply
+```
+
+위 문자열은 **절차 예시**로 바로 실행 가능한 IP/지문/계정 비밀이 아니다. 서버 SSH host-key fingerprint를 첫 접속에서 무조건 승인하지 말고 독립 경로로 대조한다. 수동 WinSCP+PuTTY 절차는 장애 시 복구 경로로 유지한다. 이 Windows 원커맨드 자동화는 **오프라인 정적 CI만 검증**, 실제 PowerShell/WinSCP/Ubuntu 통합 실행 **NOT_RUN**.
+
 ### 운영자 점검·오류·유지보수
 
 - SSH 안 됨: NCP 서버 Running·공인IP/IGW/라우팅 → ACG 관리자 IP/32:22 → ACL 양방향 → UFW → PuTTY 키/계정·host key 지문. **0.0.0.0/0 SSH 열어서 해결하지 않는다.**
