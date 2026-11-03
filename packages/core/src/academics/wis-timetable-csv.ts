@@ -5,8 +5,8 @@ import type {TimetableAttribute, TimetableImport, TimetableRow} from './wis-time
  * operator-saved curriculum import (apps/api permitted-curriculum `importSavedCurriculum`,
  * OPERATOR_SAVED) accepts. One line per listed section; the raw 9-character code is kept, so
  * sections never collide. category is the page's 개설영역 text as written. The page states no
- * 학번, so cohort is UNKNOWN; campus comes from the page (TimetableImport.campus) unless the
- * operator states it.
+ * 학번, so cohort is UNKNOWN; campus is the one the page shows (TimetableImport.campus), and a
+ * stated campus is only checked against it.
  *
  * The CSV has no column for 이수구분, notes, or review flags, so they travel beside it in
  * `details`, one entry per exported line, and a row that needs review (for example a course
@@ -51,11 +51,11 @@ function quote(cell:string):string {
 }
 
 export function toSavedCurriculumCsv(page:TimetableImport, options:{campus?:string} = {}):SavedCurriculumCsv {
-  if (options.campus !== undefined && page.campus !== 'UNKNOWN' && options.campus !== page.campus) {
-    throw new TypeError(`campus ${options.campus} disagrees with the page, which shows ${page.campus}`);
+  // A stated campus may only confirm what the page shows. It never turns UNKNOWN into a campus.
+  if (options.campus !== undefined && options.campus !== page.campus) {
+    throw new TypeError(`campus ${options.campus} does not match the page, which shows ${page.campus}`);
   }
-  const campus = options.campus ?? page.campus;
-  if (!acceptable(campus)) throw new TypeError('campus must be a short non-empty label');
+  const campus = page.campus;
   if (!acceptable(page.departmentLabel)) throw new TypeError('department label is not accepted by the import');
   const lines = [SAVED_CURRICULUM_CSV_HEADERS.join(',')];
   const details:SavedCurriculumDetail[] = [];

@@ -43,11 +43,19 @@ describe('toSavedCurriculumCsv', () => {
     const seoul = page([row(1)], {campus:'SEOUL'});
     expect(toSavedCurriculumCsv(seoul).csv.split('\n')[1]).toBe('SYN010101,가상 과목 1,3,전공,SYNDEPT,2026-2,SEOUL,UNKNOWN');
     expect(toSavedCurriculumCsv(seoul, {campus:'SEOUL'}).campus).toBe('SEOUL');
-    expect(() => toSavedCurriculumCsv(seoul, {campus:'GLOBAL'})).toThrow(/disagrees with the page/);
+    expect(() => toSavedCurriculumCsv(seoul, {campus:'GLOBAL'})).toThrow(/does not match the page/);
   });
 
-  it('quotes cells with commas or quotes and uses a stated campus', () => {
-    const out = toSavedCurriculumCsv(page([row(1, {title:'가상 "입문", 실습'})]), {campus:'SEOUL'});
+  it('never turns an UNKNOWN page campus into a stated campus', () => {
+    const unknown = page([row(1)]);
+    for (const campus of ['SEOUL', 'GLOBAL', '서울', 'anything']) {
+      expect(() => toSavedCurriculumCsv(unknown, {campus})).toThrow(/does not match the page, which shows UNKNOWN/);
+    }
+    expect(toSavedCurriculumCsv(unknown, {campus:'UNKNOWN'}).csv.split('\n')[1]).toBe('SYN010101,가상 과목 1,3,전공,SYNDEPT,2026-2,UNKNOWN,UNKNOWN');
+  });
+
+  it('quotes cells with commas or quotes', () => {
+    const out = toSavedCurriculumCsv(page([row(1, {title:'가상 "입문", 실습'})], {campus:'SEOUL'}));
     expect(out.csv.split('\n')[1]).toBe('SYN010101,"가상 ""입문"", 실습",3,전공,SYNDEPT,2026-2,SEOUL,UNKNOWN');
   });
 
