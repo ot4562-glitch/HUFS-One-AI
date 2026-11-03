@@ -84,6 +84,10 @@ class NcpPreviewSafetyTests(unittest.TestCase):
             self.assertIn(expected, self.runbook)
         self.assertRegex(self.runbook, r"실제.+(서비스|운영).+(차단|미구현|전)")
         self.assertIn("APP_ENV=production", self.runbook)
+        self.assertIn("Global Edge", self.runbook)
+        self.assertIn("Whitelist > Geo", self.runbook)
+        self.assertIn("한국", self.runbook)
+        self.assertIn("Source port 5174", self.deploy)
 
 
 if __name__ == "__main__":
