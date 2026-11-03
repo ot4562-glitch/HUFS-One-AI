@@ -118,6 +118,23 @@
 **공통 불변 차단:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) Private Git 원본 권리/검사 **2 FAIL**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) **RELEASE_BLOCKED**. 실 NCP 리소스 생성/유료 호출·모델 다운로드·실학생/학교 자료 외부 전송·공개 배포는 별도 승인과 독립 검증 전 금지.
 <!-- full-issue-roster-20261103:end -->
 
+## 협업자 결정 → 다음 구현 책임 (2026-11-03)
+
+이 항목은 실제 [GitHub 이슈 댓글](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 **명시적 답변이 된 기술 방향**만 요약한다. 결정을 승인했다고 코드·학교 규정·자료 권리·유료 실행이 승인된 것은 아니다.
+
+| 결정 / 관련 이슈 | 주관·다음 구현·검증 책임 |
+| --- | --- |
+| [#133 학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133): `degreePath/track`를 `curriculumVersion`과 분리, multi-source documents/조항 SHA·권리, AREA_SPREAD·과목 묶음·언어조건은 공식 근거 전 `NEEDS_REVIEW`; 7+2 학수번호/교시 변환 추정 금지 | **박준영:** Git 밖 local-only DRAFT·합성 반례 및 순수 코드 PR, 학교 근거 수집. **심민성:** additive contracts/권한·PG/파일별 SHA receipt 검토. **김채윤·이의상:** 추천·UI에서 미승인 READY/졸업 확정 차단 |
+| [#61 합성 평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61): legacy snapshot 유지 + corpus snapshots 별도, 독립 gold 0/200 | **김채윤:** 생성·자체 검수/fixture 출처. **이의상:** 200쌍 독립 사람 라벨·anchor 검토. **심민성:** 결과 수락·API 소비자 계약 |
+| [#141/#124 메뉴](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 공개 5/24/4 정본 변경 금지, 로그인 관찰 6개는 비활성 `UNVERIFIED observedAreas` 별도 추가 계약 | **심민성:** 공통 manifest additive Zod·음성 시험 PR. **이의상:** 계약 병합 후 텍스트-only 비활성 360px·키보드·스크린리더 렌더링 |
+| [#119 정정 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119): owner `compareOpportunityRevisions`는 main; 두 개의 현재 승인 revision-id 발견 경로 미구현 | **심민성:** owner/SourceRevision 권한 메타 전용 조회·부정 테스트. **이의상:** #151 UI 별도 owner `liveServices` 연결·구판 잔상/401/403/409/503 제거 |
+| [#144/#81/#82 학업 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/144): main의 현재 이중전공 GET, `checkStudyPlan`, `checkMajorWhatIf`를 owner 세션에만 주입; 가정 후보는 승인 owner catalog 근거 필요 | **심민성:** #171 선택적 API DI 및 권한 있는 전공 후보 조회. **박준영:** 공식 RulePack 없을 때 BLOCKED. **이의상:** #152 P2 rowImpacts strict 원소 검증·#151/#154/#155 main 충돌 해결·실 E2E |
+| [#132 EMPTY_DEMO](https://github.com/ot4562-glitch/HUFS-One-AI/issues/132): #163 PG CAS/RESET main; GET/PATCH/POST reset·snapshot 정본 사용, #134 중복 UI 종료 | **심민성:** #170 실제 SQL 검증 + #171 optional owner PG DI. **이의상:** 기존 LocalAccountWorkbench를 중복 실계정으로 만들지 않고 BETA owner-client 소비·시연 접근성 E2E |
+| [#123 동아리](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123): main 합성 club route + owner browser client 소비, 실제 AI 포스터 아님 | **이의상:** 실제 BETA owner session DI·404/403/늦은 응답/360px 합성 소비. **김채윤:** 가상 추천 core 유지. **심민성:** role/source rights 검증 |
+| [#52/#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52) calendar/추천 사유 | **심민성:** 계약의 calendar ID 유일성·needsConfirmation/asOf/grant 묶음 및 `explainOpportunity` 권한 경계 유지. **김채윤:** core와 실제 표시 사유/증거 혼동 방어. **이의상:** owner UI 표시·실브라우저 검증 |
+
+**실행 관리:** 최신 코드·PR/CI 판정은 [STATUS](../STATUS.md). 독립 비작성자 리뷰 승인 없이 PR 강제 병합 금지. 사용자 별도 승인이 없는 학교 원본/실학생/NCP 유료 서비스 사용·출시 금지. #46/#61/#89 수락 게이트는 열린 상태 유지.
+
 ## 주요 교차 의존
 
 | 작업 | 입력 주관 → 소비자 및 완료 게이트 |
