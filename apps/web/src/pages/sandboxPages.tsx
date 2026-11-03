@@ -49,7 +49,7 @@ export const experiencePage: PageRenderer = ({path, state, sandbox}) => {
   return {title: '경험', body: <ExperienceEditor sandbox={sandbox} />};
 };
 
-export const settingsPage: PageRenderer = ({path, state, sandbox, services, controller}) => {
+export const settingsPage: PageRenderer = ({path, state, sandbox, services, controller, navigate}) => {
   if (path !== '/settings') return null;
   if (!sandbox && !services.overlay) return {title: '설정', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
   if (state.status !== 'READY') return {title: '설정', body: <NoSnapshot state={state} />};
@@ -57,6 +57,11 @@ export const settingsPage: PageRenderer = ({path, state, sandbox, services, cont
   const scope = `${state.epoch}:${state.context?.contextId ?? ''}`;
   return {title: '설정', body: (
     <>
+      {services.ownerDemoProfile && <p>
+        <InAppLink to="/demo-profile" navigate={navigate} className="button button--quiet">
+          독립 빈 시연 계정 설정 (BETA)
+        </InAppLink>
+      </p>}
       {services.overlay && <OverlaySettings key={scope} controller={controller} state={state} port={services.overlay} />}
       {sandbox && <SandboxSettings sandbox={sandbox} />}
     </>
