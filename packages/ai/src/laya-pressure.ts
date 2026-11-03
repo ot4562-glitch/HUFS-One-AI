@@ -1,5 +1,5 @@
 import {readFile} from 'node:fs/promises';
-import {isAbsolute, resolve, sep} from 'node:path';
+import {posix} from 'node:path';
 import type {LayaPressure} from './laya-scheduler';
 
 export interface LayaCpuSnapshot {total: number; idle: number}
@@ -13,13 +13,16 @@ export async function readLayaPressure(options: {
   read?: (path: string) => Promise<string>;
 }): Promise<{cpu: LayaCpuSnapshot; pressure?: LayaPressure}> {
   const read = options.read ?? (path => readFile(path, 'utf8'));
-  const group = resolve(options.cgroupPath);
-  if (!isAbsolute(options.cgroupPath) || !group.startsWith('/sys/fs/cgroup' + sep)) throw new Error('INVALID_CGROUP_METRICS_PATH');
+  // These are Linux kernel paths even when an offline injected reader runs on
+  // Windows. Host drive letters/separators must never rewrite metric names.
+  const group = posix.resolve(options.cgroupPath);
+  if (!posix.isAbsolute(options.cgroupPath) || /[\\\x00-\x1f\x7f]/.test(options.cgroupPath) ||
+    !group.startsWith('/sys/fs/cgroup/')) throw new Error('INVALID_CGROUP_METRICS_PATH');
   if (![options.api.p95Ms, options.api.baselineP95Ms, options.api.errorRatio].every(Number.isFinite) ||
     options.api.p95Ms < 0 || options.api.baselineP95Ms <= 0 || options.api.errorRatio < 0 || options.api.errorRatio > 1) throw new Error('INVALID_API_METRICS');
   const [stat, pressure, memory, rss, events] = await Promise.all([
     read('/proc/stat'), read('/proc/pressure/cpu'), read('/proc/meminfo'),
-    read(resolve(group, 'memory.current')), read(resolve(group, 'memory.events')),
+    read(posix.join(group, 'memory.current')), read(posix.join(group, 'memory.events')),
   ]);
   const match = /^cpu\s+([^\n]+)$/m.exec(stat);
   const values = match?.[1]?.trim().split(/\s+/).map(Number);
