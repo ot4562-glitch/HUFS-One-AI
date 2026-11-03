@@ -25,7 +25,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/strip_build_sourcemaps.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
-    "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
+    "/apps/web/", "/infra/sql/", "/infra/laya/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/tools/release_publication_gate.py", "/.dockerignore",
@@ -169,6 +169,9 @@ class WorkflowBoundaryTests(unittest.TestCase):
             "  pull_request:\n", "  pull_request:\n    branches: [main]\n", 1
         )
         self.assertTrue(audit_ci_boundary(changed))
+
+    def test_reviewed_laya_worker_helpers_are_in_synthetic_ci(self):
+        self.assertIn('/infra/laya/', sparse_checkout_lists(self.policy)[0])
 
     def test_offline_provider_source_is_present_in_both_backend_checkouts(self) -> None:
         for paths in sparse_checkout_lists(self.policy):
