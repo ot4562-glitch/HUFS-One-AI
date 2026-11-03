@@ -114,7 +114,8 @@ class NcpPreviewSafetyTests(unittest.TestCase):
         import warnings
         import zipfile
         with tempfile.TemporaryDirectory() as directory:
-            validator = self.deploy.split("python3 - \\"$sealed\\" <<'PY'\\n", 1)[1].split("\\nPY\\n", 1)[0]
+            marker = 'python3 - "$sealed" <<' + "'PY'" + '\n'
+            validator = self.deploy.split(marker, 1)[1].split('\nPY\n', 1)[0]
             for kind in ("valid", "duplicate", "traversal", "symlink"):
                 path = Path(directory) / f"{kind}.zip"
                 with zipfile.ZipFile(path, "w") as archive:
