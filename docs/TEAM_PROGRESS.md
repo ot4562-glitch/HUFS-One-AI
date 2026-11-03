@@ -15,7 +15,7 @@
 - [ ] **사람/외부 선행:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 보호 추적 원본 6경로·과거 전체 검사 2 FAIL(목적별 4/4 확인을 Git 최초 게시·협업 접근권 승인으로 확대 금지), [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 독립 gold **0/200**, [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27) 운영 OIDC·학교메일/OTP·PG/RLS·CSRF·권한 철회 및 [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실제 TLS/direct IP/Global Edge·브라우저/배포 실증. **RELEASE_BLOCKED**.
 - **고정 증거 수락률 유지:** 심민성 **7/12 (58.3%)** / 이의상 **9/12 (75.0%)** / 김채윤 **7/12 (58.3%)** / 박준영 **8/12 (66.7%)** / 이서연 NCP 운영 **1/5 (20.0%)**. 현재 이슈 **OPEN 34 / CLOSED 7**, 부분 구현 [x]는 전체 제품 완성률의 증거가 아니다.
 
-- [ ] [#168 인증 PG 조립](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) HEAD `0eceae7`: 3파일 선행 구현 및 일회용 PG·합성/Chrome CI **3/3 PASS**, qamarrchae 현 HEAD 독립 승인 대기/미병합. [로컬 실패를 포함한 증거](../STATUS.md). **새 게이트/이슈 [x] 0**, 실 Google/OTP/운영 인증 및 출시 수락으로 확대하지 않음.
+- [ ] [#168 인증 PG 조립](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) HEAD `dd2c205`: 3파일 선행 구현 및 일회용 PG·합성/Chrome CI **3/3 PASS**, qamarrchae 현 HEAD 독립 승인 대기/미병합. [로컬 실패를 포함한 증거](../STATUS.md). **새 게이트/이슈 [x] 0**, 실 Google/OTP/운영 인증 및 출시 수락으로 확대하지 않음.
 
 ## 산정 기준과 현재 결과
 
