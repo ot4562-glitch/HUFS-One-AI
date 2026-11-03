@@ -4,6 +4,7 @@ import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
 import type {BoardPort} from './features/applications/boardPort.js';
 import type {ClubPort} from './features/clubs/useClubBoard.js';
+import type {OverlayPort} from './features/settings/overlayCompare.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -33,6 +34,8 @@ export interface AppServices {
   readonly applications?: BoardPort;
   /** #123 club board for the current demo context; synthetic only until a club API exists. */
   readonly clubs?: ClubPort;
+  /** #85 BETA temporary choices; never set for a REVIEWER session (sandbox settings instead). */
+  readonly overlay?: OverlayPort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;

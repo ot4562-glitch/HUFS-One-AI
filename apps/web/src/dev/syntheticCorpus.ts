@@ -1,4 +1,4 @@
-import {CalendarResultSchema, DemoSnapshotSchema, type CalendarResult, type DemoSnapshot, type SubjectAlias} from '@hufs-one/contracts';
+import {CalendarResultSchema, DemoSnapshotSchema, type CalendarResult, type DemoOverlayValue, type DemoSnapshot, type SubjectAlias} from '@hufs-one/contracts';
 import {
   DEMO_AS_OF, DEMO_OPPORTUNITIES, DEMO_PUBLISHED_AT, DEMO_STUDENTS,
   buildCalendar, buildDemoSnapshot, composeFeed, scopeInputsToGrant,
@@ -57,4 +57,30 @@ export function buildSyntheticSubjects(): ReadonlyMap<SubjectAlias, SyntheticSub
     out.set(student.subject, {label: student.label, snapshot, calendar});
   }
   return out;
+}
+
+/**
+ * #85 dev stand-in for the server's overlay recomputation: the same subject's feed and calendar recomputed
+ * with temporary BETA choices (interests, desired jobs, hidden postings) at the same asOf. Notices, academics
+ * and every other version stay as they were; only versions.overlay changes.
+ */
+export function applySyntheticOverlay(subject: SubjectAlias, base: SyntheticSubject, value: DemoOverlayValue, overlayVersion: number): SyntheticSubject {
+  const student = DEMO_STUDENTS.find(s => s.subject === subject);
+  if (!student) throw new RangeError('unknown synthetic subject');
+  const scoped = scopeInputsToGrant(student.profile, student.noticeStudent, ALL);
+  if (!scoped.profile || !scoped.noticeStudent) throw new RangeError('synthetic subject needs FEED and NOTICES');
+  const profile = {
+    ...scoped.profile,
+    ...(value.interestTopics ? {interestTopics: value.interestTopics} : {}),
+    ...(value.desiredJobTopics ? {desiredJobTopics: value.desiredJobTopics} : {}),
+  };
+  const feed = composeFeed(profile, DEMO_OPPORTUNITIES, {
+    asOf: DEMO_AS_OF, publishedAtBySnapshotId: DEMO_PUBLISHED_AT, hiddenOpportunityIds: value.hiddenOpportunityIds ?? [],
+  });
+  const notices = composeNotices(scoped.noticeStudent, DEMO_NOTICES, {asOf: DEMO_AS_OF});
+  const calendar = CalendarResultSchema.parse(buildCalendar(feed, notices, DEMO_NOTICES, {asOf: DEMO_AS_OF}));
+  const snapshot = DemoSnapshotSchema.parse({
+    ...base.snapshot, feed: feed.feed, versions: {...base.snapshot.versions, overlay: `BETA_OVERLAY:${overlayVersion}`},
+  });
+  return {label: base.label, snapshot, calendar};
 }

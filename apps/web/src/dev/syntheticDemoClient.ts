@@ -1,6 +1,8 @@
 import {
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema,
-  type ApiErrorCode, type CalendarResult, type DemoContext, type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
+  DemoOverlayPutSchema, DemoOverlayResultSchema,
+  type ApiErrorCode, type CalendarResult, type DemoContext, type DemoOverlayPut, type DemoOverlayResult, type DemoOverlayValue,
+  type DemoProfileOption, type DemoSnapshot, type SubjectAlias,
 } from '@hufs-one/contracts';
 import {HufsApiError} from '../integrations/api-client.js';
 import {
@@ -8,7 +10,7 @@ import {
 } from '../integrations/reviewer-sandbox-contract.js';
 import type {DemoClientPort} from '../app/demo-controller.js';
 import profilesJson from '../../../../packages/fixtures/synthetic/demo-profiles.json';
-import {buildSyntheticSubjects, type SyntheticSubject} from './syntheticCorpus.js';
+import {applySyntheticOverlay, buildSyntheticSubjects, type SyntheticSubject} from './syntheticCorpus.js';
 
 /**
  * In-browser SYNTHETIC demo transport for local UI development and component tests.
@@ -92,7 +94,7 @@ export class SyntheticDemoClient implements DemoClientPort {
     if (!subject || !data) throw new HufsApiError('FORBIDDEN', 403);
     const forced = this.snapshotErrors[subject];
     if (forced) throw new HufsApiError(forced, ERROR_STATUS[forced]);
-    return DemoSnapshotSchema.parse({...data.snapshot, contextId});
+    return DemoSnapshotSchema.parse({...this.current(contextId, subject, data).snapshot, contextId});
   }
 
   /** Synthetic stand-in for the pending HufsApiClient.getCalendar (#71): the subject's own calendar. */
@@ -100,8 +102,66 @@ export class SyntheticDemoClient implements DemoClientPort {
     await wait(this.delayMs, signal);
     const subject = this.contexts.get(contextId);
     const data = subject && this.subjects.get(subject);
+    if (!data || !subject) throw new HufsApiError('FORBIDDEN', 403);
+    return this.current(contextId, subject, data).calendar;
+  }
+
+  /** #85 temporary BETA choices per context (dev stand-in for the overlay API). */
+  private readonly overlays = new Map<string, {version: number; value: DemoOverlayValue; updatedAt: string | null}>();
+  /** Test hook: the next overlay write for these contexts fails once with this code. */
+  readonly failNextOverlay = new Map<string, ApiErrorCode>();
+
+  private current(contextId: string, subject: SubjectAlias, data: SyntheticSubject): SyntheticSubject {
+    const o = this.overlays.get(contextId);
+    return o ? applySyntheticOverlay(subject, data, o.value, o.version) : data;
+  }
+
+  private overlayResult(contextId: string): DemoOverlayResult {
+    const subject = this.contexts.get(contextId);
+    const data = subject && this.subjects.get(subject);
+    if (!subject || !data) throw new HufsApiError('FORBIDDEN', 403);
+    const o = this.overlays.get(contextId) ?? {version: 0, value: {}, updatedAt: null};
+    const s = applySyntheticOverlay(subject, data, o.value, o.version);
+    return DemoOverlayResultSchema.parse({overlay: o, snapshot: {...s.snapshot, contextId}, calendar: s.calendar});
+  }
+
+  async getDemoOverlay(context: DemoContext, signal?: AbortSignal): Promise<DemoOverlayResult> {
+    await wait(this.delayMs, signal);
+    return this.overlayResult(context.contextId);
+  }
+
+  private write(contextId: string, expectedVersion: number, value: DemoOverlayValue): DemoOverlayResult {
+    const planned = this.failNextOverlay.get(contextId);
+    if (planned) { this.failNextOverlay.delete(contextId); throw new HufsApiError(planned, ERROR_STATUS[planned]); }
+    const cur = this.overlays.get(contextId) ?? {version: 0, value: {}, updatedAt: null};
+    if (expectedVersion !== cur.version) throw new HufsApiError('VERSION_CONFLICT', 409);
+    this.overlays.set(contextId, {version: cur.version + 1, value, updatedAt: new Date(Date.parse(this.asOfOf(contextId)) + 60_000).toISOString()});
+    return this.overlayResult(contextId);
+  }
+
+  private asOfOf(contextId: string): string {
+    const subject = this.contexts.get(contextId);
+    const data = subject && this.subjects.get(subject);
     if (!data) throw new HufsApiError('FORBIDDEN', 403);
-    return data.calendar;
+    return data.snapshot.asOf;
+  }
+
+  async setDemoOverlay(context: DemoContext, change: DemoOverlayPut, signal?: AbortSignal): Promise<DemoOverlayResult> {
+    await wait(this.delayMs, signal);
+    const input = DemoOverlayPutSchema.safeParse(change);
+    if (!input.success) throw new HufsApiError('INVALID_INPUT', 422);
+    return this.write(context.contextId, input.data.expectedVersion, input.data.value);
+  }
+
+  async resetDemoOverlay(context: DemoContext, expectedVersion: number, signal?: AbortSignal): Promise<DemoOverlayResult> {
+    await wait(this.delayMs, signal);
+    return this.write(context.contextId, expectedVersion, {});
+  }
+
+  /** Simulate an overlay change from another tab: bumps the stored version. */
+  touchOverlay(contextId: string): void {
+    const cur = this.overlays.get(contextId) ?? {version: 0, value: {}, updatedAt: null};
+    this.overlays.set(contextId, {version: cur.version + 1, value: cur.value, updatedAt: new Date(Date.parse(this.asOfOf(contextId)) + 60_000).toISOString()});
   }
 
   /** In-memory synthetic sandbox log per subject (dev stand-in for the REVIEWER actions API). */
@@ -127,6 +187,7 @@ export class SyntheticDemoClient implements DemoClientPort {
 
   async logout(): Promise<void> {
     this.contexts.clear();
+    this.overlays.clear();
     this.logs.clear();
   }
 }

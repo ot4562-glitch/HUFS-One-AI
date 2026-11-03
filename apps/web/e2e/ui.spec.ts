@@ -156,6 +156,21 @@ test('#123 club board at 360px: recommendations, filter, detail; unapproved post
   await expect(page.getByRole('main')).toContainText('지금 볼 수 있는 모집 글이 아니에요');
 });
 
+test('#85 settings: change interests, see same-asOf before/after, undo — no overflow at 360px', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 900});
+  await page.goto('/settings');
+  await pick(page, 0);
+  await expect(page.getByText(/현재 설정 버전 0/)).toBeVisible();
+  await page.getByRole('group', {name: /^관심 분야/}).getByRole('checkbox', {name: '무역·통상'}).check();
+  await page.getByRole('button', {name: '바꿔서 비교하기'}).click();
+  const compare = page.getByRole('region', {name: '바꾸기 전과 후'});
+  await expect(compare).toContainText('BETA_OVERLAY:0 → BETA_OVERLAY:1');
+  await page.getByRole('button', {name: '되돌리기'}).click();
+  await expect(compare).toContainText('BETA_OVERLAY:1 → BETA_OVERLAY:2');
+  const o = await noHorizontalOverflow(page);
+  expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
+});
+
 test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {
   await page.goto('/');
   await pick(page, 0);
