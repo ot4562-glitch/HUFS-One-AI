@@ -192,6 +192,7 @@ jobs:
             /packages/core/
             /tests/api/
             /apps/api/
+            /apps/web/
             /infra/sql/
       - name: Refuse private student input in revision SQL job
         run: |
