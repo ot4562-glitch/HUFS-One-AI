@@ -12,7 +12,7 @@
 | **박준영** `taewangim-alt` | 학업·학점·교육과정/개설·졸업 RulePack 순수 코어 및 공식 교과 조사. [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) | 학수번호·이중전공·중복/대체/선수·기간/규칙, `UNKNOWN/NEEDS_REVIEW`, #138 HTML·#149 CSV/handoff **로컬 변환 코드 병합 완료**(기관 수집 허가 아님). 실제 교과 사이트 수집/이용허가를 추정하지 않음 |
 | **이서연** `lhh42001` | **NCP 클라우드 운영·계정·권한·크레딧·요금·비코드 인프라·실측 전담** [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) | VPC/서버/스토리지/TLS/IAM/DNS·CLOVA/OCR/HCX 서비스 이용권·SKU/예산·호스트 CPU/RSS/비용 영수증·중지/반납. **SDK·worker·HTTP·ONNX·IaC·OS 스크립트·CI·자동화 코딩 0건 배정**. UI·추천·학업 개발 이슈에서 assignee 해제. 유료 실행은 별도 사용자 승인 필요 |
 
-**2026-11-03 검증된 개발 현황:** 심민성 코드 #145 오프라인 OCR/HCX wire 및 #148 PostgreSQL 비용 원장, 이의상 #131 BETA 설정 비교/REVIEWER 오류 fail-closed UI는 최신 HEAD 타인 승인·CI 3/3 후 **main 병합**. 후속 #150 owner provider/Laya/API는 **Draft·main 충돌·독립 승인 대기**, 이의상 #134는 #131 squash 병합 뒤 **main 충돌**, 박준영 #149 시간표 CSV는 이전 캠퍼스 근거 결함 수정·비작성자 APPROVED·CI 3/3 뒤 **main `efa13368` 병합**. 역할 변경이나 실운영 승인·제품 전체 완료는 아님. [현재 STATUS](../STATUS.md) 참고.
+**2026-11-03 최신 GitHub 교차 검증:** [#153](https://github.com/ot4562-glitch/HUFS-One-AI/pull/153) 중앙 메뉴 매니페스트 UI는 비작성자 APPROVED·HEAD CI 3/3 후 **main `9b5cb81a` 병합**(이의상 #124/#141 하위 [x]). [#151](https://github.com/ot4562-glitch/HUFS-One-AI/pull/151)·[#154](https://github.com/ot4562-glitch/HUFS-One-AI/pull/154)·[#155](https://github.com/ot4562-glitch/HUFS-One-AI/pull/155)는 #153 병합 이후 merge conflict와 COMMENT, [#152](https://github.com/ot4562-glitch/HUFS-One-AI/pull/152)는 부정 `rowImpacts` P2 **REQUEST_CHANGES**. 이의상이 최신 main/서로 겹치는 화면을 통합하고 새 HEAD CI/리뷰를 받아야 함. [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134)는 **CLOSED/미병합**; 고유 기능은 #132에서 별도. 심민성 [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) provider/PG/Laya 대형 WIP Draft/충돌, [#156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156) Ubuntu/Windows 합성 SSH Preview Draft/독립 승인 대기(실 NCP NOT_RUN). 이서연 NCP 비코드 역할/모든 하위 이슈 assignee 변경 없음. 전체 34개 이슈 중 근거로 **종결 가능 0**, 부분 완료만 해당 이슈 [x]로 기록.
 
 **2026-11-03 최신 역할 우선:** 이서연은 NCP 운영 담당만 유지하고 OCR/HCX/Laya 코드 등 모든 개발작업은 심민성에게 재배정했다. 기존 작업 이슈 #12/#22의 운영 범위와 #20/#88/#143의 구현 범위를 엄격히 구분한다. 이전 문서/과거 이슈의 혼합 배정은 효력 없음.
 
@@ -25,8 +25,8 @@
 
 | 주관 | OPEN 건수 | 가장 가까운 독립 작업 |
 | --- | ---: | --- |
-| **심민성** `ot4562-glitch` | **17** | #150 통합·#133 저장본별 권리·#46/#89 보안 |
-| **이의상** `uisang2004-maker` | **11** | #134 rebase·#124/#141 메뉴/UX |
+| **심민성** `ot4562-glitch` | **17** | #150 83파일 Draft 분리·#27 실운영 인증/PG·#46/#89 권리/보안 |
+| **이의상** `uisang2004-maker` | **11** | #153 메뉴 하위 완료, #152 P2·#151/#154/#155 최신 main 통합, #124/#141 UX |
 | **김채윤** `qamarrchae` | **2** | #10 인용 의미·#86 근거 설명 |
 | **박준영** `taewangim-alt` | **2** | #149 변환 인계·실공식 RulePack |
 | **이서연** `lhh42001` | **2** | #12 계정/크레딧·#22 승인 후 호스트 실측 |
@@ -49,7 +49,7 @@
 | [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) | 합성 라벨 **독립 인간 gold 0/200**, 생성자 외 평가/서명 기록 | 이의상 독립 검토 |
 | [#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88) | OCR·HCX·Laya fake-provider 429/503/중복 과금/취소/OOM·CPU chaos | #150 통합 후 |
 | [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) | Google·TLS·direct IP·PG·권한·NCP·데이터 권리 **RELEASE_BLOCKED** 검증 | 전원, 배포 승인 별도 |
-| [#132](https://github.com/ot4562-glitch/HUFS-One-AI/issues/132) | 독립 빈 합성 계정 — #134 UI 재기반, #150 owner API, reset/권한 E2E | 이의상·김채윤·박준영 |
+| [#132](https://github.com/ot4562-glitch/HUFS-One-AI/issues/132) | 독립 빈 합성 계정 — #134 CLOSED/미병합 기능 재검토, #150 owner API, reset/권한 E2E | 이의상·김채윤·박준영 |
 | [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) | 실 4인 학업 연결 — #149 **병합 완료**, 저장본별 권리·원장/4인 동의·비Git 인계 | 박준영·김채윤·이의상 |
 | [#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143) | Laya worker/OS·cgroup/IaC 코드 — #150 Draft 독립 리뷰·격리/OOM/CPU 수락 | 이서연 #22 실호스트 비코드 |
 
@@ -57,7 +57,7 @@
 
 | 이슈 | 본인 주관 다음 수락 | 공동 담당·의존 |
 | --- | --- | --- |
-| [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) | UI 종합 — #134 충돌, #124/#141 새 IA, 운영·접근성 복합 게이트 | 심민성 API |
+| [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) | UI 종합 — #153 메뉴 계약 하위 병합, #151/#152/#154/#155 충돌과 P2, #124/#141 IA·운영 접근성 | 심민성 API |
 | [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51) | 2주 미니 캘린더 #72 main; 학교 일정·실스크린리더/철회 검증 | 심민성 #52 |
 | [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) | 지원 단계/자가기록 보드 #128 main; 401/403/409·다중탭 E2E | 심민성 owner/CAS |
 | [#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81) | 졸업+수강계획 나란히 — 실 RulePack/계획 안전 DTO·권한 UI | 박준영·심민성 |
