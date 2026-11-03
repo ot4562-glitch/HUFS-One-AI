@@ -205,6 +205,19 @@ or an unaudited student-data upload.
 - `npm run admin:reviewer -- revoke`: `REVIEWER_INVITE_ID`를 사용해 기한 전 revoke. DB 행은 즉시 철회되며 서버 다음 요청이 거부해야 한다.
 - 이 기능은 **독립 서버 인증/DB 연결이 완료되기 전에는 실행하지 않는다**. 사용 가능한 PDF와 템플릿을 혼동하지 않는다.
 
+## AI 비용 원장 (#20/#88, 실제 호출 미연결)
+
+`modules/ai/budget-postgres.ts`와 검토용 `infra/sql/20261103_ai_budget.sql`은 전역 phase·actor별 비용/시도 한도를 PostgreSQL에서 원자적으로 예약합니다. 단위는 정수 micro-KRW(1 KRW=1,000,000 units)이며 단가를 추정하지 않습니다. trusted quote/tokenizer가 payload·model·prompt/schema·source/permission/consent 판본을 포함한 request SHA와 각 시도 worst-case 비용을 계산해야 합니다. `task`는 과금 provider operation(`OCR_GENERAL`, `HCX_005`, `HCX_007`)이며 제품 AI task·모든 판본은 request SHA에 결속해야 합니다.
+
+- phase 기본값 **enabled=false, 모든 한도0**. operator만 기간·전역/actor 비용·시도 한도를 준비합니다. 코드 import/배포로 migration 적용·활성화하지 않습니다.
+- 독립 migration 검토 뒤 신뢰된 BYPASSRLS 소유자가 함수를 소유해야 합니다. runtime 역할은 schema USAGE와 `ai_budget_reserve(text,text,text,text,bigint)`, `ai_budget_transition(text,uuid,text,text,bigint,text)` EXECUTE만 받고, 세 테이블 SELECT/DML/configuration은 주지 않습니다. FORCE RLS·PUBLIC 권한 회수·함수의 고정 search_path/명시적 actor 검사가 유지돼야 합니다.
+- 인증된 server actor를 transaction-local로 결속합니다. 브라우저의 actor/비용/receipt는 신뢰하지 않습니다. `reserve().changed=true`는 새 예약만 뜻하며 **송신 허가는 별도 DISPATCHED transition의 changed=true**에서 한 번만 얻습니다. 응답/commit 손실은 재전송 허가가 아닙니다.
+- RESERVED(아직 전송 안 됨)만 RELEASED로 비용/시도 예약을 한 번 반환합니다. DISPATCHED 이후 timeout/crash/취소는 UNKNOWN_BILLING 또는 미정산 DISPATCHED로 남아 계속 예산을 점유하며 자동 환급/재시도하지 않습니다. 실제 검증된 사용량/과금 영수증의 SHA와 비용이 있어야 SETTLED로 정산합니다. 같은 영수증·비용 재정산은 중복 차감하지 않습니다.
+- 실제 과금이 예약보다 크면 **실제 비용을 그대로 기록하고 phase를 OFF**로 바꿉니다. 예약/정책 상한은 10^12 units, 실제 건별 영수증은 JS safe integer 범위까지 별도로 받고 DB 누적액은 numeric(30,0)으로 보존합니다. 이미 송신된 요청은 OFF/만료 뒤에도 정산할 수 있습니다. 금액을 예약 상한에 맞춰 숨기지 않습니다. 미정산 예약은 자동 만료하지 않으며 운영 reconciliation이 필요합니다.
+- 원장은 권한 승인/사실 검증/가격 계산기나 HTTP transport가 아닙니다. 매 전송 전/응답 후 current source/actor/grant/asOf/동의/철회 검사, 실제 provider usage 검증·tokenizer·bounded HTTP·retry/취소·로그/secret 보호·#88 chaos·#143 worker가 추가로 필요합니다. 현재 제품 HTTP 경로에 연결하지 않았고 유료 호출0입니다.
+
+검증: `vitest run tests/api/ai-budget-postgres.test.ts`(SQL 프로토콜 단위), 기존 opt-in disposable `pg-full-live-opt-in.test.ts`(실 PG의 동시20·idempotency/actor·unknown 정산·취소·OFF/만료·overrun). 실제 PG 성공은 해당 CI HEAD 결과로 따로 확인하며 기본 SKIP을 성공으로 표시하지 않습니다.
+
 ## Laya CPU 스파이크로부터 API 보호 (설계, 미구현·미배포)
 
 Laya 워커는 Fastify HTTP handler·REVIEWER GET·일반 데모 요청 경로와 분리한다. 나중에 승인된 ingestion에서만 권한 있는 sourceRevision별 저우선순위 비동기 작업으로 예약. OS cgroup `CPUQuota=100%` (**1vCPU**), 단일 worker, queue 16, ONNX threads=1/spin OFF, `MemoryMax=3072M`로 CPU/메모리 급증을 가둔다. CPU/pressure/API p95/RAM 경계 초과 시 pause/off 및 `UNKNOWN/NEEDS_REVIEW`+규칙 폴백. 실제 queue/worker/systemd/model download/NCP 부하 실측은 **이 PR에서 구현하지 않았다**. 게이트·샘플: [docs/LAYA_CPU_SPIKE_PROTECTION.md](../../docs/LAYA_CPU_SPIKE_PROTECTION.md).
