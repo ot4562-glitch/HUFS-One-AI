@@ -30,6 +30,10 @@ import type {OwnerCatalogAuthority} from './modules/opportunities/owner-catalog-
 import {PostgresOwnerStudyPlanSnapshotLoader} from './modules/academics/owner-study-plan-postgres.js';
 import {createTrustedOwnerStudyPlanSource} from './modules/academics/owner-study-plan-source.js';
 import type {TrustedOwnerStudyPlanRights,ApprovedStudyPlanGate} from './modules/profiles/owner-study-plan-check-http.js';
+import {createPostgresOwnerDoubleMajorServices} from './modules/academics/owner-double-major-postgres.js';
+import {PostgresApprovedRevisionClaims} from './modules/opportunities/approved-revision-claims-postgres.js';
+import {DemoProfileService} from './modules/profiles/demo-profile.js';
+import {PostgresDemoProfileStore} from './modules/profiles/demo-profile-postgres.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -60,12 +64,22 @@ export interface PostgresPlatformConfig {
   /** Separate source/permission and academic activation authorities remain mandatory. */
   studyPlanCheck?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
     rights:TrustedOwnerStudyPlanRights;approvalGate:ApprovedStudyPlanGate};
+  /** Owner-private, current approved double-major projection; never a browser rulepack. */
+  doubleMajor?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  /** Exact independently approved SourceRevision claims; read-only. */
+  revisionComparison?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  /** Isolated EMPTY_DEMO synthetic profile only, never a personal-account fallback. */
+  demoProfile?:{pool:ReviewerSqlPool};
   now?:()=>string;
 }
 
 /** Spread these services into createIntegratedApi alongside the trusted auth/reviewer ports. */
 export function createPostgresPlatformServices(config:PostgresPlatformConfig){
   const now=config.now??(()=>new Date().toISOString());
+  // Optional ports are never created from shared/default pools or environment flags.
+  const claims=config.revisionComparison
+    ?new PostgresApprovedRevisionClaims(config.revisionComparison.pool,config.revisionComparison.authority,now)
+    :undefined;
   const teamCalendar=new PostgresCalendarInputSource(config.pools.calendar);
   const calendarSource:CalendarInputSource={
     readAuthorizedInputs:input=>input.reviewerInviteId===undefined
@@ -76,6 +90,10 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
+    ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights}}:{}),
+    ...(config.demoProfile?{demoProfile:new DemoProfileService(
+      new PostgresDemoProfileStore(config.demoProfile.pool))}:{}),
     ...(config.ownerCatalog?{
       ownerCatalog:new PostgresTrustedOwnerCatalog(config.ownerCatalog.pool,config.ownerCatalog.authority,now),
     }:{}),
