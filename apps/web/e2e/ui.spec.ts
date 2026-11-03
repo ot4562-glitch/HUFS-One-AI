@@ -125,8 +125,8 @@ test('#124 sidebar at 1440px: whole HUFSAbility menu visible, 🚫 items never t
   await page.goto('/');
   const nav = page.getByRole('navigation', {name: '전체 메뉴'});
   await expect(nav).toBeVisible();
-  await expect(nav.locator('.menu__item.is-off')).toHaveCount(23);
-  await expect(nav.locator('a.menu__item')).toHaveCount(11);
+  await expect(nav.locator('.menu__item.is-off')).toHaveCount(24);
+  await expect(nav.locator('a.menu__item')).toHaveCount(12); // 8 확장 + 4 공개 영역 공식 홈 링크
   // Tab through the sidebar: focus only ever lands on real links.
   await page.keyboard.press('Tab'); // skip link
   for (let i = 0; i < 12; i++) {
@@ -192,4 +192,22 @@ test('invite page on a non-canonical origin never renders or uses a fragment cod
   await expect(page.getByText(/초대 코드가 없습니다/)).toBeVisible();
   expect(await page.content()).not.toContain(code.slice(0, 20) + 'AAAAAAAAAAAAAAAAAAAAAAA');
   await expect(page.locator('details.selector')).toHaveCount(0);
+});
+
+test('#141 /menu at 360px: manifest menus, no horizontal overflow, Tab skips 🚫 items', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/menu');
+  const main = page.getByRole('main');
+  await expect(main.getByText('핵심역량 진단검사')).toBeVisible();
+  await expect(main.locator('.menu__item.is-off')).toHaveCount(24);
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+  // Walk the whole Tab order once: no unsupported original menu ever takes focus.
+  const focused: string[] = [];
+  for (let i = 0; i < 80; i++) {
+    await page.keyboard.press('Tab');
+    focused.push(await page.evaluate(() => (document.activeElement?.closest('.menu__item.is-off') ? 'OFF' : '') + (document.activeElement?.textContent ?? '')));
+  }
+  expect(focused.filter(f => f.startsWith('OFF'))).toEqual([]);
+  expect(focused.some(f => f.includes('맞춤 기회'))).toBe(true);
 });

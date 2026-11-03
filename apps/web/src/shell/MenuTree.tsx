@@ -1,15 +1,28 @@
 import {InAppLink} from './AppShell.js';
-import {KIND_TAG, MENU_GROUPS, MENU_SOURCE, OFFICIAL_HUFSABILITY_URL, STATUS_TEXT, type MenuItem} from './menuCatalog.js';
+import {MENU_SOURCE, MENU_GROUPS, OFFICIAL_HUFSABILITY_URL, STATUS_TEXT, type MenuItem} from './menuCatalog.js';
 
 function Item({item, path, navigate}: {item: MenuItem; path: string; navigate: (p: string) => void}) {
-  const tag = KIND_TAG[item.kind];
   if (item.status === 'DEMO_AVAILABLE' && item.route) {
     return (
       <li>
         <InAppLink to={item.route} navigate={navigate} className="menu__item" current={path === item.route}>
           <span>{item.label}</span>
-          {tag && <span className="menu__tag">{tag}</span>}
         </InAppLink>
+      </li>
+    );
+  }
+  const tag = (item.disabledText ?? '🚫 미지원').replace(/^🚫\s*/, '');
+  if (item.status === 'OFFICIAL_LINK_ONLY' && item.officialUrl) {
+    // Leaves our service for the school's own home page; it is not a feature of this demo.
+    return (
+      <li>
+        <a href={item.officialUrl} target="_blank" rel="noopener noreferrer" className="menu__item menu__item--external">
+          <span aria-hidden="true">🚫</span>
+          <span>{item.label}</span>
+          <span className="menu__tag menu__tag--off">{tag}</span>
+          <span aria-hidden="true">↗</span>
+          <span className="visually-hidden"> — {STATUS_TEXT[item.status]} (새 창)</span>
+        </a>
       </li>
     );
   }
@@ -19,7 +32,7 @@ function Item({item, path, navigate}: {item: MenuItem; path: string; navigate: (
       <span className="menu__item is-off" aria-disabled="true">
         <span aria-hidden="true">🚫</span>
         <span>{item.label}</span>
-        <span className="menu__tag menu__tag--off">미지원</span>
+        <span className="menu__tag menu__tag--off">{tag}</span>
         <span className="visually-hidden"> — {STATUS_TEXT[item.status]}</span>
       </span>
     </li>
@@ -46,7 +59,7 @@ export function MenuTree({path, navigate, variant}: {path: string; navigate: (p:
         <a href={OFFICIAL_HUFSABILITY_URL} target="_blank" rel="noopener noreferrer" className="menu__official">
           공식 HUFSAbility에서 열기<span className="visually-hidden"> (새 창, 학교 공식 사이트)</span> <span aria-hidden="true">↗</span>
         </a>
-        <span className="menu__source">HUFSAbility 메뉴 명칭·순서: {MENU_SOURCE.title} 기준. HUFS One AI는 학교 공식 시스템이 아니며, 🚫 표시 기능은 이번 시연에서 제공하지 않습니다.</span>
+        <span className="menu__source">HUFSAbility 메뉴 명칭·순서: {MENU_SOURCE.title}({MENU_SOURCE.observedOn} 관찰, {MENU_SOURCE.version}) 기준. HUFS One AI는 학교 공식 시스템이 아니며, 🚫 표시 기능은 이번 시연에서 제공하지 않습니다.</span>
       </p>
     </div>
   );
