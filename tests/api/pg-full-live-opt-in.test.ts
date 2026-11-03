@@ -16,6 +16,7 @@ import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-pos
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
 import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
+import {proveSourceJobControlPg} from './source-job-control-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -851,6 +852,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query('SELECT state,last_error_code FROM source_ingest_jobs WHERE job_id=$1',
       [task.jobId])).rows[0]).toEqual({state:'NEEDS_REVIEW',last_error_code:'UNKNOWN_COMPLETION'});
   });
+  it('exposes only authorized job control/status across HTTP and two built API process lifetimes',async()=>{
+    await proveSourceJobControlPg({admin,url:connectionUrl(),password:rolePassword,adapter});
+  },60000);
   it('reads only current rights-scoped SourceRevision metadata from real SELECT-only PostgreSQL',async()=>{
     const old=new Date(Date.now()-60_000).toISOString(),fresh=new Date(Date.now()-30_000).toISOString();
     await admin.query(`INSERT INTO source_revisions_vnext (

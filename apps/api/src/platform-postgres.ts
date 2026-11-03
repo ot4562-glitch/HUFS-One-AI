@@ -10,6 +10,7 @@ import {PostgresTemporalEvidenceReader} from './modules/opportunities/temporal-p
 import {createPostgresTemporalGateway} from './modules/opportunities/temporal-gateway.js';
 import {PostgresSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
 import {PostgresSourceIngestionQueue} from './modules/opportunities/source-ingestion-queue-postgres.js';
+import type {SourceJobOperatorAuthority} from './modules/opportunities/source-job-control-http.js';
 import {PostgresReviewerSandboxStore} from './modules/auth/reviewer-sandbox-postgres.js';
 import {PostgresRestrictedIntakeImport} from './modules/academics/intake-postgres.js';
 import {PostgresSelfAccountStore} from './modules/profiles/self-account-postgres.js';
@@ -48,6 +49,8 @@ export interface PostgresPlatformConfig {
   /** Optional private operator port. No automatic crawler/worker or network. */
   sourceIngestion?:{pool:ReviewerSqlPool;
     authority:TrustedSourceIngestionAuthority;executor:TrustedDurableSourceExecutor};
+  /** Explicit operator API opt-in. The same policy also guards worker dispatch. */
+  sourceIngestionOperator?:SourceJobOperatorAuthority;
   /** Independently restricted REVIEWER-only SQL pool, never a team projection. */
   reviewerSandbox?:ReviewerSqlPool;
   /** Strictly operator-only local import; NOT a public browser route. */
@@ -75,7 +78,15 @@ export interface PostgresPlatformConfig {
 
 /** Spread these services into createIntegratedApi alongside the trusted auth/reviewer ports. */
 export function createPostgresPlatformServices(config:PostgresPlatformConfig){
+  if(config.sourceIngestionOperator&&!config.sourceIngestion)throw new Error('Source control requires an explicit queue');
   const now=config.now??(()=>new Date().toISOString());
+  const source=config.sourceIngestion,operator=config.sourceIngestionOperator;
+  const sourceIngestion=source?new PostgresSourceIngestionQueue(source.pool,operator?{
+    mayProcess:async input=>{
+      const check=()=>operator.mayManage({actorId:input.actorRef,sourceId:input.sourceId,permissionRef:input.permissionRef,now:now()});
+      return await check()===true&&await source.authority.mayProcess(input)===true&&await check()===true;
+    },
+  }:source.authority,source.executor,now):undefined;
   // Optional ports are never created from shared/default pools or environment flags.
   const claims=config.revisionComparison
     ?new PostgresApprovedRevisionClaims(config.revisionComparison.pool,config.revisionComparison.authority,now)
@@ -122,9 +133,9 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       new PostgresTemporalEvidenceReader(config.pools.evidence),config.evidenceRights),
     // Calendar reader role has SELECT on source heads and revision metadata.
     sourceHistory:new PostgresSourceRevisionHistory(config.pools.calendar,config.evidenceRights),
-    ...(config.sourceIngestion?{
-      sourceIngestion:new PostgresSourceIngestionQueue(config.sourceIngestion.pool,
-        config.sourceIngestion.authority,config.sourceIngestion.executor,now),
+    ...(sourceIngestion?{
+      sourceIngestion,
+      ...(operator?{sourceIngestionControl:{queue:sourceIngestion,authority:operator}}:{}),
     }:{}),
     ...(config.reviewerSandbox?{
       reviewerSandbox:new PostgresReviewerSandboxStore(config.reviewerSandbox),
