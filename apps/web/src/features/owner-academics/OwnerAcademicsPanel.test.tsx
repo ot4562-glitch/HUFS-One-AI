@@ -41,8 +41,8 @@ describe('#144/#81/#82 BETA owner academic UI',()=>{
   it('renders exact double-major audit, never a guessed READY or official graduation',async()=>{
     const f=await setup();render(<OwnerAcademicsPanel port={f.port}/>);
     await screen.findByText(/선택: SELECTED/);
-    expect(screen.getByText(/중복 합산하지 않은 이수 학점/)).textContent).toContain('3학점');
-    expect(screen.getByText(/중복 인정:/)).textContent).toContain('NO_APPROVED_RULE');
+    expect(screen.getByText(/중복 합산하지 않은 이수 학점/).textContent).toContain('3학점');
+    expect(screen.getByText(/중복 인정:/).textContent).toContain('NO_APPROVED_RULE');
     expect(screen.getByText(/공식 판정이 아닙니다/)).toBeTruthy();
   });
   it('uses validated future term + approved server response, and does not invent an unverified credit cap',async()=>{
@@ -50,7 +50,7 @@ describe('#144/#81/#82 BETA owner academic UI',()=>{
     await screen.findByText(/선택: SELECTED/);
     fireEvent.change(screen.getByLabelText('정규 학기'),{target:{value:'INVALID'}});
     fireEvent.click(screen.getByRole('button',{name:'권한·원문 확인 후 검사'}));
-    expect(await screen.findByRole('alert')).textContent).toContain('YYYY-1');
+    expect((await screen.findByRole('alert')).textContent).toContain('YYYY-1');
     expect(f.port.plan).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('정규 학기'),{target:{value:'2027-1'}});
     fireEvent.click(screen.getByRole('button',{name:'권한·원문 확인 후 검사'}));
@@ -73,11 +73,11 @@ describe('#144/#81/#82 BETA owner academic UI',()=>{
     f.identity({...A,actorId:'SYN-OTHER'});
     await act(async()=>{await f.port.session.revalidate();});
     expect(screen.queryByText(/중복 합산하지 않은 이수 학점/)).toBeNull();
-    expect(screen.getByRole('alert')).textContent).toContain('이전 결과를 비웠습니다');
+    expect(screen.getByRole('alert').textContent).toContain('이전 결과를 비웠습니다');
     const g=await setup();const denied:OwnerAcademicsPort={...g.port,current:async()=>{
       throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
     }};
     cleanup();render(<OwnerAcademicsPanel port={denied}/>);
-    expect(await screen.findByRole('alert')).textContent).toContain('이전 결과를 비웠습니다');
+    expect((await screen.findByRole('alert')).textContent).toContain('이전 결과를 비웠습니다');
   });
 });
