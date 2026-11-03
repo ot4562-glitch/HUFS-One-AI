@@ -49,7 +49,8 @@ function harness() {
   });
   apps.push(app);
   const client = new HufsApiClient(async (url, init) => {
-    const hdr = Object.fromEntries(new Headers(init.headers).entries());
+    const hdr: Record<string, string> = {};
+    new Headers(init.headers).forEach((value, key) => { hdr[key] = value; });
     const result = await app.inject({
       method: init.method ?? 'GET', url,
       headers: {...hdr, origin, cookie: 'SYN_SESSION'},
