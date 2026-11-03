@@ -30,7 +30,9 @@
 
 **기타 선행 하위 완료:** [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) 사람 저장 WIS HTML 로컬 변환, [#147](https://github.com/ot4562-glitch/HUFS-One-AI/pull/147) 주·이중전공 구분/중복 인정 보류 학업 pure core, [#146](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146) AI 인용 1글자 차단, [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) 원격 브랜치 안전 분류 도구. 각각 main 병합됐으나 실제 원본 권리·졸업/지원/운영까지 완료 아님. 브랜치 실제 삭제 증거 0건.
 
-## 역할과 고정 수락 게이트
+## 역할과 고정 수락 게이트**NCP 배포/진척률 정정(2026-11-03):** [Draft PR #156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156)에 [NCP Ubuntu·Windows 운영 실행서](infra/ncp/README.md)와 안전한 SSH 전용 합성 preview 설치 스크립트, offline CI 검증을 제출. **NCP 실제 설치/방화벽/서버 생성·실배포는 NOT_RUN**, 코드 PR 아직 미병합. **현재 `apps/api/src/main.ts`는 `APP_ENV=production`이면 예외로 중단**하는 local harness이며 58.3%는 서비스 완성도 아닌 7/12 복합 수락 게이트다. 코드/실연동/품질·권리/운영 4축과 조건부 예상기간은 [서비스 완성·유지보수 로드맵](docs/SERVICE_DELIVERY_PLAN.md)을 참조. #46·#89 RELEASE_BLOCKED 유지.
+
+
 
 [TEAM_PROGRESS](docs/TEAM_PROGRESS.md)의 **고정 12칸(4명)·운영 5칸(이서연)** 분모에 맞는 증거 수락률이다. 코드량·PR 개수·개인 성과·제품 완성률과 같지 않으며 이번 오프라인/합성 PR 병합만으로 출시/실데이터 게이트를 [x]로 바꾸지 않는다.
 
