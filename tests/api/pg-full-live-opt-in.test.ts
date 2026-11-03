@@ -51,6 +51,7 @@ const migrationNames=[
   '20261101_school_mail_network_limits.sql',
   '20261031_temporal_evidence.sql','20261101_source_review.sql','20261101_source_http_validators.sql',
   '20261101_source_ingest_queue.sql',
+  '20261104_source_ingest_cancellation.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
   '20261101_personal_storage_withdrawal.sql',
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
@@ -851,6 +852,36 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query('SELECT state,last_error_code FROM source_ingest_jobs WHERE job_id=$1',
       [task.jobId])).rows[0]).toEqual({state:'NEEDS_REVIEW',last_error_code:'UNKNOWN_COMPLETION'});
   });
+  it('persists pending source cancellation across instances and refuses to cancel a dispatched lease',async()=>{
+    let calls=0,started!:()=>void,finish!:()=>void;
+    const entered=new Promise<void>(resolve=>{started=resolve;});
+    const held=new Promise<void>(resolve=>{finish=resolve;});
+    const authority={mayProcess:async()=>true};
+    const executor={execute:async()=>{calls++;started();await held;throw Error('Synthetic ambiguous completion');}};
+    const make=()=>new PostgresSourceIngestionQueue(adapter(admin),authority,executor);
+    const task={actorRef:'SYN-CANCEL-OPERATOR',sourceId:'SYN-CANCEL-SOURCE',
+      permissionRef:'SYN-CANCEL-PERM',requestKey:'SYN-CANCEL-KEY'};
+    const first=make(),queued=await first.enqueue(task);
+    const cancel={actorRef:task.actorRef,sourceId:task.sourceId,permissionRef:task.permissionRef,jobId:queued.jobId};
+    expect(await first.cancelPending({...cancel,actorRef:'SYN-CANCEL-OTHER'})).toBe(false);
+    expect((await Promise.all([first.cancelPending(cancel),make().cancelPending(cancel)])).sort())
+      .toEqual([false,true]);
+    const reconstructed=make();
+    expect(await reconstructed.cancelPending(cancel)).toBe(false);
+    expect(await reconstructed.enqueue(task)).toEqual({jobId:queued.jobId,created:false});
+    expect(await reconstructed.runOne()).toEqual({state:'IDLE'});expect(calls).toBe(0);
+    expect((await admin.query('SELECT state,attempt_count FROM source_ingest_jobs WHERE job_id=$1',[queued.jobId])).rows[0])
+      .toEqual({state:'CANCELLED',attempt_count:0});
+    const active=await reconstructed.enqueue({...task,requestKey:'SYN-CANCEL-ACTIVE'});
+    const running=reconstructed.runOne();
+    try{
+      await Promise.race([entered,running.then(()=>{throw Error('Worker completed before executor entry');})]);
+      expect(await first.cancelPending({...cancel,jobId:active.jobId})).toBe(false);
+    }finally{finish();await running;}
+    expect(await running).toEqual({state:'NEEDS_REVIEW',jobId:active.jobId});
+    expect(await make().runOne()).toEqual({state:'IDLE'});expect(calls).toBe(1);
+  });
+
   it('reads only current rights-scoped SourceRevision metadata from real SELECT-only PostgreSQL',async()=>{
     const old=new Date(Date.now()-60_000).toISOString(),fresh=new Date(Date.now()-30_000).toISOString();
     await admin.query(`INSERT INTO source_revisions_vnext (
