@@ -22,6 +22,13 @@
 - **심민성 = NCP AI 소프트웨어 코드 전부**: [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20) General OCR/HCX SDK·bbox·근거, [#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88) fake-provider 429/503·budget/CPU 테스트, [#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143) Laya ONNX worker/queue/cgroup/systemd/Docker/IaC/CI. **3건 모두 OPEN**. #20의 오프라인 요청/응답 어댑터 구현·검증을 진행 중이며 실제 호출·비용 예약/권한 transport·#88 장애 시험·#143 worker 완료가 아님. 새 코드 백로그는 기존 기술/출시 수락 12칸의 분모와 별도.
 - **최신 정본** [WORKSTREAMS](docs/WORKSTREAMS.md) 담당, [TEAM_PROGRESS](docs/TEAM_PROGRESS.md) 분모/병목, [AGENTS](AGENTS.md) 코드 자동화 경계. NCP 유료 리소스/모델 다운로드·학교/학생 원자료 전송은 사용자 별도 승인 전 금지. #46/#89 `RELEASE_BLOCKED`.
 
+## 2026-11-03 추가 PR 리뷰·병합·이슈 상태
+
+- **[#146 AI 인용 최소 길이](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146) 신규 병합:** 김채윤 HEAD `61245ae`의 AI 토픽 후보 한 글자/공백 quote `QUOTE_TOO_SHORT` 거부·NFD/NFC 회귀 코드. 심민성 비작성자 `APPROVED` 리뷰와 [Actions 41555668000](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41555668000) 합성/PG **2/2 SUCCESS** + [Chrome 41555667935](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41555667935) **SUCCESS** 확인 후 **main squash merge `ff22692958c6d85c4e01fd4c29ce9d727cc81208`**. [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10)에 하위 완료 [x] 기록; 토픽 의미 검수/실출처·독립 gold 미완료로 상위 OPEN.
+- **[#145 OCR/HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) 최신 HEAD `633d665`:** 오프라인 직렬화/검증 코드·Actions `41555690869`(합성/PG 2/2) 및 `41555690904`(Chrome 1/1) SUCCESS. 심민성 최신 HEAD **COMMENT 리뷰 제출**, 이전 HEAD `288c610` 김채윤 APPROVED는 최신 HEAD 승인으로 재사용하지 않음. 비작성자 현재 HEAD 승인 및 main 변경 후 충돌 확인 전 **OPEN·병합 보류**. [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)에 PR 제출 [x]/실 transport [ ] 구분.
+- **[#144 현재 이중전공 졸업요건 화면](https://github.com/ot4562-glitch/HUFS-One-AI/issues/144) 신규 OPEN:** 기존 #74/#137/#139/#138 재사용은 확인했으나 승인 RulePack/중복 학점·현재 선택 전공별 실제 화면/권한·접근성 구현은 미완료. #82의 가정 What-if와 구분.
+- **이슈 점검:** OPEN **34** / CLOSED **7**, 열린 PR **#131/#134/#145 3건**. 전체 미완료 수락 기준을 [x]로 바꾸거나 실 NCP/학생 원본을 검증 완료로 승격하지 않음. #46 privacy **2 FAIL**, #89 `RELEASE_BLOCKED` 불변.
+
 ## 최근 병합의 정확한 증거
 
 - [#137](https://github.com/ot4562-glitch/HUFS-One-AI/pull/137): 합성 독립 빈 계정·권한/수정판본/코스 입력 수집 게이트와 owner API의 안전한 경계. `main f593b61`. **실제 4인 로그인·학교 승인 수집·운영 배포가 아님**.
