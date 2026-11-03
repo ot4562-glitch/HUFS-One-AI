@@ -1,5 +1,11 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 2026-11-03 최신 서버/AI 실제 코드 경계
+
+- **main 병합:** [#145 오프라인 CLOVA General OCR/HCX-005·007 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b` (request/response·bbox/candidate 검증) 및 [#148 원자 PostgreSQL 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516` (phase/actor reserve/idempotency·UNKNOWN_BILLING hold/초과 정산 OFF). 각각 최신 HEAD 비작성자 승인·합성/일회용 PG/Chrome CI **3/3 SUCCESS**. SQL은 검토용이며 **운영 migration이나 AI 호출을 활성화하지 않음**.
+- **현재 main 미병합:** [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) provider runtime·권한/동의/출처 재검증·bounded transport/timeout·결과 영속 조회·Laya child worker·현재 이중전공/빈 시연 계정 API·프라이빗 배포 템플릿은 **Draft, 선행 #145/#148/#131 squash와 충돌, 최신 HEAD 타인 APPROVED 0건**입니다. 이 문서 뒤의 “필요한 추가 구현/통합”은 **main 기준**이며 #150 체크포인트를 승인된 API로 오해하지 않아야 합니다.
+- **릴리스 차단:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 원본 Git 게시/권리·privacy **2 FAIL**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) Google/학교메일·실 PG/TLS/직접 IP·권한 철회·NCP 실호스트/유료 provider 미검증. `AI_ENABLED=false` 기본·`RELEASE_BLOCKED`; 실학생 자료 외부 전송·NCP 개통/과금은 별도 승인 전 금지. [STATUS](../../STATUS.md), [PR_WORKFLOW](../../docs/PR_WORKFLOW.md) 우선.
+
 ## 소비자 리뷰 후속: 비공개 근거·학점·수동 저장본
 
 학업 source는 가린 과목의 분반/선수 근거 ref와 URL도 제거한다. 필요한 근거가 숨겨진 확정 경고는 `NEEDS_REVIEW`이며, 승인 receipt 자체가 가린 근거를 포함하면 응답을 만들지 않는다. 일반 승인 학점 상한은 공개 가능한 경우 유지한다. 종료 학기는 저장소 조회 전에 공통 `422 INVALID_INPUT`으로 거절하고, 로컬 계정 학점은 공통 스키마에서 0.5학점 단위만 받는다. 화면의 십진수 입력 파서와 step은 UI 담당이 이 계약을 소비한다.
