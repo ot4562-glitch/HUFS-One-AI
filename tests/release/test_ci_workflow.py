@@ -48,6 +48,12 @@ REVISION_CLAIMS_PG_PROOF = (
     "HUFS_PG_REVISION_CLAIMS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_revision_claims_test",
     "tests/api/pg-revision-claims-live-opt-in.test.ts",
 )
+DEMO_PROFILE_PG_PROOF = (
+    "createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_demo_profile_test",
+    "HUFS_PG_DEMO_PROFILE_LIVE: '1'",
+    "HUFS_PG_DEMO_PROFILE_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_demo_profile_test",
+    "tests/api/demo-profile-live-opt-in.test.ts",
+)
 OWNER_ACADEMICS_PG_PROOF = (
     "- 15439:5432",
     "CREATE DATABASE hufs_one_owner_academics_test",
@@ -160,6 +166,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
     if any(proof not in text for proof in REVISION_CLAIMS_PG_PROOF):
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
+    if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
+        issues.append("EMPTY_DEMO SQL proof must execute against the isolated real PostgreSQL 18 server")
     return issues
 
 
@@ -205,6 +213,12 @@ class WorkflowBoundaryTests(unittest.TestCase):
 
     def test_revision_claims_sql_proof_cannot_silently_skip(self) -> None:
         for proof in REVISION_CLAIMS_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertIn(proof, self.policy)
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_empty_demo_sql_proof_cannot_silently_skip(self) -> None:
+        for proof in DEMO_PROFILE_PG_PROOF:
             with self.subTest(proof=proof):
                 self.assertIn(proof, self.policy)
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
