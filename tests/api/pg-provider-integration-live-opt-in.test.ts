@@ -183,7 +183,7 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     const browser=(srv:TestServer)=>new HufsApiClient(async(path,init)=>{
       const headers:Record<string,string>={cookie:auth.cookie,origin};
       new Headers(init.headers).forEach((value,name)=>{headers[name]=value;});
-      return fetch(srv.base+path,{method:init.method,headers,
+      return fetch(srv.base+path,{method:init.method??'GET',headers,
         ...(init.body===undefined?{}:{body:String(init.body)}),redirect:'manual'});
     });
     const api=browser(s);

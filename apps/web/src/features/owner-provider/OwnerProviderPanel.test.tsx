@@ -23,7 +23,8 @@ function fixture(role='BETA',inputs:ApprovedProviderInput[]=[item]){
     provenance:'CANDIDATE_CACHE',candidate:{...candidate,citations:[...candidate.citations],
       objectTokens:[],usage:{...candidate.usage}}};
   const list=vi.fn(async()=>({items:inputs}));
-  const submit=vi.fn(async()=>accepted[Math.min(n++,1)]!);
+  const submit=vi.fn(async(_input:ApprovedProviderInput,_task:import('@hufs-one/contracts').AiTaskPath,
+    _key:string,_signal?:AbortSignal)=>accepted[Math.min(n++,1)]!);
   const read=vi.fn(async()=>result);
   const port:OwnerProviderPort={session,list,submit,read};
   return {port,session,list,submit,read,

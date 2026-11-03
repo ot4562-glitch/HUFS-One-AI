@@ -25,7 +25,7 @@ describe('BETA Provider browser client (separate from REVIEWER MOCK)',()=>{
     expect(h.calls[0]).toMatchObject({url:'/api/ai/approved-inputs',init:{
       method:'GET',credentials:'same-origin',cache:'no-store',redirect:'error',
     }});
-    expect(h.calls[0].init.body).toBeUndefined();
+    expect(h.calls[0]!.init.body).toBeUndefined();
   });
   it('requires exact task/input pair, valid idempotency and CSRF before mutation',async()=>{
     const h=harness(path=>path==='/api/auth/csrf'?{csrfToken:'C'.repeat(32)}
@@ -38,10 +38,10 @@ describe('BETA Provider browser client (separate from REVIEWER MOCK)',()=>{
     const res=await h.api.owner.submitApprovedProvider(item,'opportunity-terms','KEY00001');
     expect(res).toEqual({jobId,state:'PENDING'});
     expect(h.calls.map(c=>c.url)).toEqual(['/api/auth/csrf','/api/ai/opportunity-terms']);
-    expect(h.calls[1].init).toMatchObject({method:'POST',credentials:'same-origin',cache:'no-store',
+    expect(h.calls[1]!.init).toMatchObject({method:'POST',credentials:'same-origin',cache:'no-store',
       body:JSON.stringify({packetRef:'SYN-INPUT',asOf:item.asOf,idempotencyKey:'KEY00001'}),
     });
-    const headers=new Headers(h.calls[1].init.headers);
+    const headers=new Headers(h.calls[1]!.init.headers);
     expect(headers.get('x-csrf-token')).toBe('C'.repeat(32));
   });
   it('rejects invented LIVE provenance on PENDING and model output injected into acceptance',async()=>{
