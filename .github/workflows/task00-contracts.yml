@@ -37,6 +37,7 @@ jobs:
             /tests/evaluation/
             /apps/api/
             /infra/sql/
+            /infra/ai/
             /packages/core/
             /packages/ui/
             /apps/web/
