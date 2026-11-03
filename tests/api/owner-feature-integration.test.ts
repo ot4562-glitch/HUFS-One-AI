@@ -19,9 +19,9 @@ const endpoints=[
   ['/api/opportunities/SYN-OPP/explanation',{asOf:at,sourceRevisionId:'SYN-REV',rankConfigVersion:'rank-v1.0'}],
   ['/api/opportunities/SYN-OPP/revisions/compare',{asOf:at,beforeRevisionId:'SYN-BEFORE',afterRevisionId:'SYN-AFTER'}],
 ] as const;
-function setup(loggedIn=true,features:Pick<IntegrationDependencies,'studyPlanCheck'|'majorWhatIf'|'doubleMajor'|'demoProfile'>={}){
+function setup(loggedIn=true,features:Pick<IntegrationDependencies,'studyPlanCheck'|'majorWhatIf'|'doubleMajor'|'demoProfile'>={},nowAt=at){
   const app=createIntegratedApi({allowedOrigin:origin,repository:new MemoryApiRepository({profiles:[]}),
-    auth:{verifySession:async()=>loggedIn?actor:null,revokeSession:async()=>{}},now:()=>at,...features});
+    auth:{verifySession:async()=>loggedIn?actor:null,revokeSession:async()=>{}},now:()=>nowAt,...features});
   apps.push(app);return app;
 }
 describe('owner feature registration does not silently enable unavailable providers',()=>{
@@ -38,6 +38,7 @@ describe('owner feature registration does not silently enable unavailable provid
       expect((await loggedOut.inject({url:path})).statusCode).toBe(401);
   });
   it('wires explicit approved owner ports through one integrated authenticated API',async()=>{
+    const doubleAt='2026-11-03T00:00:00.000Z';
     const record={version:0,value:blankDemoProfileValue(),updatedAt:null};
     const profile:DemoProfilePort={
       read:async()=>recomputeDemoProfile(record),
@@ -45,14 +46,14 @@ describe('owner feature registration does not silently enable unavailable provid
       reset:async()=>{throw new Error('test forbids resets');},
     };
     const source=createTrustedOwnerDoubleMajorSource({snapshots:{
-      load:async()=>({actorId:actor.actorId,asOf:at,receipt:'SYN-SOURCE-RECEIPT',
+      load:async()=>({actorId:actor.actorId,asOf:doubleAt,receipt:'SYN-SOURCE-RECEIPT',
         projectionVersion:'SYN-PROJ-V1',input:doubleMajorInput()}),
       revalidate:async()=>true,
     }});
     const app=setup(true,{demoProfile:profile,doubleMajor:{source,rights:{
       mayInspect:async()=>true,authorize:async()=>({allowed:true,rightsReceipt:'SYN-RIGHTS-RECEIPT'}),
       revalidate:async()=>true,
-    }}});
+    }}},doubleAt);
     const demo=await app.inject({url:'/api/demo-profile'});
     expect(demo.statusCode).toBe(200);
     expect(demo.json().snapshot.namespace).toBe('EMPTY_DEMO');
