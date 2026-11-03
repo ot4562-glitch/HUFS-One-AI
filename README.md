@@ -15,11 +15,11 @@
 | --- | --- |
 | 공개 원격 저장소 | **Private** |
 | 실제 코드 | TypeScript/Zod 계약, 추천·공지/학업 코어, Fastify API, React/Vite UI, 합성 테스트 |
-| 검증된 최근 병합 | #137 통합·#139/#140 회귀·#138 저장 시간표·#142 도구·#146 인용 보강·[#147 현재 이중전공 학업 코어](https://github.com/ot4562-glitch/HUFS-One-AI/pull/147). 실제 데이터/API/UI 전체 수락은 STATUS 참고 |
-| 진행 중 PR | [#131 설정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) 수정 요청·[#134 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) 선행 대기. [#145 OCR/HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145)·[#148 비용 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) 현재 HEAD CI3/3 성공·타인 승인 대기 |
+| 검증된 최근 병합 | [#145 OCR·HCX 오프라인 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b`, [#148 AI PostgreSQL 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516`, [#131 BETA 설정 비교·역할 격리 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) `6efc532` — 각각 타인 승인/HEAD CI 3/3 후 병합. 이전 #137~#147 합성·코어 하위 기능도 main; 자세한 범위는 STATUS |
+| 진행 중 PR | **3건 OPEN:** [#134 합성 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) **main 재기반 충돌**, [#149 시간표 CSV 내보내기](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) **캠퍼스 출처 근거 CHANGES_REQUESTED**, [#150 provider/Laya/API 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) **Draft·main 충돌·타인 승인 대기**. 이전 HEAD CI 통과만으로 병합 허가 아님 |
 | 운영/실자료 | **RELEASE_BLOCKED** — [#46 개인정보/자료 이력](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), [#89 공개 노출·인증·인프라](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) |
 
-**추가 검증 병합:** [#138 저장 강의시간표 HTML 변환기](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138), [#142 안전한 브랜치 정리 CLI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142), [#146 한 글자 AI 인용 거부](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146)(HEAD `61245ae`, 비작성자 승인·합성/PG/Chrome CI 성공, main `ff226929`). **#145 OCR/HCX wire는 최신 HEAD `633d665` 타인 승인·병합 대기**. #46/#89 출시 차단과 실제 NCP/학생 데이터 사용 금지는 불변.
+**2026-11-03 최신 검토:** #145·#148·#131은 비작성자 최신 HEAD 승인 및 합성/일회용 PG/Chrome 필수 CI 3/3 뒤 main 병합. #149는 `campus: UNKNOWN`을 `--campus SEOUL`로 확정할 수 있는 P2 버그 수정 요청; #134/#150은 선행 squash main 병합 후 코드 충돌을 작성자가 정리해야 합니다. 34개 OPEN 이슈는 실서비스/권리/인적 평가 수락 미완료로 유지. **#46 개인정보·#89 출시 `RELEASE_BLOCKED`**와 무승인 유료 NCP/학교·학생 원본 전송 금지는 불변.
 
 최근 #139/#140의 GitHub Actions 합성/일회용 PostgreSQL/Chrome **각 3/3 성공**은 해당 PR HEAD의 **합성 회귀**에 대한 증거입니다. 실제 HUFSAbility 데이터·공식 학칙·학생 4인 로그인, 운영 NCP/CLOVA·실제 기관/자료 권리, 배포/보안을 검증 완료했다는 의미가 아닙니다. 상세 증거 및 차단 사항은 [STATUS.md](STATUS.md)를 봅니다.
 
