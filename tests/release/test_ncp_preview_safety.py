@@ -22,6 +22,7 @@ class NcpPreviewSafetyTests(unittest.TestCase):
         cls.harden = (NCP / "harden-ssh.sh").read_text(encoding="utf-8")
         cls.systemd = (NCP / "hufs-preview.service").read_text(encoding="utf-8")
         cls.windows = (NCP / "Prepare-NcpPreview.ps1").read_text(encoding="utf-8")
+        cls.windows_deploy = (NCP / "Deploy-NcpPreview.ps1").read_text(encoding="utf-8")
         cls.runbook = (NCP / "README.md").read_text(encoding="utf-8")
 
     def test_all_shell_scripts_parse_in_linux_bash(self):
@@ -53,6 +54,20 @@ class NcpPreviewSafetyTests(unittest.TestCase):
         self.assertIn("(^|/)(csv|private|secrets|local_only)/", self.windows)
         self.assertIn("Symlink forbidden", self.windows)
         self.assertIn("Get-FileHash", self.windows)
+
+    def test_windows_one_command_requires_explicit_apply_and_pinned_sftp_ssh(self):
+        for required in (
+            "Prepare-NcpPreview.ps1", "WinSCP.com", "plink.exe",
+            "HostKeyFingerprint", "PrivateKeyPath", "Get-FileHash",
+            "SYNTHETIC-only", "if (-not $Apply)", "-hostkey",
+            "hufs-admin", "/usr/local/sbin/hufs-preview-deploy",
+            "127.0.0.1:5173",
+        ):
+            self.assertIn(required, self.windows_deploy)
+        self.assertNotIn("git clone", self.windows_deploy)
+        self.assertNotIn("ncloud ", self.windows_deploy)
+        self.assertNotIn("APP_ENV=production", self.windows_deploy)
+        self.assertNotIn("-password", self.windows_deploy)
 
     def test_linux_deploy_verifies_zip_hash_paths_and_rollback(self):
         for expected in (
