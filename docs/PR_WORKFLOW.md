@@ -13,20 +13,24 @@
 
 **예외:** 소유자 승인된 문서-only `README.md`, `STATUS.md`, `AGENTS.md`, `Proposal.md`, `Architecture.md`, `docs/*.md` 정정은 blob SHA 충돌검사 후 직접 main 변경 가능. **코드, CI/workflow, API/DB, 공통 Zod, lockfile, 유료 자원/개인 원본**은 이 예외의 대상이 아닙니다. 2026-11-01의 과거 한시적 작성자 직접 병합 사례는 새 PR의 자동 승인권이 아닙니다.
 
-## 남은 작업 PR (2026-11-03 감사)
+## 남은 작업 PR (2026-11-03 최신 HEAD 감사)
 
-| PR | 현재 결정 / 진행 순서 |
+| PR | 검증 결과 및 병합 게이트 |
 | --- | --- |
-| [#131 설정 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | 두 가지 fail-closed·remount 지적 `CHANGES_REQUESTED` → 작성자 보완·실 브라우저/회귀·최신 HEAD 재승인 |
-| [#134 빈 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | #131을 base로 쌓인 PR. 선행 수정·병합 및 main diff 복원 후 독립 최신 HEAD CI/리뷰 |
-| [#138 강의시간표 변환](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) | `DRAFT` + 잘못된 마지막 데이터행 누락·행별 학기 근거 수정 요청. 학교 실제 사이트 무단 수집/원본 공개 금지 |
-| [#142 브랜치 정리 CLI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) | 별도 유지관리 코드 PR, 격리 Node 테스트 4/4 PASS. 원격 삭제는 0건, 최신 HEAD CI/독립 리뷰/실 dry-run 확인 전 병합·apply 금지 |
+| [#131 설정 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | HEAD `35cdaf3`, **CHANGES_REQUESTED**: 실제 route unmount/remount 중 overlay GET 경합·REVIEWER capabilities 오류→BETA 오인. 작성자 수정·독립 재승인/CI 전 **병합 금지** |
+| [#134 빈 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | HEAD `ab565d0`, #131 기반 스택. UI 합성 하위 구현/합성·PG CI는 인정하나 #131 수정·병합 뒤 main 기준 diff·최신 HEAD 리뷰/CI·실 owner API 연동 필요. **COMMENT, 병합 금지** |
+| [#145 OCR/HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) | HEAD `633d665`의 오프라인 직렬화/검증만. Actions `41555690869` 합성/PG **2/2 SUCCESS** + `41555690904` Chrome **SUCCESS**. 김채윤 `APPROVED`는 이전 HEAD `288c610` 기준; **현재 HEAD 독립 승인 필요**. 기술 총괄 최신 HEAD `COMMENT` 제출(자기 승인 아님). 실제 NCP·키/예산/권한 transport·20포스터 미완료 |
 
-[#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 합성 개인화/전공 재계산 테스트(`26c559e`)와 [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/피드 판본 테스트(`41de619`)는 HEAD 비작성자 승인·관련 CI 3/3 뒤 **main 병합 완료**. 실서비스 기능 완료와 구별합니다.
+**이번 감사에서 병합 상태 확인:**
+- [#138 저장 시간표](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138): HEAD `44afcf6`, 결함 2건 수정·기술 총괄 비작성자 `APPROVED`·합성/PG/Chrome **3/3 SUCCESS**, main `605144c` **MERGED**. 로컬 변환기만 수락.
+- [#142 브랜치 정리](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142): HEAD `53039bd`, 김채윤 비작성자 `APPROVED`·합성/PG/Chrome **3/3 SUCCESS**, main `719c576` **MERGED**. 도구 병합이지 원격 브랜치 삭제 완료 아님.
+- [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 합성 개인화/전공 재계산 및 [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/피드 판본 회귀도 이전에 병합됨. 실제 학교/학생 데이터 검증 아님.
+
+**리뷰 원칙:** 과거 HEAD의 승인·단순 COMMENT·작성자 자체 리뷰·에이전트 검토는 새 HEAD 비작성자 승인으로 대체하지 않는다. PR merge 가능 플래그만으로 기존 `CHANGES_REQUESTED`나 합성/운영 권리 차단을 해제하지 않는다.
 
 ## 원격 브랜치 정리 절차
 
-2026-11-03 최신 조회 기준 **총 106개**입니다(main 1/열린 PR 4/병합 PR 연계 86/닫힌 미병합 PR 연계 11/PR 없는 백업·준비 4). 수치는 매번 GitHub 조회로 갱신합니다. [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)는 **dry-run 기본/삭제 명시적** 도구 제안이며 HEAD 비작성자 리뷰·CI 전 **미병합**, 원격 실제 삭제 **0건**입니다.
+이전 브랜치 감사 기준 **총 106개**(당시 main 1/열린 PR 4/병합 PR 연계 86/닫힌 미병합 PR 연계 11/PR 없는 백업·준비 4)였습니다. **현재 재집계 값이 아닙니다.** 이후 #138/#142 병합과 #145 생성으로 분류가 변했습니다. [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) 도구는 독립 리뷰·CI 후 **main 병합 완료**. 하지만 이 감사에서 확인된 실제 원격 브랜치 **삭제 0건**이고, dry-run 후보를 자동 삭제 허가로 해석하지 않습니다.
 
 1. **무조건 보존:** `main`, 보호 브랜치, 열려 있는 PR의 head/base, 다른 사용자 worktree·운영 참조, 미확인 백업/준비 브랜치.
 2. **1차 삭제 후보:** 최종 `merged_at`가 실제 기록된 **그 PR의 현재 head 브랜치**이며 지금 원격 SHA가 병합 PR head SHA와 같고, 이 브랜치를 사용하는 열린 PR이 **하나도** 없고, 별도 후속 작업/복구 용도가 없는 것. squash/rebase는 Git 부모조상 관계만으로 삭제를 결정하지 않습니다.
