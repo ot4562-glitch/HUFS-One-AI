@@ -157,8 +157,8 @@ jobs:
             await pool.end();
           }
           NODE
-      - name: Build contracts for the live adapter tests
-        run: npm run build:contracts
+      - name: Build API for live adapter and process restart tests
+        run: npm run build:api
       - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL
         env:
           HUFS_A2_PG_LIVE: '1'
