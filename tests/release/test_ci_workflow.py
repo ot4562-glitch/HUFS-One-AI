@@ -43,7 +43,7 @@ REVISION_CLAIMS_PG_PROOF = (
     "  revision-claims-real-postgres:",
     "--network host",
     "-c listen_addresses=127.0.0.1 -c port=15439",
-    "hufs_one_revision_claims_test",
+    "createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_revision_claims_test",
     "HUFS_PG_REVISION_CLAIMS_LIVE: '1'",
     "HUFS_PG_REVISION_CLAIMS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_revision_claims_test",
     "tests/api/pg-revision-claims-live-opt-in.test.ts",
