@@ -47,7 +47,7 @@ echo "This changes Ubuntu packages, creates hufs-admin/hufs-preview, and restric
 echo "Verify this exact IP is allowed by the NCP ACG and subnet Network ACL BEFORE continuing."
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  ca-certificates curl gnupg python3 unzip ufw openssh-server
+  ca-certificates curl gnupg python3 unzip ufw openssh-server sudo
 # NodeSource signed APT repository, not curl|bash. Node 24 is required by Vite 8.
 install -d -m 0755 /usr/share/keyrings
 curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
