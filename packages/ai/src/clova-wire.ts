@@ -147,18 +147,3 @@ export function validateHcxCandidate(packetRaw:unknown,raw:unknown){
     return candidate;
   });
 }
-/** Revalidates persisted candidates against a freshly authorized packet; no truth promotion. */
-export function validateHcxCandidate(packetRaw:unknown,raw:unknown){
-  return checked(()=>{
-    const packet=SafeLlmPacketSchema.parse(packetRaw),candidate=Candidate.parse(raw);
-    if(candidate.task!==packet.task||new Set(candidate.objectTokens).size!==candidate.objectTokens.length
-      ||candidate.objectTokens.some(t=>!packet.allowedObjectTokens.includes(t)))throw new ClovaWireError();
-    for(const citation of candidate.citations){
-      const matches=packet.sourceTokens.filter(s=>s.token===citation.sourceToken)
-        .flatMap(s=>s.paragraphs.filter(p=>p.id===citation.paragraphId));
-      if(matches.length!==1||!matches[0]!.text.includes(citation.quote)
-        ||(citation.topicCode&&!packet.allowedTopicCodes.includes(citation.topicCode)))throw new ClovaWireError();
-    }
-    return candidate;
-  });
-}
