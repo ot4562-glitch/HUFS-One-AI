@@ -39,6 +39,15 @@ SAFE_SPARSE_PATHS = frozenset({
 EXCLUDED_DIRECTORIES = (
     "csv", "local_only", "templates/real5-intake", "reference/hufsability/raw",
 )
+REVISION_CLAIMS_PG_PROOF = (
+    "  revision-claims-real-postgres:",
+    "--network host",
+    "-c listen_addresses=127.0.0.1 -c port=15439",
+    "hufs_one_revision_claims_test",
+    "HUFS_PG_REVISION_CLAIMS_LIVE: '1'",
+    "HUFS_PG_REVISION_CLAIMS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_revision_claims_test",
+    "tests/api/pg-revision-claims-live-opt-in.test.ts",
+)
 OWNER_ACADEMICS_PG_PROOF = (
     "- 15439:5432",
     "CREATE DATABASE hufs_one_owner_academics_test",
@@ -92,16 +101,16 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("synthetic and disposable PostgreSQL jobs must be separate")
 
     actions = re.findall(r"(?m)^\s*(?:-\s*)?uses:\s*(\S+)", text)
-    if (len(actions) != 4 or actions.count(PINNED_CHECKOUT) != 2
-        or actions.count(PINNED_SETUP_NODE) != 2):
+    if (len(actions) != 6 or actions.count(PINNED_CHECKOUT) != 3
+        or actions.count(PINNED_SETUP_NODE) != 3):
         issues.append("only reviewed commit-pinned checkout and setup-node are permitted")
     checkouts = text.count("uses: " + PINNED_CHECKOUT)
-    if checkouts != 2 or text.count("persist-credentials: false") != checkouts:
+    if checkouts != 3 or text.count("persist-credentials: false") != checkouts:
         issues.append("each checkout must disable credential persistence")
-    if checkouts != 2 or text.count("sparse-checkout-cone-mode: false") != checkouts:
+    if checkouts != 3 or text.count("sparse-checkout-cone-mode: false") != checkouts:
         issues.append("each checkout must retain explicit sparse rules")
     sparse = sparse_checkout_lists(text)
-    if len(sparse) != 2:
+    if len(sparse) != 3:
         issues.append("both jobs need sparse checkout")
     else:
         for index, paths in enumerate(sparse):
@@ -127,11 +136,11 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/.github/workflows/release-readiness.yml",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
-        if "/infra/sql/" not in sparse[1] or "/tests/api/" not in sparse[1]:
+        if any("/infra/sql/" not in paths or "/tests/api/" not in paths for paths in sparse[1:]):
             issues.append("disposable PostgreSQL checkout lacks tests/migrations")
 
     for directory in EXCLUDED_DIRECTORIES:
-        if text.count(f"test ! -d {directory}") != 2:
+        if text.count(f"test ! -d {directory}") != 3:
             issues.append(f"both jobs must assert absence of {directory}")
     if "python3 -m unittest discover -s tests/release" not in text:
         issues.append("release policy regression tests must execute in CI")
@@ -149,6 +158,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("browser cache and loopback preview audit must execute in CI")
     if any(proof not in text for proof in OWNER_ACADEMICS_PG_PROOF):
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
+    if any(proof not in text for proof in REVISION_CLAIMS_PG_PROOF):
+        issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
     return issues
 
 
@@ -190,6 +201,12 @@ class WorkflowBoundaryTests(unittest.TestCase):
         for proof in OWNER_ACADEMICS_PG_PROOF:
             with self.subTest(proof=proof):
                 self.assertTrue(proof in self.policy, "Missing owner-academics SQL CI prerequisite")
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_revision_claims_sql_proof_cannot_silently_skip(self) -> None:
+        for proof in REVISION_CLAIMS_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertIn(proof, self.policy)
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
 
     def test_path_filtered_pr_regression_is_rejected(self) -> None:
