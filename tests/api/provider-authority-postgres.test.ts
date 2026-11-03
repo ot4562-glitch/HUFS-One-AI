@@ -110,6 +110,17 @@ describe('Postgres provider input authority — synthetic SQL adapter tests',()=
     const result=await d.authority.read({...req,operation:'OCR_GENERAL'});expect(result?.media?.bytes).toEqual(bytes);expect(result?.media?.bytes).not.toBe(bytes);
     d.state.projection.media_original_sha256='0'.repeat(64);expect(await d.authority.read({...req,operation:'OCR_GENERAL'})).toBeNull();
   });
+  it('rejects media changed between fresh reads even if the bound metadata is unchanged',async()=>{
+    const d=db(),bytes=Buffer.from('synthetic-verified-media');
+    const originalSha=createHash('sha256').update(bytes).digest('hex');
+    Object.assign(d.state.projection,{operation:'OCR_GENERAL',safe_packet:null,
+      source_refs:[{...source,originalSha256:originalSha}],media_bytes:bytes,
+      media_source_revision_id:source.revisionId,media_asset_id:'SYN-ASSET',
+      media_original_sha256:originalSha});
+    d.state.rights[0]!.original_sha256=originalSha;
+    d.state.afterFirst=()=>{d.state.projection.media_bytes=Buffer.from('synthetic-CHANGED-media');};
+    expect(await d.authority.read({...req,operation:'OCR_GENERAL'})).toBeNull();
+  });
   it('sanitizes SQL errors and releases connections',async()=>{
     const d=db();d.state.fail=true;await expect(d.authority.read(req)).rejects.toThrow('Provider authority unavailable');expect(d.release).toHaveBeenCalledOnce();
   });
