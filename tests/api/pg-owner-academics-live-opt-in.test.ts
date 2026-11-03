@@ -10,6 +10,7 @@ import {PostgresOwnerStudyPlanSnapshotLoader} from '../../apps/api/src/modules/a
 import {createTrustedOwnerStudyPlanSource} from '../../apps/api/src/modules/academics/owner-study-plan-source.js';
 import {PostgresEvidenceRightsResolver} from '../../apps/api/src/modules/opportunities/rights-postgres.js';
 import {canonicalProjectionHash} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
+import {PostgresTrustedOwnerCatalog} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {OwnerCatalogAuthority} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
@@ -193,6 +194,59 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
       identity=team;
       await admin.query("UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{personalStorage}','false'),version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1",[f.actorId]);
       await expect(browser().owner.getDoubleMajor()).rejects.toMatchObject({code:'FORBIDDEN'});
+    }finally{await app.close();}
+  });
+
+  it('runs browser→authenticated Fastify→actual RLS catalog PG and preserves it after HTTP restart',async()=>{
+    const f=await seed('CATALOG-E2E'),at=now(),origin='https://synthetic.invalid';
+    const ref={sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
+      status:'ACTIVE' as const,verifiedAt:f.before};
+    const course={courseId:'SYN-COURSE-A',courseCode:'SYN-101',
+      title:'가상 데이터 분석 교과목',campus:'SEOUL',creditUnits:6,source:ref};
+    const offering={courseId:course.courseId,term:'2027-1',
+      status:'UNKNOWN' as const,source:ref};
+    await f.insert('COURSE',course.courseId,course,f.actorId+'-COURSE');
+    await f.insert('OFFERING',course.courseId+':2027-1',offering,f.actorId+'-OFFERING');
+    const team={role:'BETA' as const,actorId:f.actorId,sessionIdHash:'H'.repeat(32),
+      csrfToken:'C'.repeat(32),betaAllowed:true,
+      sessionExpiresAt:f.expires,schoolMailProofExpiresAt:f.expires};
+    let identity:VerifiedActor|null=team;
+    const launch=()=>createIntegratedApi({
+      allowedOrigin:origin,repository:new MemoryApiRepository({profiles:[]}),
+      auth:{verifySession:async()=>identity,revokeSession:async()=>{identity=null;}},
+      now:()=>at,
+      ownerCatalog:new PostgresTrustedOwnerCatalog(adapter(reader),f.authority,now),
+    });
+    let app=launch();
+    const browser=()=>new HufsApiClient(async(url,init)=>{
+      const headers:Record<string,string>={};
+      new Headers(init.headers).forEach((v,k)=>{headers[k]=v;});
+      const reply=await app.inject({url,method:init.method??'GET',
+        headers:{...headers,cookie:'SYNTHETIC-SESSION',origin},
+        ...(init.body===undefined?{}:{payload:JSON.parse(String(init.body))})});
+      return new Response(reply.body,{status:reply.statusCode,
+        headers:{'content-type':'application/json'}});
+    });
+    try{
+      const api=browser(),guard=new OwnerSessionController(api);
+      await guard.initialize();expect(guard.getState().status).toBe('READY');
+      const courses=await guard.runLatest('owner-courses',signal=>
+        api.owner.listCourses({limit:20},signal));
+      expect(courses?.items).toMatchObject([{courseId:course.courseId,creditUnits:6,
+        source:{status:'ACTIVE',revisionId:f.revisionId}}]);
+      expect(JSON.stringify(courses)).not.toMatch(/SYN-SOURCE-RECEIPT|PRIVATE-ATTEMPT-TOKEN|original_bytes/);
+      const offers=await guard.runLatest('owner-offerings',signal=>
+        api.owner.listCourseOfferings(course.courseId,{limit:20},signal));
+      expect(offers?.items).toMatchObject([{term:'2027-1',status:'UNKNOWN'}]);
+      await app.close();app=launch();
+      expect((await browser().owner.listCourses({limit:20})).items).toEqual(courses?.items);
+      identity={...team,actorId:f.actorId+'-OTHER'};
+      expect(await guard.runLatest('owner-courses',signal=>api.owner.listCourses({limit:20},signal))).toBeNull();
+      expect(guard.getState().status).toBe('SIGNED_OUT');
+      await expect(browser().owner.listCourses()).rejects.toMatchObject({code:'FORBIDDEN'});
+      identity=team;
+      await admin.query("UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{personalStorage}','false'),version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1",[f.actorId]);
+      await expect(browser().owner.listCourses()).rejects.toMatchObject({code:'FORBIDDEN'});
     }finally{await app.close();}
   });
 
