@@ -163,6 +163,19 @@ describe('importWisTimetable', () => {
     expect(() => importWisTimetable(request(page([]), {fileName:'SYNDEPT.html'}))).toThrow(/names no term/);
   });
 
+  it('reads the campus only when the checked radio and the department list agree', () => {
+    const radios = (checked:'H1'|'H2'|null) => ['H1', 'H2'].map(value =>
+      `<input name="campus_sect" type="radio" value="${value}"${value === checked ? ' checked=""' : ''}>`).join('');
+    const list = (...labels:string[]) => `<select name="ag_crs_strct_cd">${labels.map(label => `<option>${label}</option>`).join('')}</select>`;
+    const campus = (extra:string) => importWisTimetable(request(page(ROWS).replace('<table>', `${extra}<table>`))).campus;
+    expect(importWisTimetable(request(page(ROWS))).campus).toBe('UNKNOWN');
+    expect(campus(radios('H1') + list('&nbsp;(서울)&nbsp;-&nbsp;가상학과&nbsp;', '(서울) - 가상학부'))).toBe('SEOUL');
+    expect(campus(radios('H2') + list('(글로벌) - 가상학과'))).toBe('GLOBAL');
+    expect(campus(radios('H1') + list('(글로벌) - 가상학과'))).toBe('UNKNOWN');
+    expect(campus(radios(null) + list('(서울) - 가상학과'))).toBe('UNKNOWN');
+    expect(campus(radios('H1') + list('(서울) - 가상학과', '(글로벌) - 가상학과'))).toBe('UNKNOWN');
+  });
+
   it('refuses an empty table saved while the card list still shows courses', () => {
     const cards = `<div class="sch-card"><a href="javascript:lecture_open('2026','3','A','SYN010101')">▤</a></div>`;
     const half = page([]).replace('</body>', `${cards}</body>`);
