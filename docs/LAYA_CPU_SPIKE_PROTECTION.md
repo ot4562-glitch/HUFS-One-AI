@@ -3,13 +3,13 @@
 > 최신 가격·예산·개통 승인 [NCP_OPERATIONS_2026.md](NCP_OPERATIONS_2026.md). 위 CPU 1vCPU 상한은 같은 4vCPU 서버에서 25%이며, 확대된 32GB RAM의 충분성은 실측 전 미보장.
 
 
-> 상태: **설계·오프라인 부하 시험 계획(미배포·미설치·실측 전)** · 작성 2026-10-31
+> 상태: **설계·오프라인 부하 시험 계획(미배포·미설치·실측 전)** · 작성 2026-10-31, **2026-11-03 코드/운영 소유권 갱신**
 > 권한: [Architecture.md](../Architecture.md) A06.9/A13, [RAG 운영 계약](TRUSTED_RAG_MEDIA_VERSIONING.md) §6, [CLOUD.md](../CLOUD.md), [이슈 #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22).
 > Laya는 **322M multilingual ONNX CPU 선택형 조언 모델**이고, 자격·마감·학칙을 확정하는 모델이 아니다. NCP 실제 서버·모델은 아직 사용하지 않았다.
 
 ## 1. 무엇이 문제인가
 
-High Memory-g3(4vCPU·32GiB)에서 API/DB, 검색, NCP provider와 Laya 워커가 CPU 시간을 공유한다. 이는 **이서연이 담당하는 클라우드/모델 실행 설계**이며 심민성 API 코드는 Laya를 직접 실행하지 않는다. Laya는 모델 초기 적재·ONNX 그래프 최적화/weight prepacking·첫 추론·긴 입력·동시 호출 시 순간적으로 CPU와 메모리를 사용할 수 있다. 온디맨드 웹 요청에서 바로 Laya를 실행하면 **심사자 여러 명의 반복 열람이나 높은 API 요청 수가 추론량을 늘려 API p95·DB 응답을 악화**시킬 수 있다.
+High Memory-g3(4vCPU·32GiB)에서 API/DB, 검색, NCP provider와 Laya 워커가 CPU 시간을 공유한다. 이는 **이서연이 운영하는 NCP 호스트/쿼터 환경**과 **심민성이 개발하는 Laya worker·ONNX/CPU 자동 제어 코드**가 교차하는 작업이다([#22 NCP 운영](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22), [#143 Laya 코드](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)). API의 동기 요청에서 Laya를 직접 실행하지 않는다. Laya는 모델 초기 적재·ONNX 그래프 최적화/weight prepacking·첫 추론·긴 입력·동시 호출 시 순간적으로 CPU와 메모리를 사용할 수 있다. 온디맨드 웹 요청에서 바로 Laya를 실행하면 **심사자 여러 명의 반복 열람이나 높은 API 요청 수가 추론량을 늘려 API p95·DB 응답을 악화**시킬 수 있다.
 
 상위 Laya 자료는 multilingual 322M CPU·ONNX 구동을 지원하며 **CPU 지연이 입력 길이/코어/워밍 상태에 의존**한다고 설명한다. 4코어 환경 수치는 이 VM의 성능 증명이 아니다. 고정된 한글 라벨 평가에서 Laya가 규칙보다 개선 효과를 보이지 않으면 **모델 실행은 영구 선택 기능**으로 두고 기본 규칙을 사용한다. 파인튜닝은 초기 시연 계획에서 제외한다.
 
@@ -92,8 +92,8 @@ Environment="TRANSFORMERS_OFFLINE=1"
 
 ## 6. 구현 책임·비용·추가 자료
 
-- **현재 문서는 CPU/메모리 운영 계약만 확정한 설계 자료다.** 이서연 #22 후속 승인 PR에서 Laya 모델 설치·systemd/worker·NCP 인프라 운영/부하 실측을 별도로 입증한다. 여기의 systemd 예시나 CPU quota는 배포 실행 또는 유료 NCP 리소스 개통을 승인하지 않는다.
-- [이슈 #22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)에서 **이서연 NCP/모델/worker 단독 소유**이 런타임 구현/검증을 후속 PR로 관리하고, 심민성이 인프라·크레딧/비용 상한·서비스 오픈을 승인한다. Laya 업그레이드나 파인튜닝은 기본 로드맵에 없다.
+- **현재 문서는 CPU/메모리 운영 계약만 확정한 설계 자료다.** Laya ONNX worker/queue/OS cgroup·systemd 파일·검증·자동화 구현 PR은 **심민성 [#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)** 전담. 이서연 [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)는 승인된 NCP 계정·CPU/RSS·실요금·운영 환경의 **비코드 실측 증거**만 기록한다. 예시 설정은 실제 배포 승인이나 리소스 개통이 아니다.
+- **소유 명확화:** NCP 콘솔·SKU·키/크레딧·호스트·성능/비용 실측/반납은 **이서연 #12/#22**. Laya worker·모델 adapter·ONNX/runtime·Docker/IaC/OS/cgroup 스크립트·상태 감지·offline/CI 검증은 **심민성 #143/#88**, 실제 모델 호출/비용/인프라 변경은 사용자 명시 승인과 별도 리뷰 전 금지. 파인튜닝은 기본 로드맵에 없다.
 - 원본 학생 데이터/학교 자료가 모델에 전달되지 않도록 전용 입력 allowlist와 목적별 동의/권한 검사를 유지한다. 총 월 크레딧을 넘기지 않더라도 CPU 스파이크가 일으키는 **사용자 지연·추가 VM 요구**가 숨은 비용이므로 자동 증설하지 않는다.
 
 ### 기술 근거 · 설계 참고자료

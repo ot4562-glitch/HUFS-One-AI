@@ -1,20 +1,26 @@
 # 코딩을 몰라도 알 수 있는 전체 흐름
 
+## 2026-11-02 최근 협업 정리 — 사용자 화면의 새 방향
+
+**기존 HUFSAbility의 익숙한 메뉴는 없애지 않습니다.** [관찰 보고서](HUFSABILITY_UI_COMPONENT_ATLAS.md)의 11개 학생 화면 분류·76개 화면과 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 공식 공개 안내 5분류·24기능/공개 4영역을 대조해 **전체 메뉴에서 모두 찾아볼 수 있게** 만듭니다. 하지만 지금 쓸 수 없는 기능은 **🚫 미지원/검증 전**, 현재 검증된 합성 시연 기능만 실행합니다. 이의상 UI, 심민성 학생가치/공식성 검토·기능/권한/manifest를 맡아 [**새 UX 디자인 이슈 #141**](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141)로 작업합니다. 과거 HUFSAbility와 똑같은 모양을 만드는 것이 아니라, 학생이 익숙하게 찾되 **더 쉽고 멋지고 접근성이 좋은 새 화면**을 목표로 합니다. 학교가 공식 업데이트한 사이트라고 표현하지 않습니다.
+
+최근 [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 합성 개인화·전공 변경 회귀와 [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 공고 정정 비교 회귀는 **독립 승인/현재 HEAD CI 각 3/3 후 main 병합 완료**(코드 커밋 `26c559e`/`41de619`). 화면을 완성한 것은 아닙니다. 아직 #131(두 결함 수정 요청), #134(#131 위에 쌓인 UI/매뉴얼), #138(시간표 변환기 Draft/결함) **3건은 미병합**입니다. 새 UI 이슈 #141 포함 OPEN 32, CLOSED 7, 기존 OPEN 전체 완료 종료는 없습니다. 실제 4인 계정/공식 자료·Google·NCP/개인정보/배포는 #46/#89 차단을 유지합니다.
+
 ## 2026-11-02 동아리 기능 담당자용 최신 병합 인수인계
 
 - [x] 김채윤의 [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 가상 동아리 노출·추천 **순수 코어**는 이전 #125 변경요청의 미래시점/수정 후 승인 결함을 고쳐 새 HEAD `8e88a4b` 비작성자 APPROVED·GitHub Actions 2/2 SUCCESS 후 **main `8f76c388` 실제 병합**.
-- [ ] 이의상: 모집 게시판·실제 생성된 AI 가상 포스터 이미지/접근성 UI. 심민성: 서버의 **진짜 가상 관리자 권한 확인/게시 승인 contract·API**. 이서연: 기획·학교 공식성 표현 검토. **#123 상위 Issue OPEN**.
+- [ ] 이의상: 모집 게시판·실제 생성된 AI 가상 포스터 이미지/접근성 UI. 심민성: 서버의 **진짜 가상 관리자 권한 확인/게시 승인 contract·API**. 심민성: 기획·학교 공식성 표현 검토. **#123 상위 Issue OPEN**.
 - [ ] HUFSAbility 메뉴 전체와 🚫 미구현 표시 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 별도 구현. 이번 PR 총 병합 3건·열린 PR 7건/Issue 30, #46/#89 RELEASE_BLOCKED. 아래 '수정 요청 중'은 이전 HEAD 당시 기록.
 
 ## 2026-11-02 새 기능 이슈/담당 및 협업 순서
 
-- **[Issue #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 기존 기능/메뉴 수용(P0):** 이의상(`uisang2004-maker`) UI/메뉴·🚫/360px·접근성, 심민성(`ot4562-glitch`) route/권한/capability manifest·통합, 이서연(`lhh42001`) 기획/정식 학교 연계 주장 검토. 원래 메뉴 5대 분류·24 하위 기능과 공개 진입 4영역 **누락 없이 보이되 구현되지 않은 메뉴는 작동 금지**. 학교 공식 운영 허가/전 기능 이식이 아님.
+- **[Issue #124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 기존 기능/메뉴 수용(P0):** 이의상(`uisang2004-maker`) UI/메뉴·🚫/360px·접근성, 심민성(`ot4562-glitch`) route/권한/capability manifest·통합, 심민성(`ot4562-glitch`) 학교 공식성/제품가치 주장 검토. 원래 메뉴 5대 분류·24 하위 기능과 공개 진입 4영역 **누락 없이 보이되 구현되지 않은 메뉴는 작동 금지**. 학교 공식 운영 허가/전 기능 이식이 아님.
 - **[Issue #123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 가상 동아리 모집(P1):** 이의상 UI·독창적 합성 포스터, 김채윤(`qamarrchae`) 승인된 가상 동아리만 추천하는 코어, 심민성 가상 관리자 승인 gate·합성 DTO/API·안전 검토. 실동아리/에브리타임 원문·학생 개인정보 사용 금지. [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 코어는 과거 asOf/미래 updatedAt 가드 수정 요청 중이고 실제 포스터 asset은 없음.
 - **현재 통합:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) source revision 회귀 main `bb5b76d`, [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) calendar UI main `717ce979`. #73 초대 비동기 race CHANGES_REQUESTED → #74/75 code APPROVED 순서, #76 E2E 독립 재현 전. #117 코어 리뷰자 최종 재확인, #120(현재 reason enum 불일치)→#121 안전 계약/API 스택 정리 필요.
 - **해결 정책:** 구현·검증된 세부 항목만 [x], 상위 서비스/배포/학교 공식 자료·Google/학생 동의·#46/#89은 계속 별도 검증. 코드 PR에는 타인 최신 HEAD APPROVED와 동일 HEAD 성공한 관련 CI가 필요.
 
 
-**담당 GitHub 작업 계정(현재 이슈 배정 확인):** 심민성 `ot4562-glitch`(계약·일반 API), 이의상 `uisang2004-maker`(UI), 김채윤 `qamarrchae`(추천·공지), 박준영 `taewangim-alt`(학업), 이서연 `lhh42001`(NCP·CLOVA/OCR·Laya 제공자·운영). **일반 웹/외부 API는 심민성 담당**이며 실제 서버·Google OIDC/DB/OCR·모델·클라우드 개통은 별도 검증/승인 전 완료로 표시하지 않는다. 역할/근거: [WORKSTREAMS.md](WORKSTREAMS.md).
+**담당 GitHub 작업 계정(현재 이슈 배정 확인):** 심민성 `ot4562-glitch`(계약·일반 API), 이의상 `uisang2004-maker`(UI), 김채윤 `qamarrchae`(추천·공지), 박준영 `taewangim-alt`(학업), 이서연 `lhh42001`(NCP 비코드 계정·환경·크레딧/요금·호스트 운영). **일반 웹/외부 API와 모든 OCR/HCX SDK·Laya worker·CI/OS 자동화 코딩은 심민성 담당**이며 실제 서버·Google OIDC/DB/OCR·모델·클라우드 개통은 별도 검증/승인 전 완료로 표시하지 않는다. 역할/근거: [WORKSTREAMS.md](WORKSTREAMS.md).
 
 **접속 전:** 주소는 `https://외대.온라인.한국`으로 계획한다(아직 DNS/TLS·배포 확인 전). 학교의 공식 로그인 연결 없이도 **Google 계정 로그인 → 외대 이메일 수신함 확인 → 베타 초대 승인**을 거치게 한다. 학교가 실제 Google Workspace를 운영한다면 검증된 조직 정보로 메일 소유를 확인할 수 있고, 그렇지 않으면 외대 이메일로 보낸 인증코드를 입력한다. **개인 Gmail로만 로그인하거나 `example@hufs.ac.kr`을 입력했다고 해서 접속되는 것은 아니다.** 로그인 후에도 타인의 데이터는 별도 공유 허용 범위를 확인한다. 학교 공식 서비스가 아닌 독립 팀 프로젝트다.
 
@@ -28,7 +34,7 @@
 6. 졸업지원 탭에서는 공식 학사요건에 따라 부족 학점·필수과목·계획·개설 전망을 본다.
 7. 다른 학생으로 바꿀 때 이전 학생의 늦은 API 응답을 섞지 않는다.
 
-**다섯 팀원이 할 일:** 심민성은 웹·외부 API·인증·DB/검색·계약과 PR을 통합하고, 이의상은 웹 UI/모바일, 김채윤은 추천·공지, 박준영은 학업, 이서연은 NCP 서버·CLOVA SDK/실제 호출/키/모델·과금·CPU worker를 전담한다. 누구나 자신 영역의 입력→처리→출력과 실패 시 상태를 두 문장으로 설명할 수 있어야 한다.
+**다섯 팀원이 할 일:** 심민성은 웹·외부 API·인증·DB/검색/계약·NCP SDK/HTTP·OCR/HCX·Laya ONNX/worker·OS/systemd/IaC·CI와 PR 코드를 통합하고, 이의상은 웹 UI/모바일, 김채윤은 추천·공지, 박준영은 학업, **이서연은 코드 없이 NCP 계정·크레딧·서비스 사용권·VPC/TLS/IAM·비용·호스트 CPU/RSS·종료 영수증**을 전담한다. 누구나 자신 영역의 입력→처리→출력과 실패 시 상태를 두 문장으로 설명할 수 있어야 한다.
 
 ## 새 화면: '내 주요 일정' 미니 캘린더 (2026-10-31 기획 추가)
 

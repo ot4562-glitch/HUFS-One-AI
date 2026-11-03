@@ -158,7 +158,7 @@ Laya FP32 raw 가중치 약 1.3GB 추산(322M×4byte) 외에 tokenizer/activatio
 | 소유 | 인계 |
 |---|---|
 | **심민성 / 통합** | 본 계약, contracts vNext, schema/evidence/asOf, budget gates, CI·릴리스 부정 테스트, PR 교차검토 |
-| **이서연 / NCP·CLOVA·OCR/Vision·Laya 모델/Provider 전담** | High Memory-g3 인프라/CPU Laya service/worker, NCP IAM·TLS/인프라·provider SDK, OCR/HCX API, 스토리지·사용량 원장 |
+| **이서연 / NCP 비코드 운영·entitlement·실측** ↔ **심민성 / 모든 NCP AI 코딩** | 이서연: High Memory-g3 계정·콘솔/IAM·TLS·크레딧/요금·서비스/호스트 CPU·RSS·중지/반납 영수증(#12/#22). 심민성: provider SDK·OCR/HCX API·Laya ONNX worker/queue·cgroup/systemd/Docker/IaC·budget hard gate·test/CI/스크립트(#20/#88/#143) |
 | **김채윤 / 추천·공지** | 승인된 SourceRevision/VerifiedClaim만 소비, 구본 추천 제외, score/공지 캐시 무효화 |
 | **박준영 / 학업·전망** | RulePack·공지 근거 범위, 적용학번/졸업학기·각주 누락·출처 버전 검토 |
 | **이의상 / 화면·모바일** | 원본 이미지 근거 확대 표시, LAST_VERIFIED·불확실·STALE·SYNTHETIC 배지, 권한철회 차단 |

@@ -1,9 +1,8 @@
-# NCP·배포
+# NCP 인프라 운영 · 배포 코드 경계
 
-- 주 소유자: **이서연(NCP·CLOVA·Laya)**. Architecture.md A14와 docs/WORKSTREAMS.md 참조.
-- 본선/결제 승인 전 리소스 생성 금지. csv/·키 배포 이미지 금지.
-- 다른 담당 경로는 읽기·교차 리뷰를 우선하며 일반 웹/API 코드 수정은 심민성 담당자와 조율한다.
+**2026-11-03 사용자 최신 지시** · [루트 AGENTS](../AGENTS.md), [WORKSTREAMS](../docs/WORKSTREAMS.md), [NCP 운영](../docs/NCP_OPERATIONS_2026.md), [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)/[#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)/[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143) 우선.
 
-## NCP 환경 전담 및 개통 불가 게이트 (#12/#20/#22)
-
-**NCP 리소스/코드/운영 전부 이서연**: 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h, KVM SSD CB 50GB 8원/h, HTTPS ingress/ACG/IAM/Secrets/DB 호스팅·backup·사용량·모든 CLOVA/OCR/HCX/Laya SDK·API/worker/CPU/cgroup/비용. **심민성은 일반 웹·외부 REST/API/Google OIDC/일반 DB·Temporal RAG/권한/DTO 소유**. #9/#10/#11 UI/추천/학사의 기존 작업 범위를 유지한다. 사용자 계획 11/6~12/9(816h) 기준 최대 비용이나 공고의 실제 본선 발표는 **11/16**. 선정·크레딧·사용자 승인 없으면 어떤 NCP VM·유료 호출도 만들지 않는다. [정본](../docs/NCP_OPERATIONS_2026.md).
+- **이서연 `lhh42001` = NCP 비코드 운영 담당:** 사용권·크레딧/SKU·VPC·콘솔·ACG/TLS·IAM/secret 권한·실호스트 CPU/RSS·비용·백업/종료 증빙. 이 디렉터리의 코드를 작성하지 않는다.
+- **심민성 `ot4562-glitch` = 이 디렉터리의 모든 코드·설정 파일·배포 자동화 소유:** Docker/IaC/YAML/systemd/cgroup/shell/CLI·비밀 노출 차단·NCP SDK/client·worker/비용/CPU 코드·CI 검증. 공통 API/계약 소비자 리뷰 후 진행한다. 이서연의 운영 환경 정보·사용 승인 없이 리소스를 실제 생성/변경하지 않는다.
+- Cloud 사용 전 **사용자 별도 승인**·실제 본선/크레딧/요금/권리 확인 필수. 비승인 모델 다운로드·NCP 서버/키 생성/유료 호출·학생 원본/학교 저작물 외부 전송은 금지. `LAYA_ENABLED=false`가 기본이며 4vCPU·32GB/가격은 운영 설계 가정이다.
+- `main` 직접 코드 변경/force push·타인 dirty worktree reset 금지. 비작성자 최신 HEAD 리뷰와 필수 CI 후 병합. [#46 개인정보 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)·[#89 출시 게이트](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)는 `RELEASE_BLOCKED`.

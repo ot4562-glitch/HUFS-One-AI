@@ -1,6 +1,6 @@
 # HUFS One AI | 예선 제출 항목·근거 확인표
 
-> **2026-10-31 최종 운영·역할 정본:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG, 이서연은 NCP·CLOVA/OCR/HCX/Laya/provider SDK/모델·클라우드 운용 전담. 독립 UI·추천·학업 소유 불변.
+> **2026-11-03 역할 정정·2026-10-31 NCP 가격 계획:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG 및 NCP OCR/HCX SDK·Laya ONNX worker·OS/CI 자동화 등 **모든 코드** 전담, 이서연은 **NCP 계정/크레딧·실운영/실측·비용·인프라(비코드)** 전담. 독립 UI·추천·학업 소유 불변.
 
 
 **문서 역할:** 제안서 준비 자료. 제출 양식·분량·마감과 회의 일정은 주최 측 및 팀 공지를 기준으로 확인한다. 제품 가치·심사 설득은 [Proposal.md](Proposal.md), 실제 구현 계약은 [Architecture.md](Architecture.md)를 따른다.

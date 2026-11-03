@@ -6,6 +6,12 @@ import {
   CourseCatalogPageSchema,CourseOfferingsPageSchema,OpportunityCatalogPageSchema,
   OpportunityCatalogDetailSchema,
   BookmarkStageSchema,BookmarkOutcomeSchema,BookmarkStagePatchSchema,isNextBookmarkStage,
+  OwnerStudyPlanCheckRequestSchema,OwnerStudyPlanCheckResponseSchema,
+  OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
+  OpportunityExplanationRequestSchema,OpportunityExplanationResponseSchema,
+  OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
+  HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
+  SyntheticClubDetailResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
@@ -74,6 +80,25 @@ export class HufsOwnerApiClient {
     body:unknown,signal?:AbortSignal):Promise<T>{
     const {csrfToken}=await this.csrf(signal);
     return this.request(path,schema,{method,body,csrf:csrfToken,signal});
+  }
+  /** #124: original HUFSAbility menus are informational; no school login or
+   * unverified internal routes are made available through this method.
+   * Invalidate the consuming screen on session/snapshot changes.
+   */
+  getHufsAbilityCapabilities(signal?:AbortSignal){
+    return this.request('/api/hufsability/capabilities',HufsAbilityMenuManifestSchema,{signal});
+  }
+  /** #123: simulated student-specific club recommendations. The server chooses
+   * the synthetic identity and review history; never send actor/profile IDs.
+   */
+  listSyntheticClubs(signal?:AbortSignal){
+    return this.request('/api/synthetic/clubs',SyntheticClubBoardResponseSchema,{signal});
+  }
+  async getSyntheticClub(clubId:string,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^SYN-CLUB-[0-9]{3}$/),clubId);
+    const detail=await this.request('/api/synthetic/clubs/'+id,
+      SyntheticClubDetailResponseSchema,{signal});
+    requireMatchingReceipt(detail.item.post.id===id);return detail;
   }
   getProfile(signal?:AbortSignal){return this.request('/api/profile',ProfileRead,{signal});}
   async updateProfile(change:z.infer<typeof SelfProfilePatchSchema>,signal?:AbortSignal){
@@ -185,5 +210,36 @@ export class HufsOwnerApiClient {
     const id=clientInput(CatalogId,opportunityId);
     const result=await this.request('/api/opportunities/'+encodeURIComponent(id),OpportunityCatalogDetailSchema,{signal});
     requireMatchingReceipt(result.opportunity.id===id);return result;
+  }
+  /** Private read-only calculations still use POST/CSRF. Render through
+   * OwnerSessionController.runLatest so late actor/tab responses are dropped. */
+  async checkStudyPlan(change:z.infer<typeof OwnerStudyPlanCheckRequestSchema>,signal?:AbortSignal){
+    const input=clientInput(OwnerStudyPlanCheckRequestSchema,change);
+    const result=await this.mutate('/api/study-plans/check',OwnerStudyPlanCheckResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.term===input.term
+      &&(input.expectedPlanVersion===undefined||result.versions.plan===input.expectedPlanVersion));
+    return result;
+  }
+  async checkMajorWhatIf(change:z.infer<typeof OwnerMajorWhatIfRequestSchema>,signal?:AbortSignal){
+    const input=clientInput(OwnerMajorWhatIfRequestSchema,change);
+    const result=await this.mutate('/api/academics/major-what-if',OwnerMajorWhatIfResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(same(result.scenario,input.scenario));
+    return result;
+  }
+  async explainOpportunity(opportunityId:string,change:z.infer<typeof OpportunityExplanationRequestSchema>,signal?:AbortSignal){
+    const id=clientInput(CatalogId,opportunityId),input=clientInput(OpportunityExplanationRequestSchema,change);
+    const result=await this.mutate('/api/opportunities/'+encodeURIComponent(id)+'/explanation',
+      OpportunityExplanationResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.opportunityId===id&&result.sourceRevisionId===input.sourceRevisionId
+      &&result.rankConfigVersion===input.rankConfigVersion&&Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
+  }
+  async compareOpportunityRevisions(opportunityId:string,change:z.infer<typeof OpportunityRevisionComparisonRequestSchema>,signal?:AbortSignal){
+    const id=clientInput(CatalogId,opportunityId),input=clientInput(OpportunityRevisionComparisonRequestSchema,change);
+    const result=await this.mutate('/api/opportunities/'+encodeURIComponent(id)+'/revisions/compare',
+      OpportunityRevisionComparisonResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.opportunityId===id&&result.beforeRevisionId===input.beforeRevisionId
+      &&result.afterRevisionId===input.afterRevisionId&&Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
   }
 }

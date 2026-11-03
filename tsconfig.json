@@ -24,6 +24,8 @@
   },
   "include": [
     "packages/contracts/src/**/*.ts",
+    "packages/ui/src/**/*.ts",
+    "packages/ui/src/**/*.tsx",
     "apps/api/src/**/*.ts",
     "tests/**/*.ts",
     "vitest.config.ts",

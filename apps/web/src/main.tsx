@@ -1,4 +1,4 @@
-import {StrictMode} from 'react';
+import {StrictMode, type ComponentType} from 'react';
 import {createRoot} from 'react-dom/client';
 import {DemoController, newTabDemoRunId, type DemoClientPort} from './app/index.js';
 import {HufsApiClient, consumeReviewerInviteFragment} from './integrations/index.js';
@@ -46,6 +46,7 @@ async function start() {
   let client: DemoClientPort = api;
   let transportLabel: string | null = null;
   let services: AppServices = {...liveServices(api), reviewerInvite: {port: api, holder: inviteHolder}};
+  let localAccountWorkbench:ComponentType|undefined;
   // Synthetic transport only for `vite --mode synthetic` on a loopback host. The literal
   // import.meta.env.DEV check lets the production build drop this branch and its chunk.
   if (import.meta.env.DEV && import.meta.env.MODE === 'synthetic'
@@ -73,6 +74,7 @@ async function start() {
         save: (ctx, action, signal) => synthetic.saveAction(ctx.contextId, action, signal),
       },
     };
+    localAccountWorkbench = (await import('./features/local-accounts/LocalAccountWorkbench.js')).LocalAccountWorkbench;
   } else {
     const reviewer = await reviewerSandbox(api);
     // REVIEWER: synthetic sandbox only. Otherwise (BETA) the #85 overlay; the server checks the role anyway.
@@ -87,7 +89,7 @@ async function start() {
   const root = document.getElementById('root');
   if (root) {
     createRoot(root).render(
-      <StrictMode><App controller={controller} transportLabel={transportLabel} pages={appPages} services={services} /></StrictMode>,
+      <StrictMode><App controller={controller} transportLabel={transportLabel} pages={appPages} services={services} {...(localAccountWorkbench?{localAccountWorkbench}:{})} /></StrictMode>,
     );
   }
 }
