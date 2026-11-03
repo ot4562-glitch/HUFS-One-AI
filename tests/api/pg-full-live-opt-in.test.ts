@@ -7,7 +7,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {createLocalJWKSet,exportJWK,generateKeyPair,SignJWT} from 'jose';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
-import {createPostgresGoogleAuth} from '../../apps/api/src/auth-postgres.js';
+import {createPostgresGoogleAuth,createPostgresSchoolMailAuth} from '../../apps/api/src/auth-postgres.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
 import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
@@ -1048,6 +1048,101 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query(`SELECT safe_packet IS NULL AS scrubbed,erased_at IS NOT NULL AS erased
       FROM api_ai_provider_inputs WHERE projection_id=$1`,[projection])).rows[0])
       .toEqual({scrubbed:true,erased:true});
+  });
+
+  it('persists mailbox OTP across HTTP reconstruction, admits BETA only after proof, and rechecks withdrawal',async()=>{
+    await admin.query(`
+      CREATE ROLE hufs_test_otp_sessions LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_otp_admission LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_otp_challenges LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_otp_proofs LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      GRANT USAGE ON SCHEMA public TO hufs_test_otp_sessions,hufs_test_otp_admission,hufs_test_otp_challenges,hufs_test_otp_proofs;
+      GRANT SELECT,INSERT,DELETE ON google_login_attempts TO hufs_test_otp_sessions;
+      GRANT SELECT,INSERT,UPDATE ON google_app_sessions TO hufs_test_otp_sessions;
+      GRANT SELECT ON beta_school_proofs TO hufs_test_otp_admission,hufs_test_otp_proofs;
+      GRANT UPDATE(method,proof_verified_at,proof_expires_at) ON beta_school_proofs TO hufs_test_otp_proofs;
+      GRANT SELECT,INSERT,UPDATE ON beta_mail_issue_windows TO hufs_test_otp_challenges;
+      GRANT SELECT,INSERT,UPDATE,DELETE ON beta_mail_challenges TO hufs_test_otp_challenges;
+    `);
+    const sessions=poolFor(connectionUrl(),'hufs_test_otp_sessions');
+    const admission=poolFor(connectionUrl(),'hufs_test_otp_admission');
+    const challenges=poolFor(connectionUrl(),'hufs_test_otp_challenges');
+    const proofs=poolFor(connectionUrl(),'hufs_test_otp_proofs');
+    const at=new Date(),origin='https://synthetic-otp.example.test';
+    const subject='SYN-PG-OTP',schoolEmail='synthetic-otp@hufs.ac.kr';
+    const expires=new Date(at.getTime()+600_000).toISOString();
+    const pair=await generateKeyPair('RS256',{extractable:true});
+    const clientId='synthetic-otp.apps.googleusercontent.com';
+    const jwks=createLocalJWKSet({keys:[{...await exportJWK(pair.publicKey),kid:'otp',alg:'RS256',use:'sig'}]});
+    let nonce='',code='',sends=0,deliveryFails=false,currentSubject=subject;
+    const config={pools:{sessions:adapter(sessions),admission:adapter(admission),attempts:adapter(limiter)},
+      attemptDigestKey:randomBytes(32),google:{clientId,allowedOrigin:origin,now:()=>at,
+        redirectUri:origin+'/api/auth/google/callback',
+        verifyIdToken:createGoogleIdTokenVerifier({clientId,jwks,now:()=>at}),
+        exchangeCode:async()=>new SignJWT({sub:currentSubject,email:'synthetic-otp@example.test',email_verified:true,nonce})
+          .setProtectedHeader({alg:'RS256',kid:'otp'}).setIssuer('https://accounts.google.com')
+          .setAudience(clientId).setIssuedAt(Math.floor(at.getTime()/1000)-1)
+          .setExpirationTime(Math.floor(at.getTime()/1000)+600).sign(pair.privateKey)},
+      schoolMail:{pools:{challenges:adapter(challenges),proofUpdates:adapter(proofs)},digestKey:randomBytes(32),
+        sender:{send:async(input:{schoolEmail:string;code:string;expiresAt:string})=>{
+          sends++;code=input.code;expect(input.schoolEmail).toBe(schoolEmail);
+          if(deliveryFails)throw Error('Synthetic delivery failure');
+        }}}};
+    const make=()=>createIntegratedApi({allowedOrigin:origin,repository:closedRepository,
+      ...createPostgresSchoolMailAuth(config),now:()=>at.toISOString()});
+    let app=make();
+    const cookie=(response:{headers:Record<string,unknown>},name:string)=>{
+      const raw=response.headers['set-cookie'],all=Array.isArray(raw)?raw:[raw];
+      return String(all.find(v=>typeof v==='string'&&v.startsWith(name+'='))??'').split(';')[0]!;
+    };
+    const login=async(intent:'BETA'|'REVIEWER')=>{
+      const start=await app.inject({url:'/api/auth/google/start?intent='+intent,remoteAddress:'127.0.0.91'});
+      expect(start.statusCode).toBe(303);
+      const url=new URL(String(start.headers.location));nonce=url.searchParams.get('nonce')!;
+      return app.inject({url:'/api/auth/google/callback?state='+url.searchParams.get('state')+'&code=SYN-CODE',
+        remoteAddress:'127.0.0.91',headers:{cookie:cookie(start,'__Host-hufs_login')}});
+    };
+    try{
+      const reviewer=await login('REVIEWER');expect(reviewer.statusCode).toBe(303);
+      const headers={cookie:cookie(reviewer,'__Host-hufs_session'),origin};
+      const csrf=(await app.inject({url:'/api/auth/csrf',headers})).json().csrfToken as string;
+      const request={method:'POST' as const,url:'/api/auth/school-mail/request',remoteAddress:'127.0.0.91',
+        headers:{...headers,'x-csrf-token':csrf},payload:{schoolEmail}};
+      expect((await app.inject(request)).statusCode).toBe(403);expect(sends).toBe(0);
+      await admin.query(`INSERT INTO beta_school_proofs(google_subject,school_email,method,approved_at,approved_until)
+        VALUES($1,$2,'MAILBOX_OTP',$3,$4)`,[subject,schoolEmail,at.toISOString(),expires]);
+      expect((await login('BETA')).statusCode).toBe(403);
+      expect((await app.inject({...request,headers})).statusCode).toBe(403);expect(sends).toBe(0);
+      const issued=await app.inject(request);expect(issued.statusCode).toBe(202);
+      expect(issued.json()).not.toHaveProperty('code');expect(code).toMatch(/^\d{8}$/);
+      const challengeId=issued.json().challengeId as string;
+      const stored=(await admin.query('SELECT proof_digest,used_at FROM beta_mail_challenges WHERE challenge_id=$1',[challengeId])).rows[0]!;
+      expect(stored.proof_digest).toMatch(/^[a-f0-9]{64}$/);expect(stored.proof_digest).not.toBe(code);
+      expect(stored.used_at).toBeNull();
+      await app.close();app=make(); // only PG and protected shared keys survive
+      const confirm={...request,url:'/api/auth/school-mail/confirm',payload:{schoolEmail,challengeId,code}};
+      currentSubject='SYN-PG-OTHER';
+      const other=await login('REVIEWER'),otherHeaders={cookie:cookie(other,'__Host-hufs_session'),origin};
+      const otherCsrf=(await app.inject({url:'/api/auth/csrf',headers:otherHeaders})).json().csrfToken as string;
+      expect((await app.inject({...confirm,headers:{...otherHeaders,'x-csrf-token':otherCsrf}})).json()).toEqual({verified:false});
+      currentSubject=subject;
+      expect((await app.inject(confirm)).json()).toEqual({verified:true});
+      expect((await app.inject(confirm)).json()).toEqual({verified:false});
+      const beta=await login('BETA');expect(beta.statusCode).toBe(303);
+      const betaHeaders={cookie:cookie(beta,'__Host-hufs_session')};
+      expect((await app.inject({url:'/api/auth/session',headers:betaHeaders})).json()).toMatchObject({role:'BETA',actorId:'google:'+subject});
+      await expect(admission.query("UPDATE beta_school_proofs SET method='SIGNED_WORKSPACE'")).rejects.toMatchObject({code:'42501'});
+      await expect(proofs.query('UPDATE beta_school_proofs SET approved_until=approved_until')).rejects.toMatchObject({code:'42501'});
+      await expect(proofs.query("INSERT INTO beta_school_proofs SELECT * FROM beta_school_proofs WHERE false")).rejects.toMatchObject({code:'42501'});
+      deliveryFails=true;
+      expect((await app.inject(request)).statusCode).toBe(403);
+      expect((await admin.query('SELECT count(*)::int AS n FROM beta_mail_challenges WHERE google_subject=$1',[subject])).rows[0]?.n).toBe(1);
+      await admin.query('UPDATE beta_school_proofs SET revoked_at=$2 WHERE google_subject=$1',[subject,at.toISOString()]);
+      await app.close();app=make();
+      expect((await app.inject({url:'/api/auth/session',headers:betaHeaders})).statusCode).toBe(401);
+      const sent=sends;
+      expect((await app.inject(request)).statusCode).toBe(403);expect(sends).toBe(sent);
+    }finally{await app.close();}
   });
 
   it('restores PostgreSQL BETA auth across API instances and enforces shared revocation, limits and CSRF',async()=>{
