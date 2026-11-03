@@ -56,9 +56,13 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
   await page.keyboard.press('Tab'); // selector summary
   await expect(page.locator('.selector__summary')).toBeFocused();
-  // #132: 설정 comes right after the account switcher.
+  // #132: 설정 stays in the account area after the switcher. In synthetic dev mode only, main's local
+  // synthetic-account lab link sits between them (the production entry never passes the lab, so it is not rendered).
+  await page.keyboard.press('Tab');
+  await expect(page.locator('.app__account').getByRole('link', {name: '로컬 합성 계정 실험실 열기'})).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.locator('.app__account').getByRole('link', {name: '설정'})).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Shift+Tab');
   await expect(page.locator('.selector__summary')).toBeFocused();
   await page.keyboard.press('Enter');
