@@ -36,7 +36,7 @@
 - `local_only/`, 실제 개인 파일, 보호 원문/스크린샷, 토큰·키·비밀번호는 원격 코드/번들/테스트 fixture에 포함하지 않습니다. `npm run check:privacy` 통과도 법적/기관 이용허가를 대신하지 않습니다.
 - SourceRevision·공고/학칙/상담 자료는 허용 출처·버전·수집·검수 시각·근거·권한을 분리합니다. AI/화면이 확정 자격·졸업·마감·지원 결과를 임의 생성하거나 `UNKNOWN/NEEDS_REVIEW`를 성공으로 변경하지 못합니다.
 - [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 운영 검증 전 **RELEASE_BLOCKED**. 실제 Google OIDC/외대 이메일 증명/HTTPS·직접IP·preview/CDN/스토리지, 영속 DB, 실심사자, 유료 NCP/CLOVA/HCX/Laya·DNS/TLS·학교 자료권리/기관 협의는 **각각 별도 승인·실증**이 필요합니다. 현재의 합성 API/오프라인 CI가 이를 자동 충족하지 않습니다.
-- NCP/Laya 비용·CPU·worker/실측의 설계는 [CLOUD](CLOUD.md), [NCP 운영](docs/NCP_OPERATIONS_2026.md), [CPU 보호](docs/LAYA_CPU_SPIKE_PROTECTION.md)를 따릅니다. 사전 승인 없이 모델 다운로드·과금·서버 생성/배포·자동 백그라운드 실행 금지.
+- NCP/Laya 비용·CPU·worker/실측의 설계는 [CLOUD](CLOUD.md), [NCP 운영](docs/NCP_OPERATIONS_2026.md), [CPU 보호](docs/LAYA_CPU_SPIKE_PROTECTION.md)를 따릅니다. **실제 서버 생성·포트/ACG/ACL·Windows PuTTY/WinSCP·Ubuntu 설치/안전한 합성 SSH 미리보기 절차는 [NCP 실행서](infra/ncp/README.md)를 우선 읽습니다. 실제 prod 진입점은 미구현이며 외부 80/443·유료 자원은 이 스크립트로 열지 않습니다.** 사전 승인 없이 모델 다운로드·과금·서버 생성/배포·자동 백그라운드 실행 금지.
 
 ## 문서 책임
 
