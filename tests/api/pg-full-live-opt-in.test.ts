@@ -167,6 +167,39 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       [phase,cap,actorCap,attempts,actorAttempts]);
     return new PostgresAiBudgetLedger(adapter(aiBudget));
   }
+  /** Synthetic settled result fixtures for the remaining #150 retention proof.
+   * Uses the execute-only runtime role, never a privileged result INSERT. */
+  async function retentionResult(suffix:string,ttlMs=600_000){
+    const owner='SYN-RETENTION-'+suffix,phase='SYN-RETENTION-PHASE-'+suffix;
+    const projection='SYN-RETENTION-PROJECTION-'+suffix,inputRef='SYN-RETENTION-INPUT-'+suffix;
+    const approvedAt=new Date(Date.now()-120_000).toISOString(),asOf=new Date(Date.now()-60_000).toISOString();
+    const inputExpiry=new Date(Date.now()+600_000).toISOString(),epoch='retention-v1';
+    await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at)
+      VALUES($1,1,'{"personalStorage":true,"externalAi":true,"teamReview":false,"ncpStorage":false,"presentation":false}'::jsonb,$2)`,[owner,approvedAt]);
+    const packet={packetId:'SYN-RETENTION-PACKET',task:'opportunity_terms',providerInputClass:'SYNTHETIC_CLEARED',
+      sourceTokens:[{token:'DOC1',paragraphs:[{id:'p1',text:'SYNTHETIC ONLY'}]}],
+      allowedTopicCodes:[],allowedObjectTokens:[],approvedFacts:[],schemaVersion:'1',promptVersion:'1'};
+    await admin.query(`INSERT INTO api_ai_provider_inputs(projection_id,actor_id,input_ref,operation,as_of,epoch,
+      policy_version,consent_version,approved_by,approved_at,expires_at,input_class,privacy_review_ref,source_refs,safe_packet)
+      VALUES($1,$2,$3,'HCX_007',$4,$5,'retention-policy','1','SYN-INDEPENDENT-REVIEWER',$6,$7,
+        'SYNTHETIC_CLEARED','SYN-RETENTION-PRIVACY',$8::jsonb,$9::jsonb)`,
+    [projection,owner,inputRef,asOf,epoch,approvedAt,inputExpiry,JSON.stringify([{sourceId:'SYN-RETENTION-SOURCE',
+      revisionId:'SYN-RETENTION-REV',permissionRef:'SYN-RETENTION-PERM',originalSha256:'c'.repeat(64)}]),JSON.stringify(packet)]);
+    await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id)
+      VALUES($1,$2,'HCX_007',$3)`,[owner,inputRef,projection]);
+    const ledger=await provisionBudget(phase),job=await ledger.reserve(owner,request(phase,'SYN-RETENTION-KEY'));
+    const identity={phaseId:phase,jobId:job.jobId,requestSha256:billingHash};
+    await ledger.transition(owner,{...identity,action:'DISPATCHED'});
+    await ledger.transition(owner,{...identity,action:'SETTLED',actualUnits:40,receiptSha256:usageReceipt});
+    const value={jobId:job.jobId,actorId:owner,sessionIdHash:'SYN-RETENTION-SESSION',inputRef,
+      operation:'HCX_007' as const,asOf,phaseId:phase,idempotencyKey:'SYN-RETENTION-KEY',requestSha256:billingHash,
+      inputEpoch:'input-'+createHash('sha256').update([projection,epoch,'1'].join('|')).digest('hex'),
+      expiresAt:new Date(Date.now()+Math.min(ttlMs,590_000)).toISOString(),
+      candidate:{reviewState:'NEEDS_REVIEW',text:'SYNTHETIC-RETENTION-CANDIDATE'}};
+    const store=new PostgresProviderResults(adapter(aiResults));
+    await store.put(value);
+    return {owner,projection,value,store};
+  }
   it('AI budget is OFF by default, private, and execute-only role cannot bypass accounting',async()=>{
     const phase='SYN-BILL-OFF';
     await admin.query(`INSERT INTO ai_budget_phases(phase_id,starts_at,ends_at)
@@ -1132,5 +1165,53 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       for(let i=0;i<10;i++)expect((await (i%2?first:second).inject(start)).statusCode).toBe(303);
       expect((await first.inject(start)).statusCode).toBe(429);
     }finally{await first.close();await second.close();}
+  });
+
+  it('retention never resurrects erased payloads after AI/storage withdrawal, consent deletion or later reconsent',async()=>{
+    for(const mode of ['externalAi','personalStorage','delete'] as const){
+      const f=await retentionResult('ERASE-'+mode);
+      if(mode==='delete')await admin.query('DELETE FROM api_self_consents WHERE actor_id=$1',[f.owner]);
+      else await admin.query(`UPDATE api_self_consents SET version=version+1,
+        choices_json=jsonb_set(choices_json,ARRAY[$2]::text[],'false'::jsonb),updated_at=clock_timestamp()
+        WHERE actor_id=$1`,[f.owner,mode]);
+      const erased=(await admin.query(`SELECT result_json,erased_at,request_sha256 FROM api_ai_provider_results
+        WHERE job_id=$1`,[f.value.jobId])).rows[0]!;
+      expect(erased.result_json).toBeNull();expect(erased.erased_at).not.toBeNull();expect(erased.request_sha256).toBe(billingHash);
+      await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at)
+        VALUES($1,2,'{"personalStorage":true,"externalAi":true,"teamReview":false,"ncpStorage":false,"presentation":false}'::jsonb,clock_timestamp())
+        ON CONFLICT(actor_id) DO UPDATE SET version=api_self_consents.version+1,choices_json=EXCLUDED.choices_json,updated_at=EXCLUDED.updated_at`,[f.owner]);
+      const restarted=new PostgresProviderResults(adapter(aiResults));
+      expect(await restarted.get(f.owner,f.value.sessionIdHash,f.value.jobId)).toBeNull();
+      await expect(restarted.put(f.value)).rejects.toThrow('Provider result unavailable');
+      await expect(admin.query(`UPDATE api_ai_provider_results SET result_json=$2::jsonb,erased_at=NULL
+        WHERE job_id=$1`,[f.value.jobId,JSON.stringify(f.value.candidate)])).rejects.toThrow('immutable provider result');
+      expect((await admin.query('SELECT state,charged_units,receipt_sha256 FROM ai_budget_jobs WHERE job_id=$1',
+        [f.value.jobId])).rows[0]).toEqual({state:'SETTLED',charged_units:'40',receipt_sha256:usageReceipt});
+    }
+  });
+
+  it('a separate execute-only retention role scrubs bounded expired batches while preserving active results and billing',async()=>{
+    await admin.query(`CREATE ROLE hufs_test_result_retention LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      GRANT USAGE ON SCHEMA public TO hufs_test_result_retention;
+      GRANT EXECUTE ON FUNCTION ai_provider_results_prune(integer) TO hufs_test_result_retention;`);
+    const maintenance=poolFor(connectionUrl(),'hufs_test_result_retention');
+    const first=await retentionResult('TTL-A',3000),second=await retentionResult('TTL-B',3000),active=await retentionResult('TTL-ACTIVE');
+    // Wait only until these synthetic fixtures expire, independent of runner speed.
+    await admin.query(`SELECT pg_sleep(GREATEST(0,EXTRACT(EPOCH FROM $1::timestamptz-clock_timestamp()))+0.02)`,[second.value.expiresAt]);
+    const restarted=new PostgresProviderResults(adapter(aiResults));
+    for(const f of [first,second])expect(await restarted.get(f.owner,f.value.sessionIdHash,f.value.jobId)).toBeNull();
+    await expect(aiResults.query('SELECT public.ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
+    await expect(maintenance.query('SELECT result_json FROM api_ai_provider_results')).rejects.toMatchObject({code:'42501'});
+    const pruner=new PostgresProviderResults(adapter(maintenance));
+    expect(await pruner.pruneExpired(1)).toBe(1);
+    const jobs=[first.value.jobId,second.value.jobId];
+    expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_results
+      WHERE job_id=ANY($1::uuid[]) AND result_json IS NULL AND erased_at IS NOT NULL`,[jobs])).rows[0]?.n).toBe(1);
+    expect(await pruner.pruneExpired(1)).toBe(1);expect(await pruner.pruneExpired(1)).toBe(0);
+    expect(await restarted.get(active.owner,active.value.sessionIdHash,active.value.jobId)).toEqual(active.value);
+    for(const f of [first,second]){
+      await expect(f.store.put(f.value)).rejects.toThrow('Provider result unavailable');
+      expect((await admin.query('SELECT request_sha256 FROM api_ai_provider_results WHERE job_id=$1',[f.value.jobId])).rows[0]?.request_sha256).toBe(billingHash);
+    }
   });
 });
