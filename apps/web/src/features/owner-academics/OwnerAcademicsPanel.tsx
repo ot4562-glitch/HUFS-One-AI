@@ -79,7 +79,7 @@ export function OwnerAcademicsPanel({port}:{port:OwnerAcademicsPort}){
       <h2>수강계획 사전검사</h2>
       <form onSubmit={event=>{void checkPlan(event);}}>
         <label>정규 학기
-          <input inputMode="numeric" pattern="(19|20|21)[0-9]{2}-[12]"
+          <input inputMode="numeric"
             maxLength={6} value={term} onChange={event=>{setTerm(event.target.value);setPlan(null);}}/>
         </label>
         <button disabled={busy} type="submit">권한·원문 확인 후 검사</button>
