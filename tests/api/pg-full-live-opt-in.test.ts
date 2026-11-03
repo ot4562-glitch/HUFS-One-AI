@@ -50,7 +50,9 @@ const migrationNames=[
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
   '20261101_experience_tag_approval.sql',
   '20261101_demo_overlays.sql',
+  '20261101_verified_source_rights.sql',
   '20261103_ai_budget.sql',
+  '20261103_ai_provider_inputs.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -934,4 +936,23 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const events=await admin.query(`SELECT count(*)::int AS n FROM source_invalidation_deliveries
       WHERE event_id='review:SYN-REVIEW-ATTESTATION'`);expect(events.rows[0]?.n).toBe(5);
   });
+  it('keeps staged provider input projections immutable and inaccessible to unrelated runtime roles',async()=>{
+    const rows=await admin.query(`SELECT relname,relrowsecurity,relforcerowsecurity
+      FROM pg_class WHERE relname IN ('api_ai_provider_inputs','api_ai_provider_input_heads')
+      ORDER BY relname`);
+    expect(rows.rows).toHaveLength(2);
+    expect(rows.rows.every(r=>r.relrowsecurity===true&&r.relforcerowsecurity===true)).toBe(true);
+    const triggers=await admin.query(`SELECT tgname FROM pg_trigger
+      WHERE tgrelid='api_ai_provider_inputs'::regclass AND NOT tgisinternal`);
+    expect(triggers.rows.map(r=>r.tgname)).toEqual(expect.arrayContaining([
+      'immutable_ai_provider_input','approved_ai_input_needs_current_consent',
+    ]));
+    await expect(writer.query('SELECT projection_id FROM api_ai_provider_inputs')).rejects.toMatchObject({code:'42501'});
+    await expect(writer.query('SELECT projection_id FROM api_ai_provider_input_heads')).rejects.toMatchObject({code:'42501'});
+    await expect(writer.query(`INSERT INTO api_ai_provider_input_heads
+      (actor_id,input_ref,operation,projection_id) VALUES ('SYN-A','SYN-I','HCX_007','SYN-P')`))
+      .rejects.toMatchObject({code:'42501'});
+    expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_inputs`)).rows[0]?.n).toBe(0);
+  });
+
 });
