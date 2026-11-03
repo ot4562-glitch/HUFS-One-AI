@@ -7,9 +7,7 @@ import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {createLocalJWKSet,exportJWK,generateKeyPair,SignJWT} from 'jose';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
-import {createPostgresGoogleAuth} from '../../apps/api/src/auth-postgres.js';
-import {createIntegratedApi} from '../../apps/api/src/integration.js';
-import {closedRepository} from '../../apps/api/src/repository.js';
+import {createPostgresApplication} from '../../apps/api/src/application-postgres.js';
 import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
 import {PostgresPersonalStateStore,PersonalStateDenied} from '../../apps/api/src/db/personal-state-postgres.js';
 import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-postgres.js';
@@ -1050,7 +1048,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       .toEqual({scrubbed:true,erased:true});
   });
 
-  it('restores PostgreSQL BETA auth across API instances and enforces shared revocation, limits and CSRF',async()=>{
+  it('assembles PostgreSQL BETA auth and owner consent HTTP with restart, shared revocation, limits and CSRF',async()=>{
     await admin.query(`
       CREATE ROLE hufs_test_auth_sessions LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       CREATE ROLE hufs_test_auth_admission LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
@@ -1077,8 +1075,12 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
             .setAudience(clientId).setIssuedAt(Math.floor(at.getTime()/1000)-1)
             .setExpirationTime(Math.floor(at.getTime()/1000)+600).sign(pair.privateKey);
         }}};
-    const make=()=>createIntegratedApi({allowedOrigin:origin,repository:closedRepository,
-      googleAuth:createPostgresGoogleAuth(config),now:()=>at.toISOString()});
+    let ownerAllowed=true;
+    const make=()=>createPostgresApplication({auth:config,platform:{
+      pools:{projections:adapter(reader),calendar:adapter(temporal),personal:adapter(writer),evidence:adapter(temporal)},
+      evidenceRights:{resolveFor:async()=>null},selfAccount:{pool:adapter(selfAccount),
+        authority:{mayAccess:async({actorId})=>ownerAllowed&&actorId==='google:'+subject}},
+    }});
     const first=make();let second=make();
     const cookie=(response:{headers:Record<string,unknown>},name:string)=>{
       const raw=response.headers['set-cookie'],all=Array.isArray(raw)?raw:[raw];
@@ -1104,6 +1106,18 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       expect(String(login.headers['set-cookie'])).toContain('HttpOnly; Secure; SameSite=Lax');
       expect(String(login.headers['set-cookie'])).not.toContain('Domain=');
       expect((await second.inject({url:'/api/auth/session',headers})).json()).toMatchObject({role:'BETA',actorId:'google:'+subject});
+      const choices={personalStorage:true,externalAi:false,teamReview:false,ncpStorage:false,presentation:false};
+      const consentCsrf=(await second.inject({url:'/api/auth/csrf',headers})).json().csrfToken as string;
+      const consent=await second.inject({method:'PUT',url:'/api/consents',headers:{...headers,origin,'x-csrf-token':consentCsrf},
+        payload:{expectedVersion:0,choices}});
+      expect(consent.statusCode).toBe(200);expect(consent.json()).toMatchObject({consents:{version:1,choices}});
+      await second.close();second=make();
+      expect((await second.inject({url:'/api/consents',headers})).json()).toMatchObject({consents:{version:1,choices}});
+      const profile=await second.inject({url:'/api/profile',headers});
+      expect(profile.statusCode).toBe(200);expect(profile.json()).toEqual({profile:null});
+      ownerAllowed=false;
+      expect((await second.inject({url:'/api/consents',headers})).statusCode).toBe(403);
+      ownerAllowed=true;
       const before=exchanges;
       expect((await second.inject(pending)).statusCode).toBe(403);
       expect(exchanges).toBe(before); // one-time state consumed across replicas
