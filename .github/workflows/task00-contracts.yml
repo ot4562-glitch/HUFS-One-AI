@@ -26,6 +26,7 @@ jobs:
             /tsconfig.json
             /vitest.config.ts
             /packages/contracts/
+            /packages/ai/src/
             /packages/fixtures/synthetic/
             /packages/fixtures/negative/
             /tests/contracts/
@@ -115,6 +116,7 @@ jobs:
             /tsconfig.json
             /vitest.config.ts
             /packages/contracts/
+            /packages/ai/src/
             /packages/fixtures/synthetic/
             /packages/fixtures/negative/
             /tests/api/
