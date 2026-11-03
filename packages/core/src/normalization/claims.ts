@@ -114,14 +114,18 @@ export interface TopicCandidate {code:unknown; paragraphId:string; quote:string}
 export interface TopicCandidateCheck {
   /** Codes that passed: still CANDIDATE — a person/owner approves before they count. */
   accepted:TopicCode[];
-  rejected:{code:unknown; reason:'NOT_IN_ENUM'|'NOT_ALLOWED'|'QUOTE_NOT_IN_SOURCE'}[];
+  rejected:{code:unknown; reason:'NOT_IN_ENUM'|'NOT_ALLOWED'|'QUOTE_TOO_SHORT'|'QUOTE_NOT_IN_SOURCE'}[];
 }
 
 /**
  * Re-checks AI topic candidates (A06 opportunity_terms / experience_skills) that arrived through the
  * API's validated pipeline: closed enum, allowed list of the packet, and a literal quote in the
  * referenced trusted paragraph. Passing never grants eligibility or verification.
+ * A quote must carry at least TOPIC_QUOTE_MIN_CHARS non-space characters: a one-letter "quote" is found in
+ * almost any paragraph and is no evidence for a topic (#145 review). This is still only an existence check —
+ * whether the quote supports the topic is decided by the person/owner who approves the candidate.
  */
+export const TOPIC_QUOTE_MIN_CHARS = 2;
 export function checkTopicCandidates(
   candidates:readonly TopicCandidate[],
   allowedTopicCodes:readonly TopicCode[],
@@ -136,7 +140,8 @@ export function checkTopicCandidates(
     if (!allowedTopicCodes.includes(code.data)) { rejected.push({code:c.code, reason:'NOT_ALLOWED'}); continue; }
     const text = textById.get(c.paragraphId);
     const quote = c.quote.normalize('NFC').trim();
-    if (!text || quote === '' || !text.includes(quote)) { rejected.push({code:c.code, reason:'QUOTE_NOT_IN_SOURCE'}); continue; }
+    if ([...quote.replace(/\s+/gu, '')].length < TOPIC_QUOTE_MIN_CHARS) { rejected.push({code:c.code, reason:'QUOTE_TOO_SHORT'}); continue; }
+    if (!text || !text.includes(quote)) { rejected.push({code:c.code, reason:'QUOTE_NOT_IN_SOURCE'}); continue; }
     if (!accepted.includes(code.data)) accepted.push(code.data);
   }
   return {accepted, rejected};

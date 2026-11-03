@@ -201,6 +201,20 @@ describe('#10 AI topic candidates are re-checked by code', () => {
     expect(r.accepted).toEqual(['DATA_ANALYTICS']);
     expect(r.rejected.map(x => x.reason)).toEqual(['NOT_ALLOWED', 'NOT_IN_ENUM', 'QUOTE_NOT_IN_SOURCE', 'QUOTE_NOT_IN_SOURCE']);
   });
+  it('#145 review: one-letter / whitespace quotes are not evidence, even when they occur in the paragraph', () => {
+    const r = checkTopicCandidates([
+      {code:'DATA_ANALYTICS', paragraphId:'p1', quote:'데'},
+      {code:'DATA_ANALYTICS', paragraphId:'p1', quote:' 분 '},
+      {code:'DATA_ANALYTICS', paragraphId:'p1', quote:'   '},
+      {code:'DATA_ANALYTICS', paragraphId:'p1', quote:'분석'},
+    ], ['DATA_ANALYTICS'], paragraphs);
+    expect(r.rejected.map(x => x.reason)).toEqual(['QUOTE_TOO_SHORT', 'QUOTE_TOO_SHORT', 'QUOTE_TOO_SHORT']);
+    expect(r.accepted).toEqual(['DATA_ANALYTICS']); // a 2-character literal quote still counts as a candidate
+  });
+  it('NFC-normalizes both sides, so a decomposed (NFD) quote of the same text is found', () => {
+    const r = checkTopicCandidates([{code:'DATA_ANALYTICS', paragraphId:'p1', quote:'데이터 분석'.normalize('NFD')}], ['DATA_ANALYTICS'], paragraphs);
+    expect(r).toEqual({accepted:['DATA_ANALYTICS'], rejected:[]});
+  });
 });
 
 describe('#10 cache keys: version change invalidates, students never share', () => {
