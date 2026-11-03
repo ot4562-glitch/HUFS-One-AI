@@ -38,7 +38,7 @@ try {
   # Fixed paths: the school/student originals (csv/, templates/, reference/, private/) are excluded.
   $filePaths = @(
     'package.json', 'package-lock.json', 'tsconfig.json',
-    'packages/contracts/package.json', 'packages/contracts/tsconfig.json',
+    'packages/contracts/package.json', 'packages/contracts/tsconfig.build.json',
     'apps/web/index.html', 'apps/web/vite.config.ts',
     'infra/ncp/bootstrap-ubuntu.sh', 'infra/ncp/deploy-preview.sh',
     'infra/ncp/harden-ssh.sh', 'infra/ncp/hufs-preview.service'
