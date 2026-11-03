@@ -51,6 +51,7 @@ const AiRequest=z.strictObject({
   packetRef:z.string().regex(/^[a-zA-Z0-9_-]{1,90}$/),
   idempotencyKey:z.string().regex(/^[a-zA-Z0-9_-]{8,100}$/),
   contextId:z.string().min(1).max(100).optional(),
+  asOf:z.iso.datetime({offset:true}).optional(),
 });
 type Section='FEED'|'NOTICES'|'ACADEMICS'|'FORECAST'|'EXPERIENCE';
 type Job={jobId:string;actorId:string;sessionIdHash:string;task:string;packetRef:string;
@@ -725,6 +726,15 @@ export function createApi(options:ApiOptions) {
       if(!body.contextId)throw new ApiFailure('INVALID_INPUT');
       const selected=await checkedContext(req,body.contextId,[]);
       reviewerSubject=selected.context.demoSubjectId;
+    }else if(options.realAi){
+      if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
+      if(!body.asOf)throw new ApiFailure('INVALID_INPUT');
+      await recheckCurrent(req,actor);
+      const result=await options.realAi.executor.execute({actor,inputRef:body.packetRef,operation:options.realAi.operation,
+        phaseId:options.realAi.phaseId,idempotencyKey:body.idempotencyKey,asOf:body.asOf,task});
+      await recheckCurrent(req,actor);
+      if(result.state==='UNAVAILABLE'||!result.jobId)throw new ApiFailure('PROVIDER_UNAVAILABLE',result.jobId);
+      reply.code(202);return {jobId:result.jobId,state:result.state,provenance:result.provenance??'LIVE'};
     }else if(!options.syntheticAiProvider){
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     }
@@ -776,6 +786,10 @@ export function createApi(options:ApiOptions) {
   });
   app.get('/api/ai/jobs/:id',async(req)=>{
     const actor=principal(req),{id}=JobParams.parse(req.params),job=jobs.get(id);
+    if(!job&&actor.role==='BETA'&&options.realAi){
+      await recheckCurrent(req,actor);const result=await options.realAi.executor.readJob(actor,id);await recheckCurrent(req,actor);
+      if(!result)throw new ApiFailure('FORBIDDEN');return result;
+    }
     if(!job||job.actorId!==actor.actorId||job.sessionIdHash!==actor.sessionIdHash)
       throw new ApiFailure('FORBIDDEN');
     return {jobId:job.jobId,state:job.state,task:job.task,createdAt:job.createdAt,candidate:job.candidate};

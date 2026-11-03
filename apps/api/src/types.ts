@@ -103,6 +103,9 @@ export interface ApiOptions {
   newId?: () => string;
   /** This must be explicitly supplied by a private local test harness. */
   syntheticAiProvider?: AiCandidateProvider;
+  /** Explicit private provider composition; absence never starts model/network work. */
+  realAi?:{phaseId:string;operation:'HCX_005'|'HCX_007';
+    executor:Pick<ReturnType<typeof import('./modules/ai/provider-runtime.js').createProviderExecutor>,'execute'|'readJob'>};
   maxSyntheticAiCallsPerActor?: number;
   /** Server-owned, rights/scope/head-bound revision metadata; never raw source bodies. */
   sourceHistory?:{

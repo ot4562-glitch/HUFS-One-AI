@@ -126,7 +126,14 @@ export function parseHcxResponse(context:HcxContext,raw:unknown){
     const result=HcxResponse.parse(raw).result,u=result.usage;
     if(u.totalTokens!==u.promptTokens+u.completionTokens||u.completionTokens>binding.maxOutputTokens)
       throw new ClovaWireError();
-    const candidate=Candidate.parse(JSON.parse(result.message.content)),packet=binding.packet;
+    const candidate=validateHcxCandidate(binding.packet,JSON.parse(result.message.content));
+    return {...candidate,reviewState:'NEEDS_REVIEW' as const,usage:u};
+  });
+}
+/** Revalidates persisted candidates against a freshly authorized packet; no truth promotion. */
+export function validateHcxCandidate(packetRaw:unknown,raw:unknown){
+  return checked(()=>{
+    const packet=SafeLlmPacketSchema.parse(packetRaw),candidate=Candidate.parse(raw);
     if(candidate.task!==packet.task||new Set(candidate.objectTokens).size!==candidate.objectTokens.length
       ||candidate.objectTokens.some(t=>!packet.allowedObjectTokens.includes(t)))throw new ClovaWireError();
     for(const citation of candidate.citations){
@@ -135,6 +142,6 @@ export function parseHcxResponse(context:HcxContext,raw:unknown){
       if(matches.length!==1||!matches[0]!.text.includes(citation.quote)
         ||(citation.topicCode&&!packet.allowedTopicCodes.includes(citation.topicCode)))throw new ClovaWireError();
     }
-    return {...candidate,reviewState:'NEEDS_REVIEW' as const,usage:u};
+    return candidate;
   });
 }

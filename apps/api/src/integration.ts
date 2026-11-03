@@ -7,6 +7,9 @@ import {registerHufsAbilityCapabilitiesRoute} from './modules/hufsability/manife
 import {registerSyntheticClubRoutes} from './modules/opportunities/synthetic-clubs-http.js';
 import {registerOwnerWorkspaceRoutes} from './modules/profiles/self-workspace-http.js';
 import {registerOwnerStudyPlanCheckRoutes} from './modules/profiles/owner-study-plan-check-http.js';
+import {registerOwnerDoubleMajorRoutes} from './modules/academics/owner-double-major-http.js';
+import {registerDemoProfileRoutes} from './modules/profiles/demo-profile-http.js';
+import type {DemoProfilePort} from './modules/profiles/demo-profile.js';
 import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
@@ -48,6 +51,9 @@ export interface TrustedSchoolMailPort {
 interface SharedDependencies {
   /** Explicit approved provider ports only. Absence keeps these reads at 503. */
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
+  doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
+  realAi?:ApiOptions['realAi'];
+  demoProfile?:DemoProfilePort;
   majorWhatIf?:Omit<Parameters<typeof registerOwnerMajorWhatIfRoutes>[0],'app'|'session'>;
   opportunityExplanation?:Omit<Parameters<typeof registerOpportunityExplanationRoutes>[0],'app'|'session'>;
   revisionComparison?:Omit<Parameters<typeof registerOpportunityRevisionComparisonRoutes>[0],'app'|'session'>;
@@ -161,6 +167,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
       reviewerSandbox:deps.reviewer.sandbox,
     }:{}),
     ...(deps.syntheticAiProvider?{syntheticAiProvider:deps.syntheticAiProvider}:{}),
+    ...(deps.realAi?{realAi:deps.realAi}:{}),
     ...(deps.maxSyntheticAiCallsPerActor!==undefined
       ?{maxSyntheticAiCallsPerActor:deps.maxSyntheticAiCallsPerActor}:{}),
     ...(deps.now?{now:deps.now}:{}),
@@ -177,6 +184,8 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerSyntheticClubRoutes({...deps.syntheticClubs,app,session:ownerSession,
     ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{})});
   registerOwnerStudyPlanCheckRoutes({...deps.studyPlanCheck,app,session:ownerSession});
+  registerOwnerDoubleMajorRoutes({...deps.doubleMajor,app,session:ownerSession});
+  registerDemoProfileRoutes(app,deps.demoProfile,{verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())});
   registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
   registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
   registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});

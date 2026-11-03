@@ -30,6 +30,12 @@ import type {OwnerCatalogAuthority} from './modules/opportunities/owner-catalog-
 import {PostgresOwnerStudyPlanSnapshotLoader} from './modules/academics/owner-study-plan-postgres.js';
 import {createTrustedOwnerStudyPlanSource} from './modules/academics/owner-study-plan-source.js';
 import type {TrustedOwnerStudyPlanRights,ApprovedStudyPlanGate} from './modules/profiles/owner-study-plan-check-http.js';
+import {createPostgresOwnerDoubleMajorServices} from './modules/academics/owner-double-major-postgres.js';
+import {createPostgresProviderRuntime} from './modules/ai/provider-postgres.js';
+import type {PostgresProviderConfig} from './modules/ai/provider-postgres.js';
+import {PostgresApprovedRevisionClaims} from './modules/opportunities/approved-revision-claims-postgres.js';
+import {DemoProfileService} from './modules/profiles/demo-profile.js';
+import {PostgresDemoProfileStore} from './modules/profiles/demo-profile-postgres.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -60,6 +66,10 @@ export interface PostgresPlatformConfig {
   /** Separate source/permission and academic activation authorities remain mandatory. */
   studyPlanCheck?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
     rights:TrustedOwnerStudyPlanRights;approvalGate:ApprovedStudyPlanGate};
+  doubleMajor?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  realAi?:PostgresProviderConfig;
+  revisionComparison?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  demoProfile?:{pool:ReviewerSqlPool};
   now?:()=>string;
 }
 
@@ -76,6 +86,11 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.realAi?{realAi:createPostgresProviderRuntime({...config.realAi,now})}:{}),
+    ...(config.demoProfile?{demoProfile:new DemoProfileService(new PostgresDemoProfileStore(config.demoProfile.pool))}:{}),
+    ...(config.revisionComparison?{revisionComparison:new PostgresApprovedRevisionClaims(
+      config.revisionComparison.pool,config.revisionComparison.authority,now)}:{}),
+    ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
     ...(config.ownerCatalog?{
       ownerCatalog:new PostgresTrustedOwnerCatalog(config.ownerCatalog.pool,config.ownerCatalog.authority,now),
     }:{}),
