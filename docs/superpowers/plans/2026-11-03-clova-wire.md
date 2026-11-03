@@ -42,3 +42,5 @@
 Base main `605144c`: #138/#139/#140/#142 already merged; only #131/#134 open at initial refresh. main Actions 41552895276/41552895286 SUCCESS. No assumptions from older PR state are carried into this task.
 
 Independent review reproduced blank quote and impossible usage. Four new regression cases failed before the nonblank/positive-usage/128000 total-cap fixes; focused suite then passed 59/59. Typecheck and API build succeeded. Privacy gate remains 146/148 PASS, 2 existing failures on 6 protected tracked files. Reviewer recheck found no remaining actionable issue in this protocol-only scope. Actual nonauthor GitHub approval is still separate.
+
+PR #145 initial CI 41554809100 failed TS2307 because the new package source was absent from sparse checkout. Add only `/packages/ai/src/` to both backend jobs and the reviewed path allowlist. New workflow regression failed before the fix; production source and privacy exclusions unchanged. This required CI integration belongs to this task.
