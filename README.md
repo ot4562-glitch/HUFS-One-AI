@@ -15,11 +15,11 @@
 | --- | --- |
 | 공개 원격 저장소 | **Private** |
 | 실제 코드 | TypeScript/Zod 계약, 추천·공지/학업 코어, Fastify API, React/Vite UI, 합성 테스트 |
-| 검증된 최근 병합 | [#145 OCR·HCX 오프라인 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b`, [#148 AI PostgreSQL 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516`, [#131 BETA 설정 비교·역할 격리 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) `6efc532` — 각각 타인 승인/HEAD CI 3/3 후 병합. 이전 #137~#147 합성·코어 하위 기능도 main; 자세한 범위는 STATUS |
-| 진행 중 PR | **3건 OPEN:** [#134 합성 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) **main 재기반 충돌**, [#149 시간표 CSV 내보내기](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) **캠퍼스 출처 근거 CHANGES_REQUESTED**, [#150 provider/Laya/API 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) **Draft·main 충돌·타인 승인 대기**. 이전 HEAD CI 통과만으로 병합 허가 아님 |
+| 검증된 최근 병합 | [#145 오프라인 OCR·HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b`, [#148 비용 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516`, [#131 BETA 설정 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) `6efc532`, **[#149 시간표 CSV/handoff](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) `efa13368`**. 모두 최신 HEAD 비작성자 승인·CI 3/3 후 main; 실 출처/데이터/API/배포 수락은 별도 |
+| 진행 중 PR | **2건 OPEN:** [#134 합성 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) main 재기반/중복 충돌, [#150 provider/Laya/API 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) **Draft·충돌·비작성자 승인 대기**. [#149](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149)는 P2 수정/재승인 뒤 **main 병합 완료** |
 | 운영/실자료 | **RELEASE_BLOCKED** — [#46 개인정보/자료 이력](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), [#89 공개 노출·인증·인프라](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) |
 
-**2026-11-03 최신 검토:** #145·#148·#131은 비작성자 최신 HEAD 승인 및 합성/일회용 PG/Chrome 필수 CI 3/3 뒤 main 병합. #149는 `campus: UNKNOWN`을 `--campus SEOUL`로 확정할 수 있는 P2 버그 수정 요청; #134/#150은 선행 squash main 병합 후 코드 충돌을 작성자가 정리해야 합니다. 34개 OPEN 이슈는 실서비스/권리/인적 평가 수락 미완료로 유지. **#46 개인정보·#89 출시 `RELEASE_BLOCKED`**와 무승인 유료 NCP/학교·학생 원본 전송 금지는 불변.
+**2026-11-03 최신 검토:** #145·#148·#131에 이어 [#149](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) WIS 시간표 8열 CSV/handoff가 이전 UNKNOWN 캠퍼스 근거 오류 수정·음성 회귀·비작성자 APPROVED·필수 CI 3/3 뒤 **main `efa13368`** 병합됐습니다. 현재 열린 일반 이슈 34개는 [담당자별 전수 원장](docs/WORKSTREAMS.md)에 **심민성 17·이의상 11·김채윤 2·박준영 2·이서연 2(미배정/중복 0)**로 주관 1명씩 분류, 닫힌 7건 별도 기재. 같은 WIS URL에서 다른 파일의 **저장본별 권리 receipt** 문제는 #27/#133 OPEN. **#46 개인정보·#89 출시 `RELEASE_BLOCKED`**와 무승인 유료 NCP/학교·학생 원본 전송 금지는 불변.
 
 최근 #139/#140의 GitHub Actions 합성/일회용 PostgreSQL/Chrome **각 3/3 성공**은 해당 PR HEAD의 **합성 회귀**에 대한 증거입니다. 실제 HUFSAbility 데이터·공식 학칙·학생 4인 로그인, 운영 NCP/CLOVA·실제 기관/자료 권리, 배포/보안을 검증 완료했다는 의미가 아닙니다. 상세 증거 및 차단 사항은 [STATUS.md](STATUS.md)를 봅니다.
 
