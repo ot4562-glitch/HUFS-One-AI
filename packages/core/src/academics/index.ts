@@ -36,6 +36,18 @@ export type {
   TimetableRow,
   TimetableSession,
 } from './wis-timetable.js';
+export {buildDoubleMajorAudit} from './double-major.js';
+export type {
+  DoubleMajorAttempt,
+  DoubleMajorAudit,
+  DoubleMajorRequest,
+  DoubleMajorSelection,
+  MajorRulePack,
+  OverlapRowImpact,
+  OverlapRule,
+  OverlapStatus,
+  SharedCourse,
+} from './double-major.js';
 export {simulateStudyPlan} from './study-plan.js';
 export type {StudyPlanCheck, StudyPlanCheckRequest, StudyPlanItem, UncheckedReason} from './study-plan.js';
 export {buildAcademicPlan, checkAcademicPlan} from './plan.js';

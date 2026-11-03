@@ -8,7 +8,7 @@
 | --- | --- |
 | 코드 | React/Vite + Fastify + TypeScript/Zod + 순수 추천/학업 코어·합성 시험 구현 진행 |
 | 통합 | #137의 합성 독립 계정/인가/자료 검수 게이트는 main. #139·#140 테스트-only 회귀 병합 |
-| 열려 있는 PR | **3개**: UI #131 수정 요청·#134 선행 스택 대기, [#145 OCR·HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) 현재 HEAD CI 3/3 성공·타인 승인 대기 |
+| 열려 있는 PR | **4개**: #131 수정 요청·#134 선행 대기, #145 wire(HEAD633d665)·[#148 비용 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148)(HEAD54f09c6) CI3/3 SUCCESS·현재 HEAD 타인 승인 대기 |
 | 이슈 | **OPEN 34 / CLOSED 7**(이번 감사 기준). 일반 기능/실자료/출시의 전체 완료 판정 아님 |
 | **담당 범위 진척** | [2026-11-03 증거 원장](docs/TEAM_PROGRESS.md): 심민성 **7/12(58.3%)**, 이의상 **9/12(75.0%)**, 김채윤 **7/12(58.3%)**, 박준영 **8/12(66.7%)**, 이서연 **NCP 운영 전용 1/5(20.0%, 새 기준선)**. 제품/개인 성과/출시 준비율 아님; 이전 이서연 1/8과 직접 비교 금지 |
 | UI | #129 메뉴 셸 main. 전체 HUFSAbility IA/독립 리디자인 #124·#141 OPEN |
@@ -31,6 +31,8 @@
 
 ## 최근 병합의 정확한 증거
 
+- [#147](https://github.com/ot4562-glitch/HUFS-One-AI/pull/147): 현재 주전공/이중전공을 같은 원장으로 독립 계산하고 고유 총학점·중복 인정 불확실성을 분리하는 순수 코어. HEAD `c8f0039` 비작성자 승인·CI3/3 SUCCESS 뒤 main `2ae089f` 병합. #144의 wire/API/UI·현재 actor/전공/규칙 적용 범위·실제 공식 RulePack 검증은 후속이며 전체 이슈 OPEN.
+
 - [#137](https://github.com/ot4562-glitch/HUFS-One-AI/pull/137): 합성 독립 빈 계정·권한/수정판본/코스 입력 수집 게이트와 owner API의 안전한 경계. `main f593b61`. **실제 4인 로그인·학교 승인 수집·운영 배포가 아님**.
 - [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139): 합성 EMPTY→A→B→RESET 및 주전공/이중전공 변경·제거에 따른 재계산 baseline 회귀. HEAD `6f7496e`, 비작성자 승인, 해당 HEAD synthetic/PG/Chrome CI **3/3 SUCCESS**, `main 26c559e` 병합.
 - [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140): 정정/취소 공고의 DEADLINE·STATUS·ELIGIBILITY와 현재 검수 피드·공지 판본 합성 일치 회귀. HEAD `e4e8599`, 비작성자 승인, 해당 HEAD synthetic/PG/Chrome CI **3/3 SUCCESS**, `main 41de619` 병합.
@@ -49,6 +51,7 @@
 | PR | 담당/현 상태 | 반드시 해결할 문제 |
 | --- | --- | --- |
 | [#131](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | 이의상, CHANGES_REQUESTED | route unmount/remount 중 overlay GET 지연 응답·재진입 로딩 문제, REVIEWER capability 장애를 BETA로 오인하는 fail-open 위험. 최신 HEAD 재검토 필요 |
+| [#148](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) | 심민성, HEAD `54f09c6` CI **3/3 SUCCESS**, 실제 비작성자 승인 대기 | phase/actor 원자 비용·시도 예약, idempotency·dispatch·unknown 과금 유지·정산/초과 OFF. source/권한/tokenizer·transport 활성화 아님 |
 | [#145](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) | 심민성, HEAD `633d665`, CI **3/3 SUCCESS**·실제 비작성자 승인 대기 | OCR/HCX 오프라인 serializer/parser 첫 부분. 실제 HTTP·billing·권한 transport·Laya 미구현; 코드 전체/출시 완료 아님 |
 | [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | 이의상, COMMENT/선행 대기 | #131 위의 stacked PR. 선행 수정·병합 뒤 main 기준 새 diff/CI/독립 승인, #137 실제 API 연동과 시연 매뉴얼 검증 |
 
@@ -68,6 +71,8 @@ CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는�
 - 실제 원격 브랜치 **삭제 0건**. [PR #142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142)에 안전한 후보 분류/명시적 삭제 CLI와 Node 독립 단위 테스트 **4/4 PASS(격리본)**를 제출했고, 최신 PR HEAD `53039bd`는 GitHub 합성·PG·Chrome **3/3 SUCCESS**. 독립 리뷰는 이후 현재 HEAD에서 승인됐고 main에 병합됐다. 실제 원격 삭제는 이 기록에서 실행 증거를 확인하지 못했으므로 완료로 표시하지 않는다.
 
 ## 검증·재현
+
+- #148 HEAD `54f09c6` [Actions41558021524](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41558021524)·[41558021572](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41558021572): 합성 **1858 PASS/40 SKIP**, 실제 일회용 PostgreSQL **40/40 PASS(새8건)**, Chrome **14+9 PASS**, 필수3/3 SUCCESS. 로컬unit12·type/API build PASS. 과금 원장 중복/20동시/actor/unknown·취소·만료·횟수/실제 초과 지출의 DB 검증이며 운영 가격·provider/실NCP·권한 transport 검증을 대체하지 않음. #20/#88/#143 OPEN.
 
 - 합성 및 타입 검사: `npm ci --ignore-scripts --no-audit --no-fund` → `npm run check`. 선택적 PG와 실제 Chromium 시험은 별도; CI 필수 작업은 `.github/workflows/` 확인.
 - 개인정보 경계: `npm run check:privacy`. 이번 #20 개발 트리의 CLOVA wire/기존 AI/evidence 집중 검사 **59 PASS**, 타입 검사·API 빌드 성공. 초기 모듈 부재 RED와 독립 리뷰 발견 4개 회귀 RED 후 수정·GREEN 확인. 개인정보 경계 **146/148 PASS·2 FAIL**. [#145 HEAD 633d665 Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41555690869) **3/3 SUCCESS**: 합성1887 PASS/32 SKIP(신규 wire43 포함), 일회용 PG32 PASS, [Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41555690904) 기존 UI14·독립 계정9 PASS. 초기 f7b6c6a CI의 새 package sparse 누락 TS2307을 수정한 결과이며 이전 실패를 성공으로 바꾸지 않음. 실제 NCP/학생 로그인/운영 PG는 NOT_RUN. #20 wire 코드는 검토 중인 제안이며 현재 main 구현 완료로 표시하지 않음.
