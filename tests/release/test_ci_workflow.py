@@ -25,7 +25,8 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/strip_build_sourcemaps.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
-    "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
+    "/apps/web/", "/infra/sql/", "/infra/ai/", "/infra/laya/", "/infra/deploy/",
+    "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/tools/release_publication_gate.py", "/.dockerignore",
@@ -173,6 +174,13 @@ class WorkflowBoundaryTests(unittest.TestCase):
     def test_offline_provider_source_is_present_in_both_backend_checkouts(self) -> None:
         for paths in sparse_checkout_lists(self.policy):
             self.assertIn('/packages/ai/src/', paths)
+
+    def test_worker_scripts_and_browser_provider_imports_are_in_sparse_checkout(self) -> None:
+        backend = sparse_checkout_lists(self.policy)[0]
+        for directory in ('/infra/ai/', '/infra/laya/', '/infra/deploy/'):
+            self.assertIn(directory, backend)
+        browser = (WORKFLOW.parents[2] / '.github/workflows/ui-browser-e2e.yml').read_text(encoding='utf-8')
+        self.assertIn('/packages/ai/src/', sparse_checkout_lists(browser)[0])
 
     def test_path_filtered_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
