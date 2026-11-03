@@ -30,7 +30,7 @@ if p.stat().st_size>32*1024*1024:
 fixed={
   "package.json", "package-lock.json", "tsconfig.json",
   "apps/web/index.html", "apps/web/vite.config.ts",
-  "packages/contracts/package.json", "packages/contracts/tsconfig.json",
+  "packages/contracts/package.json", "packages/contracts/tsconfig.build.json",
   "infra/ncp/bootstrap-ubuntu.sh", "infra/ncp/harden-ssh.sh",
   "infra/ncp/deploy-preview.sh", "infra/ncp/hufs-preview.service",
 }
