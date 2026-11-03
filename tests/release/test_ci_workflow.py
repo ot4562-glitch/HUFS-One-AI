@@ -46,6 +46,13 @@ OWNER_ACADEMICS_PG_PROOF = (
     "HUFS_PG_OWNER_ACADEMICS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_owner_academics_test",
     "tests/api/pg-owner-academics-live-opt-in.test.ts",
 )
+PROVIDER_HTTP_PG_PROOF = (
+    "CREATE DATABASE hufs_one_provider_integration_test",
+    "HUFS_PG_PROVIDER_INTEGRATION_LIVE: '1'",
+    "HUFS_PG_PROVIDER_INTEGRATION_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_provider_integration_test",
+    "tests/api/pg-provider-integration-live-opt-in.test.ts",
+    "Build compiled API for the separate-process Provider HTTP proof",
+)
 
 
 def sparse_checkout_lists(text: str) -> list[list[str]]:
@@ -149,6 +156,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("browser cache and loopback preview audit must execute in CI")
     if any(proof not in text for proof in OWNER_ACADEMICS_PG_PROOF):
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
+    if any(proof not in text for proof in PROVIDER_HTTP_PG_PROOF):
+        issues.append("Provider HTTP/process-restart proof must execute in its isolated opt-in database")
     return issues
 
 
@@ -190,6 +199,12 @@ class WorkflowBoundaryTests(unittest.TestCase):
         for proof in OWNER_ACADEMICS_PG_PROOF:
             with self.subTest(proof=proof):
                 self.assertTrue(proof in self.policy, "Missing owner-academics SQL CI prerequisite")
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_provider_http_pg_proof_cannot_silently_skip(self) -> None:
+        for proof in PROVIDER_HTTP_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertIn(proof, self.policy)
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
 
     def test_path_filtered_pr_regression_is_rejected(self) -> None:
