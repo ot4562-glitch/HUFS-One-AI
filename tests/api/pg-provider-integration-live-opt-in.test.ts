@@ -118,10 +118,37 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     expect(await job(f.actor,'KEY-HAPPY')).toMatchObject({state:'SETTLED',charged_units:'143'});
     const initial=await get(s,auth.cookie,first.jobId);expect(initial.status).toBe(200);
     expect(await initial.json()).toMatchObject({state:'NEEDS_REVIEW',billing:'SETTLED',candidate:{reviewState:'NEEDS_REVIEW'},provenance:'CANDIDATE_CACHE'});
+    // Exercise the real BETA browser client on the SAME already authenticated
+    // actor/session. No extra login attempts or weakened 429 policy.
+    const browser=(srv:TestServer)=>new HufsApiClient(async(path,init)=>{
+      const headers:Record<string,string>={cookie:auth.cookie,origin};
+      new Headers(init.headers).forEach((value,name)=>{headers[name]=value;});
+      return fetch(srv.base+path,{method:init.method??'GET',headers,
+        ...(init.body===undefined?{}:{body:String(init.body)}),redirect:'manual'});
+    });
+    const approved=await browser(s).owner.getApprovedProviderInputs();
+    expect(approved).toMatchObject({items:[{inputRef:'SYN-INPUT',operation:'HCX_007',
+      task:'opportunity_terms',asOf:f.asOf}]});
+    expect(JSON.stringify(approved)).not.toMatch(/safe_packet|media_bytes|privacy_review_ref|source_refs|actor_id/);
+    const selection=approved.items[0]!;
+    const duplicate=await browser(s).owner.submitApprovedProvider(selection,'opportunity-terms','KEY-HAPPY');
+    expect(duplicate).toMatchObject({state:'NEEDS_REVIEW',provenance:'CANDIDATE_CACHE',jobId:first.jobId});
+    const current=await browser(s).owner.readApprovedProviderJob(first.jobId,'opportunity-terms');
+    expect(current).toMatchObject({billing:'SETTLED',provenance:'CANDIDATE_CACHE',
+      candidate:{reviewState:'NEEDS_REVIEW',task:'opportunity_terms'}});
+    expect(current.candidate.citations[0]!.quote).toBe('Synthetic approved notice');
+    expect(s.calls).toEqual(['TOKENIZE','INFER']);
     await s.stop();const restarted=await start(f.subject);
     expect((await get(restarted,auth.cookie,first.jobId)).status).toBe(200);
+    expect(await browser(restarted).owner.readApprovedProviderJob(first.jobId,'opportunity-terms')).toEqual(current);
     expect((await execute(restarted,auth,f.asOf,'KEY-HAPPY')).status).toBe(202);expect(restarted.calls).toEqual([]);
     const otherSession=await login(restarted);expect((await get(restarted,otherSession.cookie,first.jobId)).status).toBe(403);
+    await admin.query("INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref) VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-REVOKED')",
+      [f.subject+'-RIGHTS']);
+    expect(await browser(restarted).owner.getApprovedProviderInputs()).toEqual({items:[]});
+    await expect(browser(restarted).owner.readApprovedProviderJob(first.jobId,'opportunity-terms'))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(restarted.calls).toEqual([]);
     await restarted.stop();const b=await seed('OTHER'),other=await start(b.subject),bAuth=await login(other);
     expect((await get(other,bAuth.cookie,first.jobId)).status).toBe(403);await other.stop();
     expect((await admin.query('SELECT count(*)::int AS n FROM ai_budget_jobs WHERE actor_id=$1',[f.actor])).rows[0]?.n).toBe(1);
@@ -178,42 +205,6 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     await expect(results.query('SELECT ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
     await expect(budget.query('SELECT * FROM ai_budget_jobs')).rejects.toMatchObject({code:'42501'});
   });
-  it('proves BETA browser client → approved metadata → real HTTP → actual PG budget → restart → revoked denial',async()=>{
-    const f=await seed('BROWSER'),s=await start(f.subject),auth=await login(s);
-    const browser=(srv:TestServer)=>new HufsApiClient(async(path,init)=>{
-      const headers:Record<string,string>={cookie:auth.cookie,origin};
-      new Headers(init.headers).forEach((value,name)=>{headers[name]=value;});
-      return fetch(srv.base+path,{method:init.method??'GET',headers,
-        ...(init.body===undefined?{}:{body:String(init.body)}),redirect:'manual'});
-    });
-    const api=browser(s);
-    const approved=await api.owner.getApprovedProviderInputs();
-    expect(approved).toMatchObject({items:[{inputRef:'SYN-INPUT',operation:'HCX_007',
-      task:'opportunity_terms',asOf:f.asOf}]});
-    const selection=approved.items[0]!;
-    expect(JSON.stringify(approved)).not.toMatch(/safe_packet|media_bytes|privacy_review_ref|source_refs|actor_id/);
-    const first=await api.owner.submitApprovedProvider(selection,'opportunity-terms','KEY-BROWSER-UI');
-    expect(first).toMatchObject({state:'NEEDS_REVIEW',provenance:'LIVE'});
-    const saved=await api.owner.readApprovedProviderJob(first.jobId,'opportunity-terms');
-    expect(saved).toMatchObject({state:'NEEDS_REVIEW',billing:'SETTLED',
-      provenance:'CANDIDATE_CACHE',candidate:{task:'opportunity_terms',
-        reviewState:'NEEDS_REVIEW',reviewRequired:true}});
-    expect(saved.candidate.citations[0]!.quote).toBe('Synthetic approved notice');
-    expect(s.calls).toEqual(['TOKENIZE','INFER']);
-    expect(await job(f.actor,'KEY-BROWSER-UI')).toMatchObject({state:'SETTLED',charged_units:'143'});
-    await s.stop();
-    const restarted=await start(f.subject),again=browser(restarted);
-    expect(await again.owner.readApprovedProviderJob(first.jobId,'opportunity-terms')).toEqual(saved);
-    expect((await again.owner.submitApprovedProvider(selection,'opportunity-terms','KEY-BROWSER-UI'))
-      .state).toBe('NEEDS_REVIEW');
-    expect(restarted.calls).toEqual([]);
-    await admin.query(`INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref)
-      VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-REVOKED')`,[f.subject+'-RIGHTS']);
-    expect(await again.owner.getApprovedProviderInputs()).toEqual({items:[]});
-    await expect(again.owner.readApprovedProviderJob(first.jobId,'opportunity-terms'))
-      .rejects.toMatchObject({code:'FORBIDDEN'});
-    expect(restarted.calls).toEqual([]);
-    await restarted.stop();
-  },30000);
+
 
 });
