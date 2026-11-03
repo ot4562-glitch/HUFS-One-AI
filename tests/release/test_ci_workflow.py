@@ -23,6 +23,8 @@ SAFE_SPARSE_PATHS = frozenset({
     "/packages/ui/", "/tools/audit_private_git_metadata.py",
     "/tools/private_registry_io.mjs",
     "/tools/strip_build_sourcemaps.mjs",
+    "/tools/prune_merged_branches.mjs",
+    "/tools/tests/prune-merged-branches.node.mjs",
     "/apps/web/", "/infra/sql/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
@@ -105,6 +107,8 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/packages/ui/", "/tools/audit_private_git_metadata.py",
             "/tools/private_registry_io.mjs",
             "/tools/strip_build_sourcemaps.mjs",
+            "/tools/prune_merged_branches.mjs",
+            "/tools/tests/prune-merged-branches.node.mjs",
             "/.github/workflows/task00-contracts.yml",
             "/.github/workflows/ui-browser-e2e.yml",
             "/tools/release_entrypoint_gate.mjs",
@@ -126,6 +130,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("release policy regression tests must execute in CI")
     if "node --test tests/security/*.test.mjs" not in text:
         issues.append("security negative regression tests must execute in CI")
+    if "node --test tools/tests/prune-merged-branches.node.mjs" not in text:
+        issues.append("branch cleanup fail-closed tests must execute in CI")
     if "node tools/release_entrypoint_gate.mjs" not in text:
         issues.append("actual offline anonymous HTTP probe must execute in CI")
     if "npm run build:web" not in text:
@@ -179,6 +185,12 @@ class WorkflowBoundaryTests(unittest.TestCase):
         ):
             with self.subTest(changed=changed != self.policy):
                 self.assertTrue(audit_ci_boundary(changed))
+
+    def test_missing_branch_cleanup_safety_test_is_rejected(self) -> None:
+        changed = self.policy.replace(
+            "node --test tools/tests/prune-merged-branches.node.mjs", "echo skipped", 1
+        )
+        self.assertTrue(audit_ci_boundary(changed))
 
     def test_missing_browser_cache_gate_is_rejected(self) -> None:
         changed = self.policy.replace(
