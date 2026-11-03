@@ -12,7 +12,7 @@
 | **박준영** `taewangim-alt` | 학업·학점·교육과정/개설·졸업 RulePack 순수 코어 및 공식 교과 조사. [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) | 학수번호·이중전공·중복/대체/선수·기간/규칙, `UNKNOWN/NEEDS_REVIEW`, #138 HTML·#149 CSV/handoff **로컬 변환 코드 병합 완료**(기관 수집 허가 아님). 실제 교과 사이트 수집/이용허가를 추정하지 않음 |
 | **이서연** `lhh42001` | **NCP 클라우드 운영·계정·권한·크레딧·요금·비코드 인프라·실측 전담** [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) | VPC/서버/스토리지/TLS/IAM/DNS·CLOVA/OCR/HCX 서비스 이용권·SKU/예산·호스트 CPU/RSS/비용 영수증·중지/반납. **SDK·worker·HTTP·ONNX·IaC·OS 스크립트·CI·자동화 코딩 0건 배정**. UI·추천·학업 개발 이슈에서 assignee 해제. 유료 실행은 별도 사용자 승인 필요 |
 
-**2026-11-03 최신 GitHub 교차 검증:** #153 중앙 메뉴 `main 9b5cb81a`, #157 Provider 권한/PG 입력 `main 7ac5a06c`, #159 Laya 기본 OFF scheduler `main 638ed77a`는 **비작성자 최신 HEAD 승인 및 CI 3/3 후 병합**된 하위 수락. **OPEN 15 PR:** #150/#166 Draft, #158 결과·#156 NCP SSH Preview는 이전 HEAD 승인 이후 non-force 재정렬되어 현재 HEAD 재승인 요청(김채윤); #160 raster→#165 executor→#167 BETA HTTP는 부모 먼저 병합하는 스택; #161 IPC·#162 현재 이중전공·#163 EMPTY_DEMO·#164 승인 SourceRevision PG는 독립 리뷰 요청. 이의상 #151/#152/#154/#155는 #153 이후 merge conflict, #152 strict 응답 검증 P2 REQUEST_CHANGES. #134 CLOSED/미병합. **이슈 OPEN 34/CLOSED 7**; 전체 종결 가능한 항목은 아직 없음. 이서연의 #12/#22 NCP 비코드 운영 경계/기존 assignee 그대로.
+**2026-11-03 최신 GitHub 교차 검증:** #153 중앙 메뉴 `main 9b5cb81a`, #157 Provider 권한/PG 입력 `main 7ac5a06c`, #159 Laya 기본 OFF scheduler `main 638ed77a`는 **비작성자 최신 HEAD 승인 및 CI 3/3 후 병합**된 하위 수락. **OPEN 16 PR:** #150/#166 Draft, #158 결과·#156 NCP SSH Preview는 이전 HEAD 승인 이후 non-force 재정렬되어 현재 HEAD 재승인 요청(김채윤); #160 raster→#165 executor→#167 BETA HTTP는 부모 먼저 병합하는 스택; #161 IPC·#162 현재 이중전공·#163 EMPTY_DEMO·#164 승인 SourceRevision PG는 독립 리뷰 요청. 이의상 #151/#152/#154/#155는 #153 이후 merge conflict, #152 strict 응답 검증 P2 REQUEST_CHANGES. #134 CLOSED/미병합. **이슈 OPEN 34/CLOSED 7**; 전체 종결 가능한 항목은 아직 없음. 이서연의 #12/#22 NCP 비코드 운영 경계/기존 assignee 그대로.
 
 **2026-11-03 #150 분리·통합 의존성 (최신 코드 기준):** 모든 새 코드는 심민성 소유, 타인 UI 작업 트리는 보존한다. #145 wire·#148 budget SQL/adapter는 이미 main에 병합되어 재구현하지 않는다.
 
@@ -26,6 +26,8 @@
 **현재 병합·통합 의존성:** #157 HEAD `93817f24`→main `7ac5a06c`, #159 HEAD `f9e181b`→main `638ed77a`는 독립 승인·CI 3/3. #158 `fb135017`와 #156 `6a26e8f`는 **현재 HEAD CI 3/3 PASS·이전 HEAD만 APPROVED**, 최신 HEAD 김채윤 재승인 요청. #160→#165→#167은 스택으로 독립 리뷰 후 앞 PR부터 병합; #161 `a7ea62a`(9파일)는 현재 main 고유 diff·CI 3/3/독립 승인 대기, #162/#163/#164 현재 HEAD 3/3 PASS/독립 승인 대기. UI 통합은 #151 → #152(P2 strict schema) → #154 → #155 순으로 작성자 최신 main 기준. **#150 원본 Draft 보존/병합 금지**.
 
 **2026-11-03 최신 역할 우선:** 이서연은 NCP 운영 담당만 유지하고 OCR/HCX/Laya 코드 등 모든 개발작업은 심민성에게 재배정했다. 기존 작업 이슈 #12/#22의 운영 범위와 #20/#88/#143의 구현 범위를 엄격히 구분한다. 이전 문서/과거 이슈의 혼합 배정은 효력 없음.
+
+**심민성 #27 현재 선행 연결:** [#168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) PostgreSQL 인증 factory·새 API 인스턴스/철회 HTTP 시험, 현 HEAD CI 3/3 PASS·qamarrchae 독립 승인 대기/미병합. [검증 범위](../STATUS.md). 타인 UI/추천/학업 브랜치·이서연 비코드 운영 배정 및 고정 수락률 변경 없음.
 
 **팀원 5명 ≠ 실자료 제출 5명.** 실제 학업/Forms 자료 제출 대상은 **심민성·이의상·김채윤·이서연 4명**으로, 박준영은 학업 코어 담당일 뿐 이번 실 4인 자료 제출 대상이 아닙니다. 별도의 빈 SYNTHETIC 계정·S01~S05·REVIEWER도 실 4인과 섞지 않습니다. 당사자 목적별 동의 확인과 Git 게시/클라우드/공개 사용 동의는 [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 기준으로 구분합니다.
 

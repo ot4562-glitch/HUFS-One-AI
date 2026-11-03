@@ -8,7 +8,7 @@
 | --- | --- |
 | 저장소 | **Private**, 독립 HUFS One AI 학생 정보 탐색·개인화 팀 프로젝트. 공식 HUFSAbility 개편/학교 운영 아님 |
 | 코드 | TypeScript/Zod·Fastify/API·React/Vite·추천/학업 순수 코어·합성 데모/권한 검증, 오프라인 CLOVA wire와 AI 비용 원장 main |
-| PR | **OPEN 15**: #150/#166 Draft; #151/#152/#154/#155 UI 충돌(#152 P2 REQUEST_CHANGES); #156 NCP 합성 preview Ready; #158·#160~#165·#167 소형 코드 PR. **#157/#159 MERGED**. 열린 PR 15건은 원래 HEAD CI 3/3 성공이나 **최신 HEAD 비작성자 승인과 스택 검증** 충족 전 병합 금지. [GitHub 열린 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls) 우선 |
+| PR | **OPEN 16**: #150/#166 Draft; #151/#152/#154/#155 UI 충돌(#152 P2 REQUEST_CHANGES); #156 SSH Preview·#158 결과·#160~#165·#167·#168 인증 조립은 리뷰 대기. **#157/#159 MERGED**. #168 현 HEAD CI 3/3 PASS; 모든 코드 PR은 **최신 HEAD 비작성자 승인·필수 CI·스택 검증** 충족 전 병합 금지. [GitHub 열린 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls) 우선 |
 | 이슈 | **OPEN 34 / CLOSED 7** (기능 전체 게이트 미완료이므로 상위 이슈 임의 종료 없음) |
 | 담당자별 전수 | [WORKSTREAMS의 34건 원장](docs/WORKSTREAMS.md): **심민성 17 · 이의상 11 · 김채윤 2 · 박준영 2 · 이서연 2**. 주관 정확히 1명/이슈, 미배정·중복 0. 공동 담당 11건은 기존 assignees 보존하고 GitHub 본문에 주관/협업 분리 |
 | 공개·운영 | **RELEASE_BLOCKED** — [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) Private Git 자료 게시/권한 감사 및 [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실제 OIDC/TLS/PG/NCP/권한 E2E 미완료 |
@@ -39,6 +39,10 @@
 **기타 선행 하위 완료:** [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) 사람 저장 WIS HTML 로컬 변환, [#147](https://github.com/ot4562-glitch/HUFS-One-AI/pull/147) 주·이중전공 구분/중복 인정 보류 학업 pure core, [#146](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146) AI 인용 1글자 차단, [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) 원격 브랜치 안전 분류 도구. 각각 main 병합됐으나 실제 원본 권리·졸업/지원/운영까지 완료 아님. 브랜치 실제 삭제 증거 0건.
 
 **이번 리뷰:** #158·#160~#167·#156·#150 총 11개 작성자 COMMENT 리뷰; #158/#156의 과거 HEAD 승인 이후 변경으로 최신 HEAD 재승인 요청. #160/#164는 김채윤, #161/#162는 박준영, #163은 이의상 독립 검토 요청. 새 PR 병합 0(현 HEAD 필수 승인 부족).
+
+**운영 API 선행 구현:** [#168 인증 PG 조립](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) HEAD `0eceae7`은 서버 전용 `createPostgresGoogleAuth`로 기존 세션 저장·공유 시도 제한·BETA 승인/철회 정책을 연결한 **3파일 미병합 선행 구현**이다. 명시적 pool/key/code-exchange만 받으며 production 진입점·통합 차단은 유지한다. 합성 서명 JWT→HTTP→일회용 PG→새 factory 세션 복원·replay·만료/철회·CSRF/logout·공유 제한 시험은 [PG CI](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41617169735/job/125853405088) PASS. 같은 HEAD의 합성 계약·PG·Chrome 필수 CI **3/3 SUCCESS**. qamarrchae 현 HEAD 독립 승인 대기이며 실 Google/OTP 발송·운영 PG/TLS/NCP/Provider 종단 수락 아님.
+
+**이번 환경의 실패 보존:** Windows Node 24.14.0 `npm run check`는 2,006 PASS / 42 SKIP / 1 FAIL(변경하지 않은 Linux cgroup 경로 fixture `laya-pressure.test.ts:17`); typecheck·API/web build·auth 26 tests PASS. 기존 보존 checkout privacy는 **163/165 PASS·2 FAIL, 보호 경로 6개**; 원문 열람/복사 없음. 이 수치는 해당 로컬 checkout 검사이며 현재 main 전체 성공으로 이월하지 않는다. 새 이슈 [x]/종결 0, 고정 수락률 불변.
 
 ## 역할과 고정 수락 게이트
 
