@@ -23,7 +23,7 @@
 
 **최신 #150 코드 분리 경로:** [#157](https://github.com/ot4562-glitch/HUFS-One-AI/pull/157)→[#158](https://github.com/ot4562-glitch/HUFS-One-AI/pull/158) provider 권한·정산결과, [#160](https://github.com/ot4562-glitch/HUFS-One-AI/pull/160)→[#165](https://github.com/ot4562-glitch/HUFS-One-AI/pull/165)→[#167](https://github.com/ot4562-glitch/HUFS-One-AI/pull/167) raster·provider·BETA HTTP, [#159](https://github.com/ot4562-glitch/HUFS-One-AI/pull/159)→[#161](https://github.com/ot4562-glitch/HUFS-One-AI/pull/161) Laya 오프라인/프로세스, [#162](https://github.com/ot4562-glitch/HUFS-One-AI/pull/162)·[#163](https://github.com/ot4562-glitch/HUFS-One-AI/pull/163)·[#164](https://github.com/ot4562-glitch/HUFS-One-AI/pull/164) Owner, [#166](https://github.com/ot4562-glitch/HUFS-One-AI/pull/166) private 배포 Draft. **합성 CI는 각 3/3 PASS, 독립 승인·실 NCP/유료 Provider·현재 자료권리 확인은 별도**. 연결은 #157/#158 및 최신 session/rights 종단 승인 이후.
 
-**현재 #157 상태:** 새 HEAD `93817f24` 합성 계약·일회용 PG·Chrome CI 3/3 SUCCESS, **최신 HEAD 비작성자 재승인 대기·OPEN/미병합**. #150 원본 83파일 Draft는 유지한다. UI 통합 권장 순서 #151 → #152(P2 strict schema) → #154 → #155, 각 담당자 새 HEAD CI·승인 필요.
+**현재 병합·통합 의존성:** #157 HEAD `93817f24` 비작성자 승인·CI 3/3 후 main `7ac5a06c` 병합, #159 HEAD `f9e181b` 독립 승인·CI 3/3 후 main `638ed77a` 병합. #158 결과-only HEAD `fb1350178` (4파일), #161 Laya child-only HEAD `a7ea62a` (9파일)은 모두 main으로 비강제 2-parent merge 재정렬 후 3/3 CI PASS, **각 현재 HEAD 독립 재승인 대기**. #150 원본 83파일 Draft는 계속 보존한다. UI 통합 권장 순서 #151 → #152(P2 strict schema) → #154 → #155, 각 담당자 새 HEAD CI·승인 필요.
 
 **2026-11-03 최신 역할 우선:** 이서연은 NCP 운영 담당만 유지하고 OCR/HCX/Laya 코드 등 모든 개발작업은 심민성에게 재배정했다. 기존 작업 이슈 #12/#22의 운영 범위와 #20/#88/#143의 구현 범위를 엄격히 구분한다. 이전 문서/과거 이슈의 혼합 배정은 효력 없음.
 
