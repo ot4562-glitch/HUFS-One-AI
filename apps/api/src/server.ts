@@ -734,7 +734,8 @@ export function createApi(options:ApiOptions) {
         phaseId:options.realAi.phaseId,idempotencyKey:body.idempotencyKey,asOf:body.asOf,task});
       await recheckCurrent(req,actor);
       if(result.state==='UNAVAILABLE'||!result.jobId)throw new ApiFailure('PROVIDER_UNAVAILABLE',result.jobId);
-      reply.code(202);return {jobId:result.jobId,state:result.state,provenance:result.provenance??'LIVE'};
+      reply.code(202);return {jobId:result.jobId,state:result.state,
+        ...(result.provenance!==undefined?{provenance:result.provenance}:{})};
     }else if(!options.syntheticAiProvider){
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     }

@@ -2,7 +2,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {createApi} from '../../apps/api/src/server.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import type {ApiOptions} from '../../apps/api/src/types.js';
-import type {ProviderRequest} from '../../apps/api/src/modules/ai/provider-runtime.js';
+import type {ProviderRequest,ProviderOutcome} from '../../apps/api/src/modules/ai/provider-runtime.js';
 import type {VerifiedActor} from '../../apps/api/src/types.js';
 const NOW='2026-11-03T00:00:00Z',ORIGIN='https://example.test',id='00000000-0000-4000-8000-000000000001';
 const actor={actorId:'SYN-ACTOR',sessionIdHash:'SYN-SESSION-HASH',role:'BETA' as const,betaAllowed:true,csrfToken:'C'.repeat(32),
@@ -11,7 +11,7 @@ const headers={cookie:'SYN',origin:ORIGIN,'x-csrf-token':actor.csrfToken};
 const apps:ReturnType<typeof createApi>[]=[];
 afterEach(async()=>{await Promise.all(apps.splice(0).map(a=>a.close()));});
 function fixture(){
-  const execute=vi.fn(async(_request:ProviderRequest)=>({state:'NEEDS_REVIEW' as const,billing:'SETTLED' as const,jobId:id,candidate:{reviewState:'NEEDS_REVIEW'},provenance:'LIVE' as const}));
+  const execute=vi.fn(async(_request:ProviderRequest):Promise<ProviderOutcome>=>({state:'NEEDS_REVIEW',billing:'SETTLED',jobId:id,candidate:{reviewState:'NEEDS_REVIEW'},provenance:'LIVE'}));
   const readJob=vi.fn(async(_actor:VerifiedActor,_jobId:string)=>({state:'NEEDS_REVIEW' as const,billing:'SETTLED' as const,jobId:id,candidate:{reviewState:'NEEDS_REVIEW'},provenance:'CANDIDATE_CACHE' as const}));
   const verify=vi.fn(async()=>actor);
   const options={repository:new MemoryApiRepository({profiles:[],safePackets:[]}),allowedOrigin:ORIGIN,verifySession:verify,now:()=>NOW,
@@ -43,5 +43,12 @@ describe('explicit real provider API wiring',()=>{
     const r=await f.app.inject({url:'/api/ai/opportunity-terms',method:'POST',headers,
       payload:{packetRef:'INPUT1',idempotencyKey:'KEY00001',asOf:NOW}});
     expect(r.statusCode).toBe(503);expect(r.json().code).toBe('PROVIDER_UNAVAILABLE');
+  });
+  it('does not invent LIVE provenance for a pending job with no result',async()=>{
+    const f=fixture();f.execute.mockResolvedValueOnce({state:'PENDING',billing:'RESERVED',jobId:id});
+    const r=await f.app.inject({url:'/api/ai/opportunity-terms',method:'POST',headers,
+      payload:{packetRef:'INPUT1',idempotencyKey:'KEY00001',asOf:NOW}});
+    expect(r.statusCode).toBe(202);expect(r.json()).toEqual({jobId:id,state:'PENDING'});
+    expect(r.json()).not.toHaveProperty('provenance');
   });
 });
