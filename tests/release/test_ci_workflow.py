@@ -18,7 +18,7 @@ PINNED_CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 PINNED_SETUP_NODE = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 SAFE_SPARSE_PATHS = frozenset({
     "/package.json", "/package-lock.json", "/tsconfig.json", "/vitest.config.ts",
-    "/packages/contracts/", "/packages/fixtures/synthetic/",
+    "/packages/contracts/", "/packages/ai/src/", "/packages/fixtures/synthetic/",
     "/packages/fixtures/negative/", "/packages/core/", "/apps/api/",
     "/packages/ui/", "/tools/audit_private_git_metadata.py",
     "/tools/private_registry_io.mjs",
@@ -169,6 +169,10 @@ class WorkflowBoundaryTests(unittest.TestCase):
             "  pull_request:\n", "  pull_request:\n    branches: [main]\n", 1
         )
         self.assertTrue(audit_ci_boundary(changed))
+
+    def test_offline_provider_source_is_present_in_both_backend_checkouts(self) -> None:
+        for paths in sparse_checkout_lists(self.policy):
+            self.assertIn('/packages/ai/src/', paths)
 
     def test_path_filtered_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
