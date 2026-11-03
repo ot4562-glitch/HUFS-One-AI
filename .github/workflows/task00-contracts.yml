@@ -38,6 +38,7 @@ jobs:
             /apps/api/
             /infra/sql/
             /infra/ai/
+            /infra/ncp/
             /packages/core/
             /packages/ui/
             /apps/web/
