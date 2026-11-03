@@ -272,6 +272,89 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       .toEqual({enabled:false,reserved_units:'0',charged_units:String(actual)});
   });
 
+
+  it('accepts only SETTLED candidate results, isolates actors and scrubs on consent withdrawal',async()=>{
+    const owner='SYN-RESULT-A',session='SYN-RESULT-SESSION-1',phase='SYN-RESULT-PHASE';
+    const projection='SYN-RESULT-PROJECTION-1',inputRef='SYN-RESULT-INPUT-1',operation='HCX_007' as const;
+    const idempotencyKey='SYN-RESULT-KEY',epoch='synthetic-projection-v1';
+    const approvedAt=new Date(Date.now()-120_000).toISOString();
+    const asOf=new Date(Date.now()-60_000).toISOString();
+    const expiresAt=new Date(Date.now()+600_000).toISOString();
+    const packet={packetId:'DOC-RESULT-SYN',task:'opportunity_terms',providerInputClass:'SYNTHETIC_CLEARED',
+      sourceTokens:[{token:'DOC1',paragraphs:[{id:'p1',text:'SYNTHETIC ONLY'}]}],
+      allowedTopicCodes:[],allowedObjectTokens:[],approvedFacts:[],schemaVersion:'1',promptVersion:'1'};
+    await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at)
+      VALUES($1,1,$2::jsonb,$3)`,[owner,JSON.stringify({
+      personalStorage:true,externalAi:true,teamReview:false,ncpStorage:false,presentation:false,
+    }),approvedAt]);
+    await admin.query(`INSERT INTO api_ai_provider_inputs(
+      projection_id,actor_id,input_ref,operation,as_of,epoch,policy_version,consent_version,
+      approved_by,approved_at,expires_at,input_class,privacy_review_ref,source_refs,safe_packet)
+      VALUES($1,$2,$3,$4,$5,$6,'synthetic-policy-v1','1','SYN-INDEPENDENT-REVIEWER',
+        $7,$8,'SYNTHETIC_CLEARED','SYN-PRIVACY-REVIEW',$9::jsonb,$10::jsonb)`,[
+      projection,owner,inputRef,operation,asOf,epoch,approvedAt,expiresAt,
+      JSON.stringify([{sourceId:'SYN-RESULT-SOURCE',revisionId:'SYN-RESULT-REV',
+        permissionRef:'SYN-RESULT-PERM',originalSha256:'c'.repeat(64)}]),JSON.stringify(packet),
+    ]);
+    await admin.query(`INSERT INTO ai_budget_phases(
+      phase_id,enabled,starts_at,ends_at,max_units,actor_max_units,max_attempts,actor_max_attempts)
+      VALUES($1,true,clock_timestamp()-interval '1 minute',
+        clock_timestamp()+interval '1 hour',1000,1000,10,10)`,[phase]);
+    const ledger=new PostgresAiBudgetLedger(adapter(aiBudget));
+    const requestSha256='a'.repeat(64),receiptSha256='b'.repeat(64);
+    const job=await ledger.reserve(owner,{phaseId:phase,task:operation,idempotencyKey,
+      requestSha256,worstCaseUnits:100});
+    const receipt={phaseId:phase,jobId:job.jobId,requestSha256};
+    const value={jobId:job.jobId,actorId:owner,sessionIdHash:session,inputRef,operation,asOf,
+      phaseId:phase,idempotencyKey,requestSha256,
+      inputEpoch:'input-'+createHash('sha256').update([projection,epoch,'1'].join('|')).digest('hex'),
+      expiresAt,candidate:{reviewState:'NEEDS_REVIEW',text:'SYNTHETIC-RESULT-CANDIDATE'}};
+    const results=new PostgresProviderResults(adapter(aiResults));
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // RESERVED
+    await ledger.transition(owner,{...receipt,action:'DISPATCHED'});
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // DISPATCHED
+    await ledger.transition(owner,{...receipt,action:'UNKNOWN_BILLING'});
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // unresolved bill
+    await ledger.transition(owner,{...receipt,action:'SETTLED',actualUnits:65,receiptSha256});
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // missing current head
+    await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id)
+      VALUES($1,$2,$3,$4)`,[owner,inputRef,operation,projection]);
+    await Promise.all(Array.from({length:4},()=>results.put(value)));
+    expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_results
+      WHERE job_id=$1`,[job.jobId])).rows[0]?.n).toBe(1);
+    // A new adapter instance reads only durable PostgreSQL state (simulates process restart).
+    const restarted=new PostgresProviderResults(adapter(aiResults));
+    expect(await restarted.get(owner,session,job.jobId)).toEqual(value);
+    expect(await restarted.get('SYN-RESULT-OTHER',session,job.jobId)).toBeNull();
+    expect(await restarted.get(owner,'SYN-RESULT-OTHER-SESSION',job.jobId)).toBeNull();
+    await expect(results.put({...value,actorId:'SYN-RESULT-OTHER'})).rejects.toThrow('Provider result unavailable');
+    await expect(results.put({...value,sessionIdHash:'SYN-RESULT-OTHER-SESSION'}))
+      .rejects.toThrow('Provider result unavailable');
+    await expect(results.put({...value,candidate:{reviewState:'NEEDS_REVIEW',text:'SYNTHETIC-ALTERED'}}))
+      .rejects.toThrow('Provider result unavailable');
+    await expect(results.put({...value,inputEpoch:'input-'+'0'.repeat(64)}))
+      .rejects.toThrow('Provider result unavailable');
+    expect(await restarted.get(owner,session,job.jobId)).toEqual(value);
+    await expect(aiResults.query('SELECT result_json FROM api_ai_provider_results')).rejects.toMatchObject({code:'42501'});
+    await expect(aiResults.query("UPDATE api_ai_provider_results SET result_json='{}'::jsonb"))
+      .rejects.toMatchObject({code:'42501'});
+    await expect(aiResults.query('SELECT public.ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
+    expect((await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
+      WHERE relname='api_ai_provider_results'`)).rows).toEqual([{relrowsecurity:true,relforcerowsecurity:true}]);
+    // Consent withdrawal triggers one-way erasure of input AND previously settled result.
+    await admin.query(`UPDATE api_self_consents SET version=version+1,
+      choices_json=jsonb_set(choices_json,'{externalAi}','false'::jsonb),
+      updated_at=clock_timestamp() WHERE actor_id=$1`,[owner]);
+    expect(await restarted.get(owner,session,job.jobId)).toBeNull();
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable');
+    expect((await admin.query(`SELECT result_json IS NULL AS scrubbed,erased_at IS NOT NULL AS erased
+      FROM api_ai_provider_results WHERE job_id=$1`,[job.jobId])).rows[0])
+      .toEqual({scrubbed:true,erased:true});
+    expect((await admin.query(`SELECT safe_packet IS NULL AS scrubbed,erased_at IS NOT NULL AS erased
+      FROM api_ai_provider_inputs WHERE projection_id=$1`,[projection])).rows[0])
+      .toEqual({scrubbed:true,erased:true});
+  });
+
   it('supports owner-private profile/consent CAS, no implicit grant, withdrawal and immutable audit under FORCE RLS',async()=>{
     const id='SYN-SELF-OWNER';
     const consent={personalStorage:true,teamReview:false,externalAi:false,
