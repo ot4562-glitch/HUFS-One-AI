@@ -11,6 +11,7 @@ import {
   OpportunityExplanationRequestSchema,OpportunityExplanationResponseSchema,
   OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
+  DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
   SyntheticClubDetailResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
@@ -242,4 +243,26 @@ export class HufsOwnerApiClient {
       &&result.afterRevisionId===input.afterRevisionId&&Date.parse(result.asOf)===Date.parse(input.asOf));
     return result;
   }
+  /** #132 Independent EMPTY_DEMO, never a demo subject or reviewer session.
+   * Server derives BETA actor; no-store and CSRF are enforced by this client.
+   * The profile/snapshot version match is validated by the response schema.
+   */
+  readDemoProfile(signal?:AbortSignal){
+    return this.request('/api/demo-profile',DemoProfileResponseSchema,{signal});
+  }
+  async saveDemoProfile(change:z.infer<typeof DemoProfileSaveSchema>,signal?:AbortSignal){
+    const input=clientInput(DemoProfileSaveSchema,change);
+    const result=await this.mutate('/api/demo-profile',DemoProfileResponseSchema,'PATCH',input,signal);
+    requireMatchingReceipt(result.profile.version===input.expectedVersion+1
+      &&same(result.profile.value,input.value));
+    return result;
+  }
+  async resetDemoProfile(change:z.infer<typeof DemoProfileResetSchema>,signal?:AbortSignal){
+    const input=clientInput(DemoProfileResetSchema,change);
+    const result=await this.mutate('/api/demo-profile/reset',DemoProfileResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.profile.version===input.expectedVersion+1
+      &&same(result.profile.value,blankDemoProfileValue()));
+    return result;
+  }
+
 }
