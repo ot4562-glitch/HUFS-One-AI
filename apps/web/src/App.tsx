@@ -1,4 +1,5 @@
 import {useEffect, useRef, type ComponentType, type ReactNode} from 'react';
+import type {RevisionPort} from './features/revisions/RevisionComparison.js';
 import type {DemoContext} from '@hufs-one/contracts';
 import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
@@ -36,6 +37,8 @@ export interface AppServices {
   readonly clubs?: ClubPort;
   /** #85 BETA temporary choices; never set for a REVIEWER session (sandbox settings instead). */
   readonly overlay?: OverlayPort;
+  /** #119 reviewed correction comparison for an opportunity; dev synthetic until the client/discovery API exists. */
+  readonly revisions?: RevisionPort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;

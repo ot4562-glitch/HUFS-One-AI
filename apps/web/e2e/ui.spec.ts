@@ -193,3 +193,14 @@ test('invite page on a non-canonical origin never renders or uses a fragment cod
   expect(await page.content()).not.toContain(code.slice(0, 20) + 'AAAAAAAAAAAAAAAAAAAAAAA');
   await expect(page.locator('details.selector')).toHaveCount(0);
 });
+
+test('#119 정정 내역 at 360px: changed row first, text badge, no horizontal overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/opportunities/SYN-OPP-002');
+  await pick(page, 0);
+  const rev = page.getByRole('region', {name: '정정 내역'});
+  await expect(rev.getByRole('status')).toContainText('정정된 항목 1개: 모집 마감 연장');
+  await expect(rev.getByRole('row').nth(1)).toHaveAttribute('aria-label', /모집 마감: 연장/);
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
