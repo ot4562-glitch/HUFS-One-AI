@@ -61,17 +61,21 @@ export const settingsPage: PageRenderer = ({path, state, sandbox, services, cont
       내 이중전공·수강계획·가정 분석 (BETA)
     </InAppLink>
   </p>;
-  if (!sandbox && !services.overlay && !ownerDemoLink && !ownerAcademicsLink)
+  const ownerCatalogLink=services.ownerCatalog&&<p><InAppLink to="/owner-catalog" navigate={navigate}
+    className="button button--quiet">승인된 교과목·공고 원문 목록 (BETA)</InAppLink></p>;
+  if (!sandbox && !services.overlay && !ownerDemoLink && !ownerAcademicsLink && !ownerCatalogLink)
     return {title: '설정', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
   // The independent BETA account must be reachable WITHOUT selecting S01–S05.
   if (state.status !== 'READY') return {title: '설정', body:
-    <>{ownerDemoLink}{ownerAcademicsLink}{!ownerDemoLink&&!ownerAcademicsLink&&<NoSnapshot state={state} />}</>};
+    <>{ownerDemoLink}{ownerAcademicsLink}{ownerCatalogLink}
+      {!ownerDemoLink&&!ownerAcademicsLink&&!ownerCatalogLink&&<NoSnapshot state={state} />}</>};
   // Keyed by subject/context so unsaved topic picks never carry to another student.
   const scope = `${state.epoch}:${state.context?.contextId ?? ''}`;
   return {title: '설정', body: (
     <>
       {ownerDemoLink}
       {ownerAcademicsLink}
+      {ownerCatalogLink}
       {services.overlay && <OverlaySettings key={scope} controller={controller} state={state} port={services.overlay} />}
       {sandbox && <SandboxSettings sandbox={sandbox} />}
     </>

@@ -52,6 +52,13 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
       reset: (ctx, version, signal) => api.resetDemoOverlay(ctx, version, signal),
     },
+    ownerCatalog: {
+      session:ownerSession,
+      courses:(query,signal)=>api.owner.listCourses(query,signal),
+      opportunities:(query,signal)=>api.owner.listOpportunities(query,signal),
+      offerings:(id,query,signal)=>api.owner.listCourseOfferings(id,query,signal),
+      detail:(id,signal)=>api.owner.getOpportunity(id,signal),
+    },
     ownerAcademics: {
       session: ownerSession,
       current: signal => api.owner.getDoubleMajor(signal),
