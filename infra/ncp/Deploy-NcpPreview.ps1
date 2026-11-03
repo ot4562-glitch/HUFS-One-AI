@@ -9,9 +9,9 @@
 #>
 [CmdletBinding()]
 param(
-  [Parameter(Mandatory=$true)][string]$ServerIPv4,
-  [Parameter(Mandatory=$true)][string]$PrivateKeyPath,
-  [Parameter(Mandatory=$true)][string]$HostKeyFingerprint,
+  [string]$ServerIPv4 = '',
+  [string]$PrivateKeyPath = '',
+  [string]$HostKeyFingerprint = '',
   [string]$Ref = 'HEAD',
   [string]$WinSCPExe = '',
   [string]$PlinkExe = '',
@@ -20,6 +20,15 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Plan-only MUST NOT require a server, host key, private key or installed SSH tools,
+# and must not package files, call git, start a child process, or touch NCP.
+if (-not $Apply) {
+  Write-Host 'PLAN ONLY: synthetic SSH-loopback preview, never production.'
+  Write-Host 'No resources, account, IP, SSH key, package, network or paid provider are touched.'
+  Write-Host 'For -Apply, provide -ServerIPv4, -PrivateKeyPath (.ppk), -HostKeyFingerprint and verify NCP ACG /32.'
+  Write-Host 'Read infra/ncp/README.md and obtain separate operator approval before applying.'
+  exit 0
+}
 # Do not pass arbitrary hostnames, SSH URI, command fragments or remote shell input.
 if ($ServerIPv4 -notmatch '^([0-9]{1,3}\.){3}[0-9]{1,3}$') {
   throw 'ServerIPv4 must be the NCP host literal IPv4 address, not a hostname or command.'
@@ -69,11 +78,6 @@ $zip = Join-Path $repo 'local_only\ncp-preview.zip'
 Write-Host "Mode: SYNTHETIC-only SSH loopback preview (NOT production)"
 Write-Host "Destination server: $ServerIPv4 / user=hufs-admin / TCP 22"
 Write-Host "Ref: $Ref; verified host-key fingerprint required; no secrets stored."
-if (-not $Apply) {
-  Write-Host 'PLAN ONLY. No packaging, transfer, remote command or billable resource action executed.'
-  Write-Host 'After owner approval, NCP manual server+ACG setup and Ubuntu bootstrap, rerun with -Apply.'
-  exit 0
-}
 # Only run against a manually provisioned authorized host. No cloud API, no daemon, no retries.
 Write-Host 'Preparing a committed, fixed allowlist archive (no student originals or private repo clone).'
 & (Join-Path $PSScriptRoot 'Prepare-NcpPreview.ps1') -Ref $Ref
