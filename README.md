@@ -19,6 +19,8 @@
 | 진행 중 PR | [#131 설정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) **수정 요청**, [#134 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) **선행 스택 대기**. #138·#142는 현재 HEAD 승인 뒤 이미 main 병합. [#145 OCR·HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145)는 최종 HEAD CI 3/3 성공·타인 승인 대기 |
 | 운영/실자료 | **RELEASE_BLOCKED** — [#46 개인정보/자료 이력](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), [#89 공개 노출·인증·인프라](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) |
 
+**추가 검증 병합:** [#138 저장 강의시간표 HTML 변환기](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138), [#142 안전한 브랜치 정리 CLI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142), [#146 한 글자 AI 인용 거부](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146)(HEAD `61245ae`, 비작성자 승인·합성/PG/Chrome CI 성공, main `ff226929`). **#145 OCR/HCX wire는 최신 HEAD `633d665` 타인 승인·병합 대기**. #46/#89 출시 차단과 실제 NCP/학생 데이터 사용 금지는 불변.
+
 최근 #139/#140의 GitHub Actions 합성/일회용 PostgreSQL/Chrome **각 3/3 성공**은 해당 PR HEAD의 **합성 회귀**에 대한 증거입니다. 실제 HUFSAbility 데이터·공식 학칙·학생 4인 로그인, 운영 NCP/CLOVA·실제 기관/자료 권리, 배포/보안을 검증 완료했다는 의미가 아닙니다. 상세 증거 및 차단 사항은 [STATUS.md](STATUS.md)를 봅니다.
 
 ## 로컬 합성 개발
