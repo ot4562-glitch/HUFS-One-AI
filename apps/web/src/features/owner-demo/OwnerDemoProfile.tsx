@@ -5,6 +5,7 @@ import {
 } from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {TOPIC_TEXT} from '../demo/topicText.js';
+import '../local-accounts/localAccounts.css';
 
 /** Owner-only BETA port. Never accepts a S01–S05 alias or a REVIEWER actor. */
 export interface OwnerDemoProfilePort {
