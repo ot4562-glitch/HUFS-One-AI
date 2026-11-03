@@ -41,6 +41,7 @@ const ATTRIBUTE_CLASSES:Readonly<Record<string, TimetableAttribute>> = {
 const UNSTATED_LANGUAGE = 'F';
 
 export type TimetableSession = '1'|'SUMMER'|'2'|'WINTER';
+export type TimetableCampus = 'SEOUL'|'GLOBAL'|'UNKNOWN';
 export type TimetableArea = 'MAJOR'|'DOUBLE_OR_MINOR'|'OTHER';
 export type TimetableAttribute = 'REQUIRED'|'FOREIGN_LANGUAGE'|'TEAM_TEACHING'|'ONLINE'|'PASS_FAIL';
 
@@ -91,6 +92,11 @@ export interface TimetableImport {
   term:{year:number; session:TimetableSession; academicTerm?:string};
   /** Taken from the file name or the caller, not from the page: a saved page does not record it. */
   departmentLabel:string;
+  /**
+   * Read from the page: the checked 캠퍼스 radio and the department list it loads must agree
+   * (H1 with every option "(서울) - …", H2 with every option "(글로벌) - …"); otherwise UNKNOWN.
+   */
+  campus:TimetableCampus;
   /** One department page is not the whole term catalog. */
   coverage:'ONE_DEPARTMENT_PAGE';
   codeFormat:{reviewed:boolean; consistentWithCourse7Section2:boolean};
@@ -332,6 +338,21 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
   return result(url, input, term, departmentLabel, rows, issues);
 }
 
+const CAMPUS_RADIO:Readonly<Record<string, TimetableCampus>> = {H1:'SEOUL', H2:'GLOBAL'};
+const CAMPUS_PREFIX:Readonly<Record<string, TimetableCampus>> = {'(서울)':'SEOUL', '(글로벌)':'GLOBAL'};
+
+function pageCampus(html:string):TimetableCampus {
+  const checked = [...html.matchAll(/<input\b[^>]*\bname="campus_sect"[^>]*>/gi)]
+    .filter(match => /\bchecked\b/i.test(match[0]))
+    .map(match => /\bvalue="([^"]*)"/i.exec(match[0])?.[1] ?? '');
+  const byRadio = checked.length === 1 ? CAMPUS_RADIO[checked[0]!] : undefined;
+  const list = /<select\b[^>]*\bname="ag_crs_strct_cd"[^>]*>([\s\S]*?)<\/select>/i.exec(html)?.[1] ?? '';
+  const labels = [...list.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)].map(match => cellText(match[1]!)).filter(label => label !== '');
+  const prefixes = new Set(labels.map(label => CAMPUS_PREFIX[label.split(' ')[0]!]));
+  const byList = labels.length > 0 && prefixes.size === 1 ? [...prefixes][0] : undefined;
+  return byRadio !== undefined && byRadio === byList ? byRadio : 'UNKNOWN';
+}
+
 function result(
   savedFrom:string, input:TimetableImportRequest, term:{year:number; session:TimetableSession},
   departmentLabel:string, rows:TimetableRow[], issues:TimetableIssue[],
@@ -349,6 +370,7 @@ function result(
     source:{system:'HUFS_WIS_LECTURE_TIMETABLE', savedFromUrl:savedFrom, fileName:input.fileName, savedAt:input.savedAt},
     term:{...term, ...(term.session === '1' || term.session === '2' ? {academicTerm:`${term.year}-${term.session}`} : {})},
     departmentLabel,
+    campus:pageCampus(input.html.replace(/<script\b[\s\S]*?<\/script>/gi, '')),
     coverage:'ONE_DEPARTMENT_PAGE',
     codeFormat:{reviewed:input.codeFormatReviewed === true, consistentWithCourse7Section2:consistent},
     rows,

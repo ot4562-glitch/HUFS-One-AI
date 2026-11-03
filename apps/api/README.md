@@ -1,10 +1,18 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 2026-11-03 최신 서버/AI 실제 코드 경계
+
+- **main 병합:** [#145 오프라인 CLOVA General OCR/HCX-005·007 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b` (request/response·bbox/candidate 검증) 및 [#148 원자 PostgreSQL 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516` (phase/actor reserve/idempotency·UNKNOWN_BILLING hold/초과 정산 OFF). 각각 최신 HEAD 비작성자 승인·합성/일회용 PG/Chrome CI **3/3 SUCCESS**. SQL은 검토용이며 **운영 migration이나 AI 호출을 활성화하지 않음**.
+- **현재 main 미병합:** [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) provider runtime·권한/동의/출처 재검증·bounded transport/timeout·결과 영속 조회·Laya child worker·현재 이중전공/빈 시연 계정 API·프라이빗 배포 템플릿은 **Draft, 선행 #145/#148/#131 squash와 충돌, 최신 HEAD 타인 APPROVED 0건**입니다. 이 문서 뒤의 “필요한 추가 구현/통합”은 **main 기준**이며 #150 체크포인트를 승인된 API로 오해하지 않아야 합니다.
+- **릴리스 차단:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 원본 Git 게시/권리·privacy **2 FAIL**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) Google/학교메일·실 PG/TLS/직접 IP·권한 철회·NCP 실호스트/유료 provider 미검증. `AI_ENABLED=false` 기본·`RELEASE_BLOCKED`; 실학생 자료 외부 전송·NCP 개통/과금은 별도 승인 전 금지. [STATUS](../../STATUS.md), [PR_WORKFLOW](../../docs/PR_WORKFLOW.md) 우선.
+
 ## 소비자 리뷰 후속: 비공개 근거·학점·수동 저장본
 
 학업 source는 가린 과목의 분반/선수 근거 ref와 URL도 제거한다. 필요한 근거가 숨겨진 확정 경고는 `NEEDS_REVIEW`이며, 승인 receipt 자체가 가린 근거를 포함하면 응답을 만들지 않는다. 일반 승인 학점 상한은 공개 가능한 경우 유지한다. 종료 학기는 저장소 조회 전에 공통 `422 INVALID_INPUT`으로 거절하고, 로컬 계정 학점은 공통 스키마에서 0.5학점 단위만 받는다. 화면의 십진수 입력 파서와 step은 UI 담당이 이 계약을 소비한다.
 
 `importSavedCurriculum({sourceUrl, originalBytes, csv, authority, now, previous})`는 private operator 전용 수동 저장본 입력이다. 승인된 #138 등의 변환 결과를 받고 HTML을 변환하거나 fetch하지 않는다. authority의 `OPERATOR_SAVED` 정책은 `robots: NOT_APPLICABLE`, 기존 수집/보관/약관 허가·정확한 URL/증거/만료, `savedArtifactSha256`, `normalizedCsvSha256`, `capturedAt`, `converterVersion`, `redistribution: ALLOWED|DENIED`를 모두 요구한다. 원본 5MB/CSV 1MB 한도·두 hash와 전후 권한을 확인하고 원본 검수시각을 보존한다. `DENIED`는 로컬 검수용 보존만 뜻하며 재배포·시연·운영 catalog 등록 권한이 아니다. 이 함수는 원본/이름/경로를 반환하거나 DB/파일에 쓰지 않는다.
+
+**2026-11-03 수동 WIS importer 인계:** [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) HTML 파서와 [#149](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) 8열 CSV/`.handoff.json`/원본·CSV SHA가 각각 **main `605144c`, `efa13368` 병합**. #149의 `UNKNOWN` 캠퍼스 임의 확정 결함은 HEAD `f797787`에서 수정·음성 테스트, 비작성자 승인·CI 3/3 확인. **파일 변환기는 로컬만**이며 실제 운영 import/이용허가 제공 아님. 현 `CurriculumAuthority.resolve(sourceUrl, now)` 인터페이스는 WIS 페이지가 학과·학기와 관계없이 동일 URL인 복수 저장본에 대해 **파일별 권리 receipt 조회 식별자가 부족**합니다. [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)·[#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)에서 `sourceUrl` + `savedArtifactSha256`(또는 동등한 승인받은 복합 키)로 pre/post/철회·무결성·각 파일 보관권을 별도로 검증하고, `details`/withheld 인계 계약·Git 외 제한 전달을 결정할 때까지 실제 학교 저장본을 승인 카탈로그에 반입하지 마세요.
 
 자동 `collectCurriculum`은 수동 정책을 거절하고 robots `ALLOWED`를 계속 요구한다. 수동 저장·브라우저 접근 가능 여부가 이용권을 대신하지 않는다. `cohort: UNKNOWN`, 9자리 원본 분반 코드와 category 원문을 허용하며 공식 RulePack을 추론하지 않는다. 실제 변환/수집물·권리 심사·운영 등록은 별도이며 현재 합성 테스트만 수행했다.
 
@@ -204,6 +212,19 @@ or an unaudited student-data upload.
 - `python3 reference/reviewer/export_invitation_template.py --private-json local_only/reviewer_invitations/<uuid>.json`: 활성 초대장을 **로컬만** PDF로 출력. 자료 비공개/메일 개인 발송.
 - `npm run admin:reviewer -- revoke`: `REVIEWER_INVITE_ID`를 사용해 기한 전 revoke. DB 행은 즉시 철회되며 서버 다음 요청이 거부해야 한다.
 - 이 기능은 **독립 서버 인증/DB 연결이 완료되기 전에는 실행하지 않는다**. 사용 가능한 PDF와 템플릿을 혼동하지 않는다.
+
+## AI 비용 원장 (#20/#88, 실제 호출 미연결)
+
+`modules/ai/budget-postgres.ts`와 검토용 `infra/sql/20261103_ai_budget.sql`은 전역 phase·actor별 비용/시도 한도를 PostgreSQL에서 원자적으로 예약합니다. 단위는 정수 micro-KRW(1 KRW=1,000,000 units)이며 단가를 추정하지 않습니다. trusted quote/tokenizer가 payload·model·prompt/schema·source/permission/consent 판본을 포함한 request SHA와 각 시도 worst-case 비용을 계산해야 합니다. `task`는 과금 provider operation(`OCR_GENERAL`, `HCX_005`, `HCX_007`)이며 제품 AI task·모든 판본은 request SHA에 결속해야 합니다.
+
+- phase 기본값 **enabled=false, 모든 한도0**. operator만 기간·전역/actor 비용·시도 한도를 준비합니다. 코드 import/배포로 migration 적용·활성화하지 않습니다.
+- 독립 migration 검토 뒤 신뢰된 BYPASSRLS 소유자가 함수를 소유해야 합니다. runtime 역할은 schema USAGE와 `ai_budget_reserve(text,text,text,text,bigint)`, `ai_budget_transition(text,uuid,text,text,bigint,text)` EXECUTE만 받고, 세 테이블 SELECT/DML/configuration은 주지 않습니다. FORCE RLS·PUBLIC 권한 회수·함수의 고정 search_path/명시적 actor 검사가 유지돼야 합니다.
+- 인증된 server actor를 transaction-local로 결속합니다. 브라우저의 actor/비용/receipt는 신뢰하지 않습니다. `reserve().changed=true`는 새 예약만 뜻하며 **송신 허가는 별도 DISPATCHED transition의 changed=true**에서 한 번만 얻습니다. 응답/commit 손실은 재전송 허가가 아닙니다.
+- RESERVED(아직 전송 안 됨)만 RELEASED로 비용/시도 예약을 한 번 반환합니다. DISPATCHED 이후 timeout/crash/취소는 UNKNOWN_BILLING 또는 미정산 DISPATCHED로 남아 계속 예산을 점유하며 자동 환급/재시도하지 않습니다. 실제 검증된 사용량/과금 영수증의 SHA와 비용이 있어야 SETTLED로 정산합니다. 같은 영수증·비용 재정산은 중복 차감하지 않습니다.
+- 실제 과금이 예약보다 크면 **실제 비용을 그대로 기록하고 phase를 OFF**로 바꿉니다. 예약/정책 상한은 10^12 units, 실제 건별 영수증은 JS safe integer 범위까지 별도로 받고 DB 누적액은 numeric(30,0)으로 보존합니다. 이미 송신된 요청은 OFF/만료 뒤에도 정산할 수 있습니다. 금액을 예약 상한에 맞춰 숨기지 않습니다. 미정산 예약은 자동 만료하지 않으며 운영 reconciliation이 필요합니다.
+- 원장은 권한 승인/사실 검증/가격 계산기나 HTTP transport가 아닙니다. 매 전송 전/응답 후 current source/actor/grant/asOf/동의/철회 검사, 실제 provider usage 검증·tokenizer·bounded HTTP·retry/취소·로그/secret 보호·#88 chaos·#143 worker가 추가로 필요합니다. 현재 제품 HTTP 경로에 연결하지 않았고 유료 호출0입니다.
+
+검증: `vitest run tests/api/ai-budget-postgres.test.ts`(SQL 프로토콜 단위), 기존 opt-in disposable `pg-full-live-opt-in.test.ts`(실 PG의 동시20·idempotency/actor·unknown 정산·취소·OFF/만료·overrun). 실제 PG 성공은 해당 CI HEAD 결과로 따로 확인하며 기본 SKIP을 성공으로 표시하지 않습니다.
 
 ## Laya CPU 스파이크로부터 API 보호 (설계, 미구현·미배포)
 

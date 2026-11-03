@@ -23,6 +23,7 @@ import {PostgresSelfAccountStore} from '../../apps/api/src/modules/profiles/self
 import {PostgresOwnerWorkspaceStore} from '../../apps/api/src/modules/profiles/self-workspace-postgres.js';
 import {PostgresExperienceApprovalStore} from '../../apps/api/src/modules/profiles/experience-approval-postgres.js';
 import {PostgresDemoOverlayStore} from '../../apps/api/src/modules/demo-overlay-postgres.js';
+import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
 import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
@@ -31,7 +32,7 @@ const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
 const pools:Pool[]=[];
 // Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
 const rolePassword=randomBytes(24).toString('hex');
-let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool,overlays:Pool;
+let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool,overlays:Pool,aiBudget:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
 const now=()=>new Date().toISOString();
@@ -49,6 +50,7 @@ const migrationNames=[
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
   '20261101_experience_tag_approval.sql',
   '20261101_demo_overlays.sql',
+  '20261103_ai_budget.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -102,6 +104,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        CREATE ROLE hufs_test_intake LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_self LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_overlay LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+       CREATE ROLE hufs_test_ai_budget LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
       GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake,hufs_test_self,hufs_test_overlay;
@@ -120,12 +123,16 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_effective_revisions_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
+      GRANT USAGE ON SCHEMA public TO hufs_test_ai_budget;
+      GRANT EXECUTE ON FUNCTION ai_budget_reserve(text,text,text,text,bigint) TO hufs_test_ai_budget;
+      GRANT EXECUTE ON FUNCTION ai_budget_transition(text,uuid,text,text,bigint,text) TO hufs_test_ai_budget;
     `);
     writer=poolFor(url,'hufs_test_personal');reader=poolFor(url,'hufs_test_projection');
     temporal=poolFor(url,'hufs_test_temporal');limiter=poolFor(url,'hufs_test_limiter');
     sandbox=poolFor(url,'hufs_test_sandbox');intake=poolFor(url,'hufs_test_intake');
     selfAccount=poolFor(url,'hufs_test_self');
     overlays=poolFor(url,'hufs_test_overlay');
+    aiBudget=poolFor(url,'hufs_test_ai_budget');
     await admin.query(`INSERT INTO api_sharing_grants(
       grant_id,actor_id,subject_id,allowed_sections,version,consent_ref,
       approved_by,approved_at,expires_at)
@@ -136,6 +143,126 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       VALUES('S01','SYN-P1','SYN-D1',$1,clock_timestamp(),'SYN-OPERATOR',true)`,[snapshotRaw]);
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(pool=>pool.end()));},30000);
+
+  const billingHash='a'.repeat(64),usageReceipt='b'.repeat(64);
+  function request(phaseId:string,idempotencyKey:string,worstCaseUnits=100){
+    return {phaseId,task:'HCX_007' as const,idempotencyKey,requestSha256:billingHash,worstCaseUnits};
+  }
+  async function provisionBudget(phase:string,cap=500,actorCap=500,attempts=100,actorAttempts=100){
+    await admin.query(`INSERT INTO ai_budget_phases(phase_id,enabled,starts_at,ends_at,max_units,actor_max_units,max_attempts,actor_max_attempts)
+      VALUES($1,true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',$2,$3,$4,$5)`,
+      [phase,cap,actorCap,attempts,actorAttempts]);
+    return new PostgresAiBudgetLedger(adapter(aiBudget));
+  }
+  it('AI budget is OFF by default, private, and execute-only role cannot bypass accounting',async()=>{
+    const phase='SYN-BILL-OFF';
+    await admin.query(`INSERT INTO ai_budget_phases(phase_id,starts_at,ends_at)
+      VALUES($1,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour')`,[phase]);
+    const ledger=new PostgresAiBudgetLedger(adapter(aiBudget));
+    await expect(ledger.reserve('SYN-A',request(phase,'FIRST'))).rejects.toThrow('AI budget operation denied');
+    await expect(aiBudget.query('SELECT * FROM ai_budget_jobs')).rejects.toThrow();
+    await expect(aiBudget.query(`UPDATE ai_budget_phases SET enabled=true`)).rejects.toThrow();
+    await expect(aiBudget.query(`SELECT * FROM ai_budget_reserve($1,'HCX_007','NO-ACTOR',$2,100)`,[phase,billingHash])).rejects.toThrow();
+    const policies=await admin.query(`SELECT relname,relrowsecurity,relforcerowsecurity FROM pg_class
+      WHERE relname=ANY($1::text[])`,[['ai_budget_phases','ai_budget_actors','ai_budget_jobs']]);
+    expect(policies.rows).toHaveLength(3);
+    expect(policies.rows.every(r=>r.relrowsecurity&&r.relforcerowsecurity)).toBe(true);
+    expect((await admin.query('SELECT count(*)::int AS n FROM ai_budget_jobs')).rows[0]?.n).toBe(0);
+  });
+  it('twenty concurrent AI requests cannot exceed shared or per-actor reservation caps',async()=>{
+    for(const [phase,sameActor] of [['SYN-BILL-GLOBAL',false],['SYN-BILL-ACTOR',true]] as const){
+      const ledger=await provisionBudget(phase,sameActor?10000:500,sameActor?300:1000);
+      const results=await Promise.allSettled(Array.from({length:20},(_,i)=>ledger.reserve(sameActor?'SYN-A':'SYN-A'+i,request(phase,'REQ-'+i))));
+      expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(sameActor?3:5);
+      const totals=(await admin.query('SELECT reserved_units::int,charged_units::int,attempts FROM ai_budget_phases WHERE phase_id=$1',[phase])).rows[0];
+      expect(totals).toEqual({reserved_units:sameActor?300:500,charged_units:0,attempts:sameActor?3:5});
+    }
+  });
+  it('AI idempotency races create one reservation, reject changed requests and permit one dispatch',async()=>{
+    const phase='SYN-BILL-IDEM',ledger=await provisionBudget(phase);
+    const jobs=await Promise.all(Array.from({length:20},()=>ledger.reserve('SYN-A',request(phase,'SAME'))));
+    expect(new Set(jobs.map(j=>j.jobId)).size).toBe(1);
+    expect(jobs.filter(j=>j.changed)).toHaveLength(1);
+    await expect(ledger.reserve('SYN-A',{...request(phase,'SAME'),requestSha256:'c'.repeat(64)})).rejects.toThrow();
+    await expect(ledger.reserve('SYN-A',request(phase,'SAME',101))).rejects.toThrow();
+    const job=jobs[0]!,v={phaseId:phase,jobId:job.jobId,requestSha256:billingHash,action:'DISPATCHED' as const};
+    const dispatches=await Promise.all(Array.from({length:20},()=>ledger.transition('SYN-A',v)));
+    expect(dispatches.filter(j=>j.changed)).toHaveLength(1);
+    await expect(ledger.transition('SYN-B',v)).rejects.toThrow();
+    await expect(ledger.transition('SYN-A',{...v,requestSha256:'d'.repeat(64)})).rejects.toThrow();
+  });
+  it('AI attempt limits bind independently of roomy cost caps; unsent release returns one attempt',async()=>{
+    for(const [phase,sameActor] of [['SYN-BILL-GLOBAL-COUNT',false],['SYN-BILL-ACTOR-COUNT',true]] as const){
+      const ledger=await provisionBudget(phase,100000,100000,sameActor?100:3,sameActor?2:100);
+      const results=await Promise.allSettled(Array.from({length:20},(_,i)=>ledger.reserve(sameActor?'SYN-A':'SYN-'+i,request(phase,'TRY-'+i))));
+      const good=results.flatMap((r,i)=>r.status==='fulfilled'?[{...r.value,actor:sameActor?'SYN-A':'SYN-'+i}]:[]);
+      expect(good).toHaveLength(sameActor?2:3);
+      const sent=good[0]!,unused=good[1]!;
+      const ident=(jobId:string)=>({phaseId:phase,jobId,requestSha256:billingHash});
+      await ledger.transition(sent.actor,{...ident(sent.jobId),action:'DISPATCHED'});
+      await ledger.transition(sent.actor,{...ident(sent.jobId),action:'SETTLED',actualUnits:0,receiptSha256:usageReceipt});
+      await expect(ledger.reserve(sameActor?'SYN-A':'SYN-FRESH',request(phase,'STILL-FULL'))).rejects.toThrow();
+      await ledger.transition(unused.actor,{...ident(unused.jobId),action:'RELEASED'});
+      await ledger.transition(unused.actor,{...ident(unused.jobId),action:'RELEASED'});
+      await ledger.reserve(sameActor?'SYN-A':'SYN-FRESH',request(phase,'REPLACEMENT'));
+      await expect(ledger.reserve(sameActor?'SYN-A':'SYN-NEW',request(phase,'COUNT-FULL'))).rejects.toThrow();
+    }
+  });
+  it('unknown AI billing stays reserved until verified settlement; replay never refunds twice',async()=>{
+    const phase='SYN-BILL-UNKNOWN',ledger=await provisionBudget(phase,100,100);
+    const job=await ledger.reserve('SYN-A',request(phase,'ONE'));
+    const v={phaseId:phase,jobId:job.jobId,requestSha256:billingHash};
+    await ledger.transition('SYN-A',{...v,action:'DISPATCHED'});
+    await ledger.transition('SYN-A',{...v,action:'UNKNOWN_BILLING'});
+    await expect(ledger.transition('SYN-A',{...v,action:'RELEASED'})).rejects.toThrow();
+    await expect(ledger.reserve('SYN-A',request(phase,'RETRY'))).rejects.toThrow();
+    const done={...v,action:'SETTLED' as const,actualUnits:70,receiptSha256:usageReceipt};
+    expect((await ledger.transition('SYN-A',done)).changed).toBe(true);
+    expect((await ledger.transition('SYN-A',done)).changed).toBe(false);
+    await expect(ledger.transition('SYN-A',{...done,actualUnits:0})).rejects.toThrow();
+    expect((await admin.query('SELECT reserved_units::int,charged_units::int,attempts FROM ai_budget_phases WHERE phase_id=$1',[phase])).rows[0])
+      .toEqual({reserved_units:0,charged_units:70,attempts:1});
+  });
+  it('unsent AI cancellations release quota once, but disabled/expired phases never dispatch',async()=>{
+    const phase='SYN-BILL-CANCEL',ledger=await provisionBudget(phase,100,100,1,1);
+    const job=await ledger.reserve('SYN-A',request(phase,'CANCEL'));
+    const v={phaseId:phase,jobId:job.jobId,requestSha256:billingHash};
+    await admin.query('UPDATE ai_budget_phases SET enabled=false WHERE phase_id=$1',[phase]);
+    await expect(ledger.transition('SYN-A',{...v,action:'DISPATCHED'})).rejects.toThrow();
+    expect((await ledger.transition('SYN-A',{...v,action:'RELEASED'})).changed).toBe(true);
+    expect((await ledger.transition('SYN-A',{...v,action:'RELEASED'})).changed).toBe(false);
+    await expect(ledger.reserve('SYN-A',request(phase,'DISABLED'))).rejects.toThrow();
+    await admin.query('UPDATE ai_budget_phases SET enabled=true WHERE phase_id=$1',[phase]);
+    const next=await ledger.reserve('SYN-A',request(phase,'NEXT'));
+    await admin.query(`UPDATE ai_budget_phases SET starts_at=clock_timestamp()-interval '2 hour',ends_at=clock_timestamp()-interval '1 hour' WHERE phase_id=$1`,[phase]);
+    await expect(ledger.transition('SYN-A',{...v,jobId:next.jobId,action:'DISPATCHED'})).rejects.toThrow();
+    await expect(ledger.reserve('SYN-B',request(phase,'EXPIRED'))).rejects.toThrow();
+  });
+  it('AI cost overrun records actual cost, disables future calls and still settles existing dispatches',async()=>{
+    const phase='SYN-BILL-OVERRUN',ledger=await provisionBudget(phase);
+    const a=await ledger.reserve('SYN-A',request(phase,'ONE'));
+    const b=await ledger.reserve('SYN-B',request(phase,'TWO'));
+    const identity=(jobId:string)=>({phaseId:phase,jobId,requestSha256:billingHash});
+    await ledger.transition('SYN-A',{...identity(a.jobId),action:'DISPATCHED'});
+    await ledger.transition('SYN-B',{...identity(b.jobId),action:'DISPATCHED'});
+    await ledger.transition('SYN-A',{...identity(a.jobId),action:'SETTLED',actualUnits:120,receiptSha256:usageReceipt});
+    await expect(ledger.reserve('SYN-C',request(phase,'THREE'))).rejects.toThrow();
+    await ledger.transition('SYN-B',{...identity(b.jobId),action:'SETTLED',actualUnits:90,receiptSha256:usageReceipt});
+    expect((await admin.query('SELECT enabled,reserved_units::int,charged_units::int FROM ai_budget_phases WHERE phase_id=$1',[phase])).rows[0])
+      .toEqual({enabled:false,reserved_units:0,charged_units:210});
+  });
+  it('verified AI charges above quote ceiling are accounted exactly and kill phase before new reservations',async()=>{
+    const phase='SYN-BILL-LARGE-ACTUAL',ledger=await provisionBudget(phase),actual=1_000_000_000_001;
+    const job=await ledger.reserve('SYN-A',request(phase,'LARGE'));
+    const ident={phaseId:phase,jobId:job.jobId,requestSha256:billingHash};
+    await ledger.transition('SYN-A',{...ident,action:'DISPATCHED'});
+    const done={...ident,action:'SETTLED' as const,actualUnits:actual,receiptSha256:usageReceipt};
+    expect((await ledger.transition('SYN-A',done)).chargedUnits).toBe(actual);
+    expect((await ledger.transition('SYN-A',done)).changed).toBe(false);
+    await expect(ledger.reserve('SYN-B',request(phase,'AFTER-OVERRUN'))).rejects.toThrow();
+    expect((await admin.query('SELECT enabled,reserved_units::text,charged_units::text FROM ai_budget_phases WHERE phase_id=$1',[phase])).rows[0])
+      .toEqual({enabled:false,reserved_units:'0',charged_units:String(actual)});
+  });
 
   it('supports owner-private profile/consent CAS, no implicit grant, withdrawal and immutable audit under FORCE RLS',async()=>{
     const id='SYN-SELF-OWNER';
