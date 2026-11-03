@@ -164,6 +164,43 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     s.child.send({kind:'release'});expect((await response).status).toBe(503);
     expect((await admin.query('SELECT count(*)::int AS n FROM api_ai_provider_results WHERE actor_id=$1',[f.actor])).rows[0]?.n).toBe(0);await s.stop();
   },30000);
+  it('twenty concurrent duplicate HTTP submissions cannot reserve, dispatch or charge twice',async()=>{
+    const f=await seed('CONCURRENT-IDEMPOTENT'),s=await start(f.subject),auth=await login(s);
+    try{
+      const responses=await Promise.all(Array.from({length:20},()=>execute(s,auth,f.asOf,'KEY-CONCURRENT-ONE')));
+      // During contention some callers may fail closed, but no caller may
+      // bypass the budget gate or mint a distinct job for the same idempotency key.
+      expect(responses.every(r=>[202,409,429,503].includes(r.status))).toBe(true);
+      const accepted=await Promise.all(responses.filter(r=>r.status===202).map(r=>r.json() as Promise<{jobId:string}>));
+      expect(new Set(accepted.map(r=>r.jobId)).size).toBeLessThanOrEqual(1);
+      const jobs=await admin.query('SELECT job_id,state,charged_units FROM ai_budget_jobs WHERE actor_id=$1 AND idempotency_key=$2',[f.actor,'KEY-CONCURRENT-ONE']);
+      expect(jobs.rows).toHaveLength(1);
+      expect(jobs.rows[0]!.state).toBe('SETTLED');
+      expect(jobs.rows[0]!.charged_units).toBe('143');
+      expect(s.calls.filter(x=>x==='TOKENIZE')).toHaveLength(1);
+      expect(s.calls.filter(x=>x==='INFER')).toHaveLength(1);
+      const resultRows=await admin.query('SELECT count(*)::int AS n FROM api_ai_provider_results WHERE actor_id=$1',[f.actor]);
+      expect(resultRows.rows[0]?.n).toBe(1);
+      const again=await execute(s,auth,f.asOf,'KEY-CONCURRENT-ONE');
+      expect(again.status).toBe(202);
+      expect(s.calls).toHaveLength(2);
+    }finally{await s.stop();}
+  },60000);
+
+  it('twenty simultaneous requests after consent revocation cause zero provider calls, charges or stored results',async()=>{
+    const f=await seed('CONCURRENT-REVOKED'),s=await start(f.subject),auth=await login(s);
+    try{
+      await admin.query("UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{externalAi}','false'),version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1",[f.actor]);
+      const responses=await Promise.all(Array.from({length:20},(_,i)=>execute(s,auth,f.asOf,'KEY-REVOKED-'+i)));
+      expect(responses.every(r=>r.status!==202)).toBe(true);
+      expect(s.calls).toHaveLength(0);
+      const jobs=await admin.query('SELECT count(*)::int AS n FROM ai_budget_jobs WHERE actor_id=$1',[f.actor]);
+      expect(jobs.rows[0]?.n).toBe(0);
+      const results=await admin.query('SELECT count(*)::int AS n FROM api_ai_provider_results WHERE actor_id=$1',[f.actor]);
+      expect(results.rows[0]?.n).toBe(0);
+    }finally{await s.stop();}
+  },60000);
+
   it('SQL denies pre-SETTLED writes and runtime table/prune access',async()=>{
     const f=await seed('DIRECT'),ledger=new PostgresAiBudgetLedger(adapter(budget)),store=new PostgresProviderResults(adapter(results));
     const hash='a'.repeat(64),row=await ledger.reserve(f.actor,{phaseId:phase,task:'HCX_007',idempotencyKey:'KEY-DIRECT',requestSha256:hash,worstCaseUnits:1});
