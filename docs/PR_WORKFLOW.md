@@ -21,6 +21,8 @@
 | [#134 빈 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | HEAD `ab565d0`, #131 기반 스택. UI 합성 하위 구현/합성·PG CI는 인정하나 #131 수정·병합 뒤 main 기준 diff·최신 HEAD 리뷰/CI·실 owner API 연동 필요. **COMMENT, 병합 금지** |
 | [#145 OCR/HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) | HEAD `633d665`의 오프라인 직렬화/검증만. Actions `41555690869` 합성/PG **2/2 SUCCESS** + `41555690904` Chrome **SUCCESS**. 김채윤 `APPROVED`는 이전 HEAD `288c610` 기준; **현재 HEAD 독립 승인 필요**. 기술 총괄 최신 HEAD `COMMENT` 제출(자기 승인 아님). 실제 NCP·키/예산/권한 transport·20포스터 미완료 |
 
+**이번 감사에서 추가 병합:** [#146](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146) 김채윤 AI 토픽 후보 quote 최소 2글자/공백 거부. HEAD `61245ae` 심민성 비작성자 `APPROVED`, GitHub 합성/PG/Chrome **3/3 SUCCESS**, main squash `ff226929`. #10 전체/실출처/독립 gold 미완료.
+
 **이번 감사에서 병합 상태 확인:**
 - [#138 저장 시간표](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138): HEAD `44afcf6`, 결함 2건 수정·기술 총괄 비작성자 `APPROVED`·합성/PG/Chrome **3/3 SUCCESS**, main `605144c` **MERGED**. 로컬 변환기만 수락.
 - [#142 브랜치 정리](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142): HEAD `53039bd`, 김채윤 비작성자 `APPROVED`·합성/PG/Chrome **3/3 SUCCESS**, main `719c576` **MERGED**. 도구 병합이지 원격 브랜치 삭제 완료 아님.
