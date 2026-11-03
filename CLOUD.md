@@ -1,5 +1,7 @@
 # HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
+> **NCP 실제 인프라 준비·Windows PuTTY/WinSCP·Ubuntu SSH 전용 합성 미리보기 설치·한국 IP Wall/ACG/ACL:** [실행서](infra/ncp/README.md). **실서비스 준비 상태/기간의 조건부 분석:** [서비스 완성·유지보수 계획](docs/SERVICE_DELIVERY_PLAN.md). 자동화는 [Draft PR #156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156)의 검토용 코드이며 서버/유료 API/실학생 자료를 사용·배포하지 않았다. `APP_ENV=production`은 현재 main에서 실행 불가, #46/#89 RELEASE_BLOCKED 그대로.
+
 <!-- 2026-11-03-owner-boundary:start -->
 > **2026-11-03 운영/코드 소유 확정:** **이서연 `lhh42001`은 NCP 계정·크레딧·VPC·서버/스토리지·서비스 entitlement/키·IAM/TLS·비용/호스트 실측·중단/반납만 담당하며 SDK·worker·코드·스크립트/CI/IaC 구현을 하지 않는다**([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)·[#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)). **심민성 `ot4562-glitch`은 일반 API뿐 아니라 NCP General OCR·HCX Vision/Studio provider SDK/HTTP·bbox·비용/권한 hard gate·Laya ONNX worker/cgroup·OS/CI/배포 자동화 코드 전부 담당**([#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)·[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)·[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)). **비밀·학생 원본·유료 자원·운영 공개는 사용자 명시 승인/기관 권리·#46/#89 전 미실행**. 아래의 과거 PR/이슈 수치·역할은 작성 당시 기록이며, 최신 검증 결과는 [STATUS](STATUS.md)·[TEAM_PROGRESS](docs/TEAM_PROGRESS.md) 우선.
 <!-- 2026-11-03-owner-boundary:end -->
