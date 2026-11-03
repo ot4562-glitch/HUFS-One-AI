@@ -73,8 +73,10 @@ if ! id -u hufs-preview >/dev/null 2>&1; then
 fi
 install -d -m 0700 -o hufs-admin -g hufs-admin /home/hufs-admin/.ssh
 install -m 0600 -o hufs-admin -g hufs-admin "$PUBLIC_KEY" /home/hufs-admin/.ssh/authorized_keys
-install -d -m 0750 -o hufs-preview -g hufs-preview /opt/hufs-one/preview
-install -d -m 0750 -o hufs-preview -g hufs-preview /opt/hufs-one/preview/releases
+# Root owns the release pointers: the unprivileged Vite service may write only
+# inside the newly selected release, never re-point the service to another path.
+install -d -m 0755 -o root -g root /opt/hufs-one/preview
+install -d -m 0755 -o root -g root /opt/hufs-one/preview/releases
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 install -m 0755 "$SCRIPT_DIR/deploy-preview.sh" /usr/local/sbin/hufs-preview-deploy
