@@ -1,4 +1,5 @@
 import {afterEach,describe,expect,it} from 'vitest';
+import {makeApiError} from '@hufs-one/contracts';
 import {createTrustedOwnerDoubleMajorSource} from '../../apps/api/src/modules/academics/owner-double-major-source.js';
 import {doubleMajorInput} from '../api/owner-double-major-fixture.js';
 import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
@@ -41,8 +42,12 @@ describe('#144 BETA owner academic strict browser client',()=>{
   });
   it('preserves 401/403/503 and never substitutes public demo data after a server error',async()=>{
     for(const [status,code] of [[401,'UNAUTHENTICATED'],[403,'FORBIDDEN'],[503,'PROVIDER_UNAVAILABLE']] as const){
-      const browser=new HufsApiClient(async()=>json({code},status));
+      const browser=new HufsApiClient(async()=>json(makeApiError(code,'SYN-REQUEST'),status));
       await expect(browser.owner.getDoubleMajor()).rejects.toMatchObject({code,status});
     }
+  });
+  it('fail-closes a fake success or malformed 403 envelope to sanitized 503',async()=>{
+    const fake=new HufsApiClient(async()=>json({code:'FORBIDDEN'},403));
+    await expect(fake.owner.getDoubleMajor()).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE',status:503});
   });
 });
