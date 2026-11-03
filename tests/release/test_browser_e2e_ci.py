@@ -87,8 +87,8 @@ class BrowserE2EWorkflowTests(unittest.TestCase):
 
     def test_provider_runtime_imports_are_present_without_private_checkout(self):
         self.assertIn("/packages/ai/src/", ALLOWED)
-        self.assertIn("            /packages/ai/src/\\n", self.workflow)
-        self.assertNotIn("            /packages/ai/\\n", self.workflow)
+        self.assertIn("            /packages/ai/src/", self.workflow.splitlines())
+        self.assertNotIn("            /packages/ai/", self.workflow.splitlines())
 
     def test_unreviewed_paths_fail(self):
         self.assertTrue(audit(self.workflow.replace("            /apps/web/\n",
