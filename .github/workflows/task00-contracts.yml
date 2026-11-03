@@ -38,6 +38,7 @@ jobs:
             /apps/api/
             /infra/sql/
             /infra/ai/
+            /infra/ncp/
             /packages/core/
             /packages/ui/
             /apps/web/
@@ -100,6 +101,8 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+          # Preserve the owner suite's explicit isolated loopback-port guard.
+          - 15439:5432
         options: >-
           --health-cmd "pg_isready -U hufs_local_admin -d postgres"
           --health-interval 10s
@@ -137,7 +140,7 @@ jobs:
           cache: npm
       - name: Install pinned lockfile without dependency lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Create three empty synthetic databases in the disposable service
+      - name: Create four empty synthetic databases in the disposable service
         env:
           HUFS_PG_CI_ADMIN_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/postgres
         run: |
@@ -148,6 +151,7 @@ jobs:
             await pool.query('CREATE DATABASE hufs_one_a2_test');
             await pool.query('CREATE DATABASE hufs_one_full_test');
             await pool.query('CREATE DATABASE hufs_one_calendar_test');
+            await pool.query('CREATE DATABASE hufs_one_owner_academics_test');
           } finally {
             await pool.end();
           }
@@ -162,4 +166,6 @@ jobs:
           HUFS_PG_CALENDAR_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_calendar_test
           HUFS_PG_FULL_LIVE: '1'
           HUFS_PG_FULL_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_full_test
-        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts --reporter=verbose
+          HUFS_PG_OWNER_ACADEMICS_LIVE: '1'
+          HUFS_PG_OWNER_ACADEMICS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_owner_academics_test
+        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts tests/api/pg-owner-academics-live-opt-in.test.ts --reporter=verbose
