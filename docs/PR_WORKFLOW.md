@@ -13,19 +13,16 @@
 
 **예외:** 소유자 승인된 문서-only `README.md`, `STATUS.md`, `AGENTS.md`, `Proposal.md`, `Architecture.md`, `docs/*.md` 정정은 blob SHA 충돌검사 후 직접 main 변경 가능. **코드, CI/workflow, API/DB, 공통 Zod, lockfile, 유료 자원/개인 원본**은 이 예외의 대상이 아닙니다. 2026-11-01의 과거 한시적 작성자 직접 병합 사례는 새 PR의 자동 승인권이 아닙니다.
 
-## 2026-11-03 현재 PR 인수 점검 — 변경 가능한 사실은 STATUS/GitHub 우선
+## 2026-11-03 현재 인수·독립 리뷰 운영 원칙
 
-- **GitHub 일반 이슈 OPEN 34 / CLOSED 7, PR OPEN 14.** #157 Provider 권한·PG RLS(`7ac5a06c`)와 #159 Laya OFF scheduler(`638ed77a`)는 비작성자 최신 HEAD 승인·CI 3/3 뒤 병합 완료. 앞선 #153 메뉴 정본화(`9b5cb81a`)도 main.
-- **#158/#156 병합 완료:** **MERGED `6e2b57de`** — HEAD `fb135017`의 qamarrchae 새 독립 APPROVED·CI 3/3 SUCCESS·미해결 요청 없음 후 squash. SETTLED 결과 저장/RLS·철회 제거 하위만 수락; **MERGED `2e39c86a`** — HEAD `6a26e8f`의 qamarrchae 새 독립 APPROVED·CI 3/3 SUCCESS·미해결 요청 없음 후 squash. SSH-only 합성 Preview 도구만 수락; PowerShell plan-only 실행 PASS, 실 SSH/UFW/NCP 운영은 NOT_RUN.
-- **#160 Raster/OCR → #165 Provider 실행기 → #167 BETA-only HTTP**는 스택 의존 관계다. #160은 이전 `af844271` 승인 이후 main과 CI allowlist 충돌을 `a741e5b`로 비강제 해결(`/infra/ai/`+`/infra/ncp/` 보존), 새 HEAD CI/독립 재승인 필요. #160 main 병합 후 #165의 고유 diff/새 base·CI·리뷰, 이후 #167을 차례로 검증한다. squash로 선행 커밋 ancestry가 달라지는 상황에 주의한다.
-- **#161 Laya IPC**는 #159 이후 main restack CI3/3/승인 대기. **#162 현재 이중전공, #163 EMPTY_DEMO, #164 SourceRevision PG**도 독립 리뷰/CI 통과 후만 병합. **#166** ingress/compose는 Draft·`RELEASE_BLOCKED`; **#150** 대형 WIP 83파일 Draft/충돌이며 분해 없이 병합 금지.
-- **UI #151/#152/#154/#155**는 #153 이후 공통 App/main/graduation/E2E 충돌. #152의 `rowImpacts` malformed array elements 런타임 오류 가능성은 `CHANGES_REQUESTED`로 남아 있어 author의 strict 검증·음성회귀·safe rebase가 필요하다.
-- **GitHub `main` 브랜치 보호는 마지막 관측 `protected=false`**. UI에서 설정이 강제되지 않더라도 위 리뷰·CI·최신 HEAD 규칙을 직접 준수하고, 보안 규칙 변경/우회로 병합을 성사시키지 않는다.
-- 각 PR·이슈의 **부분 완료**는 `main` 병합 및 검증된 범위만 [x]로 표시한다. 사람/기관 원본 권리 #46(기존 privacy 2 FAIL), 독립 gold #61(0/200), 실 OIDC·학교메일·TLS/direct IP/NCP #89(`RELEASE_BLOCKED`)를 합성 CI로 대체하지 않는다. 상세 이력은 Git/PR 기록, 현재 결론은 [STATUS](../STATUS.md).
-
-**#27 신규 선행 PR:** [#168](https://github.com/ot4562-glitch/HUFS-One-AI/pull/168) HEAD `dd2c205`, PostgreSQL 인증 조립 3파일·CI 3/3 PASS·현재 HEAD 사람 독립 승인 대기/미병합. 작성자 및 독립 에이전트 검토는 GitHub 사람 APPROVED의 대체가 아니다. [실패/범위 근거](../STATUS.md); #158/#156은 현 HEAD 재승인 후 병합 완료; #160→#165→#167 순서 유지.
-
-**별도 opt-in SQL 시험의 증거:** #162는 이전 3/3 일반 CI가 실제 Owner PG 시험 실행을 뜻하지 않았다. HEAD `4699269`에서 별도 빈 DB/기존 고정 시험 포트·opt-in을 필수 job에 연결해 **Owner 4/4·전체 PG 46/46 PASS**를 확인했다. 이전 `02268e9` 승인을 새 HEAD 승인으로 이월하지 않는다. [현재 근거](../STATUS.md).
+- **일반 이슈 OPEN 34 / CLOSED 7, PR OPEN 11**, 기준 main `b7acd949`(이후 문서 커밋 시 SHA는 변함). 원본 #150은 **CLOSED/NOT MERGED**이며 83경로 보존 원장은 원본 PR 댓글에 있다. #166은 Draft/운영 배포 금지.
+- #156/#157/#158/#159/#160/#162/#163/#164/#168은 검토된 **코드·합성/일회용 PG 하위 기능만 main 병합**. 이 수락은 학교 원문·실학생·실 Google/OTP·유료 Provider·NCP 운영을 의미하지 않는다.
+- **스택 우선순위:** [#165 Provider runtime](https://github.com/ot4562-glitch/HUFS-One-AI/pull/165) → [#167 BETA HTTP](https://github.com/ot4562-glitch/HUFS-One-AI/pull/167) → [#169 PG 종단](https://github.com/ot4562-glitch/HUFS-One-AI/pull/169). 현재 각각 CI3/3 SUCCESS라도 **현재 HEAD 비작성자 승인 및 부모 main/고유 diff·새 CI**가 없으면 병합 불가. #167 PENDING에 거짓 LIVE provenance를 생성하던 P2는 `4fb29bf`에서 수정·부정 테스트를 추가했으나 기존 CHANGES_REQUESTED는 자동 해소되지 않는다.
+- [#170 실제 SQL CI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/170) HEAD `6eb7c965`: 신규 PG18 loopback job + 기존 CI **4/4 SUCCESS**, revision/EMPTY_DEMO 실제 SQL **6/6 PASS**. [#171 owner PG DI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/171) HEAD `1132c1fe`: synthetic/PG/browser CI **3/3 PASS**, 합성 2,153 PASS. 둘 모두 **독립 승인 대기/미병합**; 이전 CI를 새 HEAD 승인으로 취급 금지.
+- #161 Laya IPC child는 구 HEAD에 비작성자 APPROVED가 있어도 **현 main 충돌**과 Linux cgroup/ONNX NOT_RUN이 남아 있다. UI 작성자 #151/#152/#154/#155는 서로 겹치는 화면 파일을 보호하고 최신 main 재통합·새 CI/승인 전 병합 금지. #152 P2 malformed `rowImpacts` 원소 수정 필수.
+- **협업자 의사결정 요청 처리:** 각 이슈 댓글에서 ① 요청자/선택지 ② 채택/보류 사유 ③ 코드/계약 소유 ④ 인적·기관/운영 별도 게이트 ⑤ 다음 PR/테스트를 명시해 답한다. 답변은 **기술 방향 승인**이지 정식 학사 RulePack·자료권리·프로덕션 배포 승인 아님. 판단 원장은 [STATUS](../STATUS.md)와 [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)·[#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61)·[#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 및 UI 의존 이슈 댓글을 따른다.
+- **리뷰를 기다리며 재조회만 반복하지 않는다:** 실제 새 리뷰/코드/CI 알림이 오면 즉시 반영; 그 외에는 별도 안전한 CODE_PENDING 항목 구현·시험을 진행한다. 단 자신이 작성한 PR을 스스로 독립 승인·강제 병합하는 것은 금지.
+- `RELEASE_BLOCKED`: #46 privacy 2 FAIL, #61 독립 사람 gold 0/200, #89 OIDC/TLS/PG/NCP/원본 권리 실증 미수락. 실제 클라우드/유료 provider/학생 원본 반입은 사전 별도 승인 필요.
 
 ## 원격 브랜치 정리 절차
 
