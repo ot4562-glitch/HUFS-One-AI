@@ -23,6 +23,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/packages/ui/", "/tools/audit_private_git_metadata.py",
     "/tools/private_registry_io.mjs",
     "/tools/strip_build_sourcemaps.mjs",
+    "/tools/check_postgres_migration_plan.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
     "/apps/web/", "/infra/sql/", "/infra/ai/", "/infra/ncp/", "/tests/contracts/", "/tests/consumers/",
@@ -60,6 +61,13 @@ OWNER_ACADEMICS_PG_PROOF = (
     "HUFS_PG_OWNER_ACADEMICS_LIVE: '1'",
     "HUFS_PG_OWNER_ACADEMICS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_owner_academics_test",
     "tests/api/pg-owner-academics-live-opt-in.test.ts",
+)
+MIGRATIONS_PG_PROOF = (
+    "CREATE DATABASE hufs_one_migration_test",
+    "HUFS_PG_MIGRATIONS_LIVE: '1'",
+    "HUFS_PG_MIGRATIONS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_migration_test",
+    "tests/api/pg-migrations-live-opt-in.test.ts",
+    "- name: Build API for live adapter and process restart tests\n        run: npm run build:api",
 )
 
 
@@ -166,6 +174,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("browser cache and loopback preview audit must execute in CI")
     if any(proof not in text for proof in OWNER_ACADEMICS_PG_PROOF):
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
+    if any(proof not in text for proof in MIGRATIONS_PG_PROOF):
+        issues.append("reviewed migration proof must execute against a fresh isolated database")
     if any(proof not in text for proof in REVISION_CLAIMS_PG_PROOF):
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
     if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
@@ -212,6 +222,13 @@ class WorkflowBoundaryTests(unittest.TestCase):
             with self.subTest(proof=proof):
                 self.assertTrue(proof in self.policy, "Missing owner-academics SQL CI prerequisite")
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_reviewed_migration_proof_cannot_silently_skip(self) -> None:
+        for proof in MIGRATIONS_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertTrue(proof in self.policy, "Missing reviewed migration CI prerequisite")
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+        self.assertIn('/tools/check_postgres_migration_plan.mjs', sparse_checkout_lists(self.policy)[1])
 
     def test_revision_claims_sql_proof_cannot_silently_skip(self) -> None:
         for proof in REVISION_CLAIMS_PG_PROOF:
