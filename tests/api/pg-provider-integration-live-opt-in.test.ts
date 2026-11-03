@@ -133,8 +133,8 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     await admin.query('UPDATE api_ai_provider_input_heads SET projection_id=$2 WHERE actor_id=$1',[f.actor,f.projection+'-NEXT']);
     expect((await get(s,auth.cookie,first.jobId)).status).toBe(403);
     expect((await execute(s,auth,f.asOf,'KEY-EPOCH')).status).toBe(503);expect(s.calls).toHaveLength(2);
-    await admin.query(`INSERT INTO source_revisions_vnext(revision_id,source_id,original_sha256,content_sha256,media_kind,source_class,permission_ref,provenance,status,change_kind,fetched_at,last_checked_at,last_verified_at)
-      VALUES($1,$2,$3,$3,'TEXT','SYNTHETIC',$4,'SYNTHETIC','ACTIVE','CORRECTED',clock_timestamp(),clock_timestamp(),clock_timestamp())`,[f.revision+'-NEW',f.source,'e'.repeat(64),f.permission]);
+    await admin.query(`INSERT INTO source_revisions_vnext(revision_id,source_id,supersedes,original_sha256,content_sha256,media_kind,source_class,permission_ref,provenance,status,change_kind,fetched_at,last_checked_at,last_verified_at)
+      VALUES($1,$2,$5,$3,$3,'TEXT','SYNTHETIC',$4,'SYNTHETIC','ACTIVE','CORRECTED',clock_timestamp(),clock_timestamp(),clock_timestamp())`,[f.revision+'-NEW',f.source,'e'.repeat(64),f.permission,f.revision]);
     await admin.query('UPDATE source_ingest_heads SET revision_id=$2 WHERE source_id=$1',[f.source,f.revision+'-NEW']);
     expect((await execute(s,auth,f.asOf,'KEY-NEW-SOURCE')).status).toBe(503);expect(s.calls).toHaveLength(2);await s.stop();
   },30000);
