@@ -126,6 +126,7 @@
 
 - [x] **PR #138** 박준영 저장 시간표 HTML 변환기: 마지막 불완전 행 누락·행별 학기 근거 결함 수정, HEAD `44afcf6` 독립 승인·Actions 합성/PG/Chrome **3/3 SUCCESS**, main `605144c` 병합. **로컬 변환기 하위 기능 완료**, 학교 실제 데이터 이용권/수강 DB 연동·전체 졸업 요건은 [ ].
 - [x] **PR #142** 심민성 merged-branch dry-run/명시적 삭제 도구: HEAD `53039bd` 김채윤 독립 승인·Actions **3/3 SUCCESS**, main `719c576` 병합. **도구 코드 완료**, 실제 원격 삭제 **0건/미실행**.
+- [x] **PR #146** 김채윤 추천 토픽 후보 quote 최소 길이 fail-closed: HEAD `61245ae` 심민성 비작성자 APPROVED·Actions 합성/PG/Chrome 3/3 SUCCESS 후 **main squash `ff226929` 병합**. 1글자·공백 인용 거부 및 NFC 회귀 하위 코드만 수락. 독립 200 gold·토픽 의미/기관 권리·실서비스 추천 검증 [ ].
 - [x] **PR #145** 심민성 OCR/HCX offline wire: 요청·응답/좌표/인용·usage/허용 토큰 검증 코드, HEAD `633d665` 합성/PG/Chrome **3/3 SUCCESS**, 기술 총괄 최신 HEAD `COMMENT` 리뷰 제출. **현재 HEAD 타인 승인/병합 [ ]**, 실제 NCP HTTP/키·budget·tokenizer·권한/철회 transport·20포스터·#88/#143 [ ].
 - [ ] **PR #131** 이의상 실제 route unmount/remount GET 경합 및 REVIEWER capability 오류→BETA 오분류, `CHANGES_REQUESTED`. [ ] **PR #134** 이의상 독립 시연 프로필 UI는 #131에 스택, 실제 owner API/Chrome·새 HEAD 승인 필요.
 - [ ] **이슈 #144** 현재 이중전공 졸업요건 표시: 기존 #74/#137/#139 합성 계약을 재사용하되, 실제 공식 RulePack·중복학점·권한/actor/상태별 화면·접근성 미구현. #82의 가정 What-if와 다른 요구.
