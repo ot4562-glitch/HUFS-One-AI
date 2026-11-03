@@ -144,8 +144,8 @@ def audit_ci_boundary(text: str) -> list[str]:
             issues.append("synthetic job omits release policy tests or workflow")
         if any("/infra/sql/" not in paths or "/tests/api/" not in paths for paths in sparse[1:]):
             issues.append("disposable PostgreSQL checkout lacks tests/migrations")
-        if "/apps/web/" not in sparse[-1]:
-            issues.append("real EMPTY_DEMO PG browser E2E must include the owned browser client source")
+        if any("/apps/web/" not in paths for paths in sparse[1:]):
+            issues.append("both real PostgreSQL jobs must checkout the reviewed browser client")
 
     for directory in EXCLUDED_DIRECTORIES:
         if text.count(f"test ! -d {directory}") != 3:
