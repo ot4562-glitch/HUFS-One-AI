@@ -61,6 +61,7 @@
 
 - 소스: GitHub `main` 승인 HEAD SHA, 작성자 외 PR 리뷰/필수 CI 링크·결론; 깨끗한 소스 확인.
 - 로컬 Windows 준비: `powershell -ExecutionPolicy Bypass -File .\infra\ncp\Prepare-NcpPreview.ps1` → `local_only/ncp-preview.zip` SHA256 (비밀 없는 해시만 기록).
+- **Windows 선택 자동화:** 승인된 서버/bootstrap 후 `Deploy-NcpPreview.ps1`의 `-Apply`로 SHA ZIP/WinSCP/plink를 한 명령으로 실행할 수 있음. 기본 계획-only; 실제 Windows·NCP 수행 `NOT_RUN`. 서버 IP·개인키 **경로**·검증한 SSH host-key 지문만 인수인계하며 개인키/암호 원문은 절대 공유하지 않음.
 - 전송: WinSCP SFTP → `/home/hufs-admin/ncp-preview.zip` (저장소 전체 clone/CSV/Forms/real 자료 업로드 금지).
 - 실행: `sudo /usr/local/sbin/hufs-preview-deploy <SHA256>`; 실제 서버 미승인/미접속이면 **NOT_RUN**.
 - 검사: SSH 터널만 성공, `systemctl status hufs-preview`, `journalctl -u hufs-preview -n 30`, `ss -ltnp`, SSH 외 외부 포트 닫힘, 합성 계정/개인정보 유출 없음. 현재 합성 스모크는 실서비스 E2E의 대체가 아님.
