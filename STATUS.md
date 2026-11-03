@@ -8,7 +8,7 @@
 | --- | --- |
 | 저장소 | **Private**, 독립 HUFS One AI 학생 정보 탐색·개인화 팀 프로젝트. 공식 HUFSAbility 개편/학교 운영 아님 |
 | 코드 | TypeScript/Zod·Fastify/API·React/Vite·추천/학업 순수 코어·합성 데모/권한 검증, 오프라인 CLOVA wire와 AI 비용 원장 main |
-| PR | **OPEN 2**: [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) 빈 시연 UI main 재기반 충돌, [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) owner provider/Laya/API **Draft·통합 충돌·독립 승인 대기** |
+| PR | **OPEN 7(2026-11-03 관측):** [#150 owner/provider/Laya Draft](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) · [#151–155 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pulls) · [#156 NCP 안전 합성 미리보기 Draft](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156). [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134)는 **CLOSED/미병합**. 최신 상태는 [열린 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls) 기준 |
 | 이슈 | **OPEN 34 / CLOSED 7** (기능 전체 게이트 미완료이므로 상위 이슈 임의 종료 없음) |
 | 담당자별 전수 | [WORKSTREAMS의 34건 원장](docs/WORKSTREAMS.md): **심민성 17 · 이의상 11 · 김채윤 2 · 박준영 2 · 이서연 2**. 주관 정확히 1명/이슈, 미배정·중복 0. 공동 담당 11건은 기존 assignees 보존하고 GitHub 본문에 주관/협업 분리 |
 | 공개·운영 | **RELEASE_BLOCKED** — [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) Private Git 자료 게시/권한 감사 및 [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실제 OIDC/TLS/PG/NCP/권한 E2E 미완료 |
@@ -20,7 +20,7 @@
 | [#145 오프라인 OCR/HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) | **MERGED `cade7c9b`**. HEAD `633d665` 김채윤 최신 HEAD 비작성자 APPROVED·합성/일회용 PG/Chrome CI **3/3 SUCCESS**. 직렬화·bbox/인용/usage 검사만 수락, 실제 네트워크·가격·원본 승인 아님 |
 | [#148 PostgreSQL 비용 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) | **MERGED `e102516`**. HEAD `54f09c6` 이의상·김채윤 비작성자 APPROVED·합성/일회용 PG/Chrome CI **3/3 SUCCESS**. 원자 비용/시도 예약·멱등/UNKNOWN_BILLING/kill switch 코드만; migration 적용/운영·실과금 아님 |
 | [#131 BETA 설정 비교 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | **MERGED `6efc532`**. HEAD `8254dc17` 과거 두 P2(route remount GET 경합·REVIEWER capabilities 장애→BETA 오분류) 수정, 심민성 비작성자 APPROVED·합성/PG/Chrome CI **3/3 SUCCESS**. 합성/역할 격리 UI, 실학교 로그인 아님 |
-| [#134 빈 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | **OPEN/충돌**. HEAD `eb376ca`, base를 #131 브랜치→`main`으로 전환했으나 GitHub `mergeable_state=dirty`(squash #131 중복/19파일). synthetic UI CI 3/3 성공 이력은 인정하되, 작성자 고유 diff 재기반·최신 HEAD 리뷰/CI 후 병합 |
+| [#134 빈 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | **CLOSED/미병합**(2026-11-03 현재). 과거 main 중복·충돌/합성 CI는 역사적 진척일 뿐 main에 병합된 수락 증거가 아니다. 필요 기능은 #132/현재 열린 UI PR과 main 코드 차이를 확인한 후 별도 승인·CI로 통합 |
 | [#149 시간표 CSV 내보내기](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) | **MERGED `efa13368`**. HEAD `f797787`에서 P2 `UNKNOWN` 캠퍼스 임의 확정 수정·음성 회귀, 심민성 **비작성자 APPROVED**, 동일 HEAD 합성/일회용 PG/Chrome **3/3 SUCCESS**. 학교 원본/허가·실데이터 등록이 아니라 **로컬 CSV/handoff만** |
 | [#150 owner 통합 WIP](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) | **Draft/충돌/미승인**, HEAD `2812806`, 합성/일회용 PG/Chrome CI 3/3 SUCCESS. provider authority·bounded transport/취소/결과 저장, Laya/raster child worker, 이중전공·시연 API, 비공개 배포 템플릿 **제안 코드**. #145/#148/#131 병합 뒤 중복/충돌·비작성자 승인 0 → main 미병합 |
 
