@@ -8,6 +8,7 @@ import {
   RetrievalEnvelopeVNextSchema,
   DemoPreflightStateSchema,DemoPreflightReportSchema,
   DemoOverlayPutSchema,DemoOverlayResetSchema,DemoOverlayStateSchema,CalendarResultSchema,
+  ApprovedProviderInputsSchema,
 } from '@hufs-one/contracts';
 import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectionSchema} from '@hufs-one/contracts';
 import type {FastifyRequest} from 'fastify';
@@ -715,6 +716,17 @@ export function createApi(options:ApiOptions) {
     return result;
   });
 
+  app.get('/api/ai/approved-inputs',async(req)=>{
+    const actor=principal(req);
+    if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
+    if(!options.approvedAiInputs)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await recheckCurrent(req,actor);
+    try {
+      const result=ApprovedProviderInputsSchema.parse(await options.approvedAiInputs.list(actor));
+      await recheckCurrent(req,actor);
+      return result;
+    }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+  });
   app.post('/api/ai/:task',async(req,reply)=>{
     const actor=principal(req);
     const {task:taskPath}=AiPathParams.parse(req.params);

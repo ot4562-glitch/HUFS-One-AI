@@ -106,6 +106,8 @@ export interface ApiOptions {
   /** Explicit server-only adapter; default absent, never started by import or env. */
   realAi?:{phaseId:string;operation:'HCX_005'|'HCX_007';
     executor:Pick<ReturnType<typeof import('./modules/ai/provider-runtime.js').createProviderExecutor>,'execute'|'readJob'>};
+  /** Exact-current-actor, independently approved input metadata. No packet/media or credentials. */
+  approvedAiInputs?:{list(actor:VerifiedActor):Promise<import('@hufs-one/contracts').ApprovedProviderInputs>};
   maxSyntheticAiCallsPerActor?: number;
   /** Server-owned, rights/scope/head-bound revision metadata; never raw source bodies. */
   sourceHistory?:{

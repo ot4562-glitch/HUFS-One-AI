@@ -1,12 +1,13 @@
 import {z} from 'zod';
-import {AiTaskSchema} from './index.js';
+// Keep the four tasks byte-equivalent to AI_TASK_PATHS in index.ts.
+const Task=z.enum(['experience_skills','opportunity_terms','personal_action_brief','graduation_explanation']);
 import {TopicCodeSchema} from '../topics/index.js';
 
 /** Server-approved metadata, not original packet/media, data rights or a price quote. */
 export const ApprovedProviderInputSchema=z.strictObject({
   inputRef:z.string().regex(/^[A-Za-z0-9_-]{1,90}$/),
   operation:z.enum(['HCX_005','HCX_007']),
-  task:AiTaskSchema,
+  task:Task,
   asOf:z.iso.datetime({offset:true}),
   expiresAt:z.iso.datetime({offset:true}),
 }).refine(item=>Date.parse(item.asOf)<Date.parse(item.expiresAt));
@@ -24,7 +25,7 @@ export const ProviderAcceptedSchema=z.discriminatedUnion('state',[
     provenance:z.enum(['LIVE','CANDIDATE_CACHE'])}),
 ]);
 export const ProviderCandidateSchema=z.strictObject({
-  task:AiTaskSchema,reviewRequired:z.literal(true),reviewState:z.literal('NEEDS_REVIEW'),
+  task:Task,reviewRequired:z.literal(true),reviewState:z.literal('NEEDS_REVIEW'),
   citations:z.array(z.strictObject({
     sourceToken:z.string().min(1).max(128),
     paragraphId:z.string().min(1).max(128),

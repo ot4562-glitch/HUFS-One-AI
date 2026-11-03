@@ -73,6 +73,7 @@ interface SharedDependencies {
   syntheticAiProvider?:AiCandidateProvider;
   /** Explicit only; no integration-default provider, no live NCP on import. */
   realAi?:ApiOptions['realAi'];
+  approvedAiInputs?:ApiOptions['approvedAiInputs'];
   now?:()=>string;
   maxSyntheticAiCallsPerActor?:number;
   /** Server-owned, current source rights. Never supplied by a browser. */
@@ -169,6 +170,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     }:{}),
     ...(deps.syntheticAiProvider?{syntheticAiProvider:deps.syntheticAiProvider}:{}),
     ...(deps.realAi?{realAi:deps.realAi}:{}),
+    ...(deps.approvedAiInputs?{approvedAiInputs:deps.approvedAiInputs}:{}),
     ...(deps.maxSyntheticAiCallsPerActor!==undefined
       ?{maxSyntheticAiCallsPerActor:deps.maxSyntheticAiCallsPerActor}:{}),
     ...(deps.now?{now:deps.now}:{}),
