@@ -5,12 +5,14 @@ const Utc=z.iso.datetime({offset:true});
 /** Single already-visible candidate only. Browser input never grants access. */
 export const OpportunityExplanationRequestSchema=z.strictObject({
   asOf:Utc,sourceRevisionId:Ref,rankConfigVersion:Ref,
+  /** Optional binding to the exact current own-account feed inputs. */
+  expectedFeedVersion:z.string().regex(/^[a-f0-9]{64}$/).optional(),
 });
 export const OpportunityExplanationReasonSchema=z.enum([
   'HIDDEN_BY_USER','DEADLINE_PASSED','ELIGIBILITY_NOT_MET','SOURCE_NEEDS_REVIEW',
   'LOW_RELEVANCE','OUTRANKED','GROUP_CAP','DIVERSITY','NO_PERSONAL_INPUT','NOT_EVALUATED',
 ]);
-const Base={opportunityId:Ref,...OpportunityExplanationRequestSchema.shape,
+const Base={opportunityId:Ref,asOf:Utc,sourceRevisionId:Ref,rankConfigVersion:Ref,
   provenance:z.literal('CODE_RULES')};
 export const OpportunityExplanationResponseSchema=z.discriminatedUnion('state',[
   z.strictObject({...Base,state:z.literal('FEATURED'),evidenceRefs:z.array(Ref).max(30)}),

@@ -16,10 +16,11 @@ afterEach(async()=>{await Promise.all(apps.map(a=>a.close()));apps.length=0;});
 function harness(){
   const seen:string[]=[];let allowed=true,current=true,enabled=true,approved=true;
   let value:unknown=explanation;
+  let snapshotVersion:string|undefined='a'.repeat(64);
   let onPreauthorize=()=>{},onSourceRecheck=()=>{};
   const source:TrustedOpportunityExplanationSource={
     inspect:async input=>{seen.push('inspect:'+input.actorId);return {explanation:value,
-      receipt:'SYN-SOURCE-RECEIPT',coreVersion:'SYN-CORE-117'};},
+      receipt:'SYN-SOURCE-RECEIPT',coreVersion:'SYN-CORE-117',...(snapshotVersion?{snapshotVersion}:{})};},
     revalidate:async()=>{seen.push('source-recheck');onSourceRecheck();return current;},
   };
   const rights:TrustedOpportunityExplanationRights={
@@ -43,6 +44,13 @@ function harness(){
     onSourceRecheck:(hook:()=>void)=>{onSourceRecheck=hook;}};
 }
 describe('#86 safe visible-opportunity explanations',()=>{
+  it('binds an optional expected owner-feed version without echoing it as an explanation field',async()=>{
+    const same=harness(),ok=await same.post({...query,expectedFeedVersion:'a'.repeat(64)});
+    expect(ok.statusCode).toBe(200);expect(ok.json()).toEqual(explanation);
+    const changed=harness(),conflict=await changed.post({...query,expectedFeedVersion:'b'.repeat(64)});
+    expect(conflict.statusCode).toBe(409);expect(conflict.json().code).toBe('VERSION_CONFLICT');
+    expect(changed.seen).toEqual(['preauthorize','inspect:'+actor.actorId]);
+  });
   it('returns a strict code decision with no private facts, scores or candidate count',async()=>{
     const h=harness(),r=await h.post();expect(r.statusCode).toBe(200);
     expect(r.json()).toEqual(explanation);expect(r.headers['cache-control']).toBe('no-store');

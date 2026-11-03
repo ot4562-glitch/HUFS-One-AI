@@ -34,6 +34,8 @@ import {createPostgresOwnerDoubleMajorServices} from './modules/academics/owner-
 import {PostgresApprovedRevisionClaims} from './modules/opportunities/approved-revision-claims-postgres.js';
 import {DemoProfileService} from './modules/profiles/demo-profile.js';
 import {PostgresDemoProfileStore} from './modules/profiles/demo-profile-postgres.js';
+import {createPostgresOwnerRecommendations} from './modules/opportunities/owner-recommendations-postgres.js';
+import type {ApprovedOwnerRecommendationGate,OwnerRecommendationAuthority} from './modules/opportunities/owner-feed-http.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -61,6 +63,10 @@ export interface PostgresPlatformConfig {
   sourceReview?:{pool:ReviewerSqlPool;authority:SourceReviewAuthority};
   /** SELECT-only approved owner projections; no intake promotion or default authority. */
   ownerCatalog?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  /** Own profile/current topic approvals + the same approved opportunity catalog.
+   * Separate SELECT-only role and independently reviewed core activation. */
+  ownerRecommendations?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;ownerAuthority:OwnerRecommendationAuthority;
+    approval:ApprovedOwnerRecommendationGate};
   /** Separate source/permission and academic activation authorities remain mandatory. */
   studyPlanCheck?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
     rights:TrustedOwnerStudyPlanRights;approvalGate:ApprovedStudyPlanGate};
@@ -90,6 +96,7 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.ownerRecommendations?createPostgresOwnerRecommendations({...config.ownerRecommendations,now}):{}),
     ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
     ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights}}:{}),
     ...(config.demoProfile?{demoProfile:new DemoProfileService(

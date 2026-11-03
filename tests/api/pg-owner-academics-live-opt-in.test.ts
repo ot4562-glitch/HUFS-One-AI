@@ -2,6 +2,8 @@
  * never resets/drops a database or changes application/production resources. */
 import {readFileSync} from 'node:fs';
 import {createHash,randomBytes} from 'node:crypto';
+import {spawn} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {doubleMajorInput} from './owner-double-major-fixture.js';
@@ -12,14 +14,18 @@ import {PostgresEvidenceRightsResolver} from '../../apps/api/src/modules/opportu
 import {canonicalProjectionHash} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {OwnerCatalogAuthority} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
+import {createIntegratedApi} from '../../apps/api/src/integration.js';
+import {createPostgresPlatformServices} from '../../apps/api/src/platform-postgres.js';
+import {ownerOpportunity} from './owner-recommendations-fixture.js';
 
 const RUN=process.env.HUFS_PG_OWNER_ACADEMICS_LIVE==='1';
 const pools:Pool[]=[];
 const password=randomBytes(24).toString('hex');
-let admin:Pool,reader:Pool;
+let admin:Pool,reader:Pool,writer:Pool;
 const now=()=>new Date().toISOString();
 const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
+  '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql',
   '20261101_owner_approved_catalog.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{
   const client=await pool.connect();return {query:async(sql,params=[])=>({rows:(await client.query(sql,[...params])).rows}),release:()=>client.release()};
@@ -55,11 +61,17 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     await admin.query(`CREATE ROLE hufs_test_owner_academics LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
       GRANT USAGE ON SCHEMA public TO hufs_test_owner_academics;
       GRANT SELECT ON api_owner_approved_projections,api_owner_approved_heads,api_owner_projection_revocations,
-        api_self_consents,api_self_workspace_records,source_revisions_vnext,source_effective_revisions_vnext,
+        api_self_consents,api_self_profiles,api_self_workspace_records,api_experience_tag_approvals,source_revisions_vnext,source_effective_revisions_vnext,
         source_ingest_heads,source_review_attestations_vnext,source_rights_receipts,source_rights_revocations,
         source_actor_scope_receipts,source_actor_scope_revocations TO hufs_test_owner_academics;
       GRANT SELECT(revision_id,original_sha256) ON source_originals_vnext TO hufs_test_owner_academics;`);
     reader=pool(url,'hufs_test_owner_academics');
+    await admin.query(`CREATE ROLE hufs_test_owner_recommendation_writer LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+      GRANT USAGE ON SCHEMA public TO hufs_test_owner_recommendation_writer;
+      GRANT SELECT,INSERT,UPDATE ON api_self_consents TO hufs_test_owner_recommendation_writer;
+      GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_profiles,api_self_workspace_records,api_experience_tag_approvals TO hufs_test_owner_recommendation_writer;
+      GRANT INSERT ON api_self_consent_events,api_self_workspace_events,api_experience_tag_events TO hufs_test_owner_recommendation_writer;`);
+    writer=pool(url,'hufs_test_owner_recommendation_writer');
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(value=>value.end()));},10000);
 
@@ -151,4 +163,114 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     expect(result.check).toMatchObject({term,termLoadCreditUnits:0,creditCapUnits:36});
     expect(await source.revalidate({actorId:f.actorId,receipt:result.receipt,now:now()})).toBe(true);
   });
+  it('connects owner CRUD, explicit experience approval, feed/explanation and two real process lifetimes',async()=>{
+    const f=await seed('RECOMMENDATIONS'),origin='https://synthetic.invalid',token=randomBytes(32).toString('hex');
+    const actor={actorId:f.actorId,role:'BETA' as const,sessionIdHash:token,csrfToken:token,betaAllowed:true,
+      sessionExpiresAt:f.expires,schoolMailProofExpiresAt:f.expires};
+    let identity:typeof actor|null=actor,ownerAllowed=true,coreApproved=true;
+    let duringApproval:(()=>Promise<void>)|undefined;
+    for(const [id,topics] of [['SYN-A',['AI_ML']],['SYN-B',['TRADE_OVERSEAS']]] as const){
+      const opportunity={...ownerOpportunity(id,[...topics]),sourceSnapshotId:f.revisionId,applyClosesAt:f.expires,
+        conditions:id==='SYN-A'?[{field:'cohort' as const,operator:'GTE' as const,value:2024,evidenceId:'SYN-COHORT'}]:[]};
+      await f.insert('OPPORTUNITY',id,{opportunity,source:{sourceId:f.sourceId,revisionId:f.revisionId,
+        permissionRef:f.permissionRef,status:'SYNTHETIC'}},f.actorId+'-'+id);
+    }
+    const mayOwn=async({actorId}:{actorId:string})=>ownerAllowed&&actorId===f.actorId;
+    const sql=adapter(reader),write=adapter(writer),rights=new PostgresEvidenceRightsResolver(sql);
+    const open=()=>createIntegratedApi({allowedOrigin:origin,now,
+      ...createPostgresPlatformServices({pools:{projections:sql,calendar:sql,evidence:sql,personal:write},evidenceRights:rights,
+        selfAccount:{pool:write,authority:{mayAccess:mayOwn}},ownerWorkspace:{pool:write,authority:{mayOperate:mayOwn}},
+        experienceApproval:{pool:write,authority:{mayOperate:mayOwn}},ownerRecommendations:{pool:sql,authority:f.authority,
+          ownerAuthority:{mayRead:mayOwn},approval:{isApproved:async()=>{await duringApproval?.();return coreApproved;}}},now}),
+      auth:{verifySession:async()=>identity,revokeSession:async()=>{}}});
+    const app=open();
+    const headers={origin,'x-csrf-token':token};
+    const profile={displayName:'SYN-PRIVATE-NAME',interestTopics:['AI_ML'],desiredJobTopics:[]};
+    const experience={kind:'EXPERIENCE',dataMode:'OWNER_CONSENTED',state:'DRAFT',title:'SYN-PRIVATE-EXPERIENCE',summary:'SYN-PRIVATE-BODY'};
+    const feed=async()=>{
+      // Both PG and Node use the host clock, but Windows exposes different
+      // precision. Establish that the HTTP asOf is AFTER all completed writes;
+      // the separate old-asOf assertion below still requires a 409.
+      const observed=(await admin.query('SELECT clock_timestamp() AS at')).rows[0]!.at as Date;
+      const deadline=Date.now()+1000;
+      while(Date.now()<=observed.getTime()){
+        if(Date.now()>deadline)throw new Error('Synthetic database/API clocks disagree');
+        await new Promise(resolve=>setTimeout(resolve,2));
+      }
+      const response=await app.inject({url:'/api/owner/feed'});expect(response.statusCode,response.body).toBe(200);return response.json();
+    };
+    try{
+      expect((await app.inject({method:'PATCH',url:'/api/profile',payload:{expectedVersion:0,value:profile}})).statusCode).toBe(403);
+      const saved=await app.inject({method:'PATCH',url:'/api/profile',headers,payload:{expectedVersion:0,value:profile}});
+      expect(saved.statusCode,saved.body).toBe(200);
+      const first=await feed();expect(first.feed.featured.map((c:any)=>c.opportunityId)).toEqual(['SYN-A']);
+      expect(first.feed.featured[0].eligibility).toBe('ELIGIBLE');
+      const explain=(snapshot:any)=>({asOf:snapshot.feed.asOf,sourceRevisionId:f.revisionId,
+        rankConfigVersion:snapshot.rankConfigVersion,expectedFeedVersion:snapshot.version});
+      const reason=await app.inject({method:'POST',url:'/api/opportunities/SYN-B/explanation',headers,payload:explain(first)});
+      expect(reason.statusCode,reason.body).toBe(200);expect(reason.json()).toMatchObject({state:'NOT_FEATURED',reason:'LOW_RELEVANCE'});
+      expect(reason.body+JSON.stringify(first)).not.toMatch(/SYN-PRIVATE|actorId|profile_json|sourceReceipt/);
+      const created=await app.inject({method:'POST',url:'/api/experience/cards',headers,payload:{itemId:'SYN-EXP',value:experience}});
+      expect(created.statusCode,created.body).toBe(201);
+      const approve=async(version:number,content:number)=>app.inject({method:'PUT',url:'/api/experience/cards/SYN-EXP/tag-approval',headers,
+        payload:{expectedApprovalVersion:version,expectedContentVersion:content,expectedConsentVersion:1,topics:['TRADE_OVERSEAS']}});
+      const approved=await approve(0,1);expect(approved.statusCode,approved.body).toBe(200);
+      const second=await feed();expect(new Set(second.feed.featured.map((c:any)=>c.opportunityId))).toEqual(new Set(['SYN-A','SYN-B']));
+      expect(second.version).not.toBe(first.version);
+      const edited=await app.inject({method:'PATCH',url:'/api/experience/cards/SYN-EXP',headers,payload:{expectedVersion:1,value:{...experience,summary:'SYN-PRIVATE-EDIT'}}});
+      expect(edited.statusCode,edited.body).toBe(200);
+      expect((await feed()).feed.featured.map((c:any)=>c.opportunityId)).toEqual(['SYN-A']);
+      const inactive=(await app.inject({url:'/api/experience/cards/SYN-EXP/tag-approval'})).json().approval;
+      expect(inactive.state).toBe('INACTIVE');
+      const again=await approve(inactive.version,2);expect(again.statusCode,again.body).toBe(200);
+      expect((await app.inject({method:'PATCH',url:'/api/profile',headers,payload:{expectedVersion:1,value:{...profile,interestTopics:[]}}})).statusCode).toBe(200);
+      const final=await feed();expect(final.feed.featured.map((c:any)=>c.opportunityId)).toEqual(['SYN-B']);
+      expect((await app.inject({method:'POST',url:'/api/opportunities/SYN-B/explanation',headers,
+        payload:{...explain(final),expectedFeedVersion:first.version}})).statusCode).toBe(409);
+      expect((await app.inject({url:'/api/owner/feed?asOf='+encodeURIComponent(first.feed.asOf)})).statusCode).toBe(409);
+
+      // Each fork imports the actual built API in a fresh Node OS process.
+      const readerUrl=databaseUrl();readerUrl.hostname='127.0.0.1';readerUrl.username='hufs_test_owner_academics';readerUrl.password=password;
+      const restartRead=async()=>{
+        const child=spawn(process.execPath,[fileURLToPath(new URL('./fixtures/owner-recommendations-pg-server.mjs',import.meta.url))],{
+          windowsHide:true,stdio:['ignore','ignore','ignore','ipc'],
+          env:{SystemRoot:process.env.SystemRoot,PATH:process.env.PATH,HUFS_SYN_REC_FIXTURE:'1',HUFS_SYN_REC_URL:readerUrl.toString(),
+            HUFS_SYN_REC_ACTOR:f.actorId,HUFS_SYN_REC_TOKEN:token,HUFS_SYN_REC_EXPIRES:f.expires}});
+        let exited=false;const exit=new Promise<void>(resolve=>child.once('close',()=>{exited=true;resolve();}));
+        const startup=new Promise<number>((resolve,reject)=>{
+          child.once('error',()=>reject(new Error('Synthetic child launch failed')));
+          child.once('close',()=>reject(new Error('Synthetic child exited before ready')));
+          child.once('message',(message:any)=>Number.isInteger(message?.port)?resolve(message.port):reject(new Error('Synthetic child unavailable')));
+        });
+        const deadline=setTimeout(()=>{child.kill();},15_000);
+        try{
+          const port=await startup,url=`http://127.0.0.1:${port}/api/owner/feed?asOf=${encodeURIComponent(final.feed.asOf)}`;
+          const denied=await fetch(url,{headers:{cookie:'synthetic_session=wrong'},signal:AbortSignal.timeout(5000)});expect(denied.status).toBe(401);
+          const response=await fetch(url,{headers:{cookie:`synthetic_session=${token}`},signal:AbortSignal.timeout(5000)});
+          expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toBe('no-store');
+          expect(await response.json()).toEqual(final);
+        }finally{
+          if(!exited&&child.connected)child.send('STOP');
+          await exit;clearTimeout(deadline);
+        }
+      };
+      await restartRead();await restartRead();
+      const other={...actor,actorId:'SYN-FOREIGN'};identity=other;
+      expect((await app.inject({url:'/api/owner/feed'})).statusCode).toBe(403);identity=actor;
+      ownerAllowed=false;expect((await app.inject({url:'/api/owner/feed'})).statusCode).toBe(403);ownerAllowed=true;
+      coreApproved=false;expect((await app.inject({url:'/api/owner/feed'})).statusCode).toBe(503);coreApproved=true;
+      const withdrawn=await app.inject({method:'PUT',url:'/api/consents',headers,payload:{expectedVersion:1,
+        choices:{personalStorage:false,teamReview:false,externalAi:false,ncpStorage:false,presentation:false}}});
+      expect(withdrawn.statusCode,withdrawn.body).toBe(200);
+      expect((await app.inject({url:'/api/owner/feed'})).statusCode).toBe(403);
+      expect((await app.inject({method:'POST',url:'/api/opportunities/SYN-B/explanation',headers,payload:explain(final)})).statusCode).toBe(403);
+      // Restore consent only through a new explicit synthetic owner action.
+      const restored=await app.inject({method:'PUT',url:'/api/consents',headers,payload:{expectedVersion:2,
+        choices:{personalStorage:true,teamReview:false,externalAi:false,ncpStorage:false,presentation:false}}});
+      expect(restored.statusCode,restored.body).toBe(200);
+      expect((await feed()).feed.featured).toEqual([]); // no resurrected private profile/topics
+      duringApproval=async()=>{duringApproval=undefined;await admin.query("INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref) VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-REVOKED')",[f.actorId+'-RIGHTS']);};
+      expect((await app.inject({url:'/api/owner/feed'})).statusCode).toBe(403);
+    }finally{await app.close();}
+  },60000);
 });

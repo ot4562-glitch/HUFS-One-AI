@@ -7,6 +7,7 @@ import type {OpportunityExplanationRequest,OpportunityExplanationResponse} from 
 import {ApiFailure} from '../auth/gates.js';
 import {betaActor,betaRecheck} from '../profiles/self-account-http.js';
 import type {BetaRouteVerifier} from '../profiles/self-account-http.js';
+import {OwnerRecommendationVersionConflict} from './owner-recommendations.js';
 
 type Query=OpportunityExplanationRequest&{actorId:string;opportunityId:string;now:string};
 /** Adapter to the reviewed recommendation core, not a model explanation.
@@ -14,7 +15,7 @@ type Query=OpportunityExplanationRequest&{actorId:string;opportunityId:string;no
  * A missing or unreviewed core is unavailable, never a guessed reason.
  */
 export interface TrustedOpportunityExplanationSource {
-  inspect(input:Query):Promise<{explanation:unknown;receipt:string;coreVersion:string}>;
+  inspect(input:Query):Promise<{explanation:unknown;receipt:string;coreVersion:string;snapshotVersion?:string}>;
   revalidate(input:{actorId:string;receipt:string;now:string}):Promise<boolean>;
 }
 export interface TrustedOpportunityExplanationRights {
@@ -47,13 +48,19 @@ export function registerOpportunityExplanationRoutes(options:{
     if(!source||!rights||!approval)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const input={...query,opportunityId,actorId:actor.actorId,now:session.now()};
     const available=async<T>(perform:()=>Promise<T>):Promise<T>=>{
-      try{return await perform();}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+      try{return await perform();}catch(error){
+        if(error instanceof OwnerRecommendationVersionConflict)throw new ApiFailure('VERSION_CONFLICT');
+        throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      }
     };
     if(await available(()=>rights.mayInspect(input))!==true)throw new ApiFailure('FORBIDDEN');
     await betaRecheck(request,session,actor);
     const raw=await available(()=>source.inspect(input));
     if(!raw||!Receipt.safeParse(raw.receipt).success||!Ref.safeParse(raw.coreVersion).success)
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    if(raw.snapshotVersion!==undefined&&!/^[a-f0-9]{64}$/.test(raw.snapshotVersion))throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    if(query.expectedFeedVersion!==undefined&&raw.snapshotVersion!==query.expectedFeedVersion)
+      throw new ApiFailure('VERSION_CONFLICT');
     const parsed=OpportunityExplanationResponseSchema.safeParse(raw.explanation);
     if(!parsed.success)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const safe=parsed.data;
