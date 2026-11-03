@@ -1,9 +1,10 @@
 import type {PageRenderer} from '../App.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, buildGraduationView, buildOutlookView} from '../features/graduation/graduationView.js';
+import {InAppLink} from '../shell/AppShell.js';
 import {Badges, NOT_SHARED_TEXT, NoSnapshot, Section, screenViewOf} from './parts.js';
 
 /** 졸업: graduation support + 개설 전망 (A11.1: outlook lives inside the 졸업 tab). */
-export const graduationPage: PageRenderer = ({path, state}) => {
+export const graduationPage: PageRenderer = ({path, state, services, navigate}) => {
   if (path !== '/graduation') return null;
   const view = screenViewOf(state);
   if (!view) return {title: '졸업', body: <NoSnapshot state={state} />};
@@ -32,6 +33,7 @@ export const graduationPage: PageRenderer = ({path, state}) => {
                   </>
                 )}
                 {g.caveats.length > 0 && <ul className="muted">{g.caveats.map(c => <li key={c}>{c}</li>)}</ul>}
+                {services.whatIf && <p><InAppLink to="/graduation/what-if" navigate={navigate}>전공을 바꾸면? 가정 분석해 보기</InAppLink></p>}
               </>
             );
           })()}

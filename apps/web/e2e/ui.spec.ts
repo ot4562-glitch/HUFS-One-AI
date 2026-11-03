@@ -193,3 +193,17 @@ test('invite page on a non-canonical origin never renders or uses a fragment cod
   expect(await page.content()).not.toContain(code.slice(0, 20) + 'AAAAAAAAAAAAAAAAAAAAAAA');
   await expect(page.locator('details.selector')).toHaveCount(0);
 });
+
+test('#82 전공 가정 분석 at 360px: keyboard-only submit, labelled result, no page overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/graduation');
+  await pick(page, 0);
+  await page.getByRole('link', {name: '전공을 바꾸면? 가정 분석해 보기'}).click();
+  const p = page.getByRole('region', {name: '전공을 바꾸면? 가정 분석'});
+  await p.getByRole('button', {name: '가정 분석하기'}).focus();
+  await page.keyboard.press('Enter');
+  await expect(p.getByRole('row', {name: /SYN-STAT-CORE: 새로 생기는 요건/})).toBeVisible();
+  await expect(p.getByText('합성 예시')).toBeVisible();
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
