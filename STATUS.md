@@ -8,7 +8,7 @@
 | --- | --- |
 | 코드 | React/Vite + Fastify + TypeScript/Zod + 순수 추천/학업 코어·합성 시험 구현 진행 |
 | 통합 | #137의 합성 독립 계정/인가/자료 검수 게이트는 main. #139·#140 테스트-only 회귀 병합 |
-| 열려 있는 PR | UI #131 수정 요청·#134 선행 스택 대기. #20 오프라인 어댑터 후속은 현재 개발 브랜치에서 검수 중 |
+| 열려 있는 PR | **3개**: UI #131 수정 요청·#134 선행 스택 대기, [#145 OCR·HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) 현재 HEAD CI 3/3 성공·타인 승인 대기 |
 | 이슈 | **OPEN 34 / CLOSED 7**(이번 감사 기준). 일반 기능/실자료/출시의 전체 완료 판정 아님 |
 | **담당 범위 진척** | [2026-11-03 증거 원장](docs/TEAM_PROGRESS.md): 심민성 **7/12(58.3%)**, 이의상 **9/12(75.0%)**, 김채윤 **7/12(58.3%)**, 박준영 **8/12(66.7%)**, 이서연 **NCP 운영 전용 1/5(20.0%, 새 기준선)**. 제품/개인 성과/출시 준비율 아님; 이전 이서연 1/8과 직접 비교 금지 |
 | UI | #129 메뉴 셸 main. 전체 HUFSAbility IA/독립 리디자인 #124·#141 OPEN |
@@ -42,6 +42,7 @@
 | PR | 담당/현 상태 | 반드시 해결할 문제 |
 | --- | --- | --- |
 | [#131](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) | 이의상, CHANGES_REQUESTED | route unmount/remount 중 overlay GET 지연 응답·재진입 로딩 문제, REVIEWER capability 장애를 BETA로 오인하는 fail-open 위험. 최신 HEAD 재검토 필요 |
+| [#145](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) | 심민성, HEAD `288c610`, CI **3/3 SUCCESS**·실제 비작성자 승인 대기 | OCR/HCX 오프라인 serializer/parser 첫 부분. 실제 HTTP·billing·권한 transport·Laya 미구현; 코드 전체/출시 완료 아님 |
 | [#134](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | 이의상, COMMENT/선행 대기 | #131 위의 stacked PR. 선행 수정·병합 뒤 main 기준 새 diff/CI/독립 승인, #137 실제 API 연동과 시연 매뉴얼 검증 |
 
 CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는다. 최신 상태는 각 PR 화면에서 재확인한다.
@@ -62,7 +63,7 @@ CI 성공이나 PR 리뷰 작성은 미해결 결함을 무효화하지 않는�
 ## 검증·재현
 
 - 합성 및 타입 검사: `npm ci --ignore-scripts --no-audit --no-fund` → `npm run check`. 선택적 PG와 실제 Chromium 시험은 별도; CI 필수 작업은 `.github/workflows/` 확인.
-- 개인정보 경계: `npm run check:privacy`. 이번 #20 개발 트리의 CLOVA wire/기존 AI/evidence 집중 검사 **59 PASS**, 타입 검사·API 빌드 성공. 초기 모듈 부재 RED와 독립 리뷰 발견 4개 회귀 RED 후 수정·GREEN 확인. 개인정보 경계 **146/148 PASS·2 FAIL**. 실제 PG·NCP·브라우저 재실행은 NOT_RUN; 기존 main/PR CI 기록은 위 SHA 기준. #20 wire 코드는 검토 중인 제안이며 현재 main 구현 완료로 표시하지 않음.
+- 개인정보 경계: `npm run check:privacy`. 이번 #20 개발 트리의 CLOVA wire/기존 AI/evidence 집중 검사 **59 PASS**, 타입 검사·API 빌드 성공. 초기 모듈 부재 RED와 독립 리뷰 발견 4개 회귀 RED 후 수정·GREEN 확인. 개인정보 경계 **146/148 PASS·2 FAIL**. [#145 HEAD 288c610 Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41555051387) **3/3 SUCCESS**: 합성1887 PASS/32 SKIP(신규 wire43 포함), 일회용 PG32 PASS, [Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/41555051330) 기존 UI14·독립 계정9 PASS. 초기 f7b6c6a CI의 새 package sparse 누락 TS2307을 수정한 결과이며 이전 실패를 성공으로 바꾸지 않음. 실제 NCP/학생 로그인/운영 PG는 NOT_RUN. #20 wire 코드는 검토 중인 제안이며 현재 main 구현 완료로 표시하지 않음.
 - 당사자 동의·기록/권리·기관 승인·유료 실행·정식 서비스 개통은 이 문서나 CI 합격으로 충족되지 않는다.
 
 **정본:** [README](README.md) 안내, [Architecture](Architecture.md) 기술 계약, [PR_WORKFLOW](docs/PR_WORKFLOW.md) 리뷰·병합, [WORKSTREAMS](docs/WORKSTREAMS.md) 담당, [DATA_GOVERNANCE](docs/DATA_GOVERNANCE.md) 자료 권한, GitHub 이슈/PR의 최신 HEAD 증거.

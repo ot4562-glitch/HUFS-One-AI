@@ -16,7 +16,7 @@
 | 공개 원격 저장소 | **Private** |
 | 실제 코드 | TypeScript/Zod 계약, 추천·공지/학업 코어, Fastify API, React/Vite UI, 합성 테스트 |
 | 검증된 최근 병합 | [#137 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/137), [#139 개인화 재계산 회귀](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139), [#140 공고 판본·피드 정합 회귀](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) |
-| 진행 중 PR | [#131 설정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) **수정 요청**, [#134 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) **선행 스택 대기**. #138·#142는 현재 HEAD 승인 뒤 이미 main 병합 |
+| 진행 중 PR | [#131 설정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) **수정 요청**, [#134 시연 프로필](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) **선행 스택 대기**. #138·#142는 현재 HEAD 승인 뒤 이미 main 병합. [#145 OCR·HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145)는 최종 HEAD CI 3/3 성공·타인 승인 대기 |
 | 운영/실자료 | **RELEASE_BLOCKED** — [#46 개인정보/자료 이력](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), [#89 공개 노출·인증·인프라](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) |
 
 최근 #139/#140의 GitHub Actions 합성/일회용 PostgreSQL/Chrome **각 3/3 성공**은 해당 PR HEAD의 **합성 회귀**에 대한 증거입니다. 실제 HUFSAbility 데이터·공식 학칙·학생 4인 로그인, 운영 NCP/CLOVA·실제 기관/자료 권리, 배포/보안을 검증 완료했다는 의미가 아닙니다. 상세 증거 및 차단 사항은 [STATUS.md](STATUS.md)를 봅니다.
