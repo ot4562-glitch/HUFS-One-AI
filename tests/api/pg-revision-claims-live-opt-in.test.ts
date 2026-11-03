@@ -100,4 +100,31 @@ describe.skipIf(!RUN)('REAL PostgreSQL: independently approved source revision c
     await admin.query("INSERT INTO api_opportunity_revision_claim_revocations VALUES($1,clock_timestamp(),'SYN-OPERATOR','SYN-REVOKE')",[f.ids[1]+'-APPROVAL']);
     expect(await f.services.source.revalidate({...f.input,receipt:pair.receipt,now:now()})).toBe(false);
   });
+  it('discovers the only current independently reviewed direct predecessor, without source bytes',async()=>{
+    const f=await seed('DISCOVERY');
+    const input={actorId:f.actorId,opportunityId:f.input.opportunityId,asOf:f.input.asOf,now:now()};
+    expect(await f.services.context.find(input)).toEqual({
+      opportunityId:input.opportunityId,asOf:input.asOf,available:true,
+      beforeRevisionId:f.ids[0],afterRevisionId:f.ids[1],
+    });
+    expect(await f.services.context.find({...input,actorId:'SYN-ANOTHER'})).toBeNull();
+  });
+  it('removes discoverability when consent or exact second-field approval is revoked',async()=>{
+    const a=await seed('DISCOVERY-CONSENT');
+    const query={actorId:a.actorId,opportunityId:a.input.opportunityId,asOf:a.input.asOf,now:now()};
+    expect((await a.services.context.find(query))?.available).toBe(true);
+    await admin.query('UPDATE api_self_consents SET version=version+1,choices_json=$2,updated_at=clock_timestamp() WHERE actor_id=$1',
+      [a.actorId,{personalStorage:false}]);
+    expect(await a.services.context.find({...query,now:now()})).toBeNull();
+    const b=await seed('DISCOVERY-CLAIM'),request={
+      actorId:b.actorId,opportunityId:b.input.opportunityId,asOf:b.input.asOf,now:now(),
+    };
+    expect((await b.services.context.find(request))?.available).toBe(true);
+    await admin.query("INSERT INTO api_opportunity_revision_claim_revocations VALUES($1,clock_timestamp(),'SYN-OPERATOR','SYN-REVOKE')",
+      [b.ids[1]+'-APPROVAL']);
+    expect(await b.services.context.find({...request,now:now()})).toEqual({
+      opportunityId:request.opportunityId,asOf:request.asOf,available:false,
+    });
+  });
+
 });
