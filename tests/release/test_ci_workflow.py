@@ -25,6 +25,8 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/strip_build_sourcemaps.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
+    "/tools/audit_entrypoints.mjs", "/tools/entrypoints.json",
+    "/tools/tests/entrypoint-inventory.node.mjs",
     "/apps/web/", "/infra/sql/", "/infra/ai/", "/infra/ncp/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
