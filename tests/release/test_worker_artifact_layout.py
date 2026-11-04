@@ -15,11 +15,21 @@ PDF = "infra/ai/pdf-render-worker.py"
 PRIVATE_SENTINEL = "infra/ai/unrelated-operator-state.json"
 
 
-def copy_layout(dockerfile):
+def copy_layout(dockerfile, with_metadata=False):
     context = {name: name for name in (RASTER, PDF, PRIVATE_SENTINEL)}
     stages = {}
+    metadata = {}
     stage = None
     workdir = "/"
+    def directory(path, owner="root:root", mode=0o755):
+        # COPY creates missing parents with its ownership/mode, preserving existing
+        # directories. This models fsutil Copy/MkdirAll, not an image-build claim.
+        pieces = path.strip("/").split("/") if path != "/" else []
+        current = ""
+        metadata[stage].setdefault("/", {"kind":"dir", "owner":"root:root", "mode":0o755})
+        for piece in pieces:
+            current += "/" + piece
+            metadata[stage].setdefault(current, {"kind":"dir", "owner":owner, "mode":mode})
     for raw in dockerfile.splitlines():
         words = shlex.split(raw, comments=True)
         if not words:
@@ -28,20 +38,27 @@ def copy_layout(dockerfile):
         if op.upper() == "FROM":
             stage = args[-1]
             stages[stage] = {}
+            metadata[stage] = {}
             workdir = "/"
         elif op.upper() == "WORKDIR":
             workdir = posixpath.normpath(posixpath.join(workdir, args[0]))
+            directory(workdir)
         elif op.upper() == "RUN" and stage == "build":
             # Known fixture output; this test makes no compilation claim.
             stages[stage]["/app/dist/packages/ai/src/raster.js"] = "SYNTHETIC_COMPILED_RASTER"
             stages[stage]["/app/dist/web/index.html"] = "SYNTHETIC_PUBLIC_WEB"
         elif op.upper() == "COPY":
             source_stage = None
+            owner, mode = "root:root", None
             while args and args[0].startswith("--"):
                 flag = args.pop(0)
                 if flag.startswith("--from="):
                     source_stage = flag.split("=", 1)[1]
-                elif not flag.startswith("--chown="):
+                elif flag.startswith("--chown="):
+                    owner = flag.split("=", 1)[1]
+                elif flag.startswith("--chmod=") and re.fullmatch(r"[0-7]{3,4}", flag.split("=", 1)[1]):
+                    mode = int(flag.split("=", 1)[1], 8)
+                else:
                     raise AssertionError("Review new COPY option in artifact-layout fixture")
             if len(args) < 2 or any("*" in x or "$" in x or "[" in x for x in args):
                 raise AssertionError("Artifact layout requires explicit literal COPY")
@@ -60,15 +77,19 @@ def copy_layout(dockerfile):
                         target = posixpath.join(destination, path)
                     else:
                         continue
-                    stages[stage][posixpath.normpath(target)] = provenance
-    return stages
+                    target = posixpath.normpath(target)
+                    directory(posixpath.dirname(target), owner, mode if mode is not None else 0o755)
+                    stages[stage][target] = provenance
+                    metadata[stage][target] = {"kind":"file", "owner":owner,
+                                               "mode":mode if mode is not None else 0o644}
+    return (stages, metadata) if with_metadata else stages
 
 
 class WorkerArtifactLayoutTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dockerfile = (ROOT / "infra/deploy/Dockerfile").read_text(encoding="utf-8")
-        cls.layout = copy_layout(cls.dockerfile)
+        cls.layout, cls.metadata = copy_layout(cls.dockerfile, with_metadata=True)
 
     def test_built_raster_worker_url_resolves_in_api_artifact(self):
         source = (ROOT / "packages/ai/src/raster-worker.ts").read_text(encoding="utf-8")
@@ -86,6 +107,20 @@ class WorkerArtifactLayoutTests(unittest.TestCase):
     def test_pdf_worker_contract_is_in_api_artifact(self):
         self.assertEqual(self.layout["api"].get("/app/" + PDF), PDF,
                          "The PDF worker must survive both explicit COPY boundaries")
+
+    def test_pdf_worker_is_root_owned_and_read_only(self):
+        item = self.metadata["api"]["/app/" + PDF]
+        self.assertEqual(item["owner"], "root:root", "verifyPdfRuntime requires a root-owned worker")
+        self.assertEqual(item["mode"], 0o444, "The node process may read but never edit the pinned worker")
+
+    def test_pdf_worker_ancestors_are_root_owned_and_traversable(self):
+        for path in ["/", "/app", "/app/infra", "/app/infra/ai"]:
+            with self.subTest(path=path):
+                item = self.metadata["api"][path]
+                self.assertEqual(item["kind"], "dir")
+                self.assertEqual(item["owner"], "root:root", "trustedPath checks every ancestor")
+                self.assertEqual(item["mode"] & 0o022, 0)
+                self.assertTrue(item["mode"] & 0o001, "The node user must traverse the parent")
 
     def test_private_sentinel_is_not_copied_to_any_stage(self):
         for name, files in self.layout.items():

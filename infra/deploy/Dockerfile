@@ -20,8 +20,9 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/packages/contracts ./packages/contracts
 COPY --from=build --chown=node:node /app/dist/apps ./dist/apps
 COPY --from=build --chown=node:node /app/dist/packages ./dist/packages
-COPY --from=build --chown=node:node /app/infra/ai/raster-worker.mjs ./infra/ai/raster-worker.mjs
-COPY --from=build --chown=node:node /app/infra/ai/pdf-render-worker.py ./infra/ai/pdf-render-worker.py
+# Create root-owned traversable worker parents before copying the read-only PDF worker.
+COPY --from=build --chown=root:root /app/infra/ai/raster-worker.mjs ./infra/ai/raster-worker.mjs
+COPY --from=build --chown=root:root --chmod=0444 /app/infra/ai/pdf-render-worker.py ./infra/ai/pdf-render-worker.py
 # Python/Poppler/fonts and isolation tools require a separately reviewed pinned runtime mount.
 # These copies package maintained worker code only; they do not enable PDF execution.
 USER node
