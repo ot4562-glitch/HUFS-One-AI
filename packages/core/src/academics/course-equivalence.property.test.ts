@@ -8,6 +8,7 @@ import {buildAcademicLedger, type LedgerAttempt, type LedgerRequirement} from '.
  * Seeded properties for 동일 교과목 rules composed with the credit ledger (#202, #189). Synthetic only.
  *
  * Reproduce one seed:  SAME_COURSE_PROP_SEED=<seed> npx vitest run packages/core/src/academics/course-equivalence.property.test.ts
+ * (repro mode runs every property on that one seed; the coverage guard and report self-test keep the 300 exploration seeds)
  *
  * Spec the reference model encodes (S1-S4), written from the #189 contract, not from its code:
  * S1 an attempt whose course no rule names as an old course is unchanged.
@@ -112,9 +113,17 @@ const ledger = (attempts:readonly LedgerAttempt[]) => buildAcademicLedger({asOf:
 
 const CODE_SHA = createHash('sha256').update(readFileSync(new URL('./course-equivalence.ts', import.meta.url))).digest('hex').slice(0, 12);
 const hash = (v:unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex').slice(0, 12);
-const SEEDS = process.env.SAME_COURSE_PROP_SEED !== undefined
-  ? [Number(process.env.SAME_COURSE_PROP_SEED)]
-  : Array.from({length:300}, (_, i) => 20261105 + i);
+/** The default exploration run. The coverage guard and the report self-test always use these. */
+const EXPLORATION_SEEDS:readonly number[] = Array.from({length:300}, (_, i) => 20261105 + i);
+/** Repro mode runs the properties on exactly the requested seed; anything that is not a safe integer is refused. */
+export function seedsFrom(env:Readonly<Record<string, string|undefined>>):readonly number[] {
+  const raw = env.SAME_COURSE_PROP_SEED;
+  if (raw === undefined) return EXPLORATION_SEEDS;
+  const seed = Number(raw);
+  if (!/^-?\d+$/.test(raw.trim()) || !Number.isSafeInteger(seed)) throw new TypeError(`SAME_COURSE_PROP_SEED must be an integer, got ${raw}`);
+  return [seed];
+}
+const SEEDS = seedsFrom(process.env);
 
 function shrink(c:Case, fails:(x:Case) => boolean):Case {
   let cur = c;
@@ -136,8 +145,9 @@ function shrink(c:Case, fails:(x:Case) => boolean):Case {
   return cur;
 }
 
-function forAll(name:string, size:number, prop:(c:Case, rng:Rng) => string|null, gen:(rng:Rng, size:number) => Case = genCase):void {
-  for (const seed of SEEDS) {
+function forAll(name:string, size:number, prop:(c:Case, rng:Rng) => string|null, gen:(rng:Rng, size:number) => Case = genCase,
+  seeds:readonly number[] = SEEDS):void {
+  for (const seed of seeds) {
     const c = gen(mulberry32(seed), size);
     const check = (x:Case) => prop(x, mulberry32(seed ^ 0x5bd1e995));
     let problem:string|null;
@@ -159,8 +169,10 @@ const byToken = (list:readonly {attemptToken:string}[]) => [...list].sort((a, b)
 
 describe('applySameCourseRules + ledger properties (#202)', () => {
   it('the generator reaches every branch it should exercise', () => {
+    // A property of the generator, not of one case: always measured on the exploration seeds, so the
+    // single-seed repro mode does not turn it into a false failure (#218 review).
     const seen = {applied:0, ambiguous:0, notApproved:0, untouched:0, renameRetake:0};
-    for (const seed of SEEDS) {
+    for (const seed of EXPLORATION_SEEDS) {
       const c = genCase(mulberry32(seed), 8);
       const r = applySameCourseRules(c.attempts, c.rules);
       seen.applied += r.applied.length > 0 ? 1 : 0;
@@ -299,9 +311,12 @@ describe('applySameCourseRules + ledger properties (#202)', () => {
 
   it('a failure report carries the seed, hashes, code SHA, repro command and a shrunk case that still fails', () => {
     // Deliberately false property: "no attempt is ever rewritten". The runner must report and shrink it.
+    // It runs on the exploration seeds whatever SAME_COURSE_PROP_SEED says, so repro mode cannot skip it.
     let message = '';
-    try { forAll('demo: nothing rewritten', 8, c => (applySameCourseRules(c.attempts, c.rules).applied.length > 0 ? 'rewritten' : null)); }
-    catch (error) { message = (error as Error).message; }
+    try {
+      forAll('demo: nothing rewritten', 8, c => (applySameCourseRules(c.attempts, c.rules).applied.length > 0 ? 'rewritten' : null),
+        genCase, EXPLORATION_SEEDS);
+    } catch (error) { message = (error as Error).message; }
     expect(message).toMatch(/^property "demo: nothing rewritten" failed: rewritten$/m);
     const seed = Number(/seed=(\d+)/.exec(message)![1]);
     expect(message).toContain(`inputHash=${hash(genCase(mulberry32(seed), 8))}`);
@@ -312,6 +327,22 @@ describe('applySameCourseRules + ledger properties (#202)', () => {
     // Minimal: one attempt and one approved rule, and it still fails.
     expect([small.attempts.length, small.rules.length]).toEqual([1, 1]);
     expect(applySameCourseRules(small.attempts, small.rules).applied).toHaveLength(1);
+    // The repro seed alone rebuilds the same failure: same case, same shrunk case.
+    let again = '';
+    try {
+      forAll('demo: nothing rewritten', 8, c => (applySameCourseRules(c.attempts, c.rules).applied.length > 0 ? 'rewritten' : null),
+        genCase, seedsFrom({SAME_COURSE_PROP_SEED:String(seed)}));
+    } catch (error) { again = (error as Error).message; }
+    expect(again).toBe(message);
+  });
+
+  it('repro mode resolves exactly the requested seed and refuses anything else', () => {
+    expect(seedsFrom({})).toBe(EXPLORATION_SEEDS);
+    expect(seedsFrom({SAME_COURSE_PROP_SEED:'20261234'})).toEqual([20261234]);
+    expect(seedsFrom({SAME_COURSE_PROP_SEED:'-7'})).toEqual([-7]);
+    for (const bad of ['', 'abc', '1.5', '1e3', '9007199254740993']) {
+      expect(() => seedsFrom({SAME_COURSE_PROP_SEED:bad}), bad).toThrow(/must be an integer/);
+    }
   });
 
   it('the reference model agrees with hand-checked cases', () => {
