@@ -167,3 +167,42 @@ powershell -ExecutionPolicy Bypass -File .\infra\ncp\Deploy-NcpPreview.ps1 -Serv
 **운영 서비스 배포를 가장한 가짜 원클릭은 만들지 않는다.** 지금의 설치 자동화는 안전한 **단일 VM 합성 미리보기** 준비용이다.
 
 공식 참조: [NCP Server](https://guide.ncloud-docs.com/docs/server-create-vpc), [Public IP](https://guide.ncloud-docs.com/docs/server-publicip-vpc), [ACG](https://guide.ncloud-docs.com/docs/server-acg-vpc), [NACL](https://guide.ncloud-docs.com/docs/vpc-nacl-vpc), [NCP Access](https://guide.ncloud-docs.com/docs/server-access-vpc), [NodeSource](https://github.com/nodesource/distributions), [WinSCP](https://winscp.net/eng/docs/guide_connect).
+
+
+## 설치 및 기존 릴리스 배포·복구의 승인형 단일 진입점 (후속 PR)
+
+**기본 실행은 완전한 plan-only.** 별도 NCP 계정·요금 승인, Terraform
+#211/#214에서 확인한 전용 네트워크/SSH 서버와 승인된 소스 커밋이 선행한다.
+이 단계를 실행한다고 운영 공개, 학교 공식 서비스, 유료 OCR/HCX 또는 실제
+학생자료 연동이 승인되는 것은 아니다.
+
+Windows PowerShell 5.1+ 관리 PC에서 먼저 다음 명령을 실행한다.
+
+```powershell
+powershell -NoProfile -File .\infra\ncp\Operator-NcpPreview.ps1
+```
+
+이는 Git/SSH/클라우드에 접근하지 않고 배포·복구 요구사항을 요약한다. 실서버
+작업에 대한 **독립 사용자 승인**을 받고 NCP 운영자가 관리자 /32, ACG/NACL,
+검증된 공인 서버 IP, 호스트 지문, 전용 .ppk, 현재 ZIP SHA, 이전 릴리스 SHA를
+확인한 다음에만 다음 절차를 이용한다.
+
+1. 서버 설치(승인된 Ubuntu 호스트에서만): `bash infra/ncp/setup/02-install-host.sh --plan`
+   → `sudo bash infra/ncp/setup/02-install-host.sh --apply --ack-owner-approved --ack-acg-verified --admin-public-key /root/hufs-admin.pub --admin-ip <관리자공인IPv4/32> --reviewed-bootstrap-sha256 <승인된bootstrap64SHA>`.
+   설치기는 이 bootstrap 바이트와 root-owned 파일을 검사하고 기존 SSH/UFW
+   준비 코드를 호출한다. **새 PuTTY 창의 키 인증 성공 확인 전에는 SSH
+   password/root 로그인 비활성화 스크립트를 실행하면 안 된다.**
+2. 합성 미리보기 배포: `Operator-NcpPreview.ps1 -Operation Deploy -Apply -OwnerApproved -ServerIPv4 <서버공인IPv4> -PrivateKeyPath <로컬.ppk> -HostKeyFingerprint <직접확인한지문> -Ref <검토승인커밋>`.
+   내부에서는 기존 `Deploy-NcpPreview.ps1`의 allowlisted ZIP SHA→SFTP→
+   pinned SSH→loopback 헬스·실패 시 복구 경로만 실행한다.
+3. 헬스 확인: 동일 옵션으로 `-Operation Verify`. 서버 로컬
+   `127.0.0.1:5173/` 및 `/src/main.tsx`를 **SSH 안에서만** 검사한다.
+   서버 공인 5173·3000·5432는 열지 않는다.
+4. 수동 복구: `-Operation Rollback -Apply -OwnerApproved -Target <기존승인64SHA> -ExpectedCurrent <현재64SHA>`.
+   **이미 호스트에 존재하는 릴리스**만 복구하고 `flock`·현재 SHA·실패 시
+   원래 릴리스 복귀·상태 확인을 수행한다. 변경할 SHA를 임의 경로/명령으로
+   대체할 수 없다. 실제 승인 전에는 rollback 명령을 실행하지 않는다.
+
+모든 실제 실행은 운영 담당자 확인 사항이며, 위 지시만으로 사람이 리뷰
+완료/실행 완료했다고 주장하지 않는다. 관련 #12/#22(이서연 비코드 실측),
+#192(NCP 코드), #46/#61/#89(RELEASE_BLOCKED).
