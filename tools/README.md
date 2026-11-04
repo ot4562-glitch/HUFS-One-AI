@@ -15,6 +15,10 @@ document links to source files are checked. Relative `.js` imports and generated
 is a missing tracked reference for review, not proof of an exploitable or reachable
 bug. Unresolved dynamic imports, directory loaders and files without known
 incoming references remain `UNKNOWN` and are preserved.
+Worker constructors (including Node named/namespace aliases) are recognized.
+An inline module URL supplies a static worker target; string filenames keep an
+unknown base because Node uses the runtime cwd and browsers use the document
+URL. `fork` cwd/arguments also stay unknown instead of guessing an importer base.
 
 Scope is maintained code roots and named canonical documents, not the whole drive
 or repository. Protected student roots, `private/`, credentials, raw references,

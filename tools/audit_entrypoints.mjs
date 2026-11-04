@@ -98,6 +98,7 @@ export async function auditEntrypoints(directory,{prs,maxFileBytes=1024*1024,max
     references.push({from,to:found,kind,line});incoming.add(found);
     if(kind==='PACKAGE_SCRIPT'||kind==='WORKFLOW_COMMAND')addEntry(found,kind,'DECLARED_COMMAND');
     if(found.endsWith('.sql'))addEntry(found,'SQL_MIGRATION','EXPLICIT_DISPOSABLE_PG_OPT_IN');
+    return found;
   };
   const commandRefs=(path,text,kind)=>{
     const pattern=/(?:dist\/)?(?:apps|packages|tools|tests|infra)\/[A-Za-z0-9_./*${}-]+\.(?:tsx?|[cm]?js|sql|py|ps1|sh|json|ya?ml)\b/g;
@@ -132,6 +133,14 @@ export async function auditEntrypoints(directory,{prs,maxFileBytes=1024*1024,max
     if(!CODE.test(path))continue;
     const source=ts.createSourceFile(path,text,ts.ScriptTarget.Latest,true);
     if(source.parseDiagnostics.length){incomplete=true;uncertain(path,'PARSE_ERROR');}
+    const workers=new Set(['Worker']),workerNamespaces=new Set();
+    for(const statement of source.statements)if(ts.isImportDeclaration(statement)
+      &&ts.isStringLiteralLike(statement.moduleSpecifier)&&['node:worker_threads','worker_threads'].includes(statement.moduleSpecifier.text)){
+      const bindings=statement.importClause?.namedBindings;
+      if(bindings&&ts.isNamedImports(bindings))for(const binding of bindings.elements)
+        if((binding.propertyName?.text??binding.name.text)==='Worker')workers.add(binding.name.text);
+      if(bindings&&ts.isNamespaceImport(bindings))workerNamespaces.add(bindings.name.text);
+    }
     const visit=node=>{
       const line=source.getLineAndCharacterOfPosition(node.getStart(source)).line+1;
       if((ts.isImportDeclaration(node)||ts.isExportDeclaration(node))&&node.moduleSpecifier&&ts.isStringLiteralLike(node.moduleSpecifier)){
@@ -139,10 +148,23 @@ export async function auditEntrypoints(directory,{prs,maxFileBytes=1024*1024,max
         if(target.startsWith('.'))reference(path,target,'STATIC_IMPORT',line);
       }
       if(ts.isCallExpression(node)&&(node.expression.kind===ts.SyntaxKind.ImportKeyword
-        ||ts.isIdentifier(node.expression)&&['require','fork','Worker'].includes(node.expression.text))){
-        const arg=node.arguments[0],kind=node.expression.kind===ts.SyntaxKind.ImportKeyword?'DYNAMIC_IMPORT':'PROCESS_OR_REQUIRE';
+        ||ts.isIdentifier(node.expression)&&node.expression.text==='require')){
+        const arg=node.arguments[0],kind=node.expression.kind===ts.SyntaxKind.ImportKeyword?'DYNAMIC_IMPORT':'REQUIRE';
         if(arg&&ts.isStringLiteralLike(arg)&&arg.text.startsWith('.'))reference(path,arg.text,kind,line);
         else if(!arg||!ts.isStringLiteralLike(arg))uncertain(path,kind,line);
+      }
+      if(ts.isCallExpression(node)&&ts.isIdentifier(node.expression)&&node.expression.text==='fork')
+        uncertain(path,'FORK_RUNTIME_CWD_OR_ARGUMENT',line);
+      if(ts.isNewExpression(node)&&(ts.isIdentifier(node.expression)&&workers.has(node.expression.text)
+        ||ts.isPropertyAccessExpression(node.expression)&&node.expression.name.text==='Worker'
+          &&ts.isIdentifier(node.expression.expression)&&workerNamespaces.has(node.expression.expression.text))){
+        const arg=node.arguments?.[0];
+        if(arg&&ts.isNewExpression(arg)&&ts.isIdentifier(arg.expression)&&arg.expression.text==='URL'
+          &&arg.arguments?.[0]&&ts.isStringLiteralLike(arg.arguments[0])&&arg.arguments[0].text.startsWith('.')
+          &&arg.arguments[1]?.getText(source)==='import.meta.url'){
+          const target=reference(path,arg.arguments[0].text,'WORKER_MODULE_URL',line);
+          if(target)addEntry(target,'WORKER','EXPLICIT_PARENT_CONSTRUCTION');
+        }else uncertain(path,arg&&ts.isStringLiteralLike(arg)?'WORKER_STRING_BASE_UNKNOWN':'DYNAMIC_WORKER',line);
       }
       if(ts.isNewExpression(node)&&ts.isIdentifier(node.expression)&&node.expression.text==='URL'){
         const arg=node.arguments?.[0],base=node.arguments?.[1];

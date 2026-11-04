@@ -75,6 +75,16 @@ test('retains unresolved dynamic modules as UNKNOWN instead of asserting dead co
   assert.ok(!JSON.stringify(r).includes('deadCode'));
 });
 
+test('preserves Worker constructors, aliases and cwd-dependent strings instead of dropping them',async()=>{
+  const {root}=await fixture({'apps/api/src/workers.ts':
+    "import {Worker as Thread} from 'node:worker_threads'; new Thread(workerPath); new Worker('./worker.mjs'); new Thread(new URL('../../../infra/ai/worker.mjs',import.meta.url)); new Thread(new URL('./missing-worker.mjs',import.meta.url));"});
+  const r=await auditEntrypoints(root);
+  assert.ok(r.unknown.some(x=>x.path==='apps/api/src/workers.ts'&&x.reason==='DYNAMIC_WORKER'));
+  assert.ok(r.unknown.some(x=>x.path==='apps/api/src/workers.ts'&&x.reason==='WORKER_STRING_BASE_UNKNOWN'));
+  assert.ok(r.entrypoints.some(x=>x.path==='infra/ai/worker.mjs'&&x.kind==='WORKER'));
+  assert.ok(r.findings.some(x=>x.target==='apps/api/src/missing-worker.mjs'));
+});
+
 test('never reads protected paths or includes protected names and contents',async()=>{
   const {root}=await fixture({'private/DO-NOT-READ.ts':'PROTECTED-SENTINEL',
     'packages/fixtures/real/DO-NOT-READ.ts':'PROTECTED-SENTINEL',
