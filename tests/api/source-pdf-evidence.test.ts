@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import {PNG} from 'pngjs';
 import {describe,expect,it} from 'vitest';
-import {parseSourcePdfEvidence} from '../../apps/api/src/modules/opportunities/source-pdf-evidence.js';
+import {parseSourcePdfEvidence,pdfPageTransforms} from '../../apps/api/src/modules/opportunities/source-pdf-evidence.js';
 
 const sha=(bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
 const binding={sourceId:'SYN-PDF',revisionId:'SYN-PDF-REV',permissionRef:'SYN-PERMISSION',originalSha256:'a'.repeat(64)};
@@ -78,5 +78,14 @@ describe('retained PDF evidence with explicit original-page transforms',()=>{
   it.each(invalid)('refuses %s rather than creating a PDF citation',(_name,mutate)=>{
     const value=bundle();mutate(value);
     expect(()=>parseSourcePdfEvidence(value,binding)).toThrow('Source PDF evidence requires review');
+  });
+});
+
+describe('PDF native and canonical geometry agreement',()=>{
+  it.each([
+    {width:20,height:40,mediaBox:[20000,0,20200,400],cropBox:[20000,0,20200,400]},
+    {width:20,height:42,mediaBox:[0,0,200,400],cropBox:[0,0,200,400]},
+  ])('refuses coordinates or axis distortion outside the native renderer envelope',geometry=>{
+    expect(()=>pdfPageTransforms({...geometry,rotation:0,userUnit:1})).toThrow('Source PDF evidence requires review');
   });
 });

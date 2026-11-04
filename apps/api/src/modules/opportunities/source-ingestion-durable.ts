@@ -11,6 +11,8 @@ import {PostgresSourceRevisionWriter} from './temporal-writer-postgres.js';
 import {hashRevisionParagraphs,type RevisionParagraph} from './revision-ledger.js';
 import type {SourceImageExtractor} from './approved-image-extractor.js';
 import {parseSourceImageEvidence} from './source-image-evidence.js';
+import type {SourcePdfExtractor} from './approved-pdf-extractor.js';
+import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
 import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
@@ -23,7 +25,7 @@ function safeValidator(value:string|null):string|null{
 type StoredHead={
   revisionId:string;originalSha256:string;contentSha256:string;
   fetchedAt:string;permissionRef:string;etag:string|null;lastModified:string|null;
-  mediaKind:string;hasImageEvidence:boolean;
+  mediaKind:string;hasImageEvidence:boolean;hasPdfEvidence:boolean;
 };
 function stringDate(value:unknown):string{
   if(value instanceof Date)return value.toISOString();
@@ -77,6 +79,8 @@ export function createApprovedDurableSourceExecutor(options:{
   extractor:SourceContentExtractor;
   /** Explicit private image adapter; absent means binary extraction is refused. */
   imageExtractor?:SourceImageExtractor;
+  /** Explicit pinned local renderer and independently approved OCR adapter. */
+  pdfExtractor?:SourcePdfExtractor;
   readerPool:ReviewerSqlPool;
   writer:Pick<PostgresSourceRevisionWriter,'append'|'observeUnchanged'|'storeHttpValidators'>;
   now?:()=>string;
@@ -88,7 +92,10 @@ export function createApprovedDurableSourceExecutor(options:{
       const r=await c.query(`SELECT h.revision_id,r.original_sha256,r.content_sha256,
         r.fetched_at,r.permission_ref,r.media_kind,v.etag,v.last_modified,
         EXISTS(SELECT 1 FROM source_paragraphs_vnext p
-          WHERE p.revision_id=r.revision_id AND p.image_span IS NOT NULL) AS has_image_evidence
+          WHERE p.revision_id=r.revision_id AND p.image_span IS NOT NULL) AS has_image_evidence,
+        EXISTS(SELECT 1 FROM source_paragraphs_vnext p
+          WHERE p.revision_id=r.revision_id
+            AND p.image_span->>'transformVersion'='pdf-full-page-v1') AS has_pdf_evidence
         FROM source_ingest_heads h LEFT JOIN source_revisions_vnext r
           ON r.revision_id=h.revision_id
         LEFT JOIN source_http_validators v ON v.source_id=h.source_id
@@ -105,7 +112,8 @@ export function createApprovedDurableSourceExecutor(options:{
         permissionRef:v.permission_ref,
         etag:typeof v.etag==='string'?v.etag:null,
         lastModified:typeof v.last_modified==='string'?v.last_modified:null,
-        mediaKind:typeof v.media_kind==='string'?v.media_kind:'TEXT',hasImageEvidence:v.has_image_evidence===true};
+        mediaKind:typeof v.media_kind==='string'?v.media_kind:'TEXT',hasImageEvidence:v.has_image_evidence===true,
+        hasPdfEvidence:v.has_pdf_evidence===true};
     }finally{c.release();}
   };
   return {
@@ -153,11 +161,53 @@ export function createApprovedDurableSourceExecutor(options:{
       const bytes=await readApprovedSourceBody(response),originalSha256=SHA(bytes);
       const revisionId='revision-'+randomUUID();
       let image:ReturnType<typeof parseSourceImageEvidence>|undefined;
-      let revalidateImage:(()=>Promise<void>)|undefined;
+      let pdf:ReturnType<typeof parseSourcePdfEvidence>|undefined,pdfRasters:SourcePdfRaster[]|undefined;
+      let revalidateMedia:(()=>Promise<void>)|undefined;
       let paragraphs:RevisionParagraph[];
-      // No PDF renderer/page-transform contract is installed by this adapter.
-      if(media==='application/pdf')throw new Error('Approved PDF renderer unavailable');
-      if(media==='image/png'||media==='image/jpeg'){
+      if(media==='application/pdf'){
+        if(head?.mediaKind==='PDF'&&head.hasPdfEvidence&&head.originalSha256===originalSha256){
+          if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+            throw new Error('Source rights changed during PDF check');
+          const checkedAt=now();
+          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
+            canonicalUrl:u.href,checkedAt,etag,lastModified});
+          return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
+        }
+        if(!options.pdfExtractor)throw new Error('Approved PDF extractor unavailable');
+        const purposes=['COLLECT','STORE','EXTERNAL_TRANSFER'] as const;
+        const processingRights=await approvedFingerprint({policy,resolver:options.rights,now:now(),purposes});
+        if(initial!=='SYNTHETIC_TEST_ONLY'&&processingRights!==initial)
+          throw new Error('Source rights changed before PDF processing');
+        const assertSourceRights=async()=>{
+          if(await approvedFingerprint({policy,resolver:options.rights,now:now(),purposes})!==processingRights)
+            throw new Error('Source rights changed during PDF processing');
+        };
+        const prepared=await options.pdfExtractor.extract({
+          content:Buffer.from(bytes),contentType:media,canonicalUrl:u.href,sourceId:input.sourceId,
+          sourceRevisionId:revisionId,permissionRef:input.permissionRef,actorRef:input.actorRef,
+          assetId:'asset-'+randomUUID(),originalSha256,assertSourceRights,
+        });
+        if(typeof prepared.revalidate!=='function')throw new Error('PDF authority recheck unavailable');
+        const recheck=prepared.revalidate;
+        pdf=parseSourcePdfEvidence(prepared.evidence,{sourceId:input.sourceId,revisionId,
+          permissionRef:input.permissionRef,originalSha256});
+        if(pdf.evidence.originalByteLength!==bytes.byteLength||!Array.isArray(prepared.rasters)
+          ||prepared.rasters.length!==pdf.evidence.pageCount)throw new Error('PDF raster proof unavailable');
+        pdfRasters=prepared.rasters.map((raster,index)=>{
+          const page=pdf!.evidence.pages[index]!;
+          if(!raster||raster.pageIndex!==index||raster.assetId!==page.assetId
+            ||raster.rasterSha256!==page.rasterSha256||raster.width!==page.width||raster.height!==page.height
+            ||!(raster.bytes instanceof Uint8Array)||raster.bytes.byteLength!==page.rasterByteLength)
+            throw new Error('PDF raster proof mismatch');
+          const retained=Buffer.from(raster.bytes);
+          if(SHA(retained)!==page.rasterSha256)throw new Error('PDF raster proof mismatch');
+          return {pageIndex:index,assetId:page.assetId,rasterSha256:page.rasterSha256,
+            width:page.width,height:page.height,bytes:retained};
+        });
+        revalidateMedia=async()=>{await recheck();await assertSourceRights();};
+        await revalidateMedia();paragraphs=pdf.paragraphs;
+      }else if(media==='image/png'||media==='image/jpeg'){
         if(head?.mediaKind==='IMAGE'&&head.hasImageEvidence&&head.originalSha256===originalSha256){
           if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
             throw new Error('Source rights changed during image check');
@@ -182,8 +232,8 @@ export function createApprovedDurableSourceExecutor(options:{
           assetId:'asset-'+randomUUID(),originalSha256,assertSourceRights,
         });
         if(typeof prepared.revalidate!=='function')throw new Error('Image authority recheck unavailable');
-        revalidateImage=async()=>{await prepared.revalidate();await assertSourceRights();};
-        await revalidateImage();
+        revalidateMedia=async()=>{await prepared.revalidate();await assertSourceRights();};
+        await revalidateMedia();
         image=parseSourceImageEvidence(prepared.evidence,{sourceId:input.sourceId,revisionId,
           permissionRef:input.permissionRef,originalSha256});
         paragraphs=image.paragraphs;
@@ -197,7 +247,7 @@ export function createApprovedDurableSourceExecutor(options:{
         throw new Error('Source rights changed during IO');
       // Duplicate content never upgrades human verification timestamps.
       if(head&&head.originalSha256===originalSha256
-        &&head.contentSha256===contentSha256){
+        &&head.contentSha256===contentSha256&&(media!=='application/pdf'||head.hasPdfEvidence)){
         const checkedAt=now();
         await options.writer.observeUnchanged({sourceId:input.sourceId,
           revisionId:head.revisionId,checkedAt,responseStatus:200});
@@ -208,7 +258,7 @@ export function createApprovedDurableSourceExecutor(options:{
       const checkedAt=now();
       if(head&&Date.parse(checkedAt)<=Date.parse(head.fetchedAt))
         throw new Error('Nonmonotonic revision time');
-      const mediaKind=image?'IMAGE':media==='text/html'?'HTML':'TEXT';
+      const mediaKind=pdf?'PDF':image?'IMAGE':media==='text/html'?'HTML':'TEXT';
       const revision:SourceRevisionVNext={
         sourceId:input.sourceId,revisionId,
         ...(head?{supersedes:head.revisionId}:{}),
@@ -218,10 +268,11 @@ export function createApprovedDurableSourceExecutor(options:{
         changeKind:head?'CORRECTED':'NEW',
         fetchedAt:checkedAt,lastCheckedAt:checkedAt,topicCodes:[],
       };
-      if(revalidateImage)await revalidateImage();
+      if(revalidateMedia)await revalidateMedia();
       await options.writer.append({revision,paragraphs,originalBytes:bytes,
-        permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{})});
-      if(revalidateImage)await revalidateImage();
+        permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{}),
+        ...(pdf?{pdfEvidence:pdf.evidence,pdfRasters}:{})});
+      if(revalidateMedia)await revalidateMedia();
       await options.writer.storeHttpValidators({sourceId:input.sourceId,
         revisionId:revision.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
       // A revocation after append leaves an unapproved DRAFT, never ACTIVE.

@@ -9,7 +9,7 @@ import type {PdfRendererIdentity} from '../../../../../packages/ai/src/pdf-rende
 import type {SourceImageBinding} from './source-image-evidence.js';
 
 const Token=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),Sha=z.string().regex(/^[a-f0-9]{64}$/);
-const Coordinate=z.number().finite().min(-1_000_000).max(1_000_000);
+const Coordinate=z.number().finite().min(-14400).max(14400);
 const Box=z.tuple([Coordinate,Coordinate,Coordinate,Coordinate]);
 const Matrix=z.tuple([z.number().finite(),z.number().finite(),z.number().finite(),
   z.number().finite(),z.number().finite(),z.number().finite()]);
@@ -44,8 +44,9 @@ export function pdfPageTransforms(raw:unknown){
     const pageWidth=x1-x0,pageHeight=y1-y0;
     if(pageWidth<=0||pageHeight<=0||pageWidth>14400||pageHeight>14400
       ||page.width*page.height>4_000_000||!page.cropBox.every((n,i)=>n===page.mediaBox[i])
-      // Allow at most one pixel of independent output rounding on each axis.
-      ||Math.abs(page.width*pageHeight-page.height*pageWidth)>pageWidth+pageHeight)denied();
+      // Match the native renderer's maximum one-pixel rounding on each axis.
+      ||Math.abs(page.width-page.height*pageWidth/pageHeight)>1.01
+      ||Math.abs(page.height-page.width*pageHeight/pageWidth)>1.01)denied();
     const rasterToPageNorm:[number,number,number,number,number,number]=[1/page.width,0,0,1/page.height,0,0];
     const rasterToPdfPoints:[number,number,number,number,number,number]=[pageWidth/page.width,0,0,-pageHeight/page.height,x0,y1];
     return {rasterToPageNorm,rasterToPdfPoints};
