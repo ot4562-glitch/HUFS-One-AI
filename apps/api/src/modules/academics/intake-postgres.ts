@@ -54,6 +54,16 @@ export class PostgresRestrictedIntakeImport {
     private readonly authority:IntakeOperatorAuthority,
     private readonly now:()=>string=()=>new Date().toISOString()){}
 
+  private async authorize(actorRef:string,subjects:readonly string[],action:'PREVIEW'|'APPLY'){
+    for(const subjectKey of subjects){
+      const now=this.now();
+      if(!Number.isFinite(Date.parse(now)))throw new Error('Trusted clock unavailable');
+      if(await this.authority.mayProcess({
+        actorRef,subjectKey,action,purpose:'LOCAL_TRANSCRIPT_REVIEW',now,
+      })!==true)throw new ApiFailure('FORBIDDEN');
+    }
+  }
+
   private async inspect(input:RestrictedIntakeInput,action:'PREVIEW'|'APPLY'){
     const actorRef=Ref.parse(input.actorRef);
     if(typeof input.formsCsv!=='string'
@@ -67,15 +77,9 @@ export class PostgresRestrictedIntakeImport {
       ||input.courseFiles.some(x=>typeof x.content!=='string'
         ||Buffer.byteLength(x.content,'utf8')>MAX_SOURCE_BYTES))
       throw new ApiFailure('INVALID_INPUT');
-    const now=this.now();
-    if(!Number.isFinite(Date.parse(now)))throw new Error('Trusted clock unavailable');
     // Authorize before interpreting any source lines. Form-supplied consent is
     // NOT a substitute for this independent purpose-specific authority.
-    for(const subjectKey of subjects){
-      if(!await this.authority.mayProcess({
-        actorRef,subjectKey,action,purpose:'LOCAL_TRANSCRIPT_REVIEW',now,
-      }))throw new ApiFailure('FORBIDDEN');
-    }
+    await this.authorize(actorRef,subjects,action);
     const report=validateApprovedIntakeBundle(input);
     const issues=[...report.issues];
     for(const p of report.forms?.participants??[]){
@@ -203,6 +207,9 @@ export class PostgresRestrictedIntakeImport {
         if(changed.rows.length!==1)throw new ApiFailure('VERSION_CONFLICT');
         applied.push({subjectKey,version,reused:false});
       }
+      // Connection acquisition, row locks and writes may outlive purpose rights.
+      // Recheck before the all-four commit, including an idempotent replay.
+      await this.authorize(x.actorRef,x.subjects,'APPLY');
       await c.query('COMMIT');started=false;
       return {previewHash:x.previewHash,applied,nextState:'STUDENT_REVIEW_PENDING'};
     }catch(error){

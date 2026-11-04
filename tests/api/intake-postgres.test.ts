@@ -78,4 +78,59 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
     await expect(h.service.apply(input,{previewHash:'f'.repeat(64),expectedVersions}))
       .rejects.toMatchObject({code:'INVALID_INPUT'});
   });
+  it('requires an explicit boolean purpose authorization',async()=>{
+    await expect(local('yes' as unknown as boolean).service.preview(makeSyntheticIntake()))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+  });
+  it.each(['connection','row lock','revision write'] as const)(
+    'rolls back the entire import when purpose rights are revoked during the %s',async stage=>{
+      let allowed=true,released=0;
+      const commands:string[]=[];
+      const service=new PostgresRestrictedIntakeImport({connect:async()=>{
+        if(stage==='connection')allowed=false;
+        return {release:()=>{released++;},query:async(sql:string)=>{
+          commands.push(sql);
+          if(sql.includes('SELECT current_version')){
+            if(stage==='row lock')allowed=false;
+            return {rows:[{current_version:0,current_batch_sha256:null}]};
+          }
+          if(sql.includes('INSERT INTO api_intake_revisions')){
+            if(stage==='revision write')allowed=false;
+            return {rows:[{import_version:1}]};
+          }
+          if(sql.includes('UPDATE api_intake_heads'))return {rows:[{current_version:1}]};
+          return {rows:[]};
+        }};
+      }},{mayProcess:async()=>allowed},()=> '2026-10-31T00:00:00.000Z');
+      const input=makeSyntheticIntake(),preview=await service.preview(input);
+      const expectedVersions=Object.fromEntries(input.formsOptions.expectedSubjectKeys.map(x=>[x,0]));
+      await expect(service.apply(input,{previewHash:preview.previewHash,expectedVersions}))
+        .rejects.toMatchObject({code:'FORBIDDEN'});
+      expect(commands).toContain('ROLLBACK');
+      expect(commands).not.toContain('COMMIT');
+      expect(released).toBe(1);
+    });
+  it('uses the completion-time clock when rechecking purpose rights before commit',async()=>{
+    let now='2026-10-31T00:00:00.000Z';
+    const commands:string[]=[];
+    const service=new PostgresRestrictedIntakeImport({connect:async()=>({
+      release:()=>{},query:async(sql:string)=>{
+        commands.push(sql);
+        if(sql.includes('SELECT current_version'))
+          return {rows:[{current_version:0,current_batch_sha256:null}]};
+        if(sql.includes('INSERT INTO api_intake_revisions')){
+          now='2026-10-31T00:01:00.000Z';
+          return {rows:[{import_version:1}]};
+        }
+        if(sql.includes('UPDATE api_intake_heads'))return {rows:[{current_version:1}]};
+        return {rows:[]};
+      },
+    })},{mayProcess:async input=>input.now<'2026-10-31T00:01:00.000Z'},()=>now);
+    const input=makeSyntheticIntake(),preview=await service.preview(input);
+    const expectedVersions=Object.fromEntries(input.formsOptions.expectedSubjectKeys.map(x=>[x,0]));
+    await expect(service.apply(input,{previewHash:preview.previewHash,expectedVersions}))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(commands).toContain('ROLLBACK');
+    expect(commands).not.toContain('COMMIT');
+  });
 });
