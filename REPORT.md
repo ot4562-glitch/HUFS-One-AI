@@ -1,5 +1,7 @@
 # HUFS One AI | 시연·에이전트 검증 기준
 
+> **2026-11-04 최신 (아래 2026-11-02 기록보다 우선):** [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main f23b86bb로 UI/학업/추천/API/PG/NCP 코드를 통합, OPEN PR **0건**, main TASK-00/NCP IaC/Chrome **3/3 SUCCESS**. 아래 7개 PR/30개 이슈·미병합 UI 수치는 **과거 당시 기록**. 실 Google/학교메일/운영 DB/NCP/기관 권리·독립 200-gold는 NOT_RUN으로 **RELEASE_BLOCKED**. 현재 [STATUS](STATUS.md) 및 [DEMO_MANUAL](docs/DEMO_MANUAL.md).
+
 ## 2026-11-02 최신 #125 수정 병합·시연 수락 경계
 
 - [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 동아리 합성 추천 코어 **새 HEAD `8e88a4b`**는 `updatedAt>asOf` 시점 누출과 승인 후 수정된 게시물 재검토 필수 gate를 수정했고, 비작성자 APPROVED·Actions 2/2 SUCCESS 후 **main merge `8f76c388`**.
