@@ -2,7 +2,7 @@
 
 ## 2026-11-04 PR #216 통합 후 검증 · 개인정보 경계
 
-- [x] [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 보호 대상 6개 Git-tracked 경로 HEAD untrack 코드 **main 병합**; 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 뒤에도 main 현재 tree **보호 경로 0 / 810 tracked path** 재검증. 이 증거는 **현재 트리의 Git 메타데이터**만 의미한다.
+- [x] [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 보호 대상 6개 Git-tracked 경로 HEAD untrack 코드 **main 병합**; 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 뒤에도 main 현재 tree **보호 경로 0 / 811 tracked path** 재검증. 이 증거는 **현재 트리의 Git 메타데이터**만 의미한다.
 - [ ] **실제로 남은 개인정보 승인/검사:** 별도 원본 보존·현재 사용/철회/게시 권한, 과거 Git commit·협업자 clone/backup의 원본 접근 검토 및 승인된 full private checkout 개인정보 검사. 과거 검사 2 FAIL을 현재 Git tree 0만으로 180/180 PASS로 선언하지 않는다.
 - [x] 공모전 5명 전원 동의·HUFSAbility 자료 수집 허가는 사용자 확인. 공식 시간표의 공개 교수명·강의명은 최소 범위로 사용하며 이름 일괄 마스킹을 강제하지 않는다. 개인정보 적법한 이용·저장·외부 전송 범위는 별도 관리.
 - 인가된 실제 Google/운영 NCP/TLS·PG/사람 gold 미검증으로 **RELEASE_BLOCKED** 유지. 현재 [STATUS](../STATUS.md) 참고.
@@ -12,7 +12,7 @@
 - **공모전 참여자 5명:** 사용자 확인으로 전원 프로젝트 참여 및 해당 공모전 자료 처리에 동의한 상태다. 이 확인은 사용자 진술이며 실제 동의 문서의 원문/개별 사용 목적 및 철회 기록을 이 GitHub 편집에서 별도로 열람·재검증하지 않았다. **실제 학업 원본 수강/Forms 제출자는 4명**이며, 남은 1명을 가상 5번째 학업 데이터 제공자로 취급하지 않는다.
 - **HUFSAbility 정보 수집:** 사용자에게서 **수집 허가 확보**를 확인했다. 따라서 과거의 'HUFSAbility 수집 허가 없음/전혀 미확인'은 현재 사실로 반복하지 않는다. 다만 허가의 대상 서비스, 수집 필드, 사용 범위, 기간, 재배포·외부 AI 전송 허용 여부를 원본 증빙과 대조하는 운영 기록은 별도 보관한다. 학교 공식 HUFSAbility 개편·SSO/계정 접근 허가라는 의미는 아니다.
 - **교수 정보:** 현재 수집 대상은 **공식 강의시간표에 공개된 교수명과 강의명 등 직무상 수업정보**로 한정한다. 위 사용자가 확인한 수집 허가 범위에 해당하는 수업 안내라면 교수 이름의 **일괄 마스킹을 필수 미완료 기능으로 세지 않는다.** 비공개 연락처·평가/평판·사생활 자료는 별개이며, 수집·저장·노출 최소화와 법적 처리 근거는 유지한다. 불필요한 이름은 저장 전 제거할 수 있지만 후행 화면 마스킹만으로 수집·원본 이력을 삭제했다고 주장하지 않는다.
-- **Git 보호 원본 문제는 동의와 독립:** 2026-11-04 main의 보호된 Git 추적 경로 **6개** 때문에 전체 로컬 검사에서 과거 2항목 FAIL. [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)가 내용을 읽지 않고 현재 Git 트리의 6경로 추적 제거, `.gitignore` 예외 제거, 전체 commit-tree metadata CI 검사를 제안함. **#212 main 병합 완료**, 2026-11-04 현 main tracked path 810개 중 금지 경로 **0개 확인(경로 메타데이터만)**. full private checkout privacy 전체 검사 PASS, 과거 Git 이력/clone/backup 처리 완료는 **아직 확인되지 않음**.
+- **Git 보호 원본 문제는 동의와 독립:** 2026-11-04 main의 보호된 Git 추적 경로 **6개** 때문에 전체 로컬 검사에서 과거 2항목 FAIL. [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)가 내용을 읽지 않고 현재 Git 트리의 6경로 추적 제거, `.gitignore` 예외 제거, 전체 commit-tree metadata CI 검사를 제안함. **#212 main 병합 완료**, 2026-11-04 현 main tracked path 811개 중 금지 경로 **0개 확인(경로 메타데이터만)**. full private checkout privacy 전체 검사 PASS, 과거 Git 이력/clone/backup 처리 완료는 **아직 확인되지 않음**.
 - 과거 원본을 코드/PR/CI/프롬프트에 붙여넣거나 무승인 Git history 재작성·force push 하지 않는다. 프로젝트는 데이터 권한과 별개로 실제 OAuth·TLS·DB·NCP·독립 품질 검증을 통과하기 전 `RELEASE_BLOCKED` 상태다. #46·#89는 증거가 충족될 때까지 OPEN.
 
 ## 과거 개인정보 원본/동의 관련 결정과 감사 이력 (2026-11-02 이전)
