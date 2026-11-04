@@ -34,6 +34,10 @@ current가 바뀌었거나 필수 파일이 없거나 경로/권한·동시 작�
 실패 후 복원 성공은 exit1, 복원/헬스까지 실패하면 exit3·수동 복구 필요다.
 새 다운로드·npm 설치·release 삭제·DB 복원·NCP 반납·외부 포트 공개 기능은 없다.
 현재 코드는 합성 파일/프로세스 경계 시험이며 실제 host systemd/SSH/NCP 검증은 별도다.
+서비스 시작은 `Type=simple`이므로 두 URL을 최대10회 준비 대기한 뒤 실패를 판정한다.
+Windows exporter는 과거 Git blob의 shell CRLF도 **생성 ZIP 안에서만** LF로 바꾼다.
+원 Git commit은 유지하고 최종 ZIP SHA256으로 변환된 바이트를 검증한다. helper별
+256KiB 초과·잘못된 UTF-8·단독 CR·BOM은 최종 ZIP 게시 전 거부한다.
 
 ## 1. NCP 콘솔에서 VPC 서버 만들기 — 운영 담당자 이서연, 승인 전 생성 금지
 

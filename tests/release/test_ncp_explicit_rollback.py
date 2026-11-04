@@ -43,6 +43,13 @@ systemctl)
   [ "$SYN_MODE" != restart-failure ] || [ "$count" -gt 1 ] || exit 1;;
 curl)
   current=$(readlink "$SYN_BASE/current")
+  if [ "$SYN_MODE" = delayed-start ] || [ "$SYN_MODE" = delayed-recovery ]; then
+    key=${current##*/}; count=0
+    [ ! -f "$SYN_ROOT/probes-$key" ] || read -r count < "$SYN_ROOT/probes-$key"
+    count=$((count+1)); printf '%s\\n' "$count" > "$SYN_ROOT/probes-$key"
+    [ "$count" -gt 2 ] || exit 1
+  fi
+  if [ "$SYN_MODE" = delayed-recovery ] && [ "$current" = "$SYN_BASE/releases/$SYN_TARGET" ]; then exit 1; fi
   [ "$SYN_MODE" != health-failure ] || [ "$current" != "$SYN_BASE/releases/$SYN_TARGET" ] || exit 1;;
 sleep|journalctl) :;;
 *) exit 99;;
@@ -78,6 +85,12 @@ esac
         result,pointer,commands=self.run_case()
         self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(pointer,TARGET)
         self.assertIn('OK:',result.stdout);self.assertIn('curl ',commands)
+
+    def test_waits_for_type_simple_startup_and_for_original_service_recovery(self):
+        result,pointer,_=self.run_case('delayed-start')
+        self.assertEqual(result.returncode,0,result.stderr);self.assertEqual(pointer,TARGET)
+        result,pointer,_=self.run_case('delayed-recovery')
+        self.assertEqual(result.returncode,1,result.stderr);self.assertEqual(pointer,OLD)
 
     def test_activation_or_health_failure_restores_original_preview(self):
         for mode in ['restart-failure','health-failure']:

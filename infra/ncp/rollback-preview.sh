@@ -71,8 +71,16 @@ switch_to() {
 }
 restart_preview() { timeout 15s systemctl restart hufs-preview.service; }
 healthy() {
-  curl -fsS --connect-timeout 1 --max-time 3 http://127.0.0.1:5173/ >/dev/null \
-    && curl -fsS --connect-timeout 1 --max-time 3 http://127.0.0.1:5173/src/main.tsx >/dev/null
+  # Type=simple restart does not imply readiness. Bound both activation and
+  # restoration polling; a cold Vite listener must not be an instant failure.
+  for _ in $(seq 1 10); do
+    if curl -fsS --connect-timeout 1 --max-time 3 http://127.0.0.1:5173/ >/dev/null \
+      && curl -fsS --connect-timeout 1 --max-time 3 http://127.0.0.1:5173/src/main.tsx >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
 }
 switch_to "$target"
 if restart_preview && healthy; then
