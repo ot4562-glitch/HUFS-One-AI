@@ -1,5 +1,7 @@
 # Laya CPU 급증 방어 설계 — High Memory-g3 4 vCPU·32GB
 
+> **현재 상태 안내:** 2026-11-04: [#161](https://github.com/minseong-hufs/HUFS-One-AI/pull/161)의 격리 child IPC/Linux supervisor/systemd와 Laya 기본 OFF 안전 코드는 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 통해 main에 포함. 그러나 실제 NCP VM/cgroup v2/CPU/RSS/p95·ONNX 모델 권리·유료 실행은 NOT_RUN/RELEASE_BLOCKED. 이 문서의 CPUQuota·MemoryMax 등은 현장 실측 수치가 아닌 설계값. [STATUS](../STATUS.md).
+
 > 최신 가격·예산·개통 승인 [NCP_OPERATIONS_2026.md](NCP_OPERATIONS_2026.md). 위 CPU 1vCPU 상한은 같은 4vCPU 서버에서 25%이며, 확대된 32GB RAM의 충분성은 실측 전 미보장.
 
 
