@@ -1,5 +1,9 @@
 # HUFS One AI — NCP 서버·접속·네트워크·자동설치 운영 가이드
 
+새 운영자는 [짧은 Quickstart](QUICKSTART.md)와 [에이전트 매뉴얼](AGENT_DEPLOYMENT_MANUAL.md)에서
+시작한다. `setup/00-preflight.mjs`는 비용·CIDR·SSH /32·승인 SHA의 **계획만** 검증한다.
+신규 자원 생성·운영 배포·수동 rollback/반납 자동화 완료를 뜻하지 않는다(#192).
+
 > **2026-11-03 | 현재 가능한 자동화는 SSH 터널 전용 합성 시연 설치까지. 실제 학생 서비스 배포는 RELEASE_BLOCKED.** 이 스크립트는 NCP 서버·공인 IP·유료 CLOVA 서비스를 생성하지 않는다. 사용자 승인 뒤 운영 담당자가 콘솔에서 리소스를 준비하고 심민성 코드 담당자가 검증/업데이트한다. 기존 Private Git의 원본 학생 파일·기관 자료·키를 NCP에 통째로 복사하는 것을 금지한다(#46). 승인 없이 배포/유료 자원 생성/모델 다운로드 금지(#89).
 
 **다른 운영자·개발 에이전트에게 인계할 때:** [운영 인수인계 양식](OPERATIONS_HANDOFF_TEMPLATE.md)을 복사해 `local_only/` 아래 실제 값으로 작성하고, 외부에는 비밀을 제거한 요약만 공유한다. 이 가이드는 **NCP 화면에서 누르는 절차**와 **Ubuntu에서 실행하는 명령/Windows에서 쓰는 도구**를 구분한다.
@@ -8,7 +12,7 @@
 
 1. **NCP 콘솔**에서 **VPC·Public Subnet·Ubuntu Server·전용 ACG·공인 IP**를 설정한다. 실제 생성은 **과금 가능**하므로 사전 사용자 승인 필요.
 2. Windows **PuTTYgen**으로 관리자 SSH 공개/개인키를 새로 생성하고, **NCP의 서버 인증키(.pem)와 구분**한다.
-3. PuTTY **root + NCP 관리자 비밀번호**로 초기 접속. WinSCP SFTP로 이 폴더의 `bootstrap-ubuntu.sh`·`harden-ssh.sh`·`deploy-preview.sh`·`hufs-preview.service`와 관리자 **공개키 한 줄만** 복사한다.
+3. PuTTY **root + NCP 관리자 비밀번호**로 초기 접속. WinSCP SFTP로 이 폴더의 `bootstrap-ubuntu.sh`·`harden-ssh.sh`·`deploy-preview.sh`·`rollback-preview.sh`·`hufs-preview.service`와 관리자 **공개키 한 줄만** 복사한다.
 4. `bootstrap-ubuntu.sh`를 1회 실행해 Ubuntu/Node24, 안전한 hufs-admin 사용자·127.0.0.1 전용 시연 서비스·SSH UFW /32를 준비한다.
 5. **별도 새 PuTTY 창에서 hufs-admin 공개키 인증이 된 것을 확인한 후** `harden-ssh.sh`로 root/SSH 비밀번호 로그인 차단.
 6. Windows에서 `Prepare-NcpPreview.ps1`로 **허용된 합성 소스만 ZIP**을 만들고 **SHA256** 확인. WinSCP로 서버의 `/home/hufs-admin/ncp-preview.zip`에 전송.
@@ -16,6 +20,28 @@
 8. PuTTY SSH 터널 **Windows 5174 → 서버 127.0.0.1:5173**을 추가하고 **http://127.0.0.1:5174**에서 **합성 시연만** 확인한다. **실제 Google/학생/PG/NCP AI는 연결되지 않는다.**
 
 기준 OS는 **Ubuntu Server 24.04 LTS amd64** (SKU/리전 이미지가 없으면 22.04 LTS amd64). **Rocky/Alma/Windows Server는 스크립트 지원 밖**이고 실행하면 실패하도록 했다. Windows 개발 PC는 PowerShell 5.1+ 및 Git for Windows, PuTTY, WinSCP를 이용한다. 최신 Git HEAD에서 정상 merge·CI 확인된 소스만 포장한다.
+
+### 기존 합성 preview의 명시적 복구
+
+`bash rollback-preview.sh --target <대상ZIP의64자리SHA256> --expected-current <현재ZIP의64자리SHA256>`는
+호스트를 읽거나 바꾸지 않는 기본 plan이다. **폴더 이름은 내용 무결성 증거가 아니다.**
+운영자는 보존된 승인 아티팩트/출처 SHA·현재 파일/서비스 상태와 대상 권리를 먼저 검토한다.
+키/실학생/유료 Provider·운영 데이터를 가진 release에는 이 합성 전용 도구를 사용하지 않는다.
+실행 승인 뒤 기존 호스트의 제한된 hufs-admin sudo에서
+`sudo /usr/local/sbin/hufs-preview-rollback --target <대상64SHA> --expected-current <현재64SHA> --apply --ack-owner-approved`로 복구한다.
+이 확인 flag 자체가 원격 CI/독립 사람 승인의 증거는 아니다.
+
+대상은 root가 관리하는 preview/releases 바로 아래의 실제 디렉터리여야 하며,
+current가 바뀌었거나 필수 파일이 없거나 경로/권한·동시 작업 잠금이 불안전하면 거부한다.
+배포와 복구는 같은 `.preview-operation.lock`을 사용한다. 재시작/두 loopback URL 검사가
+성공해야 OK이며, 실패하면 원래 current를 복원하고 재시작·헬스를 검사한다.
+실패 후 복원 성공은 exit1, 복원/헬스까지 실패하면 exit3·수동 복구 필요다.
+새 다운로드·npm 설치·release 삭제·DB 복원·NCP 반납·외부 포트 공개 기능은 없다.
+현재 코드는 합성 파일/프로세스 경계 시험이며 실제 host systemd/SSH/NCP 검증은 별도다.
+서비스 시작은 `Type=simple`이므로 두 URL을 최대10회 준비 대기한 뒤 실패를 판정한다.
+Windows exporter는 과거 Git blob의 shell CRLF도 **생성 ZIP 안에서만** LF로 바꾼다.
+원 Git commit은 유지하고 최종 ZIP SHA256으로 변환된 바이트를 검증한다. helper별
+256KiB 초과·잘못된 UTF-8·단독 CR·BOM은 최종 ZIP 게시 전 거부한다.
 
 ## 1. NCP 콘솔에서 VPC 서버 만들기 — 운영 담당자 이서연, 승인 전 생성 금지
 
@@ -145,3 +171,45 @@ powershell -ExecutionPolicy Bypass -File .\infra\ncp\Deploy-NcpPreview.ps1 -Serv
 **운영 서비스 배포를 가장한 가짜 원클릭은 만들지 않는다.** 지금의 설치 자동화는 안전한 **단일 VM 합성 미리보기** 준비용이다.
 
 공식 참조: [NCP Server](https://guide.ncloud-docs.com/docs/server-create-vpc), [Public IP](https://guide.ncloud-docs.com/docs/server-publicip-vpc), [ACG](https://guide.ncloud-docs.com/docs/server-acg-vpc), [NACL](https://guide.ncloud-docs.com/docs/vpc-nacl-vpc), [NCP Access](https://guide.ncloud-docs.com/docs/server-access-vpc), [NodeSource](https://github.com/nodesource/distributions), [WinSCP](https://winscp.net/eng/docs/guide_connect).
+
+
+## 설치 및 기존 릴리스 배포·복구의 승인형 단일 진입점 (후속 PR)
+
+**기본 실행은 완전한 plan-only.** 별도 NCP 계정·요금 승인, Terraform
+#211/#214에서 확인한 전용 네트워크/SSH 서버와 승인된 소스 커밋이 선행한다.
+이 단계를 실행한다고 운영 공개, 학교 공식 서비스, 유료 OCR/HCX 또는 실제
+학생자료 연동이 승인되는 것은 아니다.
+
+Windows PowerShell 5.1+ 관리 PC에서 먼저 다음 명령을 실행한다.
+
+```powershell
+powershell -NoProfile -File .\infra\ncp\Operator-NcpPreview.ps1
+```
+
+이는 Git/SSH/클라우드에 접근하지 않고 배포·복구 요구사항을 요약한다. 실서버
+작업에 대한 **독립 사용자 승인**을 받고 NCP 운영자가 관리자 /32, ACG/NACL,
+검증된 공인 서버 IP, 호스트 지문, 전용 .ppk, 현재 ZIP SHA, 이전 릴리스 SHA를
+확인한 다음에만 다음 절차를 이용한다.
+
+1. 서버 설치(승인된 Ubuntu 호스트에서만): `bash infra/ncp/setup/02-install-host.sh --plan`
+   → `sudo bash infra/ncp/setup/02-install-host.sh --apply --ack-owner-approved --ack-acg-verified --admin-public-key /root/hufs-admin.pub --admin-ip <관리자공인IPv4/32> --reviewed-bootstrap-sha256 <승인된bootstrap64SHA>`.
+   설치기는 bootstrap 바이트와 전체 고정 helper/service/설치기 파일의 root 소유·
+   group/other 쓰기 금지, bundle부터 루트까지 정규 디렉터리·소유/쓰기 권한을
+   검사한다. `/tmp`나 사용자 쓰기 가능한 checkout에서 직접 설치하지 않는다.
+   승인된 bundle을 root 전용 경로에 준비한 뒤 기존 SSH/UFW
+   준비 코드를 호출한다. **새 PuTTY 창의 키 인증 성공 확인 전에는 SSH
+   password/root 로그인 비활성화 스크립트를 실행하면 안 된다.**
+2. 합성 미리보기 배포: `Operator-NcpPreview.ps1 -Operation Deploy -Apply -OwnerApproved -ServerIPv4 <서버공인IPv4> -PrivateKeyPath <로컬.ppk> -HostKeyFingerprint <직접확인한지문> -Ref <검토승인커밋>`.
+   내부에서는 기존 `Deploy-NcpPreview.ps1`의 allowlisted ZIP SHA→SFTP→
+   pinned SSH→loopback 헬스·실패 시 복구 경로만 실행한다.
+3. 헬스 확인: 동일 옵션으로 `-Operation Verify`. 서버 로컬
+   `127.0.0.1:5173/` 및 `/src/main.tsx`를 **SSH 안에서만** 검사한다.
+   서버 공인 5173·3000·5432는 열지 않는다.
+4. 수동 복구: `-Operation Rollback -Apply -OwnerApproved -Target <기존승인64SHA> -ExpectedCurrent <현재64SHA>`.
+   **이미 호스트에 존재하는 릴리스**만 복구하고 `flock`·현재 SHA·실패 시
+   원래 릴리스 복귀·상태 확인을 수행한다. 변경할 SHA를 임의 경로/명령으로
+   대체할 수 없다. 실제 승인 전에는 rollback 명령을 실행하지 않는다.
+
+모든 실제 실행은 운영 담당자 확인 사항이며, 위 지시만으로 사람이 리뷰
+완료/실행 완료했다고 주장하지 않는다. 관련 #12/#22(이서연 비코드 실측),
+#192(NCP 코드), #46/#61/#89(RELEASE_BLOCKED).

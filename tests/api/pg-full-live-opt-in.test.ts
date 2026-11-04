@@ -7,7 +7,8 @@ import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {createLocalJWKSet,exportJWK,generateKeyPair,SignJWT} from 'jose';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
-import {createPostgresGoogleAuth,createPostgresSchoolMailAuth} from '../../apps/api/src/auth-postgres.js';
+import {createPostgresApplication} from '../../apps/api/src/application-postgres.js';
+import {createPostgresSchoolMailAuth} from '../../apps/api/src/auth-postgres.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
 import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
@@ -16,6 +17,7 @@ import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-pos
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
 import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
+import {proveSourceJobControlPg} from './source-job-control-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -30,6 +32,7 @@ import {PostgresExperienceApprovalStore} from '../../apps/api/src/modules/profil
 import {PostgresDemoOverlayStore} from '../../apps/api/src/modules/demo-overlay-postgres.js';
 import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
 import {PostgresProviderResults} from '../../apps/api/src/modules/ai/provider-results-postgres.js';
+import {PostgresProviderAuthority} from '../../apps/api/src/modules/ai/provider-authority-postgres.js';
 import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
@@ -39,6 +42,7 @@ const pools:Pool[]=[];
 // Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
 const rolePassword=randomBytes(24).toString('hex');
 let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool,overlays:Pool,aiBudget:Pool,aiResults:Pool;
+let aiProvider:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
 const now=()=>new Date().toISOString();
@@ -139,6 +143,10 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       GRANT EXECUTE ON FUNCTION ai_budget_transition(text,uuid,text,text,bigint,text) TO hufs_test_ai_budget;
        GRANT USAGE ON SCHEMA public TO hufs_test_ai_results;
        GRANT EXECUTE ON FUNCTION ai_provider_result_put(jsonb),ai_provider_result_get(uuid) TO hufs_test_ai_results;
+       CREATE ROLE hufs_test_ai_provider LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+       GRANT USAGE ON SCHEMA public TO hufs_test_ai_provider;
+       GRANT SELECT ON api_ai_provider_inputs,api_ai_provider_input_heads,api_self_consents,
+         source_ingest_heads,source_effective_revisions_vnext,source_rights_receipts,source_rights_revocations TO hufs_test_ai_provider;
     `);
     writer=poolFor(url,'hufs_test_personal');reader=poolFor(url,'hufs_test_projection');
     temporal=poolFor(url,'hufs_test_temporal');limiter=poolFor(url,'hufs_test_limiter');
@@ -147,6 +155,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     overlays=poolFor(url,'hufs_test_overlay');
     aiBudget=poolFor(url,'hufs_test_ai_budget');
      aiResults=poolFor(url,'hufs_test_ai_results');
+    aiProvider=poolFor(url,'hufs_test_ai_provider');
     await admin.query(`INSERT INTO api_sharing_grants(
       grant_id,actor_id,subject_id,allowed_sections,version,consent_ref,
       approved_by,approved_at,expires_at)
@@ -159,6 +168,27 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   afterAll(async()=>{await Promise.all(pools.map(pool=>pool.end()));},30000);
 
   const billingHash='a'.repeat(64),usageReceipt='b'.repeat(64);
+  async function provisionProvider(suffix:string){
+    const actorId='SYN-PROVIDER-'+suffix,sourceId=actorId+'-SOURCE',revisionId=actorId+'-REV',permissionRef=actorId+'-PERM',projectionId=actorId+'-INPUT';
+    const asOf=now(),before=new Date(Date.parse(asOf)-60000).toISOString(),approved=new Date(Date.parse(asOf)-30000).toISOString(),expires=new Date(Date.parse(asOf)+3600000).toISOString();
+    const originalSha256='d'.repeat(64),choices={personalStorage:true,externalAi:true,teamReview:false,ncpStorage:false,presentation:false};
+    const packet={packetId:'DOC-PACKET',task:'opportunity_terms',providerInputClass:'SYNTHETIC_CLEARED',
+      sourceTokens:[{token:'DOC1',paragraphs:[{id:'p1',text:'Synthetic approved notice'}]}],allowedTopicCodes:[],allowedObjectTokens:[],approvedFacts:[],schemaVersion:'1',promptVersion:'1'};
+    await admin.query(`INSERT INTO source_revisions_vnext(revision_id,source_id,original_sha256,content_sha256,media_kind,source_class,permission_ref,provenance,status,change_kind,fetched_at,last_checked_at,last_verified_at)
+      VALUES($1,$2,$3,$3,'TEXT','SYNTHETIC',$4,'SYNTHETIC','ACTIVE','NEW',$5,$5,$5)`,[revisionId,sourceId,originalSha256,permissionRef,before]);
+    await admin.query('INSERT INTO source_ingest_heads(source_id,revision_id,fetched_at,last_checked_at) VALUES($1,$2,$3,$3)',[sourceId,revisionId,before]);
+    await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at) VALUES($1,1,$2,$3)`,[actorId,choices,before]);
+    await admin.query(`INSERT INTO source_rights_receipts(receipt_id,actor_id,source_id,permission_ref,canonical_url,purposes,reviewed_by,reviewed_at,starts_at,expires_at,policy_version)
+      VALUES($1,$2,$3,$4,'https://example.org/synthetic',ARRAY['STORE','EXTERNAL_TRANSFER'],'SYN-INDEPENDENT-OPERATOR',$5,$5,$6,'rights-1')`,[actorId+'-RIGHTS-1',actorId,sourceId,permissionRef,before,expires]);
+    await admin.query(`INSERT INTO api_ai_provider_inputs(projection_id,actor_id,input_ref,operation,as_of,epoch,policy_version,consent_version,approved_by,approved_at,expires_at,input_class,privacy_review_ref,source_refs,safe_packet)
+      VALUES($1,$2,'SYN-INPUT','HCX_007',$3,'epoch-1','input-policy-1','1','SYN-INDEPENDENT-OPERATOR',$4,$5,'SYNTHETIC_CLEARED','SYN-PRIVACY-ATTESTATION',$6,$7)`,
+      [projectionId,actorId,asOf,approved,expires,JSON.stringify([{sourceId,revisionId,permissionRef,originalSha256}]),packet]);
+    await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id) VALUES($1,'SYN-INPUT','HCX_007',$2)`,[actorId,projectionId]);
+    const request={actor:{actorId,role:'BETA' as const,sessionIdHash:'SYN-SESSION-HASH',csrfToken:'SYN-CSRF-TOKEN-123456',sessionExpiresAt:expires,schoolMailProofExpiresAt:expires,betaAllowed:true},
+      inputRef:'SYN-INPUT',operation:'HCX_007' as const,asOf,phaseId:'SYN-PHASE',idempotencyKey:'SYN-KEY',now:now()};
+    const authority=new PostgresProviderAuthority(adapter(aiProvider),{policyVersion:'input-policy-1',sessionIsCurrent:async()=>true});
+    return {authority,request,actorId,sourceId,revisionId,permissionRef,projectionId,before,expires};
+  }
   function request(phaseId:string,idempotencyKey:string,worstCaseUnits=100){
     return {phaseId,task:'HCX_007' as const,idempotencyKey,requestSha256:billingHash,worstCaseUnits};
   }
@@ -167,6 +197,39 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       VALUES($1,true,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',$2,$3,$4,$5)`,
       [phase,cap,actorCap,attempts,actorAttempts]);
     return new PostgresAiBudgetLedger(adapter(aiBudget));
+  }
+  /** Synthetic settled result fixtures for the remaining #150 retention proof.
+   * Uses the execute-only runtime role, never a privileged result INSERT. */
+  async function retentionResult(suffix:string,ttlMs=600_000){
+    const owner='SYN-RETENTION-'+suffix,phase='SYN-RETENTION-PHASE-'+suffix;
+    const projection='SYN-RETENTION-PROJECTION-'+suffix,inputRef='SYN-RETENTION-INPUT-'+suffix;
+    const approvedAt=new Date(Date.now()-120_000).toISOString(),asOf=new Date(Date.now()-60_000).toISOString();
+    const inputExpiry=new Date(Date.now()+600_000).toISOString(),epoch='retention-v1';
+    await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at)
+      VALUES($1,1,'{"personalStorage":true,"externalAi":true,"teamReview":false,"ncpStorage":false,"presentation":false}'::jsonb,$2)`,[owner,approvedAt]);
+    const packet={packetId:'SYN-RETENTION-PACKET',task:'opportunity_terms',providerInputClass:'SYNTHETIC_CLEARED',
+      sourceTokens:[{token:'DOC1',paragraphs:[{id:'p1',text:'SYNTHETIC ONLY'}]}],
+      allowedTopicCodes:[],allowedObjectTokens:[],approvedFacts:[],schemaVersion:'1',promptVersion:'1'};
+    await admin.query(`INSERT INTO api_ai_provider_inputs(projection_id,actor_id,input_ref,operation,as_of,epoch,
+      policy_version,consent_version,approved_by,approved_at,expires_at,input_class,privacy_review_ref,source_refs,safe_packet)
+      VALUES($1,$2,$3,'HCX_007',$4,$5,'retention-policy','1','SYN-INDEPENDENT-REVIEWER',$6,$7,
+        'SYNTHETIC_CLEARED','SYN-RETENTION-PRIVACY',$8::jsonb,$9::jsonb)`,
+    [projection,owner,inputRef,asOf,epoch,approvedAt,inputExpiry,JSON.stringify([{sourceId:'SYN-RETENTION-SOURCE',
+      revisionId:'SYN-RETENTION-REV',permissionRef:'SYN-RETENTION-PERM',originalSha256:'c'.repeat(64)}]),JSON.stringify(packet)]);
+    await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id)
+      VALUES($1,$2,'HCX_007',$3)`,[owner,inputRef,projection]);
+    const ledger=await provisionBudget(phase),job=await ledger.reserve(owner,request(phase,'SYN-RETENTION-KEY'));
+    const identity={phaseId:phase,jobId:job.jobId,requestSha256:billingHash};
+    await ledger.transition(owner,{...identity,action:'DISPATCHED'});
+    await ledger.transition(owner,{...identity,action:'SETTLED',actualUnits:40,receiptSha256:usageReceipt});
+    const value={jobId:job.jobId,actorId:owner,sessionIdHash:'SYN-RETENTION-SESSION',inputRef,
+      operation:'HCX_007' as const,asOf,phaseId:phase,idempotencyKey:'SYN-RETENTION-KEY',requestSha256:billingHash,
+      inputEpoch:'input-'+createHash('sha256').update([projection,epoch,'1'].join('|')).digest('hex'),
+      expiresAt:new Date(Date.now()+Math.min(ttlMs,590_000)).toISOString(),
+      candidate:{reviewState:'NEEDS_REVIEW',text:'SYNTHETIC-RETENTION-CANDIDATE'}};
+    const store=new PostgresProviderResults(adapter(aiResults));
+    await store.put(value);
+    return {owner,projection,value,store};
   }
   it('AI budget is OFF by default, private, and execute-only role cannot bypass accounting',async()=>{
     const phase='SYN-BILL-OFF';
@@ -882,6 +945,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect(await make().runOne()).toEqual({state:'IDLE'});expect(calls).toBe(1);
   });
 
+  it('exposes only authorized job control/status across HTTP and two built API process lifetimes',async()=>{
+    await proveSourceJobControlPg({admin,url:connectionUrl(),password:rolePassword,adapter});
+  },60000);
   it('reads only current rights-scoped SourceRevision metadata from real SELECT-only PostgreSQL',async()=>{
     const old=new Date(Date.now()-60_000).toISOString(),fresh=new Date(Date.now()-30_000).toISOString();
     await admin.query(`INSERT INTO source_revisions_vnext (
@@ -999,6 +1065,47 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   });
 
   // Run after #157's empty-projection baseline test; keep that prior gate unchanged.
+  it('provider authority reads independently approved input with actual actor RLS and no write privilege',async()=>{
+    const p=await provisionProvider('RLS');
+    expect((await p.authority.read(p.request))?.packet?.providerInputClass).toBe('SYNTHETIC_CLEARED');
+    expect(await p.authority.read({...p.request,actor:{...p.request.actor,actorId:'SYN-OTHER-ACTOR'}})).toBeNull();
+    expect((await aiProvider.query('SELECT projection_id FROM api_ai_provider_inputs')).rows).toHaveLength(0);
+    await expect(aiProvider.query(`UPDATE api_ai_provider_input_heads SET projection_id=$1`,[p.projectionId])).rejects.toMatchObject({code:'42501'});
+    await expect(admin.query(`UPDATE api_ai_provider_inputs SET epoch='tampered' WHERE projection_id=$1`,[p.projectionId])).rejects.toThrow('immutable provider input');
+    const policies=await admin.query(`SELECT relname,relrowsecurity,relforcerowsecurity FROM pg_class
+      WHERE relname=ANY($1::text[])`,[['api_ai_provider_inputs','api_ai_provider_input_heads']]);
+    expect(policies.rows).toHaveLength(2);expect(policies.rows.every(r=>r.relrowsecurity&&r.relforcerowsecurity)).toBe(true);
+  });
+  it('physically erases provider payloads on external-AI withdrawal and never restores archived inputs',async()=>{
+    const p=await provisionProvider('ERASURE');
+    expect(await p.authority.read({...p.request,now:now()})).not.toBeNull();
+    await admin.query(`UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{externalAi}','false'::jsonb),
+      version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1`,[p.actorId]);
+    const row=(await admin.query('SELECT safe_packet,media_bytes,erased_at,epoch FROM api_ai_provider_inputs WHERE projection_id=$1',[p.projectionId])).rows[0];
+    expect(row?.safe_packet).toBeNull();expect(row?.media_bytes).toBeNull();expect(row?.erased_at).not.toBeNull();expect(row?.epoch).toBe('epoch-1');
+    expect(await p.authority.read({...p.request,now:now()})).toBeNull();
+    await expect(admin.query(`UPDATE api_ai_provider_inputs SET safe_packet='{}'::jsonb,erased_at=NULL WHERE projection_id=$1`,[p.projectionId]))
+      .rejects.toThrow('immutable provider input');
+    await admin.query(`UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{externalAi}','true'::jsonb),version=version+1 WHERE actor_id=$1`,[p.actorId]);
+    expect(await p.authority.read({...p.request,now:now()})).toBeNull();
+  });
+  it('provider latest revoked receipt shadows the earlier still-valid receipt',async()=>{
+    const p=await provisionProvider('REVOKE');expect(await p.authority.read(p.request)).not.toBeNull();
+    await admin.query(`INSERT INTO source_rights_receipts(receipt_id,actor_id,source_id,permission_ref,canonical_url,purposes,reviewed_by,reviewed_at,starts_at,expires_at,policy_version)
+      VALUES($1,$2,$3,$4,'https://example.org/synthetic',ARRAY['STORE','EXTERNAL_TRANSFER'],'SYN-INDEPENDENT-OPERATOR',$5,$5,$6,'rights-2')`,
+      [p.actorId+'-RIGHTS-2',p.actorId,p.sourceId,p.permissionRef,p.before,p.expires]);
+    await admin.query(`INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref) VALUES($1,'SYN-INDEPENDENT-OPERATOR',clock_timestamp(),'SYN-REVOKED')`,[p.actorId+'-RIGHTS-2']);
+    expect(await p.authority.read({...p.request,now:now()})).toBeNull();
+  });
+  it('provider fresh consent withdrawal and head deletion deny previously approved projection',async()=>{
+    const p=await provisionProvider('CONSENT');expect(await p.authority.read(p.request)).not.toBeNull();
+    await admin.query(`UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{externalAi}','false'),version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1`,[p.actorId]);
+    expect(await p.authority.read({...p.request,now:now()})).toBeNull();
+    const h=await provisionProvider('HEAD');expect(await h.authority.read(h.request)).not.toBeNull();
+    await admin.query('DELETE FROM api_ai_provider_input_heads WHERE actor_id=$1',[h.actorId]);
+    expect(await h.authority.read({...h.request,now:now()})).toBeNull();
+  });
+
   it('accepts only SETTLED candidate results, isolates actors and scrubs on consent withdrawal',async()=>{
     const owner='SYN-RESULT-A',session='SYN-RESULT-SESSION-1',phase='SYN-RESULT-PHASE';
     const projection='SYN-RESULT-PROJECTION-1',inputRef='SYN-RESULT-INPUT-1',operation='HCX_007' as const;
@@ -1060,6 +1167,13 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       .rejects.toThrow('Provider result unavailable');
     await expect(results.put({...value,inputEpoch:'input-'+'0'.repeat(64)}))
       .rejects.toThrow('Provider result unavailable');
+    // Preserve the remaining original #150 exact billing/input binding cases.
+    for(const delta of [{requestSha256:'0'.repeat(64)},{phaseId:'SYN-OTHER-PHASE'},
+      {idempotencyKey:'SYN-OTHER-KEY'},{operation:'OCR_GENERAL' as const},
+      {asOf:new Date(Date.parse(asOf)-1).toISOString()},
+      {expiresAt:new Date(Date.now()+31*60_000).toISOString()}]){
+      await expect(results.put({...value,...delta})).rejects.toThrow('Provider result unavailable');
+    }
     expect(await restarted.get(owner,session,job.jobId)).toEqual(value);
     await expect(aiResults.query('SELECT result_json FROM api_ai_provider_results')).rejects.toMatchObject({code:'42501'});
     await expect(aiResults.query("UPDATE api_ai_provider_results SET result_json='{}'::jsonb"))
@@ -1067,6 +1181,12 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await expect(aiResults.query('SELECT public.ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
     expect((await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
       WHERE relname='api_ai_provider_results'`)).rows).toEqual([{relrowsecurity:true,relforcerowsecurity:true}]);
+    await admin.query('DELETE FROM api_ai_provider_input_heads WHERE actor_id=$1',[owner]);
+    expect(await restarted.get(owner,session,job.jobId)).toBeNull();
+    // Restore only this synthetic operator fixture to test withdrawal separately.
+    await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id)
+      VALUES($1,$2,$3,$4)`,[owner,inputRef,operation,projection]);
+    expect(await restarted.get(owner,session,job.jobId)).toEqual(value);
     // Consent withdrawal triggers one-way erasure of input AND previously settled result.
     await admin.query(`UPDATE api_self_consents SET version=version+1,
       choices_json=jsonb_set(choices_json,'{externalAi}','false'::jsonb),
@@ -1176,7 +1296,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     }finally{await app.close();}
   });
 
-  it('restores PostgreSQL BETA auth across API instances and enforces shared revocation, limits and CSRF',async()=>{
+  it('assembles PostgreSQL BETA auth and owner consent HTTP with restart, shared revocation, limits and CSRF',async()=>{
     await admin.query(`
       CREATE ROLE hufs_test_auth_sessions LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       CREATE ROLE hufs_test_auth_admission LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
@@ -1203,8 +1323,12 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
             .setAudience(clientId).setIssuedAt(Math.floor(at.getTime()/1000)-1)
             .setExpirationTime(Math.floor(at.getTime()/1000)+600).sign(pair.privateKey);
         }}};
-    const make=()=>createIntegratedApi({allowedOrigin:origin,repository:closedRepository,
-      googleAuth:createPostgresGoogleAuth(config),now:()=>at.toISOString()});
+    let ownerAllowed=true;
+    const make=()=>createPostgresApplication({auth:config,platform:{
+      pools:{projections:adapter(reader),calendar:adapter(temporal),personal:adapter(writer),evidence:adapter(temporal)},
+      evidenceRights:{resolveFor:async()=>null},selfAccount:{pool:adapter(selfAccount),
+        authority:{mayAccess:async({actorId})=>ownerAllowed&&actorId==='google:'+subject}},
+    }});
     const first=make();let second=make();
     const cookie=(response:{headers:Record<string,unknown>},name:string)=>{
       const raw=response.headers['set-cookie'],all=Array.isArray(raw)?raw:[raw];
@@ -1230,6 +1354,18 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       expect(String(login.headers['set-cookie'])).toContain('HttpOnly; Secure; SameSite=Lax');
       expect(String(login.headers['set-cookie'])).not.toContain('Domain=');
       expect((await second.inject({url:'/api/auth/session',headers})).json()).toMatchObject({role:'BETA',actorId:'google:'+subject});
+      const choices={personalStorage:true,externalAi:false,teamReview:false,ncpStorage:false,presentation:false};
+      const consentCsrf=(await second.inject({url:'/api/auth/csrf',headers})).json().csrfToken as string;
+      const consent=await second.inject({method:'PUT',url:'/api/consents',headers:{...headers,origin,'x-csrf-token':consentCsrf},
+        payload:{expectedVersion:0,choices}});
+      expect(consent.statusCode).toBe(200);expect(consent.json()).toMatchObject({consents:{version:1,choices}});
+      await second.close();second=make();
+      expect((await second.inject({url:'/api/consents',headers})).json()).toMatchObject({consents:{version:1,choices}});
+      const profile=await second.inject({url:'/api/profile',headers});
+      expect(profile.statusCode).toBe(200);expect(profile.json()).toEqual({profile:null});
+      ownerAllowed=false;
+      expect((await second.inject({url:'/api/consents',headers})).statusCode).toBe(403);
+      ownerAllowed=true;
       const before=exchanges;
       expect((await second.inject(pending)).statusCode).toBe(403);
       expect(exchanges).toBe(before); // one-time state consumed across replicas
@@ -1258,5 +1394,53 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       for(let i=0;i<10;i++)expect((await (i%2?first:second).inject(start)).statusCode).toBe(303);
       expect((await first.inject(start)).statusCode).toBe(429);
     }finally{await first.close();await second.close();}
+  });
+
+  it('retention never resurrects erased payloads after AI/storage withdrawal, consent deletion or later reconsent',async()=>{
+    for(const mode of ['externalAi','personalStorage','delete'] as const){
+      const f=await retentionResult('ERASE-'+mode);
+      if(mode==='delete')await admin.query('DELETE FROM api_self_consents WHERE actor_id=$1',[f.owner]);
+      else await admin.query(`UPDATE api_self_consents SET version=version+1,
+        choices_json=jsonb_set(choices_json,ARRAY[$2]::text[],'false'::jsonb),updated_at=clock_timestamp()
+        WHERE actor_id=$1`,[f.owner,mode]);
+      const erased=(await admin.query(`SELECT result_json,erased_at,request_sha256 FROM api_ai_provider_results
+        WHERE job_id=$1`,[f.value.jobId])).rows[0]!;
+      expect(erased.result_json).toBeNull();expect(erased.erased_at).not.toBeNull();expect(erased.request_sha256).toBe(billingHash);
+      await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at)
+        VALUES($1,2,'{"personalStorage":true,"externalAi":true,"teamReview":false,"ncpStorage":false,"presentation":false}'::jsonb,clock_timestamp())
+        ON CONFLICT(actor_id) DO UPDATE SET version=api_self_consents.version+1,choices_json=EXCLUDED.choices_json,updated_at=EXCLUDED.updated_at`,[f.owner]);
+      const restarted=new PostgresProviderResults(adapter(aiResults));
+      expect(await restarted.get(f.owner,f.value.sessionIdHash,f.value.jobId)).toBeNull();
+      await expect(restarted.put(f.value)).rejects.toThrow('Provider result unavailable');
+      await expect(admin.query(`UPDATE api_ai_provider_results SET result_json=$2::jsonb,erased_at=NULL
+        WHERE job_id=$1`,[f.value.jobId,JSON.stringify(f.value.candidate)])).rejects.toThrow('immutable provider result');
+      expect((await admin.query('SELECT state,charged_units,receipt_sha256 FROM ai_budget_jobs WHERE job_id=$1',
+        [f.value.jobId])).rows[0]).toEqual({state:'SETTLED',charged_units:'40',receipt_sha256:usageReceipt});
+    }
+  });
+
+  it('a separate execute-only retention role scrubs bounded expired batches while preserving active results and billing',async()=>{
+    await admin.query(`CREATE ROLE hufs_test_result_retention LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      GRANT USAGE ON SCHEMA public TO hufs_test_result_retention;
+      GRANT EXECUTE ON FUNCTION ai_provider_results_prune(integer) TO hufs_test_result_retention;`);
+    const maintenance=poolFor(connectionUrl(),'hufs_test_result_retention');
+    const first=await retentionResult('TTL-A',3000),second=await retentionResult('TTL-B',3000),active=await retentionResult('TTL-ACTIVE');
+    // Wait only until these synthetic fixtures expire, independent of runner speed.
+    await admin.query(`SELECT pg_sleep(GREATEST(0,EXTRACT(EPOCH FROM $1::timestamptz-clock_timestamp()))+0.02)`,[second.value.expiresAt]);
+    const restarted=new PostgresProviderResults(adapter(aiResults));
+    for(const f of [first,second])expect(await restarted.get(f.owner,f.value.sessionIdHash,f.value.jobId)).toBeNull();
+    await expect(aiResults.query('SELECT public.ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
+    await expect(maintenance.query('SELECT result_json FROM api_ai_provider_results')).rejects.toMatchObject({code:'42501'});
+    const pruner=new PostgresProviderResults(adapter(maintenance));
+    expect(await pruner.pruneExpired(1)).toBe(1);
+    const jobs=[first.value.jobId,second.value.jobId];
+    expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_results
+      WHERE job_id=ANY($1::uuid[]) AND result_json IS NULL AND erased_at IS NOT NULL`,[jobs])).rows[0]?.n).toBe(1);
+    expect(await pruner.pruneExpired(1)).toBe(1);expect(await pruner.pruneExpired(1)).toBe(0);
+    expect(await restarted.get(active.owner,active.value.sessionIdHash,active.value.jobId)).toEqual(active.value);
+    for(const f of [first,second]){
+      await expect(f.store.put(f.value)).rejects.toThrow('Provider result unavailable');
+      expect((await admin.query('SELECT request_sha256 FROM api_ai_provider_results WHERE job_id=$1',[f.value.jobId])).rows[0]?.request_sha256).toBe(billingHash);
+    }
   });
 });

@@ -73,6 +73,9 @@ export interface AiCandidateProvider {
 }
 
 export interface ApiOptions {
+  /** Process-local leases only. Defaults support 20 directed subject switches
+   * (40 selections), other tabs and 2 sessions/actor; global capacity is 200. */
+  contextLimits?:{perActor:number;perSession:number};
   demoOverlay?:Pick<DemoOverlayService,'read'|'put'|'reset'>;
   /** Independent current operator allowlist; a BETA grant or OIDC email alone is insufficient. */
   adminAuthority?:{isApproved(input:{actor:VerifiedTeamActor;now:string}):Promise<boolean>};
@@ -106,6 +109,8 @@ export interface ApiOptions {
   /** Explicit server-only adapter; default absent, never started by import or env. */
   realAi?:{phaseId:string;operation:'HCX_005'|'HCX_007';
     executor:Pick<ReturnType<typeof import('./modules/ai/provider-runtime.js').createProviderExecutor>,'execute'|'readJob'>};
+  /** Exact-current-actor, independently approved input metadata. No packet/media or credentials. */
+  approvedAiInputs?:{list(actor:VerifiedActor):Promise<import('@hufs-one/contracts').ApprovedProviderInputs>};
   maxSyntheticAiCallsPerActor?: number;
   /** Server-owned, rights/scope/head-bound revision metadata; never raw source bodies. */
   sourceHistory?:{

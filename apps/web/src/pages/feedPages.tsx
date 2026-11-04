@@ -1,4 +1,5 @@
 import type {PageRenderer} from '../App.js';
+import {RevisionComparison} from '../features/revisions/RevisionComparison.js';
 import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
@@ -64,7 +65,7 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
   };
 };
 
-export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sandbox}) => {
+export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sandbox, services, controller}) => {
   const m = /^\/opportunities\/([^/]+)$/.exec(path);
   if (!m) return null;
   const view = screenViewOf(state);
@@ -87,6 +88,7 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
         </dl>
         {card.relevance && <p className="card__relevance">{card.relevance.text}<span className="card__disclaimer">{card.relevance.disclaimer}</span></p>}
         {card.reasons.length > 0 && <Section title="이 공고를 보여 준 이유"><ul>{card.reasons.map(r => <li key={r}>{r}</li>)}</ul></Section>}
+        {services.revisions && <RevisionComparison opportunityId={card.opportunityId} state={state} controller={controller} port={services.revisions} />}
         {sandbox && <OpportunityActions key={card.opportunityId} sandbox={sandbox} id={card.opportunityId} />}
         <p><InAppLink to="/" navigate={navigate}>오늘로 돌아가기</InAppLink></p>
       </>

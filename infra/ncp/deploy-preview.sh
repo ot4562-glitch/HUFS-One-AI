@@ -39,6 +39,7 @@ fixed={
   "packages/contracts/package.json", "packages/contracts/tsconfig.build.json",
   "infra/ncp/bootstrap-ubuntu.sh", "infra/ncp/harden-ssh.sh",
   "infra/ncp/deploy-preview.sh", "infra/ncp/hufs-preview.service",
+  "infra/ncp/rollback-preview.sh",
 }
 prefixes=(
   "apps/web/src/", "packages/contracts/src/", "packages/core/src/",
@@ -74,6 +75,23 @@ print("Allowlisted ZIP paths, size and symlink policy: PASS")
 PY
 
 base=/opt/hufs-one/preview
+[[ -d "$base" && ! -L "$base" && ! -L "$base/.preview-operation.lock" ]] || exit 2
+[[ ! -e "$base/.preview-operation.lock" || -f "$base/.preview-operation.lock" ]] || exit 2
+python3 - "$base" <<'PY'
+import pathlib,stat,sys
+base=pathlib.Path(sys.argv[1]); expected_uid = 0
+for path in [base,base/'releases']:
+    info=path.lstat()
+    if not stat.S_ISDIR(info.st_mode) or path.resolve()!=path or info.st_uid!=expected_uid or info.st_mode&0o022:
+        sys.exit('Untrusted preview lock parent')
+lock=base/'.preview-operation.lock'
+if lock.exists():
+    info=lock.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid!=expected_uid or info.st_mode&0o022:
+        sys.exit('Untrusted preview lock')
+PY
+exec 9>>"$base/.preview-operation.lock"
+flock -n 9 || { echo 'Another preview operation is active.' >&2; exit 2; }
 release="$base/releases/$expected"
 old=''
 if [[ -L "$base/current" ]]; then old=$(readlink "$base/current"); fi

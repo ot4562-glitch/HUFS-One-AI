@@ -61,6 +61,15 @@ artifacts/
 **/*_qa_*.png
 **/*_qa_*.html
 node_modules/
+
+# Operator IaC values/state may contain private infrastructure metadata.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
 dist/
 build/
 *.sqlite

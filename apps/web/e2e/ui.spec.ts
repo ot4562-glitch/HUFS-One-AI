@@ -194,6 +194,50 @@ test('invite page on a non-canonical origin never renders or uses a fragment cod
   await expect(page.locator('details.selector')).toHaveCount(0);
 });
 
+test('#82 전공 가정 분석 at 360px: keyboard-only submit, labelled result, no page overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/graduation');
+  await pick(page, 0);
+  await page.getByRole('link', {name: '전공을 바꾸면? 가정 분석해 보기'}).click();
+  const p = page.getByRole('region', {name: '전공을 바꾸면? 가정 분석'});
+  await p.getByRole('button', {name: '가정 분석하기'}).focus();
+  await page.keyboard.press('Enter');
+  await expect(p.getByRole('row', {name: /SYN-STAT-CORE: 새로 생기는 요건/})).toBeVisible();
+  await expect(p.getByText('합성 예시')).toBeVisible();
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
+
+test('#81 졸업 요건 현황 + 수강계획 검사: side by side at 1440px, stacked at 360px without overflow', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
+  await page.goto('/graduation');
+  await pick(page, 0);
+  const plan = page.getByRole('region', {name: '수강계획 검사'});
+  await expect(plan.getByRole('status')).toHaveText('2027년 1학기 · 검토가 필요한 결과');
+  const summary = page.getByRole('region', {name: '졸업 요건 현황'});
+  const [s, p] = [await summary.boundingBox(), await plan.boundingBox()];
+  expect(Math.abs(s!.y - p!.y)).toBeLessThan(4);
+  expect(p!.x).toBeGreaterThan(s!.x);
+  await page.setViewportSize({width: 360, height: 800});
+  const [s2, p2] = [await summary.boundingBox(), await plan.boundingBox()];
+  expect(p2!.y).toBeGreaterThan(s2!.y);
+  await plan.getByLabel('검사할 학기').selectOption('2027-2');
+  await expect(plan.getByText('이 학기에 저장된 수강계획이 없습니다.')).toBeVisible();
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
+
+test('#119 정정 내역 at 360px: changed row first, text badge, no horizontal overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/opportunities/SYN-OPP-002');
+  await pick(page, 0);
+  const rev = page.getByRole('region', {name: '정정 내역'});
+  await expect(rev.getByRole('status')).toContainText('정정된 항목 1개: 모집 마감 연장');
+  await expect(rev.getByRole('row').nth(1)).toHaveAttribute('aria-label', /모집 마감: 연장/);
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
+
 test('#144 주전공 · 이중전공 at 360px: one column, held row reason, no horizontal overflow', async ({page}) => {
   await page.setViewportSize({width: 360, height: 800});
   await page.goto('/graduation');

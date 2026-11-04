@@ -1,5 +1,24 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 공유 컨텍스트 자원과 해제 (#203)
+
+`POST /api/demo/contexts`의 프로세스별 전역 200개 제한에 사용자당 100개,
+세션당 50개 제한을 더한다. 기존 5개 대상의 20개 방향 전환(40회 선택)과
+별도 탭·지연 요청, 사용자당 2세션을 수용하는 합성 시나리오를 기준으로 하며,
+다른 사용자의 컨텍스트를
+강제 퇴출하지 않는다. 서버 조립의 `contextLimits: {perActor, perSession}`으로
+1~200 범위에서 조정할 수 있고 `perSession <= perActor`여야 한다.
+동일 사용자 여러 세션과 BETA/REVIEWER에 같은 정책을 적용한다.
+만료 회수·상한 검사·저장은 비동기 권한 재검사 후 동기적으로 실행한다.
+429는 내부 사용자/용량 정보 없이 `Retry-After: 300`을 반환한다.
+
+`DELETE /api/demo/contexts/:id`는 검증된 현재 actor/session의 컨텍스트만
+해제한다. Origin/CSRF가 필수이며 없거나 다른 세션의 ID도 동일한 빈 204를
+반환한다. 만료·공유/초대 철회 뒤에도 유효한 로그인 세션으로 해제할 수 있다.
+해제된 컨텍스트를 읽던 지연 응답은 반환 전에 403으로 차단한다. 로그아웃은
+해당 세션의 컨텍스트만 해제한다. 브라우저는 별도 UI 연결 전까지 기존 5분
+만료를 사용하며, 이 프로세스별 Map을 다중 서버 공통 quota로 보장하지 않는다.
+
 ## 2026-11-03 최신 서버/AI 실제 코드 경계
 
 - **main 병합:** [#145 오프라인 CLOVA General OCR/HCX-005·007 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b` (request/response·bbox/candidate 검증) 및 [#148 원자 PostgreSQL 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516` (phase/actor reserve/idempotency·UNKNOWN_BILLING hold/초과 정산 OFF). 각각 최신 HEAD 비작성자 승인·합성/일회용 PG/Chrome CI **3/3 SUCCESS**. SQL은 검토용이며 **운영 migration이나 AI 호출을 활성화하지 않음**.
@@ -237,3 +256,39 @@ Laya 워커는 Fastify HTTP handler·REVIEWER GET·일반 데모 요청 경로�
 - `GET /api/auth/session`과 초대 redeem이 `readOnly:false,sandboxOnly:true`를 반환해 합성 수정 허용과 실제 원장 읽기/쓰기를 명확히 구분한다. 인증되지 않은 local main.ts는 여전히 401 전부 차단.
 - 루트 `npm run check`는 API/공통 계약/추천 core/웹 UI 합성 테스트 전체를 실행한다. PR #28 UI 상태관리 테스트도 `main`에 병합됐다. 실제 브라우저 Google OAuth/JWKS/PKCE/OTP·PostgreSQL E2E가 없으면 외부 심사자에게 배포하지 않는다.
 - [NCP 추천 SKU/공식 비용·기간](../../docs/NCP_OPERATIONS_2026.md), API 담당 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), UI [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), NCP [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
+
+
+## Internal operator PostgreSQL/OIDC acceptance launcher (stacked on #183)
+
+`apps/api/src/operator-postgres-runtime.ts` connects **seven distinct, restricted
+PostgreSQL LOGIN roles** through the existing TLS-verified pool factory, verifies
+each role/SQL readiness before binding Fastify to `127.0.0.1`, and closes every
+pool on startup failure and shutdown. A real Google OIDC code-exchange callback,
+independent current evidence rights, protected 32+ byte digest key and role DSNs
+must be injected from an **operator-controlled private module**; they are never
+generated or committed. No migrations, reviewer admission, paid AI or crawling
+are enabled by this launcher.
+
+Plan (no private module, network or SQL):
+```bash
+node dist/apps/api/src/operator-main.js --plan
+```
+
+After independent approvals, an operator can stage an *internal* SQL/OIDC
+acceptance on an already approved host by placing a **root-owned,
+non-group-writable** `.mjs` adapter under `/etc/hufs-one/private/` that exports
+`createOperatorConfig()`. Keep credentials there or in the approved external
+secret manager, not in the repository. The operator must explicitly supply
+`HUFS_OPERATOR_CONFIG_MODULE`, `HUFS_OPERATOR_MODE=loopback-acceptance`,
+`HUFS_OPERATOR_ACK=INTERNAL_ONLY_NOT_RELEASE`, and `HUFS_OPERATOR_LOOPBACK_PORT`
+(default 3000), then use `node dist/apps/api/src/operator-main.js --apply`.
+The application must remain `NODE_ENV=development`/`APP_ENV=local`
+for this restricted acceptance path. **Never use this configuration to expose
+traffic publicly or claim a production release.**
+
+`main.ts` and `createIntegratedApi` still **reject production** until the
+independent #46/#61/#89 human, live-identity, domain/TLS, revocation, RLS,
+NCP and publication gates are accepted in a separate, reviewed release PR.
+This branch demonstrates real SQL/OIDC startup wiring but does not claim those
+external checks ran. Start/stop tests use synthetic managed-pool doubles;
+the parent #183 disposable PostgreSQL integration is separately verified in CI.

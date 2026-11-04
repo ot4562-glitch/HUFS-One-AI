@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "conditions": [
+    {"path":"apps/api/src/main.ts","condition":"LOCAL_FAIL_CLOSED_COMPOSITION","verify":"npm run build:api && npm run test:api"},
+    {"path":"infra/ai/raster-worker.mjs","condition":"EXPLICIT_APPROVED_SYNTHETIC_WORKER","verify":"npm run test:api -- tests/api/raster-worker.test.ts"}
+  ]
+}

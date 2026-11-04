@@ -1,0 +1,107 @@
+worker_processes auto;
+pid /tmp/nginx.pid;
+error_log /dev/null crit;
+events { worker_connections 256; }
+http {
+  include /etc/nginx/mime.types;
+  default_type application/octet-stream;
+  server_tokens off;
+  log_format minimal '$status $body_bytes_sent';
+  access_log /dev/stdout minimal;
+  client_body_temp_path /tmp/client_temp;
+  proxy_temp_path /tmp/proxy_temp;
+  fastcgi_temp_path /tmp/fastcgi_temp;
+  uwsgi_temp_path /tmp/uwsgi_temp;
+  scgi_temp_path /tmp/scgi_temp;
+  client_max_body_size 64k;
+  client_body_timeout 10s;
+  send_timeout 30s;
+  keepalive_timeout 30s;
+  proxy_connect_timeout 3s;
+  proxy_read_timeout 30s;
+  proxy_send_timeout 30s;
+  proxy_cache off;
+  proxy_buffering off;
+  proxy_hide_header Cache-Control;
+  proxy_hide_header Expires;
+  proxy_hide_header ETag;
+  proxy_hide_header Last-Modified;
+  proxy_hide_header X-Powered-By;
+  proxy_hide_header Access-Control-Allow-Origin;
+  etag off;
+  if_modified_since off;
+  max_ranges 0;
+  gzip off;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_session_cache off;
+  ssl_session_tickets off;
+
+  # No HTTP redirect, preview vhost or direct-IP content surface.
+  server { listen 8080 default_server; server_name _; return 444; }
+  server {
+    listen 8443 ssl default_server;
+    server_name _;
+    ssl_reject_handshake on;
+    return 444;
+  }
+  server {
+    listen 8443 ssl;
+    server_name @@HOST@@;
+    ssl_certificate /run/operator/tls/fullchain.pem;
+    ssl_certificate_key /run/operator/tls/privkey.pem;
+    if ($http_host !~ ^@@ESCAPED_HOST@@(:443)?$) { return 444; }
+    if ($ssl_server_name != @@HOST@@) { return 444; }
+    root /srv/web;
+    index index.html;
+    autoindex off;
+    add_header Cache-Control "private, no-store, max-age=0" always;
+    add_header Pragma "no-cache" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+    add_header X-Frame-Options DENY always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" always;
+
+    # Inherited by ALL static, fallback, API, download and unknown paths.
+    # This endpoint uses actual persistent session/role/reviewer admission checks.
+    auth_request /_validated_session;
+    error_page 401 403 = @private_denial;
+    location @private_denial {
+      default_type application/json;
+      return 403 '{"code":"FORBIDDEN"}';
+    }
+    location = /_validated_session {
+      internal;
+      auth_request off;
+      proxy_pass http://api:3000/api/auth/session;
+      proxy_method GET;
+      proxy_pass_request_body off;
+      proxy_pass_request_headers off;
+      proxy_set_header Content-Length "";
+      proxy_set_header Cookie $http_cookie;
+      proxy_set_header Host @@HOST@@;
+      proxy_set_header Connection "";
+    }
+    # The only public exceptions are the real, exact OAuth routes.
+    location = /api/auth/google/start {
+      auth_request off;
+      if ($request_method != GET) { return 403; }
+      include /etc/nginx/private-proxy.conf;
+      proxy_pass http://api:3000;
+    }
+    location = /api/auth/google/callback {
+      auth_request off;
+      if ($request_method != GET) { return 403; }
+      include /etc/nginx/private-proxy.conf;
+      proxy_pass http://api:3000;
+    }
+    location ^~ /api/ {
+      include /etc/nginx/private-proxy.conf;
+      proxy_pass http://api:3000;
+    }
+    location / {
+      limit_except GET { deny all; }
+      try_files $uri /index.html;
+    }
+  }
+}

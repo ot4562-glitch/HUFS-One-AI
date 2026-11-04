@@ -47,6 +47,11 @@ try {
     'apps/web/src', 'packages/contracts/src', 'packages/core/src',
     'packages/ui/src', 'packages/fixtures/synthetic'
   )
+  # Preserve historical approved refs that predate the optional rollback helper.
+  $rollbackPath = 'infra/ncp/rollback-preview.sh'
+  $rollbackEntry = @(& git ls-tree --name-only $commit -- $rollbackPath)
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect reviewed rollback helper.' }
+  if ($rollbackEntry -contains $rollbackPath) { $filePaths += $rollbackPath }
   $allPaths = @($filePaths + $dirPaths)
   $entries = @(& git ls-tree -r --full-tree $commit -- $allPaths)
   if ($LASTEXITCODE -ne 0 -or $entries.Count -lt 20) {
@@ -73,6 +78,35 @@ try {
   try {
     & git archive --format=zip "--output=$temp" $commit $allPaths
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path $temp)) { throw 'git archive failed.' }
+    # Historical approved Git blobs can contain CRLF even when current checkout
+    # attributes require LF. Normalize only generated allowlisted shell entries;
+    # the final ZIP digest below covers these exact exported bytes.
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $zip = [System.IO.Compression.ZipFile]::Open($temp, [System.IO.Compression.ZipArchiveMode]::Update)
+    try {
+      $utf8 = New-Object System.Text.UTF8Encoding($false, $true)
+      foreach ($member in $zip.Entries) {
+        if (-not $member.FullName.EndsWith('.sh', [System.StringComparison]::Ordinal)) { continue }
+        if ($member.Length -gt 262144) { throw 'Approved shell helper exceeds 256 KiB.' }
+        $stream = $member.Open()
+        try {
+          $buffer = New-Object System.IO.MemoryStream
+          try {
+            $stream.CopyTo($buffer)
+            $shell = $utf8.GetString($buffer.ToArray()).Replace("`r`n", "`n")
+          }
+          finally { $buffer.Dispose() }
+          if ($shell.Contains("`r") -or $shell.StartsWith([string][char]0xfeff, [System.StringComparison]::Ordinal)) { throw 'Invalid shell bytes in approved source.' }
+          $bytes = $utf8.GetBytes($shell)
+          $stream.SetLength(0)
+          $stream.Position = 0
+          $stream.Write($bytes, 0, $bytes.Length)
+        }
+        finally { $stream.Dispose() }
+      }
+    }
+    finally { $zip.Dispose() }
     Move-Item -LiteralPath $temp -Destination $Output -Force
   }
   finally { if (Test-Path $temp) { Remove-Item -LiteralPath $temp -Force } }
@@ -81,6 +115,7 @@ try {
   Set-Content -LiteralPath "$Output.sha256.txt" -Value "$sha  ncp-preview.zip" -Encoding Ascii
   Write-Host "SAFE SYNTHETIC ZIP: $Output"
   Write-Host "COMMIT: $commit"
+  Write-Host 'Only exported shell CRLF was normalized to LF; the Git commit was not rewritten.'
   Write-Host "SHA256: $sha"
   Write-Host 'Transfer this ZIP only using WinSCP/SFTP to /home/hufs-admin/ncp-preview.zip.'
   Write-Host 'On server run: sudo /usr/local/sbin/hufs-preview-deploy <SHA256>'

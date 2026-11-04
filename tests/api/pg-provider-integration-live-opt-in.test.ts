@@ -6,13 +6,14 @@ import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
 import {PostgresProviderResults} from '../../apps/api/src/modules/ai/provider-results-postgres.js';
+import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const RUN=process.env.HUFS_PG_PROVIDER_INTEGRATION_LIVE==='1';
 type TestServer={child:ChildProcess;calls:string[];stop:()=>Promise<void>;base:string};
 const pools:Pool[]=[],servers:TestServer[]=[];
 let admin:Pool,budget:Pool,results:Pool,urls:Record<string,string>,policy:Record<string,unknown>;
-const phase='SYN-PROVIDER-HTTP',digestKey=randomBytes(32).toString('hex'),password=randomBytes(24).toString('hex');
+const phase='SYN-PROVIDER-HTTP',password=randomBytes(24).toString('hex');
 const origin='https://synthetic-provider.example.test';
 const migrations=['20261031_google_auth.sql','20261031_beta_admission.sql','20261031_auth_attempt_windows.sql',
   '20261031_temporal_evidence.sql','20261101_source_review.sql','20261101_verified_source_rights.sql',
@@ -25,7 +26,8 @@ async function start(subject:string,mode='ok'):Promise<TestServer>{
   // fork defaults to no console window (silent pipe/IPC handles only).
   const child=fork(new URL('./fixtures/provider-pg-server.mjs',import.meta.url),[],{
     stdio:['ignore','ignore','ignore','ipc'],env:{PATH:process.env.PATH??'',APP_ENV:'test',NODE_ENV:'test',
-      HUFS_SYNTHETIC_PROVIDER_CONFIG:JSON.stringify({urls,phase,policy,digestKey,subject,mode})}});
+      // Each isolated scenario gets its own keyed login attempt bucket. Production rate limits stay active.
+      HUFS_SYNTHETIC_PROVIDER_CONFIG:JSON.stringify({urls,phase,policy,digestKey:randomBytes(32).toString('hex'),subject,mode})}});
   const calls:string[]=[];
   child.on('message',(m:any)=>{if(m?.kind==='provider-call')calls.push(m.stage);});
   const port=await new Promise<number>((resolve,reject)=>{
@@ -117,10 +119,37 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     expect(await job(f.actor,'KEY-HAPPY')).toMatchObject({state:'SETTLED',charged_units:'143'});
     const initial=await get(s,auth.cookie,first.jobId);expect(initial.status).toBe(200);
     expect(await initial.json()).toMatchObject({state:'NEEDS_REVIEW',billing:'SETTLED',candidate:{reviewState:'NEEDS_REVIEW'},provenance:'CANDIDATE_CACHE'});
+    // Exercise the real BETA browser client on the SAME already authenticated
+    // actor/session. No extra login attempts or weakened 429 policy.
+    const browser=(srv:TestServer)=>new HufsApiClient(async(path,init)=>{
+      const headers:Record<string,string>={cookie:auth.cookie,origin};
+      new Headers(init.headers).forEach((value,name)=>{headers[name]=value;});
+      return fetch(srv.base+path,{method:init.method??'GET',headers,
+        ...(init.body===undefined?{}:{body:String(init.body)}),redirect:'manual'});
+    });
+    const approved=await browser(s).owner.getApprovedProviderInputs();
+    expect(approved).toMatchObject({items:[{inputRef:'SYN-INPUT',operation:'HCX_007',
+      task:'opportunity_terms',asOf:f.asOf}]});
+    expect(JSON.stringify(approved)).not.toMatch(/safe_packet|media_bytes|privacy_review_ref|source_refs|actor_id/);
+    const selection=approved.items[0]!;
+    const duplicate=await browser(s).owner.submitApprovedProvider(selection,'opportunity-terms','KEY-HAPPY');
+    expect(duplicate).toMatchObject({state:'NEEDS_REVIEW',provenance:'CANDIDATE_CACHE',jobId:first.jobId});
+    const current=await browser(s).owner.readApprovedProviderJob(first.jobId,'opportunity-terms');
+    expect(current).toMatchObject({billing:'SETTLED',provenance:'CANDIDATE_CACHE',
+      candidate:{reviewState:'NEEDS_REVIEW',task:'opportunity_terms'}});
+    expect(current.candidate.citations[0]!.quote).toBe('Synthetic approved notice');
+    expect(s.calls).toEqual(['TOKENIZE','INFER']);
     await s.stop();const restarted=await start(f.subject);
     expect((await get(restarted,auth.cookie,first.jobId)).status).toBe(200);
+    expect(await browser(restarted).owner.readApprovedProviderJob(first.jobId,'opportunity-terms')).toEqual(current);
     expect((await execute(restarted,auth,f.asOf,'KEY-HAPPY')).status).toBe(202);expect(restarted.calls).toEqual([]);
     const otherSession=await login(restarted);expect((await get(restarted,otherSession.cookie,first.jobId)).status).toBe(403);
+    await admin.query("INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref) VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-REVOKED')",
+      [f.subject+'-RIGHTS']);
+    expect(await browser(restarted).owner.getApprovedProviderInputs()).toEqual({items:[]});
+    await expect(browser(restarted).owner.readApprovedProviderJob(first.jobId,'opportunity-terms'))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(restarted.calls).toEqual([]);
     await restarted.stop();const b=await seed('OTHER'),other=await start(b.subject),bAuth=await login(other);
     expect((await get(other,bAuth.cookie,first.jobId)).status).toBe(403);await other.stop();
     expect((await admin.query('SELECT count(*)::int AS n FROM ai_budget_jobs WHERE actor_id=$1',[f.actor])).rows[0]?.n).toBe(1);
@@ -164,6 +193,43 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     s.child.send({kind:'release'});expect((await response).status).toBe(503);
     expect((await admin.query('SELECT count(*)::int AS n FROM api_ai_provider_results WHERE actor_id=$1',[f.actor])).rows[0]?.n).toBe(0);await s.stop();
   },30000);
+  it('twenty concurrent duplicate HTTP submissions cannot reserve, dispatch or charge twice',async()=>{
+    const f=await seed('CONCURRENT-IDEMPOTENT'),s=await start(f.subject),auth=await login(s);
+    try{
+      const responses=await Promise.all(Array.from({length:20},()=>execute(s,auth,f.asOf,'KEY-CONCURRENT-ONE')));
+      // During contention some callers may fail closed, but no caller may
+      // bypass the budget gate or mint a distinct job for the same idempotency key.
+      expect(responses.every(r=>[202,409,429,503].includes(r.status))).toBe(true);
+      const accepted=await Promise.all(responses.filter(r=>r.status===202).map(r=>r.json() as Promise<{jobId:string}>));
+      expect(new Set(accepted.map(r=>r.jobId)).size).toBeLessThanOrEqual(1);
+      const jobs=await admin.query('SELECT job_id,state,charged_units FROM ai_budget_jobs WHERE actor_id=$1 AND idempotency_key=$2',[f.actor,'KEY-CONCURRENT-ONE']);
+      expect(jobs.rows).toHaveLength(1);
+      expect(jobs.rows[0]!.state).toBe('SETTLED');
+      expect(jobs.rows[0]!.charged_units).toBe('143');
+      expect(s.calls.filter(x=>x==='TOKENIZE')).toHaveLength(1);
+      expect(s.calls.filter(x=>x==='INFER')).toHaveLength(1);
+      const resultRows=await admin.query('SELECT count(*)::int AS n FROM api_ai_provider_results WHERE actor_id=$1',[f.actor]);
+      expect(resultRows.rows[0]?.n).toBe(1);
+      const again=await execute(s,auth,f.asOf,'KEY-CONCURRENT-ONE');
+      expect(again.status).toBe(202);
+      expect(s.calls).toHaveLength(2);
+    }finally{await s.stop();}
+  },60000);
+
+  it('twenty simultaneous requests after consent revocation cause zero provider calls, charges or stored results',async()=>{
+    const f=await seed('CONCURRENT-REVOKED'),s=await start(f.subject),auth=await login(s);
+    try{
+      await admin.query("UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{externalAi}','false'),version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1",[f.actor]);
+      const responses=await Promise.all(Array.from({length:20},(_,i)=>execute(s,auth,f.asOf,'KEY-REVOKED-'+i)));
+      expect(responses.every(r=>r.status!==202)).toBe(true);
+      expect(s.calls).toHaveLength(0);
+      const jobs=await admin.query('SELECT count(*)::int AS n FROM ai_budget_jobs WHERE actor_id=$1',[f.actor]);
+      expect(jobs.rows[0]?.n).toBe(0);
+      const results=await admin.query('SELECT count(*)::int AS n FROM api_ai_provider_results WHERE actor_id=$1',[f.actor]);
+      expect(results.rows[0]?.n).toBe(0);
+    }finally{await s.stop();}
+  },60000);
+
   it('SQL denies pre-SETTLED writes and runtime table/prune access',async()=>{
     const f=await seed('DIRECT'),ledger=new PostgresAiBudgetLedger(adapter(budget)),store=new PostgresProviderResults(adapter(results));
     const hash='a'.repeat(64),row=await ledger.reserve(f.actor,{phaseId:phase,task:'HCX_007',idempotencyKey:'KEY-DIRECT',requestSha256:hash,worstCaseUnits:1});
@@ -177,4 +243,6 @@ describe.skipIf(!RUN)('REAL Provider integration: BETA HTTP, fake transport, PG 
     await expect(results.query('SELECT ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
     await expect(budget.query('SELECT * FROM ai_budget_jobs')).rejects.toMatchObject({code:'42501'});
   });
+
+
 });

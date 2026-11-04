@@ -1,0 +1,69 @@
+name: hufs-private
+services:
+  api:
+    profiles: [private-deployment]
+    image: ${HUFS_API_IMAGE:?explicit reviewed local image required}
+    environment:
+      APP_ENV: production
+      NODE_ENV: production
+      API_INTERNAL_PORT: "3000"
+      AI_PROVIDER_ENABLED: "false"
+      LAYA_ENABLED: "false"
+    env_file:
+      - ${HUFS_OPERATOR_ROOT:?external operator directory required}/api.env
+    volumes:
+      - type: bind
+        source: ${HUFS_OPERATOR_ROOT}/auth
+        target: /run/operator/auth
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${HUFS_OPERATOR_ROOT}/db
+        target: /run/operator/db
+        read_only: true
+        bind: {create_host_path: false}
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 768m
+    cpus: 1.5
+    restart: "no"
+  edge:
+    profiles: [private-deployment]
+    image: ${HUFS_EDGE_IMAGE:?explicit reviewed local image required}
+    depends_on: [api]
+    ports:
+      - "${HUFS_HTTPS_BIND_IP:-127.0.0.1}:443:8443"
+    volumes:
+      - type: bind
+        source: ${HUFS_OPERATOR_ROOT}/nginx/private.conf
+        target: /etc/nginx/private.conf
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${HUFS_OPERATOR_ROOT}/nginx/private-proxy.conf
+        target: /etc/nginx/private-proxy.conf
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${HUFS_OPERATOR_ROOT}/tls
+        target: /run/operator/tls
+        read_only: true
+        bind: {create_host_path: false}
+    networks: [backend]
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    restart: "no"
+# No database creation or published API/DB ports. An operator must separately
+# provide approved durable DB connectivity and firewall evidence; never guessed.
+networks:
+  backend:
+    internal: true

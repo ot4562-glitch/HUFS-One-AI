@@ -284,6 +284,38 @@ a { color: var(--color-primary); }
 
 .section__title { color: var(--color-heading); font-size: 18px; line-height: 26px; margin: 0 0 var(--space-3); }
 
+/* #82 전공 가정 분석: the comparison table scrolls inside its own box on phones, never the page. */
+.whatif__form p { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.whatif__form select, .whatif__form button { min-height: var(--touch-target); max-width: 100%; }
+.whatif__result h3 { margin: var(--space-3) 0 var(--space-2); }
+.whatif__syn { margin-left: var(--space-2); }
+.whatif__table-wrap { overflow-x: auto; max-width: 100%; }
+.whatif__table { border-collapse: collapse; width: 100%; min-width: 0; }
+.whatif__table th, .whatif__table td { text-align: left; padding: var(--space-2); border-bottom: 1px solid var(--color-border); overflow-wrap: anywhere; vertical-align: top; }
+.whatif__badge { font-weight: 700; white-space: nowrap; }
+/* #81 졸업 요건 현황 + 수강계획 검사: stacked on phones, side by side from 1024px. */
+.grad-pair { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) { .grad-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.plan { min-width: 0; overflow-wrap: anywhere; }
+.plan__term select { min-height: var(--touch-target); }
+.plan__issues { list-style: none; margin: 0 0 var(--space-3); padding: 0; }
+.plan__issue { padding: var(--space-2) 0; }
+.plan__issue + .plan__issue { border-top: 1px solid var(--color-border); }
+.plan__badge { font-weight: 700; white-space: nowrap; }
+.plan__sub { font-size: 16px; line-height: 24px; margin: var(--space-3) 0 var(--space-2); }
+.plan__caveats { padding-left: var(--space-4); }
+/* #119 정정 전/후 비교 */
+.rev h3 { color: var(--color-heading); font-size: 18px; line-height: 26px; margin: 0 0 var(--space-2); }
+.rev h4 { font-size: 15px; line-height: 22px; margin: 0 0 var(--space-1); color: var(--color-heading); }
+.rev__syn { margin-left: var(--space-2); }
+.rev__table-wrap { overflow-x: auto; }
+.rev__table { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: 15px; }
+.rev__table th, .rev__table td { border: 1px solid var(--color-border); padding: var(--space-2); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.rev__table thead th { background: var(--color-chip-bg); color: var(--color-heading); }
+.rev__row--changed th[scope="row"] { box-shadow: inset 4px 0 0 var(--color-primary); }
+.rev__badge { white-space: nowrap; font-weight: 600; }
+.rev__sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--space-3); margin-top: var(--space-3); }
+.rev__side { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-control); padding: var(--space-2) var(--space-3); }
 /* #144 주전공 · 이중전공: one column on phones, side by side from tablet width. State is text + icon, never colour alone. */
 .dm__sub { font-size: 16px; line-height: 24px; margin: var(--space-3) 0 var(--space-2); }
 .dm__overlap { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); border: 1px dashed var(--color-border); }

@@ -3,6 +3,7 @@ name: TASK-00 synthetic contracts
 # Every PR, including stacked branches and security-only changes, is checked.
 # Keep the unprivileged pull_request event; never use pull_request_target.
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
@@ -37,6 +38,8 @@ jobs:
             /tests/evaluation/
             /apps/api/
             /infra/sql/
+            /infra/laya/
+            /infra/deploy/
             /infra/ai/
             /infra/ncp/
             /packages/core/
@@ -57,6 +60,9 @@ jobs:
             /tools/strip_build_sourcemaps.mjs
             /tools/prune_merged_branches.mjs
             /tools/tests/prune-merged-branches.node.mjs
+            /tools/audit_entrypoints.mjs
+            /tools/entrypoints.json
+            /tools/tests/entrypoint-inventory.node.mjs
             /.github/workflows/release-readiness.yml
             /.dockerignore
       - name: Prove real-student sources are not in this workspace
@@ -79,6 +85,8 @@ jobs:
         run: node --test tools/tests/prune-merged-branches.node.mjs
       - name: TypeScript, four-track contracts and synthetic API/React E2E regressions
         run: npm run check
+      - name: Verify read-only entrypoint inventory with isolated synthetic Git fixtures
+        run: npm run test:entrypoints
       - name: Build local fail-closed Fastify API
         run: npm run build:api
       - name: Reject unsafe anonymous responses and false release readiness

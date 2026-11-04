@@ -4,12 +4,14 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": "^22.22.2 || ^24.15.0"
   },
   "workspaces": [
     "packages/contracts"
   ],
   "scripts": {
+    "audit:entrypoints": "node tools/audit_entrypoints.mjs",
+    "test:entrypoints": "node --test tools/tests/entrypoint-inventory.node.mjs",
     "check": "npm run typecheck && npm run test",
     "typecheck": "npm run build:contracts && tsc --noEmit -p tsconfig.json",
     "test": "npm run build:contracts && vitest run",
@@ -34,7 +36,8 @@
     "test:e2e:accounts": "npm run build:api && node tools/check_local_account_browser.mjs --start-servers",
     "dev:web": "npm run build:contracts && vite --config apps/web/vite.config.ts",
     "build:web": "npm run build:contracts && vite build --config apps/web/vite.config.ts",
-    "test:e2e:web": "npm run build:contracts && playwright test -c apps/web/playwright.config.ts"
+    "test:e2e:web": "npm run build:contracts && playwright test -c apps/web/playwright.config.ts",
+    "bench:normalization": "npm run build:contracts && tsc -p tsconfig.bench.json && node tools/bench_normalization.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

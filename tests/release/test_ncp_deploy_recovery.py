@@ -29,6 +29,7 @@ class PreviewActivationRecoveryTests(unittest.TestCase):
             root = Path(temporary)
             base = root / "preview"
             base.mkdir()
+            (base / "releases").mkdir()
             old = base / "previous"
             if previous:
                 old.mkdir()
@@ -50,6 +51,7 @@ class PreviewActivationRecoveryTests(unittest.TestCase):
             for before, after in replacements.items():
                 self.assertEqual(source.count(before), 1)
                 source = source.replace(before, after)
+            source = source.replace('expected_uid = 0', 'expected_uid = ' + str(os.getuid()))
             script = root / "deploy.sh"
             script.write_text(source, encoding="utf-8")
             bin_dir = root / "bin"
@@ -88,8 +90,15 @@ class PreviewActivationRecoveryTests(unittest.TestCase):
             environment = {"PATH": str(bin_dir) + os.pathsep + os.environ.get("PATH", ""),
                            "SUDO_USER": "hufs-admin", "SYNTHETIC_ROOT": str(root),
                            "SYNTHETIC_MODE": mode, "HOME": str(root)}
+            lock = None
+            if mode == "busy":
+                import fcntl
+                lock = (base / ".preview-operation.lock").open("w")
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             result = subprocess.run(["bash", str(script), expected], env=environment,
                                     capture_output=True, text=True, timeout=20)
+            if lock:
+                lock.close()
             commands = [shlex.split(line) for line in (root / "commands.log").read_text().splitlines()]
             current = base / "current"
             destination = os.readlink(current) if current.is_symlink() else None
@@ -136,6 +145,12 @@ class PreviewActivationRecoveryTests(unittest.TestCase):
         self.assertEqual(current, release)
         self.assertEqual(commands.count(["systemctl", "restart", "hufs-preview.service"]), 1)
         self.assertIn("OK: SYNTHETIC PREVIEW", result.stdout)
+
+    def test_manual_rollback_lock_prevents_deploy_mutation(self):
+        result, commands, current, old, _ = self.deploy("busy")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(current, old)
+        self.assertFalse(any(command[0] in ("runuser", "systemctl") for command in commands))
 
 
 if __name__ == "__main__":

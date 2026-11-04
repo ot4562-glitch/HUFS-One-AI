@@ -41,6 +41,8 @@ export function projectOpportunityExplanation(
   const scope=Binding.safeParse(binding),parsed=Report.safeParse(report);
   if(!scope.success||!parsed.success)return null;
   const input=scope.data,raw=parsed.data;
+  const wireBinding={opportunityId:input.opportunityId,asOf:input.asOf,
+    sourceRevisionId:input.sourceRevisionId,rankConfigVersion:input.rankConfigVersion};
   if(raw.rankConfigVersion!==input.rankConfigVersion
     ||Date.parse(raw.asOf)!==Date.parse(input.asOf))return null;
   const featured=raw.featuredIds.filter(id=>id===input.opportunityId).length;
@@ -51,7 +53,7 @@ export function projectOpportunityExplanation(
   if(featured>1||selected.length>1||featured&&selected.length)return null;
   if(featured===1){
     return OpportunityExplanationResponseSchema.parse({
-      ...input,state:'FEATURED',evidenceRefs:[],provenance:'CODE_RULES',
+      ...wireBinding,state:'FEATURED',evidenceRefs:[],provenance:'CODE_RULES',
     });
   }
   if(selected.length!==1)return null;
@@ -60,7 +62,7 @@ export function projectOpportunityExplanation(
   const item=decision.data;
   const unevaluated=item.reason==='HIDDEN_BY_USER'||item.reason==='NOT_EVALUATED';
   const result=OpportunityExplanationResponseSchema.safeParse({
-    ...input,state:'NOT_FEATURED',reason:item.reason,
+    ...wireBinding,state:'NOT_FEATURED',reason:item.reason,
     notes:unevaluated?[]:item.notes,evidenceRefs:unevaluated?[]:item.evidenceRefs,
     provenance:'CODE_RULES',
   });

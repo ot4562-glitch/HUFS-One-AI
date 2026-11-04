@@ -11,14 +11,35 @@
  * GITHUB_TOKEN=... node tools/prune_merged_branches.mjs --repo owner/repo --apply --confirm owner/repo --limit 10
  */
 
+import {execFile} from 'node:child_process';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir,devNull} from 'node:os';
+import {join,resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {promisify} from 'node:util';
+
+const executeFile = promisify(execFile);
 const API = 'https://api.github.com';
 const RESERVED = ['backup/', 'prep/'];
 
 export function selectMergedBranchCandidates(branches, pulls, repository, defaultBranch = 'main') {
   const candidates = [];
   const excluded = [];
-  const isOwnHead = (p, name) => p.head?.ref === name &&
-    p.head?.repo?.full_name?.toLowerCase() === repository.toLowerCase();
+  const own = repository.toLowerCase();
+  const byHead = new Map();
+  const openReferences = new Set();
+  // Index once instead of rescanning every PR for every branch. Open stacked
+  // PRs protect their BASE as well as their HEAD, including fork contributors.
+  for (const pull of pulls) {
+    if (pull.head?.repo?.full_name?.toLowerCase() === own) {
+      const linked = byHead.get(pull.head.ref) ?? [];
+      linked.push(pull);byHead.set(pull.head.ref, linked);
+    }
+    if (pull.state === 'open') for (const ref of [pull.head, pull.base]) {
+      if (ref?.ref && (!ref.repo?.full_name || ref.repo.full_name.toLowerCase() === own))
+        openReferences.add(ref.ref);
+    }
+  }
 
   for (const branch of branches) {
     const name = branch.name;
@@ -29,8 +50,9 @@ export function selectMergedBranchCandidates(branches, pulls, repository, defaul
     else if (name === defaultBranch) reason = 'default branch';
     else if (RESERVED.some(prefix => name.startsWith(prefix))) reason = 'reserved backup/prep';
     else if (branch.protected !== false) reason = 'protected/unknown protection';
+    else if (openReferences.has(name)) reason = 'open PR references branch';
     else {
-      const linked = pulls.filter(p => isOwnHead(p, name));
+      const linked = byHead.get(name) ?? [];
       if (linked.length === 0) reason = 'no same-repo PR';
       else if (linked.some(p => p.state === 'open')) reason = 'open PR exists';
       else if (linked.some(p => !p.merged_at)) reason = 'unmerged PR shares branch';
@@ -67,8 +89,40 @@ export function parseArguments(args) {
   return opts;
 }
 
-function encodeRef(branch) {
-  return branch.split('/').map(encodeURIComponent).join('/');
+/** Delete only if the Git server still observes the reviewed SHA. REST ref
+ * DELETE has no expected-SHA condition and can erase a concurrent new commit.
+ * A fresh bare repository avoids touching the operator's worktree or hooks.
+ * execute is the process boundary; tests substitute a local receive-pack only.
+ */
+export async function deleteBranchWithLease({repository,name,sha,token}, execute = executeFile) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? '')
+    || repository.split('/').some(part => part === '.' || part === '..')
+    || typeof name !== 'string' || !name || name.startsWith('-')
+    || !/^[0-9a-f]{40}$/.test(sha ?? '') || typeof token !== 'string' || !token)
+    throw new Error('Invalid branch deletion identity; nothing deleted');
+  const directory = await mkdtemp(join(tmpdir(), 'hufs-branch-lease-'));
+  const ref = `refs/heads/${name}`;
+  const env = {};
+  for (const key of ['PATH','SystemRoot','WINDIR','COMSPEC','PATHEXT','TEMP','TMP'])
+    if (process.env[key] !== undefined) env[key] = process.env[key];
+  Object.assign(env, {HOME: directory, XDG_CONFIG_HOME: directory,
+    GIT_CONFIG_GLOBAL: devNull, GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0',
+    GCM_INTERACTIVE: 'never', GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+    GIT_CONFIG_VALUE_0: 'AUTHORIZATION: basic ' + Buffer.from(`x-access-token:${token}`).toString('base64')});
+  const run = args => execute('git', args, {cwd: directory, env,
+    windowsHide: true, timeout: 15000, maxBuffer: 64 * 1024});
+  try {
+    await run(['init','--bare','--quiet','--template=']);
+    await run(['check-ref-format',ref]);
+    await run(['-c',`core.hooksPath=${devNull}`,'-c','credential.helper=',
+      '-c','protocol.allow=never','-c','protocol.https.allow=always',
+      '-c','http.followRedirects=false','push','--porcelain','--no-verify',
+      `--force-with-lease=${ref}:${sha}`,`https://github.com/${repository}.git`, ':' + ref]);
+  } catch {
+    // Driver errors can carry credentials/remote diagnostics. Never echo them.
+    throw new Error('Branch lease deletion unconfirmed; stop and re-audit the remote ref');
+  } finally {await rm(directory, {recursive: true, force: true});}
 }
 
 async function main() {
@@ -82,10 +136,9 @@ async function main() {
     'X-GitHub-Api-Version': '2022-11-28',
     'User-Agent': 'hufs-one-safe-branch-audit',
   };
-  async function request(path, method = 'GET') {
-    const response = await fetch(`${API}${path}`, {method, headers, redirect: 'error'});
-    if (!response.ok) throw new Error(`${method} ${path} failed: HTTP ${response.status}`);
-    if (method === 'DELETE') return null;
+  async function request(path) {
+    const response = await fetch(`${API}${path}`, {method: 'GET', headers, redirect: 'error'});
+    if (!response.ok) throw new Error(`GET ${path} failed: HTTP ${response.status}`);
     return response.json();
   }
   async function pages(path) {
@@ -121,24 +174,28 @@ async function main() {
   const batch = candidates.slice(0, opts.limit);
   console.log(`DELETE_BATCH ${batch.length} / ${candidates.length}`);
   for (const c of batch) {
-    // Recheck both current branch head and every open PR immediately before deletion.
-    const [live, openPRs, mergedPR] = await Promise.all([
+    // Re-run all safety rules on current PR metadata before the atomic SHA lease.
+    // PR creation and Git ref updates are separate services; no cross-service
+    // transaction is claimed, and protected branches remain the final guard.
+    const [live, currentPRs, mergedPR] = await Promise.all([
       request(`${root}/branches/${encodeURIComponent(c.name)}`),
-      pages(`${root}/pulls?state=open&head=${encodeURIComponent(repo.owner.login + ':' + c.name)}`),
+      pages(`${root}/pulls?state=all`),
       request(`${root}/pulls/${c.mergedPr}`),
     ]);
     if (live.name !== c.name || live.commit?.sha !== c.sha || live.protected !== false ||
-        openPRs.length > 0 || mergedPR.state !== 'closed' || !mergedPR.merged_at ||
+        !selectMergedBranchCandidates([live], currentPRs, repo.full_name, repo.default_branch)
+          .candidates.some(candidate => candidate.name === c.name && candidate.sha === c.sha)
+        || mergedPR.state !== 'closed' || !mergedPR.merged_at ||
         mergedPR.head?.sha !== c.sha || mergedPR.head?.ref !== c.name ||
         mergedPR.head?.repo?.full_name?.toLowerCase() !== repo.full_name.toLowerCase()) {
       throw new Error(`Safety preflight changed for ${c.name}; no further deletions attempted`);
     }
-    await request(`${root}/git/refs/heads/${encodeRef(c.name)}`, 'DELETE');
+    await deleteBranchWithLease({repository: repo.full_name, name: c.name, sha: c.sha, token});
     console.log(`DELETED ${c.name} ${c.sha} PR#${c.mergedPr}`);
   }
 }
 
-const invoked = process.argv[1]?.replace(/\\/g, '/');
-if (invoked && import.meta.url.endsWith(`/${invoked.split('/').pop()}`)) {
+const invoked = process.argv[1];
+if (invoked && import.meta.url === pathToFileURL(resolve(invoked)).href) {
   main().catch(error => { console.error(error.message); process.exitCode = 1; });
 }

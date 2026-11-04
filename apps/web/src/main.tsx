@@ -38,6 +38,9 @@ async function start() {
     const synthetic = new dev.SyntheticDemoClient({snapshotErrors: {S04: 'SHARING_REVOKED'}});
     const owner = await import('./dev/syntheticOwnerServer.js');
     const clubs = await import('./dev/syntheticClubs.js');
+    const whatIf = await import('./dev/syntheticWhatIf.js');
+    const planCheck = await import('./dev/syntheticPlanCheck.js');
+    const revisions = await import('./dev/syntheticRevisions.js');
     const doubleMajor = await import('./dev/syntheticDoubleMajor.js');
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
@@ -47,6 +50,9 @@ async function start() {
       // #80: the real HufsApiClient over an in-memory fictitious owner (dev only).
       applications: boardPort(new HufsApiClient(new owner.SyntheticOwnerServer().fetch)),
       clubs: clubs.syntheticClubPort(),
+      whatIf: whatIf.syntheticWhatIfPort(),
+      planCheck: planCheck.syntheticPlanCheckPort(),
+      revisions: revisions.syntheticRevisionPort(),
       doubleMajor: doubleMajor.syntheticDoubleMajorPort(),
       overlay: {
         get: (ctx, signal) => synthetic.getDemoOverlay(ctx, signal),

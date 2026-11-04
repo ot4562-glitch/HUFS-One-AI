@@ -2,7 +2,7 @@
 
 **Purpose:** shared source of truth for **all four independent development tracks**. The package is implemented as TypeScript + Zod strict runtime schemas. It **does not** implement real authentication, academic rulings, database migrations, NCP networking, CLOVA live calls, actual UI, or final student consent. Use it to agree on the wire shape **before** editing other teams' files.
 
-## Quick start (Node >=22.12)
+## Quick start (Node 22.22.2+ (22.x) / 24.15.0+ (24.x))
 
 From the repository root:
 

@@ -33,3 +33,6 @@ export type SafeLlmPacket = z.infer<typeof SafeLlmPacketSchema>;
 export function parseSafeLlmPacket(value:unknown): SafeLlmPacket {
   return SafeLlmPacketSchema.parse(value);
 }
+
+/** Approved input and Provider job wire DTOs. No opt-in or billing approval. */
+export * from './provider-jobs.js';
