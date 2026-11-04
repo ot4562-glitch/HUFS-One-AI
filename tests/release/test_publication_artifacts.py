@@ -92,6 +92,29 @@ class PublicationGateTests(unittest.TestCase):
         output = json.dumps(report, ensure_ascii=True)
         self.assertNotIn("apps/api/Dockerfile.dockerignore", output)
 
+    def test_deploy_dockerfile_ignore_override_is_blocked_without_reading_it(self) -> None:
+        from unittest.mock import patch
+
+        relative = "infra/deploy/Dockerfile.dockerignore"
+        self._write(relative, "NEVER_PUBLISH_CONTENT\n!private/**\n")
+        override = self.root / relative
+        original_open = Path.open
+
+        def guarded_open(path, *args, **kwargs):
+            if path == override:
+                raise AssertionError("Docker override content must not be read")
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, "open", guarded_open):
+            report = audit_publication_artifacts(self.root)
+
+        self.assertIn("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED",
+                      {entry["reason"] for entry in report["findings"]})
+        self.assertEqual(report["gates"][0]["status"], "FAIL")
+        output = json.dumps(report)
+        self.assertNotIn(relative, output)
+        self.assertNotIn("NEVER_PUBLISH_CONTENT", output)
+
     def test_non_web_sourcemap_must_never_be_in_release_artifact(self) -> None:
         for name in ("dist/apps/api/src/server.js.map",
                      "dist/packages/contracts/index.css.map",

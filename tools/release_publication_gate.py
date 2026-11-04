@@ -143,7 +143,7 @@ def audit_publication_artifacts(root: Path) -> dict:
         # Dockerfile-specific ignores can override the root policy. Only
         # inspect filenames under the already reviewed synthetic checkout
         # roots; never recurse into raw student, local_only, or dist data.
-        for safe_root in ("apps", "infra/compose", "packages"):
+        for safe_root in ("apps", "infra/compose", "infra/deploy", "packages"):
             safe_dir = root / safe_root
             if safe_dir.is_dir() and not safe_dir.is_symlink():
                 for override in safe_dir.rglob("*.dockerignore"):
