@@ -40,6 +40,7 @@ export function OwnerDemoFeatures({response,busy,onSave}:Props){
   const [selected,setSelected]=useState<string|null>(null),[search,setSearch]=useState(w.search);
   const [title,setTitle]=useState(''),[summary,setSummary]=useState(''),[topic,setTopic]=useState<TopicCode>('AI_ML');
   const [course,setCourse]=useState(''),[error,setError]=useState('');
+  const [filter,setFilter]=useState<'CURRENT'|'INELIGIBLE'|'CLOSED'>('CURRENT');
   const detail=useRef<HTMLElement>(null),opener=useRef<HTMLElement|null>(null);
   useEffect(()=>{setSelected(null);setSearch(w.search);setTitle('');setSummary('');setCourse('');setError('');},[profile.version]);
   useEffect(()=>{if(selected)detail.current?.focus();},[selected]);
@@ -58,7 +59,9 @@ export function OwnerDemoFeatures({response,busy,onSave}:Props){
   };
   const item=selected?s.catalog.find(o=>o.id===selected):undefined;
   const reason=selected?s.allCards.find(o=>o.opportunityId===selected)?.explanation:undefined;
-  const cards=s.allCards.filter(c=>!w.search||c.title.normalize('NFKC').toLocaleLowerCase().includes(w.search.normalize('NFKC').toLocaleLowerCase()));
+  const cards=s.allCards.filter(c=>filter==='CLOSED'?c.lifecycle==='CLOSED':c.lifecycle!=='CLOSED'
+    &&(filter==='INELIGIBLE'?c.eligibility==='INELIGIBLE':c.eligibility!=='INELIGIBLE'))
+    .filter(c=>!w.search||c.title.normalize('NFKC').toLocaleLowerCase().includes(w.search.normalize('NFKC').toLocaleLowerCase()));
   const top=new Set(s.feed.featured.map(c=>c.opportunityId));
   return <div className="owner-demo" aria-busy={busy}>
     <p className="owner-demo__provenance">합성 원천 {s.corpus.version} · 기회 {s.corpus.opportunities} · 공지 {s.corpus.notices} · 가상 프로필 {s.corpus.profiles}<br/>
@@ -66,6 +69,10 @@ export function OwnerDemoFeatures({response,busy,onSave}:Props){
     {error&&<p role="alert">{error}</p>}
     <section aria-label="빈 계정 추천" className="local-account__card">
       <h3>추천과 전체 기회</h3>
+      <label>기회 상태<select aria-label="기회 상태" value={filter} onChange={e=>setFilter(e.target.value as typeof filter)}>
+        <option value="CURRENT">현재 기회 · 조건 확인 필요 포함</option>
+        <option value="INELIGIBLE">조건 미충족</option><option value="CLOSED">마감 이력</option>
+      </select></label>
       <p>관심·경험의 관련도를 계산합니다. 취업·합격 확률이 아니며, 필수 조건은 별도로 확인합니다.</p>
       <form aria-label="합성 검색 설정" onSubmit={e=>{e.preventDefault();save({...w,search});}}>
         <label>기회 검색<input value={search} maxLength={200} onChange={e=>setSearch(e.target.value)}/></label>
@@ -107,7 +114,7 @@ export function OwnerDemoFeatures({response,busy,onSave}:Props){
         <form aria-label="가상 경험 초안" onSubmit={addExperience}>
           <label>가상 경험 제목<input value={title} maxLength={120} onChange={e=>setTitle(e.target.value)}/></label>
           <label>가상 경험 설명<textarea value={summary} maxLength={1000} onChange={e=>setSummary(e.target.value)}/></label>
-          <label>가상 경험 분야<select value={topic} onChange={e=>setTopic(e.target.value as TopicCode)}>
+          <label>가상 경험 분야<select aria-label="가상 경험 분야" value={topic} onChange={e=>setTopic(e.target.value as TopicCode)}>
             {TOPIC_CODES.map(t=><option value={t} key={t}>{TOPIC_TEXT[t]}</option>)}</select></label>
           <button type="submit" disabled={busy||!title.trim()||w.experiences.length>=100}>경험 초안 저장</button>
         </form>

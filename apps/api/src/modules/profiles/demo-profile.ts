@@ -46,8 +46,9 @@ export function recomputeDemoProfile(raw:unknown):DemoProfileResponse {
   if(p.primaryMajor!==null)student.majors=[{major:p.primaryMajor,role:'PRIMARY'},
     ...(p.doubleMajor?.kind==='DOUBLE'?[{major:p.doubleMajor.major,role:'DOUBLE' as const}]:[])];
   const notices=composeNotices(student,DEMO_NOTICES,{asOf:DEMO_AS_OF});
-  const catalog=[...feed.all,...feed.ineligible,...feed.closed].map(r=>r.opportunity);
-  const allCards=feed.all.map(r=>({opportunityId:r.opportunity.id,displayMode:'COMPACT_LIST' as const,
+  const visible=[...feed.all,...feed.ineligible,...feed.closed];
+  const catalog=visible.map(r=>r.opportunity);
+  const allCards=visible.map(r=>({opportunityId:r.opportunity.id,displayMode:'COMPACT_LIST' as const,
     title:r.opportunity.title,eligibility:r.evaluation.eligibility,lifecycle:r.evaluation.lifecycle,
     topics:r.opportunity.topicCodes,evidenceRefs:r.evaluation.evidenceRefs,score:r.score.total,
     dataMode:'SYNTHETIC' as const,explanation:explainRecommendation(r,DEFAULT_RANK_CONFIG)}));

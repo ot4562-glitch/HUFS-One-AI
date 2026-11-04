@@ -71,8 +71,10 @@ export const DemoProfileSnapshotSchema=z.strictObject({
     {message:'Synthetic source pack only'})
   .refine(s=>s.catalog.every(o=>o.dataMode==='SYNTHETIC'&&!o.applicationUrlRef
     &&['DEMO_DISABLED','RECORD_ONLY'].includes(o.actualApplicationRoute)),{message:'Synthetic catalog cannot enable applications'})
-  .refine(s=>new Set(s.catalog.map(o=>o.id)).size===s.catalog.length&&s.allCards.every(c=>c.dataMode==='SYNTHETIC'
-    &&s.catalog.some(o=>o.id===c.opportunityId)),{message:'Catalog/card binding required'});
+  .refine(s=>new Set(s.catalog.map(o=>o.id)).size===s.catalog.length
+    &&new Set(s.allCards.map(c=>c.opportunityId)).size===s.allCards.length
+    &&s.allCards.length===s.catalog.length&&s.allCards.every(c=>c.dataMode==='SYNTHETIC'
+      &&s.catalog.some(o=>o.id===c.opportunityId)),{message:'Complete unique catalog/card binding required'});
 export const DemoProfileResponseSchema=z.strictObject({profile:DemoProfileRecordSchema,snapshot:DemoProfileSnapshotSchema})
   .refine(r=>r.profile.version===r.snapshot.version,{message:'Profile and derived snapshot versions must agree'})
   .refine(r=>JSON.stringify(r.profile.workspace)===JSON.stringify(r.snapshot.workspace),{message:'Profile and snapshot workspace must agree'});

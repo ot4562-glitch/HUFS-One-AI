@@ -30,6 +30,8 @@ describe('#132 one EMPTY_DEMO workspace and reset boundary',()=>{
     expect(response.snapshot.calendar.asOf).toBe(response.snapshot.asOf);
     expect(response.snapshot.catalog.every(o=>o.dataMode==='SYNTHETIC'&&!o.applicationUrlRef)).toBe(true);
     expect(response.snapshot.catalog.some(o=>o.id==='SYN-OPP-038')).toBe(false);
+    expect(response.snapshot.allCards.map(c=>c.opportunityId).sort()).toEqual(response.snapshot.catalog.map(o=>o.id).sort());
+    expect(response.snapshot.allCards.some(c=>c.lifecycle==='CLOSED')).toBe(true);
     expect(response.snapshot.corpus).toMatchObject({opportunities:40,notices:10,profiles:5});
     expect(DemoProfileResponseSchema.safeParse({...response,snapshot:{...response.snapshot,version:2}}).success).toBe(false);
   });

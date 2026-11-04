@@ -169,7 +169,7 @@ export function OwnerDemoProfile({port}: {port: OwnerDemoProfilePort}) {
           </label>)}
         </fieldset>
         <label>이중전공 상태
-          <select value={draft.doubleKind} onChange={e => edit({
+          <select aria-label="이중전공 상태" value={draft.doubleKind} onChange={e => edit({
             doubleKind: e.target.value as Draft['doubleKind'], doubleName: '',
           })}>
             <option value="UNSET">미정 · UNSET</option>

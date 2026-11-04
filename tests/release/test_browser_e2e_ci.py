@@ -15,6 +15,7 @@ ALLOWED={
     "/packages/contracts/","/packages/ai/src/","/packages/fixtures/synthetic/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
     "/.github/workflows/ui-browser-e2e.yml",
     "/tools/check_local_account_browser.mjs","/tools/strip_build_sourcemaps.mjs",
+    "/tools/check_empty_demo_browser.mjs","/tools/generate_demo_assets.mjs",
 }
 PROTECTED=("csv","local_only","templates/real5-intake","reference/hufsability/raw",
     "reference/hufsability")
@@ -68,6 +69,8 @@ def audit(text: str)->list[str]:
         issues.append("must run traceable browser E2E list reporter")
     if "npm run test:e2e:accounts" not in text:
         issues.append("must run account-switch and revoked-session browser E2E")
+    if "npm run test:e2e:empty-demo" not in text or "npm run assets:check" not in text:
+        issues.append("must run independent EMPTY_DEMO and original asset validation")
     if "npm ci --ignore-scripts --no-audit --no-fund" not in text:
         issues.append("must use pinned lockfile without install hooks")
     if "playwright install" in text or "npx playwright install" in text:
@@ -111,6 +114,8 @@ class BrowserE2EWorkflowTests(unittest.TestCase):
             self.workflow.replace("    runs-on: ubuntu-24.04","    runs-on: ubuntu-latest",1),
             self.workflow.replace("npm run test:e2e:web -- --reporter=list","echo no-tests",1),
             self.workflow.replace("npm run test:e2e:accounts","echo skipped",1),
+            self.workflow.replace("npm run test:e2e:empty-demo","echo skipped",1),
+            self.workflow.replace("npm run assets:check","echo skipped",1),
             self.workflow.replace("test ! -d local_only","echo unsafe",1),
         ):
             self.assertTrue(audit(change))

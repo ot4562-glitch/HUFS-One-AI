@@ -31,6 +31,15 @@ describe('#132 owner feature consumer',()=>{
     await waitFor(()=>expect(onSave).toHaveBeenCalledTimes(2));
     expect(onSave.mock.calls[1]?.[0]).toMatchObject({experienceOverlay:'OFF',experiences:[{title:'합성 분석 활동',topicCodes:['DATA_ANALYTICS']}]});
   });
+  it('keeps closed items out of current recommendations and exposes their bound detail in history',()=>{
+    const response=recomputeDemoProfile(record),closed=response.snapshot.allCards.find(c=>c.lifecycle==='CLOSED')!;
+    render(<OwnerDemoFeatures response={response} busy={false} onSave={vi.fn()}/>);
+    const list=within(screen.getByRole('region',{name:'빈 계정 추천'}));
+    expect(list.queryByRole('button',{name:'상세 보기 · '+closed.title})).toBeNull();
+    fireEvent.change(screen.getByLabelText('기회 상태'),{target:{value:'CLOSED'}});
+    fireEvent.click(list.getByRole('button',{name:'상세 보기 · '+closed.title}));
+    expect(within(screen.getByRole('region',{name:'합성 기회 상세'})).getByRole('heading',{name:closed.title})).toBeTruthy();
+  });
   it('labels academics/forecast UNKNOWN and avoids official grade, AI or notification claims',()=>{
     render(<OwnerDemoFeatures response={recomputeDemoProfile(record)} busy={false} onSave={vi.fn()}/>);
     expect(screen.getByText(/학업·개설 전망: 근거 부족/)).toBeTruthy();
