@@ -1,5 +1,5 @@
 import {useEffect, useId, useState} from 'react';
-import type {DemoContext} from '@hufs-one/contracts';
+import type {DemoContext, DemoSnapshot} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from '../../app/index.js';
 import {HufsApiError} from '../../integrations/api-error.js';
 import {buildPlanCheckView, termText, type PlanCheckView} from './planCheckView.js';
@@ -14,13 +14,13 @@ export interface PlanCheckPort {
   check(context: DemoContext, term: string, signal: AbortSignal): Promise<unknown | null>;
 }
 
-type Load =
+type Load = (
   | {readonly key: string; readonly kind: 'LOADING'}
   | {readonly key: string; readonly kind: 'NONE'}
   | {readonly key: string; readonly kind: 'ERROR'}
   | {readonly key: string; readonly kind: 'STALE'}
   | {readonly key: string; readonly kind: 'UNAVAILABLE'}
-  | {readonly key: string; readonly kind: 'VIEW'; readonly view: PlanCheckView};
+  | {readonly key: string; readonly kind: 'VIEW'; readonly view: PlanCheckView}) & {readonly snapshot: DemoSnapshot};
 
 /**
  * Loads through DemoController.runContextOperation keyed by epoch + context + snapshot + term and renders
@@ -38,7 +38,7 @@ export function PlanCheckPanel({state, controller, port}: {state: DemoViewState;
   useEffect(() => {
     if (!snapshot || !term) { setLoad(null); return; }
     let live = true;
-    setLoad({key, kind: 'LOADING'});
+    setLoad({key, snapshot, kind: 'LOADING'});
     void controller.runContextOperation(async (ctx, signal) => {
       try {
         return {raw: await port.check(ctx, term, signal)} as const;
@@ -50,16 +50,16 @@ export function PlanCheckPanel({state, controller, port}: {state: DemoViewState;
     }).then(r => {
       if (!live) return;
       if (r === null) { setLoad(null); return; } // stale / denied: the controller state explains
-      if ('failed' in r) { setLoad({key, kind: r.failed}); return; }
-      if (r.raw === null) { setLoad({key, kind: 'NONE'}); return; }
+      if ('failed' in r) { setLoad({key, snapshot, kind: r.failed}); return; }
+      if (r.raw === null) { setLoad({key, snapshot, kind: 'NONE'}); return; }
       const v = buildPlanCheckView(r.raw, {term, asOf: snapshot.asOf});
-      setLoad(v.ok ? {key, kind: 'VIEW', view: v.view} : {key, kind: 'ERROR'});
+      setLoad(v.ok ? {key, snapshot, kind: 'VIEW', view: v.view} : {key, snapshot, kind: 'ERROR'});
     });
     return () => { live = false; };
   }, [key, snapshot, term, port, controller]);
 
   if (!snapshot) return null;
-  const current = load && load.key === key ? load : null;
+  const current = load && load.key === key && load.snapshot === snapshot ? load : null;
   return (
     <section className="section plan" aria-labelledby="plan-title" aria-busy={current?.kind === 'LOADING' || !current}>
       <div className="section__head"><h2 id="plan-title">수강계획 검사</h2></div>

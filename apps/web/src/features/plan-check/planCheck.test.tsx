@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import {afterEach, describe, expect, it} from 'vitest';
+import {useLayoutEffect} from 'react';
 import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import {OwnerStudyPlanCheckResponseSchema, type DemoContext} from '@hufs-one/contracts';
 import {DemoController} from '../../app/index.js';
@@ -10,7 +11,8 @@ import {App} from '../../App.js';
 import {appPages} from '../../pages/index.js';
 import type {HistoryPort} from '../../shell/router.js';
 import {buildPlanCheckView} from './planCheckView.js';
-import type {PlanCheckPort} from './PlanCheckPanel.js';
+import {PlanCheckPanel, type PlanCheckPort} from './PlanCheckPanel.js';
+import type {DemoViewState} from '../../app/index.js';
 
 afterEach(cleanup);
 const AS_OF = '2026-11-20T00:00:00.000Z';
@@ -73,6 +75,27 @@ async function open(i: number, planCheck: PlanCheckPort) {
 const panel = () => screen.queryByRole('region', {name: '수강계획 검사'});
 
 describe('#81 수강계획 검사 next to 졸업 요건 현황', () => {
+  it('hides an old plan result before effects when the same context gets a replacement snapshot', async () => {
+    const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'RUN');
+    await controller.select('S01');
+    const before = controller.getState();
+    let calls = 0;
+    const port: PlanCheckPort = {terms: ['2027-1'], check: (ctx, term, signal) => ++calls === 1
+      ? port0.check(ctx, term, signal) : new Promise(() => {})};
+    const observed: boolean[] = [];
+    function View({state}: {state: DemoViewState}) {
+      useLayoutEffect(() => { observed.push(Boolean(document.querySelector('.plan [role="status"]'))); }, [state]);
+      return <PlanCheckPanel state={state} controller={controller} port={port} />;
+    }
+    const view = render(<View state={before} />);
+    await flush();
+    expect(screen.getByRole('status')).toBeTruthy();
+    const after = {...before, snapshot: {...before.snapshot!, versions: {...before.snapshot!.versions, overlay: 'NEXT-OVERLAY'}}};
+    view.rerender(<View state={after} />);
+    expect(observed.at(-1)).toBe(false);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('S01: both sections in one pair, result for the chosen term, switching term asks again', async () => {
     await open(0, port0);
     const p = panel()!;
