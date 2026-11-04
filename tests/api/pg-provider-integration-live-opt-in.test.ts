@@ -16,7 +16,7 @@ let admin:Pool,budget:Pool,results:Pool,urls:Record<string,string>,policy:Record
 const phase='SYN-PROVIDER-HTTP',password=randomBytes(24).toString('hex');
 const origin='https://synthetic-provider.example.test';
 const migrations=['20261031_google_auth.sql','20261031_beta_admission.sql','20261031_auth_attempt_windows.sql',
-  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261101_verified_source_rights.sql',
+  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261101_verified_source_rights.sql',
   '20261101_self_account.sql','20261103_ai_budget.sql','20261103_ai_provider_inputs.sql','20261103_ai_provider_results.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{const c=await pool.connect();return {
   query:async(sql,args=[])=>({rows:(await c.query(sql,[...args])).rows}),release:()=>c.release()};}});

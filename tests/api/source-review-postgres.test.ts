@@ -13,7 +13,7 @@ function harness(options:{deny?:boolean;revoke?:boolean;stale?:boolean;tamper?:b
   failOutbox?:boolean;existing?:boolean;tamperText?:boolean;missingOriginal?:boolean;
   dependent?:boolean;futureFetch?:boolean;policyChanges?:boolean;decisionConflict?:boolean;
   storedOriginalSha?:string;capturedAt?:string;ordinals?:readonly (number|null)[];
-  clock?:()=>string}={}){
+  clock?:()=>string;mediaKind?:'TEXT'|'IMAGE'|'PDF'}={}){
   const calls:Array<{sql:string;params:readonly unknown[]}>=[];let authorityCalls=0;
   const authority={authorize:async()=>{
     authorityCalls++;
@@ -28,7 +28,7 @@ function harness(options:{deny?:boolean;revoke?:boolean;stale?:boolean;tamper?:b
     if(sql.includes('FROM source_revisions_vnext'))return {rows:[{
       revision_id:'revision-1',source_id:'source-1',permission_ref:'permission-1',
       original_sha256:originalSha256,content_sha256:contentSha256,status:'NEEDS_REVIEW',
-      change_kind:'NEW',provenance:'SYNTHETIC',source_class:'SYNTHETIC',
+      change_kind:'NEW',provenance:'SYNTHETIC',source_class:'SYNTHETIC',media_kind:options.mediaKind??'TEXT',
       fetched_at:options.futureFetch?'2026-11-02T00:00:00.000Z':'2026-11-01T00:00:00.000Z',
     }]};
     if(sql.includes('FROM source_originals_vnext'))return {rows:options.missingOriginal?[]:[{
@@ -85,6 +85,11 @@ describe('explicit operator source review',()=>{
   ] as const)it('rolls back '+name,async()=>{
     const x=harness(options);await expect(x.service.review(request)).rejects.toThrow(reason);
     expect(x.calls.at(-1)!.sql).toBe('ROLLBACK');
+  });
+  it.each(['IMAGE','PDF'] as const)('refuses %s approval without retained bbox evidence and independent image attestation',async mediaKind=>{
+    const x=harness({mediaKind});
+    await expect(x.service.review(request)).rejects.toThrow();
+    expect(x.calls.some(q=>q.sql.includes('INSERT INTO source_review_attestations_vnext'))).toBe(false);
   });
   it('cannot treat an extractor or dependent reviewer as independent human approval',async()=>{
     const x=harness({dependent:true});await expect(x.service.review(request)).rejects.toThrow('authority');

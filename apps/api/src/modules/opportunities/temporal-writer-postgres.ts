@@ -6,6 +6,7 @@ import type {SourceRevisionVNext,RevisionInvalidationVNext} from '@hufs-one/cont
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import {hashRevisionParagraphs} from './revision-ledger.js';
 import type {RevisionParagraph} from './revision-ledger.js';
+import {parseSourceImageEvidence} from './source-image-evidence.js';
 
 /**
  * Transactional Postgres source writer. Cannot be reached by browser routes.
@@ -20,6 +21,7 @@ export class PostgresSourceRevisionWriter {
     paragraphs:RevisionParagraph[];
     originalBytes:Uint8Array;
     permissionReviewed:boolean;
+    imageEvidence?:unknown;
   }):Promise<RevisionInvalidationVNext|null>{
     if(!input.permissionReviewed)throw new Error('Missing approved source rights');
     const r=SourceRevisionVNextSchema.parse(input.revision);
@@ -36,6 +38,16 @@ export class PostgresSourceRevisionWriter {
       ||createHash('sha256').update(originalBytes).digest('hex')!==r.originalSha256
       ||hashRevisionParagraphs(input.paragraphs)!==r.contentSha256)
       throw new Error('Immutable revision integrity failure');
+    // Image candidates retain their original OCR geometry and cannot self-approve.
+    if(r.mediaKind==='PDF')throw new Error('Approved PDF renderer unavailable');
+    const image=r.mediaKind==='IMAGE'?parseSourceImageEvidence(input.imageEvidence,{
+      sourceId:r.sourceId,revisionId:r.revisionId,permissionRef:r.permissionRef,originalSha256:r.originalSha256,
+    }):undefined;
+    if(image&&(r.status==='ACTIVE'||r.lastVerifiedAt!==undefined
+      ||JSON.stringify(image.paragraphs)!==JSON.stringify(paragraphs)))
+      throw new Error('Source image evidence requires independent review');
+    if(!image&&input.imageEvidence!==undefined)throw new Error('Unexpected source image evidence');
+    const retained=paragraphs.map((p,i)=>image?{...p,imageSpan:image.spans[i]}:p);
     const c=await this.pool.connect();
     let started=false;
     try{
@@ -83,15 +95,16 @@ export class PostgresSourceRevisionWriter {
         r.applicableScope?.cohortRange?.[1]??r.applicableScope?.cohortMax??null,
       ]);
       await c.query(`INSERT INTO source_paragraphs_vnext(
-        revision_id,paragraph_id,paragraph_text,paragraph_ordinal)
-        SELECT $1,item.value->>'id',item.value->>'text',item.ordinality
+        revision_id,paragraph_id,paragraph_text,paragraph_ordinal,image_span)
+        SELECT $1,item.value->>'id',item.value->>'text',item.ordinality,item.value->'imageSpan'
         FROM jsonb_array_elements($2::jsonb) WITH ORDINALITY AS item(value,ordinality)`,[
-        r.revisionId,JSON.stringify(paragraphs),
+        r.revisionId,JSON.stringify(retained),
       ]);
       await c.query(`INSERT INTO source_originals_vnext(
-        revision_id,original_sha256,original_bytes,captured_at)
-        VALUES($1,$2,$3,$4)`,[
+        revision_id,original_sha256,original_bytes,captured_at,image_evidence,image_evidence_sha256)
+        VALUES($1,$2,$3,$4,$5::jsonb,$6)`,[
         r.revisionId,r.originalSha256,originalBytes,r.fetchedAt,
+        image?JSON.stringify(image.evidence):null,image?.sha256??null,
       ]);
       const updated=await c.query(`UPDATE source_ingest_heads
         SET revision_id=$2,fetched_at=$3,last_checked_at=$3

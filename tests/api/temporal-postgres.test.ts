@@ -181,3 +181,28 @@ describe('TASK-21 PostgreSQL permission-first historical retrieval (SQL stub)',(
     expect(x.releases).toHaveLength(1);
   });
 });
+
+describe('PostgreSQL IMAGE citation projections',()=>{
+  const image=()=>({kind:'IMAGE' as const,sourceRevisionId:'r-image',assetId:'asset-image',
+    originalSha256:'a'.repeat(64),pageIndex:0,bboxNorm:[0,0,.5,.25] as [number,number,number,number],
+    ocrLineIds:['field-1'],quote:'합성 공고',extractionEngine:'CLOVA_OCR_GENERAL' as const,transformVersion:'raster-identity-v1'});
+  const row=()=>({source_id:'s-image',revision_id:'r-image',paragraph_id:'ocr-line-1',
+    paragraph_text:'합성 공고',score:1,media_kind:'IMAGE',original_sha256:'a'.repeat(64),image_span:image()});
+  it('returns the stored IMAGE span without inventing text offsets',async()=>{
+    const x=stub([row()]),result=await x.reader.retrieve(policy);
+    expect(result.envelope.evidence).toEqual([image()]);expect(result.hits[0]?.imageSpan).toEqual(image());
+    expect(result.envelope.evidence[0]).not.toHaveProperty('startCodePoint');
+    expect(x.calls[0]?.sql).toContain('r.media_kind,r.original_sha256');
+    expect(x.calls[0]?.sql).toContain('p.image_span');
+  });
+  const invalid:Array<[string,(value:any)=>void]>=[
+    ['absent span',r=>{delete r.image_span;}],['TEXT downgrade',r=>{r.media_kind='TEXT';}],
+    ['PDF',r=>{r.media_kind='PDF';}],['original hash',r=>{r.original_sha256='b'.repeat(64);}],
+    ['revision',r=>{r.image_span.sourceRevisionId='other';}],['quote',r=>{r.image_span.quote='다른 공고';}],
+    ['bbox',r=>{r.image_span.bboxNorm=[0,0,2,.5];}],
+  ];
+  it.each(invalid)('fails closed on mismatched %s from storage',async(_name,mutate)=>{
+    const value=row();mutate(value);const x=stub([value]);
+    await expect(x.reader.retrieve(policy)).rejects.toThrow(/unavailable/);expect(x.releases).toHaveLength(1);
+  });
+});

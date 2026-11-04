@@ -1,4 +1,4 @@
-import {RetrievalEnvelopeVNextSchema} from '@hufs-one/contracts';
+import {RetrievalEnvelopeVNextSchema,SourceSpanVNextSchema} from '@hufs-one/contracts';
 import type {EvidenceActorScope} from '@hufs-one/contracts';
 import type {VerifiedTeamActor,ApiOptions} from '../../types.js';
 import type {TemporalResult} from './revision-ledger.js';
@@ -96,10 +96,14 @@ export function createPostgresTemporalGateway(
         ||resultRevisionIds.some(id=>!envelope.sourceRevisionIds.includes(id))
         ||result.hits.some((hit,i)=>{
           const span=envelope.evidence[i];
-          return !span||span.kind!=='TEXT'||span.sourceRevisionId!==hit.revisionId
-            ||span.paragraphId!==hit.paragraphId||span.quote!==hit.quote
-            ||span.startCodePoint!==0
-            ||span.endCodePoint!==Array.from(hit.quote).length;
+          if(!span||span.sourceRevisionId!==hit.revisionId||span.quote!==hit.quote)return true;
+          if(span.kind==='IMAGE'){
+            const retained=SourceSpanVNextSchema.safeParse(hit.imageSpan);
+            return !retained.success||retained.data.kind!=='IMAGE'
+              ||JSON.stringify(retained.data)!==JSON.stringify(span);
+          }
+          return hit.imageSpan!==undefined||span.paragraphId!==hit.paragraphId
+            ||span.startCodePoint!==0||span.endCodePoint!==Array.from(hit.quote).length;
         }))throw new Error('Untrusted retrieval evidence mismatch');
       // Never persist permission snapshots or reuse a previous actor's result.
       return {envelope,hits:result.hits};
