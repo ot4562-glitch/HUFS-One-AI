@@ -142,7 +142,7 @@ jobs:
           cache: npm
       - name: Install pinned lockfile without dependency lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Create four empty synthetic databases in the disposable service
+      - name: Create five empty synthetic databases in the disposable service
         env:
           HUFS_PG_CI_ADMIN_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/postgres
         run: |
@@ -154,12 +154,13 @@ jobs:
             await pool.query('CREATE DATABASE hufs_one_full_test');
             await pool.query('CREATE DATABASE hufs_one_calendar_test');
             await pool.query('CREATE DATABASE hufs_one_owner_academics_test');
+            await pool.query('CREATE DATABASE hufs_one_provider_integration_test');
           } finally {
             await pool.end();
           }
           NODE
-      - name: Build contracts for the live adapter tests
-        run: npm run build:contracts
+      - name: Build compiled API for the separate-process Provider HTTP proof
+        run: npm run build:api
       - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL
         env:
           HUFS_A2_PG_LIVE: '1'
@@ -170,7 +171,9 @@ jobs:
           HUFS_PG_FULL_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_full_test
           HUFS_PG_OWNER_ACADEMICS_LIVE: '1'
           HUFS_PG_OWNER_ACADEMICS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_owner_academics_test
-        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts tests/api/pg-owner-academics-live-opt-in.test.ts --reporter=verbose
+          HUFS_PG_PROVIDER_INTEGRATION_LIVE: '1'
+          HUFS_PG_PROVIDER_INTEGRATION_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_provider_integration_test
+        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts tests/api/pg-owner-academics-live-opt-in.test.ts tests/api/pg-provider-integration-live-opt-in.test.ts --reporter=verbose
 
   # Real PostgreSQL evidence for #119/#164, not merely an opt-in SKIP.
   # Separate runner: owner SQL on 15439 and other PG tests cannot collide.
