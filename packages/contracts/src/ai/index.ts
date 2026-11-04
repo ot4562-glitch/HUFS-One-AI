@@ -36,3 +36,4 @@ export function parseSafeLlmPacket(value:unknown): SafeLlmPacket {
 
 /** Approved input and Provider job wire DTOs. No opt-in or billing approval. */
 export * from './provider-jobs.js';
+export * from './task-results.js';

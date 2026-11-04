@@ -3,6 +3,7 @@ import {AI_TASK_PATHS,type AiTaskPath,type ApprovedProviderInput,
   type ProviderAccepted,type ProviderStoredJob} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import '../local-accounts/localAccounts.css';
+import {AiTaskResultView} from './AiTaskResultView.js';
 
 export interface OwnerProviderPort {
   readonly session:OwnerSessionController;
@@ -127,8 +128,9 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
     {stored&&<section aria-label="현재 권한으로 재검증된 AI 후보">
       <h2>독립 사람 검토 필요 · NEEDS_REVIEW</h2>
       <p>원장 상태: {stored.billing} · 출처: {stored.provenance}</p>
+      {stored.candidate.result&&<AiTaskResultView result={stored.candidate.result}/>}
       <ul>{stored.candidate.citations.map((c,i)=><li key={c.sourceToken+':'+c.paragraphId+':'+i}>
-        <strong>{c.sourceToken} / {c.paragraphId}</strong> · {c.quote}
+        <strong>근거 {i+1} · {c.sourceToken} / {c.paragraphId}</strong> · {c.quote}
       </li>)}</ul>
       <p>인용은 현재 입력과 일치 여부만 재검사한 후보이며, 학교의 공식 사실·지원 가능 판정이 아닙니다.</p>
     </section>}

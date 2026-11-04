@@ -2,6 +2,7 @@ import {z} from 'zod';
 // Keep the four tasks byte-equivalent to AI_TASK_PATHS in index.ts.
 const Task=z.enum(['experience_skills','opportunity_terms','personal_action_brief','graduation_explanation']);
 import {TopicCodeSchema} from '../topics/index.js';
+import {AiTaskResultSchema,hasValidAiTaskResultBindings} from './task-results.js';
 
 /** Server-approved metadata, not original packet/media, data rights or a price quote. */
 export const ApprovedProviderInputSchema=z.strictObject({
@@ -33,12 +34,13 @@ export const ProviderCandidateSchema=z.strictObject({
     topicCode:TopicCodeSchema.optional(),
   })).min(1).max(6),
   objectTokens:z.array(z.string().min(1).max(128)).max(3),
+  result:AiTaskResultSchema.optional(),
   usage:z.strictObject({
     promptTokens:z.number().int().positive().max(128000),
     completionTokens:z.number().int().positive().max(4096),
     totalTokens:z.number().int().positive().max(128000),
-  }).refine(u=>u.totalTokens===u.promptTokens+u.completionTokens),
-});
+  }).refine(u => u.totalTokens === u.promptTokens + u.completionTokens),
+}).refine(hasValidAiTaskResultBindings);
 export const ProviderStoredJobSchema=z.strictObject({
   jobId:z.uuid(),state:z.literal('NEEDS_REVIEW'),billing:z.literal('SETTLED'),
   provenance:z.literal('CANDIDATE_CACHE'),candidate:ProviderCandidateSchema,

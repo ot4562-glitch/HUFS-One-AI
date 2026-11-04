@@ -15,4 +15,37 @@ Synthetic response tests are not an OCR accuracy benchmark or the required indep
 
 Official references checked 2026-11-03: [General OCR](https://api.ncloud-docs.com/docs/en/ai-application-service-ocr-ocr), [HCX-005 text/image](https://api.ncloud-docs.com/docs/en/clovastudio-chatcompletionsv3), [HCX-007 structured output](https://api.ncloud-docs.com/docs/en/clovastudio-chatcompletionsv3-so). These documents specify the provider wire shape; model/entitlement/cost and actual responses still require independent operational verification before use.
 
-Reproduce: `npx vitest run tests/api/clova-wire.test.ts --maxWorkers=1` and `npm run typecheck`. All inputs are synthetic; no network mocking is needed because the module performs no I/O.
+Reproduce: `npm test -- tests/api/clova-wire.test.ts tests/api/ai-task-results.test.ts --maxWorkers=2` and `npm run typecheck`. All inputs are synthetic; no live provider is used.
+
+## Versioned results for the four product tasks
+
+A server-reviewed packet with `schemaVersion: "ai-task-result-v1"` requests a strict
+`result` in addition to the existing citation envelope. Legacy packet versions and
+their stored citation-only results remain readable; a new result cannot be silently
+accepted under a legacy or unknown task-result version.
+
+| Task | Candidate result |
+| --- | --- |
+| `experience_skills` | Up to six allowed topic/skill/role suggestions with citation indexes |
+| `opportunity_terms` | One to five allowed topics; separate eligibility, priority and completion conditions, date kinds and role steps |
+| `personal_action_brief` | An evidence-backed headline and explanations in the exact supplied action order (at most three) |
+| `graduation_explanation` | Explanations for supplied requirement tokens and references to their approved fact keys (at most three per packet) |
+
+This first result version is extractive: every displayed phrase must occur verbatim
+in each referenced quote. Ambiguous source/paragraph IDs, duplicate fact keys,
+invented objects, changed action order and ungrounded phrases are rejected. Graduation
+explanations reject Unicode numeric characters; actual numeric facts/tables remain
+code-owned. This is not a semantic classifier for all spelled-out numbers, conditions
+or quote-to-requirement associations. All accepted output remains `NEEDS_REVIEW`;
+the user must still approve experience tags and an independent reviewer must verify
+official conditions/evidence.
+
+The API executor revalidates the result against a fresh authorized packet on cache
+reads. The owner panel renders the four result shapes, keeps action order, and erases
+them when its current session becomes invalid. The feature neither creates approved
+inputs nor activates a provider. `tests/api/ai-task-results.test.ts` exercises the
+wire, stored DTO, synthetic validator and authenticated API/executor with fake
+transport; the owner-panel tests cover display, revocation and 100 input switches
+without additional provider submissions. These are offline contract tests, not
+real PostgreSQL/NCP or independent media-quality acceptance.
+

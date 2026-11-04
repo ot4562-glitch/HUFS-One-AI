@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {AiTaskSchema, SafeLlmPacketSchema, TopicCodeSchema} from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
+import {validateHcxCandidate} from '../../../../../packages/ai/src/clova-wire.js';
 
 const ModelCandidate = z.strictObject({
   task: AiTaskSchema,
@@ -16,6 +17,12 @@ const ModelCandidate = z.strictObject({
 /** A quote match is only a candidate; it is not human-reviewed truth. */
 export function validateModelCandidate(packet:unknown,raw:unknown) {
   const x=SafeLlmPacketSchema.safeParse(packet);
+  if(x.success&&x.data.schemaVersion.startsWith('ai-task-result-')){
+    try{
+      const candidate=validateHcxCandidate(x.data,raw);
+      return {...candidate,reviewState:'NEEDS_REVIEW' as const,provenance:'MOCK' as const};
+    }catch{throw new ApiFailure('UNVERIFIED_EVIDENCE');}
+  }
   const y=ModelCandidate.safeParse(raw);
   if(!x.success||!y.success||x.data.task!==y.data.task)
     throw new ApiFailure('UNVERIFIED_EVIDENCE');
