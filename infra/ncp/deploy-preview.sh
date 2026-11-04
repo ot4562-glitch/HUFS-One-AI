@@ -93,8 +93,30 @@ newlink="$base/.current-new"
 rm -f "$newlink"
 ln -s "$release" "$newlink"
 mv -Tf "$newlink" "$base/current"
-systemctl enable hufs-preview.service >/dev/null
-systemctl restart hufs-preview.service
+rollback_preview() {
+  local rollback_failed=no
+  echo "Activation failed. Rolling back the preview symlink." >&2
+  if [[ -n "$old" ]]; then
+    if rm -f "$newlink" && ln -s "$old" "$newlink" && mv -Tf "$newlink" "$base/current"; then
+      systemctl restart hufs-preview.service || rollback_failed=yes
+    else
+      rollback_failed=yes
+    fi
+  else
+    systemctl stop hufs-preview.service || rollback_failed=yes
+    rm -f "$base/current" || rollback_failed=yes
+  fi
+  if [[ "$rollback_failed" == yes ]]; then
+    echo "Rollback incomplete; manual recovery required. Do not declare this preview healthy." >&2
+  fi
+  journalctl -u hufs-preview.service --no-pager -n 20 >&2 || true
+}
+# set -e alone would exit after a failed enable/restart with the NEW pointer
+# still active. Route activation failures through the same recovery as health.
+if ! systemctl enable hufs-preview.service >/dev/null || ! systemctl restart hufs-preview.service; then
+  rollback_preview
+  exit 1
+fi
 ok=no
 for _ in $(seq 1 20); do
   if curl -fsS --connect-timeout 1 --max-time 3 http://127.0.0.1:5173/ >/dev/null \
@@ -105,16 +127,7 @@ for _ in $(seq 1 20); do
   sleep 2
 done
 if [[ "$ok" != yes ]]; then
-  echo "Health check failed. Rolling back the preview symlink." >&2
-  if [[ -n "$old" ]]; then
-    ln -s "$old" "$newlink"
-    mv -Tf "$newlink" "$base/current"
-    systemctl restart hufs-preview.service
-  else
-    systemctl stop hufs-preview.service || true
-    rm -f "$base/current"
-  fi
-  journalctl -u hufs-preview.service --no-pager -n 20 >&2 || true
+  rollback_preview
   exit 1
 fi
 echo "OK: SYNTHETIC PREVIEW listens ONLY on 127.0.0.1:5173."
