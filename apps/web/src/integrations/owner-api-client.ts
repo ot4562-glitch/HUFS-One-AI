@@ -13,6 +13,7 @@ import {
   OpportunityRevisionComparisonContextResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
   DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
+  OwnerDoubleMajorAuditSchema,
   SyntheticClubDetailResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
@@ -253,6 +254,12 @@ export class HufsOwnerApiClient {
     requireMatchingReceipt(result.opportunityId===id&&result.beforeRevisionId===input.beforeRevisionId
       &&result.afterRevisionId===input.afterRevisionId&&Date.parse(result.asOf)===Date.parse(input.asOf));
     return result;
+  }
+  /** #144 Approved Owner double-major read; server binds exact actor, consent, effective RulePack and heads.
+   * Never send an actor ID, hypothetical major or school rule from the browser.
+   */
+  getDoubleMajor(signal?:AbortSignal){
+    return this.request('/api/academics/double-major',OwnerDoubleMajorAuditSchema,{signal});
   }
   /** #132 Independent EMPTY_DEMO, never a demo subject or reviewer session.
    * Server derives BETA actor; no-store and CSRF are enforced by this client.

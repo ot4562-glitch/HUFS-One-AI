@@ -52,6 +52,12 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
       reset: (ctx, version, signal) => api.resetDemoOverlay(ctx, version, signal),
     },
+    ownerAcademics: {
+      session: ownerSession,
+      current: signal => api.owner.getDoubleMajor(signal),
+      plan: (change,signal) => api.owner.checkStudyPlan(change,signal),
+      hypothetical: (change,signal) => api.owner.checkMajorWhatIf(change,signal),
+    },
     ownerDemoProfile: {
       session: ownerSession,
       read: signal => api.owner.readDemoProfile(signal),

@@ -18,6 +18,10 @@ import {proveOwnerStudyPlanPg} from './owner-study-plan-live-slice.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {createPostgresPlatformServices} from '../../apps/api/src/platform-postgres.js';
 import {ownerOpportunity} from './owner-recommendations-fixture.js';
+import {MemoryApiRepository} from '../../apps/api/src/repository.js';
+import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
+import {OwnerSessionController} from '../../apps/web/src/app/owner-session-controller.js';
+import type {VerifiedActor} from '../../apps/api/src/types.js';
 
 const RUN=process.env.HUFS_PG_OWNER_ACADEMICS_LIVE==='1';
 const pools:Pool[]=[];
@@ -276,4 +280,44 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
       expect((await app.inject({url:'/api/owner/feed'})).statusCode).toBe(403);
     }finally{await app.close();}
   },60000);
+  it('restarts authenticated Fastify over real owner-approved RLS PostgreSQL and rejects revoked consent',async()=>{
+    const f=await seed('BROWSER-E2E'),at=now(),origin='https://synthetic.invalid';
+    const team={role:'BETA' as const,actorId:f.actorId,sessionIdHash:'H'.repeat(32),csrfToken:'C'.repeat(32),
+      betaAllowed:true,sessionExpiresAt:f.expires,schoolMailProofExpiresAt:f.expires};
+    let identity:VerifiedActor|null=team;
+    const launch=()=>createIntegratedApi({allowedOrigin:origin,
+      repository:new MemoryApiRepository({profiles:[]}),
+      auth:{verifySession:async()=>identity,revokeSession:async()=>{identity=null;}},
+      now:()=>at,
+      doubleMajor:createPostgresOwnerDoubleMajorServices({pool:adapter(reader),authority:f.authority,now}),
+    });
+    let app=launch();
+    const browser=()=>new HufsApiClient(async(url,init)=>{
+      const headers:Record<string,string>={};
+      new Headers(init.headers).forEach((v,k)=>{headers[k]=v;});
+      const reply=await app.inject({url,method:init.method??'GET',
+        headers:{...headers,cookie:'SYNTHETIC-SESSION',origin},
+        ...(init.body===undefined?{}:{payload:JSON.parse(String(init.body))})});
+      return new Response(reply.body,{status:reply.statusCode,headers:{'content-type':'application/json'}});
+    });
+    try{
+      const api=browser(),session=new OwnerSessionController(api);
+      await session.initialize();expect(session.getState().status).toBe('READY');
+      const a=await session.runLatest('owner-academic',signal=>api.owner.getDoubleMajor(signal));
+      expect(a).toMatchObject({state:'NEEDS_REVIEW',selection:'SELECTED',
+        overlap:{status:'NO_APPROVED_RULE',sharedCreditUnits:6}});
+      expect(JSON.stringify(a)).not.toMatch(/PRIVATE-ATTEMPT-TOKEN|SYN-SOURCE-RECEIPT|original_bytes/);
+      await app.close();app=launch();
+      const persisted=await browser().owner.getDoubleMajor();
+      expect(persisted).toEqual(a);
+      identity={...team,actorId:f.actorId+'-OTHER'};
+      expect(await session.runLatest('owner-academic',signal=>api.owner.getDoubleMajor(signal))).toBeNull();
+      expect(session.getState().status).toBe('SIGNED_OUT');
+      await expect(browser().owner.getDoubleMajor()).rejects.toMatchObject({code:'FORBIDDEN'});
+      identity=team;
+      await admin.query("UPDATE api_self_consents SET choices_json=jsonb_set(choices_json,'{personalStorage}','false'),version=version+1,updated_at=clock_timestamp() WHERE actor_id=$1",[f.actorId]);
+      await expect(browser().owner.getDoubleMajor()).rejects.toMatchObject({code:'FORBIDDEN'});
+    }finally{await app.close();}
+  });
+
 });
