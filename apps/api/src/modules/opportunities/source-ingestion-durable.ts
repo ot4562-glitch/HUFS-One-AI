@@ -268,10 +268,14 @@ export function createApprovedDurableSourceExecutor(options:{
         changeKind:head?'CORRECTED':'NEW',
         fetchedAt:checkedAt,lastCheckedAt:checkedAt,topicCodes:[],
       };
+      let pdfInput:{pdfEvidence:unknown;pdfRasters:SourcePdfRaster[]}|undefined;
+      if(pdf){
+        if(!pdfRasters)throw new Error('PDF raster proof unavailable');
+        pdfInput={pdfEvidence:pdf.evidence,pdfRasters};
+      }
       if(revalidateMedia)await revalidateMedia();
       await options.writer.append({revision,paragraphs,originalBytes:bytes,
-        permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{}),
-        ...(pdf?{pdfEvidence:pdf.evidence,pdfRasters}:{})});
+        permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{}),...(pdfInput??{})});
       if(revalidateMedia)await revalidateMedia();
       await options.writer.storeHttpValidators({sourceId:input.sourceId,
         revisionId:revision.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
