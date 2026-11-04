@@ -62,6 +62,37 @@ node dist/apps/api/src/admin/intake.js --apply --preview-hash <64자리 소문�
 운영 PostgreSQL/RLS·권한/동의 증명은 **NOT_RUN**이며 공개 출시는
 **RELEASE_BLOCKED**다.
 
+## 승인 이미지 OCR의 저장·검수·검색 (#19/#20, 로컬 코드)
+
+`createApprovedDurableSourceExecutor`의 선택 항목 `imageExtractor`에
+`createApprovedImageExtractor`를 명시적으로 연결하면 PNG/JPEG의 원본 SHA,
+OCR 필드/좌표와 IMAGE 인용을 불변 판본으로 저장할 수 있다.
+기본값은 OFF이며, 독립 `TRANSFORM`·`EXTERNAL_AI` 영수증과 기존
+COLLECT/STORE/EXTERNAL_TRANSFER 권한, 별도로 주입한 예산·취소 통제 OCR 포트가
+모두 필요하다. 비동기 처리 전후 같은 권한을 재검증한다. 실제 provider나
+자격증명은 기본 제공하지 않는다.
+
+업데이트한 reader/writer를 배포하기 전에 별도 검토한
+`infra/sql/20261105_source_image_evidence.sql`을 기존
+`20261101_source_review.sql` 뒤에 적용해야 한다. 이 작업은 마이그레이션을
+실행하지 않는다. 기존 비공개 ingest 역할에는 revision/paragraph 메타데이터 조회와
+봉인 확인을 위한 originals의 `SELECT(revision_id)`가 필요하다. 새 마이그레이션은
+권한을 자동 부여하지 않으며, 검색 역할에는 원본 바이트 접근을 추가하지 않는다.
+
+새 이미지는 항상 `NEEDS_REVIEW`다. 독립 검수자가 원본·문단·OCR/bbox 묶음의
+정확한 해시를 확인한 뒤에만 effective view와 검색이 IMAGE 근거를 사용한다.
+원본 묶음을 저장한 뒤 IMAGE 문단을 추가하는 순차 INSERT를 거부하며,
+동시 쓰기는 기존 source-head 잠금 프로토콜을 따라야 한다.
+같은 원본은 확인 시각만 갱신하고, 정정 이미지는 미검수 후속 판본을 만든다.
+
+네트워크 입력 상한은 256 KiB이며 identity raster v1의 단일 페이지 PNG/JPEG만
+지원한다. PDF는 승인된 렌더러와 page/transform 계약이 없어 명시적으로 거부한다.
+정규화 성공은 OCR 의미·레이아웃의 인적 정확성 판정이 아니다.
+`tests/api/source-image-ingestion.test.ts`는 합성 권한/취소/저장/검수/검색을 검사한다.
+`source-image-live-slice.ts`는 기존 opt-in PostgreSQL CI에 연결했으나 로컬 실 PG는
+미실행이다. 그 fixture는 admin writer/reviewer와 제한된 reader를 사용하므로
+운영 ingest/review 역할 설정이나 실제 포스터 평가를 증명하지 않는다.
+
 ## 공유 컨텍스트 자원과 해제 (#203)
 
 `POST /api/demo/contexts`의 프로세스별 전역 200개 제한에 사용자당 100개,
