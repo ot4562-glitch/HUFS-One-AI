@@ -8,6 +8,7 @@ import type {OverlayPort} from './features/settings/overlayCompare.js';
 import type {DoubleMajorPort} from './features/double-major/DoubleMajorPanel.js';
 import type {OwnerDemoProfilePort} from './features/owner-demo/OwnerDemoProfile.js';
 import type {OwnerAcademicsPort} from './features/owner-academics/OwnerAcademicsPanel.js';
+import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -45,6 +46,8 @@ export interface AppServices {
   readonly ownerDemoProfile?: OwnerDemoProfilePort;
   /** Current BETA owner's double-major/plan/What-if checks; no public demo subject context. */
   readonly ownerAcademics?: OwnerAcademicsPort;
+  /** Operator-provisioned, metadata-only BETA Provider vertical slice. Default absent. */
+  readonly ownerProvider?: OwnerProviderPort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;
@@ -99,13 +102,11 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       navigate={navigate}
       transportLabel={transportLabel}
       // Reviewer enrollment is never a student selector; the local demo remains a separate synthetic-only route.
-      selector={((path === '/demo-profile' && services.ownerDemoProfile)
-        ||(path === '/owner-academics' && services.ownerAcademics)) ? null
+      selector={(path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics') ? null
         : path === '/reviewer/invite' ? null : path === '/local-demo' && LocalWorkbench
         ? <a href="/" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/');}}}>기존 S01–S05 시연으로 돌아가기</a>
         : <><DemoSelector state={state} onSelect={s => void controller.select(s)} />{LocalWorkbench&&<a href="/local-demo" onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();navigate('/local-demo');}}}>로컬 합성 계정 실험실 열기</a>}</>}
-      status={((path === '/demo-profile' && services.ownerDemoProfile)
-        ||(path === '/owner-academics' && services.ownerAcademics)) || path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
+      status={(path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics') || path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <h1 ref={heading} tabIndex={-1} className="page__title">{page.title}</h1>

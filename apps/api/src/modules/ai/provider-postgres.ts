@@ -7,6 +7,7 @@ import {PostgresProviderResults} from './provider-results-postgres.js';
 import {createNodeClovaTransport} from './provider-transport.js';
 import type {NodeClovaOptions} from './provider-transport.js';
 import {createProviderExecutor} from './provider-runtime.js';
+import {PostgresApprovedProviderDirectory} from './provider-approved-directory.js';
 import type {ProviderRuntimeOptions} from './provider-runtime.js';
 
 export interface PostgresProviderConfig {
@@ -25,14 +26,22 @@ export function createPostgresProviderRuntime(config:PostgresProviderConfig){
   const phaseId=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).parse(config.phaseId);
   const operation=z.enum(['HCX_005','HCX_007']).parse(config.operation);
   const now=config.now??(()=>new Date().toISOString());
+  const authority=new PostgresProviderAuthority(config.pools.authority,{policyVersion:config.inputPolicyVersion,
+    sessionIsCurrent:config.sessionIsCurrent,now});
+  const directory=new PostgresApprovedProviderDirectory(config.pools.authority,authority,phaseId,operation,now);
   const executor=createProviderExecutor({
     enabled:config.enabled??(()=>false),liveApproved:config.liveApproved??(()=>false),now,
-    authority:new PostgresProviderAuthority(config.pools.authority,{policyVersion:config.inputPolicyVersion,
-      sessionIsCurrent:config.sessionIsCurrent,now}),
+    authority,
     ledger:new PostgresAiBudgetLedger(config.pools.budget),results:new PostgresProviderResults(config.pools.results),
     transport:config.transport??createNodeClovaTransport({secret:config.secret,...(config.ocrEndpoint?{ocrEndpoint:config.ocrEndpoint}:{}),
       ...(config.timeoutMs!==undefined?{timeoutMs:config.timeoutMs}:{})}),
     policy:config.policy,...(config.timeoutMs!==undefined?{timeoutMs:config.timeoutMs}:{}),
   });
-  return {phaseId,operation,executor};
+  return {phaseId,operation,executor,
+    // This metadata-only directory does not activate the provider and is empty
+    // whenever the explicitly approved runtime is OFF. No browser/ENV override.
+    approvedInputs:{list:(actor:Parameters<typeof directory.list>[0])=>
+      (config.enabled?.()===true&&config.liveApproved?.()===true)
+        ?directory.list(actor):Promise.resolve({items:[]})},
+  };
 }

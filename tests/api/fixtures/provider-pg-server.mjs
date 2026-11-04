@@ -64,7 +64,8 @@ const realAi=createPostgresProviderRuntime({pools:{authority:db.authority,budget
     const saved=await sessions.readSession(actor.sessionIdHash,now);
     return saved?.actor.role==='BETA'&&saved.actor.actorId===actor.actorId&&await betaCurrent(saved.actor);
   }});
-const app=createIntegratedApi({repository:closedRepository,allowedOrigin:origin,googleAuth:auth,realAi});
+const app=createIntegratedApi({repository:closedRepository,allowedOrigin:origin,googleAuth:auth,
+  realAi,approvedAiInputs:realAi.approvedInputs});
 await app.listen({host:'127.0.0.1',port:0});
 const address=app.server.address();
 if(!address||typeof address==='string')throw Error('Loopback listener required');

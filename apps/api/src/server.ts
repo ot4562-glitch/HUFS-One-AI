@@ -8,6 +8,7 @@ import {
   RetrievalEnvelopeVNextSchema,
   DemoPreflightStateSchema,DemoPreflightReportSchema,
   DemoOverlayPutSchema,DemoOverlayResetSchema,DemoOverlayStateSchema,CalendarResultSchema,
+  ApprovedProviderInputsSchema,
 } from '@hufs-one/contracts';
 import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectionSchema} from '@hufs-one/contracts';
 import type {FastifyRequest} from 'fastify';
@@ -755,6 +756,20 @@ export function createApi(options:ApiOptions) {
     return result;
   });
 
+  app.get('/api/ai/approved-inputs',async(req)=>{
+    const actor=principal(req);
+    if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
+    if(!options.approvedAiInputs)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await recheckCurrent(req,actor);
+    let result:ReturnType<typeof ApprovedProviderInputsSchema.parse>;
+    try {
+      result=ApprovedProviderInputsSchema.parse(await options.approvedAiInputs.list(actor));
+    }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    // Revocation between the DB read and reply must retain its 401/403 status;
+    // never disguise an expired session as a provider outage (503).
+    await recheckCurrent(req,actor);
+    return result;
+  });
   app.post('/api/ai/:task',async(req,reply)=>{
     const actor=principal(req);
     const {task:taskPath}=AiPathParams.parse(req.params);
