@@ -6,7 +6,7 @@
 
 - **사용자 확인 완료:** 공모전 참여자 **5명 전원 동의**, HUFSAbility의 자료 수집 **허가 확보**. 실제 개인 수강/Forms 원본 제출 대상 **4명**과 구별. 이 확인을 '동의 자체 미확보/학교 수집 허가 전무'로 다시 집계하지 않는다. 허가 목적·이용·재배포/외부전송의 정확한 범위는 제한된 증빙에서 별도로 유지.
 - **교수 자료:** 공식 강의시간표에 공개된 교수명·강의명(수업 직무정보)만 수집. 허가 범위 내 안내 정보에 대해 교수 이름 일괄 마스킹은 **필수 출시 차단으로 산정하지 않음**. 비공개 연락처·교수 평가/사생활은 수집하지 않으며, 필요한 최소 항목·저장·노출 제어 유지.
-- **기술 결함 #46:** 현재 main Git 트리에 보호 원본 경로 **6개가 추적**돼, full checkout privacy의 기존 두 검사 실패와 연결된다. [PR #212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)에서 원본 바이트를 열지 않고 **PR HEAD 보호 경로 0개**로 만들고, `.gitignore`/full Git tree metadata·sparse CI 회귀를 보강. **아직 미병합/독립 승인 및 실제 full checkout PASS 미확인**, 기존 Git history/clone 남음. 검사 우회/동의 없는 외부 재게시/force push 없음.
+- **기술 결함 #46:** 현재 main Git 트리에 보호 원본 경로 **6개가 추적**돼, full checkout privacy의 기존 두 검사 실패와 연결된다. [PR #212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)에서 원본 바이트를 열지 않고 **PR HEAD 보호 경로 0개**로 만들고, `.gitignore`/full Git tree metadata·sparse CI 회귀를 보강. **최신 HEAD f2605803의 TASK-00/Chrome CI 2/2 SUCCESS**, 비작성자 독립 APPROVED·main 병합·실제 full checkout privacy PASS 미확인, 기존 Git history/clone 남음. 검사 우회/동의 없는 외부 재게시/force push 없음.
 - **출시 별도 판단:** 공모전 동의·자료 수집 허가와 무관하게 #61 사람 독립 평가 0/200, #89 실 OIDC·HTTPS/TLS·직접 IP·운영 PostgreSQL·NCP/실호스트 검증이 남아 `RELEASE_BLOCKED` 유지. [자료 권한 정본](docs/DATA_GOVERNANCE.md).
 
 ## 한눈에 보기
