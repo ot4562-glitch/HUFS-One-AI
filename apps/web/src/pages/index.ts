@@ -7,9 +7,11 @@ import {experiencePage, savedPage, settingsPage} from './sandboxPages.js';
 import {applicationsPage} from './applicationsPage.js';
 import {menuPage} from './menuPage.js';
 import {clubDetailPage, clubsPage} from './clubPages.js';
+import {ownerDemoProfilePage} from './ownerDemoProfilePage.js';
 
 /** Feature pages, checked in order before the shell's placeholders. */
 export const appPages: readonly PageRenderer[] = [
   todayPage, opportunitiesPage, opportunityDetailPage, noticesPage, noticeDetailPage, reviewerInvitePage, graduationPage, whatIfPage,
   savedPage, experiencePage, settingsPage, applicationsPage, menuPage, clubsPage, clubDetailPage,
+  ownerDemoProfilePage,
 ];

@@ -2,6 +2,16 @@
 
 **한국외대 학생의 정보 탐색·개인화를 돕는 독립 팀 프로젝트**입니다. 기존 HUFSAbility의 익숙한 기능과 메뉴를 보존하는 사용자 경험을 목표로 하지만, **학교 공식 HUFSAbility 개편·운영 서비스가 아닙니다**. 원본 UI/학교 저작물·학생 데이터·공식 로그인·자료 이용권을 허가 없이 복제·연동하지 않습니다.
 
+## 완료 목표와 배포·유지보수 단계 (지속 지침)
+
+**GitHub 개발의 최종 목표는 사용 가능한 HUFS One AI 서비스의 완성**이다. 단순 PR 개수·기능 코드 추가·합성 데모가 출시를 뜻하지 않는다. **서비스 완성 및 검증 → 사용자 승인에 따른 NCP 배포 → NCP 배포 후 지속적인 유지보수·품질 개선**으로 단계가 바뀐다.
+
+1. **서비스 완성:** 허용·동의된 사용자와 자료만으로 학생 주요 여정(맞춤 기회/공지/학업/일정/시연)을 실제 UI↔API↔영속 DB까지 연결하고, 인가·로그인(실 Google OIDC/외대 메일 확인)·접근성·원본 권리·독립 품질 평가를 수락 기준대로 통과한다. 안 된 항목을 합성 테스트 통과로 완료 처리하지 않는다.
+2. **NCP 배포 준비와 운영 전환:** 실제 서버는 사용자 **별도 과금/배포 승인**, [#46 개인정보 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)와 [#89 릴리스 보안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 해제, 실 Google/TLS/PG·영속 철회/직접 IP/GeoIP 경계 등 독립 검증이 선행되어야 한다. 서버 생성·공인/사설 IP·VPC/ACG/NACL·포트·NCP 인증키/초기 암호·PuTTY/WinSCP·한국 IP Wall·시스템 설치는 [NCP 운영 정본](docs/NCP_OPERATIONS_2026.md)과 [병합된 #156 서버 실행서](infra/ncp/README.md)에 기록했다. **PR #156은 main `2e39c86a` 병합됐으며 자동화는 SSH 전용 합성 미리보기까지만**이다. 실제 production 자동 배포가 이미 가능하다고 주장하지 않는다.
+3. **배포 후 유지보수:** 출시 뒤 GitHub의 일차 목표를 안정 운영으로 전환한다. OS/Node/의존성 보안 패치, 신뢰·접근성/오류 회귀, 로그인/권한 철회, API p95/CPU·메모리·디스크, NCP 크레딧·청구·비밀키 회전, 데이터 백업·복원·롤백/장애 대응, 출처·개인정보 권리/삭제 요청과 운영 종료·반납을 실제 영수증으로 관리한다. 변경은 이슈→PR→독립 리뷰/CI→배포/롤백 증거 순으로 기록한다.
+
+현재 승인·진행 상태와 출시 차단은 [STATUS](STATUS.md) 및 [서비스 완성/유지보수 계획(#156 병합)](docs/SERVICE_DELIVERY_PLAN.md)을 참조한다. 서버/비밀키/실학생 자료/유료 API를 PR, CI, 에이전트 메시지에 넣지 않는다.
+
 ## 제품 방향
 
 - 기존 **비교과·장학·공지·채용·역량·상담·진로·학업** 메뉴와 학생 여정을 쉽게 찾도록 구성합니다. [공식 공개 기능 5분류/24기능·비로그인 4영역](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)과 [학생 계정 관찰 UI 11개 대분류/76화면](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)은 관찰 범위가 다르며 명칭·계층을 별도로 대응합니다.
@@ -9,19 +19,13 @@
 - 같은 허용 공고를 관심사·선택한 경험·진로에 따라 다르게 정렬해 큰 추천 카드/작은 일반 목록, 추천 이유·마감/정정 근거, 일정·자기기록·별도 학업 계획을 안내합니다. AI의 분류 후보는 확정 결과가 아니고 자격·마감·학점은 코드 및 검수 근거로 판정합니다.
 - [#141 UI/UX 고도화](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 HUFSAbility와 동일한 픽셀·컴포넌트를 복제하는 대신 **탐색·정보 위계·모바일·접근성이 더 좋은 독립적인 디자인**을 개발합니다.
 
-## 현재 구현/출시 상태 — 2026-11-03
+## 현재 구현·협업 판단 — 2026-11-03
 
-| 구분 | 상태 |
-| --- | --- |
-| 공개 원격 저장소 | **Private** |
-| 실제 코드 | TypeScript/Zod 계약, 추천·공지/학업 코어, Fastify API, React/Vite UI, 합성 테스트 |
-| 검증된 최근 병합 | [#145 오프라인 OCR·HCX wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b`, [#148 비용 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516`, [#131 BETA 설정 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) `6efc532`, **[#149 시간표 CSV/handoff](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) `efa13368`**. 모두 최신 HEAD 비작성자 승인·CI 3/3 후 main; 실 출처/데이터/API/배포 수락은 별도 |
-| 진행 중 PR | **2건 OPEN:** [#134 합성 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) main 재기반/중복 충돌, [#150 provider/Laya/API 통합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) **Draft·충돌·비작성자 승인 대기**. [#149](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149)는 P2 수정/재승인 뒤 **main 병합 완료** |
-| 운영/실자료 | **RELEASE_BLOCKED** — [#46 개인정보/자료 이력](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46), [#89 공개 노출·인증·인프라](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) |
-
-**2026-11-03 최신 검토:** #145·#148·#131에 이어 [#149](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149) WIS 시간표 8열 CSV/handoff가 이전 UNKNOWN 캠퍼스 근거 오류 수정·음성 회귀·비작성자 APPROVED·필수 CI 3/3 뒤 **main `efa13368`** 병합됐습니다. 현재 열린 일반 이슈 34개는 [담당자별 전수 원장](docs/WORKSTREAMS.md)에 **심민성 17·이의상 11·김채윤 2·박준영 2·이서연 2(미배정/중복 0)**로 주관 1명씩 분류, 닫힌 7건 별도 기재. 같은 WIS URL에서 다른 파일의 **저장본별 권리 receipt** 문제는 #27/#133 OPEN. **#46 개인정보·#89 출시 `RELEASE_BLOCKED`**와 무승인 유료 NCP/학교·학생 원본 전송 금지는 불변.
-
-최근 #139/#140의 GitHub Actions 합성/일회용 PostgreSQL/Chrome **각 3/3 성공**은 해당 PR HEAD의 **합성 회귀**에 대한 증거입니다. 실제 HUFSAbility 데이터·공식 학칙·학생 4인 로그인, 운영 NCP/CLOVA·실제 기관/자료 권리, 배포/보안을 검증 완료했다는 의미가 아닙니다. 상세 증거 및 차단 사항은 [STATUS.md](STATUS.md)를 봅니다.
+- **GitHub 현재 (기준 main `b7acd949`):** 일반 이슈 **OPEN 34 / CLOSED 7**, PR **OPEN 11**. 대형 원본 [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150)은 83파일 고유 변경을 65 exact/12 대체/6 후속으로 보존한 후 **CLOSED/NOT MERGED**. 최신 실적은 [STATUS](STATUS.md).
+- **main의 코드·합성 부분 수락:** #156 SSH-only preview, #157 Provider 입력 권한, #158 SETTLED PG 결과, #159 기본 OFF Laya scheduler, #160 Raster/OCR, #162 Owner 이중전공 SQL, #163 EMPTY_DEMO CAS/RESET, #164 승인 SourceRevision claims, #168 PG 인증 팩토리. 각각 실 유료 Provider/운영 서버/학생자료·RulePack 승인 아님.
+- **현재 연결 병목:** [#165](https://github.com/ot4562-glitch/HUFS-One-AI/pull/165) Provider 실행기 → [#167](https://github.com/ot4562-glitch/HUFS-One-AI/pull/167) BETA HTTP → [#169](https://github.com/ot4562-glitch/HUFS-One-AI/pull/169) 재시작 포함 PG 결과 종단은 스택형·개별 HEAD 리뷰/병합 대기. [#170](https://github.com/ot4562-glitch/HUFS-One-AI/pull/170)은 실제 격리 PostgreSQL 18의 revision/EMPTY_DEMO **6/6 PASS, CI 4/4**; [#171](https://github.com/ot4562-glitch/HUFS-One-AI/pull/171)은 optional owner PG API 조립 **CI 3/3 PASS**, 둘 다 독립 승인 전 **미병합**. #161 Laya Linux/ONNX는 최신 main 충돌·실호스트 NOT_RUN.
+- **협업 결정:** [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) 학업 이수 과정·세부전공/복수 문서·복합 요건은 검증된 추가 계약, 미검증은 `NEEDS_REVIEW`. [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 레거시 fixture 교체 금지·독립 gold 0/200. [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 6개 로그인 관찰 메뉴는 5/24/4 공개 정본과 분리한 `UNVERIFIED` 비활성 메타데이터로만. [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119)/[#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81)/[#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82)/[#144](https://github.com/ot4562-glitch/HUFS-One-AI/issues/144) owner API↔UI 종단은 아직 미완료.
+- **출시 상태 `RELEASE_BLOCKED`:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 원본 Git 게시/자료권리와 privacy **2 FAIL**, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 사람 gold **0/200**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실 OIDC/학교메일·TLS/direct IP·NCP/운영 DB 미검증. 실 원본·유료 서비스·공개 배포는 사용자 별도 승인 전 실행하지 않는다.
 
 ## 로컬 합성 개발
 

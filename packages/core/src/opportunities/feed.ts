@@ -25,6 +25,11 @@ export interface ComposedFeed {
    * Review queue only. Items with an UNKNOWN publication time stay visible with F=0.
    */
   excludedFuture:RankedOpportunity[];
+  /**
+   * Ids that arrived more than once (e.g. two revisions slipped past the source gate). Every copy is left
+   * out of all lists and the count — the core never guesses which copy is current (#52). Sorted.
+   */
+  excludedDuplicateIds:string[];
   /** Full visible list (featured + compact + rest) so the original list is never lost. */
   all:RankedOpportunity[];
   /**
@@ -122,7 +127,11 @@ function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST'
 export function composeFeed(profile:RecommendationProfile, opportunities:readonly Opportunity[], options:ComposeFeedOptions):ComposedFeed {
   const cfg = options.config ?? DEFAULT_RANK_CONFIG;
   const hidden = new Set(options.hiddenOpportunityIds ?? []);
-  const ranked = rankOpportunities(profile, opportunities.filter(o => !hidden.has(o.id)), options);
+  const counts = new Map<string, number>();
+  for (const o of opportunities) counts.set(o.id, (counts.get(o.id) ?? 0) + 1);
+  const excludedDuplicateIds = [...counts].filter(([, n]) => n > 1).map(([id]) => id).sort(byCodeUnit);
+  const unique = opportunities.filter(o => counts.get(o.id) === 1);
+  const ranked = rankOpportunities(profile, unique.filter(o => !hidden.has(o.id)), options);
   const excludedFuture = ranked.filter(r => r.publication === 'FUTURE');
   const known = ranked.filter(r => r.publication !== 'FUTURE');
   const closed = known.filter(r => r.evaluation.lifecycle === 'CLOSED');
@@ -147,5 +156,5 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
     hasMore:visible.length > featured.length + compact.length,
     totalCandidates:visible.length,
   });
-  return {feed, ineligible, closed, excludedFuture, all:[...featured, ...ordered], explanations, rankConfigVersion:cfg.version};
+  return {feed, ineligible, closed, excludedFuture, excludedDuplicateIds, all:[...featured, ...ordered], explanations, rankConfigVersion:cfg.version};
 }
