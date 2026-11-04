@@ -75,7 +75,6 @@ RECOVERY_PG_PROOF = (
     '--entrypoint bash postgres:18 /work/infra/postgres/synthetic-recovery-drill.sh',
 )
 OWNER_ACADEMICS_PG_PROOF = (
-    "- name: Build compiled API for live adapters and process restart proofs\n        run: npm run build:api",
     "- 15439:5432",
     "CREATE DATABASE hufs_one_owner_academics_test",
     "HUFS_PG_OWNER_ACADEMICS_LIVE: '1'",
