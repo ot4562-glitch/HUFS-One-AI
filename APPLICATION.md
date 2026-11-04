@@ -1,5 +1,7 @@
 # HUFS One AI | 예선 제출 항목·근거 확인표
 
+> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 2026-11-04 코드 검증 상태: 열린 PR 0, [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main 통합, 병합 후 TASK-00/NCP IaC/Chrome 3/3 SUCCESS. 이 제출서의 2026-10/11 비용·일정 계획은 실제 학교/공모전 발표 및 NCP 콘솔 요금 확인을 대신하지 않으며 NCP·유료 OCR·공개 운영·실학생 자료 인수 **NOT_RUN / RELEASE_BLOCKED**. 공모전 참여 5명 동의/HUFSAbility 수집 허가는 사용자 확인, 교수 공식 시간표 이름·강의명만 허가 범위 내 이용. [STATUS](STATUS.md).
+
 > **2026-11-03 역할 정정·2026-10-31 NCP 가격 계획:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG 및 NCP OCR/HCX SDK·Laya ONNX worker·OS/CI 자동화 등 **모든 코드** 전담, 이서연은 **NCP 계정/크레딧·실운영/실측·비용·인프라(비코드)** 전담. 독립 UI·추천·학업 소유 불변.
 
 
