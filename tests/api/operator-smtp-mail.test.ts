@@ -4,7 +4,7 @@ import {createOperatorSmtpMailSender} from '../../apps/api/src/operator-smtp-mai
 const now='2026-11-04T00:00:00Z';
 const address='synthetic@hufs.ac.kr';
 function setup(){
-  const sendMail=vi.fn(async()=>({accepted:[address],rejected:[]}));
+  const sendMail=vi.fn(async(_message:Record<string,unknown>)=>({accepted:[address],rejected:[]}));
   const sender=createOperatorSmtpMailSender({
     host:'smtp.example.test',user:'operator@team.test',
     password:'[REDACTED_SECRET]',from:'no-reply@team.test',
