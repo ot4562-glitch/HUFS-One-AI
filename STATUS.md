@@ -7,20 +7,21 @@
 | 구분 | 현재 확인된 상태 |
 | --- | --- |
 | 제품 | Private 저장소, 독립 HUFS One AI 팀 프로젝트. 한국외대 공식 HUFSAbility 개편/운영 서비스 아님 |
-| GitHub | **열린 PR 23건 / 열린 일반 이슈 34건** (2026-11-04 조회 시점) |
+| GitHub | **열린 PR 34건 / 열린 일반 이슈 40건** (2026-11-04 조회 시점) |
 | 합성 코드 | React/TypeScript/Zod/Fastify, 학업·추천/일정 코어, 일부 Owner API·PostgreSQL, 오프라인 Provider/비용/Laya 하위 구현을 main에 병합. 전체 실서비스 종단 완료 아님 |
-| 신규 오류 수정 | 작성자 PR #175, #177, #178에 실제 CI 실패 원인 대응 커밋 제출. 수정 후 최신 HEAD CI SUCCESS는 아직 확인되지 않음 |
-| 독립 코드 리뷰 | 협업자 #152, #189 최신 HEAD 코드 리뷰 APPROVED 등록. CI·실학칙·사용자 수락 조건은 별개 |
+| 본인 신규/정상화 | #169/#179 조건 충족 병합, #204/#206/#207/#208/#209 독립 PR 제출·현재 CI 성공. #186/#188/#190 새 HEAD 재리뷰, NCP 후속 코드 계속 구현 |
+| 독립 코드 리뷰 | 현재 HEAD 비작성자 GitHub 승인과 동일 HEAD CI가 병합 게이트. 별도 에이전트 검토는 이 승인을 대체하지 않음 |
 | 출시 | **RELEASE_BLOCKED**: 개인정보 #46, 독립 gold #61, 실제 Google/학교메일·TLS/NCP/운영 DB·권한 E2E #89 |
 
 ## 열린 PR · 병합 가능성별 분류
 
-- **합성 CI 성공, 작성자 PR 독립 승인 미확인:** #176, #179, #180, #181, #182, #183, #184, #185. 기록된 두 워크플로는 SUCCESS이나 최신 HEAD 비작성자 APPROVED·선행 스택/고유 diff가 없으면 병합 금지.
-- **승인·CI 성공이나 현재 main 충돌:** [#161 Laya child](https://github.com/ot4562-glitch/HUFS-One-AI/pull/161)은 비작성자 APPROVED와 CI SUCCESS를 확인했으나 mergeable=false. 작성자/타인 dirty 작업트리 손실 없는 고유 diff 통합·새 HEAD 재검증이 먼저.
-- **비작성자 코드 리뷰 승인·CI 실패:** [#152 이중전공 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/152)는 malformed rowImpacts 부정 검증의 P2 수정 확인; [#189 교과목 동일성](https://github.com/ot4562-glitch/HUFS-One-AI/pull/189)은 승인된 동일성만 사용하는 순수 로직 확인. 그러나 둘 다 최신 Actions 실패, 공식 RulePack/원본/Owner 종단 인수 미완료.
-- **실제 실패 테스트의 코드 수정 커밋 등록:** [#175 Provider UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/175) 마지막 커밋 ddc285d — JSON 필드 순서 비의존 테스트, 엄격한 REVIEWER fixture, 인라인 citation React 검사, 권한 철회 시 401/403을 503으로 위장하던 오류 범위 분리. [#177 동시성/재시작](https://github.com/ot4562-glitch/HUFS-One-AI/pull/177) e2dc952 — 별도 합성 프로세스 사이 OAuth 시도 digest 격리(운영 rate limit 완화 없음). [#178 학교메일 OTP](https://github.com/ot4562-glitch/HUFS-One-AI/pull/178) e9150be — 허용된 Google 세션이 REVIEWER 초대 없이도 CSRF와 사전 승인 학교메일 OTP를 처리하며, 실제 심사자료는 승인 없는 조회 계속 거부. **수정 후 테스트 PASS 미확인**.
-- **CI 시작/실행 장애와 기타 실패:** #186/#187/#188/#189/#190은 TASK-00·Chrome 최신 워크플로가 모두 FAILURE; #190 실패 작업을 재실행해도 job steps/log가 비어 있어 정확한 원인 미확정. #169와 UI #151/#152/#154/#155에서도 최신 HEAD 실패. #155는 main 충돌. 실패한 CI를 과거 성공으로 덮지 않음.
-- **Draft:** [#166](https://github.com/ot4562-glitch/HUFS-One-AI/pull/166) 비공개 ingress/배포 프리뷰 템플릿은 Draft. 운영 NCP/공개 서비스 배포 승인 아님.
+- **이번에 조건 확인 후 main 병합한 본인 PR:** [#169 Provider PostgreSQL 조립](https://github.com/minseong-hufs/HUFS-One-AI/pull/169) HEAD `c9780873`의 비작성자 승인·필수 CI·선행 스택·리뷰 스레드를 확인해 merge `045f2478`; [#179 Laya 경로 파싱](https://github.com/minseong-hufs/HUFS-One-AI/pull/179) HEAD `edc1ca98`의 비작성자 승인·필수 CI·충돌 없음을 확인해 merge `ef289537`. 각각 승인된 합성 하위 코드이며 실제 외부 Provider/ONNX/NCP 운영 수락 아님.
+- **기존 PR 정상화:** #161 Laya child `5f67969d`, Draft #166 private ingress `d2c29e3e`의 CI 충돌을 보존 병합으로 해소했다. #175 `18dd8be3`·#177 `5e3355e0`은 병합된 #169 뒤 main으로 retarget·동기화했고, #197 deploy recovery `693ad9fa`도 고유 2파일을 보존했다. 이 HEAD들의 두 워크플로는 SUCCESS이며 **새 HEAD의 비작성자 승인 전 병합하지 않는다**. #166 Draft/운영 차단 유지.
+- **승인 뒤 새 main 충돌을 해소한 PR:** #186 Owner study-plan `1111977f`, #188 migration runner `2ba7fa2f`, #190 recovery drill `43b9b64a`. DB 생성/env·합성/실 disposable PG suites를 모두 보존하고, 중복 API 빌드 대신 postgres job 내 실제 compiled build 선행을 검사한다. #186/#188 최신 CI SUCCESS, #190 최신 필수 검증 진행 중. 이전 HEAD 승인을 재사용하지 않고 독립 재리뷰 요청.
+- **새 독립 구현 PR:** [#204](https://github.com/minseong-hufs/HUFS-One-AI/pull/204) actor/session context 할당·CSRF 해제(`1f21a3a4`, base #195), [#206](https://github.com/minseong-hufs/HUFS-One-AI/pull/206) 읽기 전용 실행 진입점 원장(`3f040b16`, main), [#207](https://github.com/minseong-hufs/HUFS-One-AI/pull/207) Windows shell LF(`5b506cb0`, main), [#208](https://github.com/minseong-hufs/HUFS-One-AI/pull/208) offline NCP phase00 plan/Quickstart·에이전트 매뉴얼(`3de5af4b`, base #207), [#209](https://github.com/minseong-hufs/HUFS-One-AI/pull/209) 명시적 preview 복구·공유 잠금·readiness·과거 ZIP shell 정규화(`24c19bfd`, base #197 + #207 의존). 모두 해당 HEAD 두 워크플로 SUCCESS, 비작성자 GitHub 승인 대기.
+- **실패를 보존한 검증:** #204의 초기 session10 정책은 기존 20방향 전환을 차단해 전체 CI 1FAIL이었다. 기존 회귀를 유지하고 session50/actor100/global200으로 보완해 집중 84PASS·새 CI SUCCESS. #206 Worker 생성자 누락은 새 RED 후 8회귀 PASS. #209의 초기 과거 ZIP LF PASS 서술은 실제 CRLF 3건 검사 실패로 정정했으며, 생성 ZIP만 정규화한 뒤 실제 과거 ref 재생성 LF PASS·PowerShell7/5.1 회귀 PASS. 지연 startup/recovery도 RED→GREEN. Git 이력/원본은 재작성하지 않았다.
+- **협업자 PR은 보존:** #152 rowImpacts P2와 #189 승인된 동일교과 코어의 현재 코드 리뷰는 APPROVED이며 현재 두 CI도 SUCCESS다. #151/#154/#155/#191 및 신규 #205 등은 작성자의 고유 diff/역할·현재 리뷰 게이트를 따른다. 이 회차에 협업자 PR 수정/병합은 하지 않았다.
+- **아직 CODE_PENDING:** #192의 신규 자원 생성 IaC·Nginx/호스트 설치의 추가 자동화·호스트 검증/반납·승인 SHA 기반 운영 Actions 등은 phase00/복구 도구만으로 완료되지 않았다. #199/#203도 PR 미병합이며, 다른 독립 소프트웨어/수락 항목을 계속 대조한다. 사람 승인 대기만 남았다고 선언하지 않는다.
 
 **필수 병합 게이트:** [PR_WORKFLOW](docs/PR_WORKFLOW.md) — 최신 HEAD 독립 비작성자 GitHub APPROVED, 필수 CI 성공, 기존 CHANGES_REQUESTED 해소, 스택/base 충돌 없음, 보안·학생 자료 보호. 이 조건을 충족하지 않는 PR을 작성자 자가검토만으로 병합하거나 완료 처리하지 않음.
 
@@ -41,7 +42,7 @@
 | 박준영 taewangim-alt | **8/12 · 66.7%** | 공식 RulePack·중복 인정·동일 교과목·실수강 근거 |
 | 이서연 lhh42001 | **NCP 비코드 운영 1/5 · 20.0%** | 비용·계정·VPC/ACG/TLS/quota·실호스트 수락 |
 
-**책임 경계:** NCP 관련 모든 소프트웨어 코드(Provider/OCR/HCX/Laya/worker/Docker/CI)는 심민성이 담당. 이서연의 범위는 비코드 NCP 계정·원가·운영뿐이다. 실제 학생 자료 제공 대상과 코드 담당은 별개. [WORKSTREAMS](docs/WORKSTREAMS.md)의 열린 이슈 34건 주관/공동 담당 구조는 유지.
+**책임 경계:** NCP 관련 모든 소프트웨어 코드(Provider/OCR/HCX/Laya/worker/Docker/CI)는 심민성이 담당. 이서연의 범위는 비코드 NCP 계정·원가·운영뿐이다. 실제 학생 자료 제공 대상과 코드 담당은 별개. 지속되는 역할 경계는 [WORKSTREAMS](docs/WORKSTREAMS.md)를 따른다. 신규 #192/#199/#203은 심민성 소프트웨어 범위이며, 현재 열린 일반 이슈 40건의 assignee·본문/최신 코드를 함께 대조한다.
 
 ## 아직 완료할 수 없는 릴리스/인적 게이트
 
