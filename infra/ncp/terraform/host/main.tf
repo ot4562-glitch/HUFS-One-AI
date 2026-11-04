@@ -18,11 +18,11 @@ provider "ncloud" {
 # operator must independently reconcile its exact IDs and checksum.
 variable "request" {
   type = object({
-    scope                 = string
-    project               = string
-    source_sha            = string
-    network_config_sha256 = string
-    subnet_no             = string
+    scope                   = string
+    project                 = string
+    source_sha              = string
+    network_config_sha256   = string
+    subnet_no               = string
     access_control_group_no = string
     ubuntu_image_no       = string
     server_spec_code      = string
@@ -68,9 +68,7 @@ resource "terraform_data" "operator_approval" {
   input = sha256(jsonencode(var.request))
   lifecycle {
     precondition {
-      condition = var.operator_approved &&
-        can(regex("^[A-Za-z0-9_-]{8,80}$", var.operator_approval_reference)) &&
-        var.approved_config_sha256 == sha256(jsonencode(var.request))
+      condition = (var.operator_approved && can(regex("^[A-Za-z0-9_-]{8,80}$", var.operator_approval_reference)) && var.approved_config_sha256 == sha256(jsonencode(var.request)))
       error_message = "Human-approved exact host request digest is required. This variable is not itself proof of review."
     }
   }
