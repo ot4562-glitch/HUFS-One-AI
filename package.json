@@ -36,7 +36,8 @@
     "test:e2e:accounts": "npm run build:api && node tools/check_local_account_browser.mjs --start-servers",
     "dev:web": "npm run build:contracts && vite --config apps/web/vite.config.ts",
     "build:web": "npm run build:contracts && vite build --config apps/web/vite.config.ts",
-    "test:e2e:web": "npm run build:contracts && playwright test -c apps/web/playwright.config.ts"
+    "test:e2e:web": "npm run build:contracts && playwright test -c apps/web/playwright.config.ts",
+    "bench:normalization": "npm run build:contracts && tsc -p tsconfig.bench.json && node tools/bench_normalization.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
