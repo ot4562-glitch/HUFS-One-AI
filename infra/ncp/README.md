@@ -8,7 +8,7 @@
 
 1. **NCP 콘솔**에서 **VPC·Public Subnet·Ubuntu Server·전용 ACG·공인 IP**를 설정한다. 실제 생성은 **과금 가능**하므로 사전 사용자 승인 필요.
 2. Windows **PuTTYgen**으로 관리자 SSH 공개/개인키를 새로 생성하고, **NCP의 서버 인증키(.pem)와 구분**한다.
-3. PuTTY **root + NCP 관리자 비밀번호**로 초기 접속. WinSCP SFTP로 이 폴더의 `bootstrap-ubuntu.sh`·`harden-ssh.sh`·`deploy-preview.sh`·`hufs-preview.service`와 관리자 **공개키 한 줄만** 복사한다.
+3. PuTTY **root + NCP 관리자 비밀번호**로 초기 접속. WinSCP SFTP로 이 폴더의 `bootstrap-ubuntu.sh`·`harden-ssh.sh`·`deploy-preview.sh`·`rollback-preview.sh`·`hufs-preview.service`와 관리자 **공개키 한 줄만** 복사한다.
 4. `bootstrap-ubuntu.sh`를 1회 실행해 Ubuntu/Node24, 안전한 hufs-admin 사용자·127.0.0.1 전용 시연 서비스·SSH UFW /32를 준비한다.
 5. **별도 새 PuTTY 창에서 hufs-admin 공개키 인증이 된 것을 확인한 후** `harden-ssh.sh`로 root/SSH 비밀번호 로그인 차단.
 6. Windows에서 `Prepare-NcpPreview.ps1`로 **허용된 합성 소스만 ZIP**을 만들고 **SHA256** 확인. WinSCP로 서버의 `/home/hufs-admin/ncp-preview.zip`에 전송.
@@ -16,6 +16,28 @@
 8. PuTTY SSH 터널 **Windows 5174 → 서버 127.0.0.1:5173**을 추가하고 **http://127.0.0.1:5174**에서 **합성 시연만** 확인한다. **실제 Google/학생/PG/NCP AI는 연결되지 않는다.**
 
 기준 OS는 **Ubuntu Server 24.04 LTS amd64** (SKU/리전 이미지가 없으면 22.04 LTS amd64). **Rocky/Alma/Windows Server는 스크립트 지원 밖**이고 실행하면 실패하도록 했다. Windows 개발 PC는 PowerShell 5.1+ 및 Git for Windows, PuTTY, WinSCP를 이용한다. 최신 Git HEAD에서 정상 merge·CI 확인된 소스만 포장한다.
+
+### 기존 합성 preview의 명시적 복구
+
+`bash rollback-preview.sh --target <대상ZIP의64자리SHA256> --expected-current <현재ZIP의64자리SHA256>`는
+호스트를 읽거나 바꾸지 않는 기본 plan이다. **폴더 이름은 내용 무결성 증거가 아니다.**
+운영자는 보존된 승인 아티팩트/출처 SHA·현재 파일/서비스 상태와 대상 권리를 먼저 검토한다.
+키/실학생/유료 Provider·운영 데이터를 가진 release에는 이 합성 전용 도구를 사용하지 않는다.
+실행 승인 뒤 기존 호스트의 제한된 hufs-admin sudo에서
+`sudo /usr/local/sbin/hufs-preview-rollback --target <대상64SHA> --expected-current <현재64SHA> --apply --ack-owner-approved`로 복구한다.
+이 확인 flag 자체가 원격 CI/독립 사람 승인의 증거는 아니다.
+
+대상은 root가 관리하는 preview/releases 바로 아래의 실제 디렉터리여야 하며,
+current가 바뀌었거나 필수 파일이 없거나 경로/권한·동시 작업 잠금이 불안전하면 거부한다.
+배포와 복구는 같은 `.preview-operation.lock`을 사용한다. 재시작/두 loopback URL 검사가
+성공해야 OK이며, 실패하면 원래 current를 복원하고 재시작·헬스를 검사한다.
+실패 후 복원 성공은 exit1, 복원/헬스까지 실패하면 exit3·수동 복구 필요다.
+새 다운로드·npm 설치·release 삭제·DB 복원·NCP 반납·외부 포트 공개 기능은 없다.
+현재 코드는 합성 파일/프로세스 경계 시험이며 실제 host systemd/SSH/NCP 검증은 별도다.
+서비스 시작은 `Type=simple`이므로 두 URL을 최대10회 준비 대기한 뒤 실패를 판정한다.
+Windows exporter는 과거 Git blob의 shell CRLF도 **생성 ZIP 안에서만** LF로 바꾼다.
+원 Git commit은 유지하고 최종 ZIP SHA256으로 변환된 바이트를 검증한다. helper별
+256KiB 초과·잘못된 UTF-8·단독 CR·BOM은 최종 ZIP 게시 전 거부한다.
 
 ## 1. NCP 콘솔에서 VPC 서버 만들기 — 운영 담당자 이서연, 승인 전 생성 금지
 
