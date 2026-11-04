@@ -2,7 +2,8 @@
 
 현재 실행 가능한 배포는 **기존 #156의 SSH 터널 전용 합성 preview**다.
 `setup/00-preflight.mjs`는 계정 없이 비용·네트워크·SHA 계획만 검증한다.
-리소스 생성 IaC/운영 배포/수동 rollback/반납 자동화는 아직 별도 구현·수락
+네트워크 IaC는 [별도 모듈](terraform/network/README.md)로 준비했으며 서버·NIC·IP
+구성은 후속 구현이다. 운영 배포/수동 rollback/반납 자동화는 아직 별도 구현·수락
 대상이며 이 Quickstart가 완료됐다는 뜻으로 해석하지 않는다. #46/#89
 `RELEASE_BLOCKED`와 사용자 과금/호스트 승인은 계속 필요하다.
 
