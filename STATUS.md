@@ -1,5 +1,15 @@
 # HUFS One AI | 현재 작업 상태
 
+## 2026-11-04 PR 전수 통합 종료 — 현재 정본
+
+- **열린 PR 0건**, 열린 일반 이슈 **40건**. 사용자 지시에 따른 예외 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 `f23b86bb693a163c7f6a0330d1b9657c684724ff`로 **merge commit 병합**. 병합 직전 최신 HEAD `c23767596688f46f28729bdb006180e3675d0a90`의 TASK-00/Chrome/NCP IaC **3종 CI SUCCESS**. 통합 diff **161개 파일**, 원본 HEAD 조상/회귀 패치 보존.
+- 기존 PR들은 **GitHub 자동 병합 처리**(main 대상 다수) 또는 **통합 PR #216에 포함됐다는 이유로 CLOSED·미병합**(스택 대상 #215/#214/#213/#211/#210/#209/#208/#204 및 #185/#175 등)으로 분류한다. **닫힘(CLOSED) ≠ 개별 PR 병합(MERGED)**. 모든 구현은 통합 HEAD를 기준으로 판단하고 개별 PR의 `merged_at`를 꾸며내지 않는다.
+- **독립 리뷰 예외의 정확한 기록:** 이번 회차 사용자가 자기 PR까지 직접 통합·병합하도록 명시 지시하여 #216을 병합했으나, GitHub 비작성자 `APPROVED`는 없었다. 작성자/에이전트 COMMENT를 독립 사람 승인으로 표기하지 않는다. 일반 미래 PR은 [PR_WORKFLOW](docs/PR_WORKFLOW.md) 기본 게이트 유지.
+- **구현된 코드:** 운영자 내부 API/7 PostgreSQL ROLE TLS 조립, Source/Provider 권한·취소·복원·RLS 회귀, NCP 네트워크·호스트 Terraform 오프라인 IaC 및 승인형 Ubuntu SSH preview/rollback, Laya 격리·UI what-if/plan/revisions·학업 속성/추천 benchmark가 main에 통합됨. **실 운영 적용·외부 노출·유료 NCP 호출은 NOT_RUN**, production fail-closed 유지.
+- **남은 외부 인수:** #46 보호 원본 현재 tree 제거(#212 병합)와 별개로 실제 full private checkout `check:privacy` 및 과거 Git 이력/clone 범위 확인, #61 독립 사람 gold 0/200, #89 실제 Google/학교메일·운영 PG RLS·TLS/직접 IP·실 NCP·장애 복구·권한 철회. 개발 PR 0건을 제품 100%/출시 승인으로 해석 금지. [17개 인수표](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+- **잔여 구현 평가:** 열린 이슈 40건은 대부분 여러 하위 조건을 포함하며, 코드 병합만으로 이슈를 전부 완료할 수 없다. 새 `main` 통합 회귀 및 실 운영 인수 전에는 기존 담당별 수락률(심민성 7/12, 이의상 9/12, 김채윤 7/12, 박준영 8/12, 이서연 1/5)을 임의 상향하지 않는다.
+
+
 > **2026-11-04 KST · GitHub 현재 HEAD/PR/리뷰/CI 및 이슈 수락 조건 대조.** 이 페이지는 변경 가능한 상태의 스냅샷이다. 최종 판정은 GitHub 현재 HEAD, 해당 PR 리뷰, Actions와 이슈 본문을 다시 조회한다.
 
 ## 2026-11-04 API·PostgreSQL·NCP 우선 구현 PR + 사람 검증 인수
