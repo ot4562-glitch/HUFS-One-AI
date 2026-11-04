@@ -94,6 +94,41 @@ describe('real-role PostgreSQL API operator composition',()=>{
     expect(()=>prepareOperatorPostgres(config)).toThrow(/REVIEWER sandbox/);
   });
 
+  it('rejects all prebuilt platform SQL pools before startup and refuses a forged prepared port',async()=>{
+    const ports=['sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace',
+      'experienceApproval','demoOverlay','sourceReview','ownerCatalog','ownerRecommendations',
+      'studyPlanCheck','ownerStudyPlan','doubleMajor','revisionComparison','demoProfile',
+      'demoProfileQuota','reviewerSandbox','pools'];
+    for(const field of ports){
+      const config=makeConfig() as any;
+      config.platform={[field]:{pool:{connect:vi.fn(),close:vi.fn()}}};
+      expect(()=>prepareOperatorPostgres(config),field).toThrow(/verified role settings/);
+    }
+    const f=fakePrepared();
+    (f.prepared.application.platform as any).sourceIngestion={pool:{connect:vi.fn()},authority:{},executor:{}};
+    vi.stubEnv('NODE_ENV','test');
+    await expect(startOperatorPostgres({prepared:f.prepared,host:'127.0.0.1',port:0}))
+      .rejects.toThrow(/verified role settings/);
+    expect(f.connected).toEqual([]);
+  });
+  it('wires demo quota only through distinct verified SQL roles',async()=>{
+    const config=makeConfig() as any;
+    const role=(name:string)=>({connectionString:`postgresql://hufs_${name}:synthetic@private-db.example.test/hufs_${name}`,
+      expectedRole:`hufs_${name}`,environment:'production',
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----'});
+    config.demo={profile:role('demo_profile'),quota:role('demo_quota'),digestKey:Buffer.alloc(32,11)};
+    const prepared=prepareOperatorPostgres(config);
+    expect(Object.keys(prepared.extraPools??{})).toEqual(['demoProfile','demoProfileQuota']);
+    expect(prepared.application.platform.demoProfile?.pool).toBe(prepared.extraPools?.demoProfile);
+    expect(prepared.application.platform.demoProfileQuota?.pool).toBe(prepared.extraPools?.demoProfileQuota);
+    await Promise.all([...Object.values(prepared.pools),...Object.values(prepared.extraPools??{})].map(p=>p.close()));
+    config.demo.quota=config.demo.profile;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independently restricted/);
+    config.demo.quota=role('demo_quota');
+    config.demo.digestKey=config.attemptDigestKey;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independent digest key/);
+  });
+
   it('starts only loopback AFTER all seven checks and closes app/pools',async()=>{
     const fixture=fakePrepared();
     vi.stubEnv('NODE_ENV','test');
