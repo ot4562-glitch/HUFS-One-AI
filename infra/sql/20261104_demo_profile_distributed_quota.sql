@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.consume_demo_profile_quota(
 ) RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path=pg_catalog,public
+SET search_path=pg_catalog,pg_temp
 AS $$
 DECLARE
   v_max integer;
