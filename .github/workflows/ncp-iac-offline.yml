@@ -1,6 +1,7 @@
 name: NCP IaC offline contracts
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
