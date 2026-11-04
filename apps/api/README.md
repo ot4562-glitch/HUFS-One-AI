@@ -1,5 +1,7 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+> **2026-11-04 통합 후 현재 정본:** 2026-11-04: [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main f23b86bb에 #183/#213의 7분리 PostgreSQL ROLE/TLS 및 루프백 운영자 진입점·Source/Provider/owner SQL이 통합됐다. 열린 PR **0건**, main TASK-00/NCP IaC/Chrome **3/3 SUCCESS**. **실 Google code exchange·학교메일·운영 PostgreSQL/RLS·TLS/공개 production 기동은 NOT_RUN / RELEASE_BLOCKED**. 아래 과거의 'main 미병합', 스택 PR 대기·옛 HEAD CI 표현은 당시 이력이다. [STATUS](../../../STATUS.md) · [잔여 구현](../../../docs/REMAINING_IMPLEMENTATION_20261104.md).
+
 ## 공유 컨텍스트 자원과 해제 (#203)
 
 `POST /api/demo/contexts`의 프로세스별 전역 200개 제한에 사용자당 100개,
