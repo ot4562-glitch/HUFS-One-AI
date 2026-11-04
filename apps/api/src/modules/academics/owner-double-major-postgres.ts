@@ -5,7 +5,7 @@ import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import {PostgresApprovedOwnerReader,canonicalProjectionHash} from '../opportunities/owner-catalog-postgres.js';
 import type {OwnerCatalogAuthority} from '../opportunities/owner-catalog-postgres.js';
 import {policyFingerprint} from '../opportunities/temporal-gateway.js';
-import {createTrustedOwnerDoubleMajorSource,ownerDoubleMajorInputRefs,validateOwnerDoubleMajorInput} from './owner-double-major-source.js';
+import {createTrustedOwnerDoubleMajorSource,ownerDoubleMajorInputRefs,ownerRulePackDocumentSources,validateOwnerDoubleMajorInput} from './owner-double-major-source.js';
 import type {OwnerDoubleMajorSnapshot,TrustedOwnerDoubleMajorSnapshots} from './owner-double-major-source.js';
 import type {TrustedOwnerDoubleMajorRights} from './owner-double-major-http.js';
 
@@ -47,14 +47,16 @@ export class PostgresOwnerDoubleMajorSnapshotLoader implements TrustedOwnerDoubl
         const proofs=[];
         for(const binding of [payload.primary,payload.doubleMajor]){
           if(!binding)continue;
-          const ref=binding.source;
-          const result=await connection.query(`SELECT source_id,revision_id,permission_ref,original_sha256
-            FROM source_effective_revisions_vnext WHERE source_id=$1 AND revision_id=$2 AND permission_ref=$3`,
-          [ref.sourceId,ref.revisionId,ref.permissionRef]);
-          const proof=result.rows[0];
-          if(result.rows.length!==1||!proof||proof.source_id!==ref.sourceId||proof.revision_id!==ref.revisionId||proof.permission_ref!==ref.permissionRef||
-            proof.original_sha256!==binding.pack.sourceDocumentSha256)throw new Error('RulePack original source mismatch');
-          proofs.push({sourceId:ref.sourceId,revisionId:ref.revisionId,permissionRef:ref.permissionRef,originalSha256:proof.original_sha256});
+          for(const document of ownerRulePackDocumentSources(binding)){
+            const ref=document.source;
+            const result=await connection.query(`SELECT source_id,revision_id,permission_ref,original_sha256
+              FROM source_effective_revisions_vnext WHERE source_id=$1 AND revision_id=$2 AND permission_ref=$3`,
+            [ref.sourceId,ref.revisionId,ref.permissionRef]);
+            const proof=result.rows[0];
+            if(result.rows.length!==1||!proof||proof.source_id!==ref.sourceId||proof.revision_id!==ref.revisionId||proof.permission_ref!==ref.permissionRef||
+              proof.original_sha256!==document.sha256)throw new Error('RulePack original source mismatch');
+            proofs.push({sourceId:ref.sourceId,revisionId:ref.revisionId,permissionRef:ref.permissionRef,originalSha256:proof.original_sha256});
+          }
         }
         return proofs;
       });
@@ -63,6 +65,18 @@ export class PostgresOwnerDoubleMajorSnapshotLoader implements TrustedOwnerDoubl
     if(payload.approval.consentVersion!==read.consentVersion||payload.approval.sourceRightsVersion!==before.policyVersion)throw new Error('Academic consent/policy version mismatch');
     const profile=payload.profile;
     if(profile){
+      const scopes=[payload.primary?.pack.scope,payload.doubleMajor?.pack.scope];
+      const extended=scopes.some(scope=>scope?.degreePath!==undefined||scope?.track!==undefined)
+        ||payload.primary?.pack.sourceDocuments!==undefined||payload.doubleMajor?.pack.sourceDocuments!==undefined
+        ||!!payload.sameCourseRules?.length;
+      if((extended||before.curriculumVersion!==undefined)&&before.curriculumVersion!==profile.curriculumVersion)
+        throw new Error('Academic curriculum differs from current verified actor scope');
+      for(const axis of ['degreePath','track'] as const){
+        if(profile[axis]===undefined&&!scopes.some(scope=>scope?.[axis]!==undefined))continue;
+        const missing=axis==='degreePath'?'UNSELECTED':'UNDECIDED';
+        if((profile[axis]??missing)!==(before[axis]??missing))
+          throw new Error('Academic pathway differs from current verified actor scope');
+      }
       const primaries=before.majors?.filter(major=>major.role==='PRIMARY')??[];
       const doubles=before.majors?.filter(major=>major.role==='DOUBLE')??[];
       if(before.campus!==profile.campus||before.cohort!==profile.cohort||before.admissionType!==profile.admissionType||

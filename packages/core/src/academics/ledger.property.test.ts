@@ -209,6 +209,8 @@ export function referenceLedger(c:Case):ModelResult {
       row = {state:e >= r.requiredCreditUnits ? 'SATISFIED' : 'UNSATISFIED', earned:e, remaining:Math.max(0, r.requiredCreditUnits - e)};
     } else if (r.kind === 'REQUIRED_COURSE') row = {state:winners.get(r.canonicalCourseId)?.ledger === 'EARNED' ? 'SATISFIED' : 'UNSATISFIED'};
     else {
+      // This generator/reference model covers the five original kinds; new kinds have separate counterexamples.
+      if (r.kind !== 'K_OF_N') throw new TypeError('Unsupported requirement in legacy reference model');
       const hit = r.courseIds.map(id => winners.get(id)).filter(w => w?.ledger === 'EARNED');
       row = {state:hit.length >= r.k ? 'SATISFIED' : 'UNSATISFIED', earned:hit.reduce((s, w) => s + w!.creditUnits, 0), matched:hit.length};
     }

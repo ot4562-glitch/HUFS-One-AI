@@ -3,6 +3,7 @@ import {
   AcademicRulePackVNextSchema,
   MajorRoleVNextSchema,
   stableAcademicRequirementIdsVNext,
+  verifyAcademicSourceCoverageVNext,
   type AcademicClauseVNext,
   type AcademicRulePackVNext,
 } from '@hufs-one/contracts';
@@ -42,6 +43,7 @@ export interface TrustedSourceClause {
   clauseId:string;
   kind:AcademicClauseVNext['kind'];
   sourceSpanRef:string;
+  sourceDocumentId?:string;
   /**
    * Requirements (by stable semanticKey) this clause governs. An EXCEPTION listed here
    * must appear in each such requirement's exceptionClauseIds.
@@ -57,6 +59,7 @@ export interface TrustedSourceClause {
 
 export interface TrustedSourceInventory {
   sourceDocumentSha256:string;
+  sourceDocuments?:readonly {documentId:string;sourceDocumentSha256:string}[];
   clauses:readonly TrustedSourceClause[];
 }
 
@@ -136,6 +139,15 @@ function readTrusted(original:TrustedSourceInventory):Map<string, Trusted> {
   if (!Array.isArray(original.clauses) || original.clauses.length === 0 || original.clauses.length > MAX_CLAUSES) {
     throw new RangeError(`trusted inventory needs 1 to ${MAX_CLAUSES} clauses`);
   }
+  if (original.sourceDocuments) {
+    if (original.sourceDocuments.length < 1 || original.sourceDocuments.length > 10
+      || new Set(original.sourceDocuments.map(d => d.documentId)).size !== original.sourceDocuments.length)
+      throw new TypeError('trusted inventory requires 1 to 10 distinct source documents');
+    for (const document of original.sourceDocuments) {
+      assertId(document.documentId, 'trusted documentId');
+      if (!SHA256.test(document.sourceDocumentSha256)) throw new TypeError('trusted document hash must be sha-256 hex');
+    }
+  }
   const byId = new Map<string, Trusted>();
   for (const clause of original.clauses) {
     assertId(clause.clauseId, 'trusted clauseId');
@@ -161,7 +173,8 @@ function checkInventory(pack:AcademicRulePackVNext, trusted:ReadonlyMap<string, 
   const supplied = new Map(pack.clauseInventory.map(clause => [clause.clauseId, clause]));
   for (const [clauseId, {clause}] of trusted) {
     const found = supplied.get(clauseId);
-    if (!found || found.kind !== clause.kind || found.sourceSpanRef !== clause.sourceSpanRef) {
+    if (!found || found.kind !== clause.kind || found.sourceSpanRef !== clause.sourceSpanRef
+      || found.sourceDocumentId !== clause.sourceDocumentId) {
       issues.push({code:'CLAUSE_MISSING', sourceClauseId:clauseId});
     }
   }
@@ -214,7 +227,8 @@ function sameScope(a:AcademicRulePackVNext['scope'], b:AcademicRulePackVNext['sc
   return a.campus === b.campus && a.primaryMajor === b.primaryMajor
     && a.secondaryMajor === b.secondaryMajor && a.majorRole === b.majorRole
     && a.admissionType === b.admissionType && a.curriculumVersion === b.curriculumVersion
-    && a.cohortFrom === b.cohortFrom && a.cohortTo === b.cohortTo;
+    && a.cohortFrom === b.cohortFrom && a.cohortTo === b.cohortTo
+    && a.degreePath === b.degreePath && a.track === b.track;
 }
 
 function finish(
@@ -281,7 +295,9 @@ export function decideRulePackActivation(input:RulePackActivationRequest):RulePa
   if (Date.parse(pack.effectiveFrom) > asOfMs) issues.push({code:'NOT_YET_EFFECTIVE'});
   if (pack.effectiveUntil !== undefined && Date.parse(pack.effectiveUntil) <= asOfMs) issues.push({code:'EXPIRED'});
 
-  if (pack.sourceDocumentSha256 !== input.trustedOriginal.sourceDocumentSha256) {
+  if (pack.sourceDocumentSha256 !== input.trustedOriginal.sourceDocumentSha256
+    || (pack.sourceDocuments !== undefined || input.trustedOriginal.sourceDocuments !== undefined)
+      && !verifyAcademicSourceCoverageVNext(pack, input.trustedOriginal)) {
     issues.push({code:'UNVERIFIED_ORIGINAL'});
   } else {
     checkInventory(pack, trusted, issues);

@@ -41,7 +41,7 @@ export type DefinitionChange = 'UNCHANGED'|'CHANGED'|'ADDED'|'REMOVED';
 /** SAME, GAINED (now satisfied), LOST (no longer satisfied), or UNKNOWN when either side is unverified. */
 export type StateChange = 'SAME'|'GAINED'|'LOST'|'UNKNOWN';
 export type ChangedField =
-  | 'kind'|'requiredCreditUnits'|'areaId'|'canonicalCourseId'|'courseIds'|'k'
+  | 'kind'|'requiredCreditUnits'|'areaId'|'areaIds'|'minAreas'|'groups'|'canonicalCourseId'|'courseIds'|'k'
   | 'criterionId'|'verificationMode'|'sourceClauseIds'|'exceptionClauseIds'|'clauses';
 
 interface SideResult {
@@ -97,6 +97,9 @@ function toLedger(requirement:Requirement):LedgerRequirement {
       return {...base, kind:'CATEGORY_MINIMUM', areaId:requirement.areaId, requiredCreditUnits:requirement.requiredCreditUnits};
     case 'REQUIRED_COURSE': return {...base, kind:'REQUIRED_COURSE', canonicalCourseId:requirement.canonicalCourseId};
     case 'K_OF_N': return {...base, kind:'K_OF_N', courseIds:requirement.courseIds, k:requirement.k};
+    case 'AREA_SPREAD': return {...base, kind:'AREA_SPREAD', areaIds:requirement.areaIds,
+      minAreas:requirement.minAreas, requiredCreditUnits:requirement.requiredCreditUnits};
+    case 'GROUP_CHOICE': return {...base, kind:'GROUP_CHOICE', groups:requirement.groups, k:requirement.k};
     case 'NON_CREDIT':
       return {...base, kind:'NON_CREDIT', criterionId:requirement.criterionId, verificationMode:requirement.verificationMode};
   }
@@ -127,6 +130,15 @@ function ruleFields(requirement:Requirement):Partial<Record<ChangedField, string
     fields.courseIds = sorted(requirement.courseIds).join('\u0000');
     fields.k = String(requirement.k);
   }
+  if (requirement.kind === 'AREA_SPREAD') {
+    fields.areaIds = sorted(requirement.areaIds).join('\u0000');
+    fields.minAreas = String(requirement.minAreas);
+    fields.requiredCreditUnits = String(requirement.requiredCreditUnits);
+  }
+  if (requirement.kind === 'GROUP_CHOICE') {
+    fields.groups = JSON.stringify(requirement.groups.map(group => JSON.stringify(sorted(group))).sort(byCodeUnit));
+    fields.k = String(requirement.k);
+  }
   if (requirement.kind === 'NON_CREDIT') {
     fields.criterionId = requirement.criterionId;
     fields.verificationMode = requirement.verificationMode;
@@ -135,7 +147,7 @@ function ruleFields(requirement:Requirement):Partial<Record<ChangedField, string
 }
 
 const FIELD_ORDER:readonly ChangedField[] = [
-  'kind', 'requiredCreditUnits', 'areaId', 'canonicalCourseId', 'courseIds', 'k',
+  'kind', 'requiredCreditUnits', 'areaId', 'areaIds', 'minAreas', 'groups', 'canonicalCourseId', 'courseIds', 'k',
   'criterionId', 'verificationMode', 'sourceClauseIds', 'exceptionClauseIds', 'clauses',
 ];
 
@@ -149,7 +161,12 @@ function clausesReworded(previous:Pack, next:Pack, ids:readonly string[]):boolea
   const after = new Map(next.clauseInventory.map(clause => [clause.clauseId, clause]));
   return ids.some(id => {
     const a = before.get(id), b = after.get(id);
-    return !a || !b || a.kind !== b.kind || a.sourceSpanRef !== b.sourceSpanRef;
+    const sourceHash = (pack:Pack, documentId:string|undefined) => documentId === undefined
+      ? pack.sourceDocumentSha256 : pack.sourceDocuments?.find(d => d.documentId === documentId)?.sha256;
+    return !a || !b || a.kind !== b.kind || a.sourceSpanRef !== b.sourceSpanRef
+      || a.sourceDocumentId !== b.sourceDocumentId
+      || (a.sourceDocumentId !== undefined || b.sourceDocumentId !== undefined)
+        && sourceHash(previous, a.sourceDocumentId) !== sourceHash(next, b.sourceDocumentId);
   });
 }
 
@@ -185,7 +202,8 @@ function sameScope(a:Pack['scope'], b:Pack['scope']):boolean {
   return a.campus === b.campus && a.primaryMajor === b.primaryMajor
     && a.secondaryMajor === b.secondaryMajor && a.majorRole === b.majorRole
     && a.admissionType === b.admissionType && a.curriculumVersion === b.curriculumVersion
-    && a.cohortFrom === b.cohortFrom && a.cohortTo === b.cohortTo;
+    && a.cohortFrom === b.cohortFrom && a.cohortTo === b.cohortTo
+    && a.degreePath === b.degreePath && a.track === b.track;
 }
 
 function approvedPack(raw:unknown, sideName:'previous'|'next', asOfMs:number, blockers:RevisionBlocker[]):Pack|undefined {

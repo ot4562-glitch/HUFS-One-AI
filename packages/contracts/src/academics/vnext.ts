@@ -20,6 +20,13 @@ export type AcademicTermVNext=z.infer<typeof AcademicTermVNextSchema>;
 export const MajorRoleVNextSchema=z.enum([
   'PRIMARY_MAJOR','DOUBLE_MAJOR','MINOR',
 ]);
+export const AcademicDegreePathVNextSchema=z.enum([
+  'DOUBLE_MAJOR','ADVANCED_SINGLE','ADVANCED_PLUS_MINOR',
+]);
+export type AcademicDegreePathVNext=z.infer<typeof AcademicDegreePathVNextSchema>;
+export const AcademicDegreePathSelectionVNextSchema=z.enum([
+  'DOUBLE_MAJOR','ADVANCED_SINGLE','ADVANCED_PLUS_MINOR','UNSELECTED',
+]);
 export const AcademicRuleScopeVNextSchema=z.strictObject({
   campus:Id,
   primaryMajor:Id,
@@ -27,6 +34,8 @@ export const AcademicRuleScopeVNextSchema=z.strictObject({
   majorRole:MajorRoleVNextSchema,
   admissionType:Id,
   curriculumVersion:Id,
+  degreePath:AcademicDegreePathVNextSchema.optional(),
+  track:Id.refine(v=>v!=='UNDECIDED'&&v!=='UNSELECTED',{message:'A rule scope needs a concrete track'}).optional(),
   cohortFrom:z.number().int().min(1900).max(2100),
   cohortTo:z.number().int().min(1900).max(2100),
 }).superRefine((v,ctx)=>{
@@ -60,6 +69,12 @@ export const AcademicRequirementVNextSchema=z.discriminatedUnion('kind',[
   z.strictObject({...RequirementBase,kind:z.literal('K_OF_N'),
     courseIds:z.array(Id).min(2).max(100),
     k:z.number().int().positive()}),
+  z.strictObject({...RequirementBase,kind:z.literal('AREA_SPREAD'),
+    areaIds:z.array(Id).min(2).max(30),minAreas:z.number().int().positive(),
+    requiredCreditUnits:PositiveUnits}),
+  z.strictObject({...RequirementBase,kind:z.literal('GROUP_CHOICE'),
+    groups:z.array(z.array(Id).min(1).max(10)).min(2).max(10),
+    k:z.number().int().positive()}),
   z.strictObject({...RequirementBase,kind:z.literal('NON_CREDIT'),
     criterionId:Id,verificationMode:z.enum(['OFFICIAL','MANUAL','GPA_NOT_COLLECTED'])}),
 ]).superRefine((r,ctx)=>{
@@ -67,6 +82,15 @@ export const AcademicRequirementVNextSchema=z.discriminatedUnion('kind',[
     if(new Set(r[key]).size!==r[key].length)ctx.addIssue({
       code:'custom',path:[key],message:'Duplicate reference',
     });
+  }
+  if(r.kind==='AREA_SPREAD'){
+    if(r.minAreas>r.areaIds.length||new Set(r.areaIds).size!==r.areaIds.length)
+      ctx.addIssue({code:'custom',path:['areaIds'],message:'Distinct areas and feasible minimum required'});
+  }
+  if(r.kind==='GROUP_CHOICE'){
+    const courses=r.groups.flat();
+    if(r.k>r.groups.length||new Set(courses).size!==courses.length)
+      ctx.addIssue({code:'custom',path:['groups'],message:'Groups must be disjoint and k cannot exceed their count'});
   }
   if(r.kind==='K_OF_N'){
     if(r.k>r.courseIds.length)ctx.addIssue({
@@ -84,6 +108,7 @@ export const AcademicClauseVNextSchema=z.strictObject({
   kind:z.enum(['RULE','EXCEPTION','FOOTNOTE','SCOPE','PROCEDURE']),
   /** Source document must be independently inventoried BEFORE running LLM. */
   sourceSpanRef:Id,
+  sourceDocumentId:Id.optional(),
   coverage:z.discriminatedUnion('state',[
     z.strictObject({
       state:z.literal('LINKED'),requirementIds:RequirementRef,
@@ -100,6 +125,12 @@ export const AcademicClauseVNextSchema=z.strictObject({
 export type AcademicClauseVNext=z.infer<typeof AcademicClauseVNextSchema>;
 
 const sha256=z.string().regex(/^[a-f0-9]{64}$/);
+export const AcademicSourceDocumentVNextSchema=z.strictObject({
+  documentId:Id,
+  url:z.url().refine(value=>new URL(value).protocol==='https:',{message:'Official source must use HTTPS'}),
+  version:Id,sha256,publishedAt:DateTime,
+});
+const SourceDocumentHashes=z.array(z.strictObject({documentId:Id,sha256})).min(1).max(10);
 export const AcademicRulePackVNextSchema=z.strictObject({
   version:Id,
   supersedesVersion:Id.optional(),
@@ -109,6 +140,7 @@ export const AcademicRulePackVNextSchema=z.strictObject({
   }),
   sourceDocumentSha256:sha256,
   sourcePublishedAt:DateTime,
+  sourceDocuments:z.array(AcademicSourceDocumentVNextSchema).min(1).max(10).optional(),
   effectiveFrom:DateTime,
   effectiveUntil:DateTime.optional(),
   scope:AcademicRuleScopeVNextSchema,
@@ -119,6 +151,7 @@ export const AcademicRulePackVNextSchema=z.strictObject({
   validationReport:z.strictObject({
     checkedAt:DateTime,
     sourceDocumentSha256:sha256,
+    sourceDocumentHashes:SourceDocumentHashes.optional(),
     blockingIssues:z.array(z.strictObject({
       code:z.enum([
         'NUMERIC_SOURCE_MISMATCH','CLAUSE_MISSING','EXCEPTION_SCOPE_CONFLICT',
@@ -156,6 +189,30 @@ export const AcademicRulePackVNextSchema=z.strictObject({
       ||v.validationReport.sourceDocumentSha256!==v.sourceDocumentSha256
       ||(v.approvedAt&&Date.parse(v.validationReport.checkedAt)>Date.parse(v.approvedAt)))
       problem(['validationReport'],'Blocking warnings, unverified source or late check prevent approval');
+  }
+  const documents=v.sourceDocuments;
+  if(documents){
+    const byId=new Map(documents.map(d=>[d.documentId,d]));
+    if(byId.size!==documents.length)problem(['sourceDocuments'],'Duplicate source document ID');
+    if(!documents.some(d=>d.url===v.sourceDocumentUrl&&d.version===v.sourceDocumentVersion
+      &&d.sha256===v.sourceDocumentSha256&&d.publishedAt===v.sourcePublishedAt))
+      problem(['sourceDocuments'],'Legacy primary source must identify one exact document');
+    for(const [i,c] of v.clauseInventory.entries())
+      if(!c.sourceDocumentId||!byId.has(c.sourceDocumentId))
+        problem(['clauseInventory',i,'sourceDocumentId'],'Every clause needs its exact source document');
+    const hashes=v.validationReport?.sourceDocumentHashes;
+    if(v.state==='APPROVED'||hashes){
+      if(!hashes||hashes.length!==documents.length||new Set(hashes.map(h=>h.documentId)).size!==hashes.length
+        ||hashes.some(h=>byId.get(h.documentId)?.sha256!==h.sha256))
+        problem(['validationReport','sourceDocumentHashes'],'Every source document requires the matching independent hash');
+    }
+    for(const [i,d] of documents.entries()){
+      if(v.approvedAt&&Date.parse(d.publishedAt)>Date.parse(v.approvedAt)
+        ||v.validationReport&&Date.parse(d.publishedAt)>Date.parse(v.validationReport.checkedAt))
+        problem(['sourceDocuments',i,'publishedAt'],'Document publication must precede its check and approval');
+    }
+  }else if(v.clauseInventory.some(c=>c.sourceDocumentId!==undefined)||v.validationReport?.sourceDocumentHashes){
+    problem(['sourceDocuments'],'Document-bound clauses and checks require the document inventory');
   }
   const reqIds=new Set<string>(),semanticKeys=new Set<string>();
   for(const [i,req] of v.requirements.entries()){
@@ -220,15 +277,24 @@ export type AcademicRulePackVNext=z.infer<typeof AcademicRulePackVNextSchema>;
  * an LLM candidate, so inner Zod validation alone is never approval evidence.
  * This helper does not decide whether that independent inventory is correct.
  */
+export interface AcademicTrustedSourceInventoryVNext {
+  sourceDocumentSha256:string;
+  sourceDocuments?:readonly {documentId:string;sourceDocumentSha256:string}[]|undefined;
+  clauses:readonly Pick<AcademicClauseVNext,'clauseId'|'kind'|'sourceSpanRef'|'sourceDocumentId'>[];
+}
 export function verifyAcademicSourceCoverageVNext(
   pack:AcademicRulePackVNext,
-  original:{
-    sourceDocumentSha256:string;
-    clauses:readonly Pick<AcademicClauseVNext,'clauseId'|'kind'|'sourceSpanRef'>[];
-  },
+  original:AcademicTrustedSourceInventoryVNext,
 ):boolean{
   if(pack.sourceDocumentSha256!==original.sourceDocumentSha256
     ||pack.clauseInventory.length!==original.clauses.length)return false;
+  if(pack.sourceDocuments){
+    const docs=original.sourceDocuments;
+    if(!docs||docs.length!==pack.sourceDocuments.length||new Set(docs.map(d=>d.documentId)).size!==docs.length)
+      return false;
+    const trusted=new Map(docs.map(d=>[d.documentId,d.sourceDocumentSha256]));
+    if(pack.sourceDocuments.some(d=>trusted.get(d.documentId)!==d.sha256))return false;
+  }else if(original.sourceDocuments!==undefined)return false;
   const actual=new Map<string,AcademicClauseVNext>();
   for(const clause of pack.clauseInventory){
     if(actual.has(clause.clauseId))return false;
@@ -240,7 +306,8 @@ export function verifyAcademicSourceCoverageVNext(
     seen.add(clause.clauseId);
     const supplied=actual.get(clause.clauseId);
     if(!supplied||supplied.kind!==clause.kind
-      ||supplied.sourceSpanRef!==clause.sourceSpanRef)return false;
+      ||supplied.sourceSpanRef!==clause.sourceSpanRef
+      ||supplied.sourceDocumentId!==clause.sourceDocumentId)return false;
   }
   return true;
 }
@@ -248,10 +315,7 @@ export function verifyAcademicSourceCoverageVNext(
 /** Required ingestion boundary for an APPROVED version; caller owns genuine source verification. */
 export function parseApprovedAcademicRulePackVNext(
   candidate:unknown,
-  trustedOriginal:{
-    sourceDocumentSha256:string;
-    clauses:readonly Pick<AcademicClauseVNext,'clauseId'|'kind'|'sourceSpanRef'>[];
-  },
+  trustedOriginal:AcademicTrustedSourceInventoryVNext,
 ):AcademicRulePackVNext|null{
   const checked=AcademicRulePackVNextSchema.safeParse(candidate);
   if(!checked.success||checked.data.state!=='APPROVED')return null;
@@ -275,12 +339,12 @@ export function selectAcademicRulePackAsOfVNext(
   candidates:readonly AcademicRulePackVNext[],request:{
     asOf:string;campus:string;primaryMajor:string;secondaryMajor?:string;
     majorRole:z.infer<typeof MajorRoleVNextSchema>;admissionType:string;
-    curriculumVersion:string;admissionYear:number;
+    curriculumVersion:string;admissionYear:number;degreePath?:string;track?:string;
   },
 ):AcademicRulePackVNext|null{
   const at=Date.parse(request.asOf);
   if(!Number.isFinite(at)||!Number.isInteger(request.admissionYear))return null;
-  const applicable=candidates.filter(p=>{
+  const baseCandidates=candidates.filter(p=>{
     if(p.state!=='APPROVED'||!p.approvedAt)return false;
     if(Date.parse(p.sourcePublishedAt)>at||Date.parse(p.approvedAt)>at
       ||Date.parse(p.effectiveFrom)>at
@@ -292,7 +356,18 @@ export function selectAcademicRulePackAsOfVNext(
       &&s.curriculumVersion===request.curriculumVersion
       &&s.cohortFrom<=request.admissionYear&&request.admissionYear<=s.cohortTo;
   });
+  const axes=['degreePath','track'] as const;
+  const selected=(value:string|undefined)=>!!value&&value!=='UNSELECTED'&&value!=='UNDECIDED';
+  // First exclude known mismatches on either axis; a different degree path's
+  // track does not make the current path require an irrelevant choice.
+  const applicable=baseCandidates.filter(p=>axes.every(axis=>p.scope[axis]===undefined
+    ||!selected(request[axis])||p.scope[axis]===request[axis]));
+  for(const axis of axes)
+    if(!selected(request[axis])&&applicable.some(p=>p.scope[axis]!==undefined))return null;
   if(!applicable.length)return null;
+  // A legacy record is not proof that the new axis is irrelevant, even across a supersede chain.
+  for(const axis of ['degreePath','track'] as const)
+    if(applicable.some(p=>p.scope[axis]!==undefined)&&applicable.some(p=>p.scope[axis]===undefined))return null;
   // Reject forks, disconnected overlapping rules, or identical version IDs.
   if(new Set(applicable.map(p=>p.version)).size!==applicable.length)return null;
   const byVersion=new Map(applicable.map(p=>[p.version,p]));
@@ -321,11 +396,20 @@ export const AcademicRequirementProgressVNextSchema=z.strictObject({
   projectedCreditUnits:CreditUnitsSchema.optional(),
   matchedCoursesCount:z.number().int().nonnegative().optional(),
   requiredCoursesCount:z.number().int().positive().optional(),
+  matchedAreasCount:z.number().int().min(0).max(30).optional(),
+  requiredAreasCount:z.number().int().min(1).max(30).optional(),
+  matchedGroupsCount:z.number().int().min(0).max(10).optional(),
+  requiredGroupsCount:z.number().int().min(1).max(10).optional(),
   evidenceRefs:z.array(Id).max(100),
   /** NOT_CHECKED is reserved for missing GPA (never silently pass it). */
   notCheckedReason:z.literal('GPA_NOT_COLLECTED').optional(),
   notApplicableReason:z.string().trim().min(8).max(300).optional(),
 }).superRefine((v,ctx)=>{
+  for(const [matched,required] of [['matchedAreasCount','requiredAreasCount'],['matchedGroupsCount','requiredGroupsCount']] as const){
+    if((v[matched]===undefined)!==(v[required]===undefined)
+      ||v.state==='SATISFIED'&&v[matched]!==undefined&&v[matched]!<v[required]!)
+      ctx.addIssue({code:'custom',path:[matched],message:'Composite progress requires paired counts and sufficient earned matches'});
+  }
   if(v.state==='SATISFIED'&&v.remainingCreditUnits!==undefined
     &&v.remainingCreditUnits!==0)ctx.addIssue({
       code:'custom',path:['remainingCreditUnits'],message:'Cannot satisfy missing credits',
@@ -424,6 +508,9 @@ export function validateAcademicAuditAgainstPackVNext(
   return audit.requirements.length===ids.size&&audit.requirements.every(r=>ids.has(r.requirementId))
     &&audit.requirements.every(r=>{
       const rule=pack.requirements.find(rule=>rule.id===r.requirementId)!;
+      if(rule.kind==='AREA_SPREAD'&&(r.requiredAreasCount!==rule.minAreas
+        ||r.matchedAreasCount===undefined||r.requiredCreditUnits!==rule.requiredCreditUnits))return false;
+      if(rule.kind==='GROUP_CHOICE'&&(r.requiredGroupsCount!==rule.k||r.matchedGroupsCount===undefined))return false;
       if(rule.kind==='NON_CREDIT'&&rule.verificationMode==='GPA_NOT_COLLECTED')
         return r.state==='NOT_CHECKED'
           &&r.notCheckedReason==='GPA_NOT_COLLECTED';

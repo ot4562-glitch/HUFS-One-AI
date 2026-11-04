@@ -35,7 +35,7 @@ import {PostgresDemoOverlayStore} from '../../apps/api/src/modules/demo-overlay-
 import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
 import {PostgresProviderResults} from '../../apps/api/src/modules/ai/provider-results-postgres.js';
 import {PostgresProviderAuthority} from '../../apps/api/src/modules/ai/provider-authority-postgres.js';
-import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
+import {makeSyntheticIntake,syntheticOriginalPermission} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
@@ -708,7 +708,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const fixture=makeSyntheticIntake();
     const imports=new PostgresRestrictedIntakeImport(adapter(intake),{
       mayProcess:async()=>true,
-    });
+      resolveOriginalPermission:async request=>syntheticOriginalPermission(request),
+    },()=> '2026-10-31T00:00:00.000Z');
     const preview=await imports.preview(fixture);
     expect(preview.ready).toBe(true);
     expect(preview.formRowCount).toBe(4);

@@ -16,11 +16,29 @@ const Subject=z.string().min(2).max(64).regex(/^[A-Za-z0-9_-]+$/);
 const Sha=z.string().regex(/^[a-f0-9]{64}$/);
 const digest=(input:string)=>createHash('sha256').update(input,'utf8').digest('hex');
 const MAX_SOURCE_BYTES=200_000;
+const Utc=z.iso.datetime({offset:true});
+const OriginalPermission=z.strictObject({
+  schemaVersion:z.literal('intake-original-permission-v1'),actorRef:Ref,subjectKey:Subject,
+  purpose:z.literal('LOCAL_TRANSCRIPT_REVIEW'),formsSha256:Sha,courseSha256:Sha,
+  permissionRef:Ref,permissionVersion:z.string().regex(/^[A-Za-z0-9_.:@-]{1,128}$/),consentRef:Ref,retentionRef:Ref,
+  actions:z.array(z.enum(['PREVIEW','APPLY'])).min(1).max(2).refine(v=>new Set(v).size===v.length),
+  collection:z.literal('ALLOWED'),retention:z.literal('ALLOWED'),reviewedAt:Utc,expiresAt:Utc,revoked:z.literal(false),
+});
+export type IntakeOriginalPermission=z.infer<typeof OriginalPermission>;
+export interface IntakeOriginalPermissionRequest {
+  actorRef:string;subjectKey:string;action:'PREVIEW'|'APPLY';purpose:'LOCAL_TRANSCRIPT_REVIEW';
+  formsSha256:string;courseSha256:string;now:string;
+}
 export interface IntakeOperatorAuthority {
-  /** Restricted LOCAL_REVIEW only; checks actual student and operator rights,
-   * independent original-file provenance and student permission status. */
+  /** Restricted LOCAL_REVIEW only; actual student and operator purpose rights. */
   mayProcess(input:{actorRef:string;subjectKey:string;action:'PREVIEW'|'APPLY';
     purpose:'LOCAL_TRANSCRIPT_REVIEW';now:string}):Promise<boolean>;
+  /** Trusted private registry, never a Forms consent answer or a filename rule.
+   * Must independently bind both raw originals to this subject and operator. */
+  resolveOriginalPermission(input:Readonly<IntakeOriginalPermissionRequest>):Promise<unknown|null>;
+}
+function originalFingerprint(receipt:IntakeOriginalPermission){
+  return digest(JSON.stringify({...receipt,actions:[...receipt.actions].sort()}));
 }
 export interface RestrictedIntakeInput{
   actorRef:string;
@@ -64,47 +82,81 @@ export class PostgresRestrictedIntakeImport {
     }
   }
 
-  private async inspect(input:RestrictedIntakeInput,action:'PREVIEW'|'APPLY'){
+  private async authorizeOriginals(actorRef:string,subjects:readonly string[],action:'PREVIEW'|'APPLY',
+    formHash:string,hashBySubject:ReadonlyMap<string,string>,expected?:ReadonlyMap<string,string>){
+    if(typeof this.authority.resolveOriginalPermission!=='function')throw new ApiFailure('FORBIDDEN');
+    const receipts=new Map<string,IntakeOriginalPermission>(),fingerprints=new Map<string,string>();
+    for(const subjectKey of subjects){
+      const courseSha256=hashBySubject.get(subjectKey),now=this.now();
+      if(!courseSha256||!Utc.safeParse(now).success)throw new ApiFailure('FORBIDDEN');
+      const request=Object.freeze({actorRef,subjectKey,action,purpose:'LOCAL_TRANSCRIPT_REVIEW' as const,
+        formsSha256:formHash,courseSha256,now});
+      const receipt=OriginalPermission.safeParse(await this.authority.resolveOriginalPermission(request));
+      if(!receipt.success||receipt.data.actorRef!==actorRef||receipt.data.subjectKey!==subjectKey
+        ||receipt.data.formsSha256!==formHash||receipt.data.courseSha256!==courseSha256
+        ||!receipt.data.actions.includes(action))throw new ApiFailure('FORBIDDEN');
+      const fingerprint=originalFingerprint(receipt.data);
+      if(expected&&expected.get(subjectKey)!==fingerprint)throw new ApiFailure('FORBIDDEN');
+      receipts.set(subjectKey,receipt.data);fingerprints.set(subjectKey,fingerprint);
+    }
+    // The last authority await may cross an earlier receipt's expiration.
+    const completed=this.now();
+    if(!Utc.safeParse(completed).success||[...receipts.values()].some(receipt=>
+      Date.parse(receipt.reviewedAt)>Date.parse(completed)||Date.parse(receipt.expiresAt)<=Date.parse(completed)))
+      throw new ApiFailure('FORBIDDEN');
+    return fingerprints;
+  }
+
+  private async inspect(rawInput:RestrictedIntakeInput,action:'PREVIEW'|'APPLY'){
+    const input=rawInput;
     const actorRef=Ref.parse(input.actorRef);
     if(typeof input.formsCsv!=='string'
       ||Buffer.byteLength(input.formsCsv,'utf8')>MAX_SOURCE_BYTES
       ||input.courseFiles.length!==4||input.approvedFileBindings.length!==4)
       throw new ApiFailure('INVALID_INPUT');
-    const subjects=input.formsOptions.expectedSubjectKeys;
+    const subjects=[...input.formsOptions.expectedSubjectKeys];
     if(subjects.length!==4||new Set(subjects).size!==4
       ||subjects.some(x=>!Subject.safeParse(x).success)
       ||Object.keys(input.formsOptions.subjectByDisplayName).length>8
       ||input.courseFiles.some(x=>typeof x.content!=='string'
         ||Buffer.byteLength(x.content,'utf8')>MAX_SOURCE_BYTES))
       throw new ApiFailure('INVALID_INPUT');
-    // Authorize before interpreting any source lines. Form-supplied consent is
-    // NOT a substitute for this independent purpose-specific authority.
+    // Snapshot private caller-owned text/mappings before the first authority await.
+    const snapshot=structuredClone(input);
+    const hashBySubject=new Map<string,string>(),filenames=new Set<string>();
+    if(new Set(snapshot.approvedFileBindings.map(x=>x.filename)).size!==4
+      ||new Set(snapshot.approvedFileBindings.map(x=>x.subjectKey)).size!==4)
+      throw new ApiFailure('FORBIDDEN');
+    for(const file of snapshot.courseFiles){
+      const binding=snapshot.approvedFileBindings.find(x=>x.filename===file.filename);
+      if(!binding||!subjects.includes(binding.subjectKey)||filenames.has(file.filename))
+        throw new ApiFailure('FORBIDDEN');
+      filenames.add(file.filename);hashBySubject.set(binding.subjectKey,digest(file.content));
+    }
+    if(hashBySubject.size!==4)throw new ApiFailure('FORBIDDEN');
+    const formHash=digest(snapshot.formsCsv);
+    // No CSV interpretation until all four originals have independent purpose,
+    // subject, consent and retention receipts for these exact byte hashes.
     await this.authorize(actorRef,subjects,action);
-    const report=validateApprovedIntakeBundle(input);
+    const originalPermissions=await this.authorizeOriginals(actorRef,subjects,action,formHash,hashBySubject);
+    const report=validateApprovedIntakeBundle(snapshot);
     const issues=[...report.issues];
     for(const p of report.forms?.participants??[]){
       if(p.consent.noticeAcknowledged!=='GRANTED'
         ||p.consent.teamReview!=='GRANTED')
         issues.push({code:'CONSENT_DENIED'});
     }
-    const hashBySubject=new Map<string,string>();
-    for(const file of input.courseFiles){
-      const binding=input.approvedFileBindings.find(x=>x.filename===file.filename);
-      if(binding&&subjects.includes(binding.subjectKey))
-        hashBySubject.set(binding.subjectKey,digest(file.content));
-    }
-    const formHash=digest(input.formsCsv);
     // A receipt binds the reviewed actor and private filename/subject mapping,
     // not just the raw bytes: reassigning a file invalidates old previews.
-    const bindingBySubject=new Map(input.approvedFileBindings.map(x=>[x.subjectKey,{
+    const bindingBySubject=new Map(snapshot.approvedFileBindings.map(x=>[x.subjectKey,{
       filename:x.filename,verificationSource:x.verificationSource,
     }]));
     const previewHash=digest(JSON.stringify({
       actorRef,formHash,subjects:[...subjects].sort().map(subjectKey=>({
         subjectKey,sha:hashBySubject.get(subjectKey)??null,
-        binding:bindingBySubject.get(subjectKey)??null,
+        binding:bindingBySubject.get(subjectKey)??null,originalPermission:originalPermissions.get(subjectKey),
       })),
-      nameBinding:Object.entries(input.formsOptions.subjectByDisplayName)
+      nameBinding:Object.entries(snapshot.formsOptions.subjectByDisplayName)
         .map(([name,key])=>[name.trim().normalize('NFKC'),key])
         .sort(([a],[b])=>a!.localeCompare(b!,'ko-KR')),
     }));
@@ -113,12 +165,12 @@ export class PostgresRestrictedIntakeImport {
     // keep the status UNKNOWN rather than asserting a graduation total.
     const claimed=new Map<string,[string,string]>();
     if(report.forms?.ok){
-      const parsed=Papa.parse<string[]>(input.formsCsv.replace(/^\uFEFF/,''),{
+      const parsed=Papa.parse<string[]>(snapshot.formsCsv.replace(/^\uFEFF/,''),{
         header:false,skipEmptyLines:'greedy',dynamicTyping:false,
       });
       if(parsed.errors.length===0)for(const values of parsed.data.slice(1)){
         const name=(values[6]??'').trim().normalize('NFKC');
-        const pair=input.formsOptions.subjectByDisplayName;
+        const pair=snapshot.formsOptions.subjectByDisplayName;
         const alias=Object.entries(pair).find(([label])=>label.trim().normalize('NFKC')===name)?.[1];
         if(alias&&subjects.includes(alias))claimed.set(alias,[values[18]??'',values[19]??'']);
       }
@@ -136,8 +188,10 @@ export class PostgresRestrictedIntakeImport {
     };
     const creditCheckBySubject:Record<string,'MATCH'|'MISMATCH'|'UNKNOWN'>=
       Object.fromEntries(subjects.map(key=>[key,reportCredit(key)]));
+    await this.authorize(actorRef,subjects,action);
+    await this.authorizeOriginals(actorRef,subjects,action,formHash,hashBySubject,originalPermissions);
     return {actorRef,subjects:[...subjects].sort(),report,issues,
-      hashBySubject,formHash,previewHash,creditCheckBySubject};
+      hashBySubject,formHash,previewHash,creditCheckBySubject,originalPermissions};
   }
 
   async preview(input:RestrictedIntakeInput):Promise<IntakePreview>{
@@ -154,13 +208,14 @@ export class PostgresRestrictedIntakeImport {
   async apply(input:RestrictedIntakeInput,confirmation:{
     previewHash:string;expectedVersions:Readonly<Record<string,number>>;
   }):Promise<IntakeApplyResult>{
+    const confirmed=structuredClone(confirmation);
     const x=await this.inspect(input,'APPLY');
     if(!x.report.ready||x.issues.length
-      ||!Sha.safeParse(confirmation.previewHash).success
-      ||confirmation.previewHash!==x.previewHash
-      ||Object.keys(confirmation.expectedVersions).length!==4
-      ||x.subjects.some(s=>!Number.isSafeInteger(confirmation.expectedVersions[s])
-        ||confirmation.expectedVersions[s]!<0))
+      ||!Sha.safeParse(confirmed.previewHash).success
+      ||confirmed.previewHash!==x.previewHash
+      ||Object.keys(confirmed.expectedVersions).length!==4
+      ||x.subjects.some(s=>!Number.isSafeInteger(confirmed.expectedVersions[s])
+        ||confirmed.expectedVersions[s]!<0))
       throw new ApiFailure('INVALID_INPUT');
     const c=await this.pool.connect();
     let started=false;
@@ -188,7 +243,7 @@ export class PostgresRestrictedIntakeImport {
           applied.push({subjectKey,version:current,reused:true});
           continue;
         }
-        if(confirmation.expectedVersions[subjectKey]!==current)
+        if(confirmed.expectedVersions[subjectKey]!==current)
           throw new ApiFailure('VERSION_CONFLICT');
         const version=current+1;
         const rows=JSON.stringify(course.records satisfies CourseRecord[]);
@@ -210,6 +265,7 @@ export class PostgresRestrictedIntakeImport {
       // Connection acquisition, row locks and writes may outlive purpose rights.
       // Recheck before the all-four commit, including an idempotent replay.
       await this.authorize(x.actorRef,x.subjects,'APPLY');
+      await this.authorizeOriginals(x.actorRef,x.subjects,'APPLY',x.formHash,x.hashBySubject,x.originalPermissions);
       await c.query('COMMIT');started=false;
       return {previewHash:x.previewHash,applied,nextState:'STUDENT_REVIEW_PENDING'};
     }catch(error){

@@ -27,6 +27,7 @@ export function policyFingerprint(scope:CurrentEvidenceGrants):string{
     college:scope.college??null,
     enrollmentState:scope.enrollmentState??null,
     admissionType:scope.admissionType??null,
+    degreePath:scope.degreePath??null,track:scope.track??null,curriculumVersion:scope.curriculumVersion??null,
     graduationTerm:scope.graduationTerm??null,
     graduationTermVerified:scope.graduationTermVerified??null,
     majors:scope.majors?.map(({code,role})=>[code,role])

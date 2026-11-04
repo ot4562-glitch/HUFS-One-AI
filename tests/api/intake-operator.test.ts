@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import type {ManagedDataPool,DataPoolSettings} from '../../apps/api/src/db/pg-pool.js';
-import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
+import {makeSyntheticIntake,syntheticOriginalPermission} from './synthetic-intake-fixture.js';
 
 const NOW='2026-10-31T00:00:00.000Z';
 const runtimePath='../../apps/api/src/admin/intake-runtime.js';
@@ -52,7 +52,7 @@ function fixture(versions:readonly number[]=[0,0,0,0]){
       },
     }),
   };
-  const config={input,database,authority:{mayProcess:async()=>allowed}};
+  const config={input,database,authority:{mayProcess:async()=>allowed,resolveOriginalPermission:async(request:Parameters<typeof syntheticOriginalPermission>[0])=>syntheticOriginalPermission(request)}};
   const deps={
     loadConfig:async()=>{loaded++;return config;},
     createPool:(_settings:DataPoolSettings)=>{opened++;return pool;},
@@ -176,9 +176,10 @@ describe('private operator intake command',()=>{
   });
   it('requires an explicit authority and dedicated production TLS pool settings',async()=>{
     const {runRestrictedIntakeCommand}=await runtime();
-    for(const missing of ['authority','database','production'] as const){
+    for(const missing of ['authority','originalAuthority','database','production'] as const){
       const f=fixture();
       if(missing==='authority')(f.config as any).authority=undefined;
+      if(missing==='originalAuthority')(f.config.authority as any).resolveOriginalPermission=undefined;
       if(missing==='database')(f.config as any).database=undefined;
       if(missing==='production')f.config.database={...database,environment:'local-test'};
       await expect(runRestrictedIntakeCommand(f.args('a'.repeat(64)),f.deps)).rejects.toBeDefined();

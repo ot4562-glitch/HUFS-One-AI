@@ -46,14 +46,16 @@ describe('saved timetable hand-off to the operator-saved curriculum import', () 
     expect(converted.campus).toBe('SEOUL');
     const exported = toSavedCurriculumCsv(converted);
     expect(exported.withheld).toEqual([{no:4, rawCode:'SYN030101', reason:'TERM_FROM_PAGE'}]);
-    const permission = {sourceUrl:URL, permissionRef:'SYN-PERMISSION', permissionVersion:'1',
+    const capture={capturedAt:NOW,term:'2026-2',campus:converted.campus,scope:converted.departmentLabel,
+      converterVersion:WIS_TIMETABLE_CONVERTER_VERSION,permissionRef:'SYN-PERMISSION',permissionVersion:'1'};
+    const permission = {...capture,sourceUrl:URL, permissionRef:'SYN-PERMISSION', permissionVersion:'1',
       permissionEvidenceUrl:'https://wis.hufs.ac.kr/synthetic-terms', verifiedAt:NOW, expiresAt:'2026-12-01T00:00:00.000Z',
       edition:'SYN-2026-2', sourceKind:'OFFERINGS' as const, collection:'ALLOWED' as const, retention:'ALLOWED' as const,
       terms:'ALLOWED' as const, revoked:false as const, acquisitionMethod:'OPERATOR_SAVED' as const, robots:'NOT_APPLICABLE' as const,
       savedArtifactSha256:hash(original), normalizedCsvSha256:hash(exported.csv), capturedAt:NOW,
       converterVersion:WIS_TIMETABLE_CONVERTER_VERSION, redistribution:'DENIED' as const};
-    const revision = await importSavedCurriculum({sourceUrl:URL, originalBytes:original, csv:exported.csv,
-      authority:{resolve:async () => permission}, now:() => NOW});
+    const revision = await importSavedCurriculum({sourceUrl:URL, originalBytes:original, csv:exported.csv,capture,
+      authority:{resolveSaved:async () => permission}, now:() => NOW});
     expect(revision.duplicateRows).toBe(0);
     expect(revision.courses.map(c => [c.courseCode, c.courseName, c.creditUnits, c.category, c.semester, c.campus, c.cohort,
       c.collectionStatus, c.offeringStatus, c.rulesStatus])).toEqual([

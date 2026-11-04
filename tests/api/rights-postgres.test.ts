@@ -102,6 +102,17 @@ describe('persisted exact-actor source rights and independent academic scope',()
     const g=await new PostgresEvidenceRightsResolver(x.pool,{now:()=>NOW}).resolveFor({actor,now:NOW});
     expect([...g!.sourceIds!]).toEqual(['SYN-S2']);
   });
+  it('loads optional degree path, track and curriculum facts without changing legacy receipts',async()=>{
+    for(const degreePath of ['ADVANCED_SINGLE','UNSELECTED']){
+      const scope={...academic(),scope_json:{...academic().scope_json,degreePath,track:'SYN-TRACK',curriculumVersion:'SYN-CUR'}};
+      const g=await new PostgresEvidenceRightsResolver(db({scope:[scope]}).pool,{now:()=>NOW}).resolveFor({actor,now:NOW});
+      expect(g).toMatchObject({degreePath,track:'SYN-TRACK',curriculumVersion:'SYN-CUR'});
+    }
+  });
+  it('refuses unrecognized degree paths in persisted scope rather than silently dropping them',async()=>{
+    const scope={...academic(),scope_json:{...academic().scope_json,degreePath:'UNVERIFIED_PATH'}};
+    expect(await new PostgresEvidenceRightsResolver(db({scope:[scope]}).pool,{now:()=>NOW}).resolveFor({actor,now:NOW})).toBeNull();
+  });
   it('rotates fingerprints when a source correction or independent attestation changes',async()=>{
     const x=db(),y=db({heads:[{...head(),revision_id:'SYN-REV2'}]}),z=db({heads:[{...head(),last_verified_at:NOW}]});
     const results=await Promise.all([x,y,z].map(d=>new PostgresEvidenceRightsResolver(d.pool,{now:()=>NOW}).resolveFor({actor,now:NOW})));

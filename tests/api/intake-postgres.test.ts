@@ -1,14 +1,14 @@
 import {describe,expect,it} from 'vitest';
 import {PostgresRestrictedIntakeImport} from
   '../../apps/api/src/modules/academics/intake-postgres.js';
-import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
+import {makeSyntheticIntake,syntheticOriginalPermission} from './synthetic-intake-fixture.js';
 
 function local(approved=true){
   let connections=0,permissions=0;
   const service=new PostgresRestrictedIntakeImport({connect:async()=>{
     connections++;
     throw new Error('Preview must not open a DB connection');
-  }},{mayProcess:async()=>{permissions++;return approved;}},
+  }},{mayProcess:async()=>{permissions++;return approved;},resolveOriginalPermission:async request=>syntheticOriginalPermission(request)},
   ()=> '2026-10-31T00:00:00.000Z');
   return {service,connections:()=>connections,permissions:()=>permissions};
 }
@@ -24,7 +24,7 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
     expect(JSON.stringify(result)).not.toContain('가상 기초과목');
     expect(JSON.stringify(result)).not.toContain('가상작성자');
     expect(h.connections()).toBe(0);
-    expect(h.permissions()).toBe(4);
+    expect(h.permissions()).toBe(8);
     expect((await h.service.preview(input)).previewHash).toBe(result.previewHash);
   });
   it('refuses parsing any potentially private text without operator+student purpose permission',async()=>{
@@ -59,9 +59,8 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
     const h=local(),input=makeSyntheticIntake();
     const changed={...input,courseFiles:[...input.courseFiles].map((f,i)=>i===0
       ?{...f,filename:'이수과목_타인.csv'}:f)};
-    const result=await h.service.preview(changed);
-    expect(result.ready).toBe(false);
-    expect(result.issues.map(i=>i.code)).toContain('UNAPPROVED_FILENAME');
+    await expect(h.service.preview(changed)).rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(h.permissions()).toBe(0);
   });
   it('flags a self-reported total mismatch for human review without asserting graduation',async()=>{
     const h=local(),input=makeSyntheticIntake();
@@ -101,7 +100,7 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
           if(sql.includes('UPDATE api_intake_heads'))return {rows:[{current_version:1}]};
           return {rows:[]};
         }};
-      }},{mayProcess:async()=>allowed},()=> '2026-10-31T00:00:00.000Z');
+      }},{mayProcess:async()=>allowed,resolveOriginalPermission:async request=>syntheticOriginalPermission(request)},()=> '2026-10-31T00:00:00.000Z');
       const input=makeSyntheticIntake(),preview=await service.preview(input);
       const expectedVersions=Object.fromEntries(input.formsOptions.expectedSubjectKeys.map(x=>[x,0]));
       await expect(service.apply(input,{previewHash:preview.previewHash,expectedVersions}))
@@ -125,7 +124,7 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
         if(sql.includes('UPDATE api_intake_heads'))return {rows:[{current_version:1}]};
         return {rows:[]};
       },
-    })},{mayProcess:async input=>input.now<'2026-10-31T00:01:00.000Z'},()=>now);
+    })},{mayProcess:async input=>input.now<'2026-10-31T00:01:00.000Z',resolveOriginalPermission:async request=>syntheticOriginalPermission(request)},()=>now);
     const input=makeSyntheticIntake(),preview=await service.preview(input);
     const expectedVersions=Object.fromEntries(input.formsOptions.expectedSubjectKeys.map(x=>[x,0]));
     await expect(service.apply(input,{previewHash:preview.previewHash,expectedVersions}))

@@ -88,7 +88,8 @@ export async function runRestrictedIntakeCommand(
   };
   refusePublicRuntime();
   const config=await dependencies.loadConfig();
-  if(!config||!config.input||typeof config.authority?.mayProcess!=='function')
+  if(!config||!config.input||typeof config.authority?.mayProcess!=='function'
+    ||typeof config.authority.resolveOriginalPermission!=='function')
     throw new Error('Explicit private intake input and authority required');
   // Freeze the command's inputs against mutation by an awaiting adapter.
   // This copy remains private process memory and is never included in output.
