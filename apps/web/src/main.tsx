@@ -39,6 +39,9 @@ async function start() {
     const owner = await import('./dev/syntheticOwnerServer.js');
     const clubs = await import('./dev/syntheticClubs.js');
     const whatIf = await import('./dev/syntheticWhatIf.js');
+    const planCheck = await import('./dev/syntheticPlanCheck.js');
+    const revisions = await import('./dev/syntheticRevisions.js');
+    const doubleMajor = await import('./dev/syntheticDoubleMajor.js');
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
     services = {
@@ -48,6 +51,9 @@ async function start() {
       applications: boardPort(new HufsApiClient(new owner.SyntheticOwnerServer().fetch)),
       clubs: clubs.syntheticClubPort(),
       whatIf: whatIf.syntheticWhatIfPort(),
+      planCheck: planCheck.syntheticPlanCheckPort(),
+      revisions: revisions.syntheticRevisionPort(),
+      doubleMajor: doubleMajor.syntheticDoubleMajorPort(),
       overlay: {
         get: (ctx, signal) => synthetic.getDemoOverlay(ctx, signal),
         set: (ctx, change, signal) => synthetic.setDemoOverlay(ctx, change, signal),

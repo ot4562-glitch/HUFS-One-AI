@@ -1,4 +1,5 @@
 import {useEffect, useRef, type ComponentType, type ReactNode} from 'react';
+import type {RevisionPort} from './features/revisions/RevisionComparison.js';
 import type {DemoContext} from '@hufs-one/contracts';
 import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
@@ -6,6 +7,8 @@ import type {BoardPort} from './features/applications/boardPort.js';
 import type {ClubPort} from './features/clubs/useClubBoard.js';
 import type {OverlayPort} from './features/settings/overlayCompare.js';
 import type {WhatIfPort} from './features/what-if/WhatIfPanel.js';
+import type {PlanCheckPort} from './features/plan-check/PlanCheckPanel.js';
+import type {DoubleMajorPort} from './features/double-major/DoubleMajorPanel.js';
 import type {OwnerDemoProfilePort} from './features/owner-demo/OwnerDemoProfile.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
@@ -40,6 +43,12 @@ export interface AppServices {
   readonly overlay?: OverlayPort;
   /** #82 hypothetical major What-if; synthetic until wired to OwnerApiClient.checkMajorWhatIf. */
   readonly whatIf?: WhatIfPort;
+  /** #81 owner plan check next to the 졸업 summary; synthetic until wired to OwnerApiClient.checkStudyPlan. */
+  readonly planCheck?: PlanCheckPort;
+  /** #119 reviewed correction comparison for an opportunity; dev synthetic until the client/discovery API exists. */
+  readonly revisions?: RevisionPort;
+  /** #144 current primary + chosen double major audit; synthetic only until the owner API (#150) lands. */
+  readonly doubleMajor?: DoubleMajorPort;
   /** #132 verified BETA owner, independent of S01–S05 and REVIEWER. */
   readonly ownerDemoProfile?: OwnerDemoProfilePort;
 }

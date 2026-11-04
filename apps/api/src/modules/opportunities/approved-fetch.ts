@@ -2,8 +2,8 @@ import {randomUUID} from 'node:crypto';
 import type {SourceRevisionVNext,RevisionInvalidationVNext} from '@hufs-one/contracts';
 import {MemorySourceRevisionLedger,hashRevisionParagraphs} from './revision-ledger.js';
 import type {RevisionParagraph} from './revision-ledger.js';
+import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
 
-const MAX_DOCUMENT_BYTES=256*1024;
 const SAFE_HEADER=/^[\x20-\x7e]{1,200}$/;
 export class SourceIngestionError extends Error {
   constructor(){super('Approved source ingestion failed');}
@@ -77,24 +77,6 @@ function validateConfig(p:ApprovedFetchPolicy){
     throw new SourceIngestionError();
   return url;
 }
-async function boundedBody(response:Response):Promise<Uint8Array>{
-  const declared=response.headers.get('content-length');
-  if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>MAX_DOCUMENT_BYTES))
-    throw new SourceIngestionError();
-  if(!response.body)throw new SourceIngestionError();
-  const reader=response.body.getReader(),blocks:Uint8Array[]=[];
-  let total=0;
-  try{
-    while(true){
-      const chunk=await reader.read();
-      if(chunk.done)break;
-      total+=chunk.value.byteLength;
-      if(total>MAX_DOCUMENT_BYTES)throw new SourceIngestionError();
-      blocks.push(chunk.value);
-    }
-  }finally{reader.releaseLock();}
-  return Buffer.concat(blocks);
-}
 function safeHeader(value:string|null):string|undefined {
   return value&&SAFE_HEADER.test(value)?value:undefined;
 }
@@ -147,10 +129,11 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
       const headers:Record<string,string>={Accept:'text/plain, text/html;q=0.9, application/rss+xml;q=0.8'};
       if(latest&&etag)headers['If-None-Match']=etag;
       if(latest&&modified)headers['If-Modified-Since']=modified;
+      let response:Response|undefined;
       try{
         // Never send a real HTTP request using only a caller-supplied boolean.
         const rightsBefore=await requireCurrentRights(options,checkedAt);
-        const response=await request(sourceUrl,{
+        response=await request(sourceUrl,{
           method:'GET',redirect:'error',
           credentials:'omit',
           headers,
@@ -172,7 +155,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
         const contentType=response.headers.get('content-type')??'';
         const supported=/^(text\/plain|text\/html|application\/rss\+xml)(;|$)/i.test(contentType);
         if(!supported)throw new SourceIngestionError();
-        const bytes=await boundedBody(response);
+        const bytes=await readApprovedSourceBody(response);
         if(!bytes.length)throw new SourceIngestionError();
         const paragraphs=await options.extractor.extract({
           content:bytes,contentType,canonicalUrl:sourceUrl.href,
@@ -218,6 +201,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
         return {kind:latest?'CHANGED_DRAFT':'NEW_DRAFT',sourceId:options.policy.sourceId,
           revisionId:revision.revisionId,checkedAt,invalidation:event};
       }catch{throw new SourceIngestionError();}
+      finally{if(response)discardUnreadSourceBody(response);}
     },
   };
 }

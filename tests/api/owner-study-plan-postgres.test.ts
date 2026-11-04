@@ -98,6 +98,14 @@ describe('durable approved owner study-plan snapshot',()=>{
     const three=await h.load();h.setClock('2026-11-02T00:01:00Z');
     expect(await h.loader.revalidate({actorId,receipt:three!.receipt,now:at})).toBe(false);
   });
+  it('offers retained validation for independent HTTP gates without changing consume-once validation',async()=>{
+    const h=fixture(),one=await h.load(),input={actorId,receipt:one!.receipt,now:at};
+    expect(await h.loader.revalidateCurrent(input)).toBe(true);
+    expect(await h.loader.revalidateCurrent(input)).toBe(true);
+    expect(await h.loader.revalidateCurrent({...input,actorId:'SYN-OTHER'})).toBe(false);
+    expect(await h.loader.revalidate(input)).toBe(true);
+    expect(await h.loader.revalidateCurrent(input)).toBe(false);
+  });
   it('rejects a receipt that expires during an awaited source authorization',async()=>{
     const h=fixture(),snapshot=await h.load(),resolve=h.authority.resolve;
     h.authority.resolve=async()=>{h.setClock('2026-11-02T00:01:00Z');return resolve();};
