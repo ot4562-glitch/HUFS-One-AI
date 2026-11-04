@@ -20,7 +20,7 @@ variable "request" {
   type = object({
     scope                   = string
     project                 = string
-    source_sha     = string
+    source_sha              = string
     network_config_sha256   = string
     subnet_no               = string
     access_control_group_no = string
@@ -120,7 +120,7 @@ output "operator_handoff" {
     server_id      = ncloud_server.preview.id
     network_nic_id = ncloud_network_interface.preview.id
     public_ip      = ncloud_public_ip.preview.public_ip
-    source_sha      = var.request.source_sha
+    source_sha     = var.request.source_sha
     config_sha256  = sha256(jsonencode(var.request))
     release        = "RELEASE_BLOCKED"
   }
