@@ -1,26 +1,27 @@
-# HUFS One AI | 현재 상태 (2026-11-04 확인)
+# HUFS One AI | 현재 상태 (2026-11-05 검증)
 
-> 현재 정본. 과거의 PR 숫자와 당시 HEAD 리뷰 기록은 Git 이력에서 확인한다. 근거: [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216), [모든 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues), [인수 체크리스트](docs/HUMAN_ACCEPTANCE_GATE_20261104.md), [담당별 진척](docs/TEAM_PROGRESS.md).
+> **최신 운영·개발 정본.** 현재 PR/이슈는 [GitHub PR](https://github.com/minseong-hufs/HUFS-One-AI/pulls), [15개 정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues), [인적 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md), [책임별 진행](docs/TEAM_PROGRESS.md)과 함께 확인한다. 이하 2026-11-04 이슈 이관 및 과거 통합 증거는 역사 기록으로 유지한다.
 
-## 1. GitHub와 CI
+## 1. GitHub와 CI — 2026-11-05
 
-| 구분 | 2026-11-04 검증 결과 |
+| 구분 | 실제 확인 상태 |
 | --- | --- |
-| main | **f23b86bb693a163c7f6a0330d1b9657c684724ff** — 통합 PR #216 merge commit |
-| 열린 PR | **0건** |
-| 열린 일반 이슈 | **15건** (정리 전 40건 중 중복 25건 이관·종료) |
-| 통합 PR | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) — 기존 기능·협업자 커밋·원본 조상을 보존하여 merge 방식 병합 |
-| 병합 후 3종 CI | [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022), [NCP IaC offline](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904), [Chrome browser](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS** |
-| 닫힌 미병합 PR | **10건**의 최신 HEAD가 현재 main Git ancestry에 포함됨(Git compare 10/10). 개별 PR의 merged_at가 없으므로 MERGED라고 표시하지 않음 |
-| 개인 원본 Git 추적 | 현재 main의 **811개 tracked path** 중 금지된 보호 경로 **0개** (#212). 전체 과거 이력/clone·full private checkout 개인정보 검사는 별도 |
-| 공개 운영 | **RELEASE_BLOCKED** — 실제 Google/학교메일·운영 PostgreSQL/RLS·TLS/직접 IP·유료 NCP/SSH·사람 검증 미수락 |
+| main | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 선행 통합 이후 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) merge `8e0efb5`, [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) merge `6445fc4` 반영. 최신 branch SHA는 GitHub를 실시간 확인 |
+| 열린 PR | **2건:** [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219) 보안 재검토 및 CI 대기; [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220) Draft, 대규모 기능 및 회귀 검증 대기 |
+| 열린 일반 이슈 | **15건** (#8, #9, #10, #11, #12, #19, #20, #27, #46, #61, #89, #119, #123, #132, #133). 2026-11-04 중복 25건 이관 종료 상태 유지 |
+| 완료된 코드 하위 수락 | #11에서 #217 What-if 합성 계산/보수적 인정보류 표시와 #218 동일교과 속성·seed 재현 코어를 **[x] 코드 단위 완료**로 기록. 공식 RulePack/실원장/권리·학업 운영은 미완료 |
+| #217/#218 CI | 두 PR의 병합 전 수정 HEAD에서 TASK-00 / NCP IaC offline / Chrome **각 3/3 SUCCESS**, 재검토 `COMMENT` 등록 |
+| #219 보안 | 선택적 `platform` PostgreSQL 풀의 검증 우회를 거부하고 별도 데모 role/TLS 풀을 조립·점검하도록 변경. 테스트 및 SECURITY DEFINER search_path 조정. **변경 HEAD CI/비작성자 사람 리뷰 재수락 대기**. 프록시 뒤 IP 제한 문제도 별도 남음 |
+| #220 기능·회귀 | 최초 TASK-00 **1 FAIL / 2809 PASS / 84 SKIP**(BETA 세션이 `ADMIN` 응답을 잘못 허용). 수정 `8340157` 제출; **수정 HEAD 전체 CI와 독립 리뷰 확인 전 Draft 유지** |
+| 문서 | README / PR_WORKFLOW / STATUS와 #11 정본 이슈에서 코드 완료·합성 CI·남은 사람 게이트를 분리 |
+| 공개 운영 | **RELEASE_BLOCKED** — 실 Google/학교메일, 운영 PostgreSQL·RLS·백업, NCP/TLS/직접 IP, 실제 4인 원본 권리, 독립 추천 gold 200 및 기관 학칙/사람 검증 미수락 |
 
-**2026-11-04 예외:** 사용자가 소유자·협업자 작성 PR의 전수 직접 통합을 지시했고 #216을 병합했다. 해당 PR에 GitHub 비작성자 사람 APPROVED는 없었다. 작성자 또는 에이전트 COMMENT를 사람의 독립 APPROVED로 가장하지 않는다. 향후 일반 PR 정책은 [PR_WORKFLOW](docs/PR_WORKFLOW.md)대로 유지하며 이번 지시를 유료 인프라·운영 공개 승인으로 확장하지 않는다.
+**2026-11-05 병합 승인 기록:** 사용자의 명시적인 이번 PR 정리 요청에 따라 #217/#218의 원래 `CHANGES_REQUESTED`에서 요구한 수정과 합성 CI 성공을 확인한 뒤 병합했다. 이 작업의 리뷰는 **자동 기술 검토 `COMMENT`**였고 비작성자 사람 `APPROVED`가 아니었다. 팀의 반복 가능한 독립 리뷰 규칙과 #219/#220 보안/개인정보/릴리스 게이트는 계속 적용한다. 코드 병합·테스트 통과는 운영·학교·학생 데이터 승인으로 바뀌지 않는다.
 
 ## 2. main에 반영된 코드와 경계
 
 - **API·PostgreSQL:** 서버 소유 인증 및 영속 어댑터 조립, 구분된 7개 PostgreSQL TLS/ROLE 풀, 운영자 루프백 전용 API 진입점, 세션/권한/철회·SourceRevision/추천·Provider SQL, 권한 부정/PG 복구·혼잡 시험. 그러나 실제 운영용 인증/메일 서버·운영 DB·공개 서비스는 NOT_RUN. apps/api/src/main.ts의 APP_ENV=production 차단을 유지.
-- **UI·학업·추천:** 공고 정정 전/후, 졸업·계획 나란히 보기, What-if 가정 UI, 합성 owner Provider/학업 화면, 추천 중복/정규화 benchmark·학점 속성 회귀 통합. **공식 학칙 RulePack·원본 권리·실학생 결과 및 독립 금지 경계 수락은 별개**.
+- **UI·학업·추천:** 공고 정정 전/후, 졸업·계획 나란히 보기, What-if 가정 UI 및 #217에서 병합된 합성 What-if 순수 계산 코어, #218에서 병합된 동일교과 300-seed 탐색/단일 seed 재현, 합성 owner Provider/학업 화면, 추천 중복/정규화 benchmark·학점 속성 회귀 통합. **공식 학칙 RulePack·원본 권리·실학생 결과 및 독립 금지 경계 수락은 별개**.
 - **NCP·AI:** 승인형 VPC/ACG/NACL·NIC/Ubuntu VM/Public IP Terraform, 오프라인 mock, plan 우선 설치·고정 SSH 합성 preview/rollback, CLOVA/HCX 오프라인 wire·원자 비용·Laya 기본 OFF 격리 프로세스. **실 NCP API apply·요금·SSH·OCR/HCX 유료 호출·실호스트 성능 확인은 0회/NOT_RUN**.
 - **비공개 ingress:** Nginx/Docker/Compose는 검증 전 템플릿과 차단된 로컬 점검. 외부 포트/HTTPS/직접IP/운영 공개를 구현 완료로 간주하지 않음.
 - **자료:** 사용자 확인으로 공모전 참여 **5명 전원 동의**, **HUFSAbility 자료 수집 허가 확보**. 실제 개인 수강/Forms 원본 제공자 **4명**과 구분. 공식 강의시간표에 공개된 교수명·강의명은 승인된 수업정보의 필요 범위로 제한하고 일괄 이름 마스킹을 필수 개발 게이트로 놓지 않음. 허가의 상세 필드/재배포/외부 모델 전송·철회는 별도 원장 검증.
@@ -41,7 +42,7 @@
 
 ## 4. 정리 결정
 
-- **PR 정리 종료: OPEN 0건.** 이미 main에 들어간 통합 코드를 중복 병합하거나 협업자에게 재작업 요청하지 않는다.
+- **PR 정리 (2026-11-05): OPEN 2건 (#219 보안 재검토, #220 Draft).** 2026-11-04 통합 당시는 OPEN 0건이었으나 이후 PR이 생성되었다. #217/#218는 병합됐고 중복 통합이나 승인 없는 실서비스 배포를 하지 않는다.
 - **이슈 재편 완료:** 기존 OPEN 40건을 현재 **15건 OPEN + 25건 CLOSED(duplicate/이관)**로 통합했다. 각 열린 이슈는 **완료된 코드 설명 / 미완료만 체크리스트 / 명확한 책임자·연결 원본**으로 전면 교체했다. 닫힌 이슈는 완료를 가장하지 않고 정본 이슈로 이동·이력/댓글을 보존했다. 실서비스 인적 게이트 #46/#61/#89는 여전히 OPEN이다.
 - [인적 승인·검증 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 실제 환경 수락을 별도로 관리. **RELEASE_BLOCKED** 유지.
 
