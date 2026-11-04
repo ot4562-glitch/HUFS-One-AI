@@ -2,6 +2,8 @@ import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {SourceSpanVNextSchema} from '@hufs-one/contracts';
 import {parseSourceImageEvidence} from './source-image-evidence.js';
+import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
+import {validatePdfRasters} from './source-pdf-rasters.js';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import {hashRevisionParagraphs} from './revision-ledger.js';
 const Ref=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:@-]+$/);
@@ -17,7 +19,8 @@ export interface SourceReviewAuthority {
   authorize(input:{actorRef:string;sourceId:string;permissionRef:string;now:string;
     imageEvidenceSha256?:string}):Promise<{
     reviewerId:string;independentReview:true;permissionPolicyVersion:string;
-    /** Independent human bbox/OCR review of this exact retained bundle. */
+    /** Independent human review of this exact bundle, including PDF original/page
+     * correspondence, renderer transforms and bbox/OCR anchors when applicable. */
     imageEvidenceSha256?:string;
   }|null>;
 }
@@ -84,14 +87,22 @@ export class PostgresSourceReviewService {
         throw new Error('Paragraph integrity failure');
       const paragraphs=text.rows.map(p=>({id:p.paragraph_id as string,text:p.paragraph_text as string}));
       if(hashRevisionParagraphs(paragraphs)!==input.contentSha256)throw new Error('Paragraph integrity failure');
-      if(r.media_kind==='PDF')throw new Error('Approved PDF renderer unavailable');
-      if(r.media_kind==='IMAGE'){
-        const image=parseSourceImageEvidence(stored?.image_evidence,{sourceId:input.sourceId,
-          revisionId:input.revisionId,permissionRef:input.permissionRef,originalSha256:input.originalSha256});
+      if(r.media_kind==='IMAGE'||r.media_kind==='PDF'){
+        const binding={sourceId:input.sourceId,revisionId:input.revisionId,
+          permissionRef:input.permissionRef,originalSha256:input.originalSha256};
+        const pdf=r.media_kind==='PDF'?parseSourcePdfEvidence(stored?.image_evidence,binding):undefined;
+        const image=pdf??parseSourceImageEvidence(stored?.image_evidence,binding);
         if(image.sha256!==input.imageEvidenceSha256||image.sha256!==stored?.image_evidence_sha256
           ||JSON.stringify(image.paragraphs)!==JSON.stringify(paragraphs)
           ||text.rows.some((p,i)=>JSON.stringify(SourceSpanVNextSchema.parse(p.image_span))!==JSON.stringify(image.spans[i])))
           throw new Error('Image evidence integrity failure');
+        if(pdf){
+          const pages=await c.query(`SELECT page_index,asset_id,raster_sha256,raster_bytes,width,height
+            FROM source_pdf_rasters_vnext WHERE revision_id=$1 ORDER BY page_index`,[input.revisionId]);
+          const rasters=pages.rows.map(p=>({pageIndex:p.page_index,assetId:p.asset_id,rasterSha256:p.raster_sha256,
+            bytes:p.raster_bytes,width:p.width,height:p.height})) as SourcePdfRaster[];
+          validatePdfRasters(bytes,pdf.evidence,rasters);
+        }
       }else if(input.imageEvidenceSha256!==undefined||stored?.image_evidence!=null
         ||stored?.image_evidence_sha256!=null||text.rows.some(p=>p.image_span!=null))
         throw new Error('Unexpected image evidence');
