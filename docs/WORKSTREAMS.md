@@ -1,5 +1,12 @@
 # HUFS One AI | 확정 5인 분업과 작업 경계
 
+## 2026-11-04 PR 전수 통합에 따른 담당 상태
+
+- 사용자 지시로 [통합 PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 main `f23b86bb`로 병합하여 **열린 PR 0건 / 일반 이슈 40건**. 각 팀원 UI/추천/학업의 기존 PR 변경은 통합 조상으로 보존했으며, 과거 개별 스택 PR 중 CLOSED·unmerged가 있어도 **코드 미포함으로 단정하지 않는다**. 아래 과거 33건·34건·32건 기록은 역사 스냅샷이다.
+- **담당 범위 변경 없음:** 심민성은 모든 NCP 관련 코드·API·보안/통합, 이서연은 실제 NCP 비코드 운영·요금/실측, 이의상 UI, 김채윤 추천, 박준영 학업. 이번 회차 동료에게 별도 PR 처리/승인을 요청하지 않았다.
+- 실제 계정/클라우드·학교 근거·독립 gold·접근성/현장 복구는 이슈 수락 조건에 남으며 `RELEASE_BLOCKED`. [STATUS](../STATUS.md), [검증 인수서](HUMAN_ACCEPTANCE_GATE_20261104.md) 참조.
+
+
 > **담당 범위 기준 2026-11-03, 현재 PR·이슈 대조 2026-11-04 KST.** 이 문서는 **지속되는 담당자·작업 경계**만 적습니다. PR별 실적/차단은 [STATUS](../STATUS.md), 수락 항목 증거율은 [TEAM_PROGRESS](TEAM_PROGRESS.md), 과거 기록은 [Git 이력](https://github.com/ot4562-glitch/HUFS-One-AI/commits/main/docs/WORKSTREAMS.md)에서 확인합니다. 과거 PR 상태를 '현재'로 재사용하지 않습니다.
 
 ## 팀 책임
