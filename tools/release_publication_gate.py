@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import stat
 import sys
 from pathlib import Path
 
@@ -43,6 +44,36 @@ MAX_SCAN_BYTES = 8_000_000
 
 def _identifier(relative: str) -> str:
     return hashlib.sha256(relative.encode("utf-8", "surrogatepass")).hexdigest()[:16]
+
+
+def _read_policy(root: Path, relative: str) -> str | None:
+    """Read a fixed policy only after checking every checkout-relative component.
+
+    A regular final file does not make a symlinked parent safe. Refuse missing,
+    nonregular, linked or unreadable policies without exposing paths/errors.
+    """
+    target = root
+    parts = Path(relative).parts
+    try:
+        if root.is_symlink():
+            return None
+        for index, part in enumerate(parts):
+            target = target / part
+            info = target.lstat()
+            if stat.S_ISLNK(info.st_mode):
+                return None
+            if index < len(parts) - 1:
+                if not stat.S_ISDIR(info.st_mode):
+                    return None
+            elif not stat.S_ISREG(info.st_mode) or info.st_size > MAX_SCAN_BYTES:
+                return None
+        with target.open("rb") as policy:
+            raw = policy.read(MAX_SCAN_BYTES + 1)
+        if len(raw) > MAX_SCAN_BYTES:
+            return None
+        return raw.decode("utf-8")
+    except (OSError, UnicodeError):
+        return None
 
 
 def audit_publication_artifacts(root: Path) -> dict:
@@ -125,12 +156,12 @@ def audit_publication_artifacts(root: Path) -> dict:
             if any(pattern.search(data) for pattern in SIGNATURES):
                 report("CREDENTIAL_SIGNATURE_IN_BUILD", relative)
 
-    docker = root / ".dockerignore"
-    if not docker.is_file() or docker.is_symlink():
+    docker = _read_policy(root, ".dockerignore")
+    if docker is None:
         report("DOCKERIGNORE_POLICY_MISSING")
     else:
         lines = {
-            line.strip() for line in docker.read_text(encoding="utf-8").splitlines()
+            line.strip() for line in docker.splitlines()
             if line.strip() and not line.lstrip().startswith("#")
         }
         if not DOCKER_EXCLUSIONS.issubset(lines):
@@ -151,11 +182,11 @@ def audit_publication_artifacts(root: Path) -> dict:
                         report("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED",
                                override.relative_to(root).as_posix())
 
-    workflow = root / ".github/workflows/task00-contracts.yml"
-    if not workflow.is_file() or workflow.is_symlink():
+    workflow = _read_policy(root, ".github/workflows/task00-contracts.yml")
+    if workflow is None:
         report("WORKFLOW_POLICY_MISSING")
     else:
-        text = workflow.read_text(encoding="utf-8")
+        text = workflow
         if (re.search(r"(?m)^\s+pull_request_target:", text)
             or re.search(r"actions/upload-artifact\s*@", text, re.I)
             or "secrets." in text or "id-token: write" in text):
