@@ -14,9 +14,11 @@ import {assertId, type LedgerRequirement} from './ledger.js';
  *   is the same on both sides and every course still counts once.
  * - A primary major can have a different pack per degree path (double major, 전공심화, 전공심화 +
  *   minor), so dropping or adding a second program can switch the primary pack too.
- * - Only earned credit counts. A row the core cannot decide (a shared course without an approved
- *   overlap rule, pending recognition, a non-credit check) is reported as MISSING with the
- *   conservative figures, and listed in reviewRequirementIds so a caller can show it needs review.
+ * - Only earned credit counts. A row the core cannot decide is reported as MISSING with the
+ *   conservative figures and listed in reviewRequirementIds, so a caller never shows it as a settled
+ *   shortfall: a shared course without an approved overlap rule, a non-credit check, or an unmet row
+ *   that an attempt the ledger set aside undecided could feed (pending recognition, a term not ended
+ *   by asOf, an unapproved or forked retake, crowded duplicates).
  * - Every pack used must be APPROVED; otherwise the result is BLOCKED_DEPENDENCY. A target the
  *   catalog does not have, or a change that does not fit the current programs, is
  *   TARGET_PROGRAM_UNAVAILABLE. Nothing here is an official graduation or program decision.
@@ -177,15 +179,42 @@ function project(role:WhatIfProjection['role'], input:MajorWhatIfRequest, enroll
   const second = audit.doubleMajor.status === 'CHECKED' ? audit.doubleMajor.audit : undefined;
   const rows = [...audit.primary.requirements, ...(second?.requirements ?? [])];
   const definitions = new Map<string, LedgerRequirement>();
-  for (const requirement of [...primary.requirements, ...(secondary?.requirements ?? [])]) {
-    if (definitions.has(requirement.id)) {
-      throw new TypeError(`requirement ${requirement.id} appears in both the primary and the second program pack`);
+  const owner = new Map<string, MajorRulePack>();
+  for (const pack of [primary, ...(secondary ? [secondary] : [])]) {
+    for (const requirement of pack.requirements) {
+      if (definitions.has(requirement.id)) {
+        throw new TypeError(`requirement ${requirement.id} appears in both the primary and the second program pack`);
+      }
+      definitions.set(requirement.id, requirement);
+      owner.set(requirement.id, pack);
     }
-    definitions.set(requirement.id, requirement);
   }
   if (rows.length > MAX_REQUIREMENTS) throw new RangeError('too many requirements for one projection');
   const impacts = new Map<string, OverlapRowImpact>();
   for (const impact of [...audit.overlap.rowImpacts.primary, ...audit.overlap.rowImpacts.doubleMajor]) impacts.set(impact.requirementId, impact);
+
+  // Attempts the ledger set aside without deciding them (pending recognition, a term not ended by asOf,
+  // an unapproved or forked retake, crowded duplicates). An unmet row they could feed is not a settled
+  // shortfall: it stays MISSING but is listed for review. Settled exclusions (official exclusion,
+  // duplicate, superseded retake) do not flag anything.
+  const byToken = new Map(input.attempts.map(attempt => [attempt.attemptToken, attempt]));
+  const undecided = audit.primary.excludedAttempts
+    .filter(row => row.reason === 'PENDING_RECOGNITION' || row.reason === 'NEEDS_REVIEW')
+    .map(row => byToken.get(row.attemptToken)!)
+    .filter(attempt => attempt.creditUnits > 0);
+  const touchedByUndecided = (definition:LedgerRequirement):boolean => {
+    const pack = owner.get(definition.id)!;
+    return undecided.some(attempt => {
+      const course = attempt.canonicalCourseId;
+      switch (definition.kind) {
+        case 'CREDIT_TOTAL': return true;
+        case 'CATEGORY_MINIMUM': return (pack.courseAreas[course] ?? []).includes(definition.areaId);
+        case 'REQUIRED_COURSE': return definition.canonicalCourseId === course;
+        case 'K_OF_N': return definition.courseIds.includes(course);
+        case 'NON_CREDIT': return false;
+      }
+    });
+  };
 
   const requirements:MajorWhatIfRequirementProgress[] = [];
   const reviewRequirementIds:string[] = [];
@@ -195,7 +224,9 @@ function project(role:WhatIfProjection['role'], input:MajorWhatIfRequest, enroll
       requirements.push({requirementId:row.requirementId, state:'SATISFIED'});
       continue;
     }
-    if (row.state === 'NEEDS_REVIEW' || row.state === 'NOT_CHECKED') reviewRequirementIds.push(row.requirementId);
+    if (row.state === 'NEEDS_REVIEW' || row.state === 'NOT_CHECKED' || touchedByUndecided(definition)) {
+      reviewRequirementIds.push(row.requirementId);
+    }
     const progress:MajorWhatIfRequirementProgress = {requirementId:row.requirementId, state:'MISSING'};
     if (definition.kind === 'CREDIT_TOTAL' || definition.kind === 'CATEGORY_MINIMUM') {
       // A row held over a shared course uses the figures without it: the reading if the overlap is not allowed.

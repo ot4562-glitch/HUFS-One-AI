@@ -115,6 +115,66 @@ describe('buildMajorWhatIf (#11, #82)', () => {
     expect(b).toEqual({requirementId:'SYN-B-REQ', state:'MISSING'});
   });
 
+  it('an attempt the ledger set aside undecided flags every unmet row it could feed (review of #217)', () => {
+    // C1 pending recognition: earned total drops to 30 (230 remain). On the C side C1 is C's only area
+    // course, so C's area row is 6 short but held for review; the total is held too. A's area row is met
+    // (A1 A2 S1 = 18) and stays SATISFIED. C's required C2 was never taken, so C1 cannot decide it.
+    const pendingC1 = ATTEMPTS.map(a => (a.canonicalCourseId === 'SYN-C1' ? {...a, recognition:'PENDING' as const} : a));
+    const result = ready(run({action:'CHANGE_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-C'}, {attempts:pendingC1}));
+    expect(result.hypothetical.requirements).toEqual([
+      {requirementId:'SYN-A-TOTAL', state:'MISSING', missingCreditUnits:230},
+      {requirementId:'SYN-A-MAJOR-DM', state:'SATISFIED'},
+      {requirementId:'SYN-A-REQ', state:'SATISFIED'},
+      {requirementId:'SYN-C-MAJOR', state:'MISSING', missingCreditUnits:6},
+      {requirementId:'SYN-C-REQ', state:'MISSING'},
+    ]);
+    expect(result.hypothetical.reviewRequirementIds).toEqual(['SYN-A-TOTAL', 'SYN-C-MAJOR']);
+    // Now (A + B): C1 is in neither pack, so only the total gains a flag next to the two overlap holds.
+    expect(result.current.reviewRequirementIds).toEqual(['SYN-A-TOTAL', 'SYN-A-MAJOR-DM', 'SYN-B-MAJOR']);
+    // 전공심화 A alone: its area row is 18 short in area A, which pending C1 cannot feed: a plain shortfall.
+    const alone = ready(run({action:'REMOVE_DOUBLE_MAJOR'}, {attempts:pendingC1})).hypothetical;
+    expect(alone.requirements.find(r => r.requirementId === 'SYN-A-MAJOR-MD')).toEqual({requirementId:'SYN-A-MAJOR-MD', state:'MISSING', missingCreditUnits:18});
+    expect(alone.reviewRequirementIds).toEqual(['SYN-A-TOTAL']);
+  });
+
+  it('an undecided course flags the required-course and one-of rows that name it, and no others', () => {
+    // F names C1 directly (required) and in a one-of list; C1 is pending, so both are unmet but flagged.
+    // The one-of row without C1 (G1 or G2: neither taken) is a plain shortfall.
+    const packF:MajorRulePack = {rulePackVersion:'SYN-F-DM-1', rulePackState:'APPROVED', courseAreas:{},
+      requirements:[
+        {id:'SYN-F-REQ-C1', kind:'REQUIRED_COURSE', canonicalCourseId:'SYN-C1', evidenceRefs:['EV-SYN-F']},
+        {id:'SYN-F-ONE-OF-C1', kind:'K_OF_N', courseIds:['SYN-C1', 'SYN-F2'], k:1, evidenceRefs:['EV-SYN-F']},
+        {id:'SYN-F-ONE-OF-OTHER', kind:'K_OF_N', courseIds:['SYN-G1', 'SYN-G2'], k:2, evidenceRefs:['EV-SYN-F']}]};
+    const pendingC1 = ATTEMPTS.map(a => (a.canonicalCourseId === 'SYN-C1' ? {...a, recognition:'PENDING' as const} : a));
+    const h = ready(run({action:'CHANGE_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-F'},
+      {attempts:pendingC1, programs:[...CATALOG, {role:'DOUBLE_MAJOR', programId:'SYN-MAJ-F', pack:packF}]})).hypothetical;
+    expect(h.requirements.filter(r => r.requirementId.startsWith('SYN-F')).map(r => r.state)).toEqual(['MISSING', 'MISSING', 'MISSING']);
+    expect(h.reviewRequirementIds).toEqual(['SYN-A-TOTAL', 'SYN-F-REQ-C1', 'SYN-F-ONE-OF-C1']);
+  });
+
+  it('a term not ended by asOf and an unapproved retake are undecided too; settled exclusions flag nothing', () => {
+    const scenario:WhatIfScenario = {action:'CHANGE_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-C'};
+    // A2 "earned" in 2026-2, which has not ended on 2026-11-01: A's area row has A1 + S1 = 12 of 18.
+    const unended = ATTEMPTS.map(a => (a.canonicalCourseId === 'SYN-A2' ? {...a, term:'2026-2'} : a));
+    const u = ready(run(scenario, {attempts:unended})).hypothetical;
+    expect(u.requirements.find(r => r.requirementId === 'SYN-A-MAJOR-DM')).toEqual({requirementId:'SYN-A-MAJOR-DM', state:'MISSING', missingCreditUnits:6});
+    expect(u.reviewRequirementIds).toEqual(['SYN-A-TOTAL', 'SYN-A-MAJOR-DM']);
+    // A retake of A1 without approval is held; the first A1 still counts, so every A row stays met and
+    // only the unmet total is flagged.
+    const retake = [...ATTEMPTS, course('SYN-A1', {attemptToken:'SYN-A1-RETAKE', term:'2026-1', supersedesAttemptToken:'SYN-A1-T'})];
+    const r = ready(run(scenario, {attempts:retake})).hypothetical;
+    expect(r.requirements.filter(x => x.state === 'SATISFIED').map(x => x.requirementId)).toEqual(['SYN-A-MAJOR-DM', 'SYN-A-REQ', 'SYN-C-MAJOR']);
+    expect(r.reviewRequirementIds).toEqual(['SYN-A-TOTAL']);
+    // An official exclusion is settled: C's area row is a plain shortfall, and nothing is flagged.
+    const excluded = ATTEMPTS.map(a => (a.canonicalCourseId === 'SYN-C1' ? {...a, recognition:'EXCLUDED' as const} : a));
+    const e = ready(run(scenario, {attempts:excluded})).hypothetical;
+    expect(e.requirements.find(x => x.requirementId === 'SYN-C-MAJOR')).toEqual({requirementId:'SYN-C-MAJOR', state:'MISSING', missingCreditUnits:6});
+    expect(e.reviewRequirementIds).toEqual([]);
+    // A duplicate (the same course in progress and earned) is settled: one counts, no flag.
+    const duplicate = [...ATTEMPTS, course('SYN-C1', {attemptToken:'SYN-C1-AGAIN', ledger:'IN_PROGRESS', term:'2026-2'})];
+    expect(ready(run(scenario, {attempts:duplicate})).hypothetical.reviewRequirementIds).toEqual([]);
+  });
+
   it('dropping the double major switches the primary to its 전공심화 pack', () => {
     const result = ready(run({action:'REMOVE_DOUBLE_MAJOR'}));
     expect(result.hypothetical.degreePath).toBe('MAJOR_DEEPENING');
