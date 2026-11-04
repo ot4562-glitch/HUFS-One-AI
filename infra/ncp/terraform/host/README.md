@@ -1,8 +1,8 @@
 # NCP approved SSH-only host provisioning (phase 02)
 
-**Status: PR implementation / NCP resource API NOT_RUN / RELEASE_BLOCKED.**
+**Status (2026-11-04): code integrated to main by PR #216 / real NCP resource API and Terraform apply NOT_RUN / RELEASE_BLOCKED.**
 
-This module follows #211 network Terraform; it does not replace the network
+This module follows #211 network Terraform (also integrated in main through #216); it does not replace the network
 state and must never use the default VPC/ACG. It creates **one** approved
 NIC, termination-protected Ubuntu server and billable Public IP. No NCP init
 script, public HTTP/443, private repo clone, student originals, paid AI or
