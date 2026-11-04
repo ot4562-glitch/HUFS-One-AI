@@ -1,5 +1,7 @@
 # Codex / Claude Code의 NCP 작업 매뉴얼
 
+> **현재 상태 안내:** 2026-11-04 코드 인계 최신: 네트워크/host Terraform, Ubuntu 설치 및 ZIP·SSH preview/rollback은 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main에 들어있고 열린 PR 0건. 에이전트가 실 NCP 서버를 생성하거나 비용/계정·실 SSH/실자료권리/공개 TLS 승인까지 완료한 것은 **아님**. 기본 plan과 사용자 별도 비용·운영 인수 게이트 유지. [STATUS](../../STATUS.md)·[인수서](../../docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+
 코드 담당 심민성은 자동화·검증·PR을 제공하고, 이서연은 계정·서비스 이용권·SKU·
 요금·승인된 호스트·실측·반납 영수증을 확인한다. 에이전트는 사람 승인이나
 기관/학생 권리를 생성하지 않는다. 기본 설치 위치는 **관리자 개발 PC 또는
