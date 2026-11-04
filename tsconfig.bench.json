@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": ".",
+    "outDir": "dist/bench",
+    "declaration": false,
+    "sourceMap": false,
+    "noEmitOnError": true,
+    "types": ["node"]
+  },
+  "include": ["packages/core/src/normalization/benchmark.ts"]
+}
