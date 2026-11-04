@@ -22,6 +22,20 @@ def forbidden(name):
             (lower.startswith('reference/') and any(x in lower.split('/') for x in ['raw','text','data','links','screenshots'])) or
             lower.endswith(('hufs_ui.pdf','.key','.pem','.pfx','.p12','.db','.sqlite','.sqlite3','.dump','.log','.zip','.7z')) or
             any(x.startswith('.env') for x in lower.split('/')))
+# Sparse checkout omits working files, not the complete commit tree. Check the
+# full HEAD path inventory without fetching/opening any protected blob or name.
+if sys.argv[1:] == ['--committed-tree-only']:
+    tree_result = git('ls-tree', '-r', '-z', '--name-only', 'HEAD')
+    if tree_result.returncode != 0:
+        print(json.dumps({'result':'FAIL','scope':'GIT_TREE_METADATA_ONLY','reason':'TREE_UNAVAILABLE'}))
+        sys.exit(1)
+    tree_paths = entries(tree_result)
+    count = sum(1 for path in tree_paths if forbidden(path))
+    print(json.dumps({'result':'PASS' if count == 0 else 'FAIL',
+                      'scope':'GIT_TREE_METADATA_ONLY', 'total_paths':len(tree_paths),
+                      'protected_count':count, 'history_not_scanned':True}))
+    sys.exit(0 if count == 0 else 1)
+
 tracked_result=git('ls-files','-z');check('git_index_readable',tracked_result.returncode==0)
 tracked=entries(tracked_result)
 candidate_result=git('ls-files','--cached','--others','--exclude-standard','-z');check('git_candidates_readable',candidate_result.returncode==0)
