@@ -6,7 +6,7 @@
 
 - **공모전 참여자 5명 전원 동의:** 사용자 확인. 실제 원본 수강/Forms 제출 목표는 4명이며 5명 동의를 5건의 실제 원본 제출로 해석하지 않는다.
 - **HUFSAbility 수집 허가 확보:** 사용자 확인. 공식 강의시간표의 공개 **교수명·강의명** 범위는 학교 수집 허가 아래 필요한 수업 안내 데이터로 취급하고 이름 일괄 마스킹을 필수로 두지 않는다. 비공개 교수 개인정보·평가/평판은 미수집. 이 허가는 공식 운영·SSO/비공개 API 사용 허가나 전체 저작물 재배포 허가를 의미하지 않는다.
-- 실제 허가 목적/보존/수집·재배포/외부 모델 사용 범위는 비공개 증빙 원장으로 확인. 현재 private Git에서 보호 원본 6경로가 추적돼 발생한 **개인정보 경계 2 FAIL은 [PR #212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 리뷰·병합·full checkout 재검증 전 별도 미완료**이다. 과거 Git history/clone 삭제를 승인한 것은 아니다.
+- 실제 허가 목적/보존/수집·재배포/외부 모델 사용 범위는 비공개 증빙 원장으로 확인. 기존 private Git의 보호 원본 6경로는 **[#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) main 병합으로 현재 추적 경로 0**(2026-11-04 통합 HEAD, metadata-only 확인). 과거 **full private checkout의 2 FAIL 재실행/해소, 기존 Git 이력·clone·백업/최초 접근**은 아직 별도 미검증이다. 과거 Git history/clone 삭제를 승인한 것은 아니다.
 - 현재 상태 정본: [데이터 거버넌스](../../docs/DATA_GOVERNANCE.md), [STATUS](../../STATUS.md), [#46](https://github.com/minseong-hufs/HUFS-One-AI/issues/46). 출시 실인증/운영 보안은 계속 `RELEASE_BLOCKED`.
 
 ## 과거 참고 기록 — 2026-10-29 당시의 미확인 상태
