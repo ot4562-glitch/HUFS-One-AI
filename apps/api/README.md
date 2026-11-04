@@ -237,3 +237,39 @@ Laya 워커는 Fastify HTTP handler·REVIEWER GET·일반 데모 요청 경로�
 - `GET /api/auth/session`과 초대 redeem이 `readOnly:false,sandboxOnly:true`를 반환해 합성 수정 허용과 실제 원장 읽기/쓰기를 명확히 구분한다. 인증되지 않은 local main.ts는 여전히 401 전부 차단.
 - 루트 `npm run check`는 API/공통 계약/추천 core/웹 UI 합성 테스트 전체를 실행한다. PR #28 UI 상태관리 테스트도 `main`에 병합됐다. 실제 브라우저 Google OAuth/JWKS/PKCE/OTP·PostgreSQL E2E가 없으면 외부 심사자에게 배포하지 않는다.
 - [NCP 추천 SKU/공식 비용·기간](../../docs/NCP_OPERATIONS_2026.md), API 담당 [#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), UI [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), NCP [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
+
+
+## Internal operator PostgreSQL/OIDC acceptance launcher (stacked on #183)
+
+`apps/api/src/operator-postgres-runtime.ts` connects **seven distinct, restricted
+PostgreSQL LOGIN roles** through the existing TLS-verified pool factory, verifies
+each role/SQL readiness before binding Fastify to `127.0.0.1`, and closes every
+pool on startup failure and shutdown. A real Google OIDC code-exchange callback,
+independent current evidence rights, protected 32+ byte digest key and role DSNs
+must be injected from an **operator-controlled private module**; they are never
+generated or committed. No migrations, reviewer admission, paid AI or crawling
+are enabled by this launcher.
+
+Plan (no private module, network or SQL):
+```bash
+node dist/apps/api/src/operator-main.js --plan
+```
+
+After independent approvals, an operator can stage an *internal* SQL/OIDC
+acceptance on an already approved host by placing a **root-owned,
+non-group-writable** `.mjs` adapter under `/etc/hufs-one/private/` that exports
+`createOperatorConfig()`. Keep credentials there or in the approved external
+secret manager, not in the repository. The operator must explicitly supply
+`HUFS_OPERATOR_CONFIG_MODULE`, `HUFS_OPERATOR_MODE=loopback-acceptance`,
+`HUFS_OPERATOR_ACK=INTERNAL_ONLY_NOT_RELEASE`, and `HUFS_OPERATOR_LOOPBACK_PORT`
+(default 3000), then use `node dist/apps/api/src/operator-main.js --apply`.
+The application must remain `NODE_ENV=development`/`APP_ENV=local`
+for this restricted acceptance path. **Never use this configuration to expose
+traffic publicly or claim a production release.**
+
+`main.ts` and `createIntegratedApi` still **reject production** until the
+independent #46/#61/#89 human, live-identity, domain/TLS, revocation, RLS,
+NCP and publication gates are accepted in a separate, reviewed release PR.
+This branch demonstrates real SQL/OIDC startup wiring but does not claim those
+external checks ran. Start/stop tests use synthetic managed-pool doubles;
+the parent #183 disposable PostgreSQL integration is separately verified in CI.
