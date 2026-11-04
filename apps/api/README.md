@@ -1,5 +1,23 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 공유 컨텍스트 자원과 해제 (#203)
+
+`POST /api/demo/contexts`의 프로세스별 전역 200개 제한에 사용자당 20개,
+세션당 10개 제한을 더한다. 세션당 5개 대상 × 2탭, 사용자당 2세션을
+동시에 수용하는 합성 시나리오를 기준으로 하며, 다른 사용자의 컨텍스트를
+강제 퇴출하지 않는다. 서버 조립의 `contextLimits: {perActor, perSession}`으로
+1~200 범위에서 조정할 수 있고 `perSession <= perActor`여야 한다.
+동일 사용자 여러 세션과 BETA/REVIEWER에 같은 정책을 적용한다.
+만료 회수·상한 검사·저장은 비동기 권한 재검사 후 동기적으로 실행한다.
+429는 내부 사용자/용량 정보 없이 `Retry-After: 300`을 반환한다.
+
+`DELETE /api/demo/contexts/:id`는 검증된 현재 actor/session의 컨텍스트만
+해제한다. Origin/CSRF가 필수이며 없거나 다른 세션의 ID도 동일한 빈 204를
+반환한다. 만료·공유/초대 철회 뒤에도 유효한 로그인 세션으로 해제할 수 있다.
+해제된 컨텍스트를 읽던 지연 응답은 반환 전에 403으로 차단한다. 로그아웃은
+해당 세션의 컨텍스트만 해제한다. 브라우저는 별도 UI 연결 전까지 기존 5분
+만료를 사용하며, 이 프로세스별 Map을 다중 서버 공통 quota로 보장하지 않는다.
+
 ## 2026-11-03 최신 서버/AI 실제 코드 경계
 
 - **main 병합:** [#145 오프라인 CLOVA General OCR/HCX-005·007 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b` (request/response·bbox/candidate 검증) 및 [#148 원자 PostgreSQL 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516` (phase/actor reserve/idempotency·UNKNOWN_BILLING hold/초과 정산 OFF). 각각 최신 HEAD 비작성자 승인·합성/일회용 PG/Chrome CI **3/3 SUCCESS**. SQL은 검토용이며 **운영 migration이나 AI 호출을 활성화하지 않음**.
