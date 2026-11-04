@@ -1,5 +1,7 @@
 # apps/web (UI · 이의상)
 
+> **2026-11-04 현재:** 이의상 UI의 #151 공고 정정, #154 계획 나란히, #155 What-if 및 기존 #72~#76 합성 시연 코드는 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main f23b86bb 통합, OPEN PR 0 / 최신 Chrome·TASK-00·NCP IaC CI 3/3 SUCCESS. 아래 2026-11-02 '미병합'·'변경 요청'은 당시 이력으로 해석한다. **실사용 기관 데이터/실 Google/학교 학칙/11영역76화면·스크린리더/20 포스터는 미완료, RELEASE_BLOCKED**. [STATUS](../../STATUS.md).
+
 ## 2026-11-02 동아리 core main 병합 이후 UI 인수인계
 
 - [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 순수 가상 동아리 추천·승인 시점 안전 코어가 HEAD `8e88a4b` 타인 APPROVED+Actions 2/2 성공 후 **main `8f76c388` 병합**. 12개 가상 승인 글, 10분야, 5개 합성 학생, 포스터 `SYN-POSTER-CLUB-*` **ID만** 있음.
