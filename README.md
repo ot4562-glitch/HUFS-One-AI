@@ -29,7 +29,7 @@
 - **오류 PR 수정 진행:** #175 Provider Owner UI/API·테스트, #177 PostgreSQL 동시성 합성 격리, #178 학교메일 OTP/REVIEWER 진입 권한에 새 수정 커밋을 제출했습니다. 최신 HEAD CI 통과가 확인되기 전 **수정 최종 완료/병합 완료로 표기하지 않습니다**.
 - **협업자 코드 리뷰:** #152 strict 이중전공 입력 검증 P2 수정, #189 공식 승인 동일 교과목 규칙만 적용하는 순수 로직은 비작성자 리뷰 APPROVED. 그러나 둘 다 최신 CI 실패, 운영 학사 RulePack/권리/서비스 E2E는 미수락. #161은 CI/비작성자 승인 이력이 있으나 main 충돌. #166은 Draft.
 - **CI 관측:** #186–#190의 최신 워크플로는 실행 실패, 일부는 job 실행 단계가 비어 근본 원인이 아직 불명확. 작성자 PR의 일부 과거 Vitest/실 PostgreSQL 실패는 #175/#177/#178 브랜치에 수정했으나 다시 검증해야 합니다.
-- **출시 상태 RELEASE_BLOCKED:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) Git 과거 게시/동의·개인정보 **2 FAIL**, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 독립 사람 gold **0/200**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실 OIDC·학교메일/TLS·NCP·영속 PG·권한 E2E 미검증. 실제 자료 반입/유료 호출/공개 배포는 별도 승인 전 금지.
+- **출시 상태 RELEASE_BLOCKED:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 현재 HEAD 보호 추적 경로 **0개**(#212 main 병합), 과거 Git 게시·clone/권리와 **이전 full private checkout 2 FAIL 재검증 필요**, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 독립 사람 gold **0/200**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실 OIDC·학교메일/TLS·NCP·영속 PG·권한 E2E 미검증. 실제 자료 반입/유료 호출/공개 배포는 별도 승인 전 금지.
 
 ## 로컬 합성 개발
 
@@ -55,7 +55,7 @@ npm run dev:web -- --mode synthetic
 
 ## 중요한 권한/자료 경계
 
-- GitHub Private에 과거 추적된 보호 학생 수강/Forms 원본은 **접근·게시 이력/목적별 공유 권한 감사 미완료**입니다. 기존 기록의 개인정보 경계 2 FAIL을 통과한 것으로 표시하지 않습니다. 원본·개인별 응답을 CI, 공개 웹, 외부 모델/클라우드, PR/이슈에 반입하지 않습니다.
+- GitHub Private에 과거 추적된 보호 학생 수강/Forms 원본은 **접근·게시 이력/목적별 공유 권한 감사 미완료**입니다. [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 현재 main 경로 0개는 확인했지만, **과거 full private checkout 2 FAIL이 재실행해 PASS로 바뀌었다고 표시하지 않습니다.** 원본·개인별 응답을 CI, 공개 웹, 외부 모델/클라우드, PR/이슈에 반입하지 않습니다.
 - 실제 공고·학칙·교과/상담 자료는 승인된 출처와 시점, 개별 이용권·권한이 필요한 경우에만 처리합니다. 가상 입력과 `UNKNOWN/NEEDS_REVIEW`는 공식 확정 판정과 구분합니다.
 - 예정 도메인 `외대.온라인.한국` 및 Google OAuth+외대 이메일 확인은 **설계**이며 실 DNS/TLS·OIDC/메일·PostgreSQL·NCP·익명 접근 차단 배포는 현재 승인/검증 전입니다.
 - 오프라인 CI 합격·PR 병합·이슈 체크는 출시/학교 운영 승인이나 유료 서비스 개통의 증명이 아닙니다.
