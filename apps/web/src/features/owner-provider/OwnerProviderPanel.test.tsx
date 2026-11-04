@@ -65,6 +65,28 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     expect(screen.queryByRole('button',{name:/실행/})).toBeNull();
     expect(f.submit).not.toHaveBeenCalled();
   });
+  it('discards a delayed manual result after another approved input is selected',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture('BETA',[item,{...item,inputRef:'SYN-OTHER-INPUT'}]);
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/아직 결과가 정산되지 않았습니다/);
+    fireEvent.click(screen.getByRole('button',{name:'동일 요청으로 상태 재확인'}));
+    await screen.findByText(/Synthetic approved notice/);
+    const stored=await f.read.mock.results[0]!.value;
+    let complete!:(value:ProviderStoredJob)=>void;
+    f.read.mockImplementationOnce(()=>new Promise(resolve=>{complete=resolve;}));
+    fireEvent.click(screen.getByRole('button',{name:'보존된 후보 다시 조회'}));
+    await waitFor(()=>expect(f.read).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole('radio',{name:/후보 2/}));
+    expect(screen.queryByText(/Synthetic approved notice/)).toBeNull();
+    await act(async()=>{complete(stored);});
+    expect((screen.getByRole('radio',{name:/후보 2/}) as HTMLInputElement).checked).toBe(true);
+    expect(screen.queryByText(/Synthetic approved notice/)).toBeNull();
+    expect(screen.queryByLabelText('현재 권한으로 재검증된 AI 후보')).toBeNull();
+  });
   it('REVIEWER cannot list or see the BETA input even if a port was supplied incorrectly',async()=>{
     const f=fixture('REVIEWER');render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByRole('alert');

@@ -36,9 +36,11 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
   const idempotency=useRef<string|null>(null);
+  const selectionVersion=useRef(0);
 
   useEffect(()=>{void port.session.initialize();},[port]);
   useEffect(()=>{
+    selectionVersion.current++;
     setItems(null);setSelection('');setConfirmation(false);
     setAccepted(null);setStored(null);setNotice('');idempotency.current=null;
     if(session.status!=='READY')return;
@@ -54,8 +56,9 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const canSubmit=!!selected&&!!taskPath&&Date.parse(selected.expiresAt)>Date.now();
 
   const read=async(jobId:string,path:AiTaskPath)=>{
+    const version=selectionVersion.current;
     const job=await port.session.runLatest('provider-approved-result',signal=>port.read(jobId,path,signal));
-    if(job&&port.session.getState().status==='READY')setStored(job);
+    if(job&&version===selectionVersion.current&&port.session.getState().status==='READY')setStored(job);
   };
   const submit=async()=>{
     if(!selected||!taskPath||!canSubmit||busy||!confirmation||session.status!=='READY')return;
@@ -92,6 +95,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
             return <label key={value}><input type="radio" name="approved-ai-input"
               checked={selection===value} disabled={busy}
               onChange={()=>{
+                selectionVersion.current++;
                 setSelection(value);setConfirmation(false);setAccepted(null);
                 setStored(null);setNotice('');idempotency.current=null;
               }}/>
@@ -113,7 +117,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
       {accepted?.state==='NEEDS_REVIEW'&&taskPath&&<button type="button" disabled={busy}
         onClick={()=>{void read(accepted.jobId,taskPath);}}>보존된 후보 다시 조회</button>}
       {accepted?.state==='NEEDS_REVIEW'&&<button type="button" disabled={busy}
-        onClick={()=>{idempotency.current=null;setAccepted(null);setStored(null);setConfirmation(false);
+        onClick={()=>{selectionVersion.current++;idempotency.current=null;setAccepted(null);setStored(null);setConfirmation(false);
           setNotice('새 실행은 다시 확인해야 합니다.');}}>새 실행 준비</button>}
     </div>}
     {accepted&&<section aria-label="Provider 작업 상태">
