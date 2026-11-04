@@ -71,7 +71,9 @@ try{
  assert.equal((await snapshot()).snapshot.experienceSignals.mode,'SYNTHETIC_OVERLAY');
  await page.getByLabel('계획 과목 ID',{exact:true}).fill('SYN-COURSE-001');
  await page.getByRole('button',{name:'계획 초안 저장',exact:true}).click();await version(6);
- await page.getByLabel('시연 알림 선호 저장',{exact:true}).check();await version(7);
+ // This controlled preference changes only after the server confirms its CAS receipt.
+ await page.getByLabel('시연 알림 선호 저장',{exact:true}).click();await version(7);
+ assert.equal(await page.getByLabel('시연 알림 선호 저장',{exact:true}).isChecked(),true);
  assert.equal((await snapshot()).profile.workspace.notifications,true);
  await page.getByRole('region',{name:'빈 계정 일정'}).getByRole('button').first().click();
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
@@ -85,6 +87,7 @@ try{
    const response=await route.fetch();held();await gate;try{await route.fulfill({response});}catch{}
  });
  const reload=other.reload();await waiting;
+ await page.bringToFront();await version(7);
  await page.getByRole('button',{name:'설정·보관함 전체 초기화',exact:true}).click();
  await page.getByRole('button',{name:'초기화 확인',exact:true}).click();await version(8);
  release();await reload;await version(8,other);
