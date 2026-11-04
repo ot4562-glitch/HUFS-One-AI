@@ -1,5 +1,7 @@
 # 코딩을 몰라도 알 수 있는 전체 흐름
 
+> **2026-11-04 통합 후 현재 판단:** 2026-11-04 팀 전체 실제 현황: [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 통합 병합, OPEN PR 0건 / OPEN 일반 이슈 40건, main 3 CI SUCCESS. 팀별 코드 주요 변경은 반영했으나 실 Google/PG·학교/학사자료·NCP·독립 gold/스크린리더는 미수락으로 RELEASE_BLOCKED. 아래 2026-11-02~03 당시 요청·리뷰 문구는 과거 기록이고 지금 협업자에게 PR 처리를 요청하라는 지시가 아니다. [STATUS](../STATUS.md).
+
 ## 2026-11-02 최근 협업 정리 — 사용자 화면의 새 방향
 
 **기존 HUFSAbility의 익숙한 메뉴는 없애지 않습니다.** [관찰 보고서](HUFSABILITY_UI_COMPONENT_ATLAS.md)의 11개 학생 화면 분류·76개 화면과 [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 공식 공개 안내 5분류·24기능/공개 4영역을 대조해 **전체 메뉴에서 모두 찾아볼 수 있게** 만듭니다. 하지만 지금 쓸 수 없는 기능은 **🚫 미지원/검증 전**, 현재 검증된 합성 시연 기능만 실행합니다. 이의상 UI, 심민성 학생가치/공식성 검토·기능/권한/manifest를 맡아 [**새 UX 디자인 이슈 #141**](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141)로 작업합니다. 과거 HUFSAbility와 똑같은 모양을 만드는 것이 아니라, 학생이 익숙하게 찾되 **더 쉽고 멋지고 접근성이 좋은 새 화면**을 목표로 합니다. 학교가 공식 업데이트한 사이트라고 표현하지 않습니다.
