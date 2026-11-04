@@ -24,7 +24,8 @@
 
 ## 구현·협업 판단 — 2026-11-04 현재
 
-- **GitHub 기준 (2026-11-04):** 열린 일반 이슈 **40건**, 열린 PR **0건**. [통합 PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)이 main f23b86bb에 merge commit으로 병합됐고, 병합 후 TASK-00/NCP IaC/Chrome **3/3 CI SUCCESS**. 제품 공개는 별개. [실시간 STATUS](STATUS.md)를 정본으로 사용하며 오래된 HEAD 또는 PR 수를 그대로 재사용하지 않습니다.
+- **GitHub 기준 (2026-11-04):** 열린 일반 이슈 **15건** (기존 40건에서 25건 정본으로 이관 후 종료), 열린 PR **0건**. [통합 PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)이 main f23b86bb에 merge commit으로 병합됐고, 병합 후 TASK-00/NCP IaC/Chrome **3/3 CI SUCCESS**. 제품 공개는 별개. [실시간 STATUS](STATUS.md)를 정본으로 사용하며 오래된 HEAD 또는 PR 수를 그대로 재사용하지 않습니다.
+- **2026-11-04 이슈 정리:** 중복되던 열린 이슈 **40건→15건**, 25건 `duplicate` 이관 종료. 현행 이슈는 **11건 단독 담당/4건 실제 공동 작업**이고, 완료 구현은 설명으로·미완료만 체크리스트로 분리했다. [정본 이슈 15개와 이관 원장](STATUS.md#5-2026-11-04-이슈-구조-재정리-기존-open-40--현재-open-15)을 참고한다. 원래 7개 닫힌 이슈는 변경하지 않았다.
 - **main 합성 하위 수락:** #156 SSH-only 프리뷰, #157 승인 입력 권한, #158 SETTLED PostgreSQL 결과, #159 기본 OFF Laya 스케줄러, #160 Raster/OCR, #162 Owner 이중전공 SQL, #163 EMPTY_DEMO CAS/RESET, #164 승인 SourceRevision, #168 PostgreSQL 인증 조립. 이는 실제 운영 서비스 배포 완료가 아닙니다.
 - **오류 PR 수정 진행:** #175 Provider Owner UI/API·테스트, #177 PostgreSQL 동시성 합성 격리, #178 학교메일 OTP/REVIEWER 진입 권한에 새 수정 커밋을 제출했습니다. 최신 HEAD CI 통과가 확인되기 전 **수정 최종 완료/병합 완료로 표기하지 않습니다**.
 - **협업자 코드 리뷰:** #152 strict 이중전공 입력 검증 P2 수정, #189 공식 승인 동일 교과목 규칙만 적용하는 순수 로직은 비작성자 리뷰 APPROVED. 그러나 둘 다 최신 CI 실패, 운영 학사 RulePack/권리/서비스 E2E는 미수락. #161은 CI/비작성자 승인 이력이 있으나 main 충돌. #166은 Draft.
