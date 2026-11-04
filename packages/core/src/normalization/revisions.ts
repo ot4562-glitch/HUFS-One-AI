@@ -78,7 +78,11 @@ export function selectCurrentRevisions(revisions:readonly RevisionRecord[], asOf
     else known.push(r);
   }
   const bySource = new Map<string, RevisionRecord[]>();
-  for (const r of known) bySource.set(r.sourceId, [...(bySource.get(r.sourceId) ?? []), r]);
+  for (const r of known) {
+    const bucket=bySource.get(r.sourceId);
+    if(bucket)bucket.push(r);
+    else bySource.set(r.sourceId,[r]);
+  }
 
   const current = new Map<string, RevisionRecord>();
   for (const [sourceId, list] of bySource) {
