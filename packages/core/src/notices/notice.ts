@@ -91,7 +91,9 @@ export interface NoticeEvaluation {
   adminReportDeadline?:string;
 }
 
-export type NoticeExclusionReason = 'REJECTED'|'EXPIRED'|'FUTURE_PUBLICATION'|'INVALID_DATETIME'|'INVALID_COHORT';
+/** DUPLICATE_ID: the same notice id arrived more than once (e.g. two revisions slipped past the gate).
+ * Every copy is excluded — the core never guesses which one is current (#52). */
+export type NoticeExclusionReason = 'REJECTED'|'EXPIRED'|'FUTURE_PUBLICATION'|'INVALID_DATETIME'|'INVALID_COHORT'|'DUPLICATE_ID';
 export interface NoticeExclusion {noticeId:string; reason:NoticeExclusionReason}
 
 export const CRITICAL_DUE_DAYS = 7;
@@ -236,7 +238,10 @@ export function composeNotices(student:NoticeStudent, notices:readonly Notice[],
   if (now === undefined) throw new RangeError('asOf must be an ISO datetime');
   const excluded:NoticeExclusion[] = [];
   const active:{notice:Notice; ev:NoticeEvaluation}[] = [];
+  const counts = new Map<string, number>();
+  for (const n of notices) counts.set(n.id, (counts.get(n.id) ?? 0) + 1);
   for (const notice of notices) {
+    if ((counts.get(notice.id) ?? 0) > 1) { excluded.push({noticeId:notice.id, reason:'DUPLICATE_ID'}); continue; }
     const invalid = validateNotice(notice);
     const until = time(notice.validUntil);
     const published = time(notice.publishedAt);
