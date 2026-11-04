@@ -343,12 +343,18 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
 /**
  * The 기초 field list the page loads when its 기초 tab is open (select ag_basic_fld_cd), without the
  * campus suffix and the "전체" choice. Empty on other tabs, so no 개설영역 is read as 기초 there.
+ * Only a real name attribute counts (any quoting, any attribute order; not data-name or a longer
+ * name), lists inside HTML comments are ignored, and two lists that disagree count as none.
  */
 function basicFields(html:string):Set<string> {
-  const list = /<select\b[^>]*\bname="ag_basic_fld_cd"[^>]*>([\s\S]*?)<\/select>/i.exec(html)?.[1] ?? '';
-  return new Set([...list.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
-    .map(match => cellText(match[1]!).replace(/\s*\((?:서울|글로벌)\)$/, ''))
-    .filter(label => label !== '' && label !== '전체'));
+  const page = html.replace(/<!--[\s\S]*?-->/g, '');
+  const lists = [...page.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)]
+    .filter(match => /(?:^|\s)name\s*=\s*(?:"ag_basic_fld_cd"|'ag_basic_fld_cd'|ag_basic_fld_cd(?=[\s/>]|$))/i.test(match[1]!))
+    .map(match => [...match[2]!.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
+      .map(option => cellText(option[1]!).replace(/\s*\((?:서울|글로벌)\)$/, ''))
+      .filter(label => label !== '' && label !== '전체'));
+  const keys = new Set(lists.map(list => JSON.stringify([...new Set(list)].sort())));
+  return keys.size === 1 ? new Set(lists[0]) : new Set();
 }
 
 const CAMPUS_RADIO:Readonly<Record<string, TimetableCampus>> = {H1:'SEOUL', H2:'GLOBAL'};

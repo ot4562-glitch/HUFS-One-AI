@@ -206,6 +206,35 @@ describe('importWisTimetable', () => {
     expect(mixed.rows.map(row => row.needsReview)).toEqual([true, true]);
   });
 
+  it('reads the 기초 field list only from a real ag_basic_fld_cd select, in any attribute form', () => {
+    const rows:Row[] = [{code:'SYN810101', title:'가상 기초', area:'가상단과대학', grade:''}];
+    const areaOf = (extra:string) => importWisTimetable(request(page(rows).replace('<table>', `${extra}<table>`))).rows[0]!.area;
+    const opts = '<option value="70">전체&nbsp;(서울)</option><option value="71">가상단과대학&nbsp;(서울)</option>';
+    // Accepted: attribute order, quoting, case, whitespace, entities and markup inside the option text.
+    for (const select of [
+      `<select id="x" class="y" name="ag_basic_fld_cd">${opts}</select>`,
+      `<select name='ag_basic_fld_cd' id="x">${opts}</select>`,
+      `<select name=ag_basic_fld_cd>${opts}</select>`,
+      '<SELECT NAME = "ag_basic_fld_cd"><OPTION VALUE="71">가상단과대학 (서울)</OPTION></SELECT>',
+      `<select\n  name="ag_basic_fld_cd"\n>\n<option selected value="71">\n  <span>가상단과대학</span>&nbsp;(서울)\n</option></select>`,
+      `<select name="ag_basic_fld_cd"><option>가상단과대학 (글로벌)</option></select>`,
+      `<select name="ag_basic_fld_cd">${opts}</select><select name="ag_basic_fld_cd">${opts}</select>`,
+    ]) expect(areaOf(select), select).toBe('BASIC');
+    // Refused (stays OTHER): look-alike names, a list inside an HTML comment, disagreeing lists,
+    // an empty list, only "전체", or a label that differs from the row's 개설영역.
+    for (const select of [
+      `<select data-name="ag_basic_fld_cd">${opts}</select>`,
+      `<select name="ag_basic_fld_cd2">${opts}</select>`,
+      `<select name=ag_basic_fld_cd_x>${opts}</select>`,
+      `<select id="ag_basic_fld_cd">${opts}</select>`,
+      `<!-- <select name="ag_basic_fld_cd">${opts}</select> -->`,
+      `<select name="ag_basic_fld_cd">${opts}</select><select name="ag_basic_fld_cd"><option>다른단과대학</option></select>`,
+      `<select name="ag_basic_fld_cd"></select>`,
+      `<select name="ag_basic_fld_cd"><option>전체 (서울)</option></select>`,
+      `<select name="ag_basic_fld_cd"><option>가상단과대학원 (서울)</option></select>`,
+    ]) expect(areaOf(select), select).toBe('OTHER');
+  });
+
   it('refuses an empty table saved while the card list still shows courses', () => {
     const cards = `<div class="sch-card"><a href="javascript:lecture_open('2026','3','A','SYN010101')">▤</a></div>`;
     const half = page([]).replace('</body>', `${cards}</body>`);
