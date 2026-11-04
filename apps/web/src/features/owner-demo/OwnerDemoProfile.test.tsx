@@ -55,7 +55,7 @@ describe('#132 independent EMPTY_DEMO BETA browser UI', () => {
     expect(f.port.save).toHaveBeenCalledWith(expect.objectContaining({
       expectedVersion: 0, value: expect.objectContaining({earnedCreditUnits: 0, doubleMajor: {kind: 'NONE'}}),
     }), expect.any(AbortSignal));
-    fireEvent.click(screen.getByRole('button', {name: '네 가지 설정 초기화'}));
+    fireEvent.click(screen.getByRole('button', {name: '설정·보관함 전체 초기화'}));
     expect(f.port.reset).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', {name: '초기화 확인'}));
     await waitFor(() => expect(f.port.reset).toHaveBeenCalledTimes(1));

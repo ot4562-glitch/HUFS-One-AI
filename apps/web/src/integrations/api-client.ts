@@ -54,7 +54,7 @@ const ReviewerEnrollmentSchema = z.strictObject({
   dataMode:z.literal('SYNTHETIC'),readOnly:z.boolean(),sandboxOnly:z.literal(true),
 });
 const TeamSessionSchema = z.strictObject({
-  actorId:z.string().min(1),role:z.literal('BETA'),
+  actorId:z.string().min(1),role:z.enum(['BETA','ADMIN']),
   schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),
 });
 const ReviewerSessionSchema = z.strictObject({

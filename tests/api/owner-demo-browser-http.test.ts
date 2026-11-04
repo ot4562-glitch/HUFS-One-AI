@@ -1,5 +1,5 @@
 import {afterEach, describe, expect, it} from 'vitest';
-import {blankDemoProfileValue, type DemoProfileRecord, type DemoProfileSave, type DemoProfileReset} from '@hufs-one/contracts';
+import {blankDemoProfileValue, blankDemoProfileWorkspace, type DemoProfileRecord, type DemoProfileSave, type DemoProfileReset} from '@hufs-one/contracts';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {DemoProfileConflict, DemoProfileService, type DemoProfileStore} from '../../apps/api/src/modules/profiles/demo-profile.js';
@@ -19,19 +19,25 @@ const reviewer = {role: 'REVIEWER' as const, actorId: 'SYN-REVIEWER',
   sessionExpiresAt: '2026-12-01T00:00:00.000Z'};
 type CurrentActor = typeof beta | typeof reviewer | null;
 const data = new Map<string, DemoProfileRecord>();
-const empty = (): DemoProfileRecord => ({version: 0, value: blankDemoProfileValue(), updatedAt: null});
+const empty = (): DemoProfileRecord => ({version: 0, value: blankDemoProfileValue(), workspace: blankDemoProfileWorkspace(), updatedAt: null});
 const store: DemoProfileStore = {
   read: async id => structuredClone(data.get(id) ?? empty()),
   save: async (id, input: DemoProfileSave) => {
     const old = data.get(id) ?? empty();
     if (old.version !== input.expectedVersion) throw new DemoProfileConflict();
-    const next = {version: old.version + 1, value: input.value, updatedAt: now};
+    const next = {version: old.version + 1, value: input.value, workspace: old.workspace, updatedAt: now};
     data.set(id, next); return structuredClone(next);
+  },
+  saveWorkspace:async(id,input)=>{
+    const old=data.get(id)??empty();
+    if(old.version!==input.expectedVersion)throw new DemoProfileConflict();
+    const next={...old,version:old.version+1,workspace:input.workspace,updatedAt:now};
+    data.set(id,next);return structuredClone(next);
   },
   reset: async (id, input: DemoProfileReset) => {
     const old = data.get(id) ?? empty();
     if (old.version !== input.expectedVersion) throw new DemoProfileConflict();
-    const next = {version: old.version + 1, value: blankDemoProfileValue(), updatedAt: now};
+    const next = {version: old.version + 1, value: blankDemoProfileValue(), workspace: blankDemoProfileWorkspace(), updatedAt: now};
     data.set(id, next); return structuredClone(next);
   },
 };
@@ -85,6 +91,20 @@ describe('#132 BETA owner browser→Fastify HTTP→CAS storage full contract', (
     expect(reset?.profile.version).toBe(2);
     expect(reset?.profile.value).toEqual(blankDemoProfileValue());
     expect(reset?.snapshot.version).toBe(2);
+  });
+  it('writes the workspace through the real client/HTTP middleware, CAS and full reset',async()=>{
+    const h=harness(),workspace={...blankDemoProfileWorkspace(),bookmarks:['SYN-OPP-002'],
+      experiences:[{id:'SYN-EXP-001',title:'가상 활동',summary:'합성',topicCodes:['AI_ML' as const]}],experienceOverlay:'ON' as const};
+    const result=await h.client.owner.saveDemoWorkspace({expectedVersion:0,workspace});
+    expect(result.profile.version).toBe(1);expect(result.snapshot.workspace).toEqual(workspace);
+    await expect(h.client.owner.saveDemoWorkspace({expectedVersion:0,workspace})).rejects.toMatchObject({code:'VERSION_CONFLICT'});
+    const reset=await h.client.owner.resetDemoProfile({expectedVersion:1});
+    expect(reset.profile.workspace).toEqual(blankDemoProfileWorkspace());
+    expect(reset.snapshot.experienceSignals.mode).toBe('OFF');
+    expect(reset.snapshot.calendar.entries.some(e=>e.importance==='SAVED')).toBe(false);
+    h.setActor(reviewer);
+    await expect(h.client.owner.saveDemoWorkspace({expectedVersion:2,workspace})).rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(data.get(beta.actorId)?.workspace).toEqual(blankDemoProfileWorkspace());
   });
   it('server rejects REVIEWER and forged actor in payload, without mutating stored data', async () => {
     const h = harness();

@@ -1,16 +1,16 @@
 import {describe,expect,it} from 'vitest';
-import {blankDemoProfileValue,DemoProfileResponseSchema,type DemoProfileRecord,type DemoProfileValue} from '@hufs-one/contracts';
+import {blankDemoProfileValue,blankDemoProfileWorkspace,DemoProfileResponseSchema,type DemoProfileRecord,type DemoProfileValue} from '@hufs-one/contracts';
 import {DemoProfileService,DemoProfileConflict,type DemoProfileStore} from '../../apps/api/src/modules/profiles/demo-profile.js';
 const NOW='2026-11-03T00:00:00.000Z';
 const A:DemoProfileValue={primaryMajor:'가상 정보학',earnedCreditUnits:0,interestTopics:['AI_ML','DATA_ANALYTICS'],doubleMajor:{kind:'NONE'}};
 const B:DemoProfileValue={primaryMajor:'가상 문화학',earnedCreditUnits:1,interestTopics:['CULTURE_TOURISM','LANGUAGE_TRANSLATION'],doubleMajor:{kind:'DOUBLE',major:'가상 환경학'}};
 function fixture(){
   const rows=new Map<string,DemoProfileRecord>();
-  const store:DemoProfileStore={read:async id=>structuredClone(rows.get(id)??{version:0,value:blankDemoProfileValue(),updatedAt:null}),
+  const store:DemoProfileStore={read:async id=>structuredClone(rows.get(id)??{version:0,value:blankDemoProfileValue(),workspace:blankDemoProfileWorkspace(),updatedAt:null}),
     save:async(id,raw)=>{const before=await store.read(id);if(before.version!==raw.expectedVersion)throw new DemoProfileConflict();
-      const next={version:before.version+1,value:raw.value,updatedAt:NOW};rows.set(id,next);return next;},
+      const next={version:before.version+1,value:raw.value,workspace:before.workspace,updatedAt:NOW};rows.set(id,next);return next;},
     reset:async(id,raw)=>{const before=await store.read(id);if(before.version!==raw.expectedVersion)throw new DemoProfileConflict();
-      const next={version:before.version+1,value:blankDemoProfileValue(),updatedAt:NOW};rows.set(id,next);return next;}};
+      const next={version:before.version+1,value:blankDemoProfileValue(),workspace:blankDemoProfileWorkspace(),updatedAt:NOW};rows.set(id,next);return next;}};
   return {service:new DemoProfileService(store),store,rows};
 }
 describe('standard product demo-profile recomputation bridge',()=>{
@@ -36,7 +36,7 @@ describe('standard product demo-profile recomputation bridge',()=>{
   it('fails closed when a concurrent save overtakes derived computation',async()=>{
     const h=fixture();let reads=0;
     const actual=h.store.read;
-    h.store.read=async id=>{reads++;if(reads===2)return {version:1,value:A,updatedAt:NOW};return actual(id);};
+    h.store.read=async id=>{reads++;if(reads===2)return {version:1,value:A,workspace:blankDemoProfileWorkspace(),updatedAt:NOW};return actual(id);};
     await expect(h.service.read('synthetic:owner-a')).rejects.toBeInstanceOf(DemoProfileConflict);
   });
 });

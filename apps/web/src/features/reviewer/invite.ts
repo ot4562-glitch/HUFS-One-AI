@@ -24,7 +24,7 @@ export function holdInviteCode(code: string | null): InviteCodeHolder {
 
 /** The subset of HufsApiClient the invite page needs (HufsApiClient satisfies it structurally). */
 export interface InvitePort {
-  getSession(signal?: AbortSignal): Promise<{readonly role: 'BETA' | 'REVIEWER'}>;
+  getSession(signal?: AbortSignal): Promise<{readonly role: 'BETA' | 'ADMIN' | 'REVIEWER'}>;
   redeemReviewerInvite(code: string, signal?: AbortSignal): Promise<{readonly accessEndsAt: string; readonly dataMode: 'SYNTHETIC'}>;
 }
 

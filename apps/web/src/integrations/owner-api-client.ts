@@ -13,6 +13,7 @@ import {
   OpportunityRevisionComparisonContextResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
   DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
+  DemoProfileWorkspaceSaveSchema,blankDemoProfileWorkspace,
   OwnerDoubleMajorAuditSchema,
   ApprovedProviderInputsSchema,ApprovedProviderInputSchema,ProviderRunRequestSchema,
   ProviderAcceptedSchema,ProviderStoredJobSchema,AI_TASK_PATHS,AiTaskPathSchema,
@@ -278,11 +279,19 @@ export class HufsOwnerApiClient {
       &&same(result.profile.value,input.value));
     return result;
   }
+  async saveDemoWorkspace(change:z.infer<typeof DemoProfileWorkspaceSaveSchema>,signal?:AbortSignal){
+    const input=clientInput(DemoProfileWorkspaceSaveSchema,change);
+    const result=await this.mutate('/api/demo-profile/workspace',DemoProfileResponseSchema,'PUT',input,signal);
+    requireMatchingReceipt(result.profile.version===input.expectedVersion+1
+      &&same(result.profile.workspace,input.workspace));
+    return result;
+  }
   async resetDemoProfile(change:z.infer<typeof DemoProfileResetSchema>,signal?:AbortSignal){
     const input=clientInput(DemoProfileResetSchema,change);
     const result=await this.mutate('/api/demo-profile/reset',DemoProfileResponseSchema,'POST',input,signal);
     requireMatchingReceipt(result.profile.version===input.expectedVersion+1
-      &&same(result.profile.value,blankDemoProfileValue()));
+      &&same(result.profile.value,blankDemoProfileValue())
+      &&same(result.profile.workspace,blankDemoProfileWorkspace()));
     return result;
   }
 

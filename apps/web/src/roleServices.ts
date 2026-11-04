@@ -69,6 +69,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       session: ownerSession,
       read: signal => api.owner.readDemoProfile(signal),
       save: (change, signal) => api.owner.saveDemoProfile(change, signal),
+      saveWorkspace: (change, signal) => api.owner.saveDemoWorkspace(change, signal),
       reset: (change, signal) => api.owner.resetDemoProfile(change, signal),
     },
   };
