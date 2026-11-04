@@ -91,7 +91,10 @@ export function createApprovedPinnedTransport(
     });
     if(response.redirected
       ||(response.status>=300&&response.status<400&&response.status!==304)
-      ||(response.url&&response.url!==reviewed.href))deny();
+      ||(response.url&&response.url!==reviewed.href)){
+      discardUnreadSourceBody(response);deny();
+    }
     return response;
   }) as typeof fetch;
 }
+import {discardUnreadSourceBody} from './source-response-body.js';

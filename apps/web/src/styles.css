@@ -295,3 +295,30 @@ a { color: var(--color-primary); }
 .plan__badge { font-weight: 700; white-space: nowrap; }
 .plan__sub { font-size: 16px; line-height: 24px; margin: var(--space-3) 0 var(--space-2); }
 .plan__caveats { padding-left: var(--space-4); }
+/* #119 정정 전/후 비교 */
+.rev h3 { color: var(--color-heading); font-size: 18px; line-height: 26px; margin: 0 0 var(--space-2); }
+.rev h4 { font-size: 15px; line-height: 22px; margin: 0 0 var(--space-1); color: var(--color-heading); }
+.rev__syn { margin-left: var(--space-2); }
+.rev__table-wrap { overflow-x: auto; }
+.rev__table { width: 100%; border-collapse: collapse; background: var(--color-surface); font-size: 15px; }
+.rev__table th, .rev__table td { border: 1px solid var(--color-border); padding: var(--space-2); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.rev__table thead th { background: var(--color-chip-bg); color: var(--color-heading); }
+.rev__row--changed th[scope="row"] { box-shadow: inset 4px 0 0 var(--color-primary); }
+.rev__badge { white-space: nowrap; font-weight: 600; }
+.rev__sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--space-3); margin-top: var(--space-3); }
+.rev__side { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-control); padding: var(--space-2) var(--space-3); }
+/* #144 주전공 · 이중전공: one column on phones, side by side from tablet width. State is text + icon, never colour alone. */
+.dm__sub { font-size: 16px; line-height: 24px; margin: var(--space-3) 0 var(--space-2); }
+.dm__overlap { margin: 0 0 var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); border: 1px dashed var(--color-border); }
+.dm__cols { display: grid; gap: var(--space-3); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 768px) { .dm__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.dm__col { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-3); min-width: 0; }
+.dm__col h4 { margin: 0 0 var(--space-1); color: var(--color-heading); }
+.dm__rows { list-style: none; margin: 0; padding: 0; }
+.dm__row { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); padding: var(--space-2) 0; overflow-wrap: anywhere; }
+.dm__row + .dm__row { border-top: 1px solid var(--color-border); }
+.dm__row--held { border-left: 4px solid var(--color-heading); padding-left: var(--space-2); }
+.dm__badge { font-weight: 700; white-space: nowrap; }
+.dm__id { font-family: ui-monospace, monospace; }
+.dm__held { flex-basis: 100%; }
+.dm__note { margin: 0; }

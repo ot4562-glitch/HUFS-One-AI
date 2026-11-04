@@ -1,4 +1,4 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
 import {
   createApprovedSourceFetcher,SourceIngestionError,
 } from '../../apps/api/src/modules/opportunities/approved-fetch.js';
@@ -37,6 +37,19 @@ function harness(responses:Response[],policy=POLICY){
   }};
 }
 describe('TASK-19 approved-source ingestion, fail-closed HTTP and immutable drafts',()=>{
+  it.each(['oversized','declared','media','status'])('cancels rejected %s streams without storing content',async mode=>{
+    const cancel=vi.fn();
+    const response=new Response(new ReadableStream<Uint8Array>({
+      start(controller){controller.enqueue(new Uint8Array(mode==='oversized'?256*1024+1:1));},cancel,
+    }),{status:mode==='status'?503:200,headers:{
+      'content-type':mode==='media'?'application/octet-stream':'text/plain',
+      ...(mode==='declared'?{'content-length':String(256*1024+1)}:{}),
+    }});
+    const h=harness([response]);
+    await expect(h.fetcher.check()).rejects.toBeInstanceOf(SourceIngestionError);
+    expect(cancel).toHaveBeenCalledOnce();expect(response.body?.locked).toBe(false);
+    expect(h.ledger.size()).toBe(0);expect(h.calls).toHaveLength(1);
+  });
   it('never falls back to global fetch when a trusted transport is unconfigured',async()=>{
     const ledger=new MemorySourceRevisionLedger();
     const service=createApprovedSourceFetcher({

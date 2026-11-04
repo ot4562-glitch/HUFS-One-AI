@@ -9,8 +9,8 @@ import type {ApprovedPinnedEgress} from './approved-egress.js';
 import type {TrustedDurableSourceExecutor} from './source-ingestion-queue-postgres.js';
 import {PostgresSourceRevisionWriter} from './temporal-writer-postgres.js';
 import {hashRevisionParagraphs} from './revision-ledger.js';
+import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
 
-const CAP=256*1024;
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/pdf','image/png','image/jpeg']);
 const SHA=(v:Uint8Array)=>createHash('sha256').update(v).digest('hex');
@@ -40,23 +40,6 @@ function reviewPolicy(policy:ApprovedFetchPolicy,sourceId:string,permissionRef:s
     ||origin.hash||u.protocol!=='https:'||u.hash||u.username||u.password||u.port)
     throw new Error('Noncanonical source authority');
   return u;
-}
-async function readBounded(response:Response):Promise<Uint8Array>{
-  if(!response.body)throw new Error('Missing approved source body');
-  const declared=response.headers.get('content-length');
-  if(declared!==null&&(!/^\d+$/.test(declared)||Number(declared)>CAP))
-    throw new Error('Unbounded source payload');
-  const reader=response.body.getReader(),parts:Uint8Array[]=[];
-  let size=0;
-  try{
-    for(;;){const chunk=await reader.read();if(chunk.done)break;
-      size+=chunk.value.byteLength;
-      if(size>CAP)throw new Error('Unbounded source payload');
-      parts.push(chunk.value);
-    }
-  }finally{reader.releaseLock();}
-  if(!size)throw new Error('Empty approved source');
-  return Buffer.concat(parts);
 }
 async function approvedFingerprint(input:{
   policy:ApprovedFetchPolicy;resolver:ApprovedSourceRightsResolver;now:string;
@@ -135,6 +118,7 @@ export function createApprovedDurableSourceExecutor(options:{
       if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
       const response=await transport(u,{method:'GET',redirect:'error',credentials:'omit',
         headers,signal:AbortSignal.timeout(5000)});
+      try{
       // Conditional requests are valid only with a persisted validator for
       // exactly this canonical URL and current immutable source revision.
       if(response.status===304){
@@ -151,7 +135,7 @@ export function createApprovedDurableSourceExecutor(options:{
       const lastModified=safeValidator(response.headers.get('last-modified'));
       const media=(response.headers.get('content-type')??'').split(';')[0]!.trim().toLowerCase();
       if(!ALLOWED.has(media))throw new Error('Unsupported approved content type');
-      const bytes=await readBounded(response);
+      const bytes=await readApprovedSourceBody(response);
       const paragraphs=await options.extractor.extract({content:bytes,contentType:media,
         canonicalUrl:u.href});
       if(!Array.isArray(paragraphs)||!paragraphs.length||paragraphs.length>200
@@ -194,6 +178,7 @@ export function createApprovedDurableSourceExecutor(options:{
       if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
         throw new Error('Source rights changed after draft commit');
       return {kind:head?'CHANGED_DRAFT':'NEW_DRAFT',revisionId:revision.revisionId};
+      }finally{discardUnreadSourceBody(response);}
     },
   };
 }

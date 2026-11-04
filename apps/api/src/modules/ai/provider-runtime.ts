@@ -21,7 +21,7 @@ export interface ProviderResultPort {
 
 const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,128}$/),Hash=z.string().regex(/^[a-f0-9]{64}$/),Iso=z.iso.datetime({offset:true});
 const Operation=z.enum(['OCR_GENERAL','HCX_005','HCX_007']);
-const Media=z.strictObject({bytes:z.instanceof(Uint8Array),sourceRevisionId:Ref,assetId:Ref,originalSha256:Hash});
+const Media=z.strictObject({bytes:z.custom<Uint8Array>(value=>value instanceof Uint8Array),sourceRevisionId:Ref,assetId:Ref,originalSha256:Hash});
 const Snapshot=z.strictObject({actorId:Ref,sessionIdHash:Ref,inputRef:Ref,operation:Operation,asOf:Iso,
   epoch:Ref,grantVersion:Ref,consentVersion:Ref,policyVersion:Ref,approvedBy:Ref,approvedAt:Iso,expiresAt:Iso,
   sources:z.array(z.strictObject({sourceId:Ref,revisionId:Ref,permissionRef:Ref,originalSha256:Hash})).min(1).max(20),

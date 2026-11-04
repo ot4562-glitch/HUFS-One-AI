@@ -1,6 +1,6 @@
 # HUFS One AI | 확정 5인 분업과 작업 경계
 
-> 기준: 2026-11-03 KST. 이 문서는 **지속되는 담당자·작업 경계**만 적습니다. PR별 실적/차단은 [STATUS](../STATUS.md), 수락 항목 증거율은 [TEAM_PROGRESS](TEAM_PROGRESS.md), 과거 기록은 [Git 이력](https://github.com/ot4562-glitch/HUFS-One-AI/commits/main/docs/WORKSTREAMS.md)에서 확인합니다. 과거 PR 상태를 '현재'로 재사용하지 않습니다.
+> **담당 범위 기준 2026-11-03, 현재 PR·이슈 대조 2026-11-04 KST.** 이 문서는 **지속되는 담당자·작업 경계**만 적습니다. PR별 실적/차단은 [STATUS](../STATUS.md), 수락 항목 증거율은 [TEAM_PROGRESS](TEAM_PROGRESS.md), 과거 기록은 [Git 이력](https://github.com/ot4562-glitch/HUFS-One-AI/commits/main/docs/WORKSTREAMS.md)에서 확인합니다. 과거 PR 상태를 '현재'로 재사용하지 않습니다.
 
 ## 팀 책임
 
@@ -12,7 +12,9 @@
 | **박준영** `taewangim-alt` | 학업·학점·교육과정/개설·졸업 RulePack 순수 코어 및 공식 교과 조사. [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) | 학수번호·이중전공·중복/대체/선수·기간/규칙, `UNKNOWN/NEEDS_REVIEW`, #138 HTML·#149 CSV/handoff **로컬 변환 코드 병합 완료**(기관 수집 허가 아님). 실제 교과 사이트 수집/이용허가를 추정하지 않음 |
 | **이서연** `lhh42001` | **NCP 클라우드 운영·계정·권한·크레딧·요금·비코드 인프라·실측 전담** [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) [#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22) | VPC/서버/스토리지/TLS/IAM/DNS·CLOVA/OCR/HCX 서비스 이용권·SKU/예산·호스트 CPU/RSS/비용 영수증·중지/반납. **SDK·worker·HTTP·ONNX·IaC·OS 스크립트·CI·자동화 코딩 0건 배정**. UI·추천·학업 개발 이슈에서 assignee 해제. 유료 실행은 별도 사용자 승인 필요 |
 
-**2026-11-03 현재 병합·승인:** #158 HEAD `fb135017`→main `6e2b57de`, #156 HEAD `6a26e8f`→main `2e39c86a`는 각각 **새 현 HEAD qamarrchae APPROVED·필수 CI 3/3·clean** 확인 후 squash 병합했다. #158은 SETTLED 결과 저장 하위, #156은 SSH-only 합성 Preview 도구만 수락. **OPEN PR 14 / 일반 이슈 OPEN 34·CLOSED 7**, #160→#165→#167·Owner/Laya 및 #168은 독립 승인/통합 대기, #150/#166 Draft·UI #152 P2/충돌 유지. #46/#61/#89와 고정 수락률 불변.
+**2026-11-04 데이터 수집·참여 범위 최신 사용자 확인:** 공모전 5명 전원 동의 및 HUFSAbility 자료 수집 허가 확보. 공식 강의시간표의 공개 교수명·강의명은 허가된 수업정보 범위로 관리하며 교수명 일괄 마스킹은 필수 게이트 아님. **개인 수강·Forms 원본 제출 4명**과 참여 5명은 별개. 원본 6경로 Git 추적 정리 [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)는 PR/CI·리뷰 중으로 main 미반영, #46·#89 별도 게이트 유지. 권한 정본은 [DATA_GOVERNANCE](DATA_GOVERNANCE.md).
+
+**2026-11-04 최신 담당/수락 정정 (실시간 상태는 STATUS/GitHub):** 열린 일반 이슈 **40건**을 기존 주관 기준으로 심민성 20건(#192/#199/#203 추가), 이의상 12건(#200 추가), 김채윤 3건(#201 추가), 박준영 3건(#202 추가), 이서연 2건으로 분류한다. 이 수치는 **주관 업무 1회 집계**이며 공동 assignee를 중복 세지 않는다. 열린 PR은 #189/#152 병합 및 보호 원본 정리 #212 생성 뒤 **33건**. #189 박준영의 승인 동일교과 pure core(main 5718fd2)와 #152 이의상의 현재 이중전공 합성 UI(main 28d4827)는 최신 HEAD 비작성자 리뷰·CI를 확인해 병합했으며 **공식 RulePack·4인 원본 권리·실서비스 수락은 아님**. #151/#154/#155/#191/#205/#210 리뷰는 COMMENT(사람의 승인 아님). #46/#61/#89 RELEASE_BLOCKED를 유지한다. 2026-11-03 당시 34건 전수 원장은 아래에 **역사 기록**으로 남겨 담당 변경/승인을 암시하지 않는다.
 
 **2026-11-03 #150 분리·통합 의존성 (최신 코드 기준):** 모든 새 코드는 심민성 소유, 타인 UI 작업 트리는 보존한다. #145 wire·#148 budget SQL/adapter는 이미 main에 병합되어 재구현하지 않는다.
 
@@ -35,14 +37,14 @@
 **팀원 5명 ≠ 실자료 제출 5명.** 실제 학업/Forms 자료 제출 대상은 **심민성·이의상·김채윤·이서연 4명**으로, 박준영은 학업 코어 담당일 뿐 이번 실 4인 자료 제출 대상이 아닙니다. 별도의 빈 SYNTHETIC 계정·S01~S05·REVIEWER도 실 4인과 섞지 않습니다. 당사자 목적별 동의 확인과 Git 게시/클라우드/공개 사용 동의는 [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 기준으로 구분합니다.
 
 <!-- full-issue-roster-20261103:start -->
-## 2026-11-03 담당자별 이슈 전수 원장 — 일반 이슈 OPEN 34 / CLOSED 7
+## 2026-11-03 당시 담당자별 이슈 전수 원장 — 당시 OPEN 34 / CLOSED 7 (역사 기록)
 
 **집계 정의:** GitHub `state=open, is:issue` 조회. **열린 이슈 34개를 정확히 한 명의 주관으로 배치**(중복/미배정 0). 괄호의 공동 담당은 기존 GitHub 다중 assignee와 교차 의존을 뜻하며, **기존 assignees·labels는 삭제·변경하지 않았다**. 닫힌 이슈 7개는 뒤에 별도 기록. 새로운 PR이나 코드량이 담당자 고정 수락 게이트의 분모/퍼센트를 자동 변경하지 않는다. 최종 상태/병합·차단은 [STATUS](../STATUS.md), 기존 담당 스코프는 [TEAM_PROGRESS](TEAM_PROGRESS.md) 참조.
 
 | 주관 | OPEN 건수 | 가장 가까운 독립 작업 |
 | --- | ---: | --- |
 | **심민성** `ot4562-glitch` | **17** | #150 83파일 Draft 분리·#27 실운영 인증/PG·#46/#89 권리/보안 |
-| **이의상** `uisang2004-maker` | **11** | #153 메뉴 하위 완료, #152 P2·#151/#154/#155 최신 main 통합, #124/#141 UX |
+| **이의상** `uisang2004-maker` | **11** | #153 메뉴 하위 완료, #152 P2 코드 수정·리뷰 승인(최신 CI 실패)·#151/#154/#155 최신 main 통합, #124/#141 UX |
 | **김채윤** `qamarrchae` | **2** | #10 인용 의미·#86 근거 설명 |
 | **박준영** `taewangim-alt` | **2** | #149 변환 인계·실공식 RulePack |
 | **이서연** `lhh42001` | **2** | #12 계정/크레딧·#22 승인 후 호스트 실측 |
@@ -73,7 +75,7 @@
 
 | 이슈 | 본인 주관 다음 수락 | 공동 담당·의존 |
 | --- | --- | --- |
-| [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) | UI 종합 — #153 메뉴 계약 하위 병합, #151/#152/#154/#155 충돌과 P2, #124/#141 IA·운영 접근성 | 심민성 API |
+| [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) | UI 종합 — #153 메뉴 계약 하위 병합, #152 P2 코드 수정·리뷰 승인이나 최신 CI 실패, #151/#154/#155 통합 충돌과 #124/#141 IA·운영 접근성 | 심민성 API |
 | [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51) | 2주 미니 캘린더 #72 main; 학교 일정·실스크린리더/철회 검증 | 심민성 #52 |
 | [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80) | 지원 단계/자가기록 보드 #128 main; 401/403/409·다중탭 E2E | 심민성 owner/CAS |
 | [#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81) | 졸업+수강계획 나란히 — 실 RulePack/계획 안전 DTO·권한 UI | 박준영·심민성 |

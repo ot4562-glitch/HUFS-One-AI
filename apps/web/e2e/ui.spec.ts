@@ -213,6 +213,30 @@ test('#81 졸업 요건 현황 + 수강계획 검사: side by side at 1440px, st
   expect(o.scroll).toBeLessThanOrEqual(o.width);
 });
 
+test('#119 정정 내역 at 360px: changed row first, text badge, no horizontal overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/opportunities/SYN-OPP-002');
+  await pick(page, 0);
+  const rev = page.getByRole('region', {name: '정정 내역'});
+  await expect(rev.getByRole('status')).toContainText('정정된 항목 1개: 모집 마감 연장');
+  await expect(rev.getByRole('row').nth(1)).toHaveAttribute('aria-label', /모집 마감: 연장/);
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
+
+test('#144 주전공 · 이중전공 at 360px: one column, held row reason, no horizontal overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/graduation');
+  await pick(page, 0);
+  const dm = page.getByRole('region', {name: '주전공 · 이중전공 요건'});
+  await expect(dm.getByRole('status')).toHaveText('이중전공: 선택함');
+  await expect(dm.getByRole('list', {name: '이중전공 요건'}).getByRole('listitem').filter({hasText: 'SYN-DM-MAJOR-MIN'})).toContainText('보류');
+  const [a, b] = await dm.locator('.dm__col').evaluateAll(cols => cols.map(c => c.getBoundingClientRect().top));
+  expect(b!).toBeGreaterThan(a!); // stacked, not squeezed side by side
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
+
 test('#141 /menu at 360px: manifest menus, no horizontal overflow, Tab skips 🚫 items', async ({page}) => {
   await page.setViewportSize({width: 360, height: 800});
   await page.goto('/menu');

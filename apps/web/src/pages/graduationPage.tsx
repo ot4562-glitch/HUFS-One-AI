@@ -1,6 +1,7 @@
 import type {PageRenderer} from '../App.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, buildGraduationView, buildOutlookView} from '../features/graduation/graduationView.js';
 import {PlanCheckPanel} from '../features/plan-check/PlanCheckPanel.js';
+import {DoubleMajorPanel} from '../features/double-major/DoubleMajorPanel.js';
 import {Badges, NOT_SHARED_TEXT, NoSnapshot, Section, screenViewOf} from './parts.js';
 
 /** 졸업: graduation support + 개설 전망 (A11.1: outlook lives inside the 졸업 tab). */
@@ -42,6 +43,8 @@ export const graduationPage: PageRenderer = ({path, state, services, controller}
         </Section>
         {a.kind === 'SHOW' && services.planCheck && <PlanCheckPanel state={state} controller={controller} port={services.planCheck} />}
         </div>
+        {/* #144: only once the academics section itself is shared, so consent never leaks through a second view. */}
+        {a.kind === 'SHOW' && services.doubleMajor && <DoubleMajorPanel state={state} controller={controller} port={services.doubleMajor} />}
         <Section title="개설 전망">
           {f.kind === 'HIDDEN' && <p className="muted">{NOT_SHARED_TEXT}</p>}
           {f.kind === 'PLACEHOLDER' && <p className="muted">{f.text}</p>}

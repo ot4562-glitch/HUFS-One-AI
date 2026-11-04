@@ -1,4 +1,4 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
 import {createApprovedDurableSourceExecutor} from
   '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from
@@ -14,7 +14,7 @@ const policy={sourceId:'SYN-DURABLE',canonicalUrl:url,
   provenance:'REAL_APPROVED' as const,rightsReviewed:true};
 const input={sourceId:policy.sourceId,permissionRef:policy.permissionRef,
   actorRef:'SYN-OPERATOR'};
-function harness(){
+function harness(response?:()=>Response){
   let grant=true,material='가상 공고 첫 판',calls=0,nowCounter=0;
   let responseStatus:200|304=200,etag:string|null=null,lastModified:string|null=null;
   const sentValidators:string[]=[];
@@ -38,6 +38,7 @@ function harness(){
         calls++;
         const headers=new Headers(init.headers);
         sentValidators.push(headers.get('if-none-match')??'<none>');
+        if(response)return response();
         return new Response(responseStatus===304?null:material,{status:responseStatus,
           headers:responseStatus===304?{}:{'content-type':'text/plain',etag:'"SYN-ETAG"'}});
       },
@@ -65,6 +66,19 @@ function harness(){
     observed:()=>observed,lastSeen:()=>lastSeen};
 }
 describe('TASK-19 durable approved-source fetch-to-Postgres adapter (synthetic transport)',()=>{
+  it.each(['oversized','declared','media','status','redirect'])('cancels rejected %s response bodies without drafting or retrying',async mode=>{
+    const cancel=vi.fn();
+    const response=new Response(new ReadableStream<Uint8Array>({
+      start(controller){controller.enqueue(new Uint8Array(mode==='oversized'?256*1024+1:1));},cancel,
+    }),{status:mode==='status'?503:mode==='redirect'?302:200,headers:{
+      'content-type':mode==='media'?'application/octet-stream':'text/plain',
+      ...(mode==='declared'?{'content-length':String(256*1024+1)}:{}),
+    }});
+    const x=harness(()=>response);
+    await expect(x.service.execute(input)).rejects.toThrow();
+    expect(cancel).toHaveBeenCalledOnce();expect(response.body?.locked).toBe(false);
+    expect(x.head()).toBeNull();expect(x.observed()).toHaveLength(0);expect(x.calls()).toBe(1);
+  });
   it('only ingests an allowlisted exact URL and creates a nonactive draft',async()=>{
     const x=harness();const v=await x.service.execute(input);
     expect(v.kind).toBe('NEW_DRAFT');
