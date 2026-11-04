@@ -14,7 +14,7 @@ const RUN=process.env.HUFS_PG_MIGRATIONS_LIVE==='1',password=randomBytes(24).toS
 let admin:Pool,pool:Pool,url:URL,workspace:Awaited<ReturnType<typeof migrationWorkspace>>;
 const approval:MigrationApproval={authorize:async()=>({allowed:true,receipt:'SYN-INDEPENDENT-APPROVAL-RECEIPT'}),revalidate:async()=>true};
 const adapt=(pool:Pool,loseCommit=false):MigrationPool=>({connect:async()=>{
-  const c=await postgresMigrationPool(pool).connect();return {query:async(sql,args=[])=>{
+  const c=await postgresMigrationPool(pool).connect();return {peer:c.peer,query:async(sql,args=[])=>{
     const r=await c.query(sql,args);if(loseCommit&&sql==='COMMIT')throw new Error('SYN-LOST-COMMIT-ACK');return r;
   },querySingle:sql=>c.querySingle(sql),release:error=>c.release(error)};
 }});
