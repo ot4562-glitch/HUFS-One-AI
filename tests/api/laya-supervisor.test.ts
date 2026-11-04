@@ -44,6 +44,9 @@ async function config() {
 const pressure = {hostCpuPercent:0,cpuPressureAvg10:0,availableBytes:5*1024**3,workerRssBytes:1024,
   apiP95Ms:100,apiBaselineP95Ms:100,apiErrorRatio:0,oom:false};
 const fake = ():LayaWorker => ({start:async()=>{},run:async()=>({label:'review',score:0.7,tokenCount:4}),stop(){},onFailure(){}});
+// Enabled production supervision depends on Linux ownership/mode and UNIX
+// sockets. Windows must keep the same fail-closed guard; Linux CI runs all four.
+const linuxIt = it.skipIf(process.platform !== 'linux');
 async function request(socketPath:string, value:unknown) {
   return new Promise<Record<string,unknown>>((resolve,reject)=>{
     const socket=connect(socketPath); let result='';
@@ -66,7 +69,7 @@ describe('Laya concrete local supervisor',()=>{
     expect(service.status()).toMatchObject({state:'OFF'});
     expect(created).toBe(0);
   });
-  it('serves bounded UNIX IPC with mode0600, authoritative rights and graceful cleanup',async()=>{
+  linuxIt('serves bounded UNIX IPC with mode0600, authoritative rights and graceful cleanup',async()=>{
     const {path,value}=await config();
     const service=await startLayaSupervisor({configPath:path,env:{LAYA_ENABLED:'true'},dependencies:{createWorker:fake,sample:async()=>pressure}});
     services.push(service);
@@ -78,20 +81,20 @@ describe('Laya concrete local supervisor',()=>{
     await service.close();
     await expect(stat(value.socketPath)).rejects.toMatchObject({code:'ENOENT'});
   });
-  it('verifies the authoritative permission driver before import or worker creation',async()=>{
+  linuxIt('verifies the authoritative permission driver before import or worker creation',async()=>{
     const {path,authority}=await config();
     await writeFile(authority,'throw Error("must not import altered code")');
     let created=0;
     await expect(startLayaSupervisor({configPath:path,env:{LAYA_ENABLED:'true'},dependencies:{createWorker:()=>{created++;return fake();},sample:async()=>pressure}})).rejects.toThrow('AUTHORITY_HASH_MISMATCH');
     expect(created).toBe(0);
   });
-  it('preserves an existing socket path and fails closed for pressure before model startup',async()=>{
+  linuxIt('preserves an existing socket path and fails closed for pressure before model startup',async()=>{
     const {path,value}=await config();
     await writeFile(value.socketPath,'preserve-existing-file');
     await expect(startLayaSupervisor({configPath:path,env:{LAYA_ENABLED:'true'},dependencies:{createWorker:fake,sample:async()=>pressure}})).rejects.toThrow('SOCKET_PATH_EXISTS');
     expect(await readFile(value.socketPath,'utf8')).toBe('preserve-existing-file');
   });
-  it('blocks low RAM before worker startup and accepts no client-provided current flag',async()=>{
+  linuxIt('blocks low RAM before worker startup and accepts no client-provided current flag',async()=>{
     const {path,value}=await config();
     let created=0;
     await expect(startLayaSupervisor({configPath:path,env:{LAYA_ENABLED:'true'},dependencies:{createWorker:()=>{created++;return fake();},sample:async()=>({...pressure,availableBytes:1024})}})).rejects.toThrow('LAYA_INITIAL_RESOURCE_GATE');

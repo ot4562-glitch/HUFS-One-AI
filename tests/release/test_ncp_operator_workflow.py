@@ -86,20 +86,21 @@ class InstallerBundleTrustTests(unittest.TestCase):
 class NcpOperatorWorkflowTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("bash"), "Bash required for synthetic CLI tests")
     def test_installer_default_plan_has_no_host_side_effect(self) -> None:
-        run = subprocess.run(["bash", str(INSTALL), "--plan"],
-                             capture_output=True, text=True, timeout=10, check=False)
+        # Feed exact script bytes: Linux Bash cannot interpret a Windows path.
+        run = subprocess.run(["bash", "-s", "--", "--plan"], input=INSTALL.read_bytes(),
+                             capture_output=True, timeout=10, check=False)
         self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertIn("PLAN ONLY", run.stdout)
-        self.assertIn("RELEASE_BLOCKED", run.stdout)
-        self.assertIn("No NCP resource", run.stdout)
+        self.assertIn(b"PLAN ONLY", run.stdout)
+        self.assertIn(b"RELEASE_BLOCKED", run.stdout)
+        self.assertIn(b"No NCP resource", run.stdout)
 
     @unittest.skipUnless(shutil.which("bash"), "Bash required for synthetic CLI tests")
     def test_installer_refuses_apply_without_separate_owner_and_acg_approval(self) -> None:
         for args in [[], ["--apply"], ["--apply", "--ack-owner-approved"],
                      ["--apply", "--ack-acg-verified"],
                      ["--apply", "--ack-owner-approved", "--ack-acg-verified"]]:
-            command = ["bash", str(INSTALL), *args]
-            run = subprocess.run(command, capture_output=True, text=True,
+            command = ["bash", "-s", "--", *args]
+            run = subprocess.run(command, input=INSTALL.read_bytes(), capture_output=True,
                                  timeout=10, check=False)
             self.assertNotEqual(run.returncode, 0, "Unapproved installer ran")
         source = INSTALL.read_text(encoding="utf-8")
