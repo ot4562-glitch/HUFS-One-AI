@@ -20,16 +20,16 @@ variable "request" {
   type = object({
     scope                   = string
     project                 = string
-    source_sha              = string
+    source_sha     = string
     network_config_sha256   = string
     subnet_no               = string
     access_control_group_no = string
-    ubuntu_image_no       = string
-    server_spec_code      = string
-    login_key_name        = string
-    estimated_hourly_krw  = number
-    approved_budget_krw   = number
-    approved_hours        = number
+    ubuntu_image_no         = string
+    server_spec_code        = string
+    login_key_name          = string
+    estimated_hourly_krw    = number
+    approved_budget_krw     = number
+    approved_hours          = number
   })
   validation {
     condition = try(
@@ -68,7 +68,7 @@ resource "terraform_data" "operator_approval" {
   input = sha256(jsonencode(var.request))
   lifecycle {
     precondition {
-      condition = (var.operator_approved && can(regex("^[A-Za-z0-9_-]{8,80}$", var.operator_approval_reference)) && var.approved_config_sha256 == sha256(jsonencode(var.request)))
+      condition     = (var.operator_approved && can(regex("^[A-Za-z0-9_-]{8,80}$", var.operator_approval_reference)) && var.approved_config_sha256 == sha256(jsonencode(var.request)))
       error_message = "Human-approved exact host request digest is required. This variable is not itself proof of review."
     }
   }
@@ -116,12 +116,12 @@ output "review_config_sha256" {
 }
 output "operator_handoff" {
   value = {
-    mode            = "SSH_LOOPBACK_SYNTHETIC_ONLY"
-    server_id       = ncloud_server.preview.id
-    network_nic_id  = ncloud_network_interface.preview.id
-    public_ip       = ncloud_public_ip.preview.public_ip
+    mode           = "SSH_LOOPBACK_SYNTHETIC_ONLY"
+    server_id      = ncloud_server.preview.id
+    network_nic_id = ncloud_network_interface.preview.id
+    public_ip      = ncloud_public_ip.preview.public_ip
     source_sha      = var.request.source_sha
-    config_sha256   = sha256(jsonencode(var.request))
-    release         = "RELEASE_BLOCKED"
+    config_sha256  = sha256(jsonencode(var.request))
+    release        = "RELEASE_BLOCKED"
   }
 }
