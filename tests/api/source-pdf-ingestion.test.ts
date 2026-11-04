@@ -7,6 +7,10 @@ import {decodeApprovedRaster} from '../../packages/ai/src/raster.js';
 import {createApprovedPdfExtractor} from '../../apps/api/src/modules/opportunities/approved-pdf-extractor.js';
 import {parseSourcePdfEvidence} from '../../apps/api/src/modules/opportunities/source-pdf-evidence.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
+import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
+import {PostgresSourceReviewService} from '../../apps/api/src/modules/opportunities/source-review-postgres.js';
+import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
+import {createPostgresTemporalGateway} from '../../apps/api/src/modules/opportunities/temporal-gateway.js';
 
 const sha=(bytes:Uint8Array|string)=>createHash('sha256').update(bytes).digest('hex');
 const sourceId='SYN-PDF',permissionRef='SYN-PDF-PERM',url='https://synthetic.example.edu/poster.pdf';
@@ -263,5 +267,100 @@ describe('PDF authority, renderer and cancellation boundaries',()=>{
     }});
     await expect(job.executor.execute({sourceId,permissionRef,actorRef:'SYN-OPERATOR'})).rejects.toThrow('PDF raster proof mismatch');
     expect(job.writer.append).not.toHaveBeenCalled();
+  });
+});
+
+
+/** SQL response fixture, not PostgreSQL or a substitute for the opt-in SQL slice. */
+function pdfSqlMemory(){
+  const calls:Array<{sql:string;params:readonly unknown[]}>=[];let head:string|null=null,revision:any,original:any,review:any;
+  let paragraphs:any[]=[];const rasters:any[]=[];
+  const pool={connect:async()=>({query:async(sql:string,params:readonly unknown[]=[])=>{
+    calls.push({sql,params});
+    if(sql.startsWith('INSERT INTO source_revisions_vnext')){
+      revision={revision_id:params[0],source_id:params[1],original_sha256:params[3],content_sha256:params[4],
+        media_kind:params[5],source_class:params[6],permission_ref:params[7],provenance:params[8],
+        status:params[9],change_kind:params[10],fetched_at:params[12]};return {rows:[]};
+    }
+    if(sql.startsWith('INSERT INTO source_paragraphs_vnext')){
+      paragraphs=JSON.parse(String(params[1])).map((p:any,i:number)=>({
+        paragraph_id:p.id,paragraph_text:p.text,paragraph_ordinal:i+1,image_span:p.imageSpan}));return {rows:[]};
+    }
+    if(sql.startsWith('INSERT INTO source_pdf_rasters_vnext')){
+      rasters.push({page_index:params[1],asset_id:params[2],raster_sha256:params[3],raster_bytes:params[4],width:params[5],height:params[6]});
+      return {rows:[]};
+    }
+    if(sql.startsWith('INSERT INTO source_originals_vnext')){
+      original={original_sha256:params[1],original_bytes:params[2],captured_at:params[3],
+        image_evidence:JSON.parse(String(params[4])),image_evidence_sha256:params[5]};return {rows:[]};
+    }
+    if(sql.startsWith('UPDATE source_ingest_heads')){head=String(params[1]);return {rows:[{source_id:sourceId}]};}
+    if(sql.startsWith('INSERT INTO source_review_attestations_vnext')){
+      review={review_id:params[0],reviewer_id:params[2],decision:params[3],checked_at:params[4],
+        original_sha256:params[5],content_sha256:params[6],permission_policy_version:params[7],image_evidence_sha256:params[8]};
+      return {rows:[]};
+    }
+    if(sql.includes('confirmed_conflict'))return {rows:[{confirmed_conflict:false}]};
+    if(sql.includes('AS blocked_rights'))return {rows:[{blocked_rights:false,unknown:false,stale:Boolean(revision)}]};
+    if(sql.includes('score.score')){
+      const approved=review?.decision==='APPROVED'&&review.image_evidence_sha256===original.image_evidence_sha256;
+      return {rows:approved?paragraphs.map(p=>({source_id:sourceId,revision_id:head,paragraph_id:p.paragraph_id,
+        paragraph_text:p.paragraph_text,score:1,media_kind:revision.media_kind,original_sha256:revision.original_sha256,
+        image_span:p.image_span,pdf_page_assets:original.image_evidence.pages.map((p:any)=>p.assetId)})):[]};
+    }
+    if(sql.includes('FROM source_ingest_heads')&&sql.includes('FOR UPDATE'))return {rows:[{revision_id:head,fetched_at:revision?.fetched_at??null}]};
+    if(sql.includes('FROM source_ingest_heads h'))return {rows:head?[{...revision,etag:null,last_modified:null,has_image_evidence:true,has_pdf_evidence:true}]:[]};
+    if(sql.includes('FROM source_pdf_rasters_vnext'))return {rows:rasters};
+    if(sql.includes('FROM source_revisions_vnext'))return {rows:revision?[revision]:[]};
+    if(sql.includes('FROM source_originals_vnext'))return {rows:original?[original]:[]};
+    if(sql.includes('FROM source_paragraphs_vnext'))return {rows:paragraphs};
+    if(sql.includes('FROM source_review_attestations_vnext'))return {rows:review?[review]:[]};
+    if(sql.startsWith('INSERT INTO source_http_validators'))return {rows:[{source_id:sourceId}]};
+    return {rows:[]};
+  },release:()=>{}})};
+  return {pool,calls,rasters,revision:()=>revision,original:()=>original,paragraphs:()=>paragraphs};
+}
+
+describe('whole synthetic PDF source to reviewed RAG integration',()=>{
+  it('runs the real extractor, durable writer, review and gateway with bounded synthetic ports',async()=>{
+    const x=processing(),db=pdfSqlMemory();let tick=0;const now=()=>new Date(epoch+tick++*1000).toISOString();
+    const rights={resolve:async()=>({sourceId,permissionRef,canonicalUrl:url,status:'APPROVED' as const,
+      policyVersion:'SYN-SOURCE-POLICY',reviewedBy:'SYN-INDEPENDENT',reviewedAt:new Date(epoch-60_000).toISOString(),
+      allowedPurposes:new Set(['COLLECT','STORE','EXTERNAL_TRANSFER'] as const)})};
+    const executor=createApprovedDurableSourceExecutor({
+      policies:new Map([[sourceId,{sourceId,permissionRef,canonicalUrl:url,approvedOrigin:'https://synthetic.example.edu',
+        sourceClass:'LICENSED_EXTERNAL' as const,provenance:'REAL_APPROVED' as const,rightsReviewed:true}]]),rights,now,
+      egress:{resolveAddresses:async()=>['8.8.8.8'],requestPinned:async()=>new Response(new Uint8Array(original),{
+        headers:{'content-type':'application/pdf'}})},pdfExtractor:x.adapter,
+      extractor:{extract:async()=>{throw new Error('Binary PDF must not enter text extraction');}},
+      readerPool:db.pool,writer:new PostgresSourceRevisionWriter(db.pool),
+    });
+    const ingested=await executor.execute({sourceId,permissionRef,actorRef:'SYN-OPERATOR'});
+    expect(ingested.kind).toBe('NEW_DRAFT');expect(db.revision().status).toBe('NEEDS_REVIEW');
+    expect(db.original().original_bytes).toEqual(original);expect(db.rasters).toHaveLength(2);
+    expect(db.rasters.map(r=>sha(r.raster_bytes))).toEqual([sha(raster(0).bytes),sha(raster(1).bytes)]);
+    const reader=new PostgresTemporalEvidenceReader(db.pool),actor={actorId:'SYN-ACTOR',role:'BETA' as const,
+      sessionIdHash:'s'.repeat(32),csrfToken:'C'.repeat(32),sessionExpiresAt:'2026-11-06T00:00:00.000Z',
+      schoolMailProofExpiresAt:'2026-11-06T00:00:00.000Z',betaAllowed:true};
+    const gateway=createPostgresTemporalGateway(reader,{resolveFor:async()=>({
+      permissionRefs:new Set([permissionRef]),sourceIds:new Set([sourceId]),
+      policyVersion:'SYN-SOURCE-POLICY',sourceHeadVersion:ingested.revisionId})});
+    const query=async()=>{const asOf=now();return gateway.query({actor,query:'SYNTHETIC',asOf,now:asOf,topK:4});};
+    const pending=await query();expect(pending.envelope.retrievalState).toBe('STALE');expect(pending.envelope.evidence).toEqual([]);
+    const proof=db.original().image_evidence_sha256;
+    const review=new PostgresSourceReviewService(db.pool,{authorize:async()=>({
+      reviewerId:'SYN-REVIEWER',independentReview:true,permissionPolicyVersion:'SYN-SOURCE-POLICY',imageEvidenceSha256:proof,
+    })},now);
+    await review.review({reviewId:'SYN-PDF-REVIEW',actorRef:'SYN-REVIEWER',sourceId,revisionId:ingested.revisionId,
+      permissionRef,originalSha256:sha(original),contentSha256:db.revision().content_sha256,
+      decision:'APPROVED',imageEvidenceSha256:proof});
+    const result=await query();expect(result.envelope.retrievalState).toBe('READY');
+    expect(result.envelope.evidence).toEqual(db.paragraphs().map(p=>p.image_span));
+    expect(result.envelope.evidence.map(span=>span.kind==='IMAGE'?[span.pageIndex,span.bboxNorm,span.originalSha256,span.transformVersion]:null))
+      .toEqual([[0,[.1,.1,.4,.3],sha(original),'pdf-full-page-v1'],[1,[.5,.1,.8,.4],sha(original),'pdf-full-page-v1']]);
+    expect(JSON.stringify(result)).not.toContain('raster_bytes');expect(JSON.stringify(result)).not.toContain('ocrFields');
+    expect(db.revision().status).toBe('NEEDS_REVIEW');expect(x.ocr.readCandidate).toHaveBeenCalledTimes(2);
+    const repeat=await executor.execute({sourceId,permissionRef,actorRef:'SYN-OPERATOR'});
+    expect(repeat).toEqual({kind:'NOT_MODIFIED',revisionId:ingested.revisionId});expect(x.renderer.render).toHaveBeenCalledOnce();
   });
 });
