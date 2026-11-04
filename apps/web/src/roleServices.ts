@@ -1,10 +1,11 @@
 import type {HufsApiClient} from './integrations/index.js';
 import type {AppServices} from './App.js';
 import type {SandboxPort} from './features/sandbox/useSandbox.js';
+import {OwnerSessionController} from './app/owner-session-controller.js';
 
 type RoleApi = Pick<HufsApiClient,
   'getSession' | 'loadReviewerCapabilities' | 'readReviewerActions' | 'saveReviewerAction'
-  | 'getDemoOverlay' | 'setDemoOverlay' | 'resetDemoOverlay'>;
+  | 'getDemoOverlay' | 'setDemoOverlay' | 'resetDemoOverlay' | 'owner'>;
 
 /** What the session check could actually establish. UNKNOWN (signed out, 401/503, bad payload) is never BETA. */
 export type SessionRole =
@@ -42,9 +43,20 @@ export async function resolveSessionRole(api: RoleApi): Promise<SessionRole> {
 export function roleServices(api: RoleApi, session: SessionRole): Partial<AppServices> {
   if (session.role === 'REVIEWER') return session.sandbox ? {sandbox: session.sandbox} : {};
   if (session.role !== 'BETA') return {};
-  return {overlay: {
-    get: (ctx, signal) => api.getDemoOverlay(ctx, signal),
-    set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
-    reset: (ctx, version, signal) => api.resetDemoOverlay(ctx, version, signal),
-  }};
+  // Create only for a verified BETA. This owner scope is independent from
+  // the public DemoController; it rechecks actor/session before and after reads/writes.
+  const ownerSession = new OwnerSessionController(api);
+  return {
+    overlay: {
+      get: (ctx, signal) => api.getDemoOverlay(ctx, signal),
+      set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
+      reset: (ctx, version, signal) => api.resetDemoOverlay(ctx, version, signal),
+    },
+    ownerDemoProfile: {
+      session: ownerSession,
+      read: signal => api.owner.readDemoProfile(signal),
+      save: (change, signal) => api.owner.saveDemoProfile(change, signal),
+      reset: (change, signal) => api.owner.resetDemoProfile(change, signal),
+    },
+  };
 }
