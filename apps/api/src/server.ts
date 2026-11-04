@@ -92,6 +92,15 @@ export function createApi(options:ApiOptions) {
   const jobs=new Map<string,Job>();
   const aiIdempotency=new Map<string,string>();
   const aiUsage=new Map<string,{minute:number;count:number}>();
+  // Reclaim and reserve synchronously AFTER asynchronous authorization. Both
+  // roles share the same capacity; no await may split this check and insert.
+  const publishContext=(context:DemoContext)=>{
+    const time=nowEpoch(clock());
+    for(const [id,item] of contexts)if(Date.parse(item.expiresAt)<=time)contexts.delete(id);
+    if(Date.parse(context.expiresAt)<=time)throw new ApiFailure('FORBIDDEN');
+    if(contexts.size>=200)throw new ApiFailure('RATE_LIMITED');
+    contexts.set(context.contextId,context);
+  };
 
   app.addHook('onRequest',async(request,reply)=>{
     reply.header('Cache-Control','no-store');
@@ -609,9 +618,8 @@ export function createApi(options:ApiOptions) {
         sharingGrantVersion:'REVIEWER:'+grant.inviteId,
         expiresAt:new Date(exp).toISOString(),
       });
-      if(contexts.size>=200)throw new ApiFailure('RATE_LIMITED');
       await recheckCurrent(req,actor,context);
-      contexts.set(context.contextId,context);
+      publishContext(context);
       reply.code(201);
       return context;
     }
@@ -647,10 +655,8 @@ export function createApi(options:ApiOptions) {
       datasetVersion:snapshot.versions.dataset,projectionVersion:snapshot.versions.projection,
       sharingGrantVersion:grant.version,expiresAt:new Date(expiry).toISOString(),
     });
-    for(const [id,item] of contexts)if(Date.parse(item.expiresAt)<=time)contexts.delete(id);
-    if(contexts.size>=200)throw new ApiFailure('RATE_LIMITED');
     await recheckCurrent(req,actor,context,['FEED','NOTICES']);
-    contexts.set(context.contextId,context);
+    publishContext(context);
     reply.code(201);
     return context;
   });
