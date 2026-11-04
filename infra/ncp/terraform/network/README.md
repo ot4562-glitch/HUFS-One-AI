@@ -1,7 +1,7 @@
 # 승인 기반 NCP 네트워크 코드
 
 이 모듈은 #192의 **네트워크 부분만** 구현한다. 한국 VPC·Public subnet·전용
-ACG/NACL을 정의한다. NIC/서버/공인 IP/호스트 초기화는 후속 작업이다.
+ACG/NACL을 정의한다. **별도 [host Terraform 모듈](../host/README.md)의 NIC/서버/공인 IP 및 [SSH Ubuntu 설치](../../setup/02-install-host.sh) 코드는 #216 통합으로 main에 존재한다.** 실제 네트워크/호스트 적용은 NOT_RUN이다.
 Terraform 1.14 이상, NCP provider **4.0.7**과 추적된 lockfile을 사용한다.
 실제 계정·과금·자원 생성·접속 검증은 수행하지 않았다. `RELEASE_BLOCKED`.
 
