@@ -40,8 +40,11 @@ describe('integrated approved input route is BETA-only, no raw payload and fail-
       .statusCode).toBe(503);
     const f=fixture(async()=>({items:[item]}));f.setActor(null);
     expect((await f.app.inject({url:'/api/ai/approved-inputs'})).statusCode).toBe(401);
-    f.setActor({...actor,role:'REVIEWER',verifiedEmail:'reviewer@example.invalid',
-      identityProofExpiresAt:expires} as never);
+    // Strict reviewer sessions must not inherit BETA-only fields: that malformed
+    // shape would fail session parsing at 401 before exercising role isolation.
+    f.setActor({actorId:actor.actorId,role:'REVIEWER',sessionIdHash:actor.sessionIdHash,
+      csrfToken:actor.csrfToken,sessionExpiresAt:expires,
+      verifiedEmail:'reviewer@example.invalid',identityProofExpiresAt:expires});
     expect((await f.app.inject({url:'/api/ai/approved-inputs',headers:{cookie:'SYN'}}))
       .statusCode).toBe(403);
   });
