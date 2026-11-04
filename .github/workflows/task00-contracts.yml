@@ -158,7 +158,7 @@ jobs:
             await pool.end();
           }
           NODE
-      - name: Build compiled API for the separate-process Provider HTTP proof
+      - name: Build compiled API for live adapters and process restart proofs
         run: npm run build:api
       - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL
         env:

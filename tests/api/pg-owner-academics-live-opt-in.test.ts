@@ -12,6 +12,7 @@ import {PostgresEvidenceRightsResolver} from '../../apps/api/src/modules/opportu
 import {canonicalProjectionHash} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {OwnerCatalogAuthority} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
+import {proveOwnerStudyPlanPg} from './owner-study-plan-live-slice.js';
 
 const RUN=process.env.HUFS_PG_OWNER_ACADEMICS_LIVE==='1';
 const pools:Pool[]=[];
@@ -20,7 +21,7 @@ let admin:Pool,reader:Pool;
 const now=()=>new Date().toISOString();
 const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
-  '20261101_owner_approved_catalog.sql'];
+  '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql','20261101_owner_approved_catalog.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{
   const client=await pool.connect();return {query:async(sql,params=[])=>({rows:(await client.query(sql,[...params])).rows}),release:()=>client.release()};
 }});
@@ -151,4 +152,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     expect(result.check).toMatchObject({term,termLoadCreditUnits:0,creditCapUnits:36});
     expect(await source.revalidate({actorId:f.actorId,receipt:result.receipt,now:now()})).toBe(true);
   });
+  it('checks saved plan CRUD through independent PG services and separate API process restarts',async()=>{
+    await proveOwnerStudyPlanPg({admin,reader,fixture:await seed('STUDYPLANS'),databaseUrl:databaseUrl(),password,adapter});
+  },60000);
 });

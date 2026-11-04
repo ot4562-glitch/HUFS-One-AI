@@ -44,7 +44,6 @@ PROVIDER_HTTP_PG_PROOF = (
     "HUFS_PG_PROVIDER_INTEGRATION_LIVE: '1'",
     "HUFS_PG_PROVIDER_INTEGRATION_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_provider_integration_test",
     "tests/api/pg-provider-integration-live-opt-in.test.ts",
-    "Build compiled API for the separate-process Provider HTTP proof",
 )
 
 REVISION_CLAIMS_PG_PROOF = (
@@ -87,6 +86,21 @@ def sparse_checkout_lists(text: str) -> list[list[str]]:
             paths.append(entry.strip())
         lists.append(paths)
     return lists
+
+
+def has_compiled_api_before_live_consumers(text: str) -> bool:
+    marker = "  postgres-integration:\n"
+    if marker not in text:
+        return False
+    job = re.split(r"(?m)^  [A-Za-z0-9_-]+:\s*$", text.split(marker, 1)[1], maxsplit=1)[0]
+    builds = list(re.finditer(r"(?m)^        run: npm run build:api\s*$", job))
+    if len(builds) != 1:
+        return False
+    commands = list(re.finditer(r"(?m)^        run: npx vitest run ([^\n]+)$", job))
+    required = ("tests/api/pg-owner-academics-live-opt-in.test.ts",
+                "tests/api/pg-provider-integration-live-opt-in.test.ts")
+    return all(any(command.start() > builds[0].end() and path in command.group(1).split()
+                   for command in commands) for path in required)
 
 
 def audit_ci_boundary(text: str) -> list[str]:
@@ -176,6 +190,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
     if any(proof not in text for proof in PROVIDER_HTTP_PG_PROOF):
         issues.append("Provider HTTP/process-restart proof must execute in its isolated opt-in database")
+    if not has_compiled_api_before_live_consumers(text):
+        issues.append("the PostgreSQL job must compile API before both live compiled consumers")
     if any(proof not in text for proof in REVISION_CLAIMS_PG_PROOF):
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
     if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
@@ -190,6 +206,25 @@ class WorkflowBoundaryTests(unittest.TestCase):
 
     def test_current_workflow_is_fail_closed(self) -> None:
         self.assertEqual(audit_ci_boundary(self.policy), [])
+
+    def test_compiled_pg_build_uses_command_and_order_not_step_label(self) -> None:
+        renamed = self.policy.replace(
+            'Build compiled API for live adapters and process restart proofs', 'Compile backend once for live tests'
+        )
+        self.assertEqual(audit_ci_boundary(renamed), [])
+
+    def test_pg_build_cannot_be_removed_or_replaced_by_another_jobs_build(self) -> None:
+        before, job = self.policy.split('  postgres-integration:\n', 1)
+        changed = before + '  postgres-integration:\n' + job.replace(
+            '        run: npm run build:api', '        run: echo build-not-executed', 1)
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_pg_build_must_precede_both_live_compiled_consumers(self) -> None:
+        before, job = self.policy.split('  postgres-integration:\n', 1)
+        changed = job.replace('        run: npm run build:api', '        run: echo not-built-yet', 1)
+        changed = changed.replace('  revision-claims-real-postgres:',
+            '      - name: too late\n        run: npm run build:api\n\n  revision-claims-real-postgres:', 1)
+        self.assertTrue(audit_ci_boundary(before + '  postgres-integration:\n' + changed))
         self.assertIn("/tools/verify_release_boundary.py",
                       sparse_checkout_lists(self.policy)[0])
         root = WORKFLOW.parents[2]
