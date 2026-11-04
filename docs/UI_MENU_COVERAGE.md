@@ -1,5 +1,7 @@
 # HUFS One AI 메뉴 대응표 (#141 · #124)
 
+> **현재 상태 안내:** 2026-11-04 실제 구현: #151 공고 정정 UI·#154 계획 병렬·#155 What-if 시연 화면을 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)으로 main 병합, OPEN PR 0/Chrome CI SUCCESS. **메뉴 관찰 11영역/76화면과 학교 공개 5분류/24기능+4영역 전체 매핑 및 화면 인수는 아직 #124/#141 OPEN**. 매니페스트의 '미지원/검증전'을 임의 DEMO_AVAILABLE로 바꾸지 않는다. [STATUS](../STATUS.md).
+
 이 문서는 기존 HUFSAbility 학생 메뉴가 HUFS One AI 화면에서 **어떻게 보이는지**를 출처별로 적은 대응표입니다. 같은 디자인을 복제하라는 지시가 아니고, 원래 기능을 구현했다는 주장도 아닙니다. 독립 팀 프로젝트이며 학교 공식 서비스가 아닙니다.
 
 - **정본:** HUFSAbility 원래 메뉴의 이름·순서·상태는 중앙 매니페스트 `packages/contracts/src/hufsability/manifest.ts`(`hufsability-public-2026-10-29-v1`)만 따릅니다. 웹 `apps/web/src/shell/menuCatalog.ts`는 이 매니페스트를 그대로 읽고, 원래 메뉴를 UI가 따로 "시연 가능"으로 바꾸지 않습니다.
