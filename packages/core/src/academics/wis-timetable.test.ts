@@ -176,6 +176,36 @@ describe('importWisTimetable', () => {
     expect(campus(radios('H1') + list('(서울) - 가상학과', '(글로벌) - 가상학과'))).toBe('UNKNOWN');
   });
 
+  it('reads a 기초 row only when its 개설영역 is in the page\'s own 기초 field list', () => {
+    const fields = (...labels:string[]) => `<select name="ag_basic_fld_cd">${labels.map((label, i) => `<option value="7${i}">${label}</option>`).join('')}</select>`;
+    const basicRows:Row[] = [
+      {code:'SYN710101', title:'가상 기초 입문', area:'가상단과대학', grade:''},
+      {code:'SYN720101', title:'가상 대학기초', area:'대학기초', grade:''},
+    ];
+    const withList = fields('전체&nbsp;(서울)', '가상단과대학&nbsp;(서울)', '대학기초&nbsp;(서울)');
+    const result = importWisTimetable(request(page(basicRows).replace('<table>', `${withList}<table>`)));
+    expect(result.rows.map(row => [row.area, row.areaLabel, row.gradeYear, row.needsReview]))
+      .toEqual([['BASIC', '가상단과대학', null, false], ['BASIC', '대학기초', null, false]]);
+    expect(result.issues).toEqual([]);
+    // a global-campus list carries "(글로벌)"
+    const global = importWisTimetable(request(page([basicRows[0]!]).replace('<table>', `${fields('가상단과대학 (글로벌)')}<table>`)));
+    expect(global.rows[0]).toMatchObject({area:'BASIC', needsReview:false});
+
+    // Without the list (a 전공 tab page) the same label stays unknown, and a blank 학년 stays unreadable.
+    const noList = importWisTimetable(request(page(basicRows)));
+    expect(noList.rows.map(row => row.area)).toEqual(['OTHER', 'OTHER']);
+    expect(noList.issues.map(issue => issue.code)).toEqual(['BAD_GRADE', 'UNKNOWN_AREA', 'BAD_GRADE', 'UNKNOWN_AREA']);
+    // A label the list does not name, or the "전체" choice itself, is not 기초.
+    const other = importWisTimetable(request(page([{code:'SYN730101', title:'가상', area:'다른단과대학', grade:''},
+      {code:'SYN740101', title:'가상 전체', area:'전체', grade:''}]).replace('<table>', `${withList}<table>`)));
+    expect(other.rows.map(row => row.area)).toEqual(['OTHER', 'OTHER']);
+    // A blank 학년 is accepted only on a 기초 row; an unreadable one is flagged on any row.
+    const mixed = importWisTimetable(request(page([{code:'SYN750101', title:'가상 전공', grade:''},
+      {code:'SYN760101', title:'가상 기초', area:'대학기초', grade:'일'}]).replace('<table>', `${withList}<table>`)));
+    expect(mixed.issues).toEqual([{row:1, code:'BAD_GRADE', detail:'grade ""'}, {row:2, code:'BAD_GRADE', detail:'grade "일"'}]);
+    expect(mixed.rows.map(row => row.needsReview)).toEqual([true, true]);
+  });
+
   it('refuses an empty table saved while the card list still shows courses', () => {
     const cards = `<div class="sch-card"><a href="javascript:lecture_open('2026','3','A','SYN010101')">▤</a></div>`;
     const half = page([]).replace('</body>', `${cards}</body>`);

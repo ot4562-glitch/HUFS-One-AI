@@ -16,7 +16,7 @@ import type {TimetableAttribute, TimetableImport, TimetableRow} from './wis-time
  */
 
 /** Bump when the converter or this export changes output for the same saved page. */
-export const WIS_TIMETABLE_CONVERTER_VERSION = 'hufs-wis-timetable-2';
+export const WIS_TIMETABLE_CONVERTER_VERSION = 'hufs-wis-timetable-3';
 
 /** Must equal apps/api permitted-curriculum `courseCsvHeaders`; a test keeps them in step. */
 export const SAVED_CURRICULUM_CSV_HEADERS = ['courseCode', 'courseName', 'credits', 'category', 'major', 'semester', 'campus', 'cohort'] as const;

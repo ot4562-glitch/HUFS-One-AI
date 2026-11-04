@@ -42,7 +42,8 @@ const UNSTATED_LANGUAGE = 'F';
 
 export type TimetableSession = '1'|'SUMMER'|'2'|'WINTER';
 export type TimetableCampus = 'SEOUL'|'GLOBAL'|'UNKNOWN';
-export type TimetableArea = 'MAJOR'|'DOUBLE_OR_MINOR'|'OTHER';
+/** BASIC: a 기초 row whose 개설영역 is one of the 기초 fields the page's own 기초 list names. */
+export type TimetableArea = 'MAJOR'|'DOUBLE_OR_MINOR'|'BASIC'|'OTHER';
 export type TimetableAttribute = 'REQUIRED'|'FOREIGN_LANGUAGE'|'TEAM_TEACHING'|'ONLINE'|'PASS_FAIL';
 
 export interface TimetableMeeting {
@@ -56,6 +57,7 @@ export interface TimetableRow {
   no:number;
   area:TimetableArea;
   areaLabel:string;
+  /** null when unreadable (BAD_GRADE), or when a BASIC row leaves it blank: 기초 rows state no 학년. */
   gradeYear:number|null;
   rawCode:string;
   code:ReturnType<typeof resolveAcademicCourseCodeVNext>;
@@ -270,6 +272,7 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
   const pageLabel = `${term.year}-${term.session === 'SUMMER' ? 'S' : term.session === 'WINTER' ? 'W' : term.session}`;
   if (named !== undefined && named !== pageLabel) throw new TypeError(`file name says ${named} but the page lists ${pageLabel}`);
 
+  const basic = basicFields(html);
   const rows = raw.map((row, index):TimetableRow => {
     const text = row.map(cellText);
     const no = Number(text[COL.no]);
@@ -280,17 +283,16 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
 
     const rawCode = text[COL.code]!.toUpperCase();
     if (!/^[A-Z0-9]{9}$/.test(rawCode)) flag('BAD_CODE', `course code "${text[COL.code]}"`);
+    const areaLabel = text[COL.area]!;
+    const area = AREAS[areaLabel] ?? (basic.has(areaLabel) ? 'BASIC' : 'OTHER');
     const gradeYear = /^[1-6]$/.test(text[COL.grade]!) ? Number(text[COL.grade]) : null;
-    if (gradeYear === null) flag('BAD_GRADE', `grade "${text[COL.grade]}"`);
+    if (gradeYear === null && !(area === 'BASIC' && text[COL.grade] === '')) flag('BAD_GRADE', `grade "${text[COL.grade]}"`);
     const creditUnits = units(text[COL.credits]!);
     if (creditUnits === null) flag('BAD_CREDITS', `credits "${text[COL.credits]}"`);
     const hours = /^\d{1,2}$/.test(text[COL.hours]!) ? Number(text[COL.hours]) : null;
     if (hours === null) flag('BAD_HOURS', `hours "${text[COL.hours]}"`);
     const parsedMeetings = meetings(text[COL.meetings]!);
     if (parsedMeetings === null) flag('BAD_MEETINGS', `times "${text[COL.meetings]}"`);
-
-    const areaLabel = text[COL.area]!;
-    const area = AREAS[areaLabel] ?? 'OTHER';
     if (area === 'OTHER') flag('UNKNOWN_AREA', `area "${areaLabel}"`);
 
     // Only spans whose class list has the exact token "attr"; "attr-none" holds the empty-cell dash.
@@ -336,6 +338,17 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
     };
   });
   return result(url, input, term, departmentLabel, rows, issues);
+}
+
+/**
+ * The 기초 field list the page loads when its 기초 tab is open (select ag_basic_fld_cd), without the
+ * campus suffix and the "전체" choice. Empty on other tabs, so no 개설영역 is read as 기초 there.
+ */
+function basicFields(html:string):Set<string> {
+  const list = /<select\b[^>]*\bname="ag_basic_fld_cd"[^>]*>([\s\S]*?)<\/select>/i.exec(html)?.[1] ?? '';
+  return new Set([...list.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
+    .map(match => cellText(match[1]!).replace(/\s*\((?:서울|글로벌)\)$/, ''))
+    .filter(label => label !== '' && label !== '전체'));
 }
 
 const CAMPUS_RADIO:Readonly<Record<string, TimetableCampus>> = {H1:'SEOUL', H2:'GLOBAL'};
