@@ -116,3 +116,71 @@ Focused synthetic regression commands:
 The publication regression includes `infra/deploy/Dockerfile.dockerignore`, which
 can override the root Docker exclusions. The gate inspects its presence without
 reading the override's contents.
+
+## API, DTO and TASK mapping (#8)
+
+`node tools/audit_api_contracts.mjs` prints the current static inventory as JSON.
+Add `--markdown` for the route/DTO/consumer/design/TASK tables, or
+`--root <checkout>` to select another local checkout. Run it after installing
+the repository's pinned development dependencies; the TypeScript parser is
+used without importing or executing application modules or tests.
+
+`tools/api_contract_inventory.json` records an immutable review base, the
+current 15 canonical issues, named composition boundaries, actual route aliases,
+DTO declaration references, existing test/consumer paths, all 39 A13.2 design
+rows and TASK-00 through TASK-17 plus TASK-14C exactly once. Runtime results
+cannot be supplied by this manifest. `baseCommit` is the reviewed worktree
+baseline; `currentHead` and `sourceDigest` identify the checkout and content
+observed by each new audit. A matching hash is not an execution receipt.
+
+The bounded AST pass recognizes Fastify instances, literal paths, constant
+prefixes, method arrays, receiver aliases, local registration helpers and
+literal-array loops. It verifies named composition calls, DTO declarations,
+reference files and current Architecture/STATUS coverage. Added or removed
+registrations, duplicate mappings, missing references, fabricated runtime
+claims and noncanonical issue ownership are validation failures. Mutable
+values, unresolved composed receivers, dynamic plugins/imports, unsupported
+analysis or unavailable API files remain `UNKNOWN`.
+
+`INTEGRATED` means a maintained registration and its named internal composition
+call were found. The report includes mounting/refusal conditions and preserves
+production blocks and local synthetic-only launchers. It does not prove that
+the route is enabled, called by the browser, accepted in a live environment,
+or safe for publication. DTO references have `shapeEvidence: UNKNOWN`; a
+schema name alone does not prove the response wrapper, payload or consumer
+compatibility. Test references always retain `runtimeEvidence: NOT_RUN`.
+No row becomes `TESTED` from static source text.
+
+`NOT_IMPLEMENTED` is used only when the searched static scope is complete and
+the registration is absent. Otherwise absence stays `UNKNOWN`, with notes
+distinguishing retired design paths, aliases and separate owner/operator
+contracts. In the reviewed baseline, the external private operator adapter
+import in `apps/api/src/operator-main.ts` keeps overall coverage `UNKNOWN`.
+The audit reports that observation and never opens the private module.
+
+Only maintained API TypeScript and explicit allowed code/document references
+are read. Protected raw student areas, private configuration, generated output,
+node_modules and symlinks are excluded from content reads. Limits are 500 API
+files, 1 MiB per file, 32 MiB total content, 1,000 route mappings, 100 surfaces,
+128 design rows, 100 task records and 100 references per record. A sparse
+checkout with absent required sources cannot establish complete coverage.
+Unsupported JavaScript/metaprogramming is outside this bounded static proof;
+independent runtime/consumer acceptance is still required.
+
+Exit codes: 0 = validation passes with complete supported static scope;
+1 = confirmed validation findings; 2 = audit unavailable; 3 = validation
+passes but coverage remains `UNKNOWN`. Preserve these outcomes separately in
+CI. All outcomes retain `RELEASE_BLOCKED`. The executable fixture suite is
+`node --test tools/tests/api-contract-inventory.node.mjs`.
+
+## Pre-build dependency BOM (#89)
+
+`node tools/dependency_bom.mjs [--root <path>]` emits a deterministic
+CycloneDX 1.6 report derived from the offline dependency/license audit above.
+It preserves incomplete evidence and `RELEASE_BLOCKED`. Manifest and
+license-file hashes are evidence properties, not verification of installed
+component bytes; the report does not invent component hashes or a dependency
+graph. Missing/conflicting license declarations remain unresolved. Final
+release-image/runtime contents, assets/models and independent license review
+remain separate gates. Exit 0 means complete within the selected metadata
+scope, 1 means partial evidence, and 2 means unavailable evidence.

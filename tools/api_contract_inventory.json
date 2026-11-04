@@ -1,0 +1,3425 @@
+{
+  "schemaVersion": 1,
+  "basis": {
+    "repository": "minseong-hufs/HUFS-One-AI",
+    "baseCommit": "bb0b98c895f370fde6a95517a9a640dab936ab26",
+    "upstreamCommit": "ff9327791bf046512d6e61c5b6862eb098fa5b34",
+    "designSection": "Architecture.md A13.2",
+    "taskSection": "Architecture.md A17",
+    "canonicalIssuesSource": "STATUS.md section 5"
+  },
+  "canonicalIssues": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    19,
+    20,
+    27,
+    46,
+    61,
+    89,
+    119,
+    123,
+    132,
+    133
+  ],
+  "surfaces": [
+    {
+      "id": "core",
+      "source": "apps/api/src/server.ts",
+      "registrar": "createApi",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        },
+        {
+          "path": "apps/api/src/main.ts",
+          "caller": "<module>"
+        }
+      ],
+      "exposure": {
+        "mode": "PRODUCTION_BLOCKED",
+        "conditions": [
+          "Unbound Fastify factory; local main binds loopback with closed session/provider adapters.",
+          "APP_ENV=production and unreviewed integration environment modes remain refused; no public deployment acceptance."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-double-major",
+      "source": "apps/api/src/modules/academics/owner-double-major-http.ts",
+      "registrar": "registerOwnerDoubleMajorRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "manifest",
+      "source": "apps/api/src/modules/hufsability/manifest-http.ts",
+      "registrar": "registerHufsAbilityCapabilitiesRoute",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Read-only HUFSAbility capability labels; existing school systems remain unavailable inside the app.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "local-accounts",
+      "source": "apps/api/src/modules/local-accounts/http.ts",
+      "registrar": "createLocalAccountApi",
+      "composition": [
+        {
+          "path": "apps/api/src/dev/local-account-main.ts",
+          "caller": "<module>"
+        }
+      ],
+      "exposure": {
+        "mode": "LOCAL_SYNTHETIC_ONLY",
+        "conditions": [
+          "Explicit SYNTHETIC mode and --synthetic launcher; exact loopback host/origin only.",
+          "Production environment is refused; invented local accounts are not real authentication."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/modules/local-accounts/http.ts",
+            "symbol": "createLocalAccountApi"
+          },
+          {
+            "path": "apps/api/src/dev/local-account-main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "opportunity-explanation",
+      "source": "apps/api/src/modules/opportunities/opportunity-explanation-http.ts",
+      "registrar": "registerOpportunityExplanationRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "opportunity-revision-comparison",
+      "source": "apps/api/src/modules/opportunities/opportunity-revision-comparison-http.ts",
+      "registrar": "registerOpportunityRevisionComparisonRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-catalog",
+      "source": "apps/api/src/modules/opportunities/owner-catalog-http.ts",
+      "registrar": "registerOwnerCatalogRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Routes are mounted only when deps.ownerCatalog is supplied.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-feed",
+      "source": "apps/api/src/modules/opportunities/owner-feed-http.ts",
+      "registrar": "registerOwnerFeedRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source-history",
+      "source": "apps/api/src/modules/opportunities/source-history-http.ts",
+      "registrar": "registerSourceRevisionHistoryRoute",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Routes are mounted only when deps.sourceHistory is supplied.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "source-job-control",
+      "source": "apps/api/src/modules/opportunities/source-job-control-http.ts",
+      "registrar": "registerSourceJobControlRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Internal control requires independent operator authority; no dispatcher, source bytes, or network fetch is accepted.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "synthetic-clubs",
+      "source": "apps/api/src/modules/opportunities/synthetic-clubs-http.ts",
+      "registrar": "registerSyntheticClubRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "personal-state",
+      "source": "apps/api/src/modules/personal-state.ts",
+      "registrar": "registerPersonalStateRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/server.ts",
+          "caller": "createApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Core createApi mounts context-scoped personal API; missing personalState storage is refused and REVIEWER cannot use this store.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "demo-profile",
+      "source": "apps/api/src/modules/profiles/demo-profile-http.ts",
+      "registrar": "registerDemoProfileRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "experience-approval",
+      "source": "apps/api/src/modules/profiles/experience-approval-http.ts",
+      "registrar": "registerExperienceApprovalRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Routes are mounted only when deps.experienceApproval is supplied.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-major-what-if",
+      "source": "apps/api/src/modules/profiles/owner-major-what-if-http.ts",
+      "registrar": "registerOwnerMajorWhatIfRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-study-plan-check",
+      "source": "apps/api/src/modules/profiles/owner-study-plan-check-http.ts",
+      "registrar": "registerOwnerStudyPlanCheckRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by the unbound internal composition; missing optional data/provider ports remain refused by handlers.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "restricted-owner",
+      "source": "apps/api/src/modules/profiles/restricted-owner-http.ts",
+      "registrar": "registerRestrictedOwnerIntakeRoute",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Injected restricted owner directory only; absent directory is unavailable and serialization revalidates the receipt.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-account",
+      "source": "apps/api/src/modules/profiles/self-account-http.ts",
+      "registrar": "registerSelfAccountRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Routes are mounted only when deps.selfAccount is supplied.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-workspace",
+      "source": "apps/api/src/modules/profiles/self-workspace-http.ts",
+      "registrar": "registerOwnerWorkspaceRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Routes are mounted only when deps.ownerWorkspace is supplied.",
+          "Current authenticated/no-store/Origin/CSRF composition and production refusal require runtime acceptance; this inventory does not execute them."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/main.ts"
+          }
+        ]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "get-api-academics-double-major",
+      "surface": "owner-double-major",
+      "method": "GET",
+      "path": "/api/academics/double-major",
+      "primaryIssue": 11,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/academics/double-major.ts",
+            "symbol": "OwnerDoubleMajorAuditSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-double-major-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-hufsability-capabilities",
+      "surface": "manifest",
+      "method": "GET",
+      "path": "/api/hufsability/capabilities",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/hufsability/manifest.ts",
+            "symbol": "HufsAbilityMenuManifestSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/hufsability-capabilities.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "options-api-local-accounts",
+      "surface": "local-accounts",
+      "method": "OPTIONS",
+      "path": "/api/local-accounts/*",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "UNKNOWN",
+        "refs": []
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-local-accounts-session",
+      "surface": "local-accounts",
+      "method": "GET",
+      "path": "/api/local-accounts/session",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSessionSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/features/local-accounts/client.ts"
+      ]
+    },
+    {
+      "id": "post-api-local-accounts-session",
+      "surface": "local-accounts",
+      "method": "POST",
+      "path": "/api/local-accounts/session",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSwitchSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSessionSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/features/local-accounts/client.ts"
+      ]
+    },
+    {
+      "id": "get-api-local-accounts-snapshot",
+      "surface": "local-accounts",
+      "method": "GET",
+      "path": "/api/local-accounts/snapshot",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/features/local-accounts/client.ts"
+      ]
+    },
+    {
+      "id": "patch-api-local-accounts-profile",
+      "surface": "local-accounts",
+      "method": "PATCH",
+      "path": "/api/local-accounts/profile",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountProfilePutSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/features/local-accounts/client.ts"
+      ]
+    },
+    {
+      "id": "put-api-local-accounts-workspace",
+      "surface": "local-accounts",
+      "method": "PUT",
+      "path": "/api/local-accounts/workspace",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountWorkspacePutSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/features/local-accounts/client.ts"
+      ]
+    },
+    {
+      "id": "post-api-local-accounts-reset",
+      "surface": "local-accounts",
+      "method": "POST",
+      "path": "/api/local-accounts/reset",
+      "primaryIssue": 9,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountResetSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/index.ts",
+            "symbol": "LocalAccountSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/local-accounts.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/features/local-accounts/client.ts"
+      ]
+    },
+    {
+      "id": "post-api-opportunities-opportunityid-explanation",
+      "surface": "opportunity-explanation",
+      "method": "POST",
+      "path": "/api/opportunities/:opportunityId/explanation",
+      "primaryIssue": 10,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/opportunity-explanation.ts",
+            "symbol": "OpportunityExplanationRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/opportunity-explanation.ts",
+            "symbol": "OpportunityExplanationResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/opportunity-explanation-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-opportunities-opportunityid-revisions-comparison-context",
+      "surface": "opportunity-revision-comparison",
+      "method": "GET",
+      "path": "/api/opportunities/:opportunityId/revisions/comparison-context",
+      "primaryIssue": 19,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/opportunity-revision-comparison.ts",
+            "symbol": "OpportunityRevisionComparisonContextResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/opportunity-revision-comparison.test.ts",
+        "tests/api/approved-revision-discovery-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-opportunities-opportunityid-revisions-compare",
+      "surface": "opportunity-revision-comparison",
+      "method": "POST",
+      "path": "/api/opportunities/:opportunityId/revisions/compare",
+      "primaryIssue": 19,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/opportunity-revision-comparison.ts",
+            "symbol": "OpportunityRevisionComparisonRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/opportunity-revision-comparison.ts",
+            "symbol": "OpportunityRevisionComparisonResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/opportunity-revision-comparison.test.ts",
+        "tests/api/approved-revision-discovery-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-academics-transcript",
+      "surface": "owner-catalog",
+      "method": "GET",
+      "path": "/api/academics/transcript",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "OwnerTranscriptSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-catalog-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-courses",
+      "surface": "owner-catalog",
+      "method": "GET",
+      "path": "/api/courses",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "CourseCatalogPageSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-catalog-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-courses-id-offerings",
+      "surface": "owner-catalog",
+      "method": "GET",
+      "path": "/api/courses/:id/offerings",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "CourseOfferingsPageSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-catalog-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-opportunities",
+      "surface": "owner-catalog",
+      "method": "GET",
+      "path": "/api/opportunities",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "OpportunityCatalogPageSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-catalog-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-opportunities-id",
+      "surface": "owner-catalog",
+      "method": "GET",
+      "path": "/api/opportunities/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "OpportunityCatalogDetailSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-catalog-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-feed",
+      "surface": "owner-feed",
+      "method": "GET",
+      "path": "/api/owner/feed",
+      "primaryIssue": 10,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/owner-feed.ts",
+            "symbol": "OwnerFeedResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-feed-http.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-evidence-sources-sourceid-revisions",
+      "surface": "source-history",
+      "method": "GET",
+      "path": "/api/evidence/sources/:sourceId/revisions",
+      "primaryIssue": 19,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/opportunities/source-history-http.ts",
+            "symbol": "Path"
+          },
+          {
+            "path": "apps/api/src/types.ts",
+            "symbol": "ApiOptions"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/source-history.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Response type is indirect through ApiOptions.sourceHistory; JSON shape is not inferred."
+    },
+    {
+      "id": "post-api-operator-source-jobs",
+      "surface": "source-job-control",
+      "method": "POST",
+      "path": "/api/operator/source-jobs",
+      "primaryIssue": 19,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/evidence/source-jobs.ts",
+            "symbol": "SourceJobEnqueueSchema"
+          },
+          {
+            "path": "packages/contracts/src/evidence/source-jobs.ts",
+            "symbol": "SourceJobAcceptedSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/source-job-control-http.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-operator-source-jobs-jobid",
+      "surface": "source-job-control",
+      "method": "GET",
+      "path": "/api/operator/source-jobs/:jobId",
+      "primaryIssue": 19,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/evidence/source-jobs.ts",
+            "symbol": "SourceJobScopeSchema"
+          },
+          {
+            "path": "packages/contracts/src/evidence/source-jobs.ts",
+            "symbol": "SourceJobStatusSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/source-job-control-http.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-synthetic-clubs",
+      "surface": "synthetic-clubs",
+      "method": "GET",
+      "path": "/api/synthetic/clubs",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubBoardResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-read.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-synthetic-clubs-id",
+      "surface": "synthetic-clubs",
+      "method": "GET",
+      "path": "/api/synthetic/clubs/:id",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubDetailResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-read.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-admin-synthetic-clubs-id-decision",
+      "surface": "synthetic-clubs",
+      "method": "POST",
+      "path": "/api/admin/synthetic/clubs/:id/decision",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubDecisionRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubDecisionResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-admin.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "post-api-demo-contexts-id-personal",
+      "surface": "personal-state",
+      "method": "POST",
+      "path": "/api/demo/contexts/:id/personal",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "Create"
+          },
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "PublicRecord"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/personal-state-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Shared context-scoped personal API; kind and versioned storage differ from dedicated A13.2 experience/saved/action design paths."
+    },
+    {
+      "id": "get-api-demo-contexts-id-personal",
+      "surface": "personal-state",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/personal",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "List"
+          },
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "PublicRecord"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/personal-state-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Shared context-scoped personal API; kind and versioned storage differ from dedicated A13.2 experience/saved/action design paths."
+    },
+    {
+      "id": "get-api-demo-contexts-id-personal-itemid",
+      "surface": "personal-state",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/personal/:itemId",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "Read"
+          },
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "PublicRecord"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/personal-state-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Shared context-scoped personal API; kind and versioned storage differ from dedicated A13.2 experience/saved/action design paths."
+    },
+    {
+      "id": "put-api-demo-contexts-id-personal-itemid",
+      "surface": "personal-state",
+      "method": "PUT",
+      "path": "/api/demo/contexts/:id/personal/:itemId",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "Update"
+          },
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "PublicRecord"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/personal-state-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Shared context-scoped personal API; kind and versioned storage differ from dedicated A13.2 experience/saved/action design paths."
+    },
+    {
+      "id": "delete-api-demo-contexts-id-personal-itemid",
+      "surface": "personal-state",
+      "method": "DELETE",
+      "path": "/api/demo/contexts/:id/personal/:itemId",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "Remove"
+          },
+          {
+            "path": "apps/api/src/modules/personal-state.ts",
+            "symbol": "PublicRecord"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/personal-state-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Shared context-scoped personal API; kind and versioned storage differ from dedicated A13.2 experience/saved/action design paths."
+    },
+    {
+      "id": "get-api-demo-profile",
+      "surface": "demo-profile",
+      "method": "GET",
+      "path": "/api/demo-profile",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-profile-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-demo-profile-snapshot",
+      "surface": "demo-profile",
+      "method": "GET",
+      "path": "/api/demo-profile/snapshot",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-profile-http.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "patch-api-demo-profile",
+      "surface": "demo-profile",
+      "method": "PATCH",
+      "path": "/api/demo-profile",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileSaveSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-profile-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-demo-profile-reset",
+      "surface": "demo-profile",
+      "method": "POST",
+      "path": "/api/demo-profile/reset",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileResetSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-profile-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-experience-cards-id-tag-approval",
+      "surface": "experience-approval",
+      "method": "GET",
+      "path": "/api/experience/cards/:id/tag-approval",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/experience-approval.ts",
+            "symbol": "ExperienceTagApprovalSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/experience-approval-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "put-api-experience-cards-id-tag-approval",
+      "surface": "experience-approval",
+      "method": "PUT",
+      "path": "/api/experience/cards/:id/tag-approval",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/experience-approval.ts",
+            "symbol": "ExperienceTagApprovalPutSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/experience-approval.ts",
+            "symbol": "ExperienceTagApprovalSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/experience-approval-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "delete-api-experience-cards-id-tag-approval",
+      "surface": "experience-approval",
+      "method": "DELETE",
+      "path": "/api/experience/cards/:id/tag-approval",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/experience-approval.ts",
+            "symbol": "ExperienceTagApprovalDeleteSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/experience-approval.ts",
+            "symbol": "ExperienceTagApprovalSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/experience-approval-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-academics-major-what-if",
+      "surface": "owner-major-what-if",
+      "method": "POST",
+      "path": "/api/academics/major-what-if",
+      "primaryIssue": 11,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/major-what-if.ts",
+            "symbol": "OwnerMajorWhatIfRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/major-what-if.ts",
+            "symbol": "OwnerMajorWhatIfResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-major-what-if-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-study-plans-check",
+      "surface": "owner-study-plan-check",
+      "method": "POST",
+      "path": "/api/study-plans/check",
+      "primaryIssue": 119,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/study-plan-check.ts",
+            "symbol": "OwnerStudyPlanCheckRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/study-plan-check.ts",
+            "symbol": "OwnerStudyPlanCheckResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-study-plan-check-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-private-intake-self",
+      "surface": "restricted-owner",
+      "method": "GET",
+      "path": "/api/private-intake/self",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/private-owner-intake.ts",
+            "symbol": "PrivateOwnerIntakeResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/restricted-owner-http.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-profile",
+      "surface": "self-account",
+      "method": "GET",
+      "path": "/api/profile",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "SelfProfileSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-account-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "patch-api-profile",
+      "surface": "self-account",
+      "method": "PATCH",
+      "path": "/api/profile",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "SelfProfilePatchSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "SelfProfileSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-account-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-consents",
+      "surface": "self-account",
+      "method": "GET",
+      "path": "/api/consents",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "SelfConsentSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-account-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "put-api-consents",
+      "surface": "self-account",
+      "method": "PUT",
+      "path": "/api/consents",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "SelfConsentPutSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "SelfConsentSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-account-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-experience-cards",
+      "surface": "self-workspace",
+      "method": "GET",
+      "path": "/api/experience/cards",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "OwnerList"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-experience-cards-id",
+      "surface": "self-workspace",
+      "method": "GET",
+      "path": "/api/experience/cards/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "Params"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-experience-cards",
+      "surface": "self-workspace",
+      "method": "POST",
+      "path": "/api/experience/cards",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceCreateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "patch-api-experience-cards-id",
+      "surface": "self-workspace",
+      "method": "PATCH",
+      "path": "/api/experience/cards/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceUpdateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "delete-api-experience-cards-id",
+      "surface": "self-workspace",
+      "method": "DELETE",
+      "path": "/api/experience/cards/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceDeleteSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "DeleteReceipt"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-study-plans",
+      "surface": "self-workspace",
+      "method": "GET",
+      "path": "/api/study-plans",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "OwnerList"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-study-plans",
+      "surface": "self-workspace",
+      "method": "POST",
+      "path": "/api/study-plans",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceCreateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "put-api-study-plans-id",
+      "surface": "self-workspace",
+      "method": "PUT",
+      "path": "/api/study-plans/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceUpdateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-saved-items",
+      "surface": "self-workspace",
+      "method": "GET",
+      "path": "/api/saved-items",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "OwnerList"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-saved-items",
+      "surface": "self-workspace",
+      "method": "POST",
+      "path": "/api/saved-items",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceCreateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "patch-api-saved-items-id",
+      "surface": "self-workspace",
+      "method": "PATCH",
+      "path": "/api/saved-items/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/bookmark-stage.ts",
+            "symbol": "BookmarkStagePatchSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts",
+        "tests/api/self-bookmark-stage-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "delete-api-saved-items-id",
+      "surface": "self-workspace",
+      "method": "DELETE",
+      "path": "/api/saved-items/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceDeleteSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "DeleteReceipt"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-action-plans",
+      "surface": "self-workspace",
+      "method": "GET",
+      "path": "/api/action-plans",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "OwnerList"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-action-plans",
+      "surface": "self-workspace",
+      "method": "POST",
+      "path": "/api/action-plans",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceCreateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "patch-api-action-plans-id",
+      "surface": "self-workspace",
+      "method": "PATCH",
+      "path": "/api/action-plans/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceUpdateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-experience-from-opportunity",
+      "surface": "self-workspace",
+      "method": "POST",
+      "path": "/api/experience/from-opportunity",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/profiles/self-workspace-http.ts",
+            "symbol": "FromOpportunity"
+          },
+          {
+            "path": "packages/contracts/src/self/index.ts",
+            "symbol": "OpportunityCatalogDetailSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/workspace.ts",
+            "symbol": "OwnerWorkspaceRecordSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-auth-google-start",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/auth/google/start",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "UNKNOWN",
+        "refs": []
+      },
+      "testRefs": [
+        "tests/api/google-auth-flow.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ],
+      "notes": "OAuth navigation/redirect delegates to trusted adapter; no response JSON shape asserted."
+    },
+    {
+      "id": "get-api-auth-google-callback",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/auth/google/callback",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "UNKNOWN",
+        "refs": []
+      },
+      "testRefs": [
+        "tests/api/google-auth-flow.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "OAuth callback/redirect delegates to trusted adapter; not a browser JSON request."
+    },
+    {
+      "id": "get-api-auth-csrf",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/auth/csrf",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "CsrfSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-admin-demo-preflight",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/admin/demo/preflight",
+      "primaryIssue": 89,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/preflight/index.ts",
+            "symbol": "DemoPreflightStateSchema"
+          },
+          {
+            "path": "packages/contracts/src/preflight/index.ts",
+            "symbol": "DemoPreflightReportSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-preflight.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "post-api-auth-school-mail-request",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/auth/school-mail/request",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "SchoolMailRequest"
+          },
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "SchoolMailChallengeSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/auth-school-mail-composition.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-auth-school-mail-confirm",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/auth/school-mail/confirm",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "SchoolMailConfirm"
+          },
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "SchoolMailVerifiedSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/auth-school-mail-composition.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-evidence-search",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/evidence/search",
+      "primaryIssue": 19,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "EvidenceSearchQuery"
+          },
+          {
+            "path": "packages/contracts/src/evidence/index.ts",
+            "symbol": "RetrievalEnvelopeVNextSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/evidence-route.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-demo-contexts-id-calendar",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/calendar",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/calendar/index.ts",
+            "symbol": "CalendarResultSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/calendar.test.ts",
+        "tests/api/calendar-deadline-evidence.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-health",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/health",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "UNKNOWN",
+        "refs": []
+      },
+      "testRefs": [
+        "tests/api/server.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Inline readiness response; releaseReady and provider flags remain false; no shared DTO declaration."
+    },
+    {
+      "id": "get-api-auth-session",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/auth/session",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "SessionSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts",
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-auth-logout",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "UNKNOWN",
+        "refs": []
+      },
+      "testRefs": [
+        "tests/api/google-auth-flow.test.ts",
+        "tests/api/server.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ],
+      "notes": "Successful response is 204 with no body; missing revoker is refused."
+    },
+    {
+      "id": "post-api-reviewer-invitations-redeem",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/reviewer/invitations/redeem",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "ReviewerInviteBody"
+          },
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "ReviewerEnrollmentSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-reviewer-capabilities",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/reviewer/capabilities",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "ReviewerCapabilitiesSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-reviewer-demo-profiles",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/reviewer/demo/profiles",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoProfilesResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-reviewer-demo-subjects-id-snapshot",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/reviewer/demo/subjects/:id/snapshot",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-demo-profiles",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/profiles",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoProfilesResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts",
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "delete-api-demo-contexts-id",
+      "surface": "core",
+      "method": "DELETE",
+      "path": "/api/demo/contexts/:id",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "ContextParams"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-context-allocation.test.ts",
+        "tests/api/demo-context-capacity.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Current-session lease release; successful response is 204 with no body."
+    },
+    {
+      "id": "post-api-demo-contexts",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/demo/contexts",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "SelectBody"
+          },
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoContextSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-context-allocation.test.ts",
+        "tests/api/demo-context-capacity.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-demo-contexts-id-overlay",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/overlay",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/demo-overlay/index.ts",
+            "symbol": "DemoOverlayResultSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-overlay-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "patch-api-demo-contexts-id-overlay",
+      "surface": "core",
+      "method": "PATCH",
+      "path": "/api/demo/contexts/:id/overlay",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/demo-overlay/index.ts",
+            "symbol": "DemoOverlayPutSchema"
+          },
+          {
+            "path": "packages/contracts/src/demo-overlay/index.ts",
+            "symbol": "DemoOverlayResultSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-overlay-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-demo-contexts-id-reset",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/demo/contexts/:id/reset",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/demo-overlay/index.ts",
+            "symbol": "DemoOverlayResetSchema"
+          },
+          {
+            "path": "packages/contracts/src/demo-overlay/index.ts",
+            "symbol": "DemoOverlayResultSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-overlay-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-demo-contexts-id-snapshot",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/snapshot",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts",
+        "tests/api/async-read-authorization.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-demo-contexts-id-notices",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/notices",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/corpus/index.ts",
+            "symbol": "NoticeResultSchema"
+          },
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts",
+        "tests/api/async-read-authorization.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-demo-contexts-id-graduation",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/graduation",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/academics/index.ts",
+            "symbol": "AcademicSummarySchema"
+          },
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts",
+        "tests/api/beta-academic-asof.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-demo-contexts-id-outlook",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/demo/contexts/:id/outlook",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/academics/index.ts",
+            "symbol": "ForecastSummarySchema"
+          },
+          {
+            "path": "packages/contracts/src/identity/index.ts",
+            "symbol": "DemoSnapshotSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/server.test.ts",
+        "tests/api/beta-academic-asof.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "get-api-reviewer-demo-contexts-id-actions",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/reviewer/demo/contexts/:id/actions",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/auth/reviewer-sandbox.ts",
+            "symbol": "ReviewerSandboxActionSchema"
+          },
+          {
+            "path": "apps/web/src/integrations/reviewer-sandbox-contract.ts"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-reviewer-demo-contexts-id-actions",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/reviewer/demo/contexts/:id/actions",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/auth/reviewer-sandbox.ts",
+            "symbol": "ReviewerSandboxActionSchema"
+          },
+          {
+            "path": "apps/web/src/integrations/reviewer-sandbox-contract.ts"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/reviewer.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-ai-approved-inputs",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/ai/approved-inputs",
+      "primaryIssue": 20,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/ai/provider-jobs.ts",
+            "symbol": "ApprovedProviderInputsSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/provider-approved-inputs-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-ai-task",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/ai/:task",
+      "primaryIssue": 20,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/server.ts",
+            "symbol": "AiRequest"
+          },
+          {
+            "path": "packages/contracts/src/ai/index.ts",
+            "symbol": "AiTaskPathSchema"
+          },
+          {
+            "path": "packages/contracts/src/ai/provider-jobs.ts",
+            "symbol": "ProviderRunRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/ai/provider-jobs.ts",
+            "symbol": "ProviderAcceptedSchema"
+          },
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "AiJobAcceptedSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/ai.test.ts",
+        "tests/api/provider-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts",
+        "apps/web/src/integrations/owner-api-client.ts"
+      ],
+      "notes": "One parameterized registration validates the four AI_TASK_PATHS; provider activation and reviewed input rights are separate gates."
+    },
+    {
+      "id": "get-api-ai-jobs-id",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/ai/jobs/:id",
+      "primaryIssue": 20,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/ai/provider-jobs.ts",
+            "symbol": "ProviderStoredJobSchema"
+          },
+          {
+            "path": "apps/web/src/integrations/api-client.ts",
+            "symbol": "AiJobResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/ai.test.ts",
+        "tests/api/provider-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/api-client.ts",
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    }
+  ],
+  "designContracts": [
+    {
+      "design": "POST /api/auth/login",
+      "primaryIssue": 27,
+      "actualRouteIds": [],
+      "notes": "Legacy password login remains intentionally retired. No matching registration in maintained source; private dynamic adapters remain UNKNOWN."
+    },
+    {
+      "design": "GET /api/auth/session",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-auth-session"
+      ],
+      "notes": "Current authenticated session route. Test references do not prove live OIDC or browser acceptance."
+    },
+    {
+      "design": "GET /auth/google/start · GET /auth/google/callback (제안)",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-auth-google-start",
+        "get-api-auth-google-callback"
+      ],
+      "notes": "Implemented aliases include /api and require a trusted Google adapter; proposed /auth paths are not registered."
+    },
+    {
+      "design": "POST /auth/hufs-email/challenge · /verify (제안)",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-auth-school-mail-request",
+        "post-api-auth-school-mail-confirm"
+      ],
+      "notes": "Proposed hufs-email challenge/verify names are /api/auth/school-mail/request and /confirm, only with trusted Google and mail ports."
+    },
+    {
+      "design": "POST /api/auth/logout",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-auth-logout"
+      ],
+      "notes": "Current revoker must succeed before the empty 204 response."
+    },
+    {
+      "design": "GET /api/demo/profiles",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-demo-profiles"
+      ],
+      "notes": "Owner/grant-scoped or synthetic REVIEWER profiles."
+    },
+    {
+      "design": "POST /api/demo/contexts",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-demo-contexts"
+      ],
+      "notes": "Actor/session/subject/version-bound context lease allocation."
+    },
+    {
+      "design": "GET /api/demo/contexts/:id/snapshot",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-demo-contexts-id-snapshot"
+      ],
+      "notes": "Atomic authorized snapshot and version checks."
+    },
+    {
+      "design": "GET /api/demo/contexts/:contextId/calendar (**신규 예정, 미구현**)",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-demo-contexts-id-calendar"
+      ],
+      "notes": "A13.2 pending label is stale: :contextId is implemented as :id. Calendar source remains optional and permission-scoped."
+    },
+    {
+      "design": "PATCH /api/demo/contexts/:id/overlay",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "patch-api-demo-contexts-id-overlay"
+      ],
+      "notes": "Versioned synthetic overlay; owner records have a separate scope."
+    },
+    {
+      "design": "POST /api/demo/contexts/:id/reset",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-demo-contexts-id-reset"
+      ],
+      "notes": "Resets the context overlay with expected version; source/owner data use separate APIs."
+    },
+    {
+      "design": "GET /api/demo/contexts/:id/graduation",
+      "primaryIssue": 11,
+      "actualRouteIds": [
+        "get-api-demo-contexts-id-graduation"
+      ],
+      "notes": "Academics section of the authorized snapshot. Current official RulePack rights and review remain independent acceptance gates."
+    },
+    {
+      "design": "POST /api/demo/contexts/:id/plans/simulate",
+      "primaryIssue": 119,
+      "actualRouteIds": [],
+      "notes": "No exact demo-context plans/simulate registration. Owner POST /api/study-plans/check is separately inventoried with a different authorization/DTO scope."
+    },
+    {
+      "design": "GET /api/demo/contexts/:id/outlook",
+      "primaryIssue": 11,
+      "actualRouteIds": [
+        "get-api-demo-contexts-id-outlook"
+      ],
+      "notes": "Forecast section of the authorized snapshot; future course offerings remain unconfirmed."
+    },
+    {
+      "design": "POST /api/demo/contexts/:id/outlook/scenarios",
+      "primaryIssue": 11,
+      "actualRouteIds": [],
+      "notes": "No exact outlook/scenarios registration. Owner major-what-if is a separate academic scenario contract."
+    },
+    {
+      "design": "GET /api/demo/contexts/:id/notices",
+      "primaryIssue": 10,
+      "actualRouteIds": [
+        "get-api-demo-contexts-id-notices"
+      ],
+      "notes": "Authorized notice section of the current demo snapshot."
+    },
+    {
+      "design": "GET /api/demo/contexts/:id/experiences",
+      "primaryIssue": 27,
+      "actualRouteIds": [],
+      "notes": "No dedicated context experiences route. Context personal kind EXPERIENCE is separately inventoried with a different DTO/query contract."
+    },
+    {
+      "design": "GET /api/demo/contexts/:id/saved-items",
+      "primaryIssue": 27,
+      "actualRouteIds": [],
+      "notes": "No dedicated context saved-items route. Context personal BOOKMARK and owner saved-items are separate contracts."
+    },
+    {
+      "design": "POST /api/demo/contexts/:id/actions",
+      "primaryIssue": 27,
+      "actualRouteIds": [],
+      "notes": "No generic context actions route. Synthetic REVIEWER actions and personal APPLICATION_DRAFT storage are separately scoped APIs."
+    },
+    {
+      "design": "GET/PATCH /api/profile",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-profile",
+        "patch-api-profile"
+      ],
+      "notes": "Mounted only with the independent selfAccount port; owner session and current consent apply."
+    },
+    {
+      "design": "GET/PUT /api/consents",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-consents",
+        "put-api-consents"
+      ],
+      "notes": "Owner consent versions and independent storage; missing selfAccount port leaves routes absent."
+    },
+    {
+      "design": "GET /api/academics/transcript",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-academics-transcript"
+      ],
+      "notes": "Immutable reviewed owner transcript wrapper."
+    },
+    {
+      "design": "POST /api/academics/import/preview",
+      "primaryIssue": 27,
+      "actualRouteIds": [],
+      "notes": "No HTTP academic import preview registration. Private intake parser/storage code exists and is not counted as an HTTP endpoint."
+    },
+    {
+      "design": "POST /api/academics/import/apply",
+      "primaryIssue": 27,
+      "actualRouteIds": [],
+      "notes": "No HTTP academic import apply registration. Operator-only intake requires separate private authorization; no route is inferred from CLI code."
+    },
+    {
+      "design": "GET /api/courses",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-courses"
+      ],
+      "notes": "Approved owner-scoped catalog page."
+    },
+    {
+      "design": "GET /api/courses/:id/offerings",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-courses-id-offerings"
+      ],
+      "notes": "Approved offering observations by course; historical observations do not guarantee future availability."
+    },
+    {
+      "design": "POST/PUT /api/study-plans",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-study-plans",
+        "put-api-study-plans-id"
+      ],
+      "notes": "POST uses collection path; PUT uses /:id and expectedVersion. This stores a private plan."
+    },
+    {
+      "design": "GET/POST /api/experience/cards",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-experience-cards",
+        "post-api-experience-cards"
+      ],
+      "notes": "Owner workspace EXPERIENCE list/create."
+    },
+    {
+      "design": "GET/PATCH/DELETE /api/experience/cards/:id",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "get-api-experience-cards-id",
+        "patch-api-experience-cards-id",
+        "delete-api-experience-cards-id"
+      ],
+      "notes": "Owner EXPERIENCE read/update/delete with version checks."
+    },
+    {
+      "design": "POST /api/experience/from-opportunity",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-experience-from-opportunity"
+      ],
+      "notes": "Requires ownerWorkspace and ownerCatalog; creates a private draft."
+    },
+    {
+      "design": "GET /api/opportunities",
+      "primaryIssue": 10,
+      "actualRouteIds": [
+        "get-api-opportunities"
+      ],
+      "notes": "Approved current owner catalog; recommendation explanation/feed routes are separately inventoried."
+    },
+    {
+      "design": "GET /api/opportunities/:id",
+      "primaryIssue": 10,
+      "actualRouteIds": [
+        "get-api-opportunities-id"
+      ],
+      "notes": "Approved owner-scoped opportunity detail."
+    },
+    {
+      "design": "POST/DELETE /api/saved-items",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-saved-items",
+        "delete-api-saved-items-id"
+      ],
+      "notes": "DELETE is an item path with expectedVersion; saved application-stage PATCH is separately inventoried."
+    },
+    {
+      "design": "POST/PATCH /api/action-plans",
+      "primaryIssue": 27,
+      "actualRouteIds": [
+        "post-api-action-plans",
+        "patch-api-action-plans-id"
+      ],
+      "notes": "PATCH is an item path; owner private planning has no external submission."
+    },
+    {
+      "design": "POST /api/ai/{task}",
+      "primaryIssue": 20,
+      "actualRouteIds": [
+        "post-api-ai-task"
+      ],
+      "notes": "Single parameterized registration constrained to four AI_TASK_PATHS; mock/provider provenance and human approval remain separate."
+    },
+    {
+      "design": "GET /api/ai/jobs/:id",
+      "primaryIssue": 20,
+      "actualRouteIds": [
+        "get-api-ai-jobs-id"
+      ],
+      "notes": "Actor/session-scoped synthetic or owner provider job; declaration references do not establish wire-shape parity."
+    },
+    {
+      "design": "GET /api/admin/usage",
+      "primaryIssue": 89,
+      "actualRouteIds": [],
+      "notes": "No admin usage HTTP registration. Offline budget/release evidence is not an equivalent endpoint."
+    },
+    {
+      "design": "POST /api/admin/corpus/approve",
+      "primaryIssue": 61,
+      "actualRouteIds": [],
+      "notes": "No corpus approve HTTP registration. Source review/storage code exists; independent rights and approval remain unverified."
+    },
+    {
+      "design": "POST /api/admin/demo/preflight",
+      "primaryIssue": 89,
+      "actualRouteIds": [
+        "post-api-admin-demo-preflight"
+      ],
+      "notes": "Independent admin authority and current evidence required; READY is not public release authorization."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TASK-00",
+      "primaryIssue": 8,
+      "relatedIssues": [
+        27,
+        19,
+        46
+      ],
+      "priority": "MUST",
+      "scope": "Common DTO/version/permission contracts and four consumer tracks; source references do not prove human cross-acceptance.",
+      "sourceRefs": [
+        {
+          "path": "packages/contracts/src/index.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/consumers/api-contract.test.ts",
+        "tests/consumers/ui-contract.test.ts",
+        "tests/consumers/academics-contract.test.ts",
+        "tests/consumers/recommendation-contract.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-01",
+      "primaryIssue": 11,
+      "relatedIssues": [
+        133,
+        27,
+        46
+      ],
+      "priority": "P1",
+      "scope": "Deterministic academic ledger, unique credits/retakes and independent calculation; actual four-person intake rights remain separate.",
+      "sourceRefs": [
+        {
+          "path": "packages/core/src/academics/ledger.ts"
+        }
+      ],
+      "testRefs": [
+        "packages/core/src/academics/ledger.test.ts",
+        "packages/core/src/academics/ledger.property.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-02",
+      "primaryIssue": 11,
+      "relatedIssues": [
+        119,
+        133,
+        19
+      ],
+      "priority": "P1",
+      "scope": "Graduation/rule approval and plans; approved official RulePack and human academic validation remain required.",
+      "sourceRefs": [
+        {
+          "path": "packages/core/src/academics/rule-approval.ts"
+        }
+      ],
+      "testRefs": [
+        "packages/core/src/academics/rule-approval.test.ts",
+        "tests/consumers/academics-vnext-handoff.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-03",
+      "primaryIssue": 119,
+      "relatedIssues": [
+        11,
+        27
+      ],
+      "priority": "P1",
+      "scope": "Owner study-plan checks and academic candidates; no enrolment or graduation certification.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/modules/profiles/owner-study-plan-check-http.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/self-study-plan-check-http.test.ts",
+        "packages/core/src/academics/study-plan.test.ts"
+      ],
+      "deferred": [
+        {
+          "priority": "P2",
+          "issue": 11,
+          "scope": "Advanced timetable/academic optimisation solver"
+        }
+      ]
+    },
+    {
+      "id": "TASK-04",
+      "primaryIssue": 9,
+      "relatedIssues": [
+        119,
+        132
+      ],
+      "priority": "P0",
+      "scope": "Mobile student UI, menu preservation and unsupported states; real accessibility/device acceptance remains separate.",
+      "sourceRefs": [
+        {
+          "path": "apps/web/src/App.tsx"
+        }
+      ],
+      "testRefs": [
+        "tests/consumers/ui-contract.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-05",
+      "primaryIssue": 27,
+      "relatedIssues": [
+        9,
+        119
+      ],
+      "priority": "P0",
+      "scope": "Owner experiences/bookmarks/actions and explicit tag approval/revocation; synthetic overlay stays separate.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/modules/profiles/self-workspace-http.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/self-workspace-http.test.ts",
+        "tests/api/experience-approval-http.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-06",
+      "primaryIssue": 10,
+      "relatedIssues": [
+        61,
+        19
+      ],
+      "priority": "P0",
+      "scope": "Deterministic eligibility/ranking and explanations; independent human gold acceptance is not inferred.",
+      "sourceRefs": [
+        {
+          "path": "packages/core/src/opportunities/rank.ts"
+        }
+      ],
+      "testRefs": [
+        "packages/core/src/opportunities/opportunities.test.ts",
+        "tests/consumers/recommendation-contract.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-07",
+      "primaryIssue": 27,
+      "relatedIssues": [
+        133,
+        46,
+        89
+      ],
+      "priority": "P0",
+      "scope": "Server session/OIDC/mail/PG/RLS and owner intake composition; real auth/database acceptance remains blocked.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/application-postgres.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/application-postgres.test.ts",
+        "tests/api/auth-school-mail-composition.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-08",
+      "primaryIssue": 20,
+      "relatedIssues": [
+        19,
+        11,
+        61
+      ],
+      "priority": "P0",
+      "scope": "Four product AI tasks with provider/evidence/budget refusal boundaries; live paid providers require separate acceptance.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/modules/ai/provider-runtime.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/provider-runtime.test.ts",
+        "tests/contracts/ai.test.ts"
+      ],
+      "deferred": [
+        {
+          "priority": "OPTIONAL",
+          "issue": 11,
+          "scope": "Separately approved RulePack authoring aid; not a fifth product AI task"
+        },
+        {
+          "priority": "OPTIONAL",
+          "issue": 20,
+          "scope": "Laya CPU opt-in with actual-host performance and rights evidence"
+        }
+      ]
+    },
+    {
+      "id": "TASK-09",
+      "primaryIssue": 119,
+      "relatedIssues": [
+        27,
+        8,
+        132
+      ],
+      "priority": "P0",
+      "scope": "Integrated snapshot/owner feature flows and web consumption; static wiring does not prove browser E2E.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/integration.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/owner-feature-integration.test.ts",
+        "tests/consumers/owner-feature-client.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-10",
+      "primaryIssue": 9,
+      "relatedIssues": [
+        27,
+        89
+      ],
+      "priority": "P0",
+      "scope": "Read-only/stale/late-response handling and reconnection; complete offline personal-data persistence remains deferred.",
+      "sourceRefs": [
+        {
+          "path": "apps/web/src/features/demo/snapshotSession.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/consumers/api-client-cancellation.test.ts",
+        "apps/web/src/features/demo/demo.test.ts"
+      ],
+      "deferred": [
+        {
+          "priority": "P2",
+          "issue": 9,
+          "scope": "Full offline personal-data mode beyond read-only/reconnection safety"
+        }
+      ]
+    },
+    {
+      "id": "TASK-11",
+      "primaryIssue": 89,
+      "relatedIssues": [
+        12,
+        27,
+        46
+      ],
+      "priority": "MUST",
+      "scope": "NCP deployment/rollback code and separately owned non-code operations; DNS/TLS/cost/SSH acceptance NOT_RUN.",
+      "sourceRefs": [
+        {
+          "path": "infra/ncp/Operator-NcpPreview.ps1"
+        }
+      ],
+      "testRefs": [
+        "tests/release/test_ncp_operator_workflow.py",
+        "tests/release/test_ncp_explicit_rollback.py"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-12",
+      "primaryIssue": 89,
+      "relatedIssues": [
+        46,
+        61,
+        27
+      ],
+      "priority": "MUST",
+      "scope": "Independent release/privacy/security evidence with external and human gates preserved.",
+      "sourceRefs": [
+        {
+          "path": "tools/release_readiness_gate.py"
+        }
+      ],
+      "testRefs": [
+        "tests/release/test_release_readiness.py",
+        "tests/release/test_private_git_metadata.py"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-13",
+      "primaryIssue": 132,
+      "relatedIssues": [
+        123,
+        61,
+        10,
+        89
+      ],
+      "priority": "P0",
+      "scope": "Synthetic corpus/poster manifests and rights/evaluation targets; generated asset targets and actual approvals remain distinct.",
+      "sourceRefs": [
+        {
+          "path": "packages/core/src/opportunities/demo-corpus.ts"
+        }
+      ],
+      "testRefs": [
+        "packages/core/src/opportunities/demo-corpus.test.ts",
+        "tests/consumers/generated-reviewer-corpus.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-14",
+      "primaryIssue": 10,
+      "relatedIssues": [
+        9,
+        19
+      ],
+      "priority": "P0",
+      "scope": "Personal notice conditions/deadlines/UNKNOWN and academic cross-checks.",
+      "sourceRefs": [
+        {
+          "path": "packages/core/src/notices/notice.ts"
+        }
+      ],
+      "testRefs": [
+        "packages/core/src/notices/notices.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-14C",
+      "primaryIssue": 27,
+      "relatedIssues": [
+        9,
+        10,
+        8
+      ],
+      "priority": "P0",
+      "scope": "Calendar wire/current grant/source/asOf scope and real web consumer; current HTTP registration supersedes stale planned wording.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/modules/calendar.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/calendar.test.ts",
+        "tests/consumers/calendar-web-integration.test.ts"
+      ],
+      "deferred": [
+        {
+          "priority": "OPTIONAL",
+          "issue": 27,
+          "scope": "Calendar .ics export requires separate explicit scope"
+        }
+      ]
+    },
+    {
+      "id": "TASK-15",
+      "primaryIssue": 27,
+      "relatedIssues": [
+        9,
+        133,
+        46
+      ],
+      "priority": "MUST",
+      "scope": "Subject/context binding, race/late replies/revocation and overlay isolation across five slots.",
+      "sourceRefs": [
+        {
+          "path": "apps/api/src/server.ts"
+        }
+      ],
+      "testRefs": [
+        "tests/api/demo-context-allocation.test.ts",
+        "tests/api/async-read-authorization.test.ts",
+        "tests/consumers/api-client-cancellation.test.ts"
+      ],
+      "deferred": []
+    },
+    {
+      "id": "TASK-16",
+      "primaryIssue": 89,
+      "relatedIssues": [
+        132
+      ],
+      "priority": "MUST",
+      "scope": "Team explanation/rehearsal and handoff acceptance by people; no automated TESTED claim.",
+      "sourceRefs": [
+        {
+          "path": "docs/HUMAN_ACCEPTANCE_GATE_20261104.md"
+        }
+      ],
+      "testRefs": [],
+      "deferred": []
+    },
+    {
+      "id": "TASK-17",
+      "primaryIssue": 11,
+      "relatedIssues": [
+        119,
+        27,
+        19
+      ],
+      "priority": "P1",
+      "scope": "Offering outlook completeness/asOf, official events and explicitly separated hypothetical scenarios.",
+      "sourceRefs": [
+        {
+          "path": "packages/core/src/forecast/offering.ts"
+        }
+      ],
+      "testRefs": [
+        "packages/core/src/forecast/offering.test.ts"
+      ],
+      "deferred": []
+    }
+  ]
+}
