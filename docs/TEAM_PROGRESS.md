@@ -1,17 +1,24 @@
 # HUFS One AI — 5인 담당 범위 진척·증거 원장
 
-> **검증 기준: 2026-11-03 KST**, GitHub `ot4562-glitch/HUFS-One-AI` `main`의 최신 확인 PR 병합·CI·리뷰, 현재 열린 이슈와 정해진 수락 게이트를 대조. 이 문서의 변경 자체는 **문서 전용**이며, 이번 회차에 실학생 원본·유료 NCP/CLOVA·실운영 E2E·독립 인적 평가를 실행하지 않았다. 이전 날짜별 원장은 [Git 이력](https://github.com/ot4562-glitch/HUFS-One-AI/commits/main/docs/TEAM_PROGRESS.md)에 남는다.
+> **현재 판정 기준: 2026-11-04 KST**, #189/#152 병합 직후 GitHub 열린 PR **32건**·일반 이슈 **40건**의 현재 상태와 고정 수락 게이트를 대조했습니다. 과거 일자별 PR 수·병합·CI 증거는 각각 당시 사실이며 **현재 HEAD 상태의 대체 자료가 아닙니다**. 수정된 합성 코드가 실제 학생 자료·유료 NCP·운영 서비스 인수가 되지는 않습니다.
 
-## 2026-11-03 PR·협업 결정 증거 — 고정 수락률 변동 없음
+## 2026-11-04 공모전 동의·HUFSAbility 권한 최신 판단
 
-- [x] **main 코드 하위 병합:** #156 SSH 합성 Preview `2e39c86a`, #157 Provider 입력 권한 `7ac5a06c`, #158 SETTLED 결과 `6e2b57de`, #159 Laya OFF scheduler `638ed77a`, #160 Raster/OCR `60ba5f60`, #162 현재 이중전공 owner `46f11efa`, #163 EMPTY_DEMO CAS/RESET `b7acd949`, #164 승인 SourceRevision PG reader `f420c4e6`, #168 PG 인증 팩토리 `809c26fd`. **동작/승인된 코드 하위 수락이지 운영 서비스/자료권리/실학업 인증 아님.**
-- [x] **UI manifest #153:** main `9b5cb81a`; 공개 5분류/24기능·비로그인 4영역의 기본 안전 표시 하위 수락. 로그인 관찰 6영역은 별도 `UNVERIFIED` 계약 결정만, 구현·실기기 인수 **[ ]**.
-- [ ] **통합 Provider:** #165→#167→#169 각 최신 HEAD CI3/3 성공하나 순차 비작성자 승인/고유 diff/본선 종단 수락이 필요. #167 P2 PENDING provenance 수정은 코드·음성시험 반영했지만 재승인 전 미병합. 실 유료 Provider 호출/과금/운영 금지.
-- [ ] **실 SQL/Owner DI:** [#170](https://github.com/ot4562-glitch/HUFS-One-AI/pull/170) HEAD `6eb7c965`, CI **4/4 PASS**, 격리 PG18 revision/EMPTY_DEMO **6/6 PASS**. [#171](https://github.com/ot4562-glitch/HUFS-One-AI/pull/171) HEAD `1132c1fe`, CI **3/3 PASS**, 합성 **2,153 PASS/53 SKIP**; 다만 두 PR은 **독립 승인/병합 대기**, 운영 PG/실 사용자 E2E 아님.
-- [ ] **Laya·UI:** #161은 비작성자 이전 승인·CI가 있어도 현재 main과 충돌, 실 Linux cgroup/ONNX/CPU/RSS 미실행. 이의상 #151/#152/#154/#155는 UI 충돌·#152 부정 입력 P2 해결/새 CI·승인 필요.
-- [x] **협업자 결정에 답변:** [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 합성 fixture 별도 유지/독립 사람 0/200, [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) 학업 이수과정·track·복수 문서/미검증 판단 보류·Git 외 자료 인계, [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 로그인 6메뉴 `UNVERIFIED`, [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119)/[#132](https://github.com/ot4562-glitch/HUFS-One-AI/issues/132)/[#144](https://github.com/ot4562-glitch/HUFS-One-AI/issues/144)/[#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81)/[#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82) owner API↔UI 인계. **의사결정 완료 ≠ 계약 구현·독립 인적 평가 완료**.
-- [ ] **사람·운영 게이트:** #46 보호 원본 6경로/기존 privacy 2 FAIL, #61 사람 독립 gold 0/200, #89 real OIDC/OTP/TLS/direct IP/NCP·자료 권리 NOT_RUN. `RELEASE_BLOCKED`.
-- **수락률 변경 0:** 심민성 **7/12(58.3%)** / 이의상 **9/12(75.0%)** / 김채윤 **7/12(58.3%)** / 박준영 **8/12(66.7%)** / 이서연 NCP 운영 **1/5(20.0%)**. 이슈 OPEN 34/CLOSED 7. 이 수치는 제품 완성도가 아니다.
+- [x] 사용자로부터 **공모전 참여자 5명 전원 동의**, **HUFSAbility 자료 수집 허가** 확보 확인. 5명 전체의 참여 동의와 실제 학업/Forms 원본 4명의 제출·목적별 4/4 응답을 구별한다. 학교 공식 운영·SSO/비공개 API/재배포·외부 AI 전송 전체 허가로 확대 해석하지 않는다.
+- [x] 공식 강의시간표에 공개된 **교수명·강의명**만 교수 관련 수집 범위. 허가된 수업 안내에서 교수 이름을 무조건 마스킹하는 추가 출시 게이트는 두지 않는다. 비공개 연락처/평가/사생활·원본 최소 보관/권한은 별도 보호.
+- [x] main의 보호 추적 경로 6개를 PR #212 HEAD Git 트리에서 **0개로 정정하는 코드 PR 제출**. `.gitignore`/metadata-only full-tree sparse CI 게이트·합성 회귀 추가. 이 값은 **PR 브랜치**, main/전체 로컬 checker PASS가 아니다.
+- [ ] #212 독립 비작성자 승인·새 HEAD CI·main 병합·실제 full private checkout privacy **기존 2 FAIL 재검증**·과거 Git history/clone 접근 검토 전 #46 전체 완료 표시 금지.
+- [ ] #61 독립 gold 200건·#89 실제 인증/TLS/운영 DB/NCP/철회/실기기 등은 **동의 확보와 별도**. 고정 수락률 변경 근거가 새로 확인되지 않아 기존 7/12 등 수치를 임의 상향하지 않는다.
+
+## 2026-11-04 현재 하위 수락 증거 — 고정 수락률 변동 없음
+
+- [x] **main 병합 확인:** #189 박준영 승인 동일교과 pure core(HEAD d33bae8, main 5718fd2), #152 이의상 현재 선택 이중전공 합성 UI(HEAD 2f0c0ed, main 28d4827). 해당 HEAD 비작성자 APPROVED, TASK-00/Chrome CI 2/2 SUCCESS, mergeability·review thread를 확인했다. #152의 strict rowImpacts P2 수정을 포함한다. **공식 학칙·원본 동의·실브라우저 운영 수락은 아님.**
+- [x] **코드 리뷰 COMMENT 제출:** #151/#154/#155(메인에 들어간 #152 내용 보존·재통합 요청), #191(저장 기초 탭 HTML 변형 확인), #205(seed 속성 테스트 독립 기대값 확인), #210(고정 seed benchmark, 선행 #196)에는 최신 HEAD·변경 경로·CI 확인에 따른 기술 코멘트를 남겼다. **AI 작성 댓글·작성자 자가 리뷰는 사람의 GitHub APPROVED 아님.**
+- [x] **기존 하위 병합 유지:** #156 SSH-only Preview, #157/#158 Provider 권한/결과, #159 Laya OFF 스케줄러, #160 Raster/OCR, #162 이중전공 Owner, #163 합성 profile CAS/RESET, #164 승인 SourceRevision, #168 인증 조립, #169 Provider PG 통합, #179 Laya 경로, #153 UI 메뉴. 하위 소프트웨어 수락이다.
+- [ ] **PR 병합·통합:** 심민성 #161 Laya child(HEAD 업데이트에 따른 새 독립 리뷰), #166 Draft ingress, #175/#177 Provider, #176 Owner, #178 auth, #180~#188·#190 PG/Source, #193~#198 수정, #204/#206~#209/#211 등이 **미병합**. #210 benchmark는 #196 선행, #204는 #195 선행, NCP #208/#209/#211도 각각 base 선행. HEAD 합성 CI 통과를 merge/운영 증거로 바꾸지 않는다.
+- [x] **이슈의 실제 하위 완료 표시:** #133 동일교과 코어(#189), #144 이중전공 합성 UI(#152)만 [x]로 반영. #192 NCP, #199 진입점, #201 benchmark, #202 academic property, #203 quota는 신규 PR 진행/종속성으로 분류했으나 **미병합이라 완료가 아님**. 전체 열린 일반 이슈 **40건 전부 OPEN**.
+- [ ] **실운영/기관/독립 검증:** #46 기존 원본 권리·과거 privacy 2 FAIL, #61 독립 인간 gold 0/200, #89 Google/학교메일·TLS/NCP/실 PostgreSQL/직접 IP 보안/기관 원문 이용권 NOT_RUN. **RELEASE_BLOCKED** 유지. 어떤 자료도 새로 외부 반출/유료 배포하지 않았다.
+- **고정 수락 게이트 변화 0:** 심민성 **7/12**, 이의상 **9/12**, 김채윤 **7/12**, 박준영 **8/12**, 이서연 **NCP 비코드 운영 1/5**. 이 값은 소프트웨어 코드 완성률이 아니라 각 복합 수락 조건의 전부 충족률이다.
 
 ## 산정 기준과 현재 결과
 

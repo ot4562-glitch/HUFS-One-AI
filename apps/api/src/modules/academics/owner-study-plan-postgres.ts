@@ -105,7 +105,16 @@ export class PostgresOwnerStudyPlanSnapshotLoader implements TrustedOwnerStudyPl
     return structuredClone({...result.snapshot,receipt});
   }
   async revalidate(input:Parameters<TrustedOwnerStudyPlanSnapshotLoader['revalidate']>[0]):Promise<boolean>{
-    const ticket=this.tickets.get(input.receipt);this.tickets.delete(input.receipt);
+    return this.validate(input,true);
+  }
+  /** Same bounded fresh SQL validation, retained for the HTTP source/rights/core
+   * gates that independently validate one disclosure several times. Existing
+   * revalidate remains consume-once, including cross-owner attempts. */
+  async revalidateCurrent(input:Parameters<TrustedOwnerStudyPlanSnapshotLoader['revalidate']>[0]):Promise<boolean>{
+    return this.validate(input,false);
+  }
+  private async validate(input:Parameters<TrustedOwnerStudyPlanSnapshotLoader['revalidate']>[0],consume:boolean):Promise<boolean>{
+    const ticket=this.tickets.get(input.receipt);if(consume)this.tickets.delete(input.receipt);
     try{
       const now=Date.parse(instant(this.clock()));
       Time.parse(input.now);

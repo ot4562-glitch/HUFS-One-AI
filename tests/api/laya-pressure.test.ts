@@ -4,6 +4,33 @@ import type {LayaPressure} from '../../packages/ai/src/laya-scheduler';
 
 afterEach(() => vi.useRealTimers());
 describe('Laya pressure instrumentation', () => {
+  it('resolves Linux metric paths identically on any host and stays inside the cgroup tree', async () => {
+    const read=vi.fn(async(path:string)=>{
+      const files:Record<string,string>={
+        '/proc/stat':'cpu 1 0 1 8 0 0 0 0\n',
+        '/proc/pressure/cpu':'some avg10=0.00 avg60=0.00 avg300=0.00 total=0\n',
+        '/proc/meminfo':'MemAvailable: 1024 kB\n',
+        '/sys/fs/cgroup/laya/memory.current':'0\n',
+        '/sys/fs/cgroup/laya/memory.events':'oom 0\noom_kill 0\n',
+      };
+      if(!(path in files))throw Error('Unexpected metric path');
+      return files[path]!;
+    });
+    const result=await readLayaPressure({cgroupPath:'/sys/fs/cgroup/worker/../laya/',read,
+      api:{p95Ms:1,baselineP95Ms:1,errorRatio:0}});
+    expect(result).toEqual({cpu:{total:10,idle:8}});
+    expect(read.mock.calls.map(([path])=>path)).toEqual(['/proc/stat','/proc/pressure/cpu',
+      '/proc/meminfo','/sys/fs/cgroup/laya/memory.current','/sys/fs/cgroup/laya/memory.events']);
+  });
+  it.each(['laya','C:\\sys\\fs\\cgroup\\laya','/sys/fs/cgroup','/sys/fs/cgroup/',
+    '/sys/fs/cgroup-other/laya','/sys/fs/cgroup/../../etc',
+    '/sys/fs/cgroup/laya\\..\\etc','/sys/fs/cgroup/laya\u0000',
+    '/sys/fs/cgroup/laya\n'])('rejects an invalid metric path before any read: %j',async cgroupPath=>{
+    const read=vi.fn(async()=> '');
+    await expect(readLayaPressure({cgroupPath,read,
+      api:{p95Ms:1,baselineP95Ms:1,errorRatio:0}})).rejects.toThrow('INVALID_CGROUP_METRICS_PATH');
+    expect(read).not.toHaveBeenCalled();
+  });
   it('combines independent API latency with CPU deltas, PSI, available RAM and cgroup OOM', async () => {
     const files: Record<string, string> = {
       '/proc/stat': 'cpu  50 0 30 900 20 0 0 0 0 0\n',

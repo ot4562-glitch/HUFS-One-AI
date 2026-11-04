@@ -13,16 +13,14 @@
 
 **예외:** 소유자 승인된 문서-only `README.md`, `STATUS.md`, `AGENTS.md`, `Proposal.md`, `Architecture.md`, `docs/*.md` 정정은 blob SHA 충돌검사 후 직접 main 변경 가능. **코드, CI/workflow, API/DB, 공통 Zod, lockfile, 유료 자원/개인 원본**은 이 예외의 대상이 아닙니다. 2026-11-01의 과거 한시적 작성자 직접 병합 사례는 새 PR의 자동 승인권이 아닙니다.
 
-## 2026-11-03 현재 인수·독립 리뷰 운영 원칙
+## 2026-11-04 현재 리뷰·CI·병합 현황 (스냅샷; 현재 HEAD는 STATUS/PR 확인)
 
-- **일반 이슈 OPEN 34 / CLOSED 7, PR OPEN 11**, 기준 main `b7acd949`(이후 문서 커밋 시 SHA는 변함). 원본 #150은 **CLOSED/NOT MERGED**이며 83경로 보존 원장은 원본 PR 댓글에 있다. #166은 Draft/운영 배포 금지.
-- #156/#157/#158/#159/#160/#162/#163/#164/#168은 검토된 **코드·합성/일회용 PG 하위 기능만 main 병합**. 이 수락은 학교 원문·실학생·실 Google/OTP·유료 Provider·NCP 운영을 의미하지 않는다.
-- **스택 우선순위:** [#165 Provider runtime](https://github.com/ot4562-glitch/HUFS-One-AI/pull/165) → [#167 BETA HTTP](https://github.com/ot4562-glitch/HUFS-One-AI/pull/167) → [#169 PG 종단](https://github.com/ot4562-glitch/HUFS-One-AI/pull/169). 현재 각각 CI3/3 SUCCESS라도 **현재 HEAD 비작성자 승인 및 부모 main/고유 diff·새 CI**가 없으면 병합 불가. #167 PENDING에 거짓 LIVE provenance를 생성하던 P2는 `4fb29bf`에서 수정·부정 테스트를 추가했으나 기존 CHANGES_REQUESTED는 자동 해소되지 않는다.
-- [#170 실제 SQL CI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/170) HEAD `6eb7c965`: 신규 PG18 loopback job + 기존 CI **4/4 SUCCESS**, revision/EMPTY_DEMO 실제 SQL **6/6 PASS**. [#171 owner PG DI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/171) HEAD `1132c1fe`: synthetic/PG/browser CI **3/3 PASS**, 합성 2,153 PASS. 둘 모두 **독립 승인 대기/미병합**; 이전 CI를 새 HEAD 승인으로 취급 금지.
-- #161 Laya IPC child는 구 HEAD에 비작성자 APPROVED가 있어도 **현 main 충돌**과 Linux cgroup/ONNX NOT_RUN이 남아 있다. UI 작성자 #151/#152/#154/#155는 서로 겹치는 화면 파일을 보호하고 최신 main 재통합·새 CI/승인 전 병합 금지. #152 P2 malformed `rowImpacts` 원소 수정 필수.
-- **협업자 의사결정 요청 처리:** 각 이슈 댓글에서 ① 요청자/선택지 ② 채택/보류 사유 ③ 코드/계약 소유 ④ 인적·기관/운영 별도 게이트 ⑤ 다음 PR/테스트를 명시해 답한다. 답변은 **기술 방향 승인**이지 정식 학사 RulePack·자료권리·프로덕션 배포 승인 아님. 판단 원장은 [STATUS](../STATUS.md)와 [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)·[#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61)·[#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 및 UI 의존 이슈 댓글을 따른다.
-- **리뷰를 기다리며 재조회만 반복하지 않는다:** 실제 새 리뷰/코드/CI 알림이 오면 즉시 반영; 그 외에는 별도 안전한 CODE_PENDING 항목 구현·시험을 진행한다. 단 자신이 작성한 PR을 스스로 독립 승인·강제 병합하는 것은 금지.
-- `RELEASE_BLOCKED`: #46 privacy 2 FAIL, #61 독립 사람 gold 0/200, #89 OIDC/TLS/PG/NCP/원본 권리 실증 미수락. 실제 클라우드/유료 provider/학생 원본 반입은 사전 별도 승인 필요.
+- **열린 PR 32건 / 일반 이슈 OPEN 40건:** #189 동일교과 순수 코어(H d33bae8 → main 5718fd2)와 #152 현재 이중전공 합성 UI(H 2f0c0ed → main 28d4827)를 HEAD 비작성자 APPROVED, 필수 TASK-00/Chrome SUCCESS, open review thread 없음, mergeable 조건 후 squash 병합했다. 각각 공식 학칙/실자료 승인 아님.
+- **협업자 코드 리뷰(검토 댓글, 승인 아님):** #205 학업 seeded 원장 속성, #210 정규화 benchmark(선행 #196), #191 WIS 기초 탭, #151/#154/#155 합성 UI에 현재 HEAD/CI·경계별 COMMENT 등록. AI/comment 검토는 비작성자 **사람 APPROVED를 대신하지 않는다**. UI 3건은 main #152 병합 내용을 보존한 재통합·최신 CI 필요.
+- **작성자 PR 병합 대기:** #161 최신 Laya child 격리 HEAD의 이전 승인 재사용 금지; #166 private ingress Draft; #175/#177 Provider 스택, #176 UI↔API, #178 학교메일, #180~#188 Source·PG, #190 복원, #193~#198 보안·회귀, #204/#206~#209/#211 NCP/자원/진입점 개선. 기본 CI 2개 PASS 또는 특수 NCP 오프라인 CI PASS만으로 최신 비작성자 승인 없이 병합할 수 없다.
+- **스택 의존:** #204 ← #195, #210 ← #196, #208 ← #207, #209 ← #197, #211 ← #208. squash/전진 main에서는 PR이 현재 base로 재조립됐는지 다시 검사한다.
+- **실행 전 재검증:** head SHA, 현재 GitHub 리뷰 승인 주체·적용 SHA, CODEOWNERS/CHANGES_REQUESTED, unresolved thread, 최신 워크플로의 실제 job conclusion·SKIP/NOT_RUN, mergeable, 선행 스택, 기본 branch의 최근 변경을 필수로 확인. 과거 HEAD 승인/CI를 현재 HEAD 승인이라고 주장하지 않는다.
+- **이슈 완료는 수락 조건별:** #133의 #189 순수 코어, #144의 #152 합성 UI 같은 **하위 코드만** 완료 표시하고, 남은 공식 RulePack·권리·운영 로그인·접근성 인수 때문에 전체 이슈를 닫지 않는다. #46/#61/#89 및 RELEASE_BLOCKED 유지.
 
 ## 원격 브랜치 정리 절차
 
@@ -39,7 +37,7 @@
 
 - 하나의 요구에는 **기존 이슈를 우선 사용**합니다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)는 기존 메뉴 기능/상태 **기준**, [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141)은 더 나은 독립 UX **구현·디자인**으로 분리하되 양방향 연결합니다.
 - 제안에는 `enhancement`, 재현 가능한 제품 결함에는 `bug` 등 **실제 존재하는 GitHub 라벨**을 부착합니다. 라벨은 승인/완료 상태가 아닙니다.
-- **열린 일반 이슈 34건 각각 주관 1명/지원 별도**, 닫힌 7건은 [담당자별 전수 원장](WORKSTREAMS.md)에 정확히 1번씩 배치(미배정·중복 0). 공동 assignee 11건의 주관/협업 구분을 이슈 본문 첫머리에 반영. 기존 assignees와 라벨 보존.
+- **현재 열린 이슈 수와 주관은 [STATUS](../STATUS.md) 및 GitHub를 재확인**하고, 정해진 5인 책임 경계를 [WORKSTREAMS](WORKSTREAMS.md)에서 유지한다. 2026-11-03 당시의 34건/닫힌 7건 목록은 역사 기록이다. 공동 assignee 11건의 주관/협업 구분을 이슈 본문 첫머리에 반영. 기존 assignees와 라벨 보존.
 - 각각 **담당, 진행 상태(진행/차단/외부 검증 대기), 선행 PR/이슈, [x] 세부 증거, [ ] 미완료, 합성/운영 경계**를 읽기 쉬운 최상단에 유지합니다. 과거 상태를 새 문단으로 누적하기보다는 기존 최신 요약을 교체하고 GitHub 편집/PR 이력을 이용합니다.
 - **CLOSED/completed**는 이슈 본문 전체 수락 기준이 검증됐을 때만 사용합니다. 부분 완료/계약만 완료/개인 동의는 남은 보안·출처·UI/실측 게이트를 자동 종결시키지 않습니다.
 - 개인정보 보존/감사 이슈 #46, 배포 차단 #89 등은 **삭제·중복 종료보다 선행 증거 확보**를 우선합니다.
