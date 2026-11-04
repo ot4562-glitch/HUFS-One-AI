@@ -12,7 +12,7 @@ CHECKOUT="actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 SETUP="actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 ALLOWED={
     "/package.json","/package-lock.json","/tsconfig.json",
-    "/packages/contracts/","/packages/fixtures/synthetic/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
+    "/packages/contracts/","/packages/ai/src/","/packages/fixtures/synthetic/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
     "/.github/workflows/ui-browser-e2e.yml",
     "/tools/check_local_account_browser.mjs","/tools/strip_build_sourcemaps.mjs",
 }
@@ -84,6 +84,11 @@ class BrowserE2EWorkflowTests(unittest.TestCase):
 
     def test_current_workflow_rejects_private_sources_and_browser_download(self):
         self.assertEqual(audit(self.workflow),[])
+
+    def test_provider_runtime_imports_are_present_without_private_checkout(self):
+        self.assertIn("/packages/ai/src/", ALLOWED)
+        self.assertIn("            /packages/ai/src/", self.workflow.splitlines())
+        self.assertNotIn("            /packages/ai/", self.workflow.splitlines())
 
     def test_unreviewed_paths_fail(self):
         self.assertTrue(audit(self.workflow.replace("            /apps/web/\n",
