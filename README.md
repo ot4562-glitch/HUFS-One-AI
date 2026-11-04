@@ -1,6 +1,6 @@
 # HUFS One AI
 
-> **최신 코드 정리:** 소유자 및 협업자 기존 개발 변경을 #216으로 main에 통합하고 OPEN PR 0건. 10개 CLOSED/미병합 스택 PR의 HEAD도 main ancestry에 보존했다. 실제 Google/학교메일/운영 PG·NCP/TLS·gold 200·Git 과거 원본 이력은 미수락으로 **RELEASE_BLOCKED**. [현재 상태](STATUS.md)·[사람 검증](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+> **2026-11-05 코드 통합:** #216 선행 통합에 이어 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) 동일교과 속성 테스트와 [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) What-if 합성 코어를 `main`에 병합했다. [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219)는 인증/SQL 역할 보안 재검토, [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220)은 대규모 Source·AI·EMPTY_DEMO Draft 검증 중이다. **코드 병합은 실학생 자료·공식 학칙·사람 gold 200·운영 PostgreSQL/Google/NCP/TLS 인수가 아니다. RELEASE_BLOCKED.** 최신 PR·CI/미완료 조건은 [STATUS](STATUS.md)와 [인적 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 확인한다.
 
 
 **한국외대 학생의 정보 탐색·개인화를 돕는 독립 팀 프로젝트**입니다. 기존 HUFSAbility의 익숙한 기능과 메뉴를 보존하는 사용자 경험을 목표로 하지만, **학교 공식 HUFSAbility 개편·운영 서비스가 아닙니다**. 원본 UI/학교 저작물·학생 데이터·공식 로그인·자료 이용권을 허가 없이 복제·연동하지 않습니다.
@@ -22,7 +22,7 @@
 - 같은 허용 공고를 관심사·선택한 경험·진로에 따라 다르게 정렬해 큰 추천 카드/작은 일반 목록, 추천 이유·마감/정정 근거, 일정·자기기록·별도 학업 계획을 안내합니다. AI의 분류 후보는 확정 결과가 아니고 자격·마감·학점은 코드 및 검수 근거로 판정합니다.
 - [#141 UI/UX 고도화](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 HUFSAbility와 동일한 픽셀·컴포넌트를 복제하는 대신 **탐색·정보 위계·모바일·접근성이 더 좋은 독립적인 디자인**을 개발합니다.
 
-## 구현·협업 판단 — 2026-11-04 현재
+## 2026-11-04 구현·협업 판단 (역사 스냅샷; 현행은 STATUS 참조)
 
 - **GitHub 기준 (2026-11-04):** 열린 일반 이슈 **15건** (기존 40건에서 25건 정본으로 이관 후 종료), 열린 PR **0건**. [통합 PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)이 main f23b86bb에 merge commit으로 병합됐고, 병합 후 TASK-00/NCP IaC/Chrome **3/3 CI SUCCESS**. 제품 공개는 별개. [실시간 STATUS](STATUS.md)를 정본으로 사용하며 오래된 HEAD 또는 PR 수를 그대로 재사용하지 않습니다.
 - **2026-11-04 이슈 정리:** 중복되던 열린 이슈 **40건→15건**, 25건 `duplicate` 이관 종료. 현행 이슈는 **11건 단독 담당/4건 실제 공동 작업**이고, 완료 구현은 설명으로·미완료만 체크리스트로 분리했다. [정본 이슈 15개와 이관 원장](STATUS.md#5-2026-11-04-이슈-구조-재정리-기존-open-40--현재-open-15)을 참고한다. 원래 7개 닫힌 이슈는 변경하지 않았다.
