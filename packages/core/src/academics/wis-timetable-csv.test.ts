@@ -17,6 +17,12 @@ const page = (rows:TimetableRow[], over:Partial<TimetableImport> = {}):Timetable
 });
 
 describe('toSavedCurriculumCsv', () => {
+  it('exports a 기초 row with no 학년 like any other row, with its 개설영역 as written', () => {
+    const out = toSavedCurriculumCsv(page([row(1, {area:'BASIC', areaLabel:'가상단과대학', gradeYear:null})]));
+    expect(out.withheld).toEqual([]);
+    expect(out.csv.split('\n')[1]).toBe('SYN010101,가상 과목 1,3,가상단과대학,SYNDEPT,2026-2,UNKNOWN,UNKNOWN');
+  });
+
   it('writes one line per section in the import header order, with 개설영역 as written', () => {
     const out = toSavedCurriculumCsv(page([
       row(1, {attributes:['REQUIRED', 'FOREIGN_LANGUAGE'], instructionLanguage:'ENG', note:'21학번부터 전필',
