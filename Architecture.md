@@ -1,5 +1,7 @@
 # HUFS One AI | Architecture.md
 
+> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 현재 아키텍처 코드 기준 2026-11-04: PR #216으로 운영자 루프백 API + 분리된 PostgreSQL 7 ROLE/TLS, NCP 네트워크/host IaC와 설치·복구, UI/학업/추천 종단이 main f23b86bb에 통합됐다. main 코드 필수 CI 3/3 성공, OPEN PR 0. 이 문서 아래 2026-11-01~02 PR 대기/당시 구현 현황은 역사 기록이며 현재 HEAD는 [STATUS](STATUS.md), 미구현과 실인증/RulePack/NCP/사람 검증은 [잔여 과제](docs/REMAINING_IMPLEMENTATION_20261104.md). RELEASE_BLOCKED 유지.
+
 > **2026-11-02 UI/IA 설계 최신 결정(우선):** [텍스트 학생용 HUFSAbility 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)는 데스크톱 **76개 관찰 화면·11개 상위 탐색 영역**(검증 전 리다이렉트 1건)을 형태·치수·목적별로 정리한 참고 증거다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 공식 공개 안내 **5분류/24기능+비로그인 4영역**과 **동일한 목록이라고 가정하지 말고** 명칭·계층·관찰 범위·별칭·미확인 경로를 대응한다. [UI 현대화 담당 이슈 #141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 기능을 모두 찾을 수 있는 전체 메뉴로 보존하되 `NOT_IMPLEMENTED/UNVERIFIED`는 실제 비활성 **🚫 미지원/검증 전**(텍스트+접근성), `DEMO_AVAILABLE`만 실제 main에 검증된 기능 route로 연결, `OFFICIAL_LINK_ONLY`는 별도 공식 링크. 사용자에게 HUFSAbility의 자연스러운 발전처럼 **익숙한 정보/사용자 여정**을 제공하되 화면/색/레이아웃·자산을 똑같이 구현하는 것이 아니라 **명료한 정보 계층, 탐색, 개인화·기한 근거, 모바일·키보드·스크린리더가 더 좋은 독립 UI**를 설계한다. 학교 정식 서비스/업데이트·SSO/API/소스/학생 개인정보 허가가 있다는 암시는 금지. 중앙 #137 manifest 소비 연결, 실제 route/권한/동의·연결 해제의 실패-닫힘과 자체 제품 색/디자인 토큰/사용자 안내 기준을 우선한다.
 
 > **2026-11-02 구현 검증 범위:** #139 합성 계정·전공 변경 재계산 테스트 main `26c559e` 및 #140 판본 정정·피드 일치 테스트 main `41de619`, 각 HEAD 타인 APPROVED+합성/PG/Chrome CI 3/3. UI/실자료/운영 구현이 아님. #131 CHANGES_REQUESTED, #134 #131 종속/미병합, #138 Draft+CHANGES_REQUESTED. 최신 이슈/문서 결과는 [STATUS.md](STATUS.md) 참조; #46/#89 RELEASE_BLOCKED.
