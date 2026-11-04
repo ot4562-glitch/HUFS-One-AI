@@ -35,6 +35,30 @@ describe('TASK-19 synthetic SSRF / HTTPS egress policy (NO real network)',()=>{
       '2002:c0a8:0101::','0x7f.0.0.1','127.1',
     ])expect(isPublicIngestionIp(ip),ip).toBe(false);
   });
+  it('compares IPv6 subnets numerically across compression, padding and case',()=>{
+    for(const ip of [
+      '2001:0db8::1','2001:0DB8:0:0:0:0:0:1','2001:db8::192.0.2.1',
+      '2001::1','2001:00::1','2001:000::1','2001:0000:0:0:0:0:0:1',
+      '2001:2::1','2001:0002:0000:ffff:ffff:ffff:ffff:ffff',
+      '2002:0000::1','3fff::1','3fff:0fff:ffff:ffff:ffff:ffff:ffff:ffff',
+      '2001:4860::8888%eth0',
+    ])expect(isPublicIngestionIp(ip),ip).toBe(false);
+    for(const ip of ['2001:4860:4860::8888','2001:4860:4860:0:0:0:0:8888','3fff:1000::1'])
+      expect(isPublicIngestionIp(ip),ip).toBe(true);
+  });
+  it('does not reject entire public IPv4 /16 blocks around special-use /24 ranges',()=>{
+    for(const ip of ['192.0.1.1','192.0.3.1','192.0.78.24','192.88.98.1','192.88.100.1'])
+      expect(isPublicIngestionIp(ip),ip).toBe(true);
+    for(const ip of ['192.0.0.1','192.0.2.255','192.88.99.1','192.88.99.255','192.168.0.1'])
+      expect(isPublicIngestionIp(ip),ip).toBe(false);
+  });
+  it('never connects when any DNS answer disguises a denied IPv6 prefix',async()=>{
+    for(const ip of ['2001:0db8::1','2001:00::1','2001:0002::1','3fff::1']){
+      const x=transport([[GOOD,ip],[GOOD,ip]]);
+      await expect(x.request(new URL(SOURCE_URL),REQUEST)).rejects.toThrow(/policy denied/);
+      expect(x.calls).toHaveLength(0);
+    }
+  });
   it('revalidates all DNS A/AAAA records and pins TLS SNI to the source name',async()=>{
     const x=transport([[GOOD,'8.8.8.8'],['8.8.8.8',GOOD]]);
     await expect(x.request(new URL(SOURCE_URL),REQUEST)).resolves.toBeInstanceOf(Response);

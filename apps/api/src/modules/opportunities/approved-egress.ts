@@ -1,4 +1,16 @@
-import {isIP} from 'node:net';
+import {BlockList,isIP} from 'node:net';
+
+// Compare address bits, not spellings: 2001:0db8:: and 2001:db8:: are
+// the same subnet. These local lists perform no DNS or network operations.
+const globalV6=new BlockList(),specialV6=new BlockList();
+globalV6.addSubnet('2000::',3,'ipv6');
+for(const [network,prefix] of [
+  ['2001::',32],      // Teredo
+  ['2001:2::',48],    // Benchmarking (RFC 5180)
+  ['2001:db8::',32],  // Documentation (RFC 3849)
+  ['2002::',16],      // 6to4 tunnel
+  ['3fff::',20],      // Documentation (RFC 9637)
+] as const)specialV6.addSubnet(network,prefix,'ipv6');
 
 /**
  * Safe default: IPv4 special-purpose ranges are denied; IPv6 is allowed only
@@ -14,21 +26,14 @@ export function isPublicIngestionIp(address:string):boolean{
     if(a===100&&b>=64&&b<=127)return false; // carrier-grade NAT
     if(a===169&&b===254)return false;
     if(a===172&&b>=16&&b<=31)return false;
-    if(a===192&&(b===0||b===168||b===88))return false;
-    if(a===192&&b===0&&c===2)return false;
+    if(a===192&&(b===168||(b===0&&(c===0||c===2))||(b===88&&c===99)))return false;
     if(a===198&&(b===18||b===19||(b===51&&c===100)))return false;
     if(a===203&&b===0&&c===113)return false;
     return true;
   }
   if(family===6){
-    const lowercase=address.toLowerCase();
-    if(lowercase.includes('%'))return false;
-    const first=Number.parseInt(lowercase.split(':')[0]??'',16);
-    if(!Number.isFinite(first)||first<0x2000||first>0x3fff)return false;
-    if(lowercase.startsWith('2001:db8:')||lowercase==='2001:db8::')return false;
-    if(/^2001:(?:0|0000|):/.test(lowercase))return false; // Teredo
-    if(lowercase.startsWith('2002:'))return false; // 6to4 tunnel
-    return true;
+    if(address.includes('%'))return false;
+    return globalV6.check(address,'ipv6')&&!specialV6.check(address,'ipv6');
   }
   return false;
 }
