@@ -10,7 +10,7 @@ import {App} from '../../App.js';
 import {appPages} from '../../pages/index.js';
 import type {HistoryPort} from '../../shell/router.js';
 import {buildWhatIfView, type Scenario} from './whatIfView.js';
-import type {WhatIfPort} from './WhatIfPanel.js';
+import {WhatIfPanel, type WhatIfPort} from './WhatIfPanel.js';
 
 afterEach(cleanup);
 const AS_OF = '2026-11-20T00:00:00.000Z';
@@ -68,6 +68,19 @@ const panel = () => screen.queryByRole('region', {name: '전공을 바꾸면? �
 const submit = async () => { fireEvent.click(within(panel()!).getByRole('button', {name: '가정 분석하기'})); await flush(); };
 
 describe('#82 /graduation/what-if', () => {
+  it('drops a completed analysis when a replacement snapshot keeps the same context and asOf', async () => {
+    const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'RUN');
+    await controller.select('S01');
+    const before = controller.getState();
+    const view = render(<WhatIfPanel state={before} controller={controller} port={port0} />);
+    await submit();
+    expect(screen.getByRole('table')).toBeTruthy();
+    const after = {...before, snapshot: {...before.snapshot!, versions: {...before.snapshot!.versions, overlay: 'NEXT-OVERLAY'}}};
+    view.rerender(<WhatIfPanel state={after} controller={controller} port={port0} />);
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByText('47학점')).toBeNull();
+  });
+
   it('reached from 졸업; nothing runs until asked; READY result is a labelled table marked as an example', async () => {
     let calls = 0;
     const counting: WhatIfPort = {...port0, check: (c, s, sig) => { calls++; return port0.check(c, s, sig); }};

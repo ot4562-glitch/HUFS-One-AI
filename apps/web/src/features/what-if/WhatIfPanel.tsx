@@ -1,5 +1,5 @@
 import {useId, useState, type FormEvent} from 'react';
-import type {DemoContext} from '@hufs-one/contracts';
+import type {DemoContext, DemoSnapshot} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from '../../app/index.js';
 import {HufsApiError} from '../../integrations/api-error.js';
 import {ACTION_TEXT, HYPOTHETICAL_TEXT, buildWhatIfView, needsTarget, type Scenario, type ScenarioAction, type WhatIfView} from './whatIfView.js';
@@ -16,10 +16,10 @@ export interface WhatIfPort {
   check(context: DemoContext, scenario: Scenario, signal: AbortSignal): Promise<unknown>;
 }
 
-type Result =
+type Result = (
   | {readonly key: string; readonly kind: 'LOADING'}
   | {readonly key: string; readonly kind: 'ERROR' | 'STALE' | 'UNAVAILABLE'}
-  | {readonly key: string; readonly kind: 'VIEW'; readonly view: WhatIfView};
+  | {readonly key: string; readonly kind: 'VIEW'; readonly view: WhatIfView}) & {readonly snapshot: DemoSnapshot};
 
 const ACTIONS = Object.keys(ACTION_TEXT) as ScenarioAction[];
 
@@ -41,7 +41,7 @@ export function WhatIfPanel({state, controller, port}: {state: DemoViewState; co
   if (!snapshot) return null;
   const withTarget = needsTarget(action);
   const key = `${scope}:${submission}`;
-  const shown = result && result.key === key ? result : null;
+  const shown = result && result.key === key && result.snapshot === snapshot ? result : null;
 
   const edit = (f: () => void) => { f(); setResult(null); setSubmission(n => n + 1); };
   const submit = (e: FormEvent) => {
@@ -51,7 +51,7 @@ export function WhatIfPanel({state, controller, port}: {state: DemoViewState; co
     const label = withTarget ? port.programs.find(p => p.id === target)?.label ?? null : null;
     const next = submission + 1, runKey = `${scope}:${next}`;
     setSubmission(next);
-    setResult({key: runKey, kind: 'LOADING'});
+    setResult({key: runKey, snapshot, kind: 'LOADING'});
     void controller.runContextOperation(async (ctx, signal) => {
       try {
         return {raw: await port.check(ctx, scenario, signal)} as const;
@@ -64,9 +64,9 @@ export function WhatIfPanel({state, controller, port}: {state: DemoViewState; co
       if (r === null) return; // stale / denied: the controller state explains
       setResult(prev => {
         if (!prev || prev.key !== runKey) return prev; // a newer submission or edit won
-        if ('failed' in r) return {key: runKey, kind: r.failed};
+        if ('failed' in r) return {key: runKey, snapshot, kind: r.failed};
         const v = buildWhatIfView(r.raw, {scenario, asOf: snapshot.asOf, targetLabel: label});
-        return v.ok ? {key: runKey, kind: 'VIEW', view: v.view} : {key: runKey, kind: 'ERROR'};
+        return v.ok ? {key: runKey, snapshot, kind: 'VIEW', view: v.view} : {key: runKey, snapshot, kind: 'ERROR'};
       });
     });
   };
