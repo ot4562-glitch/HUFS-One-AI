@@ -1,0 +1,16 @@
+{
+  "scope": "NETWORK_ONLY_V1",
+  "project": "hufs-one-ai",
+  "prefix": "hufs-preview",
+  "source_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "preflight_plan_sha256": "d287dcf4417a315d2f872d87fdb9690890535e3a3d575889dccec16f690178e7",
+  "zone": "KR-1",
+  "vpc_cidr": "10.27.0.0/16",
+  "subnet_cidr": "10.27.10.0/24",
+  "admin_cidr": "93.184.216.34/32",
+  "dns_cidr": "9.9.9.9/32",
+  "server_ephemeral_min": 32768,
+  "server_ephemeral_max": 60999,
+  "client_ephemeral_min": 49152,
+  "client_ephemeral_max": 65535
+}
