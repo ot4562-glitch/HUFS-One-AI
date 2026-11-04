@@ -1,6 +1,6 @@
 import {randomBytes} from 'node:crypto';
 import {z} from 'zod';
-import {OpportunityRevisionComparisonClaimSchema,SourceSpanVNextSchema,matchesTextSpan,
+import {OpportunityRevisionComparisonClaimSchema,OpportunityRevisionComparisonContextResponseSchema,SourceSpanVNextSchema,matchesTextSpan,
   matchesImageSpan,matchesEvidenceScope} from '@hufs-one/contracts';
 import type {EvidenceScope,SourceSpanVNext} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
@@ -15,6 +15,8 @@ const Sha=z.string().regex(/^[a-f0-9]{64}$/);
 const Time=z.preprocess(v=>v instanceof Date?v.toISOString():v,z.iso.datetime({offset:true}));
 const Scope=z.strictObject({actorId:Actor,opportunityId:Id,beforeRevisionId:Id,afterRevisionId:Id,asOf:Time});
 type Scope=z.infer<typeof Scope>;
+const Context=z.strictObject({actorId:Actor,opportunityId:Id,asOf:Time,now:Time});
+const Candidate=z.strictObject({after_revision_id:Id,before_revision_id:Id});
 const Payload=z.strictObject({claims:z.array(OpportunityRevisionComparisonClaimSchema).min(1).max(3),
   evidence:z.array(z.strictObject({evidenceRef:Id,span:SourceSpanVNextSchema})).min(1).max(90)});
 const Approval=z.object({approval_id:Id,actor_id:Actor,opportunity_id:Id,revision_id:Id,source_id:Id,
@@ -66,10 +68,12 @@ type Ticket={scope:Scope;fingerprint:string;expires:number;sourceReceipt?:string
 export class PostgresApprovedRevisionClaims {
   readonly source:TrustedOpportunityRevisionComparisonSource;
   readonly rights:TrustedOpportunityRevisionComparisonRights;
+  readonly context:{find(input:z.infer<typeof Context>):Promise<z.infer<typeof OpportunityRevisionComparisonContextResponseSchema>|null>};
   private readonly sources=new Map<string,Ticket>();
   private readonly disclosures=new Map<string,Ticket>();
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){
+    this.context={find:input=>this.discover(input)};
     this.source={inspect:async input=>{
       const scope=Scope.parse(this.pick(input)),read=await this.read(scope,input.now);
       if(!read)fail();return {...read.pair,receipt:this.ticket(this.sources,scope,read)};
@@ -86,6 +90,53 @@ export class PostgresApprovedRevisionClaims {
         ||canonicalProjectionHash(input.revisions)!==canonicalProjectionHash(expected))return {allowed:false,rightsReceipt:''};
       return {allowed:true,rightsReceipt:this.ticket(this.disclosures,scope,read,input.sourceReceipt)};
     },revalidate:async input=>this.revalidate(this.disclosures,input,input.rightsReceipt,input.sourceReceipt)};
+  }
+  /** Discovers only the direct predecessor of one current head, from an
+   * exact actor/opportunity claim. A pair is disclosed ONLY if the full private
+   * comparison reader reauthorizes both independent reviewed claims and rights.
+   * No URL, raw paragraph, non-current revision, or row-count oracle leaves the API. */
+  private async discover(raw:z.infer<typeof Context>):Promise<z.infer<typeof OpportunityRevisionComparisonContextResponseSchema>|null>{
+    const input=Context.parse(raw),unavailable=()=>({
+      opportunityId:input.opportunityId,asOf:input.asOf,available:false as const,
+    });
+    if(at(input.asOf)>at(input.now))return unavailable();
+    // Current actor, purpose consent and server-owned scope must precede SQL metadata discovery.
+    const auth=await this.preflight({actorId:input.actorId,opportunityId:input.opportunityId,
+      beforeRevisionId:'DISCOVERY_BEFORE',afterRevisionId:'DISCOVERY_AFTER',asOf:input.asOf},input.now);
+    if(!auth)return null;
+    const c=await this.pool.connect();let opened=false;
+    let candidates:unknown[]=[];
+    try{
+      await c.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');opened=true;
+      await c.query("SET LOCAL statement_timeout='5s'");
+      await c.query("SELECT set_config('hufs.self_actor',$1,true)",[input.actorId]);
+      const rows=await c.query(
+        'SELECT s.revision_id AS after_revision_id,s.supersedes AS before_revision_id '+
+        'FROM api_opportunity_revision_claim_approvals a '+
+        'JOIN source_effective_revisions_vnext s ON s.revision_id=a.revision_id '+
+        'JOIN source_ingest_heads h ON h.source_id=s.source_id AND h.revision_id=s.revision_id '+
+        'WHERE a.actor_id=$1 AND a.opportunity_id=$2 AND s.fetched_at<=$3::timestamptz '+
+        'AND s.permission_ref=ANY($4::text[]) AND ($5::text[] IS NULL OR s.source_id=ANY($5::text[])) '+
+        'ORDER BY s.fetched_at DESC,s.revision_id DESC LIMIT 2',
+        [input.actorId,input.opportunityId,input.asOf,[...auth.grants.permissionRefs],
+          auth.grants.sourceIds?[...auth.grants.sourceIds]:null]);
+      candidates=rows.rows;
+      await c.query('COMMIT');opened=false;
+    }catch{
+      if(opened)try{await c.query('ROLLBACK');}catch{/* deny */}
+      fail();
+    }finally{c.release();}
+    if(candidates.length!==1)return unavailable();
+    const parsed=Candidate.safeParse(candidates[0]);
+    if(!parsed.success)return unavailable();
+    const scope=Scope.parse({actorId:input.actorId,opportunityId:input.opportunityId,
+      beforeRevisionId:parsed.data.before_revision_id,afterRevisionId:parsed.data.after_revision_id,
+      asOf:input.asOf});
+    const verified=await this.read(scope,input.now);
+    if(!verified||verified.pair.before.reviewState!=='REVIEWED'
+      ||verified.pair.after.reviewState!=='REVIEWED')return unavailable();
+    return {opportunityId:input.opportunityId,asOf:input.asOf,available:true,
+      beforeRevisionId:scope.beforeRevisionId,afterRevisionId:scope.afterRevisionId};
   }
   private pick(input:Scope):Scope{
     return {actorId:input.actorId,opportunityId:input.opportunityId,beforeRevisionId:input.beforeRevisionId,
