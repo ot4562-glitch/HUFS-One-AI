@@ -114,3 +114,36 @@ test('does not inspect a file beyond its bound or claim a complete truncated sca
   assert.equal(r.status,'PARTIAL');assert.equal(r.staticCoverage,'INCOMPLETE');
   assert.ok(r.unknown.some(x=>x.path==='apps/api/src/big.ts'&&x.reason==='FILE_LIMIT'));
 });
+
+test('tracks an emitted worker through its literal copy provenance while leaving the output location unknown',async()=>{
+  const child="const worker=import.meta.url.endsWith('.ts')?new URL('../../../infra/laya/laya-worker.mjs',import.meta.url):new URL('./laya-worker.mjs',import.meta.url);"
+    +"const other=import.meta.url.endsWith('.ts')?new URL('../../../infra/laya/uncopied-worker.mjs',import.meta.url):new URL('./uncopied-worker.mjs',import.meta.url);";
+  const {root}=await fixture({
+    'packages/ai/src/laya-child-worker.ts':child,
+    'infra/laya/laya-worker.mjs':'export const synthetic=true;',
+    'infra/laya/uncopied-worker.mjs':'export const synthetic=true;',
+    'infra/laya/laya-build.mjs':"import {readFile,writeFile} from 'node:fs/promises'; import {resolve} from 'node:path'; export async function build(outDirectory){await writeFile(resolve(outDirectory,'laya-worker.mjs'),await readFile(new URL('./laya-worker.mjs',import.meta.url)));}",
+  });
+  const r=await auditEntrypoints(root);
+  assert.equal(r.findings.length,0);
+  assert.ok(r.references.some(x=>x.from==='packages/ai/src/laya-child-worker.ts'
+    &&x.to==='infra/laya/laya-worker.mjs'&&x.kind==='EMITTED_MODULE_URL'));
+  assert.ok(r.unknown.some(x=>x.path==='packages/ai/src/laya-child-worker.ts'&&x.reason==='RUNTIME_OUTPUT_DIRECTORY'));
+  assert.ok(r.unknown.some(x=>x.path==='packages/ai/src/laya-child-worker.ts'&&x.reason==='RUNTIME_LAYOUT_URL'));
+  assert.ok(!r.references.some(x=>x.kind==='EMITTED_MODULE_URL'&&x.to==='infra/laya/uncopied-worker.mjs'));
+});
+
+test('classifies literal Dockerfile URLs as exact resources and still reports a missing resource',async()=>{
+  const {root}=await fixture({
+    'infra/deploy/Dockerfile':'FROM scratch',
+    'infra/missing/Dockerfile.ts':'export const cannotStandInForAResource=true;',
+    'tests/security/resource.test.mjs':"import {readFileSync} from 'node:fs'; readFileSync(new URL('../../infra/deploy/Dockerfile',import.meta.url)); readFileSync(new URL('../../infra/missing/Dockerfile',import.meta.url));",
+  });
+  const r=await auditEntrypoints(root);
+  assert.equal(isAllowedPath('infra/deploy/Dockerfile'),true);
+  assert.ok(r.references.some(x=>x.from==='tests/security/resource.test.mjs'
+    &&x.to==='infra/deploy/Dockerfile'&&x.kind==='RESOURCE_URL'));
+  assert.deepEqual(r.findings.map(x=>({target:x.target,kind:x.kind})),[
+    {target:'infra/missing/Dockerfile',kind:'RESOURCE_URL'},
+  ]);
+});

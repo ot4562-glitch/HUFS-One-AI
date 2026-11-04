@@ -17,7 +17,7 @@ export function isAllowedPath(path){
   if(parts[0]==='packages'&&!/^packages\/(?:contracts|core|ai|ui)\//.test(path)
     &&!/^packages\/fixtures\/(?:synthetic|negative)\//.test(path))return false;
   if(DOCS.includes(path))return true;
-  return (SOURCE.test(path)||path.endsWith('/README.md'))&&(ROOTS.includes(path)||/^(?:apps|packages|tools|tests|infra)\//.test(path)
+  return (SOURCE.test(path)||path.endsWith('/README.md')||posix.basename(path)==='Dockerfile')&&(ROOTS.includes(path)||/^(?:apps|packages|tools|tests|infra)\//.test(path)
     ||/^\.github\/workflows\//.test(path));
 }
 const owner=path=>/^apps\/web\//.test(path)?'UI':/^packages\/core\/src\/academics\//.test(path)?'ACADEMICS'
@@ -27,6 +27,61 @@ function candidates(path){
   return [p,p.replace(/\.js$/,'.ts'),p.replace(/\.js$/,'.tsx'),
     ...(!posix.extname(p)?['.ts','.tsx','.js','.mjs','/index.ts','/index.js'].map(ext=>p+ext):[])];
 }
+
+function literalModuleUrl(node,source){
+  if(!node||!ts.isNewExpression(node)||!ts.isIdentifier(node.expression)||node.expression.text!=='URL')return;
+  const [target,base]=node.arguments??[];
+  return target&&ts.isStringLiteralLike(target)&&target.text.startsWith('.')
+    &&base?.getText(source)==='import.meta.url'?target.text:undefined;
+}
+function emittedSourceAlternative(node,source,path){
+  const parent=node.parent;
+  if(!path.endsWith('.ts')||!parent||!ts.isConditionalExpression(parent)||parent.whenFalse!==node)return;
+  const c=parent.condition;
+  if(!ts.isCallExpression(c)||!ts.isPropertyAccessExpression(c.expression)
+    ||c.expression.name.text!=='endsWith'||c.expression.expression.getText(source)!=='import.meta.url'
+    ||c.arguments.length!==1||!ts.isStringLiteralLike(c.arguments[0])||c.arguments[0].text!=='.ts')return;
+  return literalModuleUrl(parent.whenTrue,source);
+}
+// Narrow provenance only: a literal readFile(URL) copied by writeFile(resolve(
+// dynamicOutput, literalName), ...). No build execution, inferred output root,
+// basename-only remap, or declaration of runtime reachability.
+function literalModuleCopies(contents,tracked){
+  const copies=new Map(),unawait=node=>node&&ts.isAwaitExpression(node)?node.expression:node;
+  for(const [path,text] of contents){
+    if(!CODE.test(path)||!text.includes('writeFile')||!text.includes('readFile'))continue;
+    const source=ts.createSourceFile(path,text,ts.ScriptTarget.Latest,true);
+    const bindings=new Map();
+    for(const statement of source.statements)if(ts.isImportDeclaration(statement)
+      &&ts.isStringLiteralLike(statement.moduleSpecifier)&&statement.importClause?.namedBindings
+      &&ts.isNamedImports(statement.importClause.namedBindings)){
+      for(const b of statement.importClause.namedBindings.elements)
+        bindings.set(b.name.text,statement.moduleSpecifier.text+':'+(b.propertyName?.text??b.name.text));
+    }
+    const named=(node,name)=>node&&ts.isIdentifier(node)&&bindings.get(node.text)===name;
+    const visit=node=>{
+      if(ts.isCallExpression(node)&&named(node.expression,'node:fs/promises:writeFile')){
+        const output=node.arguments[0],read=unawait(node.arguments[1]);
+        if(output&&ts.isCallExpression(output)&&named(output.expression,'node:path:resolve')
+          &&output.arguments.length===2&&ts.isIdentifier(output.arguments[0])
+          &&ts.isStringLiteralLike(output.arguments[1])&&read&&ts.isCallExpression(read)
+          &&named(read.expression,'node:fs/promises:readFile')){
+          const name=output.arguments[1].text,target=literalModuleUrl(read.arguments[0],source);
+          if(target&&CODE.test(name)&&posix.basename(name)===name){
+            const origin=posix.normalize(posix.join(posix.dirname(path),target));
+            if(tracked.has(origin))copies.set(origin+'\0'+name,{
+              path,line:source.getLineAndCharacterOfPosition(node.getStart(source)).line+1,
+            });
+          }
+        }
+      }
+      ts.forEachChild(node,visit);
+    };
+    visit(source);
+  }
+  return copies;
+}
+
 function glob(pattern){
   return new RegExp('^'+pattern.split(/(\*\*\/|\*\*|\*)/).map(p=>p==='**/'?'(?:.*/)?':p==='**'?'.*':p==='*'?'[^/]*':p.replace(/[.+?^${}()|[\]\\]/g,'\\$&')).join('')+'$');
 }
@@ -78,7 +133,8 @@ export async function auditEntrypoints(directory,{prs,maxFileBytes=1024*1024,max
     if(!entrypoints.some(e=>e.path===path&&e.kind===kind))entrypoints.push({path,kind,owner:owner(path),condition,...(verify?{verify}:{})});
     incoming.add(path);
   };
-  const reference=(from,target,kind,line=1,rootRelative=false)=>{
+  const copies=literalModuleCopies(contents,tracked);
+  const reference=(from,target,kind,line=1,rootRelative=false,exact=false)=>{
     if(typeof target!=='string')return;
     const path=posix.normalize(rootRelative?target:posix.join(posix.dirname(from),target));
     if(target.endsWith('/')){
@@ -91,7 +147,7 @@ export async function auditEntrypoints(directory,{prs,maxFileBytes=1024*1024,max
       }else uncertain(from,'DIRECTORY_OUTSIDE_ANALYSIS_SCOPE',line);
       return;
     }
-    const choices=candidates(path),found=choices.find(p=>tracked.has(p));
+    const choices=exact?[path]:candidates(path),found=choices.find(p=>tracked.has(p));
     if(!choices.some(isAllowedPath)){uncertain(from,'OUTSIDE_ANALYSIS_SCOPE',line);return;}
     if(target.includes('*')||target.includes('${')){uncertain(from,'DYNAMIC_PATH',line);return;}
     if(!found){findings.push({code:'MISSING_TRACKED_REFERENCE',path:from,target:choices.find(isAllowedPath),kind,line});return;}
@@ -168,7 +224,19 @@ export async function auditEntrypoints(directory,{prs,maxFileBytes=1024*1024,max
       }
       if(ts.isNewExpression(node)&&ts.isIdentifier(node.expression)&&node.expression.text==='URL'){
         const arg=node.arguments?.[0],base=node.arguments?.[1];
-        if(arg&&ts.isStringLiteralLike(arg)&&arg.text.startsWith('.')&&base?.getText(source)==='import.meta.url')reference(path,arg.text,'MODULE_URL',line);
+        if(arg&&ts.isStringLiteralLike(arg)&&arg.text.startsWith('.')&&base?.getText(source)==='import.meta.url'){
+          const resolved=posix.normalize(posix.join(posix.dirname(path),arg.text));
+          const original=emittedSourceAlternative(node,source,path);
+          if(original&&!tracked.has(resolved)&&isAllowedPath(resolved)){
+            const origin=posix.normalize(posix.join(posix.dirname(path),original));
+            const copy=copies.get(origin+'\0'+posix.basename(arg.text));
+            if(copy){
+              const found=reference(path,origin,'EMITTED_MODULE_URL',line,true,true);
+              if(found)references.at(-1).via={path:copy.path,line:copy.line};
+              uncertain(path,'RUNTIME_OUTPUT_DIRECTORY',line);
+            }else uncertain(path,'RUNTIME_LAYOUT_URL',line);
+          }else reference(path,arg.text,CODE.test(arg.text)?'MODULE_URL':'RESOURCE_URL',line,false,!CODE.test(arg.text));
+        }
         else if(base?.getText(source)==='import.meta.url'&&arg&&!ts.isStringLiteralLike(arg))uncertain(path,'DYNAMIC_MODULE_URL',line);
       }
       if(ts.isPropertyAssignment(node)&&node.name.getText(source)==='testDir'&&ts.isStringLiteralLike(node.initializer)
