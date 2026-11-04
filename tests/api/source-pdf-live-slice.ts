@@ -76,7 +76,8 @@ export async function proveSourcePdfPg(admin:Pool,reader:Pool):Promise<void>{
     await c.query(`INSERT INTO source_revisions_vnext(revision_id,source_id,original_sha256,content_sha256,
       media_kind,source_class,permission_ref,provenance,status,change_kind,fetched_at,last_checked_at)
       SELECT $2,source_id,original_sha256,content_sha256,media_kind,source_class,permission_ref,
-        provenance,status,change_kind,fetched_at,last_checked_at FROM source_revisions_vnext WHERE revision_id=$1`,[f.revisionId,id]);
+        provenance,status,change_kind,fetched_at+interval '1 microsecond',last_checked_at+interval '1 microsecond'
+        FROM source_revisions_vnext WHERE revision_id=$1`,[f.revisionId,id]);
   }
   for(const bad of ['hash','dimensions'] as const){
     const c=await admin.connect();
