@@ -25,7 +25,8 @@ async function start(subject:string,mode='ok'):Promise<TestServer>{
   // fork defaults to no console window (silent pipe/IPC handles only).
   const child=fork(new URL('./fixtures/provider-pg-server.mjs',import.meta.url),[],{
     stdio:['ignore','ignore','ignore','ipc'],env:{PATH:process.env.PATH??'',APP_ENV:'test',NODE_ENV:'test',
-      // Each isolated scenario gets its own keyed login attempt bucket. Production rate limits stay active.\n      HUFS_SYNTHETIC_PROVIDER_CONFIG:JSON.stringify({urls,phase,policy,digestKey:randomBytes(32).toString('hex'),subject,mode})}});
+      // Each isolated scenario gets its own keyed login attempt bucket. Production rate limits stay active.
+      HUFS_SYNTHETIC_PROVIDER_CONFIG:JSON.stringify({urls,phase,policy,digestKey:randomBytes(32).toString('hex'),subject,mode})}});
   const calls:string[]=[];
   child.on('message',(m:any)=>{if(m?.kind==='provider-call')calls.push(m.stage);});
   const port=await new Promise<number>((resolve,reject)=>{
