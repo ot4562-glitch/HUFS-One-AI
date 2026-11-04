@@ -147,3 +147,23 @@ test('classifies literal Dockerfile URLs as exact resources and still reports a 
     {target:'infra/missing/Dockerfile',kind:'RESOURCE_URL'},
   ]);
 });
+
+test('declines copy provenance when a build binding is shadowed, including aliases and TDZ',async()=>{
+  for(const example of [
+    {writer:'copy',parameters:'outDirectory,copy',tail:''},
+    {writer:'writeFile',parameters:'outDirectory',tail:'const readFile=()=>null;'},
+    {writer:'writeFile',parameters:'outDirectory,resolve',tail:''},
+    {writer:'writeFile',parameters:'outDirectory,URL',tail:''},
+  ]){
+    const {root}=await fixture({
+      'packages/ai/src/child.ts':"const worker=import.meta.url.endsWith('.ts')?new URL('../../../infra/laya/worker.mjs',import.meta.url):new URL('./worker.mjs',import.meta.url);",
+      'infra/laya/worker.mjs':'export const synthetic=true;',
+      'infra/laya/build.mjs':"import {readFile,writeFile as "+example.writer+"} from 'node:fs/promises'; import {resolve} from 'node:path'; export async function build("+example.parameters+"){await "+example.writer+"(resolve(outDirectory,'worker.mjs'),await readFile(new URL('./worker.mjs',import.meta.url)));"+example.tail+"}",
+    });
+    const r=await auditEntrypoints(root);
+    assert.equal(r.findings.length,0);
+    assert.ok(r.references.some(x=>x.from==='packages/ai/src/child.ts'&&x.to==='infra/laya/worker.mjs'&&x.kind==='MODULE_URL'));
+    assert.ok(!r.references.some(x=>x.kind==='EMITTED_MODULE_URL'),JSON.stringify(example));
+    assert.ok(r.unknown.some(x=>x.path==='packages/ai/src/child.ts'&&x.reason==='RUNTIME_LAYOUT_URL'));
+  }
+});

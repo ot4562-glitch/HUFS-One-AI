@@ -58,6 +58,24 @@ function literalModuleCopies(contents,tracked){
       for(const b of statement.importClause.namedBindings.elements)
         bindings.set(b.name.text,statement.moduleSpecifier.text+':'+(b.propertyName?.text??b.name.text));
     }
+    // File-wide conservative refusal: a local/parameter declaration may hide
+    // an imported operation (including aliases), even before its TDZ declaration.
+    const localBindings=new Set(),addName=name=>{
+      if(name&&ts.isIdentifier(name))localBindings.add(name.text);
+      else if(name&&(ts.isObjectBindingPattern(name)||ts.isArrayBindingPattern(name)))
+        for(const item of name.elements)if(ts.isBindingElement(item))addName(item.name);
+    };
+    const declarations=node=>{
+      if(ts.isVariableDeclaration(node)||ts.isParameter(node)||ts.isFunctionDeclaration(node)
+        ||ts.isFunctionExpression(node)||ts.isClassDeclaration(node)||ts.isClassExpression(node)
+        ||ts.isEnumDeclaration(node)||ts.isModuleDeclaration(node)||ts.isImportEqualsDeclaration(node)
+        ||ts.isImportClause(node)||ts.isNamespaceImport(node)
+        ||ts.isImportSpecifier(node)&&node.name.text==='URL')addName(node.name);
+      ts.forEachChild(node,declarations);
+    };
+    declarations(source);
+    const operations=new Set(['node:fs/promises:readFile','node:fs/promises:writeFile','node:path:resolve']);
+    if(localBindings.has('URL')||[...bindings].some(([name,origin])=>operations.has(origin)&&localBindings.has(name)))continue;
     const named=(node,name)=>node&&ts.isIdentifier(node)&&bindings.get(node.text)===name;
     const visit=node=>{
       if(ts.isCallExpression(node)&&named(node.expression,'node:fs/promises:writeFile')){
