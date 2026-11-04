@@ -1,5 +1,7 @@
 # HUFS One AI — NCP 서버·접속·네트워크·자동설치 운영 가이드
 
+> **2026-11-04 통합 후 현재 정본:** 2026-11-04: [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 이후 **네트워크/host Terraform, 전용 NIC·공인 IP·Ubuntu 설치·WinSCP/SSH 합성 preview 및 복구 코드가 모두 main에 반영**되었다. [네트워크](terraform/network/README.md) · [호스트](terraform/host/README.md) · [Quickstart](QUICKSTART.md). 하지만 실 NCP 자원, 요금, SSH, 방화벽, 복구 드릴, TLS 공개는 **한 번도 실행/수락하지 않았으며 RELEASE_BLOCKED**. 아래 PR 미병합/후속 구현 표현은 2026-11-03 이전 단계 기록이다.
+
 새 운영자는 [짧은 Quickstart](QUICKSTART.md)와 [에이전트 매뉴얼](AGENT_DEPLOYMENT_MANUAL.md)에서
 시작한다. `setup/00-preflight.mjs`는 비용·CIDR·SSH /32·승인 SHA의 **계획만** 검증한다.
 신규 자원 생성·운영 배포·수동 rollback/반납 자동화 완료를 뜻하지 않는다(#192).
