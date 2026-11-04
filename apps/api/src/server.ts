@@ -721,11 +721,14 @@ export function createApi(options:ApiOptions) {
     if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
     if(!options.approvedAiInputs)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     await recheckCurrent(req,actor);
+    let result:ReturnType<typeof ApprovedProviderInputsSchema.parse>;
     try {
-      const result=ApprovedProviderInputsSchema.parse(await options.approvedAiInputs.list(actor));
-      await recheckCurrent(req,actor);
-      return result;
+      result=ApprovedProviderInputsSchema.parse(await options.approvedAiInputs.list(actor));
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    // Revocation between the DB read and reply must retain its 401/403 status;
+    // never disguise an expired session as a provider outage (503).
+    await recheckCurrent(req,actor);
+    return result;
   });
   app.post('/api/ai/:task',async(req,reply)=>{
     const actor=principal(req);
