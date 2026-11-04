@@ -6,6 +6,7 @@ const Ref=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:@-]+$/);
 const Request=z.strictObject({
   actorRef:Ref,sourceId:Ref,permissionRef:Ref,requestKey:Ref,
 });
+const Cancel=z.strictObject({actorRef:Ref,sourceId:Ref,permissionRef:Ref,jobId:z.string().uuid()});
 const Job=z.object({
   job_id:z.string().uuid(),actor_ref:Ref,source_id:Ref,
   permission_ref:Ref,request_key:Ref,
@@ -116,6 +117,26 @@ export class PostgresSourceIngestionQueue {
       if(result.rows.length!==1)throw new Error('Unsafe source queue lease');
       return Job.parse(result.rows[0]);
     },c);
+  }
+
+  /** Trusted operator port only. Cancels an undispatched job, never a running
+   * executor. The row update arbitrates atomically against claim's row lock.
+   * Keep the original request key so a retry cannot recreate cancelled work. */
+  async cancelPending(raw:z.input<typeof Cancel>):Promise<boolean>{
+    const input=Cancel.parse(raw);
+    if(!await this.authority.mayProcess({actorRef:input.actorRef,sourceId:input.sourceId,
+      permissionRef:input.permissionRef,now:this.now()}))throw new Error('Source rights not approved');
+    return this.withTransaction(async c=>{
+      const result=await c.query(`UPDATE source_ingest_jobs SET state='CANCELLED',
+        updated_at=clock_timestamp()
+        WHERE job_id=$1 AND actor_ref=$2 AND source_id=$3 AND permission_ref=$4
+        AND state='PENDING' AND attempt_count=0 RETURNING job_id`,
+      [input.jobId,input.actorRef,input.sourceId,input.permissionRef]);
+      if(result.rows.length===0)return false;
+      if(result.rows.length!==1||result.rows[0]?.job_id!==input.jobId)
+        throw new Error('Unsafe source queue cancellation');
+      return true;
+    });
   }
 
   private async settle(c:ReviewerSqlConnection,job:z.infer<typeof Job>,
