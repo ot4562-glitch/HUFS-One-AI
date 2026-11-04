@@ -1,5 +1,13 @@
 # PR 운영과 브랜치·이슈 정리 기준
 
+## 2026-11-04 PR 전수 통합 예외: 완료 상태
+
+- 사용자 명시 요청에 따라 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 **main f23b86bb**에 원본 HEAD 조상을 보존하는 merge commit으로 반영했고, **열린 PR 0건**이 됐다. 비작성자 GitHub `APPROVED`가 없던 **한 번의 사용자 예외**이며 작성자·에이전트 COMMENT를 사람 APPROVED라고 주장하지 않는다.
+- 개별 10개 스택 PR은 `CLOSED / NOT MERGED`지만 그 **각 PR 최신 HEAD가 main의 Git 조상임을 10/10 증명**. 따라서 커밋/코드 누락 없이 중복 PR을 종료했다. 원본 브랜치 강제 삭제·이력 rewrite는 수행하지 않았다.
+- main 통합 HEAD 3종 Actions [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022)·[NCP IaC](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS**. 실제 NCP/OIDC/기관·학생 원본/외부 공개는 계속 NOT_RUN·RELEASE_BLOCKED.
+- **이하 반복 가능한 일반 PR 기본 규칙은 유지.** 이번 사용자 예외가 향후 PR·실서비스 공개/유료 NCP 승인을 자동 허용하지 않는다. 이전 회차의 열린 PR 32/33건, 승인 대기 등은 당시 기준의 기록이며 현재 상태가 아니다.
+
+
 ## 2026-11-04 사용자 예외 전수 통합 — 과거 스냅샷 정정
 
 - **현재 열린 PR 0건**. 사용자의 **이번 회차에 한한 작성자 PR 포함 직접 병합 지시**로 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) merge commit `f23b86bb693a163c7f6a0330d1b9657c684724ff`가 main에 반영됨. 원본 PR HEAD는 통합 조상으로 보존, #216 최신 HEAD `c2376759` TASK-00/Chrome/NCP IaC SUCCESS. 161파일 통합/회귀 수정. **에이전트 COMMENT ≠ 비작성자 APPROVED**, 실제 승인 없음을 명시하며 향후 일반 PR 기본 독립 리뷰 게이트는 변경하지 않는다.
