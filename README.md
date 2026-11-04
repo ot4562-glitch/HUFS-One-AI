@@ -19,13 +19,14 @@
 - 같은 허용 공고를 관심사·선택한 경험·진로에 따라 다르게 정렬해 큰 추천 카드/작은 일반 목록, 추천 이유·마감/정정 근거, 일정·자기기록·별도 학업 계획을 안내합니다. AI의 분류 후보는 확정 결과가 아니고 자격·마감·학점은 코드 및 검수 근거로 판정합니다.
 - [#141 UI/UX 고도화](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 HUFSAbility와 동일한 픽셀·컴포넌트를 복제하는 대신 **탐색·정보 위계·모바일·접근성이 더 좋은 독립적인 디자인**을 개발합니다.
 
-## 현재 구현·협업 판단 — 2026-11-03
+## 구현·협업 판단 — 2026-11-04 현재
 
-- **GitHub 현재 (기준 main `b7acd949`):** 일반 이슈 **OPEN 34 / CLOSED 7**, PR **OPEN 11**. 대형 원본 [#150](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150)은 83파일 고유 변경을 65 exact/12 대체/6 후속으로 보존한 후 **CLOSED/NOT MERGED**. 최신 실적은 [STATUS](STATUS.md).
-- **main의 코드·합성 부분 수락:** #156 SSH-only preview, #157 Provider 입력 권한, #158 SETTLED PG 결과, #159 기본 OFF Laya scheduler, #160 Raster/OCR, #162 Owner 이중전공 SQL, #163 EMPTY_DEMO CAS/RESET, #164 승인 SourceRevision claims, #168 PG 인증 팩토리. 각각 실 유료 Provider/운영 서버/학생자료·RulePack 승인 아님.
-- **현재 연결 병목:** [#165](https://github.com/ot4562-glitch/HUFS-One-AI/pull/165) Provider 실행기 → [#167](https://github.com/ot4562-glitch/HUFS-One-AI/pull/167) BETA HTTP → [#169](https://github.com/ot4562-glitch/HUFS-One-AI/pull/169) 재시작 포함 PG 결과 종단은 스택형·개별 HEAD 리뷰/병합 대기. [#170](https://github.com/ot4562-glitch/HUFS-One-AI/pull/170)은 실제 격리 PostgreSQL 18의 revision/EMPTY_DEMO **6/6 PASS, CI 4/4**; [#171](https://github.com/ot4562-glitch/HUFS-One-AI/pull/171)은 optional owner PG API 조립 **CI 3/3 PASS**, 둘 다 독립 승인 전 **미병합**. #161 Laya Linux/ONNX는 최신 main 충돌·실호스트 NOT_RUN.
-- **협업 결정:** [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) 학업 이수 과정·세부전공/복수 문서·복합 요건은 검증된 추가 계약, 미검증은 `NEEDS_REVIEW`. [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 레거시 fixture 교체 금지·독립 gold 0/200. [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 6개 로그인 관찰 메뉴는 5/24/4 공개 정본과 분리한 `UNVERIFIED` 비활성 메타데이터로만. [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119)/[#81](https://github.com/ot4562-glitch/HUFS-One-AI/issues/81)/[#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82)/[#144](https://github.com/ot4562-glitch/HUFS-One-AI/issues/144) owner API↔UI 종단은 아직 미완료.
-- **출시 상태 `RELEASE_BLOCKED`:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 원본 Git 게시/자료권리와 privacy **2 FAIL**, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 사람 gold **0/200**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실 OIDC/학교메일·TLS/direct IP·NCP/운영 DB 미검증. 실 원본·유료 서비스·공개 배포는 사용자 별도 승인 전 실행하지 않는다.
+- **GitHub 기준:** 열린 일반 이슈 **34건**, 열린 PR **23건**. [실시간 STATUS](STATUS.md)를 정본으로 사용하며 오래된 HEAD 또는 PR 수를 그대로 재사용하지 않습니다.
+- **main 합성 하위 수락:** #156 SSH-only 프리뷰, #157 승인 입력 권한, #158 SETTLED PostgreSQL 결과, #159 기본 OFF Laya 스케줄러, #160 Raster/OCR, #162 Owner 이중전공 SQL, #163 EMPTY_DEMO CAS/RESET, #164 승인 SourceRevision, #168 PostgreSQL 인증 조립. 이는 실제 운영 서비스 배포 완료가 아닙니다.
+- **오류 PR 수정 진행:** #175 Provider Owner UI/API·테스트, #177 PostgreSQL 동시성 합성 격리, #178 학교메일 OTP/REVIEWER 진입 권한에 새 수정 커밋을 제출했습니다. 최신 HEAD CI 통과가 확인되기 전 **수정 최종 완료/병합 완료로 표기하지 않습니다**.
+- **협업자 코드 리뷰:** #152 strict 이중전공 입력 검증 P2 수정, #189 공식 승인 동일 교과목 규칙만 적용하는 순수 로직은 비작성자 리뷰 APPROVED. 그러나 둘 다 최신 CI 실패, 운영 학사 RulePack/권리/서비스 E2E는 미수락. #161은 CI/비작성자 승인 이력이 있으나 main 충돌. #166은 Draft.
+- **CI 관측:** #186–#190의 최신 워크플로는 실행 실패, 일부는 job 실행 단계가 비어 근본 원인이 아직 불명확. 작성자 PR의 일부 과거 Vitest/실 PostgreSQL 실패는 #175/#177/#178 브랜치에 수정했으나 다시 검증해야 합니다.
+- **출시 상태 RELEASE_BLOCKED:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) Git 과거 게시/동의·개인정보 **2 FAIL**, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 독립 사람 gold **0/200**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실 OIDC·학교메일/TLS·NCP·영속 PG·권한 E2E 미검증. 실제 자료 반입/유료 호출/공개 배포는 별도 승인 전 금지.
 
 ## 로컬 합성 개발
 

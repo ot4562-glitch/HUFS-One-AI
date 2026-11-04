@@ -10,6 +10,7 @@ import {
   OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
   OpportunityExplanationRequestSchema,OpportunityExplanationResponseSchema,
   OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
+  OpportunityRevisionComparisonContextResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
   DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
   ApprovedProviderInputsSchema,ApprovedProviderInputSchema,ProviderRunRequestSchema,
@@ -236,6 +237,16 @@ export class HufsOwnerApiClient {
       OpportunityExplanationResponseSchema,'POST',input,signal);
     requireMatchingReceipt(result.opportunityId===id&&result.sourceRevisionId===input.sourceRevisionId
       &&result.rankConfigVersion===input.rankConfigVersion&&Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
+  }
+  /** Server-authorized exact current, independently reviewed pair only.
+   * Never derive or guess revision IDs from public feed card contents. */
+  async getRevisionComparisonContext(opportunityId:string,asOf:string,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),opportunityId),
+      at=clientInput(Iso,asOf);
+    const result=await this.request(queryPath('/api/opportunities/'+encodeURIComponent(id)+
+      '/revisions/comparison-context',{asOf:at}),OpportunityRevisionComparisonContextResponseSchema,{signal});
+    requireMatchingReceipt(result.opportunityId===id&&result.asOf===at);
     return result;
   }
   async compareOpportunityRevisions(opportunityId:string,change:z.infer<typeof OpportunityRevisionComparisonRequestSchema>,signal?:AbortSignal){
