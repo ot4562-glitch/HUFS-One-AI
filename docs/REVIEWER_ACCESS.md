@@ -1,5 +1,7 @@
 # HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
 
+> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 2026-11-04 REVIEWER 현재 코드: 합성 기간제 초대·세션·권한·철회·Google OIDC/학교메일 PostgreSQL 어댑터의 구현은 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 통해 main에 포함, OPEN PR 0/기본 CI 3/3 SUCCESS. 아래 #72~#76 등의 미병합·실행 미검증 문구는 각 과거 시점 기록이며 현재 브랜치 상태가 아니다. **실 Google OIDC·운영 SMTP/메일 수신권·실 REVIEWER/PG/TLS·직접 URL/서버권한은 NOT_RUN / RELEASE_BLOCKED.** [STATUS](../STATUS.md), [인수 원장](HUMAN_ACCEPTANCE_GATE_20261104.md).
+
 ## 2026-11-02 REVIEWER UI 최신 후속 수락/미완료
 
 - [x] [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 Calendar GET/같은 context snapshot 무효화 **main merge `717ce979`**. 401/403/409/동일문맥 overlay·늦은 응답 합성 테스트 PASS.
