@@ -3,7 +3,6 @@ name: Synthetic browser E2E (Chrome, no downloads)
 # #126: unprivileged event on *every* PR, including #76 stacked branches.
 # This workflow is local-only until approved; never accesses student originals.
 on:
-  workflow_dispatch:
   pull_request:
   push:
     branches: [main]
