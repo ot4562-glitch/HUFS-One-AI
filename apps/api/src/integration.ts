@@ -1,4 +1,6 @@
 import {createApi} from './server.js';
+import {registerSourceJobControlRoutes} from './modules/opportunities/source-job-control-http.js';
+import type {SourceJobControl} from './modules/opportunities/source-job-control-http.js';
 import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
 import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
 import {registerRestrictedOwnerIntakeRoute,type RestrictedOwnerDirectoryPort} from './modules/profiles/restricted-owner-http.js';
@@ -51,6 +53,7 @@ export interface TrustedSchoolMailPort {
 
 interface SharedDependencies {
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
+  sourceIngestionControl?:SourceJobControl;
   /** Explicit approved provider ports only. Absence keeps these reads at 503. */
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
   doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
@@ -181,6 +184,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   };
   const app=createApi(options);
   const ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
+  registerSourceJobControlRoutes({app,session:ownerSession,...(deps.sourceIngestionControl?{control:deps.sourceIngestionControl}:{})});
   registerRestrictedOwnerIntakeRoute({app,session:ownerSession,
     ...(deps.restrictedOwnerDirectory?{directory:deps.restrictedOwnerDirectory}:{})});
   registerHufsAbilityCapabilitiesRoute(app,ownerSession);

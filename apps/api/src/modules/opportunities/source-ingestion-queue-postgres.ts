@@ -1,5 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {z} from 'zod';
+import {SourceJobStatusSchema} from '@hufs-one/contracts';
+import type {SourceJobStatus} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
 
 const Ref=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:@-]+$/);
@@ -27,6 +29,9 @@ export interface TrustedDurableSourceExecutor {
 export type SourceQueueRunResult =
   | {state:'IDLE'}
   | {state:'NEW_DRAFT'|'CHANGED_DRAFT'|'UNCHANGED'|'BLOCKED_RIGHTS'|'NEEDS_REVIEW';jobId:string};
+export class SourceQueueDenied extends Error {constructor(){super('Source rights not approved');}}
+export class SourceQueueCapacity extends Error {constructor(){super('Source queue capacity reached');}}
+export class SourceQueueConflict extends Error {constructor(){super('Source queue identity conflict');}}
 
 /**
  * One active lease globally, capacity 16, one delivery per idempotency key.
@@ -62,7 +67,7 @@ export class PostgresSourceIngestionQueue {
     Promise<{jobId:string;created:boolean}>{
     const input=Request.parse(raw);
     if(!await this.authority.mayProcess({...input,now:this.now()}))
-      throw new Error('Source rights not approved');
+      throw new SourceQueueDenied();
     return this.withTransaction(async c=>{
       // Serialize enqueues across all process instances before capacity and duplicate checks.
       await c.query('SELECT pg_advisory_xact_lock($1::bigint)',[64091001]);
@@ -72,14 +77,15 @@ export class PostgresSourceIngestionQueue {
       if(exists.rows.length===1){
         const row=exists.rows[0]!;
         if(row.actor_ref!==input.actorRef||row.permission_ref!==input.permissionRef)
-          throw new Error('Source queue identity conflict');
+          throw new SourceQueueConflict();
         return {jobId:z.string().uuid().parse(row.job_id),created:false};
       }
       const pending=await c.query(`SELECT count(*)::integer AS count FROM source_ingest_jobs
         WHERE state IN ('PENDING','LEASED')`);
       const count:unknown=pending.rows[0]?.count;
-      if(pending.rows.length!==1||typeof count!=='number'||!Number.isInteger(count)
-        ||count>=16)throw new Error('Source queue capacity reached');
+      if(pending.rows.length!==1||typeof count!=='number'||!Number.isInteger(count)||count<0)
+        throw new Error('Invalid source queue count');
+      if(count>=16)throw new SourceQueueCapacity();
       const jobId=randomUUID();
       const inserted=await c.query(`INSERT INTO source_ingest_jobs
         (job_id,actor_ref,source_id,permission_ref,request_key)
@@ -88,6 +94,39 @@ export class PostgresSourceIngestionQueue {
       if(inserted.rows.length!==1)throw new Error('Concurrent queue conflict');
       return {jobId,created:true};
     });
+  }
+
+  /** Read-only requester status. Does not claim, recover or retry a job, and
+   * never releases a running worker's global lock based on a stale lease. */
+  async inspect(raw:{actorRef:string;sourceId:string;permissionRef:string;jobId:string}):Promise<SourceJobStatus|null>{
+    const input=z.strictObject({actorRef:Ref,sourceId:Ref,permissionRef:Ref,jobId:z.uuid()}).parse(raw);
+    const permission={actorRef:input.actorRef,sourceId:input.sourceId,permissionRef:input.permissionRef};
+    if(await this.authority.mayProcess({...permission,now:this.now()})!==true)return null;
+    const c=await this.pool.connect();let open=false,result:SourceJobStatus|null=null;
+    try{
+      await c.query('BEGIN TRANSACTION READ ONLY');open=true;
+      await c.query("SET LOCAL statement_timeout='5s'");
+      const rows=await c.query(`SELECT job_id,actor_ref,source_id,permission_ref,state,attempt_count,queued_at,updated_at,
+        lease_until,outcome_revision_id,last_error_code,clock_timestamp() AS observed_at,
+        COALESCE(lease_until<=clock_timestamp(),false) AS lease_expired
+        FROM source_ingest_jobs WHERE job_id=$1 AND actor_ref=$2 AND source_id=$3 AND permission_ref=$4 LIMIT 2`,
+      [input.jobId,input.actorRef,input.sourceId,input.permissionRef]);
+      if(rows.rows.length>1)throw new Error('Ambiguous source queue status');
+      const row=rows.rows[0];
+      if(row){
+        if(row.job_id!==input.jobId||row.actor_ref!==input.actorRef||row.source_id!==input.sourceId||row.permission_ref!==input.permissionRef
+          ||typeof row.lease_expired!=='boolean')throw new Error('Source queue status binding mismatch');
+        const time=(value:unknown)=>z.iso.datetime({offset:true}).parse(value instanceof Date?value.toISOString():value);
+        result=SourceJobStatusSchema.parse({jobId:row.job_id,sourceId:row.source_id,state:row.state,attemptCount:row.attempt_count,
+          queuedAt:time(row.queued_at),updatedAt:time(row.updated_at),observedAt:time(row.observed_at),
+          ...(row.lease_until===null?{}:{leaseUntil:time(row.lease_until)}),
+          ...(row.outcome_revision_id===null?{}:{outcomeRevisionId:row.outcome_revision_id}),
+          ...(row.last_error_code===null?{}:{lastErrorCode:row.last_error_code}),
+          requiresOperatorReview:row.state==='NEEDS_REVIEW'||row.state==='LEASED'&&row.lease_expired});
+      }
+      await c.query('COMMIT');open=false;
+    }finally{if(open)try{await c.query('ROLLBACK');}catch{/* preserve failure */}c.release();}
+    return await this.authority.mayProcess({...permission,now:this.now()})===true?result:null;
   }
 
   private async claim(c:ReviewerSqlConnection):Promise<z.infer<typeof Job>|null>{

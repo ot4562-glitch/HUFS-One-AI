@@ -302,3 +302,4 @@ export const EvidenceBoundPacketVNextSchema=z.strictObject({
     ctx.addIssue({code:'custom',path:['mediaExtractorVersion'],message:'Image extraction version required'});
 });
 export type EvidenceBoundPacketVNext=z.infer<typeof EvidenceBoundPacketVNextSchema>;
+export * from './source-jobs.js';
