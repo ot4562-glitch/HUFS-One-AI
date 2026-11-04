@@ -13,16 +13,15 @@
 
 **예외:** 소유자 승인된 문서-only `README.md`, `STATUS.md`, `AGENTS.md`, `Proposal.md`, `Architecture.md`, `docs/*.md` 정정은 blob SHA 충돌검사 후 직접 main 변경 가능. **코드, CI/workflow, API/DB, 공통 Zod, lockfile, 유료 자원/개인 원본**은 이 예외의 대상이 아닙니다. 2026-11-01의 과거 한시적 작성자 직접 병합 사례는 새 PR의 자동 승인권이 아닙니다.
 
-## 2026-11-03 현재 인수·독립 리뷰 운영 원칙
+## 2026-11-04 현재 리뷰·CI·병합 현황 (현재 상태의 증거는 STATUS/PR HEAD)
 
-- **일반 이슈 OPEN 34 / CLOSED 7, PR OPEN 11**, 기준 main `b7acd949`(이후 문서 커밋 시 SHA는 변함). 원본 #150은 **CLOSED/NOT MERGED**이며 83경로 보존 원장은 원본 PR 댓글에 있다. #166은 Draft/운영 배포 금지.
-- #156/#157/#158/#159/#160/#162/#163/#164/#168은 검토된 **코드·합성/일회용 PG 하위 기능만 main 병합**. 이 수락은 학교 원문·실학생·실 Google/OTP·유료 Provider·NCP 운영을 의미하지 않는다.
-- **스택 우선순위:** [#165 Provider runtime](https://github.com/ot4562-glitch/HUFS-One-AI/pull/165) → [#167 BETA HTTP](https://github.com/ot4562-glitch/HUFS-One-AI/pull/167) → [#169 PG 종단](https://github.com/ot4562-glitch/HUFS-One-AI/pull/169). 현재 각각 CI3/3 SUCCESS라도 **현재 HEAD 비작성자 승인 및 부모 main/고유 diff·새 CI**가 없으면 병합 불가. #167 PENDING에 거짓 LIVE provenance를 생성하던 P2는 `4fb29bf`에서 수정·부정 테스트를 추가했으나 기존 CHANGES_REQUESTED는 자동 해소되지 않는다.
-- [#170 실제 SQL CI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/170) HEAD `6eb7c965`: 신규 PG18 loopback job + 기존 CI **4/4 SUCCESS**, revision/EMPTY_DEMO 실제 SQL **6/6 PASS**. [#171 owner PG DI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/171) HEAD `1132c1fe`: synthetic/PG/browser CI **3/3 PASS**, 합성 2,153 PASS. 둘 모두 **독립 승인 대기/미병합**; 이전 CI를 새 HEAD 승인으로 취급 금지.
-- #161 Laya IPC child는 구 HEAD에 비작성자 APPROVED가 있어도 **현 main 충돌**과 Linux cgroup/ONNX NOT_RUN이 남아 있다. UI 작성자 #151/#152/#154/#155는 서로 겹치는 화면 파일을 보호하고 최신 main 재통합·새 CI/승인 전 병합 금지. #152 P2 malformed `rowImpacts` 원소 수정 필수.
-- **협업자 의사결정 요청 처리:** 각 이슈 댓글에서 ① 요청자/선택지 ② 채택/보류 사유 ③ 코드/계약 소유 ④ 인적·기관/운영 별도 게이트 ⑤ 다음 PR/테스트를 명시해 답한다. 답변은 **기술 방향 승인**이지 정식 학사 RulePack·자료권리·프로덕션 배포 승인 아님. 판단 원장은 [STATUS](../STATUS.md)와 [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)·[#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61)·[#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 및 UI 의존 이슈 댓글을 따른다.
-- **리뷰를 기다리며 재조회만 반복하지 않는다:** 실제 새 리뷰/코드/CI 알림이 오면 즉시 반영; 그 외에는 별도 안전한 CODE_PENDING 항목 구현·시험을 진행한다. 단 자신이 작성한 PR을 스스로 독립 승인·강제 병합하는 것은 금지.
-- `RELEASE_BLOCKED`: #46 privacy 2 FAIL, #61 독립 사람 gold 0/200, #89 OIDC/TLS/PG/NCP/원본 권리 실증 미수락. 실제 클라우드/유료 provider/학생 원본 반입은 사전 별도 승인 필요.
+- 일반 이슈 OPEN **34건**, PR OPEN **23건**. 과거 #150은 83경로의 원본 보존 후 CLOSED/NOT MERGED; Draft #166은 여전히 본격 운영 배포 대상이 아니다.
+- #152(UI)·#189(학업)은 현재 HEAD의 오류 방어/순수 로직에 **비작성자 APPROVED**가 등록됐지만 필수 최신 CI 실패. 그 승인으로 공식 RulePack·개인정보·전체 기능 E2E나 병합을 승인한 것은 아니다.
+- #175의 원래 실패 4건 중 JSON 직렬화 필드 순서, 엄격한 reviewer 세션 fixture, citation 텍스트 검사, 권한 철회 후의 HTTP 오류 범위를 수정했다. #177의 독립 합성 서버 로그인 제한 digest 공유와 #178의 신규 Google 세션 학교메일 OTP/CSRF 진입 차단을 수정했다. **새 HEAD 테스트 PASS는 확인 전**. 권한·rate limit의 운영 보호를 낮추지 않는다.
+- #176/#179/#180/#181/#182/#183/#184/#185에 합성 CI SUCCESS 기록이 있어도 비작성자 HEAD 승인 없이 본인 PR을 병합하지 않는다. #161은 독립 승인과 CI 기록이 있어도 main 충돌. #151/#152/#154/#155 등 팀 UI는 현재 main과의 고유 diff/CI/충돌을 해결한 다음 병합한다.
+- #186/#187/#188/#189/#190은 최신 TASK-00·Chrome 실행 실패; 일부는 job steps/log가 비어 있다. #190 재실행도 실패한 상태. 로그 미존재를 코드 PASS로 취급하거나 추측으로 무관한 보안 제한을 해제하지 않는다.
+- 개인 원본 #46·독립 사람 gold #61·운영 노출 #89는 각각 증거가 충족되기 전 계속 OPEN/RELEASE_BLOCKED. 실제 NCP/유료 모델/학생 원본 관련 적용은 별도 승인과 이서연의 비코드 운영 실증이 필요하다.
+- 인수된 하위 항목은 관련 이슈 댓글/체크리스트에서만 정확히 체크하고, 전체 이슈 종단/기관 인수까지 확정된 경우에만 GitHub 상태를 CLOSED(completed)로 변경한다. 더 자세한 개발 경과는 각 PR에 보존한다.
 
 ## 원격 브랜치 정리 절차
 
