@@ -1,0 +1,42 @@
+name: Temporary pinned audit runtime
+on:
+  push:
+    branches: [fix/audit-branch-pruning-20261104]
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: e405cb3df0d04c36f6f747d4345af0bbaaa18f82
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /package.json
+            /package-lock.json
+            /packages/contracts/
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install only pinned dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Package runtime without repository originals or credentials
+        run: |
+          test ! -d csv
+          test ! -d local_only
+          test ! -d templates/real5-intake
+          test ! -d reference/hufsability/raw
+          node --version
+          cp "$(command -v node)" "$RUNNER_TEMP/audit-node"
+          tar -czf "$RUNNER_TEMP/audit-pinned-runtime.tar.gz" node_modules -C "$RUNNER_TEMP" audit-node
+          sha256sum "$RUNNER_TEMP/audit-pinned-runtime.tar.gz"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: hufs-pinned-audit-runtime
+          path: ${{ runner.temp }}/audit-pinned-runtime.tar.gz
+          retention-days: 1
+          if-no-files-found: error
