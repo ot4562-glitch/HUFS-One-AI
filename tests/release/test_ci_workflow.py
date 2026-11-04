@@ -23,6 +23,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/packages/ui/", "/tools/audit_private_git_metadata.py",
     "/tools/private_registry_io.mjs",
     "/tools/strip_build_sourcemaps.mjs",
+    "/tools/check_postgres_migration_plan.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
     "/apps/web/", "/infra/sql/", "/infra/ai/", "/infra/ncp/", "/tests/contracts/", "/tests/consumers/",
@@ -67,6 +68,12 @@ OWNER_ACADEMICS_PG_PROOF = (
     "HUFS_PG_OWNER_ACADEMICS_LIVE: '1'",
     "HUFS_PG_OWNER_ACADEMICS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_owner_academics_test",
     "tests/api/pg-owner-academics-live-opt-in.test.ts",
+)
+MIGRATIONS_PG_PROOF = (
+    "CREATE DATABASE hufs_one_migration_test",
+    "HUFS_PG_MIGRATIONS_LIVE: '1'",
+    "HUFS_PG_MIGRATIONS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_migration_test",
+    "tests/api/pg-migrations-live-opt-in.test.ts",
 )
 
 
@@ -188,6 +195,9 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("browser cache and loopback preview audit must execute in CI")
     if any(proof not in text for proof in OWNER_ACADEMICS_PG_PROOF):
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
+    if any(proof not in text for proof in MIGRATIONS_PG_PROOF):
+        issues.append("reviewed migration proof must execute against a fresh isolated database")
+
     if any(proof not in text for proof in PROVIDER_HTTP_PG_PROOF):
         issues.append("Provider HTTP/process-restart proof must execute in its isolated opt-in database")
     if not has_compiled_api_before_live_consumers(text):
@@ -196,6 +206,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
     if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
         issues.append("EMPTY_DEMO SQL proof must execute against the isolated real PostgreSQL 18 server")
+    if not has_compiled_api_before_live_consumers(text):
+        issues.append("the PostgreSQL job must compile API before both live compiled consumers")
     return issues
 
 
@@ -239,6 +251,25 @@ class WorkflowBoundaryTests(unittest.TestCase):
                 "owned security test file missing from sparse CI checkout",
             )
 
+    def test_compiled_pg_build_uses_command_and_order_not_step_label(self) -> None:
+        renamed = self.policy.replace(
+            'Build compiled API for live adapters and process restart proofs', 'Compile backend once for live tests'
+        )
+        self.assertEqual(audit_ci_boundary(renamed), [])
+
+    def test_pg_build_cannot_be_removed_or_replaced_by_another_jobs_build(self) -> None:
+        before, job = self.policy.split('  postgres-integration:\n', 1)
+        changed = before + '  postgres-integration:\n' + job.replace(
+            '        run: npm run build:api', '        run: echo build-not-executed', 1)
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_pg_build_must_precede_both_live_compiled_consumers(self) -> None:
+        before, job = self.policy.split('  postgres-integration:\n', 1)
+        changed = job.replace('        run: npm run build:api', '        run: echo not-built-yet', 1)
+        changed = changed.replace('  revision-claims-real-postgres:',
+            '      - name: too late\n        run: npm run build:api\n\n  revision-claims-real-postgres:', 1)
+        self.assertTrue(audit_ci_boundary(before + '  postgres-integration:\n' + changed))
+
     def test_main_only_stacked_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
             "  pull_request:\n", "  pull_request:\n    branches: [main]\n", 1
@@ -257,6 +288,13 @@ class WorkflowBoundaryTests(unittest.TestCase):
             with self.subTest(proof=proof):
                 self.assertTrue(proof in self.policy, "Missing owner-academics SQL CI prerequisite")
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_reviewed_migration_proof_cannot_silently_skip(self) -> None:
+        for proof in MIGRATIONS_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertTrue(proof in self.policy, "Missing reviewed migration CI prerequisite")
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+        self.assertIn('/tools/check_postgres_migration_plan.mjs', sparse_checkout_lists(self.policy)[1])
 
     def test_provider_http_pg_proof_cannot_silently_skip(self) -> None:
         for proof in PROVIDER_HTTP_PG_PROOF:
