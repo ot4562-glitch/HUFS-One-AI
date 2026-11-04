@@ -31,5 +31,7 @@ jobs:
           printf '%s  %s\n' "$TF_ZIP_SHA256" "$RUNNER_TEMP/terraform.zip" | sha256sum --check --status
           mkdir "$RUNNER_TEMP/hufs-terraform"
           unzip -q "$RUNNER_TEMP/terraform.zip" terraform -d "$RUNNER_TEMP/hufs-terraform"
-      - name: Schema validation and mock-only network contracts, no credentials
-        run: python3 infra/ncp/terraform/check-offline.py --terraform "$RUNNER_TEMP/hufs-terraform/terraform"
+      - name: Schema validation and mock-only network/host contracts, no credentials
+        run: |
+          python3 infra/ncp/terraform/check-offline.py --module network --terraform "$RUNNER_TEMP/hufs-terraform/terraform"
+          python3 infra/ncp/terraform/check-offline.py --module host --terraform "$RUNNER_TEMP/hufs-terraform/terraform"

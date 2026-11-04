@@ -1,0 +1,14 @@
+{
+  "scope": "SSH_PREVIEW_HOST_ONLY_V1",
+  "project": "hufs-one-ai",
+  "source_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "network_config_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "subnet_no": "12345",
+  "access_control_group_no": "67890",
+  "ubuntu_image_no": "25495367",
+  "server_spec_code": "s2-g3",
+  "login_key_name": "approved-login-key",
+  "estimated_hourly_krw": 350,
+  "approved_budget_krw": 15000,
+  "approved_hours": 24
+}

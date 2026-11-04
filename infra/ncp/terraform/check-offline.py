@@ -1,4 +1,4 @@
-"""Validate the network module using only a mocked NCP provider, never real apply.
+"""Validate approved NCP module schemas using only mocked providers, never real apply.
 
 init downloads the pinned public provider package. validate is schema-only; test
 uses in-memory mock resources. No cloud keys are accepted or passed to children.
@@ -16,10 +16,11 @@ import sys
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--terraform", required=True, type=Path)
+    parser.add_argument("--module", choices=("network", "host"), default="network")
     args = parser.parse_args()
     binary = args.terraform.resolve(strict=True)
     root = Path(__file__).resolve().parents[3]
-    module = Path(__file__).resolve().parent / "network"
+    module = Path(__file__).resolve().parent / args.module
     # Avoid auto-loaded local approvals or an accidental real provider in tests.
     if list(module.glob("*.tfvars*")):
         raise ValueError("Keep operator input outside the module; offline tests refuse auto tfvars")
@@ -30,7 +31,7 @@ def main() -> None:
         text = test.read_text(encoding="utf-8")
         if not re.search(r'(?m)^mock_provider "ncloud"\s*\{', text) or re.search(r'(?m)^\s*provider\s+"', text):
             raise ValueError("Only the mocked NCP provider is allowed in this checker")
-    cache = root / "local_only" / "ncp-iac-validation" / "network-data"
+    cache = root / "local_only" / "ncp-iac-validation" / (args.module + "-data")
     cache.mkdir(parents=True, exist_ok=True)
     config = cache.parent / "empty.tfrc"
     config.write_text("# No cloud, registry or credential helper configuration.\n", encoding="utf-8")
@@ -39,7 +40,7 @@ def main() -> None:
     env.update(TF_DATA_DIR=str(cache), TF_CLI_CONFIG_FILE=str(config),
                CHECKPOINT_DISABLE="1", TF_IN_AUTOMATION="1")
     commands = [
-        ["fmt", "-check", "-recursive"],
+        ["fmt", "-check", "-recursive", "-diff"],
         ["init", "-backend=false", "-input=false", "-lockfile=readonly", "-no-color"],
         ["validate", "-no-color"],
         ["test", "-no-color"],
