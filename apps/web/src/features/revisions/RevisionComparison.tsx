@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import type {DemoSnapshot} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from '../../app/index.js';
 import {buildRevisionView, type RevisionScreenView, type RevisionSideView} from './revisionView.js';
 
@@ -11,11 +12,11 @@ export interface RevisionPort {
   forOpportunity(opportunityId: string, asOf: string, signal: AbortSignal): Promise<unknown | null>;
 }
 
-type Load =
+type Load = (
   | {readonly key: string; readonly kind: 'LOADING'}
   | {readonly key: string; readonly kind: 'NONE'}
   | {readonly key: string; readonly kind: 'ERROR'}
-  | {readonly key: string; readonly kind: 'VIEW'; readonly view: RevisionScreenView};
+  | {readonly key: string; readonly kind: 'VIEW'; readonly view: RevisionScreenView}) & {readonly snapshot: DemoSnapshot};
 
 const ICON: Record<string, string> = {'arrow-right': '→', 'arrow-left': '←', ban: '⊘', pencil: '✎', equal: '=', help: '?'};
 
@@ -49,19 +50,19 @@ export function RevisionComparison({opportunityId, state, controller, port}: {
   useEffect(() => {
     if (!snapshot) { setLoad(null); return; }
     let live = true;
-    setLoad({key, kind: 'LOADING'});
+    setLoad({key, snapshot, kind: 'LOADING'});
     void controller.runContextOperation(async (_ctx, signal) => ({raw: await port.forOpportunity(opportunityId, snapshot.asOf, signal)}))
       .then(r => {
         if (!live) return;
         if (r === null) { setLoad(null); return; } // stale / denied: the controller state explains
-        if (r.raw === null) { setLoad({key, kind: 'NONE'}); return; }
+        if (r.raw === null) { setLoad({key, snapshot, kind: 'NONE'}); return; }
         const v = buildRevisionView(r.raw, {opportunityId, asOf: snapshot.asOf});
-        setLoad(v.ok ? {key, kind: 'VIEW', view: v.view} : {key, kind: 'ERROR'});
+        setLoad(v.ok ? {key, snapshot, kind: 'VIEW', view: v.view} : {key, snapshot, kind: 'ERROR'});
       });
     return () => { live = false; };
   }, [key, snapshot, opportunityId, port, controller]);
 
-  if (!snapshot || !load || load.key !== key || load.kind === 'NONE') return null;
+  if (!snapshot || !load || load.key !== key || load.snapshot !== snapshot || load.kind === 'NONE') return null;
   const head = <h3 id={`rev-${opportunityId}`}>정정 내역</h3>;
   if (load.kind === 'LOADING') return <section className="section rev" aria-labelledby={`rev-${opportunityId}`} aria-busy="true">{head}<p className="muted">정정 내역을 확인하는 중</p></section>;
   if (load.kind === 'ERROR') return <section className="section rev" aria-labelledby={`rev-${opportunityId}`}>{head}<p role="alert">정정 내역 자료를 확인할 수 없어 표시하지 않았습니다.</p></section>;
