@@ -1,5 +1,12 @@
 # PR 운영과 브랜치·이슈 정리 기준
 
+## 2026-11-04 사용자 예외 전수 통합 — 과거 스냅샷 정정
+
+- **현재 열린 PR 0건**. 사용자의 **이번 회차에 한한 작성자 PR 포함 직접 병합 지시**로 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) merge commit `f23b86bb693a163c7f6a0330d1b9657c684724ff`가 main에 반영됨. 원본 PR HEAD는 통합 조상으로 보존, #216 최신 HEAD `c2376759` TASK-00/Chrome/NCP IaC SUCCESS. 161파일 통합/회귀 수정. **에이전트 COMMENT ≠ 비작성자 APPROVED**, 실제 승인 없음을 명시하며 향후 일반 PR 기본 독립 리뷰 게이트는 변경하지 않는다.
+- 통합 전 스택 PR #215/#214/#213/#211/#210/#209/#208/#204/#185/#175 등은 GitHub에서 **CLOSED·unmerged**로 나타날 수 있다. 통합본에 변경이 들어간 것과 원본 PR의 `merged_at` 존재는 다르다. 개별 PR 상태를 임의 `MERGED`로 정정하지 않는다.
+- 이후 병합·이슈 업데이트 시 `main` SHA 및 실제 파일·CI·운영 증거를 재확인한다. 실 Google/PG/NCP/SSH/TLS/자료·권리 검증은 NOT_RUN, #89 `RELEASE_BLOCKED`. 과거 32건/36건 표는 **역사 스냅샷**이다.
+
+
 > 이 문서는 **현재의 반복 가능한 규칙**을 정리합니다. 일회성 과거 PR·CI 로그는 [각 Pull Request](https://github.com/ot4562-glitch/HUFS-One-AI/pulls?q=is%3Apr+is%3Aclosed)와 [이 문서의 Git 이력](https://github.com/ot4562-glitch/HUFS-One-AI/commits/main/docs/PR_WORKFLOW.md)에 보존합니다. 현재 HEAD·이슈 상태는 [STATUS](../STATUS.md)와 GitHub에서 확인합니다.
 
 ## PR 최소 병합 게이트
