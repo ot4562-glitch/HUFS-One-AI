@@ -61,6 +61,30 @@ describe('#144 double-major view model', () => {
     expect(buildDoubleMajorView({...r, doubleMajor: {status: 'MAYBE'}}, {asOf: AS_OF}).ok).toBe(false);
     expect(buildDoubleMajorView(null, {asOf: AS_OF}).ok).toBe(false);
   });
+
+  it('malformed row impacts and held rows are {ok:false}, never a thrown render (review P2)', async () => {
+    const r = await raw('SHARED_UNDECIDED') as Record<string, unknown>;
+    const ov = r.overlap as {rowImpacts: {primary: unknown[]; doubleMajor: Record<string, unknown>[]}; heldRequirementIds: {primary: string[]; doubleMajor: string[]}};
+    const good = ov.rowImpacts.doubleMajor[0]!;
+    const withImpacts = (doubleMajor: unknown, primary: unknown = ov.rowImpacts.primary) =>
+      ({...r, overlap: {...ov, rowImpacts: {primary, doubleMajor}}});
+    const withHeld = (doubleMajor: unknown) => ({...r, overlap: {...ov, heldRequirementIds: {...ov.heldRequirementIds, doubleMajor}}});
+    const bad: unknown[] = [
+      withImpacts([null]), withImpacts([null], [null]), withImpacts([[]]), withImpacts(null),
+      withImpacts([{...good, requirementId: null}]), withImpacts([{...good, requirementId: ' '}]),
+      withImpacts([{...good, decided: 'yes'}]), withImpacts([{...good, extra: 1}]),
+      withImpacts([{...good, remainingCreditUnitsWithoutShared: -3}]), withImpacts([{...good, remainingCreditUnitsWithoutShared: 1.5}]),
+      withImpacts([{...good, remainingCreditUnitsWithoutShared: Number.MAX_SAFE_INTEGER + 2}]),
+      withImpacts([good, good]), withImpacts([{...good, requirementId: 'SYN-DM-NOT-A-ROW'}]),
+      withImpacts([{...good, decided: true}]), // the held row would no longer match an undecided impact
+      withHeld([null]), withHeld('SYN-DM-MAJOR-MIN'), withHeld([...ov.heldRequirementIds.doubleMajor, 'SYN-DM-REQ']),
+      {...r, overlap: {...ov, status: 'COVERED_BY_APPROVED_RULE'}}, {...r, overlap: {...ov, extra: true}},
+      {...r, overlap: null}, {...r, doubleMajor: {status: 'NOT_APPLICABLE'}},
+    ];
+    for (const b of bad) expect(() => buildDoubleMajorView(b, {asOf: AS_OF})).not.toThrow();
+    expect(bad.map(b => buildDoubleMajorView(b, {asOf: AS_OF}).ok)).toEqual(bad.map(() => false));
+    expect(buildDoubleMajorView(r, {asOf: AS_OF}).ok).toBe(true);
+  });
 });
 
 const history = (): HistoryPort => ({location: {pathname: '/graduation'}, history: {pushState: () => {}}, addEventListener: () => {}, removeEventListener: () => {}});

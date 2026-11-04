@@ -1,3 +1,4 @@
+import {z} from 'zod';
 import {AcademicAuditVNextSchema, type AcademicAuditVNext} from '@hufs-one/contracts';
 import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../graduation/graduationView.js';
 
@@ -6,8 +7,8 @@ import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../graduation/graduatio
  * student actually chose. Figures come from the academics core (buildDoubleMajorAudit, #147) as-is; the UI
  * never adds credits, decides a row or settles whether a shared course may count twice.
  *
- * Wire: the merged core DoubleMajorAudit shape. The owner HTTP projection (#150, draft) will replace the
- * light structural check below with its own schema.
+ * Wire: the merged core DoubleMajorAudit shape. Every overlap element is checked strictly (OverlapSchema) and
+ * against the audited rows, so a malformed row impact is an error frame, never a thrown render.
  */
 type RowState = AcademicAuditVNext['requirements'][number]['state'];
 type OverlapStatus = 'NONE' | 'NO_APPROVED_RULE' | 'COVERED_BY_APPROVED_RULE' | 'OVER_APPROVED_LIMIT';
@@ -56,9 +57,33 @@ const ROW_RANK: Record<RowState, number> = {UNSATISFIED: 0, NEEDS_REVIEW: 1, NOT
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isUnits = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0;
-const isIds = (v: unknown): v is string[] => Array.isArray(v) && v.every(x => typeof x === 'string');
 
-interface Impact { requirementId: string; decided: boolean; remainingCreditUnitsWithoutShared?: number }
+// Mirrors core OverlapRowImpact / DoubleMajorAudit['overlap']; extra keys, nulls and bad numbers are rejected.
+const Id = z.string().trim().min(1).max(128);
+const Units = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
+const ImpactSchema = z.strictObject({
+  requirementId: Id, decided: z.boolean(), metWithShared: z.boolean(), metWithoutShared: z.boolean(),
+  earnedCreditUnitsWithoutShared: z.number().int().safe().optional(), remainingCreditUnitsWithoutShared: Units.optional(),
+  projectedCreditUnitsWithoutShared: z.number().int().safe().optional(), matchedCoursesCountWithoutShared: z.number().int().safe().optional(),
+});
+const OverlapSchema = z.strictObject({
+  status: z.enum(['NONE', 'NO_APPROVED_RULE', 'COVERED_BY_APPROVED_RULE', 'OVER_APPROVED_LIMIT']),
+  sharedCourses: z.array(z.strictObject({courseId: Id, ledger: z.enum(['EARNED', 'IN_PROGRESS', 'PLANNED']), creditUnits: Units,
+    primaryAreaIds: z.array(Id), doubleMajorAreaIds: z.array(Id)})),
+  sharedCreditUnits: Units, evidenceRefs: z.array(Id),
+  heldRequirementIds: z.strictObject({primary: z.array(Id), doubleMajor: z.array(Id)}),
+  rowImpacts: z.strictObject({primary: z.array(ImpactSchema), doubleMajor: z.array(ImpactSchema)}),
+});
+type Impact = z.infer<typeof ImpactSchema>;
+
+/** Impacts name real rows once each; the held rows are exactly the undecided impacts and are shown as open. */
+function impactsFit(audit: AcademicAuditVNext | null, impacts: readonly Impact[], held: readonly string[]): boolean {
+  const rows = new Map((audit?.requirements ?? []).map(r => [r.requirementId, r.state]));
+  const undecided = impacts.filter(i => !i.decided).map(i => i.requirementId);
+  return new Set(impacts.map(i => i.requirementId)).size === impacts.length && impacts.every(i => rows.has(i.requirementId))
+    && new Set(held).size === held.length && held.length === undecided.length && undecided.every(id => held.includes(id))
+    && held.every(id => rows.get(id) === 'NEEDS_REVIEW' || rows.get(id) === 'NOT_CHECKED');
+}
 
 function column(role: MajorColumnView['role'], audit: AcademicAuditVNext, held: ReadonlySet<string>, impacts: readonly Impact[]): MajorColumnView {
   const rows = [...audit.requirements].sort((a, b) => ROW_RANK[a.state] - ROW_RANK[b.state]).map(r => {
@@ -92,15 +117,14 @@ export function buildDoubleMajorView(raw: unknown, expected: {asOf: string}): Do
   if (!isObj(raw) || typeof raw.asOf !== 'string' || Date.parse(raw.asOf) !== Date.parse(expected.asOf)) return {ok: false};
   const primary = AcademicAuditVNextSchema.safeParse(raw.primary);
   if (!primary.success || Date.parse(primary.data.asOf) !== Date.parse(expected.asOf)) return {ok: false};
-  const u = raw.uniqueCredits, dm = raw.doubleMajor, ov = raw.overlap;
+  const u = raw.uniqueCredits, dm = raw.doubleMajor, parsedOverlap = OverlapSchema.safeParse(raw.overlap);
   if (!isObj(u) || !isUnits(u.earnedCreditUnits) || !isUnits(u.inProgressCreditUnits) || !isUnits(u.plannedCreditUnits)) return {ok: false};
-  if (!isObj(dm) || !isObj(ov) || !isUnits(ov.sharedCreditUnits) || !Array.isArray(ov.sharedCourses)) return {ok: false};
-  const status = ov.status as OverlapStatus;
-  if (!['NONE', 'NO_APPROVED_RULE', 'COVERED_BY_APPROVED_RULE', 'OVER_APPROVED_LIMIT'].includes(status)) return {ok: false};
-  const heldIds = isObj(ov.heldRequirementIds) ? ov.heldRequirementIds : null;
-  const impacts = isObj(ov.rowImpacts) ? ov.rowImpacts : null;
-  if (!heldIds || !impacts || !isIds(heldIds.primary) || !isIds(heldIds.doubleMajor)
-    || !Array.isArray(impacts.primary) || !Array.isArray(impacts.doubleMajor)) return {ok: false};
+  if (!isObj(dm) || !parsedOverlap.success) return {ok: false};
+  const ov = parsedOverlap.data, status: OverlapStatus = ov.status, heldIds = ov.heldRequirementIds, impacts = ov.rowImpacts;
+  // A settled overlap holds nothing; only an unsettled one may carry row impacts.
+  if ((status === 'NONE' || status === 'COVERED_BY_APPROVED_RULE')
+    && (impacts.primary.length || impacts.doubleMajor.length || heldIds.primary.length || heldIds.doubleMajor.length)) return {ok: false};
+  if (!impactsFit(primary.data, impacts.primary, heldIds.primary)) return {ok: false};
   // The same transcript feeds both majors: the totals must agree, or the two columns describe different students.
   if (u.earnedCreditUnits !== primary.data.earnedCreditUnits) return {ok: false};
 
@@ -113,12 +137,15 @@ export function buildDoubleMajorView(raw: unknown, expected: {asOf: string}): Do
     case 'CHECKED': {
       const audit = AcademicAuditVNextSchema.safeParse(dm.audit);
       if (!audit.success || Date.parse(audit.data.asOf) !== Date.parse(expected.asOf)
-        || audit.data.earnedCreditUnits !== primary.data.earnedCreditUnits) return {ok: false};
-      second = column('이중전공', audit.data, new Set(heldIds.doubleMajor), impacts.doubleMajor as Impact[]);
+        || audit.data.earnedCreditUnits !== primary.data.earnedCreditUnits
+        || !impactsFit(audit.data, impacts.doubleMajor, heldIds.doubleMajor)) return {ok: false};
+      second = column('이중전공', audit.data, new Set(heldIds.doubleMajor), impacts.doubleMajor);
       break;
     }
     default: return {ok: false};
   }
+  // Without a checked double major there is no second column for an impact to describe.
+  if (dm.status !== 'CHECKED' && (impacts.doubleMajor.length || heldIds.doubleMajor.length)) return {ok: false};
   const selectionText = dm.status === 'CHECKED' || dm.status === 'RULES_MISSING' ? '이중전공: 선택함'
     : dm.status === 'NOT_APPLICABLE' ? '이중전공: 해당 없음' : '이중전공: 입력 필요';
   return {ok: true, view: {
@@ -128,7 +155,7 @@ export function buildDoubleMajorView(raw: unknown, expected: {asOf: string}): Do
       {label: '수강 중', credits: creditsText(u.inProgressCreditUnits)},
       {label: '계획', credits: creditsText(u.plannedCreditUnits)},
     ],
-    primary: column('주전공', primary.data, new Set(heldIds.primary), impacts.primary as Impact[]),
+    primary: column('주전공', primary.data, new Set(heldIds.primary), impacts.primary),
     doubleMajor: second, doubleMajorNote: note,
     overlapText: dm.status === 'CHECKED' ? overlapText(status, ov.sharedCourses.length, ov.sharedCreditUnits) : null,
   }};
