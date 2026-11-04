@@ -56,13 +56,14 @@ describe('integration security review: deny unsupported production startups',()=
 });
 
 describe('reviewer browser: prove all nested academic/AI evidence is synthetic',()=>{
-  it('refuses ADMIN in the BETA login response even with beta-shaped flags',async()=>{
-    const client=new HufsApiClient(async()=>respond({
-      actorId:'SYN-ADMIN',role:'ADMIN',schoolMailProofValid:true,betaAllowed:true,
-    }));
-    await expect(client.getSession()).rejects.toMatchObject({
-      code:'PROVIDER_UNAVAILABLE',status:503,
-    });
+  it('refuses ADMIN sessions without verified proof and allowlist flags',async()=>{
+    // #123 adds a distinct ADMIN consumer. OwnerSessionController still accepts
+    // BETA only; tests/api/admin-browser-session.test.ts proves that separation.
+    for(const flags of [{schoolMailProofValid:false,betaAllowed:true},
+      {schoolMailProofValid:true,betaAllowed:false}]){
+      const client=new HufsApiClient(async()=>respond({actorId:'SYN-ADMIN',role:'ADMIN',...flags}));
+      await expect(client.getSession()).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE',status:503});
+    }
   });
 
   it('blocks a supposedly synthetic snapshot with potentially live cached model provenance',async()=>{
