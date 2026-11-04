@@ -9,6 +9,7 @@ import {boardPort} from '../features/applications/boardPort.js';
 import {App} from '../App.js';
 import {appPages} from '../pages/index.js';
 import type {HistoryPort} from './router.js';
+import {getHufsAbilityManifest} from '@hufs-one/contracts';
 import {MENU_GROUPS, OFFICIAL_HUFSABILITY_URL} from './menuCatalog.js';
 
 afterEach(cleanup);
@@ -41,10 +42,21 @@ describe('#124 menu catalog', () => {
     expect(MENU_GROUPS.find(g => g.origin === 'HUFSABILITY_PUBLIC')!.items.map(i => i.label)).toEqual(['교내비교과', '장학공지', '공지사항', '채용정보']);
   });
 
+  it('HUFSAbility items are exactly the central manifest: same ids, labels and states, none opened by the UI', () => {
+    const m = getHufsAbilityManifest();
+    const fromManifest = [...m.categories.flatMap(c => c.items), ...m.publicEntries].map(i => [i.id, i.label, i.state]);
+    const shown = MENU_GROUPS.filter(g => g.origin !== 'HUFS_ONE_AI').flatMap(g => g.items).map(i => [i.id, i.label, i.status]);
+    expect(shown).toEqual(fromManifest);
+    expect(MENU_GROUPS.filter(g => g.origin === 'HUFSABILITY').map(g => g.id)).toEqual(m.categories.map(c => c.id));
+    expect(OFFICIAL_HUFSABILITY_URL).toBe(m.officialHomepage);
+  });
+
   it('only DEMO_AVAILABLE items have a route; HUFS One AI additions are never listed as HUFSAbility functions', () => {
     for (const i of MENU_GROUPS.flatMap(g => g.items)) expect(Boolean(i.route)).toBe(i.status === 'DEMO_AVAILABLE');
-    expect(MENU_GROUPS.filter(g => g.origin !== 'HUFS_ONE_AI').flatMap(g => g.items).some(i => i.kind === 'EXTENSION')).toBe(false);
+    expect(MENU_GROUPS.filter(g => g.origin !== 'HUFS_ONE_AI').flatMap(g => g.items).some(i => i.kind === 'EXTENSION' || i.route)).toBe(false);
     expect(MENU_GROUPS.filter(g => g.origin === 'HUFS_ONE_AI').flatMap(g => g.items).every(i => i.kind === 'EXTENSION')).toBe(true);
+    // Our own screens stay reachable from the 확장 group instead of borrowing an original menu name.
+    expect(MENU_GROUPS[0]!.items.map(i => i.route)).toEqual(expect.arrayContaining(['/opportunities', '/notices']));
   });
 
   it('every clickable route opens a real demo screen (no placeholder, no not-found)', async () => {
@@ -68,11 +80,22 @@ describe('#124 menu rendering', () => {
     expect(off.getAttribute('aria-disabled')).toBe('true');
     expect(off.textContent).toContain('이번 시연 미지원');
     expect(off.querySelector('a, button, [tabindex]')).toBeNull();
-    const notices = within(page).getByRole('link', {name: /공지사항/});
-    expect(notices.getAttribute('href')).toBe('/notices');
-    expect(notices.textContent).toContain('AI 개선');
+    // Original menus with the same name as one of our screens are still not links to it.
+    for (const name of ['비교과 프로그램', '채용정보(교내)']) expect(within(page).getByText(name).closest('a')).toBeNull();
     expect(within(page).getAllByRole('link').filter(a => a.getAttribute('href')?.startsWith('/')).length).toBe(
       MENU_GROUPS.flatMap(g => g.items).filter(i => i.route).length);
+  });
+
+  it('the 4 public areas only link to the official home in a new tab and say the demo does not provide them', async () => {
+    await open('/menu');
+    const page = screen.getByRole('main');
+    for (const name of ['교내비교과', '장학공지', '공지사항', '채용정보']) {
+      const link = within(page).getAllByRole('link').find(a => a.textContent?.startsWith('🚫' + name))!;
+      expect(link.getAttribute('href'), name).toBe(OFFICIAL_HUFSABILITY_URL);
+      expect(link.getAttribute('target')).toBe('_blank');
+      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(link.textContent).toMatch(/시연 불가.*학교 공식 HUFSAbility 첫 화면으로 이동.*새 창/);
+    }
   });
 
   it('the official site link opens a new tab without opener/referrer and says it is the school site', async () => {

@@ -1,0 +1,36 @@
+[Unit]
+Description=HUFS One AI synthetic-only loopback Vite preview (NEVER production)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/opt/hufs-one/preview/current/node_modules/vite/bin/vite.js
+
+[Service]
+Type=simple
+User=hufs-preview
+Group=hufs-preview
+WorkingDirectory=/opt/hufs-one/preview/current
+Environment=NODE_ENV=development
+Environment=CI=1
+Environment=NO_PROXY=127.0.0.1,localhost
+ExecStart=/usr/bin/node /opt/hufs-one/preview/current/node_modules/vite/bin/vite.js --config apps/web/vite.config.ts --mode synthetic --host 127.0.0.1 --port 5173 --strictPort
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=15s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/hufs-one/preview
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+MemoryMax=1G
+CPUQuota=100%
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target
