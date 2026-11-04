@@ -71,6 +71,10 @@ export function createApi(options:ApiOptions) {
     throw new Error('Google auth flow must exclusively own session verification and revocation');
   if(options.schoolMailProof&&!options.googleAuth)
     throw new Error('Verified Google browser identity required for school mail proof');
+  const contextLimits=z.strictObject({perActor:z.number().int().min(1).max(200),
+    perSession:z.number().int().min(1).max(200)})
+    .refine(v=>v.perSession<=v.perActor)
+    .parse(options.contextLimits??{perActor:100,perSession:50});
   const app=Fastify({logger:false,trustProxy:false,bodyLimit:65536,requestIdHeader:false});
   const clock=options.now??(()=>new Date().toISOString());
   const newId=options.newId??randomUUID;
@@ -98,7 +102,13 @@ export function createApi(options:ApiOptions) {
     const time=nowEpoch(clock());
     for(const [id,item] of contexts)if(Date.parse(item.expiresAt)<=time)contexts.delete(id);
     if(Date.parse(context.expiresAt)<=time)throw new ApiFailure('FORBIDDEN');
-    if(contexts.size>=200)throw new ApiFailure('RATE_LIMITED');
+    let actorCount=0,sessionCount=0;
+    for(const item of contexts.values())if(item.actorId===context.actorId){
+      actorCount++;
+      if(item.sessionIdHash===context.sessionIdHash)sessionCount++;
+    }
+    if(contexts.size>=200||actorCount>=contextLimits.perActor||sessionCount>=contextLimits.perSession)
+      throw new ApiFailure('RATE_LIMITED');
     contexts.set(context.contextId,context);
   };
 
@@ -117,6 +127,7 @@ export function createApi(options:ApiOptions) {
     catch(error) { if(error instanceof ApiFailure)throw error;throw new ApiFailure('UNAUTHENTICATED'); }
     if(actor.role==='REVIEWER') {
       const enrollment=request.method==='POST'&&path==='/api/reviewer/invitations/redeem';
+      const contextRelease=request.method==='DELETE'&&/^\/api\/demo\/contexts\/[^/]+$/.test(path??'');
       const reviewerRead=request.method==='GET'&&(
         path==='/api/auth/session'
         ||path==='/api/auth/csrf'
@@ -141,14 +152,14 @@ export function createApi(options:ApiOptions) {
       // A verified Google session must obtain CSRF and complete administrator-preapproved
       // school-mail OTP even before it has a REVIEWER invitation. All reviewer data
       // remains inaccessible without the independently provisioned access store.
-      if(!options.reviewerAccess&&!csrf&&!schoolMail&&!logout)
+      if(!options.reviewerAccess&&!csrf&&!schoolMail&&!logout&&!contextRelease)
         throw new ApiFailure('FORBIDDEN');
-      if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail)
+      if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail&&!contextRelease)
         throw new ApiFailure('FORBIDDEN');
       // A new reviewer needs CSRF proof in order to redeem the invitation.
       // Logout must remain available when a reviewer invitation has expired
       // or been revoked; data access still requires a live grant.
-      if(!enrollment&&!schoolMail&&!logout&&!csrf){
+      if(!enrollment&&!schoolMail&&!logout&&!csrf&&!contextRelease){
         if(!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
         const grant=await options.reviewerAccess.readActive({
           actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
@@ -184,7 +195,7 @@ export function createApi(options:ApiOptions) {
   // onRequest check alone cannot protect a response whose session/invite
   // expires while that asynchronous operation is in flight.
   const recheckCurrent=async(req:FastifyRequest,actor:VerifiedActor,
-    context?:DemoContext,sections:Section[]=[])=>{
+    context?:DemoContext,sections:Section[]=[],unpublished=false)=>{
     const sameSession=(next:VerifiedActor)=>
       next.role===actor.role&&next.actorId===actor.actorId
       &&next.sessionIdHash===actor.sessionIdHash
@@ -209,7 +220,8 @@ export function createApi(options:ApiOptions) {
         throw new ApiFailure('VERSION_CONFLICT',context.contextId);
     }
     if(!sameSession(await verifiedSession(req))
-      ||context&&Date.parse(context.expiresAt)<=nowEpoch(clock()))
+      ||context&&(Date.parse(context.expiresAt)<=nowEpoch(clock())
+        ||!unpublished&&contexts.get(context.contextId)!==context))
       throw new ApiFailure('FORBIDDEN');
   };
   const overlayResult=async(raw:unknown,req:FastifyRequest,actor:VerifiedActor,context:DemoContext)=>{
@@ -224,7 +236,8 @@ export function createApi(options:ApiOptions) {
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const current=await verifiedSession(req);
     if(current.role!==actor.role||current.actorId!==actor.actorId
-      ||current.sessionIdHash!==actor.sessionIdHash||Date.parse(context.expiresAt)<=nowEpoch(clock()))
+      ||current.sessionIdHash!==actor.sessionIdHash||Date.parse(context.expiresAt)<=nowEpoch(clock())
+      ||contexts.get(context.contextId)!==context)
       throw new ApiFailure('FORBIDDEN');
     return r;
   };
@@ -294,6 +307,8 @@ export function createApi(options:ApiOptions) {
         ?'INVALID_INPUT':'PROVIDER_UNAVAILABLE';
     const response=makeApiError(code,req.id,
       err instanceof ApiFailure?err.contextId:undefined);
+    if(code==='RATE_LIMITED'&&req.method==='POST'&&req.url.split('?')[0]==='/api/demo/contexts')
+      reply.header('Retry-After','300');
     reply.code(httpStatusForError(response)).send(response);
   });
   app.setNotFoundHandler((req,reply)=>{
@@ -413,6 +428,7 @@ export function createApi(options:ApiOptions) {
     }
     await verifiedSession(req);
     if(Date.parse(context.expiresAt)<=nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT',id);
+    if(contexts.get(id)!==context)throw new ApiFailure('FORBIDDEN');
     return result;
   });
 
@@ -589,6 +605,18 @@ export function createApi(options:ApiOptions) {
     await recheckCurrent(req,actor);
     return DemoProfilesResponseSchema.parse({profiles:selected});
   });
+  // Identical empty response for absent/expired/foreign ids. Only the current
+  // session can release its lease, even after its sharing/invite is revoked.
+  app.delete('/api/demo/contexts/:id',async(req,reply)=>{
+    const {id}=ContextParams.parse(req.params);z.strictObject({}).parse(req.query);
+    if(req.body!==undefined)z.strictObject({}).parse(req.body);
+    const actor=principal(req),current=await verifiedSession(req);
+    if(current.actorId!==actor.actorId||current.sessionIdHash!==actor.sessionIdHash||current.role!==actor.role)
+      throw new ApiFailure('FORBIDDEN');
+    const context=contexts.get(id);
+    if(context?.actorId===actor.actorId&&context.sessionIdHash===actor.sessionIdHash)contexts.delete(id);
+    reply.code(204).send();
+  });
   app.post('/api/demo/contexts',async(req,reply)=>{
     const actor=principal(req);
     const body=SelectBody.parse(req.body);
@@ -618,7 +646,7 @@ export function createApi(options:ApiOptions) {
         sharingGrantVersion:'REVIEWER:'+grant.inviteId,
         expiresAt:new Date(exp).toISOString(),
       });
-      await recheckCurrent(req,actor,context);
+      await recheckCurrent(req,actor,context,[],true);
       publishContext(context);
       reply.code(201);
       return context;
@@ -655,7 +683,7 @@ export function createApi(options:ApiOptions) {
       datasetVersion:snapshot.versions.dataset,projectionVersion:snapshot.versions.projection,
       sharingGrantVersion:grant.version,expiresAt:new Date(expiry).toISOString(),
     });
-    await recheckCurrent(req,actor,context,['FEED','NOTICES']);
+    await recheckCurrent(req,actor,context,['FEED','NOTICES'],true);
     publishContext(context);
     reply.code(201);
     return context;

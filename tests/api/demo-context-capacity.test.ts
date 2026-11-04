@@ -27,7 +27,9 @@ async function fixture(role:'BETA'|'REVIEWER',concurrent=false){
   // asynchronous session-verifier boundary. No timers or network are needed.
   const verifications=new WeakMap<object,number>();let waiting=0,release!:()=>void;
   const barrier=new Promise<void>(resolve=>{release=resolve;});
-  const app=createApi({repository,allowedOrigin:ORIGIN,now:()=>now,verifySession:async request=>{
+  // This suite isolates the unchanged GLOBAL cap; per-owner policy is covered
+  // with production defaults in demo-context-allocation.test.ts.
+  const app=createApi({repository,allowedOrigin:ORIGIN,contextLimits:{perActor:200,perSession:200},now:()=>now,verifySession:async request=>{
     if(concurrent&&request.method==='POST'&&request.url==='/api/demo/contexts'){
       const count=(verifications.get(request)??0)+1;verifications.set(request,count);
       if(count===2){if(++waiting===205)release();await barrier;}
