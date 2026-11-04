@@ -28,6 +28,9 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/tests/prune-merged-branches.node.mjs",
     "/tools/audit_entrypoints.mjs", "/tools/entrypoints.json",
     "/tools/tests/entrypoint-inventory.node.mjs",
+    "/tools/audit_dependency_licenses.mjs", "/tools/dependency_bom.mjs",
+    "/tools/audit_api_contracts.mjs", "/tools/api_contract_inventory.json",
+    "/tools/tests/api-contract-inventory.node.mjs",
     "/apps/web/", "/infra/sql/", "/infra/laya/", "/infra/deploy/", "/infra/ai/", "/infra/ncp/", "/infra/postgres/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
@@ -176,6 +179,9 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/tools/strip_build_sourcemaps.mjs",
             "/tools/prune_merged_branches.mjs",
             "/tools/tests/prune-merged-branches.node.mjs",
+            "/tools/audit_dependency_licenses.mjs", "/tools/dependency_bom.mjs",
+            "/tools/audit_api_contracts.mjs", "/tools/api_contract_inventory.json",
+            "/tools/tests/api-contract-inventory.node.mjs",
             "/.github/workflows/task00-contracts.yml",
             "/.github/workflows/ui-browser-e2e.yml",
             "/tools/release_entrypoint_gate.mjs",
@@ -203,6 +209,9 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("security negative regression tests must execute in CI")
     if "node --test tools/tests/prune-merged-branches.node.mjs" not in text:
         issues.append("branch cleanup fail-closed tests must execute in CI")
+    for command in ("npm run test:dependency-evidence", "npm run test:api-contracts"):
+        if command not in text:
+            issues.append("offline evidence regression tests must execute in CI")
     if "node tools/release_entrypoint_gate.mjs" not in text:
         issues.append("actual offline anonymous HTTP probe must execute in CI")
     if "npm run build:web" not in text:
@@ -385,6 +394,19 @@ class WorkflowBoundaryTests(unittest.TestCase):
             "node --test tools/tests/prune-merged-branches.node.mjs", "echo skipped", 1
         )
         self.assertTrue(audit_ci_boundary(changed))
+
+    def test_offline_evidence_checks_cannot_be_omitted(self) -> None:
+        for command in ("npm run test:dependency-evidence", "npm run test:api-contracts"):
+            with self.subTest(command=command):
+                self.assertIn(command, self.policy)
+                self.assertTrue(audit_ci_boundary(self.policy.replace(command, "echo skipped", 1)))
+        for path in ("/tools/audit_dependency_licenses.mjs", "/tools/dependency_bom.mjs",
+                     "/tools/audit_api_contracts.mjs", "/tools/api_contract_inventory.json",
+                     "/tools/tests/api-contract-inventory.node.mjs"):
+            with self.subTest(path=path):
+                self.assertIn(path, sparse_checkout_lists(self.policy)[0])
+                changed = self.policy.replace("            " + path + "\n", "", 1)
+                self.assertTrue(audit_ci_boundary(changed))
 
     def test_missing_browser_cache_gate_is_rejected(self) -> None:
         changed = self.policy.replace(

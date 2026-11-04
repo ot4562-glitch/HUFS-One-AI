@@ -63,6 +63,11 @@ jobs:
             /tools/audit_entrypoints.mjs
             /tools/entrypoints.json
             /tools/tests/entrypoint-inventory.node.mjs
+            /tools/audit_dependency_licenses.mjs
+            /tools/dependency_bom.mjs
+            /tools/audit_api_contracts.mjs
+            /tools/api_contract_inventory.json
+            /tools/tests/api-contract-inventory.node.mjs
             /.github/workflows/release-readiness.yml
             /.dockerignore
       - name: Prove real-student sources are not in this workspace
@@ -87,6 +92,10 @@ jobs:
         run: npm run check
       - name: Verify read-only entrypoint inventory with isolated synthetic Git fixtures
         run: npm run test:entrypoints
+      - name: Verify offline license, BOM and API contract inventories with synthetic fixtures
+        run: |
+          npm run test:dependency-evidence
+          npm run test:api-contracts
       - name: Build local fail-closed Fastify API
         run: npm run build:api
       - name: Reject unsafe anonymous responses and false release readiness
