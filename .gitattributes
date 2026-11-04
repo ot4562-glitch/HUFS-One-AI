@@ -7,6 +7,6 @@
 *.png binary
 *.jpg binary
 *.jpeg binary
-
 # Keep deletion reviews for historically tracked private intake metadata-only.
 csv/** -diff linguist-generated=true
+*.sh text eol=lf
