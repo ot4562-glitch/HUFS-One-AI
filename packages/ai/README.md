@@ -1,5 +1,7 @@
 # CLOVA protocol adapters
 
+> 2026-11-04 모듈 경계: 이 패키지의 clova-wire.ts는 오프라인 프로토콜 계약이다. 하지만 앱의 별도 apps/api Provider HTTP/PG/권한·예산·취소 및 Laya supervisor 구현은 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 통해 main에 존재한다. 이 패키지 설명의 'HTTP transport 없음'은 **이 패키지 자체**에 한정한다. 실제 NCP/CLOVA/HCX 계정·요금·자료전송 권한/실호출은 NOT_RUN, 기본 OFF/RELEASE_BLOCKED. [STATUS](../../STATUS.md).
+
 `src/clova-wire.ts` implements **offline serialization/validation**, first part of #20. There is no HTTP transport, key lookup, provider registration, environment activation or model download. Existing API behavior is unchanged; `AI_ENABLED=false` remains the operating policy.
 
 - `buildOcrRequest` / `parseOcrResponse`: V2 single PNG/JPEG, bytes/SHA check, opaque request-local context, response request/name/version binding, one page, bounded fields, finite convex in-bounds quadrilateral. Output preserves field text/order/lineBreak, pixel vertices and enclosing normalized box, source revision/asset/hash/transform. It is OCR **field** evidence, not reconstructed lines/table semantics. PDF/TIFF/conversions, checkbox/multibox, empty or malformed responses fail closed.
