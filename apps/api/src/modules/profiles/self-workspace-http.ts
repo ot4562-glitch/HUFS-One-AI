@@ -185,24 +185,37 @@ export function registerOwnerWorkspaceRoutes(options:Ctx):void{
     Empty.parse(request.query);
     const {itemId,opportunityId}=FromOpportunity.parse(request.body);
     const actor=await betaActor(request,session);
-    let resolved:Awaited<ReturnType<TrustedCatalogPort['getOpportunity']>>;
-    try{resolved=await catalog.getOpportunity({
-      actorId:actor.actorId,id:opportunityId,now:session.now(),
-    });}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
-    if(!resolved)throw new ApiFailure('FORBIDDEN');
-    let detail;
-    try{detail=OpportunityCatalogDetailSchema.parse(resolved.result);}
-    catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
-    if(detail.opportunity.id!==opportunityId
-      ||detail.opportunity.title.length>120
-      ||(detail.source.status==='ACTIVE'&&(!detail.source.verifiedAt
-        ||Date.parse(detail.source.verifiedAt)>Date.parse(session.now()))))
-      throw new ApiFailure('FORBIDDEN');
-    let valid=false;
-    try{valid=await catalog.revalidate({actorId:actor.actorId,
-      scopeToken:resolved.scopeToken,now:session.now()})===true;}
-    catch{/* deny */}
-    if(!valid)throw new ApiFailure('FORBIDDEN');
+    const readOpportunity=async()=>{
+      let resolved:Awaited<ReturnType<TrustedCatalogPort['getOpportunity']>>;
+      try{resolved=await catalog.getOpportunity({
+        actorId:actor.actorId,id:opportunityId,now:session.now(),
+      });}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+      if(!resolved)throw new ApiFailure('FORBIDDEN');
+      const scopeToken=resolved.scopeToken;
+      if(typeof scopeToken!=='string'||scopeToken.length===0||scopeToken.length>2048)
+        throw new ApiFailure('PROVIDER_UNAVAILABLE');
+      let detail;
+      try{detail=OpportunityCatalogDetailSchema.parse(resolved.result);}
+      catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+      if(detail.opportunity.id!==opportunityId
+        ||detail.opportunity.title.length>120
+        ||(detail.source.status==='ACTIVE'&&(!detail.source.verifiedAt
+          ||Date.parse(detail.source.verifiedAt)>Date.parse(session.now()))))
+        throw new ApiFailure('FORBIDDEN');
+      return {detail,scopeToken};
+    };
+    const recheckSource=async(scopeToken:string)=>{
+      let valid=false;
+      try{valid=await catalog.revalidate({actorId:actor.actorId,
+        scopeToken,now:session.now()})===true;}
+      catch{/* deny */}
+      if(!valid)throw new ApiFailure('FORBIDDEN');
+    };
+    const initial=await readOpportunity(),{detail}=initial;
+    // Catalog reads must not outlive the session authorizing this write.
+    await betaRecheck(request,session,actor);
+    await recheckSource(initial.scopeToken);
+    await betaRecheck(request,session,actor);
     const record=checkedRecord(await guarded(()=>store.create({
       actorId:actor.actorId,itemId,value:{
         kind:'EXPERIENCE',state:'DRAFT',title:detail.opportunity.title,summary:'',
@@ -213,6 +226,24 @@ export function registerOwnerWorkspaceRoutes(options:Ctx):void{
     if(record.itemId!==itemId||record.version!==1
       ||record.value.kind!=='EXPERIENCE'||record.value.state!=='DRAFT')
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    // PostgreSQL receipts are single-use. Obtain a fresh receipt after storage
+    // and bind it to the source and fields from which the draft was derived.
+    await betaRecheck(request,session,actor);
+    const current=await readOpportunity(),latest=current.detail;
+    if(latest.opportunity.version!==detail.opportunity.version
+      ||latest.opportunity.sourceSnapshotId!==detail.opportunity.sourceSnapshotId
+      ||latest.opportunity.title!==detail.opportunity.title
+      ||latest.opportunity.dataMode!==detail.opportunity.dataMode
+      ||latest.source.sourceId!==detail.source.sourceId
+      ||latest.source.revisionId!==detail.source.revisionId
+      ||latest.source.permissionRef!==detail.source.permissionRef
+      ||latest.source.status!==detail.source.status
+      ||latest.source.verifiedAt!==detail.source.verifiedAt)
+      throw new ApiFailure('FORBIDDEN');
+    // A late denial suppresses the response. Independent ports cannot roll
+    // back an already committed draft or safely delete a concurrent owner edit.
+    await betaRecheck(request,session,actor);
+    await recheckSource(current.scopeToken);
     await betaRecheck(request,session,actor);
     reply.code(201);return {item:record};
   });

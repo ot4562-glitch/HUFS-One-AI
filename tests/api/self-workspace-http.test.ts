@@ -33,8 +33,15 @@ const opportunity=OpportunitySchema.parse({
 });
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
 afterEach(async()=>{await Promise.all(apps.map(x=>x.close()));apps.length=0;});
+function pausePoint(){
+  let enter!:()=>void,resume!:()=>void;
+  const entered=new Promise<void>(resolve=>{enter=resolve;});
+  const resumed=new Promise<void>(resolve=>{resume=resolve;});
+  return {entered,resume,wait:async()=>{enter();await resumed;}};
+}
 function fixture(){
   const records=new Map<string,OwnerWorkspaceRecord>();
+  const receipts=new Set<string>();let nextReceipt=0;
   let sourceCurrent=true,sessionCurrent=true;
   const calledActors:string[]=[];
   const key=(a:string,k:string,id:string)=>a+'\0'+k+'\0'+id;
@@ -76,11 +83,16 @@ function fixture(){
     },
   };
   const catalog:TrustedCatalogPort={
-    getOpportunity:async()=>({scopeToken:'SYN-CURRENT',result:{
-      opportunity,source:{sourceId:'SYN-SRC-1',revisionId:'SYN-REV-1',
-        status:'SYNTHETIC',permissionRef:'SYN-CLEARED'},
-    }}),
-    revalidate:async()=>sourceCurrent,
+    getOpportunity:async()=>{
+      const scopeToken=String(++nextReceipt);receipts.add(scopeToken);
+      return {scopeToken,result:{
+        opportunity,source:{sourceId:'SYN-SRC-1',revisionId:'SYN-REV-1',
+          status:'SYNTHETIC',permissionRef:'SYN-CLEARED'},
+      }};
+    },
+    // The actual PostgreSQL catalog consumes each receipt exactly once.
+    revalidate:async({actorId,scopeToken})=>
+      receipts.delete(scopeToken)&&actorId===actor.actorId&&sourceCurrent,
     listCourses:async()=>null,listOfferings:async()=>null,
     listOpportunities:async()=>null,readTranscript:async()=>null,
   };
@@ -142,6 +154,106 @@ describe('A13 owner-only experience, study plan, saved items and action plan HTT
     expect(denied.statusCode).toBe(403);
     expect(j.records.size).toBe(0);
   });
+  it.each(['catalog read','source revalidation'] as const)(
+    'does not save a draft when its session is revoked during %s',async stage=>{
+      const h=fixture(),pause=pausePoint();
+      if(stage==='catalog read'){
+        const read=h.catalog.getOpportunity;
+        h.catalog.getOpportunity=async input=>{
+          const result=await read(input);await pause.wait();return result;
+        };
+      }else{
+        const revalidate=h.catalog.revalidate;
+        h.catalog.revalidate=async input=>{
+          const result=await revalidate(input);await pause.wait();return result;
+        };
+      }
+      const pending=h.app.inject({method:'POST',url:'/api/experience/from-opportunity',
+        headers:post,payload:{itemId:'SYN-EX-LATE',opportunityId:'SYN-OP-1'}})
+        .then(result=>result);
+      await pause.entered;h.revokeSession();pause.resume();
+      const result=await pending;
+      expect(result.statusCode).toBe(401);
+      expect(h.records.size).toBe(0);
+      expect(result.body).not.toContain('가상 공고');
+    });
+  it.each(['withdrawn','unavailable'] as const)(
+    'withholds a saved draft response when source rights become %s during storage',async state=>{
+      const h=fixture(),pause=pausePoint(),create=h.workspace.create;
+      h.workspace.create=async input=>{
+        const result=await create(input);await pause.wait();return result;
+      };
+      const pending=h.app.inject({method:'POST',url:'/api/experience/from-opportunity',
+        headers:post,payload:{itemId:'SYN-EX-LATE',opportunityId:'SYN-OP-1'}})
+        .then(result=>result);
+      await pause.entered;
+      if(state==='withdrawn')h.revokeSource();
+      else h.catalog.revalidate=async()=>{throw new Error('Synthetic authority unavailable');};
+      pause.resume();
+      const result=await pending;
+      expect(result.statusCode).toBe(403);
+      expect(result.json()).not.toHaveProperty('item');
+      expect(result.body).not.toContain('가상 공고');
+      // Independent catalog/workspace ports cannot undo an already committed
+      // owner draft. Never claim rollback or delete a concurrent owner's edit.
+      expect(h.records.size).toBe(1);
+    });
+  it.each(['source revision','permission','opportunity version','title','data mode'] as const)(
+    'withholds a draft derived from a changed %s',async change=>{
+      const h=fixture(),read=h.catalog.getOpportunity,create=h.workspace.create;
+      let saved=false;
+      h.workspace.create=async input=>{
+        const result=await create(input);saved=true;return result;
+      };
+      h.catalog.getOpportunity=async input=>{
+        const receipt=await read(input);if(!receipt||!saved)return receipt;
+        const detail={opportunity:{...receipt.result.opportunity},source:{...receipt.result.source}};
+        if(change==='source revision'){
+          detail.source.revisionId='SYN-REV-2';
+          detail.opportunity.sourceSnapshotId='SYN-REV-2';
+        }else if(change==='permission')detail.source.permissionRef='SYN-PERM-2';
+        else if(change==='opportunity version')detail.opportunity.version='v2';
+        else if(change==='title')detail.opportunity.title='가상 정정 공고';
+        else{
+          detail.opportunity.dataMode='REAL';
+          detail.source.status='ACTIVE';
+          detail.source.verifiedAt='2026-10-31T00:00:00.000Z';
+        }
+        return {...receipt,result:detail};
+      };
+      const result=await h.app.inject({method:'POST',url:'/api/experience/from-opportunity',
+        headers:post,payload:{itemId:'SYN-EX-CHANGED',opportunityId:'SYN-OP-1'}});
+      expect(result.statusCode).toBe(403);
+      expect(result.json()).not.toHaveProperty('item');
+      expect(result.body).not.toContain('가상 공고');
+    });
+  it('rechecks the session after the final source-rights read',async()=>{
+    const h=fixture(),revalidate=h.catalog.revalidate;let checks=0;
+    h.catalog.revalidate=async input=>{
+      const result=await revalidate(input);
+      if(++checks===2)h.revokeSession();
+      return result;
+    };
+    const result=await h.app.inject({method:'POST',url:'/api/experience/from-opportunity',
+      headers:post,payload:{itemId:'SYN-EX-LATE',opportunityId:'SYN-OP-1'}});
+    expect(result.statusCode).toBe(401);
+    expect(result.json()).not.toHaveProperty('item');
+    expect(result.body).not.toContain('가상 공고');
+  });
+  it.each([
+    ['empty',''],['oversized','T'.repeat(2049)],['non-string',42],['missing',null],
+  ])('rejects an unusable catalog receipt before storing a draft (%s)',async(_label,scopeToken)=>{
+      const h=fixture(),read=h.catalog.getOpportunity;
+      h.catalog.getOpportunity=async input=>{
+        const result=await read(input);
+        return {...result!,scopeToken} as unknown as NonNullable<typeof result>;
+      };
+      const result=await h.app.inject({method:'POST',url:'/api/experience/from-opportunity',
+        headers:post,payload:{itemId:'SYN-EX-BAD',opportunityId:'SYN-OP-1'}});
+      expect(result.statusCode).toBe(503);
+      expect(h.records.size).toBe(0);
+      expect(result.body).not.toContain('가상 공고');
+    });
   it('blocks unauthenticated, REVIEWER, malicious payload and over-limit pagination',async()=>{
     const h=fixture();h.revokeSession();
     const unauth=await h.app.inject({method:'POST',url:'/api/saved-items',
