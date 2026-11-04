@@ -49,7 +49,8 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     expect(screen.queryByText(/PENDING.*LIVE/)).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'동일 요청으로 상태 재확인'}));
     await waitFor(()=>expect(f.submit).toHaveBeenCalledTimes(2));
-    await screen.findByText('Synthetic approved notice');
+    // Quote is inline in a citation list item; exact element text contains its source label.
+    await screen.findByText(/Synthetic approved notice/);
     const first=f.submit.mock.calls[0]!,second=f.submit.mock.calls[1]!;
     expect(first[0]).toEqual(item);
     expect(first[1]).toBe('opportunity-terms');
