@@ -26,7 +26,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/check_postgres_migration_plan.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
-    "/apps/web/", "/infra/sql/", "/infra/ai/", "/infra/ncp/", "/tests/contracts/", "/tests/consumers/",
+    "/apps/web/", "/infra/sql/", "/infra/ai/", "/infra/ncp/", "/infra/postgres/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/tools/release_publication_gate.py", "/.dockerignore",
@@ -61,6 +61,16 @@ DEMO_PROFILE_PG_PROOF = (
     "HUFS_PG_DEMO_PROFILE_LIVE: '1'",
     "HUFS_PG_DEMO_PROFILE_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_demo_profile_test",
     "tests/api/demo-profile-live-opt-in.test.ts",
+)
+RECOVERY_PG_PROOF = (
+    'run: npm run build:api',
+    '--network none --cpus=2 --memory=1g --pids-limit=100',
+    '-e HUFS_RECOVERY_CONTAINER=synthetic-ci-only',
+    'source=$PWD/dist,target=/work/dist,readonly',
+    'source=$PWD/node_modules,target=/work/node_modules,readonly',
+    'source=$node_binary,target=/opt/hufs-node,readonly',
+    'source=$PWD/tests/api/fixtures/postgres-recovery-live.mjs,target=/work/tests/api/fixtures/postgres-recovery-live.mjs,readonly',
+    '--entrypoint bash postgres:18 /work/infra/postgres/synthetic-recovery-drill.sh',
 )
 OWNER_ACADEMICS_PG_PROOF = (
     "- 15439:5432",
@@ -102,6 +112,9 @@ def has_compiled_api_before_live_consumers(text: str) -> bool:
     job = re.split(r"(?m)^  [A-Za-z0-9_-]+:\s*$", text.split(marker, 1)[1], maxsplit=1)[0]
     builds = list(re.finditer(r"(?m)^        run: npm run build:api\s*$", job))
     if len(builds) != 1:
+        return False
+    if any(command.start() < builds[0].end() for command in
+           re.finditer(r"(?m)^          docker run --rm --network none\b", job)):
         return False
     commands = list(re.finditer(r"(?m)^        run: npx vitest run ([^\n]+)$", job))
     required = ("tests/api/pg-owner-academics-live-opt-in.test.ts",
@@ -155,6 +168,7 @@ def audit_ci_boundary(text: str) -> list[str]:
                 issues.append(f"checkout {index} exceeds reviewed synthetic paths")
         if not {
             "/tests/release/", "/tests/security/",
+            "/infra/postgres/",
             "/packages/ui/", "/tools/audit_private_git_metadata.py",
             "/tools/private_registry_io.mjs",
             "/tools/strip_build_sourcemaps.mjs",
@@ -175,6 +189,8 @@ def audit_ci_boundary(text: str) -> list[str]:
             issues.append("disposable PostgreSQL checkout lacks tests/migrations")
         if any("/apps/web/" not in paths for paths in sparse[1:]):
             issues.append("both real PostgreSQL jobs must checkout the reviewed browser client")
+        if "/infra/postgres/" not in sparse[1]:
+            issues.append("native recovery job must checkout its synthetic container harness")
 
     for directory in EXCLUDED_DIRECTORIES:
         if text.count(f"test ! -d {directory}") != 3:
@@ -206,6 +222,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
     if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
         issues.append("EMPTY_DEMO SQL proof must execute against the isolated real PostgreSQL 18 server")
+    if any(proof not in text for proof in RECOVERY_PG_PROOF):
+        issues.append("native recovery proof must execute in a bounded isolated PostgreSQL 18 container")
     if not has_compiled_api_before_live_consumers(text):
         issues.append("the PostgreSQL job must compile API before both live compiled consumers")
     return issues
@@ -251,6 +269,17 @@ class WorkflowBoundaryTests(unittest.TestCase):
                 "owned security test file missing from sparse CI checkout",
             )
 
+    def test_native_recovery_proof_cannot_silently_skip(self) -> None:
+        for proof in RECOVERY_PG_PROOF:
+            self.assertTrue(audit_ci_boundary(self.policy.replace(proof, '')), proof)
+        root = WORKFLOW.parents[2]
+        harness = (root / 'infra/postgres/synthetic-recovery-drill.sh').read_text(encoding='utf-8')
+        for required in ('set -euo pipefail', '--auth-host=scram-sha-256',
+                         'HUFS_RECOVERY_LIVE=1', 'pg_ctl stop', '--synthetic',
+                         'HUFS_RECOVERY_CONTAINER', '-f /.dockerenv'):
+            self.assertIn(required, harness)
+        self.assertNotIn('rm -rf', harness)
+
     def test_compiled_pg_build_uses_command_and_order_not_step_label(self) -> None:
         renamed = self.policy.replace(
             'Build compiled API for live adapters and process restart proofs', 'Compile backend once for live tests'
@@ -274,6 +303,14 @@ class WorkflowBoundaryTests(unittest.TestCase):
         changed = self.policy.replace(
             "  pull_request:\n", "  pull_request:\n    branches: [main]\n", 1
         )
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_isolated_recovery_container_requires_compiled_api_first(self) -> None:
+        build = ('      - name: Build compiled API for live adapters and process restart proofs\n'
+                 '        run: npm run build:api\n')
+        changed = self.policy.replace(build, '', 1).replace(
+            '      - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL',
+            build + '      - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL', 1)
         self.assertTrue(audit_ci_boundary(changed))
 
     def test_reviewed_ai_worker_helpers_are_in_synthetic_ci(self):
