@@ -64,6 +64,8 @@ jobs:
           test ! -d local_only
           test ! -d templates/real5-intake
           test ! -d reference/hufsability/raw
+      - name: Reject protected paths from entire commit tree without reading private blobs
+        run: python3 tools/verify_release_boundary.py --committed-tree-only
       - name: Enforce CI trigger and sparse checkout regression policy
         run: python3 -m unittest discover -s tests/release -p 'test_*.py' -v
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
