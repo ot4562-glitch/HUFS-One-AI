@@ -14,7 +14,7 @@
 | [#213](https://github.com/minseong-hufs/HUFS-One-AI/pull/213), 부모 #183 | **main 통합 반영** (스택 PR 개별 CLOSED/NOT MERGED) | 실 Google/학교메일·TLS/PG RLS·세션 철회 |
 | [#214](https://github.com/minseong-hufs/HUFS-One-AI/pull/214), 부모 #207/#208/#211 | **main 통합 반영** (스택 PR 개별 CLOSED/NOT MERGED) | NCP 비용 승인·실 SKU/VPC/SSH/NIC·리소스 증빙 |
 | [#215](https://github.com/minseong-hufs/HUFS-One-AI/pull/215), 부모 #197/#209 | **main 통합 반영** (스택 PR 개별 CLOSED/NOT MERGED) | Ubuntu 실제 설치·고정 SSH·복구 연습·요금 |
-| [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) | **개별 main 병합 완료**, 810 Git paths 중 금지 경로 0 | full private checkout privacy 전체 검사·과거 Git 이력/clone 검토 |
+| [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) | **개별 main 병합 완료**, 811 Git paths 중 금지 경로 0 | full private checkout privacy 전체 검사·과거 Git 이력/clone 검토 |
 
 ## 1. 개발 독립 승인 (담당: 코드 리뷰어 / 심민성)
 
