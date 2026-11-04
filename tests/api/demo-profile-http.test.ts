@@ -2,6 +2,7 @@ import {afterEach,describe,expect,it} from 'vitest';
 import {createApi} from '../../apps/api/src/server.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {registerDemoProfileRoutes} from '../../apps/api/src/modules/profiles/demo-profile-http.js';
+import type {DemoProfileQuotaPort} from '../../apps/api/src/modules/profiles/demo-profile-http.js';
 import {DemoProfileConflict,recomputeDemoProfile,type DemoProfilePort} from '../../apps/api/src/modules/profiles/demo-profile.js';
 import {blankDemoProfileValue} from '@hufs-one/contracts';
 import type {VerifiedActor} from '../../apps/api/src/types.js';
@@ -11,7 +12,7 @@ const actor={role:'BETA' as const,actorId:'synthetic:owner-a',sessionIdHash:'S'.
 const value={primaryMajor:'가상 정보학',earnedCreditUnits:0,interestTopics:['AI_ML'],doubleMajor:{kind:'NONE'}};
 const apps:Array<ReturnType<typeof createApi>>=[];
 afterEach(async()=>{await Promise.all(apps.splice(0).map(app=>app.close()));});
-function fixture(absent=false){
+function fixture(absent=false,quota?:DemoProfileQuotaPort){
   let identity:VerifiedActor|null=actor;const ids:string[]=[];
   const result=recomputeDemoProfile({version:0,value:blankDemoProfileValue(),updatedAt:null});
   const port:DemoProfilePort={read:async id=>{ids.push(id);return result;},
@@ -19,7 +20,7 @@ function fixture(absent=false){
     reset:async(id,input)=>{ids.push(id);return recomputeDemoProfile({version:input.expectedVersion+1,value:blankDemoProfileValue(),updatedAt:NOW});}};
   const verify=async()=>identity;
   const app=createApi({repository:new MemoryApiRepository({profiles:[]}),allowedOrigin:origin,verifySession:verify,now:()=>NOW});
-  registerDemoProfileRoutes(app,absent?undefined:port,{verify,now:()=>NOW});apps.push(app);
+  registerDemoProfileRoutes(app,absent?undefined:port,{verify,now:()=>NOW},quota);apps.push(app);
   return {app,port,ids,setActor:(a:VerifiedActor|null)=>{identity=a;}};
 }
 const headers={origin,'x-csrf-token':actor.csrfToken};
@@ -64,5 +65,30 @@ describe('standard product independent demo-profile HTTP',()=>{
       payload:{expectedVersion:0,value}})).statusCode).toBe(200);
     const denied=await h.app.inject({method:'PATCH',url:'/api/demo-profile',headers,payload:{expectedVersion:0,value}});
     expect(denied.statusCode).toBe(429);expect(h.ids).toHaveLength(20);
+  });
+
+  it('uses a shared actor-bound limiter and rejects excess without touching storage',async()=>{
+    const seen:Array<[string,string]>=[];
+    const quota:DemoProfileQuotaPort={consume:async(id,operation)=>{
+      seen.push([id,operation]);return operation==='READ';
+    }};
+    const h=fixture(false,quota);
+    expect((await h.app.inject({url:'/api/demo-profile'})).statusCode).toBe(200);
+    const denied=await h.app.inject({
+      method:'PATCH',url:'/api/demo-profile',headers,
+      payload:{expectedVersion:0,value},
+    });
+    expect(denied.statusCode).toBe(429);
+    expect(seen).toEqual([[actor.actorId,'READ'],[actor.actorId,'WRITE']]);
+    expect(h.ids).toHaveLength(1);
+  });
+
+  it('fails closed on shared quota storage outage without executing profile writes',async()=>{
+    const h=fixture(false,{consume:async()=>{throw new Error('offline');}});
+    expect((await h.app.inject({url:'/api/demo-profile'})).statusCode).toBe(503);
+    expect((await h.app.inject({
+      method:'PATCH',url:'/api/demo-profile',headers,payload:{expectedVersion:0,value},
+    })).statusCode).toBe(503);
+    expect(h.ids).toEqual([]);
   });
 });

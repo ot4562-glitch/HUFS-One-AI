@@ -66,6 +66,34 @@ describe('real-role PostgreSQL API operator composition',()=>{
     expect(result.application.platform.pools.evidence).toBe(result.pools.evidence);
     await Promise.all(REQUIRED_SQL_ROLES.map(role=>result.pools[role].close()));
   });
+  it('accepts isolated reviewer/mail roles but rejects role aliases and missing reviewer',async()=>{
+    const config=makeConfig() as any;
+    const extra=(name:string)=>({
+      connectionString:'postgresql://hufs_'+name+':synthetic@private-db.example.test/hufs_'+name,
+      environment:'production',expectedRole:'hufs_'+name,
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----',
+    });
+    config.reviewer={
+      invitations:extra('reviewer'),sandbox:extra('sandbox'),
+      demo:{listProfiles:async()=>[],readSnapshot:async()=>null},
+    };
+    config.schoolMail={
+      challenges:extra('mail_challenge'),proofUpdates:extra('mail_update'),
+      digestKey:Buffer.alloc(32,8),sender:{send:async()=>{}},
+    };
+    const prepared=prepareOperatorPostgres(config);
+    expect(Object.keys(prepared.extraPools??{})).toHaveLength(4);
+    expect(prepared.application.schoolMailProof).toBeDefined();
+    expect(prepared.application.reviewer).toBeDefined();
+    await Promise.all([
+      ...Object.values(prepared.pools),...Object.values(prepared.extraPools??{}),
+    ].map(pool=>pool.close()));
+    config.schoolMail.proofUpdates=config.reviewer.sandbox;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independently restricted|isolated extensions/);
+    config.reviewer=undefined;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/REVIEWER sandbox/);
+  });
+
   it('starts only loopback AFTER all seven checks and closes app/pools',async()=>{
     const fixture=fakePrepared();
     vi.stubEnv('NODE_ENV','test');
