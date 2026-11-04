@@ -2,6 +2,14 @@
 
 > **2026-11-04 KST · GitHub 현재 HEAD/PR/리뷰/CI 및 이슈 수락 조건 대조.** 이 페이지는 변경 가능한 상태의 스냅샷이다. 최종 판정은 GitHub 현재 HEAD, 해당 PR 리뷰, Actions와 이슈 본문을 다시 조회한다.
 
+## 2026-11-04 API·PostgreSQL·NCP 우선 구현 PR + 사람 검증 인수
+
+- **API/영속 DB:** [#213](https://github.com/minseong-hufs/HUFS-One-AI/pull/213) 운영자 내부 API launcher, PostgreSQL 7개 별도 ROLE/TLS/준비/종료; **#183 선행**, 최신 HEAD `e33df5ac` TASK-00/Chrome **2/2 SUCCESS**, 비작성자 승인 대기. 실제 OIDC·DB·운영 HTTPS는 **NOT_RUN**이며 production guard 해제 없음.
+- **NCP 서버 생성 코드:** [#214](https://github.com/minseong-hufs/HUFS-One-AI/pull/214) 별도 host Terraform 승인·NIC/ACG·Ubuntu VM·Public IP 계획/오프라인 mock; **#207 → #208 → #211 → #214** 선행. 최신 HEAD `07afcaf2` TASK-00/Chrome/NCP IaC 오프라인 **3/3 SUCCESS**, 비작성자 리뷰 대기, 실제 NCP `apply`/요금 **NOT_RUN**.
+- **NCP 설치/배포·복구 코드:** [#215](https://github.com/minseong-hufs/HUFS-One-AI/pull/215) 승인형 Ubuntu bootstrap, 고정 SSH 지문 Windows 미리보기 deploy/verify/rollback, 기존 release lock 사용. **#197 → #209 → #215** 선행 및 호스트 #214 필요. 최신 HEAD `dc453a2c` TASK-00/Chrome **2/2 SUCCESS**, 독립 리뷰 대기, 실호스트 SSH/설치·복구 **NOT_RUN**.
+- **사람이 해야 할 검증 17개와 간단 피드백:** [HUMAN_ACCEPTANCE_GATE_20261104](docs/HUMAN_ACCEPTANCE_GATE_20261104.md) (A01-D03: 코드 검토, OAuth/DB, 데이터, NCP 계정·요금/현장 복구, 독립 gold, 공개 출시). 항목별 승인/수정 요청/보류/미실행 + 증거 URL/ID로 피드백. 동료 리뷰 요청: #213/#215 박준영, #214 김채윤.
+- **결론:** 현재 열린 PR **36건**, 일반 이슈 **40건**(GitHub 조회시점). 신규 3건은 코드·합성/모의 테스트 PR일 뿐 미병합. 사용자 사전 승인 없는 유료 리소스/외부 서비스/학생 자료 전송·공개 배포 없음. [#46](https://github.com/minseong-hufs/HUFS-One-AI/issues/46) Git 원본, [#61](https://github.com/minseong-hufs/HUFS-One-AI/issues/61) gold 0/200, [#89](https://github.com/minseong-hufs/HUFS-One-AI/issues/89) 실서비스 검증 전 **RELEASE_BLOCKED**.
+
 ## 2026-11-04 공모전·수집 허가 정정과 개인정보 Git 기술 결함
 
 - **사용자 확인 완료:** 공모전 참여자 **5명 전원 동의**, HUFSAbility의 자료 수집 **허가 확보**. 실제 개인 수강/Forms 원본 제출 대상 **4명**과 구별. 이 확인을 '동의 자체 미확보/학교 수집 허가 전무'로 다시 집계하지 않는다. 허가 목적·이용·재배포/외부전송의 정확한 범위는 제한된 증빙에서 별도로 유지.
@@ -14,7 +22,7 @@
 | 구분 | 확인한 상태 |
 | --- | --- |
 | 프로젝트 | 독립 Private HUFS One AI 팀 프로젝트. 한국외대 공식 HUFSAbility 개편/운영 서비스 아님 |
-| GitHub | **열린 PR 33건 / 열린 일반 이슈 40건** (#212 보호 원본 추적 해제 PR 신규 포함) |
+| GitHub | **열린 PR 36건 / 열린 일반 이슈 40건** (2026-11-04 코드 PR #213~#215 추가) |
 | main에 구현된 범위 | 계약/Zod, 합성 React, 학업·추천·일정 코어, 인가된 API/일회용 PostgreSQL, SourceRevision, OCR/Provider 비용·Laya 스케줄러의 **하위 코드**. 운영 서비스 조립·인적 수락은 별개 |
 | 최신 하위 병합 | **#189** 동일교과 승인 규칙 pure core → main 5718fd2; **#152** 현재 선택한 이중전공 합성 UI → main 28d4827. 두 PR 모두 HEAD 비작성자 APPROVED, 필수 TASK-00/Chrome 2/2 SUCCESS, 미해결 review thread 없음, mergeable 확인 후 squash 병합 |
 | 기존 개발 병합 | #169 Provider PostgreSQL 연결 main 045f2478, #179 Laya Linux 경로 main ef289537 등. 실 NCP/Provider 실행 승인으로 해석 금지 |
