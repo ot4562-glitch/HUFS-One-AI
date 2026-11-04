@@ -107,7 +107,6 @@ export function createApi(options:ApiOptions) {
     try { actor=await verifiedSession(request); }
     catch(error) { if(error instanceof ApiFailure)throw error;throw new ApiFailure('UNAUTHENTICATED'); }
     if(actor.role==='REVIEWER') {
-      if(!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
       const enrollment=request.method==='POST'&&path==='/api/reviewer/invitations/redeem';
       const reviewerRead=request.method==='GET'&&(
         path==='/api/auth/session'
@@ -129,12 +128,19 @@ export function createApi(options:ApiOptions) {
         path==='/api/auth/school-mail/request'
         ||path==='/api/auth/school-mail/confirm');
       const logout=request.method==='POST'&&path==='/api/auth/logout';
+      const csrf=request.method==='GET'&&path==='/api/auth/csrf';
+      // A verified Google session must obtain CSRF and complete administrator-preapproved
+      // school-mail OTP even before it has a REVIEWER invitation. All reviewer data
+      // remains inaccessible without the independently provisioned access store.
+      if(!options.reviewerAccess&&!csrf&&!schoolMail&&!logout)
+        throw new ApiFailure('FORBIDDEN');
       if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail)
         throw new ApiFailure('FORBIDDEN');
       // A new reviewer needs CSRF proof in order to redeem the invitation.
       // Logout must remain available when a reviewer invitation has expired
       // or been revoked; data access still requires a live grant.
-      if(!enrollment&&!schoolMail&&!logout&&path!=='/api/auth/csrf'){
+      if(!enrollment&&!schoolMail&&!logout&&!csrf){
+        if(!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
         const grant=await options.reviewerAccess.readActive({
           actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
         });
