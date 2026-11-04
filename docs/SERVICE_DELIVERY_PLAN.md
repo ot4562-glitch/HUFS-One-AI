@@ -1,6 +1,6 @@
 # HUFS One AI | 서비스 완성 → NCP 운영 → 유지보수 로드맵
 
-**2026-11-03 조사본 · 목적: ‘코드를 많이 만들었다’가 아니라 ‘실제 사용 가능한 서비스를 안전하게 완성하고, NCP에서 복원 가능하게 운영한다’.** 비용/실학생·학교 자료/외부 AI/배포는 사용자 사전 승인 전 실행 금지. 현 상태의 최종 운영 승인 여부는 [STATUS](../STATUS.md)·[#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)·[#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)로 판단한다.
+**2026-11-04 최신 PR/CI 정정(운영 가격/일정은 별도 조사 기준) · 목적: ‘코드를 많이 만들었다’가 아니라 ‘실제 사용 가능한 서비스를 안전하게 완성하고, NCP에서 복원 가능하게 운영한다’.** 비용/실학생·학교 자료/외부 AI/배포는 사용자 사전 승인 전 실행 금지. 현 상태의 최종 운영 승인 여부는 [STATUS](../STATUS.md)·[#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)·[#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)로 판단한다.
 
 ## 2026-11-04 PR 전수 검토 후 실제 서비스 종단 우선순위
 
