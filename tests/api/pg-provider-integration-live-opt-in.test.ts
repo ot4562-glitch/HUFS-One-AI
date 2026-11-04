@@ -12,7 +12,7 @@ const RUN=process.env.HUFS_PG_PROVIDER_INTEGRATION_LIVE==='1';
 type TestServer={child:ChildProcess;calls:string[];stop:()=>Promise<void>;base:string};
 const pools:Pool[]=[],servers:TestServer[]=[];
 let admin:Pool,budget:Pool,results:Pool,urls:Record<string,string>,policy:Record<string,unknown>;
-const phase='SYN-PROVIDER-HTTP',digestKey=randomBytes(32).toString('hex'),password=randomBytes(24).toString('hex');
+const phase='SYN-PROVIDER-HTTP',password=randomBytes(24).toString('hex');
 const origin='https://synthetic-provider.example.test';
 const migrations=['20261031_google_auth.sql','20261031_beta_admission.sql','20261031_auth_attempt_windows.sql',
   '20261031_temporal_evidence.sql','20261101_source_review.sql','20261101_verified_source_rights.sql',
@@ -25,7 +25,7 @@ async function start(subject:string,mode='ok'):Promise<TestServer>{
   // fork defaults to no console window (silent pipe/IPC handles only).
   const child=fork(new URL('./fixtures/provider-pg-server.mjs',import.meta.url),[],{
     stdio:['ignore','ignore','ignore','ipc'],env:{PATH:process.env.PATH??'',APP_ENV:'test',NODE_ENV:'test',
-      HUFS_SYNTHETIC_PROVIDER_CONFIG:JSON.stringify({urls,phase,policy,digestKey,subject,mode})}});
+      // Each isolated scenario gets its own keyed login attempt bucket. Production rate limits stay active.\n      HUFS_SYNTHETIC_PROVIDER_CONFIG:JSON.stringify({urls,phase,policy,digestKey:randomBytes(32).toString('hex'),subject,mode})}});
   const calls:string[]=[];
   child.on('message',(m:any)=>{if(m?.kind==='provider-call')calls.push(m.stage);});
   const port=await new Promise<number>((resolve,reject)=>{
