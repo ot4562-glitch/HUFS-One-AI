@@ -38,8 +38,10 @@ describe('BETA Provider browser client (separate from REVIEWER MOCK)',()=>{
     const res=await h.api.owner.submitApprovedProvider(item,'opportunity-terms','KEY00001');
     expect(res).toEqual({jobId,state:'PENDING'});
     expect(h.calls.map(c=>c.url)).toEqual(['/api/auth/csrf','/api/ai/opportunity-terms']);
-    expect(h.calls[1]!.init).toMatchObject({method:'POST',credentials:'same-origin',cache:'no-store',
-      body:JSON.stringify({packetRef:'SYN-INPUT',asOf:item.asOf,idempotencyKey:'KEY00001'}),
+    // JSON key order is not part of the HTTP contract: verify its parsed fields instead.
+    expect(h.calls[1]!.init).toMatchObject({method:'POST',credentials:'same-origin',cache:'no-store'});
+    expect(JSON.parse(String(h.calls[1]!.init.body))).toEqual({
+      packetRef:'SYN-INPUT',asOf:item.asOf,idempotencyKey:'KEY00001',
     });
     const headers=new Headers(h.calls[1]!.init.headers);
     expect(headers.get('x-csrf-token')).toBe('C'.repeat(32));
