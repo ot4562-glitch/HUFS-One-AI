@@ -1,5 +1,7 @@
 # 2026-11-01 심민성 플랫폼 구현·후속 연결
 
+> **현재 상태 안내:** 2026-11-04 이후 **과거 플랫폼 PR 분리·완료 이력** 자료로 유지한다. owner/Provider/source jobs/PG 7역할 루프백 조립 및 테스트 코드는 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main f23b86bb 통합, OPEN PR 0 / 본선 CI 3/3 SUCCESS. 실 운영 인증/PG/RLS/출처 권리/NCP/TLS는 별도. [STATUS](../STATUS.md)
+
 > **최신 병합 결과:** #83 플랫폼 후속은 2026-11-01 `main` merge `3c6378c` 완료(HEAD `88d781b`, Actions #41295926141 synthetic·disposable PostgreSQL 두 job 성공). 이후 #99/#102/#105/#112/#113 출처/동의/인증/PG, #97/#103/#106/#107/#115 본인·학업 DTO/API 소비, #95/#100/#110 지연 응답/REVIEWER 브라우저 합성 검증, #92~#111 보안 릴리스 gate가 순차 병합됐다. **#107은 What-if DTO만, #103은 독립 academic provider 없는 경우 503 fail-closed, #80~#82 실제 UI/학업 계산·공식 승인 아님.** 이번 사용자 요청으로 본인 PR을 직접 정밀 검토/COMMENT 후 병합했으며 타인 APPROVED를 받은 것으로 기록하지 않는다. [최신 상태](../STATUS.md). 아래 '병합 미완료' 문구는 PR 제출 당시 이력이다.
 
 
