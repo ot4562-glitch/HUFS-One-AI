@@ -1,5 +1,7 @@
 # HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
+> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 2026-11-04 클라우드 코드 최신: #207/#208/#211/#214 NCP 네트워크·서버 Terraform, #197/#209/#215 설치/SSH 미리보기·rollback, #183/#213 7 PG ROLE/TLS·loopback API는 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)으로 main 통합. OPEN PR 0, 실제 NCP 자원/API·공인 443·TLS/Google OIDC/SMTP/운영 PostgreSQL·유료 호출은 **NOT_RUN / RELEASE_BLOCKED**. 사용자 승인 전 실 리소스 생성·실학생 업로드/모델 다운로드 금지. 실제 운영 계획은 [NCP](docs/NCP_OPERATIONS_2026.md), 상태는 [STATUS](STATUS.md).
+
 > **NCP 합성 SSH 미리보기 실행서:** [NCP 설치·접속·네트워크·PuTTY/WinSCP](infra/ncp/README.md) 및 [운영 인수인계 양식](infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md). 이 문서는 [PR #156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156)의 검토용이며 실제 개통·공개·유료 호출·운영 배포는 **NOT_RUN / RELEASE_BLOCKED**입니다.
 
 <!-- 2026-11-03-owner-boundary:start -->
