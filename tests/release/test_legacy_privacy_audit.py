@@ -91,6 +91,32 @@ Path.read_text = safe_read
         self.assertNotIn('"candidate_files"', output)
         self.assertNotIn("PROTECTED_BYTES_WERE_READ", output)
 
+    def test_committed_tree_gate_catches_sparse_hidden_private_paths_without_opening_bytes(self) -> None:
+        def run_git(*args: str) -> None:
+            subprocess.run(['git', '-C', str(self.root), *args],
+                           check=True, capture_output=True)
+        run_git('config', 'user.name', 'Synthetic Reviewer')
+        run_git('config', 'user.email', 'synthetic@example.invalid')
+        run_git('commit', '-qm', 'synthetic protected index')
+        env = dict(os.environ, PYTHONPATH=str(self.root))
+        def scan() -> tuple[subprocess.CompletedProcess[str], dict]:
+            result = subprocess.run([sys.executable, str(self.root / 'tools/verify_release_boundary.py'),
+                                     '--committed-tree-only'], cwd=self.root, env=env,
+                                    capture_output=True, text=True, check=False, timeout=20)
+            return result, json.loads(result.stdout)
+        denied, blocked = scan()
+        self.assertEqual(denied.returncode, 1)
+        self.assertEqual(blocked['protected_count'], 2)
+        self.assertEqual(blocked['scope'], 'GIT_TREE_METADATA_ONLY')
+        self.assertNotIn(SENTINEL_PATH, denied.stdout + denied.stderr)
+        self.assertNotIn('synthetic-identity-map', denied.stdout + denied.stderr)
+        self.assertNotIn('PROTECTED_BYTES_WERE_READ', denied.stdout + denied.stderr)
+        run_git('rm', '--cached', '-q', '--', SENTINEL_PATH, 'private/synthetic-identity-map.json')
+        run_git('commit', '-qm', 'synthetic protected untrack')
+        accepted, clean = scan()
+        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+        self.assertEqual(clean['protected_count'], 0)
+
     def test_publication_secret_signature_finding_is_hash_only(self) -> None:
         synthetic_not_real_key = "ghp_" + "A" * 40
         self.write("safe/synthetic-published.json",

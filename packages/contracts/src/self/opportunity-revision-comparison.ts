@@ -7,6 +7,18 @@ export const OpportunityRevisionComparisonRequestSchema=z.strictObject({
 }).refine(v=>v.beforeRevisionId!==v.afterRevisionId,{
   path:['afterRevisionId'],message:'Two distinct revisions are required',
 });
+/** Only two independently approved, still-authorized revision IDs may be returned.
+ * An unavailable pair never exposes hidden revision metadata. */
+export const OpportunityRevisionComparisonContextResponseSchema=z.discriminatedUnion('available',[
+  z.strictObject({opportunityId:Ref,asOf:Utc,available:z.literal(false)}),
+  z.strictObject({opportunityId:Ref,asOf:Utc,available:z.literal(true),
+    beforeRevisionId:Ref,afterRevisionId:Ref}),
+]).superRefine((v,ctx)=>{
+  if(v.available&&v.beforeRevisionId===v.afterRevisionId)
+    ctx.addIssue({code:'custom',message:'Two distinct approved revisions required'});
+});
+export type OpportunityRevisionComparisonContextResponse=z.infer<typeof OpportunityRevisionComparisonContextResponseSchema>;
+
 const EvidenceRefs=z.array(Ref).min(1).max(30).refine(v=>new Set(v).size===v.length);
 const ConditionValue=z.union([
   z.string().min(1).max(128).regex(/^[\p{L}\p{N} _.,:()-]+$/u),

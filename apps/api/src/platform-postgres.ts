@@ -35,6 +35,8 @@ import {createPostgresOwnerDoubleMajorServices} from './modules/academics/owner-
 import {PostgresApprovedRevisionClaims} from './modules/opportunities/approved-revision-claims-postgres.js';
 import {DemoProfileService} from './modules/profiles/demo-profile.js';
 import {PostgresDemoProfileStore} from './modules/profiles/demo-profile-postgres.js';
+import {createPostgresOwnerStudyPlanServices} from './modules/academics/owner-study-plan-services-postgres.js';
+import type {OwnerStudyPlanAuthority} from './modules/academics/owner-study-plan-services-postgres.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -67,6 +69,10 @@ export interface PostgresPlatformConfig {
   /** Separate source/permission and academic activation authorities remain mandatory. */
   studyPlanCheck?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
     rights:TrustedOwnerStudyPlanRights;approvalGate:ApprovedStudyPlanGate};
+  /** Integrated fresh receipt/rights bridge. Mutually exclusive with the
+   * externally assembled studyPlanCheck ports; no authority defaults. */
+  ownerStudyPlan?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
+    ownerAuthority:OwnerStudyPlanAuthority;approval:ApprovedStudyPlanGate};
   /** Owner-private, current approved double-major projection; never a browser rulepack. */
   doubleMajor?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
   /** Exact independently approved SourceRevision claims; read-only. */
@@ -79,6 +85,7 @@ export interface PostgresPlatformConfig {
 /** Spread these services into createIntegratedApi alongside the trusted auth/reviewer ports. */
 export function createPostgresPlatformServices(config:PostgresPlatformConfig){
   if(config.sourceIngestionOperator&&!config.sourceIngestion)throw new Error('Source control requires an explicit queue');
+  if(config.studyPlanCheck&&config.ownerStudyPlan)throw new Error('Ambiguous owner study-plan services');
   const now=config.now??(()=>new Date().toISOString());
   const source=config.sourceIngestion,operator=config.sourceIngestionOperator;
   const sourceIngestion=source?new PostgresSourceIngestionQueue(source.pool,operator?{
@@ -101,8 +108,9 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.ownerStudyPlan?{studyPlanCheck:createPostgresOwnerStudyPlanServices({...config.ownerStudyPlan,now})}:{}),
     ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
-    ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights}}:{}),
+    ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights,context:claims.context}}:{}),
     ...(config.demoProfile?{demoProfile:new DemoProfileService(
       new PostgresDemoProfileStore(config.demoProfile.pool))}:{}),
     ...(config.ownerCatalog?{

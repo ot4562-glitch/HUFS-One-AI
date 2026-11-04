@@ -5,6 +5,7 @@ import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/
 import type {BoardPort} from './features/applications/boardPort.js';
 import type {ClubPort} from './features/clubs/useClubBoard.js';
 import type {OverlayPort} from './features/settings/overlayCompare.js';
+import type {DoubleMajorPort} from './features/double-major/DoubleMajorPanel.js';
 import type {OwnerDemoProfilePort} from './features/owner-demo/OwnerDemoProfile.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
@@ -37,6 +38,8 @@ export interface AppServices {
   readonly clubs?: ClubPort;
   /** #85 BETA temporary choices; never set for a REVIEWER session (sandbox settings instead). */
   readonly overlay?: OverlayPort;
+  /** #144 current primary + chosen double major audit; synthetic only until the owner API (#150) lands. */
+  readonly doubleMajor?: DoubleMajorPort;
   /** #132 verified BETA owner, independent of S01–S05 and REVIEWER. */
   readonly ownerDemoProfile?: OwnerDemoProfilePort;
 }
