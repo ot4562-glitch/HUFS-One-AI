@@ -99,7 +99,7 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
   return {
     ...(config.ownerStudyPlan?{studyPlanCheck:createPostgresOwnerStudyPlanServices({...config.ownerStudyPlan,now})}:{}),
     ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
-    ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights}}:{}),
+    ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights,context:claims.context}}:{}),
     ...(config.demoProfile?{demoProfile:new DemoProfileService(
       new PostgresDemoProfileStore(config.demoProfile.pool))}:{}),
     ...(config.ownerCatalog?{

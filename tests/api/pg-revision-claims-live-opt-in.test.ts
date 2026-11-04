@@ -8,6 +8,9 @@ import {PostgresApprovedRevisionClaims} from '../../apps/api/src/modules/opportu
 import {canonicalProjectionHash} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import {compareOpportunityRevisions} from '../../apps/api/src/modules/opportunities/opportunity-revision-comparison.js';
 import {hashRevisionParagraphs} from '../../apps/api/src/modules/opportunities/revision-ledger.js';
+import {createIntegratedApi} from '../../apps/api/src/integration.js';
+import {MemoryApiRepository} from '../../apps/api/src/repository.js';
+import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const RUN=process.env.HUFS_PG_REVISION_CLAIMS_LIVE==='1',pools:Pool[]=[];
@@ -100,4 +103,73 @@ describe.skipIf(!RUN)('REAL PostgreSQL: independently approved source revision c
     await admin.query("INSERT INTO api_opportunity_revision_claim_revocations VALUES($1,clock_timestamp(),'SYN-OPERATOR','SYN-REVOKE')",[f.ids[1]+'-APPROVAL']);
     expect(await f.services.source.revalidate({...f.input,receipt:pair.receipt,now:now()})).toBe(false);
   });
+  it('discovers the only current independently reviewed direct predecessor, without source bytes',async()=>{
+    const f=await seed('DISCOVERY');
+    const input={actorId:f.actorId,opportunityId:f.input.opportunityId,asOf:f.input.asOf,now:now()};
+    expect(await f.services.context.find(input)).toEqual({
+      opportunityId:input.opportunityId,asOf:input.asOf,available:true,
+      beforeRevisionId:f.ids[0],afterRevisionId:f.ids[1],
+    });
+    expect(await f.services.context.find({...input,actorId:'SYN-ANOTHER'})).toBeNull();
+  });
+  it('removes discoverability when consent or exact second-field approval is revoked',async()=>{
+    const a=await seed('DISCOVERY-CONSENT');
+    const query={actorId:a.actorId,opportunityId:a.input.opportunityId,asOf:a.input.asOf,now:now()};
+    expect((await a.services.context.find(query))?.available).toBe(true);
+    await admin.query('UPDATE api_self_consents SET version=version+1,choices_json=$2,updated_at=clock_timestamp() WHERE actor_id=$1',
+      [a.actorId,{personalStorage:false}]);
+    expect(await a.services.context.find({...query,now:now()})).toBeNull();
+    const b=await seed('DISCOVERY-CLAIM'),request={
+      actorId:b.actorId,opportunityId:b.input.opportunityId,asOf:b.input.asOf,now:now(),
+    };
+    expect((await b.services.context.find(request))?.available).toBe(true);
+    await admin.query("INSERT INTO api_opportunity_revision_claim_revocations VALUES($1,clock_timestamp(),'SYN-OPERATOR','SYN-REVOKE')",
+      [b.ids[1]+'-APPROVAL']);
+    expect(await b.services.context.find({...request,now:now()})).toEqual({
+      opportunityId:request.opportunityId,asOf:request.asOf,available:false,
+    });
+  });
+
+  it('runs browser GET discovery → approved POST comparison → real PG18, and denies mid-flow consent revocation',async()=>{
+    const f=await seed('DISCOVERY-HTTP');
+    const origin='https://synthetic.invalid',expires=new Date(Date.now()+3600000).toISOString();
+    const actor={role:'BETA' as const,actorId:f.actorId,sessionIdHash:'S'.repeat(32),
+      csrfToken:'C'.repeat(32),betaAllowed:true,sessionExpiresAt:expires,schoolMailProofExpiresAt:expires};
+    let current:typeof actor|null=actor;
+    const app=createIntegratedApi({allowedOrigin:origin,
+      repository:new MemoryApiRepository({profiles:[]}),
+      auth:{verifySession:async()=>current,revokeSession:async()=>{current=null;}},
+      revisionComparison:{source:f.services.source,rights:f.services.rights,context:f.services.context},
+      now});
+    try{
+      const browser=new HufsApiClient(async(url,init)=>{
+        const headers:Record<string,string>={};
+        new Headers(init.headers).forEach((value,key)=>{headers[key]=value;});
+        const response=await app.inject({method:init.method??'GET',url,
+          headers:{...headers,origin,cookie:'SYN-OWNER-E2E'},
+          ...(init.body===undefined?{}:{payload:JSON.parse(String(init.body))})});
+        return new Response(response.body,{status:response.statusCode,
+          headers:{'content-type':'application/json'}});
+      });
+      const pair=await browser.owner.getRevisionComparisonContext(f.input.opportunityId,f.input.asOf);
+      expect(pair).toEqual({opportunityId:f.input.opportunityId,asOf:f.input.asOf,available:true,
+        beforeRevisionId:f.ids[0],afterRevisionId:f.ids[1]});
+      if(!pair.available)throw Error('Only an approved pair may be compared');
+      const comparison=await browser.owner.compareOpportunityRevisions(f.input.opportunityId,{
+        asOf:pair.asOf,beforeRevisionId:pair.beforeRevisionId,afterRevisionId:pair.afterRevisionId,
+      });
+      expect(comparison).toMatchObject({state:'READY',changes:[{field:'DEADLINE',kind:'EXTENDED'}]});
+      await admin.query('UPDATE api_self_consents SET version=version+1,choices_json=$2,updated_at=clock_timestamp() WHERE actor_id=$1',
+        [f.actorId,{personalStorage:false}]);
+      await expect(browser.owner.getRevisionComparisonContext(f.input.opportunityId,f.input.asOf))
+        .rejects.toMatchObject({code:'FORBIDDEN'});
+      await expect(browser.owner.compareOpportunityRevisions(f.input.opportunityId,{
+        asOf:pair.asOf,beforeRevisionId:pair.beforeRevisionId,afterRevisionId:pair.afterRevisionId,
+      })).rejects.toMatchObject({code:'FORBIDDEN'});
+      current=null;
+      await expect(browser.owner.getRevisionComparisonContext(f.input.opportunityId,f.input.asOf))
+        .rejects.toMatchObject({code:'UNAUTHENTICATED'});
+    }finally{await app.close();}
+  });
+
 });
