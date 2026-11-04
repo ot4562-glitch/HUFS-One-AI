@@ -51,6 +51,18 @@ export type {
   OverlapStatus,
   SharedCourse,
 } from './double-major.js';
+export {buildMajorWhatIf, MAJOR_WHAT_IF_CORE_VERSION} from './major-what-if.js';
+export type {
+  DegreePath,
+  MajorWhatIfBlocker,
+  MajorWhatIfRequest,
+  MajorWhatIfResult,
+  ProgramEnrollment,
+  ProgramOffer,
+  SecondaryRole,
+  WhatIfProjection,
+  WhatIfScenario,
+} from './major-what-if.js';
 export {applySameCourseRules} from './course-equivalence.js';
 export type {AppliedSameCourse, HeldSameCourse, SameCourseResult, SameCourseRule} from './course-equivalence.js';
 export {simulateStudyPlan} from './study-plan.js';
