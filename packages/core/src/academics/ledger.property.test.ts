@@ -263,8 +263,23 @@ function shrink(c:Case, fails:(x:Case) => boolean):Case {
   return cur;
 }
 
-function forAll(name:string, size:number, prop:(c:Case, rng:Rng) => string|null):void {
-  for (const seed of SEEDS) {
+const canonical = (v:unknown):unknown => Array.isArray(v) ? v.map(canonical) : v && typeof v === 'object'
+  ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, x]) => [k, canonical(x)])) : v;
+/** Hash of the whole input (attempts, requirements, asOf, pack state), independent of key order. */
+const inputHash = (c:Case) => createHash('sha256').update(JSON.stringify(canonical(c))).digest('hex').slice(0, 12);
+
+/** What a failure report carries, so the same case can be rebuilt and checked by hand. */
+export function failureReport(name:string, problem:string, seed:number, original:Case, small:Case):string {
+  return [`property "${name}" failed: ${problem}`,
+    `seed=${seed} inputHash=${inputHash(original)} asOf=${original.asOf} pack=${original.rulePackState} ` +
+      `attempts=${original.attempts.length} requirements=${original.requirements.length}`,
+    `shrunk: inputHash=${inputHash(small)} ruleHash=${ruleHash(small)} asOf=${small.asOf} pack=${small.rulePackState} ledgerSha=${LEDGER_SHA}`,
+    `repro: LEDGER_PROP_SEED=${seed} npx vitest run packages/core/src/academics/ledger.property.test.ts`,
+    `shrunk case: ${JSON.stringify(small)}`].join('\n');
+}
+
+function forAll(name:string, size:number, prop:(c:Case, rng:Rng) => string|null, seeds:readonly number[] = SEEDS):void {
+  for (const seed of seeds) {
     const rng = mulberry32(seed);
     const c = genCase(rng, size);
     const check = (x:Case) => prop(x, mulberry32(seed ^ 0x5bd1e995));
@@ -272,19 +287,61 @@ function forAll(name:string, size:number, prop:(c:Case, rng:Rng) => string|null)
     try { problem = check(c); } catch (error) { problem = `threw: ${(error as Error).message}`; }
     if (problem !== null) {
       const small = shrink(c, x => check(x) !== null);
-      throw new Error([`property "${name}" failed: ${problem}`, `seed=${seed} ruleHash=${ruleHash(small)} ledgerSha=${LEDGER_SHA}`,
-        `repro: LEDGER_PROP_SEED=${seed} npx vitest run packages/core/src/academics/ledger.property.test.ts`,
-        `shrunk case: ${JSON.stringify(small)}`].join('\n'));
+      // Re-describe the shrunk case: the first message was about the full case.
+      let final = problem;
+      try { final = check(small) ?? problem; } catch (error) { final = `threw: ${(error as Error).message}`; }
+      throw new Error(failureReport(name, final, seed, c, small));
     }
   }
 }
 const same = (a:unknown, b:unknown) => JSON.stringify(a) === JSON.stringify(b);
 const sortKeys = (o:Record<string, unknown>) => Object.fromEntries(Object.entries(o).sort(([a], [b]) => (a < b ? -1 : 1)));
 
+/** Field-by-field difference between the model and the implementation, one line per field. */
+function explain(want:ModelResult, got:ModelResult):string|null {
+  const lines:string[] = [];
+  for (const key of ['state', 'earned', 'inProgress', 'planned', 'pending'] as const) {
+    if (want[key] !== got[key]) lines.push(`${key}: model=${want[key]} implementation=${got[key]}`);
+  }
+  for (const [label, a, b] of [['area', want.areas, got.areas], ['excluded', want.excluded, got.excluded], ['row', want.rows, got.rows]] as const) {
+    for (const id of [...new Set([...Object.keys(a), ...Object.keys(b)])].sort()) {
+      const x = (a as Record<string, unknown>)[id], y = (b as Record<string, unknown>)[id];
+      if (!same(x, y)) lines.push(`${label} ${id}: model=${JSON.stringify(x ?? null)} implementation=${JSON.stringify(y ?? null)}`);
+    }
+  }
+  return lines.length ? lines.join('; ') : null;
+}
+
 // ---------------------------------------------------------------------------------------------
 
 describe('buildAcademicLedger properties (#202)', () => {
+  it('reports a failure with everything needed to rebuild and re-check it', () => {
+    // A property that fails on any case with an earned attempt, so the runner has to report and shrink.
+    const seed = 20261104;
+    let message = '';
+    try {
+      forAll('demo: no earned attempts', 6, c => (c.attempts.some(a => a.ledger === 'EARNED') ? 'an earned attempt exists' : null), [seed]);
+    } catch (error) { message = (error as Error).message; }
+    expect(message).toMatch(/^property "demo: no earned attempts" failed: an earned attempt exists$/m);
+    const full = genCase(mulberry32(seed), 6);
+    expect(message).toContain(`seed=${seed} inputHash=${inputHash(full)} asOf=${full.asOf} pack=${full.rulePackState}`);
+    expect(message).toContain(`repro: LEDGER_PROP_SEED=${seed} npx vitest run packages/core/src/academics/ledger.property.test.ts`);
+    // The shrunk case in the report parses back, keeps exactly what makes it fail, and its hashes match.
+    const small = JSON.parse(/^shrunk case: (.*)$/m.exec(message)![1]!) as Case;
+    expect(small.attempts.filter(a => a.ledger === 'EARNED')).toHaveLength(1);
+    expect(small.requirements).toEqual([]);
+    expect(message).toContain(`shrunk: inputHash=${inputHash(small)} ruleHash=${ruleHash(small)} asOf=${small.asOf} pack=${small.rulePackState} ledgerSha=${LEDGER_SHA}`);
+    // The same seed always rebuilds the same case.
+    expect(inputHash(genCase(mulberry32(seed), 6))).toBe(inputHash(full));
+    // A model mismatch is reported field by field (expected = model, actual = implementation).
+    const want = referenceLedger(full), got = {...want, earned:want.earned + 1, rows:{...want.rows, 'SYN-X':{state:'SATISFIED'}}};
+    expect(explain(want, got)).toBe(`earned: model=${want.earned} implementation=${want.earned + 1}; row SYN-X: model=null implementation={"state":"SATISFIED"}`);
+    expect(explain(want, want)).toBeNull();
+  });
+
   it('the reference model agrees with hand-checked cases', () => {
+    // The expected values below are literals worked out by hand from R1-R7, not output of referenceLedger;
+    // the model is checked against them first, and only then compared with the implementation.
     // Hand-worked: C1 earned 2024-1 (6) retaken and approved in 2025-1 (6): one counts, total 6.
     const retake:Case = {asOf:'2025-08-01T00:00:00+09:00', rulePackVersion:'SYN-P', rulePackState:'APPROVED', requirements:[], attempts:[
       {attemptToken:'SYN-A', canonicalCourseId:'SYN-C1', creditUnits:6, ledger:'EARNED', areaIds:[], recognition:'RECOGNIZED', term:'2024-1'},
@@ -333,12 +390,7 @@ describe('buildAcademicLedger properties (#202)', () => {
   });
 
   it('matches the reference model on small seeded cases', () => {
-    forAll('reference model', 6, c => {
-      const got = project(c), want = referenceLedger(c);
-      const a = {...got, excluded:sortKeys(got.excluded), areas:sortKeys(got.areas)};
-      const b = {...want, excluded:sortKeys(want.excluded), areas:sortKeys(want.areas)};
-      return same(a, b) ? null : `implementation ${JSON.stringify(a)} != model ${JSON.stringify(b)}`;
-    });
+    forAll('reference model', 6, c => explain(referenceLedger(c), project(c)));
   });
 
   // Precondition: none. The ledger reads attempts as a set; only excludedAttempts follows input order.
