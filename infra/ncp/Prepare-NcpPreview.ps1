@@ -47,6 +47,11 @@ try {
     'apps/web/src', 'packages/contracts/src', 'packages/core/src',
     'packages/ui/src', 'packages/fixtures/synthetic'
   )
+  # Preserve historical approved refs that predate the optional rollback helper.
+  $rollbackPath = 'infra/ncp/rollback-preview.sh'
+  $rollbackEntry = @(& git ls-tree --name-only $commit -- $rollbackPath)
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect reviewed rollback helper.' }
+  if ($rollbackEntry -contains $rollbackPath) { $filePaths += $rollbackPath }
   $allPaths = @($filePaths + $dirPaths)
   $entries = @(& git ls-tree -r --full-tree $commit -- $allPaths)
   if ($LASTEXITCODE -ne 0 -or $entries.Count -lt 20) {

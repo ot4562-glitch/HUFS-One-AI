@@ -43,6 +43,12 @@ except Exception:
     sys.exit("SSH admin CIDR must be a single PUBLIC IPv4 /32, not an open range.")
 PY
 
+SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
+for helper in deploy-preview.sh harden-ssh.sh rollback-preview.sh hufs-preview.service; do
+  [[ -f "$SCRIPT_DIR/$helper" && ! -L "$SCRIPT_DIR/$helper" ]] || {
+    echo "Missing reviewed bootstrap companion: $helper" >&2; exit 2;
+  }
+done
 echo "This changes Ubuntu packages, creates hufs-admin/hufs-preview, and restricts SSH to $ADMIN_IP."
 echo "Verify this exact IP is allowed by the NCP ACG and subnet Network ACL BEFORE continuing."
 apt-get update
@@ -78,12 +84,12 @@ install -m 0600 -o hufs-admin -g hufs-admin "$PUBLIC_KEY" /home/hufs-admin/.ssh/
 install -d -m 0755 -o root -g root /opt/hufs-one/preview
 install -d -m 0755 -o root -g root /opt/hufs-one/preview/releases
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
 install -m 0755 "$SCRIPT_DIR/deploy-preview.sh" /usr/local/sbin/hufs-preview-deploy
 install -m 0755 "$SCRIPT_DIR/harden-ssh.sh" /usr/local/sbin/hufs-ssh-harden
+install -m 0755 "$SCRIPT_DIR/rollback-preview.sh" /usr/local/sbin/hufs-preview-rollback
 install -m 0644 "$SCRIPT_DIR/hufs-preview.service" /etc/systemd/system/hufs-preview.service
 cat > /etc/sudoers.d/hufs-ncp-preview <<'EOF'
-hufs-admin ALL=(root) NOPASSWD: /usr/local/sbin/hufs-preview-deploy, /usr/local/sbin/hufs-ssh-harden
+hufs-admin ALL=(root) NOPASSWD: /usr/local/sbin/hufs-preview-deploy, /usr/local/sbin/hufs-ssh-harden, /usr/local/sbin/hufs-preview-rollback
 EOF
 chmod 0440 /etc/sudoers.d/hufs-ncp-preview
 visudo -cf /etc/sudoers.d/hufs-ncp-preview
