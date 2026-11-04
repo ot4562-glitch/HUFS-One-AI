@@ -41,9 +41,35 @@ fi
 [[ $(stat -c '%u' "$key") == 0 && $(stat -c '%a' "$key") =~ ^[0-7]+$ ]] || exit 2
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 bootstrap="$script_dir/bootstrap-ubuntu.sh"
-[[ -f "$bootstrap" && ! -L "$bootstrap" && $(stat -c '%u' "$bootstrap") -eq 0 ]] || {
-  echo 'Missing root-owned reviewed bootstrap script.' >&2;exit 2;
-}
+# The bootstrap installs these companions as privileged sudo helpers. Its hash
+# alone cannot establish their trust: protect every fixed input and every parent
+# against replacement by an unprivileged account before invoking the bootstrap.
+python3 - "$script_dir" <<'PY'
+import pathlib, stat, sys
+bundle = pathlib.Path(sys.argv[1])
+expected_uid = 0
+trusted_root = pathlib.Path('/')
+def trusted(path, directory):
+    info = path.lstat()
+    kind = stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)
+    if not kind or path.resolve() != path or info.st_uid != expected_uid or info.st_mode & 0o022:
+        sys.exit('Untrusted bootstrap bundle: require canonical root-owned non-writable files and parents.')
+try:
+    if not bundle.is_absolute() or not bundle.is_relative_to(trusted_root):
+        sys.exit('Invalid bootstrap bundle boundary.')
+    parent = bundle
+    while True:
+        trusted(parent, True)
+        if parent == trusted_root:
+            break
+        parent = parent.parent
+    trusted(bundle / 'setup', True)
+    for relative in ['bootstrap-ubuntu.sh', 'deploy-preview.sh', 'harden-ssh.sh',
+                     'rollback-preview.sh', 'hufs-preview.service', 'setup/02-install-host.sh']:
+        trusted(bundle / relative, False)
+except OSError:
+    sys.exit('Missing or inaccessible trusted bootstrap bundle input.')
+PY
 actual=$(sha256sum "$bootstrap")
 actual=${actual%% *}
 [[ "$actual" == "$expected" ]] || {

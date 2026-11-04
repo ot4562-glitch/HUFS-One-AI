@@ -4,9 +4,12 @@ No NCP API, actual root, SSH, real materials or network is used.
 """
 from __future__ import annotations
 from pathlib import Path
+import hashlib
+import os
 import re
 import shutil
 import subprocess
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,6 +17,71 @@ INSTALL = ROOT / "infra/ncp/setup/02-install-host.sh"
 OPERATOR = ROOT / "infra/ncp/Operator-NcpPreview.ps1"
 DEPLOY = ROOT / "infra/ncp/Deploy-NcpPreview.ps1"
 ROLLBACK = ROOT / "infra/ncp/rollback-preview.sh"
+
+
+@unittest.skipUnless(os.name == "posix" and shutil.which("bash"),
+                     "POSIX ownership/mode checks require Linux")
+class InstallerBundleTrustTests(unittest.TestCase):
+    def run_bundle(self, unsafe: str | None = None):
+        with tempfile.TemporaryDirectory(prefix="hufs-installer-trust-") as temporary:
+            root = Path(temporary)
+            bundle = root / "reviewed" / "ncp"
+            (bundle / "setup").mkdir(parents=True)
+            marker = root / "bootstrap-called"
+            # A harmless executable sentinel replaces only the approved bootstrap.
+            bootstrap = bundle / "bootstrap-ubuntu.sh"
+            bootstrap.write_text('#!/bin/bash\nprintf called > "$BUNDLE_TEST_MARKER"\n')
+            for name in ["deploy-preview.sh", "harden-ssh.sh", "rollback-preview.sh", "hufs-preview.service"]:
+                (bundle / name).write_text("synthetic reviewed companion\n")
+            key = root / "admin.pub"
+            key.write_text("synthetic public key\n")
+            source = INSTALL.read_text(encoding="utf-8")
+            # Filesystem checks remain real. Only the test UID/root boundary and
+            # named key location differ; no sudo/packages/host operation exists.
+            source = source.replace("expected_uid = 0", "expected_uid = " + str(os.getuid()))
+            source = source.replace("trusted_root = pathlib.Path('/')", "trusted_root = pathlib.Path(" + repr(str(root)) + ")")
+            source = source.replace('[[ "$key" == /root/*', '[[ "$key" == ' + str(root) + '/*')
+            script = bundle / "setup/02-install-host.sh"
+            script.write_text(source)
+            if unsafe == "companion-writable":
+                (bundle / "deploy-preview.sh").chmod(0o666)
+            elif unsafe == "parent-writable":
+                bundle.parent.chmod(0o777)
+            elif unsafe == "companion-link":
+                companion = bundle / "rollback-preview.sh"
+                companion.unlink()
+                companion.symlink_to(bootstrap)
+            elif unsafe == "bootstrap-writable":
+                bootstrap.chmod(0o666)
+            elif unsafe == "setup-writable":
+                (bundle / "setup").chmod(0o777)
+            bin_dir = root / "bin"
+            bin_dir.mkdir()
+            shim = bin_dir / "id"
+            shim.write_text("#!/bin/sh\nprintf '0\\n'\n")
+            shim.chmod(0o755)
+            stat_shim = bin_dir / "stat"
+            stat_shim.write_text('#!/bin/sh\nif [ "$2" = "%u" ]; then printf "0\\n"; else /usr/bin/stat "$@"; fi\n')
+            stat_shim.chmod(0o755)
+            result = subprocess.run(["bash", str(script), "--apply", "--ack-owner-approved", "--ack-acg-verified",
+                "--admin-public-key", str(key), "--admin-ip", "93.184.216.34/32", "--reviewed-bootstrap-sha256",
+                hashlib.sha256(bootstrap.read_bytes()).hexdigest()],
+                env={**os.environ, "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+                     "BUNDLE_TEST_MARKER": str(marker)}, capture_output=True, text=True, timeout=10)
+            return result, marker.exists()
+
+    def test_trusted_bundle_reaches_only_synthetic_bootstrap(self):
+        result, called = self.run_bundle()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(called)
+
+    def test_unsafe_bundle_is_rejected_before_bootstrap(self):
+        for unsafe in ["companion-writable", "parent-writable", "companion-link", "bootstrap-writable", "setup-writable"]:
+            with self.subTest(unsafe=unsafe):
+                result, called = self.run_bundle(unsafe)
+                self.assertNotEqual(result.returncode, 0, unsafe)
+                self.assertFalse(called, "Untrusted bundle reached bootstrap")
+
 
 class NcpOperatorWorkflowTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("bash"), "Bash required for synthetic CLI tests")

@@ -189,7 +189,10 @@ powershell -NoProfile -File .\infra\ncp\Operator-NcpPreview.ps1
 
 1. 서버 설치(승인된 Ubuntu 호스트에서만): `bash infra/ncp/setup/02-install-host.sh --plan`
    → `sudo bash infra/ncp/setup/02-install-host.sh --apply --ack-owner-approved --ack-acg-verified --admin-public-key /root/hufs-admin.pub --admin-ip <관리자공인IPv4/32> --reviewed-bootstrap-sha256 <승인된bootstrap64SHA>`.
-   설치기는 이 bootstrap 바이트와 root-owned 파일을 검사하고 기존 SSH/UFW
+   설치기는 bootstrap 바이트와 전체 고정 helper/service/설치기 파일의 root 소유·
+   group/other 쓰기 금지, bundle부터 루트까지 정규 디렉터리·소유/쓰기 권한을
+   검사한다. `/tmp`나 사용자 쓰기 가능한 checkout에서 직접 설치하지 않는다.
+   승인된 bundle을 root 전용 경로에 준비한 뒤 기존 SSH/UFW
    준비 코드를 호출한다. **새 PuTTY 창의 키 인증 성공 확인 전에는 SSH
    password/root 로그인 비활성화 스크립트를 실행하면 안 된다.**
 2. 합성 미리보기 배포: `Operator-NcpPreview.ps1 -Operation Deploy -Apply -OwnerApproved -ServerIPv4 <서버공인IPv4> -PrivateKeyPath <로컬.ppk> -HostKeyFingerprint <직접확인한지문> -Ref <검토승인커밋>`.
