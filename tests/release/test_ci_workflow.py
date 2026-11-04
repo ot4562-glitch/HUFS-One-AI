@@ -40,6 +40,13 @@ SAFE_SPARSE_PATHS = frozenset({
 EXCLUDED_DIRECTORIES = (
     "csv", "local_only", "templates/real5-intake", "reference/hufsability/raw",
 )
+PROVIDER_HTTP_PG_PROOF = (
+    "CREATE DATABASE hufs_one_provider_integration_test",
+    "HUFS_PG_PROVIDER_INTEGRATION_LIVE: '1'",
+    "HUFS_PG_PROVIDER_INTEGRATION_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_provider_integration_test",
+    "tests/api/pg-provider-integration-live-opt-in.test.ts",
+)
+
 REVISION_CLAIMS_PG_PROOF = (
     "  revision-claims-real-postgres:",
     "--network host",
@@ -67,7 +74,6 @@ MIGRATIONS_PG_PROOF = (
     "HUFS_PG_MIGRATIONS_LIVE: '1'",
     "HUFS_PG_MIGRATIONS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_migration_test",
     "tests/api/pg-migrations-live-opt-in.test.ts",
-    "- name: Build API for live adapter and process restart tests\n        run: npm run build:api",
 )
 
 
@@ -87,6 +93,21 @@ def sparse_checkout_lists(text: str) -> list[list[str]]:
             paths.append(entry.strip())
         lists.append(paths)
     return lists
+
+
+def has_compiled_api_before_live_consumers(text: str) -> bool:
+    marker = "  postgres-integration:\n"
+    if marker not in text:
+        return False
+    job = re.split(r"(?m)^  [A-Za-z0-9_-]+:\s*$", text.split(marker, 1)[1], maxsplit=1)[0]
+    builds = list(re.finditer(r"(?m)^        run: npm run build:api\s*$", job))
+    if len(builds) != 1:
+        return False
+    commands = list(re.finditer(r"(?m)^        run: npx vitest run ([^\n]+)$", job))
+    required = ("tests/api/pg-owner-academics-live-opt-in.test.ts",
+                "tests/api/pg-provider-integration-live-opt-in.test.ts")
+    return all(any(command.start() > builds[0].end() and path in command.group(1).split()
+                   for command in commands) for path in required)
 
 
 def audit_ci_boundary(text: str) -> list[str]:
@@ -176,10 +197,15 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("owner-academics SQL proof must execute in its isolated opt-in database")
     if any(proof not in text for proof in MIGRATIONS_PG_PROOF):
         issues.append("reviewed migration proof must execute against a fresh isolated database")
+
+    if any(proof not in text for proof in PROVIDER_HTTP_PG_PROOF):
+        issues.append("Provider HTTP/process-restart proof must execute in its isolated opt-in database")
     if any(proof not in text for proof in REVISION_CLAIMS_PG_PROOF):
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
     if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
         issues.append("EMPTY_DEMO SQL proof must execute against the isolated real PostgreSQL 18 server")
+    if not has_compiled_api_before_live_consumers(text):
+        issues.append("the PostgreSQL job must compile API before both live compiled consumers")
     return issues
 
 
@@ -203,6 +229,25 @@ class WorkflowBoundaryTests(unittest.TestCase):
                 (WORKFLOW.parents[2] / "tests/security" / name).is_file(),
                 "owned security test file missing from sparse CI checkout",
             )
+
+    def test_compiled_pg_build_uses_command_and_order_not_step_label(self) -> None:
+        renamed = self.policy.replace(
+            'Build compiled API for live adapters and process restart proofs', 'Compile backend once for live tests'
+        )
+        self.assertEqual(audit_ci_boundary(renamed), [])
+
+    def test_pg_build_cannot_be_removed_or_replaced_by_another_jobs_build(self) -> None:
+        before, job = self.policy.split('  postgres-integration:\n', 1)
+        changed = before + '  postgres-integration:\n' + job.replace(
+            '        run: npm run build:api', '        run: echo build-not-executed', 1)
+        self.assertTrue(audit_ci_boundary(changed))
+
+    def test_pg_build_must_precede_both_live_compiled_consumers(self) -> None:
+        before, job = self.policy.split('  postgres-integration:\n', 1)
+        changed = job.replace('        run: npm run build:api', '        run: echo not-built-yet', 1)
+        changed = changed.replace('  revision-claims-real-postgres:',
+            '      - name: too late\n        run: npm run build:api\n\n  revision-claims-real-postgres:', 1)
+        self.assertTrue(audit_ci_boundary(before + '  postgres-integration:\n' + changed))
 
     def test_main_only_stacked_pr_regression_is_rejected(self) -> None:
         changed = self.policy.replace(
@@ -229,6 +274,12 @@ class WorkflowBoundaryTests(unittest.TestCase):
                 self.assertTrue(proof in self.policy, "Missing reviewed migration CI prerequisite")
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
         self.assertIn('/tools/check_postgres_migration_plan.mjs', sparse_checkout_lists(self.policy)[1])
+
+    def test_provider_http_pg_proof_cannot_silently_skip(self) -> None:
+        for proof in PROVIDER_HTTP_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertIn(proof, self.policy)
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
 
     def test_revision_claims_sql_proof_cannot_silently_skip(self) -> None:
         for proof in REVISION_CLAIMS_PG_PROOF:
