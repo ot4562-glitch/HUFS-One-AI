@@ -34,7 +34,7 @@ async function fixture(){
     }
     return {rows:[]};
   });
-  const release=vi.fn(),pool={connect:vi.fn(async()=>({query,querySingle:query,release}))};
+  const release=vi.fn(),pool={connect:vi.fn(async()=>({peer:{address:plan.target.address,port:plan.target.port},query,querySingle:query,release}))};
   const approval={authorize:vi.fn(async()=>({allowed:true,receipt:'SYN-APPROVAL-RECEIPT'})),revalidate:vi.fn(async()=>true)};
   const open=(authorize=true)=>createReviewedMigrationRunner({workspace:workspace.root,plan,pool,...(authorize?{approval}:{})});
   return {workspace,files,plan,state,log,rows,pool,approval,open,release};
@@ -63,6 +63,9 @@ describe('reviewed atomic PostgreSQL migrations',()=>{
   it('rejects elevated/wrong targets, untracked schema and checksum/order drift',async()=>{
     const f=await fixture(),runner=await f.open();f.state.elevated=true;
     await expect(runner.apply()).rejects.toMatchObject({code:'TARGET_DENIED',outcome:'ROLLED_BACK'});f.state.elevated=false;
+    const wrongPeerPlan={...f.plan,target:{...f.plan.target,address:'::1'}};
+    const wrongPeerRunner=await createReviewedMigrationRunner({workspace:f.workspace.root,plan:wrongPeerPlan,pool:f.pool});
+    await expect(wrongPeerRunner.check()).rejects.toMatchObject({code:'TARGET_DENIED'});
     f.state.objects=1;await expect(runner.apply()).rejects.toMatchObject({code:'UNTRACKED_SCHEMA'});f.state.objects=0;
     await runner.apply();f.rows[0]!.sha256='0'.repeat(64);
     await expect(runner.apply()).rejects.toMatchObject({code:'HISTORY_DRIFT'});
