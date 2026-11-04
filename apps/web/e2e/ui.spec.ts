@@ -194,6 +194,19 @@ test('invite page on a non-canonical origin never renders or uses a fragment cod
   await expect(page.locator('details.selector')).toHaveCount(0);
 });
 
+test('#144 주전공 · 이중전공 at 360px: one column, held row reason, no horizontal overflow', async ({page}) => {
+  await page.setViewportSize({width: 360, height: 800});
+  await page.goto('/graduation');
+  await pick(page, 0);
+  const dm = page.getByRole('region', {name: '주전공 · 이중전공 요건'});
+  await expect(dm.getByRole('status')).toHaveText('이중전공: 선택함');
+  await expect(dm.getByRole('list', {name: '이중전공 요건'}).getByRole('listitem').filter({hasText: 'SYN-DM-MAJOR-MIN'})).toContainText('보류');
+  const [a, b] = await dm.locator('.dm__col').evaluateAll(cols => cols.map(c => c.getBoundingClientRect().top));
+  expect(b!).toBeGreaterThan(a!); // stacked, not squeezed side by side
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
+});
+
 test('#141 /menu at 360px: manifest menus, no horizontal overflow, Tab skips 🚫 items', async ({page}) => {
   await page.setViewportSize({width: 360, height: 800});
   await page.goto('/menu');

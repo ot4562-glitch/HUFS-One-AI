@@ -51,6 +51,8 @@ export type {
   OverlapStatus,
   SharedCourse,
 } from './double-major.js';
+export {applySameCourseRules} from './course-equivalence.js';
+export type {AppliedSameCourse, HeldSameCourse, SameCourseResult, SameCourseRule} from './course-equivalence.js';
 export {simulateStudyPlan} from './study-plan.js';
 export type {StudyPlanCheck, StudyPlanCheckRequest, StudyPlanItem, UncheckedReason} from './study-plan.js';
 export {buildAcademicPlan, checkAcademicPlan} from './plan.js';

@@ -51,6 +51,7 @@ const AiRequest=z.strictObject({
   packetRef:z.string().regex(/^[a-zA-Z0-9_-]{1,90}$/),
   idempotencyKey:z.string().regex(/^[a-zA-Z0-9_-]{8,100}$/),
   contextId:z.string().min(1).max(100).optional(),
+  asOf:z.iso.datetime({offset:true}).optional(),
 });
 type Section='FEED'|'NOTICES'|'ACADEMICS'|'FORECAST'|'EXPERIENCE';
 type Job={jobId:string;actorId:string;sessionIdHash:string;task:string;packetRef:string;
@@ -106,7 +107,6 @@ export function createApi(options:ApiOptions) {
     try { actor=await verifiedSession(request); }
     catch(error) { if(error instanceof ApiFailure)throw error;throw new ApiFailure('UNAUTHENTICATED'); }
     if(actor.role==='REVIEWER') {
-      if(!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
       const enrollment=request.method==='POST'&&path==='/api/reviewer/invitations/redeem';
       const reviewerRead=request.method==='GET'&&(
         path==='/api/auth/session'
@@ -128,12 +128,19 @@ export function createApi(options:ApiOptions) {
         path==='/api/auth/school-mail/request'
         ||path==='/api/auth/school-mail/confirm');
       const logout=request.method==='POST'&&path==='/api/auth/logout';
+      const csrf=request.method==='GET'&&path==='/api/auth/csrf';
+      // A verified Google session must obtain CSRF and complete administrator-preapproved
+      // school-mail OTP even before it has a REVIEWER invitation. All reviewer data
+      // remains inaccessible without the independently provisioned access store.
+      if(!options.reviewerAccess&&!csrf&&!schoolMail&&!logout)
+        throw new ApiFailure('FORBIDDEN');
       if(!enrollment&&!reviewerRead&&!reviewerWrite&&!logout&&!schoolMail)
         throw new ApiFailure('FORBIDDEN');
       // A new reviewer needs CSRF proof in order to redeem the invitation.
       // Logout must remain available when a reviewer invitation has expired
       // or been revoked; data access still requires a live grant.
-      if(!enrollment&&!schoolMail&&!logout&&path!=='/api/auth/csrf'){
+      if(!enrollment&&!schoolMail&&!logout&&!csrf){
+        if(!options.reviewerAccess)throw new ApiFailure('FORBIDDEN');
         const grant=await options.reviewerAccess.readActive({
           actorId:actor.actorId,verifiedEmail:actor.verifiedEmail,now:clock(),
         });
@@ -725,6 +732,16 @@ export function createApi(options:ApiOptions) {
       if(!body.contextId)throw new ApiFailure('INVALID_INPUT');
       const selected=await checkedContext(req,body.contextId,[]);
       reviewerSubject=selected.context.demoSubjectId;
+    }else if(options.realAi){
+      if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
+      if(!body.asOf)throw new ApiFailure('INVALID_INPUT');
+      await recheckCurrent(req,actor);
+      const result=await options.realAi.executor.execute({actor,inputRef:body.packetRef,operation:options.realAi.operation,
+        phaseId:options.realAi.phaseId,idempotencyKey:body.idempotencyKey,asOf:body.asOf,task});
+      await recheckCurrent(req,actor);
+      if(result.state==='UNAVAILABLE'||!result.jobId)throw new ApiFailure('PROVIDER_UNAVAILABLE',result.jobId);
+      reply.code(202);return {jobId:result.jobId,state:result.state,
+        ...(result.provenance!==undefined?{provenance:result.provenance}:{})};
     }else if(!options.syntheticAiProvider){
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     }
@@ -776,6 +793,12 @@ export function createApi(options:ApiOptions) {
   });
   app.get('/api/ai/jobs/:id',async(req)=>{
     const actor=principal(req),{id}=JobParams.parse(req.params),job=jobs.get(id);
+    if(!job&&actor.role==='BETA'&&options.realAi){
+      await recheckCurrent(req,actor);
+      const result=await options.realAi.executor.readJob(actor,id);
+      await recheckCurrent(req,actor);
+      if(!result)throw new ApiFailure('FORBIDDEN');return result;
+    }
     if(!job||job.actorId!==actor.actorId||job.sessionIdHash!==actor.sessionIdHash)
       throw new ApiFailure('FORBIDDEN');
     return {jobId:job.jobId,state:job.state,task:job.task,createdAt:job.createdAt,candidate:job.candidate};
