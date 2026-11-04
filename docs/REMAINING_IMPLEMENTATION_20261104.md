@@ -1,6 +1,8 @@
 # HUFS One AI | 2026-11-04 PR 통합 후 남은 개발·인수 보고
 
-**작성 기준:** GitHub main 코드 HEAD [f23b86bb](https://github.com/minseong-hufs/HUFS-One-AI/commit/f23b86bb693a163c7f6a0330d1b9657c684724ff). PR [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) merge 완료. **열린 PR 0건 / 일반 이슈 40건**. 최신 main 코드 HEAD의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022)·[NCP Terraform mock](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS**. 실제 운영 공개는 **RELEASE_BLOCKED**.
+**작성 기준:** GitHub main 코드 HEAD [f23b86bb](https://github.com/minseong-hufs/HUFS-One-AI/commit/f23b86bb693a163c7f6a0330d1b9657c684724ff). PR [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) merge 완료. **열린 PR 0건 / 일반 이슈 15건(정리 전 40건, 25건 중복 종료)**. 최신 main 코드 HEAD의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022)·[NCP Terraform mock](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS**. 실제 운영 공개는 **RELEASE_BLOCKED**.
+
+**이슈 현황 추가 정정(2026-11-04):** 문서 최초 작성 시 40건 OPEN이었으나 이후 [이슈 40→15 전수 재구성](../STATUS.md#5-2026-11-04-이슈-구조-재정리-기존-open-40--현재-open-15)이 실제 반영됐다. 이 문서는 *기능·환경별 남은 구현 내용*을 보존하며 미완료의 단일 체크리스트·현재 담당은 해당 15개 정본 이슈를 따른다. 과거 #23/#22/#192 등의 작업은 사라진 것이 아니라 연결된 정본에 이관했다.
 
 ## 1. 병합 내용의 증거 수준
 
@@ -34,7 +36,7 @@
 | 구분 | 현재 | 정확한 해석 |
 | --- | ---: | --- |
 | PR 소진 | **0 OPEN / 정리 종료** | PR 대기 업무가 0이라는 뜻. 기능 개발 완료 100%가 아님 |
-| 일반 이슈 | **40 OPEN**, 전부 2026-11-04 코드·미수락 항목을 최신화 | 큰 상위 이슈가 실자료/기관/실서비스 인수까지 포함. 숫자 40이 곧 40개의 미구현 함수는 아님 |
+| 일반 이슈 | **15 OPEN**, 40개 중복·하위 작업을 15개 정본으로 통합해 25개 종료 | 큰 상위 이슈가 실자료/기관/실서비스 인수까지 포함. 숫자 40이 곧 40개의 미구현 함수는 아님 |
 | **심민성** 고정 수락 | **7/12 = 58.3%**, 나머지 **5개 복합 게이트 미수락** | 코드량과 독립 운영·인적 증거가 섞인 수락률. “41.7% 코드 미구현”이라 계산 불가 |
 | 이의상 UI | 9/12 = 75.0% | 실제 전체 UI/접근성 미수락 |
 | 김채윤 추천 | 7/12 = 58.3% | 독립 추천 gold 0/200 |
