@@ -40,7 +40,7 @@ def main() -> None:
     env.update(TF_DATA_DIR=str(cache), TF_CLI_CONFIG_FILE=str(config),
                CHECKPOINT_DISABLE="1", TF_IN_AUTOMATION="1")
     commands = [
-        ["fmt", "-check", "-recursive"],
+        ["fmt", "-check", "-recursive", "-diff"],
         ["init", "-backend=false", "-input=false", "-lockfile=readonly", "-no-color"],
         ["validate", "-no-color"],
         ["test", "-no-color"],
