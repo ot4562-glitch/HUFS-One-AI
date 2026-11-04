@@ -28,7 +28,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/tests/prune-merged-branches.node.mjs",
     "/tools/audit_entrypoints.mjs", "/tools/entrypoints.json",
     "/tools/tests/entrypoint-inventory.node.mjs",
-    "/apps/web/", "/infra/sql/", "/infra/laya/", "/infra/ai/", "/infra/ncp/", "/tests/contracts/", "/tests/consumers/",
+    "/apps/web/", "/infra/sql/", "/infra/laya/", "/infra/deploy/", "/infra/ai/", "/infra/ncp/", "/tests/contracts/", "/tests/consumers/",
     "/tests/api/", "/tests/integration/", "/tests/e2e/", "/tests/evaluation/",
     "/tests/security/", "/tests/release/", "/tools/release_entrypoint_gate.mjs",
     "/tools/release_publication_gate.py", "/.dockerignore",

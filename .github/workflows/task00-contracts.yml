@@ -38,6 +38,7 @@ jobs:
             /apps/api/
             /infra/sql/
             /infra/laya/
+            /infra/deploy/
             /infra/ai/
             /infra/ncp/
             /packages/core/
