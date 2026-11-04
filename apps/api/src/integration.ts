@@ -71,6 +71,8 @@ interface SharedDependencies {
   };
   /** Local synthetic model ONLY. A real paid NCP provider cannot use this port. */
   syntheticAiProvider?:AiCandidateProvider;
+  /** Explicit only; no integration-default provider, no live NCP on import. */
+  realAi?:ApiOptions['realAi'];
   now?:()=>string;
   maxSyntheticAiCallsPerActor?:number;
   /** Server-owned, current source rights. Never supplied by a browser. */
@@ -166,6 +168,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
       reviewerSandbox:deps.reviewer.sandbox,
     }:{}),
     ...(deps.syntheticAiProvider?{syntheticAiProvider:deps.syntheticAiProvider}:{}),
+    ...(deps.realAi?{realAi:deps.realAi}:{}),
     ...(deps.maxSyntheticAiCallsPerActor!==undefined
       ?{maxSyntheticAiCallsPerActor:deps.maxSyntheticAiCallsPerActor}:{}),
     ...(deps.now?{now:deps.now}:{}),
