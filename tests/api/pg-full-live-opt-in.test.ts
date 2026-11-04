@@ -5,7 +5,12 @@
 import {readFileSync} from 'node:fs';
 import {createHash,randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
+import {createLocalJWKSet,exportJWK,generateKeyPair,SignJWT} from 'jose';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
+import {createPostgresGoogleAuth} from '../../apps/api/src/auth-postgres.js';
+import {createIntegratedApi} from '../../apps/api/src/integration.js';
+import {closedRepository} from '../../apps/api/src/repository.js';
+import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
 import {PostgresPersonalStateStore,PersonalStateDenied} from '../../apps/api/src/db/personal-state-postgres.js';
 import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-postgres.js';
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
@@ -24,6 +29,7 @@ import {PostgresOwnerWorkspaceStore} from '../../apps/api/src/modules/profiles/s
 import {PostgresExperienceApprovalStore} from '../../apps/api/src/modules/profiles/experience-approval-postgres.js';
 import {PostgresDemoOverlayStore} from '../../apps/api/src/modules/demo-overlay-postgres.js';
 import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
+import {PostgresProviderResults} from '../../apps/api/src/modules/ai/provider-results-postgres.js';
 import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
@@ -32,7 +38,7 @@ const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
 const pools:Pool[]=[];
 // Generated credential for isolated synthetic test roles (SCRAM on GitHub Actions).
 const rolePassword=randomBytes(24).toString('hex');
-let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool,overlays:Pool,aiBudget:Pool;
+let admin:Pool,writer:Pool,reader:Pool,temporal:Pool,limiter:Pool,sandbox:Pool,intake:Pool,selfAccount:Pool,overlays:Pool,aiBudget:Pool,aiResults:Pool;
 const actor='SYNTHETIC-FULL-PG-ACTOR';
 const scope={actorId:actor,subjectId:'S01' as const,grantVersion:'v1'};
 const now=()=>new Date().toISOString();
@@ -53,6 +59,7 @@ const migrationNames=[
   '20261101_verified_source_rights.sql',
   '20261103_ai_budget.sql',
   '20261103_ai_provider_inputs.sql',
+  '20261103_ai_provider_results.sql',
 ];
 function adapter(pool:Pool):ReviewerSqlPool{return {connect:async()=>{
   const c=await pool.connect();return {
@@ -107,6 +114,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        CREATE ROLE hufs_test_self LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_overlay LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
        CREATE ROLE hufs_test_ai_budget LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+       CREATE ROLE hufs_test_ai_results LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT hufs_api_personal_writer TO hufs_test_personal;
       GRANT hufs_api_projection_reader TO hufs_test_projection;
       GRANT USAGE ON SCHEMA public TO hufs_test_temporal,hufs_test_limiter,hufs_test_sandbox,hufs_test_intake,hufs_test_self,hufs_test_overlay;
@@ -128,6 +136,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       GRANT USAGE ON SCHEMA public TO hufs_test_ai_budget;
       GRANT EXECUTE ON FUNCTION ai_budget_reserve(text,text,text,text,bigint) TO hufs_test_ai_budget;
       GRANT EXECUTE ON FUNCTION ai_budget_transition(text,uuid,text,text,bigint,text) TO hufs_test_ai_budget;
+       GRANT USAGE ON SCHEMA public TO hufs_test_ai_results;
+       GRANT EXECUTE ON FUNCTION ai_provider_result_put(jsonb),ai_provider_result_get(uuid) TO hufs_test_ai_results;
     `);
     writer=poolFor(url,'hufs_test_personal');reader=poolFor(url,'hufs_test_projection');
     temporal=poolFor(url,'hufs_test_temporal');limiter=poolFor(url,'hufs_test_limiter');
@@ -135,6 +145,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     selfAccount=poolFor(url,'hufs_test_self');
     overlays=poolFor(url,'hufs_test_overlay');
     aiBudget=poolFor(url,'hufs_test_ai_budget');
+     aiResults=poolFor(url,'hufs_test_ai_results');
     await admin.query(`INSERT INTO api_sharing_grants(
       grant_id,actor_id,subject_id,allowed_sections,version,consent_ref,
       approved_by,approved_at,expires_at)
@@ -265,6 +276,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query('SELECT enabled,reserved_units::text,charged_units::text FROM ai_budget_phases WHERE phase_id=$1',[phase])).rows[0])
       .toEqual({enabled:false,reserved_units:'0',charged_units:String(actual)});
   });
+
 
   it('supports owner-private profile/consent CAS, no implicit grant, withdrawal and immutable audit under FORCE RLS',async()=>{
     const id='SYN-SELF-OWNER';
@@ -955,4 +967,170 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_inputs`)).rows[0]?.n).toBe(0);
   });
 
+  // Run after #157's empty-projection baseline test; keep that prior gate unchanged.
+  it('accepts only SETTLED candidate results, isolates actors and scrubs on consent withdrawal',async()=>{
+    const owner='SYN-RESULT-A',session='SYN-RESULT-SESSION-1',phase='SYN-RESULT-PHASE';
+    const projection='SYN-RESULT-PROJECTION-1',inputRef='SYN-RESULT-INPUT-1',operation='HCX_007' as const;
+    const idempotencyKey='SYN-RESULT-KEY',epoch='synthetic-projection-v1';
+    const approvedAt=new Date(Date.now()-120_000).toISOString();
+    const asOf=new Date(Date.now()-60_000).toISOString();
+    const expiresAt=new Date(Date.now()+600_000).toISOString();
+    const packet={packetId:'DOC-RESULT-SYN',task:'opportunity_terms',providerInputClass:'SYNTHETIC_CLEARED',
+      sourceTokens:[{token:'DOC1',paragraphs:[{id:'p1',text:'SYNTHETIC ONLY'}]}],
+      allowedTopicCodes:[],allowedObjectTokens:[],approvedFacts:[],schemaVersion:'1',promptVersion:'1'};
+    await admin.query(`INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at)
+      VALUES($1,1,$2::jsonb,$3)`,[owner,JSON.stringify({
+      personalStorage:true,externalAi:true,teamReview:false,ncpStorage:false,presentation:false,
+    }),approvedAt]);
+    await admin.query(`INSERT INTO api_ai_provider_inputs(
+      projection_id,actor_id,input_ref,operation,as_of,epoch,policy_version,consent_version,
+      approved_by,approved_at,expires_at,input_class,privacy_review_ref,source_refs,safe_packet)
+      VALUES($1,$2,$3,$4,$5,$6,'synthetic-policy-v1','1','SYN-INDEPENDENT-REVIEWER',
+        $7,$8,'SYNTHETIC_CLEARED','SYN-PRIVACY-REVIEW',$9::jsonb,$10::jsonb)`,[
+      projection,owner,inputRef,operation,asOf,epoch,approvedAt,expiresAt,
+      JSON.stringify([{sourceId:'SYN-RESULT-SOURCE',revisionId:'SYN-RESULT-REV',
+        permissionRef:'SYN-RESULT-PERM',originalSha256:'c'.repeat(64)}]),JSON.stringify(packet),
+    ]);
+    await admin.query(`INSERT INTO ai_budget_phases(
+      phase_id,enabled,starts_at,ends_at,max_units,actor_max_units,max_attempts,actor_max_attempts)
+      VALUES($1,true,clock_timestamp()-interval '1 minute',
+        clock_timestamp()+interval '1 hour',1000,1000,10,10)`,[phase]);
+    const ledger=new PostgresAiBudgetLedger(adapter(aiBudget));
+    const requestSha256='a'.repeat(64),receiptSha256='b'.repeat(64);
+    const job=await ledger.reserve(owner,{phaseId:phase,task:operation,idempotencyKey,
+      requestSha256,worstCaseUnits:100});
+    const receipt={phaseId:phase,jobId:job.jobId,requestSha256};
+    const value={jobId:job.jobId,actorId:owner,sessionIdHash:session,inputRef,operation,asOf,
+      phaseId:phase,idempotencyKey,requestSha256,
+      inputEpoch:'input-'+createHash('sha256').update([projection,epoch,'1'].join('|')).digest('hex'),
+      expiresAt,candidate:{reviewState:'NEEDS_REVIEW',text:'SYNTHETIC-RESULT-CANDIDATE'}};
+    const results=new PostgresProviderResults(adapter(aiResults));
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // RESERVED
+    await ledger.transition(owner,{...receipt,action:'DISPATCHED'});
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // DISPATCHED
+    await ledger.transition(owner,{...receipt,action:'UNKNOWN_BILLING'});
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // unresolved bill
+    await ledger.transition(owner,{...receipt,action:'SETTLED',actualUnits:65,receiptSha256});
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable'); // missing current head
+    await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id)
+      VALUES($1,$2,$3,$4)`,[owner,inputRef,operation,projection]);
+    await Promise.all(Array.from({length:4},()=>results.put(value)));
+    expect((await admin.query(`SELECT count(*)::int AS n FROM api_ai_provider_results
+      WHERE job_id=$1`,[job.jobId])).rows[0]?.n).toBe(1);
+    // A new adapter instance reads only durable PostgreSQL state (simulates process restart).
+    const restarted=new PostgresProviderResults(adapter(aiResults));
+    expect(await restarted.get(owner,session,job.jobId)).toEqual(value);
+    expect(await restarted.get('SYN-RESULT-OTHER',session,job.jobId)).toBeNull();
+    expect(await restarted.get(owner,'SYN-RESULT-OTHER-SESSION',job.jobId)).toBeNull();
+    await expect(results.put({...value,actorId:'SYN-RESULT-OTHER'})).rejects.toThrow('Provider result unavailable');
+    await expect(results.put({...value,sessionIdHash:'SYN-RESULT-OTHER-SESSION'}))
+      .rejects.toThrow('Provider result unavailable');
+    await expect(results.put({...value,candidate:{reviewState:'NEEDS_REVIEW',text:'SYNTHETIC-ALTERED'}}))
+      .rejects.toThrow('Provider result unavailable');
+    await expect(results.put({...value,inputEpoch:'input-'+'0'.repeat(64)}))
+      .rejects.toThrow('Provider result unavailable');
+    expect(await restarted.get(owner,session,job.jobId)).toEqual(value);
+    await expect(aiResults.query('SELECT result_json FROM api_ai_provider_results')).rejects.toMatchObject({code:'42501'});
+    await expect(aiResults.query("UPDATE api_ai_provider_results SET result_json='{}'::jsonb"))
+      .rejects.toMatchObject({code:'42501'});
+    await expect(aiResults.query('SELECT public.ai_provider_results_prune(1)')).rejects.toMatchObject({code:'42501'});
+    expect((await admin.query(`SELECT relrowsecurity,relforcerowsecurity FROM pg_class
+      WHERE relname='api_ai_provider_results'`)).rows).toEqual([{relrowsecurity:true,relforcerowsecurity:true}]);
+    // Consent withdrawal triggers one-way erasure of input AND previously settled result.
+    await admin.query(`UPDATE api_self_consents SET version=version+1,
+      choices_json=jsonb_set(choices_json,'{externalAi}','false'::jsonb),
+      updated_at=clock_timestamp() WHERE actor_id=$1`,[owner]);
+    expect(await restarted.get(owner,session,job.jobId)).toBeNull();
+    await expect(results.put(value)).rejects.toThrow('Provider result unavailable');
+    expect((await admin.query(`SELECT result_json IS NULL AS scrubbed,erased_at IS NOT NULL AS erased
+      FROM api_ai_provider_results WHERE job_id=$1`,[job.jobId])).rows[0])
+      .toEqual({scrubbed:true,erased:true});
+    expect((await admin.query(`SELECT safe_packet IS NULL AS scrubbed,erased_at IS NOT NULL AS erased
+      FROM api_ai_provider_inputs WHERE projection_id=$1`,[projection])).rows[0])
+      .toEqual({scrubbed:true,erased:true});
+  });
+
+  it('restores PostgreSQL BETA auth across API instances and enforces shared revocation, limits and CSRF',async()=>{
+    await admin.query(`
+      CREATE ROLE hufs_test_auth_sessions LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      CREATE ROLE hufs_test_auth_admission LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+      GRANT USAGE ON SCHEMA public TO hufs_test_auth_sessions,hufs_test_auth_admission;
+      GRANT SELECT,INSERT,DELETE ON google_login_attempts TO hufs_test_auth_sessions;
+      GRANT SELECT,INSERT,UPDATE ON google_app_sessions TO hufs_test_auth_sessions;
+      GRANT SELECT ON beta_school_proofs TO hufs_test_auth_admission;
+    `);
+    const sessions=poolFor(connectionUrl(),'hufs_test_auth_sessions');
+    const admission=poolFor(connectionUrl(),'hufs_test_auth_admission');
+    const at=new Date(),expires=new Date(at.getTime()+600_000).toISOString();
+    const origin='https://synthetic-auth.example.test',clientId='synthetic.apps.googleusercontent.com';
+    const subject='SYN-PG-AUTH',email='synthetic-pg-auth@hufs.ac.kr';
+    const pair=await generateKeyPair('RS256',{extractable:true});
+    const jwks=createLocalJWKSet({keys:[{...await exportJWK(pair.publicKey),kid:'synthetic-pg-auth',alg:'RS256',use:'sig'}]});
+    let nonce='',exchanges=0;
+    const config={pools:{sessions:adapter(sessions),admission:adapter(admission),attempts:adapter(limiter)},
+      attemptDigestKey:randomBytes(32),google:{clientId,allowedOrigin:origin,
+        redirectUri:origin+'/api/auth/google/callback',now:()=>at,
+        verifyIdToken:createGoogleIdTokenVerifier({clientId,jwks,now:()=>at}),
+        exchangeCode:async()=>{
+          exchanges++;return new SignJWT({sub:subject,email,email_verified:true,hd:'hufs.ac.kr',nonce})
+            .setProtectedHeader({alg:'RS256',kid:'synthetic-pg-auth'}).setIssuer('https://accounts.google.com')
+            .setAudience(clientId).setIssuedAt(Math.floor(at.getTime()/1000)-1)
+            .setExpirationTime(Math.floor(at.getTime()/1000)+600).sign(pair.privateKey);
+        }}};
+    const make=()=>createIntegratedApi({allowedOrigin:origin,repository:closedRepository,
+      googleAuth:createPostgresGoogleAuth(config),now:()=>at.toISOString()});
+    const first=make();let second=make();
+    const cookie=(response:{headers:Record<string,unknown>},name:string)=>{
+      const raw=response.headers['set-cookie'],all=Array.isArray(raw)?raw:[raw];
+      return String(all.find(v=>typeof v==='string'&&v.startsWith(name+'='))??'').split(';')[0]!;
+    };
+    const begin=async()=>{
+      const response=await first.inject({url:'/api/auth/google/start?intent=BETA',remoteAddress:'127.0.0.81'});
+      expect(response.statusCode).toBe(303);
+      const url=new URL(String(response.headers.location));nonce=url.searchParams.get('nonce')!;
+      return {url:'/api/auth/google/callback?state='+url.searchParams.get('state')+'&code=SYN-CODE',
+        headers:{cookie:cookie(response,'__Host-hufs_login')}};
+    };
+    try{
+      // Signed Workspace hd alone cannot grant BETA without a pre-existing approval.
+      expect((await first.inject(await begin())).statusCode).toBe(403);
+      await admin.query(`INSERT INTO beta_school_proofs(google_subject,school_email,method,
+        proof_verified_at,proof_expires_at,approved_at,approved_until)
+        VALUES($1,$2,'SIGNED_WORKSPACE',$3,$4,$3,$4)`,[subject,email,at.toISOString(),expires]);
+      const pending=await begin(),login=await first.inject(pending);
+      expect(login.statusCode).toBe(303);
+      await second.close();second=make(); // reconstruct using only durable state
+      const bearer=cookie(login,'__Host-hufs_session'),headers={cookie:bearer};
+      expect(String(login.headers['set-cookie'])).toContain('HttpOnly; Secure; SameSite=Lax');
+      expect(String(login.headers['set-cookie'])).not.toContain('Domain=');
+      expect((await second.inject({url:'/api/auth/session',headers})).json()).toMatchObject({role:'BETA',actorId:'google:'+subject});
+      const before=exchanges;
+      expect((await second.inject(pending)).statusCode).toBe(403);
+      expect(exchanges).toBe(before); // one-time state consumed across replicas
+      expect((await second.inject({method:'POST',url:'/api/auth/logout',headers,payload:{}})).statusCode).toBe(403);
+      expect((await first.inject({url:'/api/auth/session',headers})).statusCode).toBe(200);
+      await expect(admission.query('UPDATE beta_school_proofs SET revoked_at=clock_timestamp()'))
+        .rejects.toMatchObject({code:'42501'});
+      await admin.query('UPDATE beta_school_proofs SET proof_expires_at=$2 WHERE google_subject=$1',
+        [subject,new Date(at.getTime()+1).toISOString()]);
+      config.google.now=()=>new Date(at.getTime()+2);
+      const expired=make();
+      try{expect((await expired.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);}
+      finally{await expired.close();}
+      config.google.now=()=>at;
+      await admin.query('UPDATE beta_school_proofs SET proof_expires_at=$2 WHERE google_subject=$1',[subject,expires]);
+      await admin.query('UPDATE beta_school_proofs SET revoked_at=$2 WHERE google_subject=$1',[subject,at.toISOString()]);
+      expect((await second.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);
+      expect((await first.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);
+      // Restore only this synthetic operator fixture to exercise durable logout separately.
+      await admin.query('UPDATE beta_school_proofs SET revoked_at=NULL WHERE google_subject=$1',[subject]);
+      const csrf=(await second.inject({url:'/api/auth/csrf',headers})).json().csrfToken as string;
+      expect((await second.inject({method:'POST',url:'/api/auth/logout',payload:{},
+        headers:{...headers,origin,'x-csrf-token':csrf}})).statusCode).toBe(204);
+      expect((await first.inject({url:'/api/auth/session',headers})).statusCode).toBe(401);
+      const start={url:'/api/auth/google/start?intent=BETA',remoteAddress:'127.0.0.82'};
+      for(let i=0;i<10;i++)expect((await (i%2?first:second).inject(start)).statusCode).toBe(303);
+      expect((await first.inject(start)).statusCode).toBe(429);
+    }finally{await first.close();await second.close();}
+  });
 });

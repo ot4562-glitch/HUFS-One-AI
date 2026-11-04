@@ -10,7 +10,9 @@ import {
   OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
   OpportunityExplanationRequestSchema,OpportunityExplanationResponseSchema,
   OpportunityRevisionComparisonRequestSchema,OpportunityRevisionComparisonResponseSchema,
+  OpportunityRevisionComparisonContextResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
+  DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
   SyntheticClubDetailResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
@@ -234,6 +236,16 @@ export class HufsOwnerApiClient {
       &&result.rankConfigVersion===input.rankConfigVersion&&Date.parse(result.asOf)===Date.parse(input.asOf));
     return result;
   }
+  /** Server-authorized exact current, independently reviewed pair only.
+   * Never derive or guess revision IDs from public feed card contents. */
+  async getRevisionComparisonContext(opportunityId:string,asOf:string,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),opportunityId),
+      at=clientInput(Iso,asOf);
+    const result=await this.request(queryPath('/api/opportunities/'+encodeURIComponent(id)+
+      '/revisions/comparison-context',{asOf:at}),OpportunityRevisionComparisonContextResponseSchema,{signal});
+    requireMatchingReceipt(result.opportunityId===id&&result.asOf===at);
+    return result;
+  }
   async compareOpportunityRevisions(opportunityId:string,change:z.infer<typeof OpportunityRevisionComparisonRequestSchema>,signal?:AbortSignal){
     const id=clientInput(CatalogId,opportunityId),input=clientInput(OpportunityRevisionComparisonRequestSchema,change);
     const result=await this.mutate('/api/opportunities/'+encodeURIComponent(id)+'/revisions/compare',
@@ -242,4 +254,26 @@ export class HufsOwnerApiClient {
       &&result.afterRevisionId===input.afterRevisionId&&Date.parse(result.asOf)===Date.parse(input.asOf));
     return result;
   }
+  /** #132 Independent EMPTY_DEMO, never a demo subject or reviewer session.
+   * Server derives BETA actor; no-store and CSRF are enforced by this client.
+   * The profile/snapshot version match is validated by the response schema.
+   */
+  readDemoProfile(signal?:AbortSignal){
+    return this.request('/api/demo-profile',DemoProfileResponseSchema,{signal});
+  }
+  async saveDemoProfile(change:z.infer<typeof DemoProfileSaveSchema>,signal?:AbortSignal){
+    const input=clientInput(DemoProfileSaveSchema,change);
+    const result=await this.mutate('/api/demo-profile',DemoProfileResponseSchema,'PATCH',input,signal);
+    requireMatchingReceipt(result.profile.version===input.expectedVersion+1
+      &&same(result.profile.value,input.value));
+    return result;
+  }
+  async resetDemoProfile(change:z.infer<typeof DemoProfileResetSchema>,signal?:AbortSignal){
+    const input=clientInput(DemoProfileResetSchema,change);
+    const result=await this.mutate('/api/demo-profile/reset',DemoProfileResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(result.profile.version===input.expectedVersion+1
+      &&same(result.profile.value,blankDemoProfileValue()));
+    return result;
+  }
+
 }

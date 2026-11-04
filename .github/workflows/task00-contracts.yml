@@ -38,6 +38,8 @@ jobs:
             /apps/api/
             /infra/sql/
             /infra/laya/
+            /infra/ai/
+            /infra/ncp/
             /packages/core/
             /packages/ui/
             /apps/web/
@@ -100,6 +102,8 @@ jobs:
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
+          # Preserve the owner suite's explicit isolated loopback-port guard.
+          - 15439:5432
         options: >-
           --health-cmd "pg_isready -U hufs_local_admin -d postgres"
           --health-interval 10s
@@ -122,6 +126,7 @@ jobs:
             /packages/fixtures/negative/
             /tests/api/
             /apps/api/
+            /apps/web/
             /infra/sql/
             /packages/core/
             /tools/strip_build_sourcemaps.mjs
@@ -137,7 +142,7 @@ jobs:
           cache: npm
       - name: Install pinned lockfile without dependency lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Create three empty synthetic databases in the disposable service
+      - name: Create four empty synthetic databases in the disposable service
         env:
           HUFS_PG_CI_ADMIN_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/postgres
         run: |
@@ -148,6 +153,7 @@ jobs:
             await pool.query('CREATE DATABASE hufs_one_a2_test');
             await pool.query('CREATE DATABASE hufs_one_full_test');
             await pool.query('CREATE DATABASE hufs_one_calendar_test');
+            await pool.query('CREATE DATABASE hufs_one_owner_academics_test');
           } finally {
             await pool.end();
           }
@@ -162,4 +168,74 @@ jobs:
           HUFS_PG_CALENDAR_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_calendar_test
           HUFS_PG_FULL_LIVE: '1'
           HUFS_PG_FULL_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_full_test
-        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts --reporter=verbose
+          HUFS_PG_OWNER_ACADEMICS_LIVE: '1'
+          HUFS_PG_OWNER_ACADEMICS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_owner_academics_test
+        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts tests/api/pg-owner-academics-live-opt-in.test.ts --reporter=verbose
+
+  # Real PostgreSQL evidence for #119/#164, not merely an opt-in SKIP.
+  # Separate runner: owner SQL on 15439 and other PG tests cannot collide.
+  revision-claims-real-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout synthetic backend subset for approved revision claims
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /package.json
+            /package-lock.json
+            /tsconfig.json
+            /vitest.config.ts
+            /packages/contracts/
+            /packages/ai/src/
+            /packages/fixtures/synthetic/
+            /packages/core/
+            /tests/api/
+            /apps/api/
+            /apps/web/
+            /infra/sql/
+      - name: Refuse private student input in revision SQL job
+        run: |
+          test ! -d csv
+          test ! -d local_only
+          test ! -d templates/real5-intake
+          test ! -d reference/hufsability/raw
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Start isolated PostgreSQL 18 on actual loopback port 15439
+        run: |
+          docker run --detach --rm --name hufs-revision-claims-pg --network host \
+            -e POSTGRES_USER=hufs_local_admin -e POSTGRES_PASSWORD=synthetic-ci-only \
+            -e POSTGRES_DB=postgres postgres:18 \
+            -c listen_addresses=127.0.0.1 -c port=15439
+          ready=0
+          for i in $(seq 1 30); do
+            if docker exec hufs-revision-claims-pg pg_isready -h 127.0.0.1 -p 15439 -U hufs_local_admin -d postgres; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          docker exec -e PGPASSWORD=synthetic-ci-only hufs-revision-claims-pg \
+            createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_revision_claims_test
+          docker exec -e PGPASSWORD=synthetic-ci-only hufs-revision-claims-pg \
+            createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_demo_profile_test
+      - name: Build revision claims contracts
+        run: npm run build:contracts
+      - name: Execute real synthetic revision-claims and EMPTY_DEMO SQL and RLS checks
+        env:
+          HUFS_PG_REVISION_CLAIMS_LIVE: '1'
+          HUFS_PG_REVISION_CLAIMS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_revision_claims_test
+          HUFS_PG_DEMO_PROFILE_LIVE: '1'
+          HUFS_PG_DEMO_PROFILE_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_demo_profile_test
+        run: npx vitest run tests/api/pg-revision-claims-live-opt-in.test.ts tests/api/demo-profile-live-opt-in.test.ts --reporter=verbose
+      - name: Stop isolated synthetic SQL service
+        if: always()
+        run: docker stop hufs-revision-claims-pg || true
