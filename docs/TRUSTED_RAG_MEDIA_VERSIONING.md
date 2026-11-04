@@ -1,5 +1,7 @@
 # HUFS One AI | 시간·이미지·근거 검증형 RAG와 Laya 운영 계약
 
+> **2026-11-04 통합 후 현재 판단:** 2026-11-04 코드 최신: Temporal RAG·불변 SourceRevision/rights·Provider/Laya·취소/late-response·source-job 관련 PR이 통합 #216 main f23b86bb에 포함, OPEN PR 0/기본 CI 3종 SUCCESS. 정식 기관의 출처 권리·OCR poster20 인적 증거·독립 gold200·실 NCP/OIDC/PG/TLS/외부 유료 호출은 NOT_RUN / RELEASE_BLOCKED. 아래 2026-11-01~02 이전 구현/승인 기록은 역사 스냅샷. [STATUS](../STATUS.md).
+
 > **2026-11-01 구현·운영 경계(정본):** SourceRevision/Temporal RAG·permission-first PG/HTTP는 [#58](https://github.com/ot4562-glitch/HUFS-One-AI/pull/58)·[#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83)로 `main` 병합. 독립 원본 SHA·capturedAt/문단 ordinal 검수 부정 경계 [#99](https://github.com/ot4562-glitch/HUFS-One-AI/pull/99), 리스 만료와 중복 실행을 막는 PG session advisory lock [#113](https://github.com/ot4562-glitch/HUFS-One-AI/pull/113)도 main 병합·합성/일회용 PostgreSQL CI 확인. **실제 기관 수집권·PDF/포스터 OCR 원본/이미지 20건 독립 인용 검증, Recall@k, 운영 NCP/CLOVA/Laya/권리/크롤링 승인·배포는 전혀 완료되지 않았다.** 아래 2026-10-31 '미구현'은 당시 설계 기록이다. [최신 상태](../STATUS.md).
 
 
