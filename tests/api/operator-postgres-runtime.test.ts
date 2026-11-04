@@ -93,6 +93,7 @@ describe('real-role PostgreSQL API operator composition',()=>{
     const f=fakePrepared();
     await expect(startOperatorPostgres({prepared:f.prepared,host:'0.0.0.0' as any,port:3000}))
       .rejects.toThrow(/loopback/);
+    vi.stubEnv('NODE_ENV','development');
     await expect(startOperatorPostgres({prepared:f.prepared,host:'127.0.0.1',port:0}))
       .rejects.toThrow(/loopback/);
     vi.stubEnv('NODE_ENV','test');vi.stubEnv('APP_ENV','production');
