@@ -1,17 +1,16 @@
 # HUFS One AI — 5인 담당 범위 진척·증거 원장
 
-> **현재 판정 기준: 2026-11-04 KST**, GitHub 열린 PR **23건**·일반 이슈 **34건**의 최신 HEAD/CI/리뷰와 본 문서의 고정 수락 게이트를 대조했습니다. 과거 일자별 PR 수·병합·CI 증거는 각각 당시 사실이며 **현재 HEAD 상태의 대체 자료가 아닙니다**. 수정된 합성 코드가 실제 학생 자료·유료 NCP·운영 서비스 인수가 되지는 않습니다.
+> **현재 판정 기준: 2026-11-04 KST**, #189/#152 병합 직후 GitHub 열린 PR **32건**·일반 이슈 **40건**의 현재 상태와 고정 수락 게이트를 대조했습니다. 과거 일자별 PR 수·병합·CI 증거는 각각 당시 사실이며 **현재 HEAD 상태의 대체 자료가 아닙니다**. 수정된 합성 코드가 실제 학생 자료·유료 NCP·운영 서비스 인수가 되지는 않습니다.
 
-## 2026-11-04 최신 증거 정리 — 고정 수락률 변동 없음
+## 2026-11-04 현재 하위 수락 증거 — 고정 수락률 변동 없음
 
-- [x] **이미 main에 합성 코드로 병합된 하위 항목:** #156 SSH-only 합성 Preview, #157 Provider 입력 권한, #158 SETTLED PostgreSQL 결과, #159 기본 OFF Laya scheduler, #160 Raster/OCR, #162 이중전공 owner, #163 EMPTY_DEMO CAS/RESET, #164 승인 SourceRevision reader, #168 PG 인증 조립 및 #153 UI 메뉴 계약. 운영 서비스 완료가 아닌 하위 수락입니다.
-- [x] **동료 PR 코드 리뷰:** [#152](https://github.com/ot4562-glitch/HUFS-One-AI/pull/152) malformed rowImpacts의 strict/부정 입력 P2 수정 확인 후 비작성자 APPROVE, [#189](https://github.com/ot4562-glitch/HUFS-One-AI/pull/189) 승인된 동일 교과목만 합성 ledger에 매핑하는 순수 코어 APPROVE. **두 HEAD 모두 최신 Actions FAIL**, 병합·공식 RulePack 인수는 [ ].
-- [x] **작성자 PR 실제 수정 커밋 제출:** [#175](https://github.com/ot4562-glitch/HUFS-One-AI/pull/175) HEAD ddc285d (Owner Provider API 권한 재검증/JSON 동치·REVIEWER fixture·인용문 UI 테스트), [#177](https://github.com/ot4562-glitch/HUFS-One-AI/pull/177) HEAD e2dc952 (합성 child 프로세스별 OAuth 시도 버킷 격리), [#178](https://github.com/ot4562-glitch/HUFS-One-AI/pull/178) HEAD e9150be (유효 Google 세션이 독립 reviewer 초대권 없이 CSRF/사전 승인 학교메일 OTP 진입 가능; reviewer 데이터는 여전히 권한 검사). **새 HEAD CI가 실행 단계 없이 실패했으므로 수정 검증 완료 아님 [ ]**.
-- [x] **열린 PR 전수 리뷰:** 23건 모두에 GitHub 리뷰 등록(협업자 승인 2건, 병합 게이트/오류 COMMENT 21건). 독립 승인 대기 #176/#183/#184/#185에 담당자 review 요청. 그 자체로 PR 병합 완료 [ ].
-- [ ] **합성/실 PostgreSQL/브라우저 테스트와 종단 병합:** #186~#190 최신 TASK-00·Chrome Actions 모두 FAILURE(일부 작업 steps/log 비어 원인 미확정); #175/#177/#178 수정 후에도 실패. #161 main 충돌, #151/#152/#154/#155 UI 최신 main 충돌/CI/공통 파일 정리 필요. 독립 HEAD 리뷰·CI/선행 스택·보호 정책에 맞는 병합은 별도.
-- [x] **이슈별 하위 수정/게이트 구분 기록:** #20/#27/#88/#89/#133/#141/#144에 최신 코드 변경과 남은 [ ] 조건을 GitHub 댓글로 남김. 34개 상위 이슈의 실제 사용 가능한 전체 기능/인적 게이트는 아직 만족하지 않아 전체 완료·닫기 [ ].
-- [ ] **인적·운영 출시는 계속 차단:** #46 Private Git 보호 원본 6경로/이전 privacy 2 FAIL, #61 독립 사람 gold 확인 0/200, #89 실제 Google/학교메일·권한/직접 IP/TLS·운영 PG/NCP·기관 원본 권리 NOT_RUN. **RELEASE_BLOCKED**.
-- **수락률 변경 0:** 심민성 **7/12 (58.3%)**, 이의상 **9/12 (75.0%)**, 김채윤 **7/12 (58.3%)**, 박준영 **8/12 (66.7%)**, 이서연 **NCP 비코드 운영 1/5 (20.0%)**. **OPEN 일반 이슈 34건**. 이것은 고정 게이트 증거 충족률이지 코드 완성률/서비스 출시율이 아닙니다.
+- [x] **main 병합 확인:** #189 박준영 승인 동일교과 pure core(HEAD d33bae8, main 5718fd2), #152 이의상 현재 선택 이중전공 합성 UI(HEAD 2f0c0ed, main 28d4827). 해당 HEAD 비작성자 APPROVED, TASK-00/Chrome CI 2/2 SUCCESS, mergeability·review thread를 확인했다. #152의 strict rowImpacts P2 수정을 포함한다. **공식 학칙·원본 동의·실브라우저 운영 수락은 아님.**
+- [x] **코드 리뷰 COMMENT 제출:** #151/#154/#155(메인에 들어간 #152 내용 보존·재통합 요청), #191(저장 기초 탭 HTML 변형 확인), #205(seed 속성 테스트 독립 기대값 확인), #210(고정 seed benchmark, 선행 #196)에는 최신 HEAD·변경 경로·CI 확인에 따른 기술 코멘트를 남겼다. **AI 작성 댓글·작성자 자가 리뷰는 사람의 GitHub APPROVED 아님.**
+- [x] **기존 하위 병합 유지:** #156 SSH-only Preview, #157/#158 Provider 권한/결과, #159 Laya OFF 스케줄러, #160 Raster/OCR, #162 이중전공 Owner, #163 합성 profile CAS/RESET, #164 승인 SourceRevision, #168 인증 조립, #169 Provider PG 통합, #179 Laya 경로, #153 UI 메뉴. 하위 소프트웨어 수락이다.
+- [ ] **PR 병합·통합:** 심민성 #161 Laya child(HEAD 업데이트에 따른 새 독립 리뷰), #166 Draft ingress, #175/#177 Provider, #176 Owner, #178 auth, #180~#188·#190 PG/Source, #193~#198 수정, #204/#206~#209/#211 등이 **미병합**. #210 benchmark는 #196 선행, #204는 #195 선행, NCP #208/#209/#211도 각각 base 선행. HEAD 합성 CI 통과를 merge/운영 증거로 바꾸지 않는다.
+- [x] **이슈의 실제 하위 완료 표시:** #133 동일교과 코어(#189), #144 이중전공 합성 UI(#152)만 [x]로 반영. #192 NCP, #199 진입점, #201 benchmark, #202 academic property, #203 quota는 신규 PR 진행/종속성으로 분류했으나 **미병합이라 완료가 아님**. 전체 열린 일반 이슈 **40건 전부 OPEN**.
+- [ ] **실운영/기관/독립 검증:** #46 기존 원본 권리·과거 privacy 2 FAIL, #61 독립 인간 gold 0/200, #89 Google/학교메일·TLS/NCP/실 PostgreSQL/직접 IP 보안/기관 원문 이용권 NOT_RUN. **RELEASE_BLOCKED** 유지. 어떤 자료도 새로 외부 반출/유료 배포하지 않았다.
+- **고정 수락 게이트 변화 0:** 심민성 **7/12**, 이의상 **9/12**, 김채윤 **7/12**, 박준영 **8/12**, 이서연 **NCP 비코드 운영 1/5**. 이 값은 소프트웨어 코드 완성률이 아니라 각 복합 수락 조건의 전부 충족률이다.
 
 ## 산정 기준과 현재 결과
 
