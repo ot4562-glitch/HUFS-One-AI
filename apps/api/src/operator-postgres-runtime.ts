@@ -26,7 +26,7 @@ export const REQUIRED_SQL_ROLES=[
 export type OperatorSqlRole=typeof REQUIRED_SQL_ROLES[number];
 export type OperatorSqlSettings=Readonly<Record<OperatorSqlRole,DataPoolSettings>>;
 export type OperatorSqlPools=Readonly<Record<OperatorSqlRole,ManagedDataPool>>;
-export const EXTRA_SQL_ROLES=['reviewerInvitations','reviewerSandbox','mailChallenges','mailProofUpdates'] as const;
+export const EXTRA_SQL_ROLES=['reviewerInvitations','reviewerSandbox','mailChallenges','mailProofUpdates','demoProfile','demoProfileQuota'] as const;
 type ExtraSqlRole=typeof EXTRA_SQL_ROLES[number];
 type ExtraSqlPools=Partial<Record<ExtraSqlRole,ManagedDataPool>>;
 
@@ -41,6 +41,8 @@ export interface OperatorPostgresInputs {
   reviewer?:{invitations:DataPoolSettings;sandbox:DataPoolSettings;demo:ReviewerDemoRepository};
   schoolMail?:{challenges:DataPoolSettings;proofUpdates:DataPoolSettings;
     digestKey:Buffer;sender:SchoolMailSender};
+  /** Optional, independent demo roles. Raw platform SQL pools are never accepted. */
+  demo?:{profile:DataPoolSettings;quota:DataPoolSettings;digestKey:Buffer};
 }
 export interface PreparedOperatorPostgres {
   readonly application:PostgresApplicationConfig;
@@ -49,6 +51,14 @@ export interface PreparedOperatorPostgres {
 }
 
 const LOOPBACK=new Set(['127.0.0.1','::1']);
+/** Optional SQL ports cannot bypass the production role/TLS/startup/shutdown checks. */
+const UNVERIFIED_PLATFORM_PORTS=[
+  'sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace','experienceApproval',
+  'demoOverlay','sourceReview','ownerCatalog','ownerRecommendations','studyPlanCheck',
+  'ownerStudyPlan','doubleMajor','revisionComparison',
+] as const;
+const hasUnverifiedPlatformPort=(platform:PostgresPlatformConfig|undefined):boolean=>
+  !!platform&&UNVERIFIED_PLATFORM_PORTS.some(field=>Object.prototype.hasOwnProperty.call(platform,field));
 
 /** No connection, DNS call, migration or HTTP listener is started here. */
 export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOperatorPostgres{
@@ -66,15 +76,24 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
   if(input.reviewer&&(typeof input.reviewer.demo?.listProfiles!=='function'
     ||typeof input.reviewer.demo?.readSnapshot!=='function'))
     throw new Error('An explicit synthetic-only reviewer repository is required');
-  if((input.platform as PostgresPlatformConfig|undefined)?.reviewerSandbox)
-    throw new Error('Operator REVIEWER sandbox cannot bypass verified SQL roles');
+  if(input.demo&&(!Buffer.isBuffer(input.demo.digestKey)
+    ||input.demo.digestKey.length<32
+    ||input.demo.digestKey.equals(input.attemptDigestKey)))
+    throw new Error('Demo profile quota needs an independent digest key');
+  if((input.platform as PostgresPlatformConfig|undefined)?.reviewerSandbox
+    ||(input.platform as PostgresPlatformConfig|undefined)?.pools
+    ||(input.platform as PostgresPlatformConfig|undefined)?.demoProfile
+    ||(input.platform as PostgresPlatformConfig|undefined)?.demoProfileQuota
+    ||hasUnverifiedPlatformPort(input.platform as PostgresPlatformConfig|undefined))
+    throw new Error('Operator platform SQL pools must use verified role settings');
   const expectedRoles=new Set<string>(),endpoints=new Set<string>();
   const roles={} as Record<OperatorSqlRole,ManagedDataPool>;
   const extraSettings:Partial<Record<ExtraSqlRole,DataPoolSettings>>={
     ...(input.reviewer?{reviewerInvitations:input.reviewer.invitations,
       reviewerSandbox:input.reviewer.sandbox}:{}),
     ...(input.schoolMail?{mailChallenges:input.schoolMail.challenges,
-      mailProofUpdates:input.schoolMail.proofUpdates}:{})
+      mailProofUpdates:input.schoolMail.proofUpdates}:{}),
+    ...(input.demo?{demoProfile:input.demo.profile,demoProfileQuota:input.demo.quota}:{})
   };
   const allSettings:DataPoolSettings[]=[
     ...REQUIRED_SQL_ROLES.map(role=>input.roles[role]),...Object.values(extraSettings),
@@ -106,7 +125,9 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},
     platform:{...input.platform,pools:{projections,calendar,personal,evidence},
       evidenceRights:input.evidenceRights,
-      ...(extraPools.reviewerSandbox?{reviewerSandbox:extraPools.reviewerSandbox}:{})},
+      ...(extraPools.reviewerSandbox?{reviewerSandbox:extraPools.reviewerSandbox}:{}),
+      ...(input.demo?{demoProfile:{pool:extraPools.demoProfile!},
+        demoProfileQuota:{pool:extraPools.demoProfileQuota!,digestKey:Buffer.from(input.demo.digestKey)}}:{})},
     ...(input.reviewer?{reviewer:{
       invitations:extraPools.reviewerInvitations!,demo:input.reviewer.demo}}:{}),
     ...(input.schoolMail?{schoolMailProof:createOperatorSchoolMailProof({
@@ -142,12 +163,19 @@ export async function startOperatorPostgres(input:{
       &&typeof prepared.pools[key]?.close==='function'))
     throw new Error('Seven managed PostgreSQL pools required');
   const extra=prepared.extraPools??{};
-  const requiredExtra=prepared.application.reviewer
-    ?(prepared.application.schoolMailProof?EXTRA_SQL_ROLES:EXTRA_SQL_ROLES.slice(0,2))
-    :[];
+  const platform=prepared.application.platform;
+  if(hasUnverifiedPlatformPort(platform)||Boolean(platform.demoProfile)!==Boolean(platform.demoProfileQuota))
+    throw new Error('Operator platform SQL pools must use verified role settings');
+  const requiredExtra:ExtraSqlRole[]=[
+    ...(prepared.application.reviewer?['reviewerInvitations','reviewerSandbox'] as const:[]),
+    ...(prepared.application.schoolMailProof?['mailChallenges','mailProofUpdates'] as const:[]),
+    ...(platform.demoProfile?['demoProfile','demoProfileQuota'] as const:[]),
+  ];
   if(Object.keys(extra).length!==requiredExtra.length
     ||requiredExtra.some(key=>!extra[key])
-    ||Object.keys(extra).some(key=>!EXTRA_SQL_ROLES.includes(key as ExtraSqlRole)))
+    ||Object.keys(extra).some(key=>!EXTRA_SQL_ROLES.includes(key as ExtraSqlRole))
+    ||(platform.demoProfile&&platform.demoProfile.pool!==extra.demoProfile)
+    ||(platform.demoProfileQuota&&platform.demoProfileQuota.pool!==extra.demoProfileQuota))
     throw new Error('Operator extension pool roles are incomplete');
   const pools=[
     ...REQUIRED_SQL_ROLES.map(key=>prepared.pools[key]),
