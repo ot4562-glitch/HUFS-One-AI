@@ -10,6 +10,8 @@
     "packages/contracts"
   ],
   "scripts": {
+    "audit:entrypoints": "node tools/audit_entrypoints.mjs",
+    "test:entrypoints": "node --test tools/tests/entrypoint-inventory.node.mjs",
     "check": "npm run typecheck && npm run test",
     "typecheck": "npm run build:contracts && tsc --noEmit -p tsconfig.json",
     "test": "npm run build:contracts && vitest run",
