@@ -50,6 +50,7 @@ jobs:
             /tools/release_publication_gate.py
             /tools/release_readiness_gate.py
             /tools/verify_browser_release_surface.py
+            /infra/postgres/
             /tools/verify_release_boundary.py
             /tools/audit_private_git_metadata.py
             /tools/private_registry_io.mjs
@@ -129,6 +130,7 @@ jobs:
             /infra/sql/
             /packages/core/
             /tools/strip_build_sourcemaps.mjs
+            /infra/postgres/
       - name: Prove real-student sources are not in this workspace
         run: |
           test ! -d csv
@@ -157,8 +159,21 @@ jobs:
             await pool.end();
           }
           NODE
-      - name: Build contracts for the live adapter tests
-        run: npm run build:contracts
+      - name: Build API for live adapter and native recovery tests
+        run: npm run build:api
+      - name: Stream synthetic dump and restore with PostgreSQL 18 in a network-isolated container
+        run: |
+          node_binary="$(node -p 'process.execPath')"
+          docker run --rm --network none --cpus=2 --memory=1g --pids-limit=100 \
+            -e HUFS_RECOVERY_CONTAINER=synthetic-ci-only \
+            --mount "type=bind,source=$node_binary,target=/opt/hufs-node,readonly" \
+            --mount "type=bind,source=$PWD/dist,target=/work/dist,readonly" \
+            --mount "type=bind,source=$PWD/node_modules,target=/work/node_modules,readonly" \
+            --mount "type=bind,source=$PWD/package.json,target=/work/package.json,readonly" \
+            --mount "type=bind,source=$PWD/tests/api/fixtures/postgres-recovery-live.mjs,target=/work/tests/api/fixtures/postgres-recovery-live.mjs,readonly" \
+            --mount "type=bind,source=$PWD/infra/sql,target=/work/infra/sql,readonly" \
+            --mount "type=bind,source=$PWD/infra/postgres/synthetic-recovery-drill.sh,target=/work/infra/postgres/synthetic-recovery-drill.sh,readonly" \
+            --entrypoint bash postgres:18 /work/infra/postgres/synthetic-recovery-drill.sh
       - name: Real PostgreSQL migrations, roles, CAS, revocation, limits and Temporal SQL
         env:
           HUFS_A2_PG_LIVE: '1'
