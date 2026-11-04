@@ -17,13 +17,13 @@ function canonicalUrl(raw:string|undefined):string {
  * Apply dates are part of the key, so a re-posted notice with changed dates is NOT a duplicate.
  */
 export function opportunityDedupeKey(opportunity:Opportunity, sourceUrl?:string):string {
-  return [
+  return JSON.stringify([
     canonicalUrl(sourceUrl),
     canonicalTerm(opportunity.organization).toLowerCase(),
     canonicalTerm(opportunity.title).toLowerCase(),
     opportunity.applyOpensAt ?? '',
     opportunity.applyClosesAt ?? '',
-  ].join('|');
+  ]);
 }
 
 /**
@@ -34,15 +34,15 @@ export function findDuplicateCandidates(
   opportunities:readonly Opportunity[],
   sourceUrlBySnapshotId:Readonly<Record<string, string|undefined>> = {},
 ):string[][] {
-  const groups = new Map<string, string[]>();
+  const groups = new Map<string, Set<string>>();
   for (const o of opportunities) {
     const key = opportunityDedupeKey(o, sourceUrlBySnapshotId[o.sourceSnapshotId]);
-    const ids = groups.get(key) ?? [];
-    if (!ids.includes(o.id)) ids.push(o.id);
+    const ids = groups.get(key) ?? new Set<string>();
+    ids.add(o.id);
     groups.set(key, ids);
   }
   return [...groups.values()]
-    .filter(ids => ids.length > 1)
+    .filter(ids => ids.size > 1)
     .map(ids => [...ids].sort(byCodeUnit))
     .sort((a, b) => byCodeUnit(a[0]!, b[0]!));
 }
