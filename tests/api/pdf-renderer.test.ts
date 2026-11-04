@@ -14,7 +14,7 @@ const runtime:PdfRuntimeConfig={
   pdftoppm:{path:'/opt/hufs-pdf/bin/pdftoppm',sha256:'c'.repeat(64)},
   worker:{path:'/app/infra/ai/pdf-render-worker.py',sha256:'d'.repeat(64)},
   pypdfDirectory:'/opt/hufs-pdf/pypdf',pypdfTreeSha256:'e'.repeat(64),runtimeTreeSha256:'f'.repeat(64),
-  pythonVersion:'3.12.14',pypdfVersion:'6.10.0',popplerVersion:'26.05.0',
+  pythonVersion:'3.12.14',pypdfVersion:'6.21.4',popplerVersion:'26.05.0',
   policyVersion:'SYN-PDF-POLICY-1',
 };
 function result():PdfRenderedDocument{
@@ -93,6 +93,7 @@ describe('bounded private PDF renderer',()=>{
   });
   it('refuses unsafe private configuration and binds policy/tool changes into the artifact identity',()=>{
     expect(()=>buildPdfSandboxCommand({...runtime,runtimeRoot:'/'},'/tmp/hufs-pdf-test')).toThrow();
+    expect(()=>pdfRuntimeIdentity({...runtime,pypdfVersion:'6.10.0' as any})).toThrow();
     expect(()=>buildPdfSandboxCommand({...runtime,python:{...runtime.python,path:'/opt/hufs-pdf/../evil'}},'/tmp/hufs-pdf-test')).toThrow();
     expect(pdfRuntimeIdentity({...runtime,policyVersion:'SYN-PDF-POLICY-2'}).artifactSha256).not.toBe(pdfRuntimeIdentity(runtime).artifactSha256);
   });

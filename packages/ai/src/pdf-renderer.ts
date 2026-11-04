@@ -57,7 +57,7 @@ const Runtime=z.strictObject({
   runtimeRoot:SafePath.refine(p=>p.startsWith('/opt/')||p.startsWith('/app/runtime/')),
   bwrap:Pinned,python:Pinned,pdftoppm:Pinned,worker:Pinned,
   pypdfDirectory:SafePath,pypdfTreeSha256:Sha,runtimeTreeSha256:Sha,
-  pythonVersion:Version,pypdfVersion:Version,popplerVersion:Version,policyVersion:Token,
+  pythonVersion:Version,pypdfVersion:z.literal('6.21.4'),popplerVersion:Version,policyVersion:Token,
 }).refine(r=>r.pypdfDirectory.startsWith(r.runtimeRoot+'/')
   &&r.python.path.startsWith(r.runtimeRoot+'/')
   &&r.pdftoppm.path.startsWith(r.runtimeRoot+'/'));

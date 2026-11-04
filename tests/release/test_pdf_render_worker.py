@@ -42,7 +42,7 @@ def pdf(pages=2, page_extra="", catalog_extra="", trailer_extra="", metadata="",
 @unittest.skipUnless(HAS_PYPDF, "reviewed pypdf runtime unavailable")
 class PdfInspection(unittest.TestCase):
     def inspect(self, content):
-        return worker.inspect_pdf(content, "6.10.0")
+        return worker.inspect_pdf(content, "6.21.4")
 
     def test_two_full_pages_preserve_original_geometry(self):
         result = self.inspect(pdf())
@@ -120,7 +120,7 @@ class ActualPdfRender(unittest.TestCase):
             directory=Path(temporary)
             source=directory/"input.pdf";source.write_bytes(pdf())
             result=worker.render_document(source,directory,Path(self.binary),
-                "6.10.0","26.05.0",".".join(map(str,sys.version_info[:3])))
+                "6.21.4","26.05.0",".".join(map(str,sys.version_info[:3])))
             self.assertEqual(result["pageCount"],2)
             self.assertEqual([p["pageIndex"] for p in result["pages"]],[0,1])
             self.assertNotEqual(result["pages"][0]["rasterSha256"],result["pages"][1]["rasterSha256"])
@@ -150,7 +150,7 @@ class ActualPdfRender(unittest.TestCase):
             command=[sys.executable,"-I","-S","-B",str(WORKER),
                 "--input",str(source),"--output",str(directory),"--pdftoppm",str(self.binary),
                 "--pypdf-root",package_root,"--python-version",".".join(map(str,sys.version_info[:3])),
-                "--pypdf-version","6.10.0","--poppler-version","26.05.0"]
+                "--pypdf-version","6.21.4","--poppler-version","26.05.0"]
             completed=subprocess.run(command,capture_output=True,text=True,timeout=15,
                 env={"PATH":"/usr/bin:/bin","LANG":"C","LC_ALL":"C"})
             self.assertEqual(completed.returncode,0,completed.stdout)
@@ -173,7 +173,7 @@ class ActualPdfRender(unittest.TestCase):
             sentinel=directory/"page-0.png";sentinel.write_bytes(b"SYNTHETIC-SENTINEL")
             with self.assertRaises(worker.PdfRefused):
                 worker.render_document(source,directory,Path(self.binary),
-                    "6.10.0","26.05.0",".".join(map(str,sys.version_info[:3])))
+                    "6.21.4","26.05.0",".".join(map(str,sys.version_info[:3])))
             self.assertEqual(sentinel.read_bytes(),b"SYNTHETIC-SENTINEL")
 
 if __name__ == "__main__":

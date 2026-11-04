@@ -19,6 +19,7 @@ import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportu
 import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
 import {proveSourceJobControlPg} from './source-job-control-live-slice.js';
 import {proveSourceImagePg} from './source-image-live-slice.js';
+import {proveSourcePdfPg} from './source-pdf-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -54,7 +55,7 @@ const migrationNames=[
   '20261031_reviewer_invitations.sql','20261101_reviewer_sandbox.sql',
   '20261031_auth_attempt_windows.sql',
   '20261101_school_mail_network_limits.sql',
-  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261101_source_http_validators.sql',
+  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql','20261101_source_http_validators.sql',
   '20261101_source_ingest_queue.sql',
   '20261104_source_ingest_cancellation.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
@@ -170,6 +171,10 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
 
   it('retains reviewed IMAGE geometry through SQL guards and the least-privilege reader',async()=>{
     await proveSourceImagePg(admin,temporal);
+  });
+
+  it('retains original PDF and page geometry through review and the least-privilege reader',async()=>{
+    await proveSourcePdfPg(admin,temporal);
   });
 
   const billingHash='a'.repeat(64),usageReceipt='b'.repeat(64);

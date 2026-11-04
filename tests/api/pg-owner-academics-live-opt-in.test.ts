@@ -28,7 +28,7 @@ const pools:Pool[]=[];
 const password=randomBytes(24).toString('hex');
 let admin:Pool,reader:Pool,writer:Pool;
 const now=()=>new Date().toISOString();
-const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql',
+const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
   '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql','20261101_owner_approved_catalog.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{

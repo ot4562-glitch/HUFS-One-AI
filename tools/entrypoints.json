@@ -2,6 +2,7 @@
   "version": 1,
   "conditions": [
     {"path":"apps/api/src/main.ts","condition":"LOCAL_FAIL_CLOSED_COMPOSITION","verify":"npm run build:api && npm run test:api"},
-    {"path":"infra/ai/raster-worker.mjs","condition":"EXPLICIT_APPROVED_SYNTHETIC_WORKER","verify":"npm run test:api -- tests/api/raster-worker.test.ts"}
+    {"path":"infra/ai/raster-worker.mjs","condition":"EXPLICIT_APPROVED_SYNTHETIC_WORKER","verify":"npm run test:api -- tests/api/raster-worker.test.ts"},
+    {"path":"infra/ai/pdf-render-worker.py","condition":"EXPLICIT_PRIVATE_PINNED_PDF_RUNTIME","verify":"python3 -m unittest discover -s tests/release -p test_pdf_render_worker.py"}
   ]
 }

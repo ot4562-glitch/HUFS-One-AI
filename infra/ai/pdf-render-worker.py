@@ -21,7 +21,7 @@ MAX_ORIGINAL = 256 * 1024
 MAX_PAGE = 256 * 1024
 MAX_TOTAL = 1024 * 1024
 MAX_PAGES = 4
-SUPPORTED_PYPDF = "6.10.0"
+SUPPORTED_PYPDF = "6.21.4"
 logging.disable(logging.CRITICAL)
 
 class PdfRefused(Exception):

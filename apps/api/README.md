@@ -62,11 +62,16 @@ node dist/apps/api/src/admin/intake.js --apply --preview-hash <64자리 소문�
 운영 PostgreSQL/RLS·권한/동의 증명은 **NOT_RUN**이며 공개 출시는
 **RELEASE_BLOCKED**다.
 
-## 승인 이미지 OCR의 저장·검수·검색 (#19/#20, 로컬 코드)
+## 승인 이미지·PDF OCR의 저장·검수·검색 (#19/#20, 로컬 코드)
 
 `createApprovedDurableSourceExecutor`의 선택 항목 `imageExtractor`에
 `createApprovedImageExtractor`를 명시적으로 연결하면 PNG/JPEG의 원본 SHA,
 OCR 필드/좌표와 IMAGE 인용을 불변 판본으로 저장할 수 있다.
+PDF는 별도 `pdfExtractor: createApprovedPdfExtractor(...)`와
+`createPopplerPdfRenderer(...)`를 연결한다. `pdfRuntimeIdentity(runtime)`의
+정확한 렌더러 해시를 권한 영수증에 결속하며, 원본 PDF·페이지별 PNG·OCR 필드·
+원본 페이지 좌표 변환을 함께 보존한다. 조립·제한·검증 범위는
+[PDF_RUNTIME](../../infra/ai/PDF_RUNTIME.md)을 따른다.
 기본값은 OFF이며, 독립 `TRANSFORM`·`EXTERNAL_AI` 영수증과 기존
 COLLECT/STORE/EXTERNAL_TRANSFER 권한, 별도로 주입한 예산·취소 통제 OCR 포트가
 모두 필요하다. 비동기 처리 전후 같은 권한을 재검증한다. 실제 provider나
@@ -74,10 +79,13 @@ COLLECT/STORE/EXTERNAL_TRANSFER 권한, 별도로 주입한 예산·취소 통�
 
 업데이트한 reader/writer를 배포하기 전에 별도 검토한
 `infra/sql/20261105_source_image_evidence.sql`을 기존
-`20261101_source_review.sql` 뒤에 적용해야 한다. 이 작업은 마이그레이션을
+`20261101_source_review.sql` 뒤에 적용하고, 이어서
+`20261105_source_pdf_evidence.sql`을 적용해야 한다. 이 작업은 마이그레이션을
 실행하지 않는다. 기존 비공개 ingest 역할에는 revision/paragraph 메타데이터 조회와
 봉인 확인을 위한 originals의 `SELECT(revision_id)`가 필요하다. 새 마이그레이션은
 권한을 자동 부여하지 않으며, 검색 역할에는 원본 바이트 접근을 추가하지 않는다.
+PDF ingest/review 역할의 `source_pdf_rasters_vnext` 접근도 별도로 검토해야 한다.
+검색 view는 검증용 페이지 메타데이터만 제공하며 PDF/PNG 바이트는 제공하지 않는다.
 
 새 이미지는 항상 `NEEDS_REVIEW`다. 독립 검수자가 원본·문단·OCR/bbox 묶음의
 정확한 해시를 확인한 뒤에만 effective view와 검색이 IMAGE 근거를 사용한다.
@@ -85,13 +93,20 @@ COLLECT/STORE/EXTERNAL_TRANSFER 권한, 별도로 주입한 예산·취소 통�
 동시 쓰기는 기존 source-head 잠금 프로토콜을 따라야 한다.
 같은 원본은 확인 시각만 갱신하고, 정정 이미지는 미검수 후속 판본을 만든다.
 
-네트워크 입력 상한은 256 KiB이며 identity raster v1의 단일 페이지 PNG/JPEG만
-지원한다. PDF는 승인된 렌더러와 page/transform 계약이 없어 명시적으로 거부한다.
+네트워크 원본 상한은 256 KiB다. PNG/JPEG는 identity raster v1의 단일 페이지,
+PDF는 최대 4쪽의 `pdf-full-page-v1`만 지원한다. PDF는 암호화·첨부·스크립트·
+양식/주석·회전·잘라낸 페이지·비단위 UserUnit을 거부한다. 페이지당 PNG 256 KiB,
+원본과 모든 PNG 합계 1 MiB, 렌더러 10초 상한을 적용한다. pypdf 6.21.4와
+독립 검토한 Poppler/Python/라이브러리/폰트 전체 rootfs의 정확한 해시가 필요하다.
+패키지나 바이너리를 자동 설치하지 않으며 승인되지 않은 host 폴더를 mount하지 않는다.
 정규화 성공은 OCR 의미·레이아웃의 인적 정확성 판정이 아니다.
-`tests/api/source-image-ingestion.test.ts`는 합성 권한/취소/저장/검수/검색을 검사한다.
-`source-image-live-slice.ts`는 기존 opt-in PostgreSQL CI에 연결했으나 로컬 실 PG는
+`source-image-ingestion.test.ts`, `source-pdf-ingestion.test.ts`,
+`source-pdf-persistence.test.ts`는 합성 권한/취소/저장/검수/검색을 검사한다.
+두 `source-*-live-slice.ts`를 기존 opt-in PostgreSQL CI에 연결했으나 로컬 실 PG는
 미실행이다. 그 fixture는 admin writer/reviewer와 제한된 reader를 사용하므로
-운영 ingest/review 역할 설정이나 실제 포스터 평가를 증명하지 않는다.
+운영 ingest/review 역할 설정이나 실제 포스터/PDF 평가를 증명하지 않는다.
+실제 합성 PDF를 렌더링한 worker 검증과 전체 bubblewrap 실행/운영 허가는 구별한다.
+기본 OFF 및 **RELEASE_BLOCKED**는 유지한다.
 
 ## 공유 컨텍스트 자원과 해제 (#203)
 

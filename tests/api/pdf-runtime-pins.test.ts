@@ -54,7 +54,7 @@ function configuration():PdfRuntimeConfig{
     pdftoppm:{path:root+'/bin/pdftoppm',sha256:sha(elf('poppler'))},
     worker:{path:'/app/infra/ai/pdf-render-worker.py',sha256:sha('SYNTHETIC-WORKER')},
     pypdfDirectory:root+'/pypdf',pypdfTreeSha256:sha(JSON.stringify([['__init__.py',sha('SYNTHETIC-PACKAGE')]])),
-    runtimeTreeSha256:golden(),pythonVersion:'3.12.14',pypdfVersion:'6.10.0',
+    runtimeTreeSha256:golden(),pythonVersion:'3.12.14',pypdfVersion:'6.21.4',
     popplerVersion:'26.05.0',policyVersion:'SYN-PDF-POLICY-1'};
 }
 beforeEach(()=>{
