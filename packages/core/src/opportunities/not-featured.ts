@@ -144,7 +144,8 @@ export function explainNotFeatured(
 
   // Hidden candidates: same future-publication rule, and nothing else about them is evaluated or shown.
   const hiddenIds = new Set(options.hiddenOpportunityIds ?? []);
-  const hidden = rankOpportunities(profile, opportunities.filter(o => hiddenIds.has(o.id)), options)
+  const duplicated = new Set(composed.excludedDuplicateIds);
+  const hidden = rankOpportunities(profile, opportunities.filter(o => hiddenIds.has(o.id) && !duplicated.has(o.id)), options)
     .filter(r => r.publication !== 'FUTURE');
   for (const r of hidden) {
     items.push({opportunityId:r.opportunity.id, reason:'HIDDEN_BY_USER', notes:[], placement:'HIDDEN', text:TEXT.HIDDEN_BY_USER, fields:[], evidenceRefs:[]});

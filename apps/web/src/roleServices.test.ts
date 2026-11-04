@@ -10,6 +10,7 @@ function fakeApi(session: () => Promise<unknown>, caps: () => Promise<{actions: 
     getSession: vi.fn(session), loadReviewerCapabilities: vi.fn(caps),
     readReviewerActions: vi.fn(), saveReviewerAction: vi.fn(),
     getDemoOverlay: vi.fn(), setDemoOverlay: vi.fn(), resetDemoOverlay: vi.fn(),
+    owner: {readDemoProfile: vi.fn(), saveDemoProfile: vi.fn(), resetDemoProfile: vi.fn()},
   } as never as Parameters<typeof roleServices>[0] & Record<string, ReturnType<typeof vi.fn>>;
 }
 const down = () => Promise.reject(new HufsApiError('PROVIDER_UNAVAILABLE', 503));
@@ -21,6 +22,7 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(role).toEqual({role: 'REVIEWER', sandbox: null});
     const services = roleServices(api, role);
     expect(services.overlay).toBeUndefined();
+    expect(services.ownerDemoProfile).toBeUndefined();
     expect(services.sandbox).toBeUndefined();
     expect(api.getDemoOverlay).not.toHaveBeenCalled();
   });
@@ -39,6 +41,7 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     const api = fakeApi(async () => REVIEWER, async () => ({actions: ['BOOKMARK']}));
     const services = roleServices(api, await resolveSessionRole(api));
     expect(services.overlay).toBeUndefined();
+    expect(services.ownerDemoProfile).toBeUndefined();
     expect([...services.sandbox!.allowedActions]).toEqual(['BOOKMARK']);
   });
 
@@ -46,6 +49,8 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     const api = fakeApi(async () => BETA, async () => ({actions: []}));
     const services = roleServices(api, await resolveSessionRole(api));
     expect(services.overlay).toBeDefined();
+    expect(services.ownerDemoProfile).toBeDefined();
+    expect(services.ownerDemoProfile?.session.getState().status).toBe('IDLE');
     expect(services.sandbox).toBeUndefined();
     expect(api.loadReviewerCapabilities).not.toHaveBeenCalled();
   });

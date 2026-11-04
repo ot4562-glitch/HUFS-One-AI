@@ -141,8 +141,16 @@ export function clubHiddenReason(post:ClubPost, asOf:string):ClubHiddenReason|un
   return undefined;
 }
 
-/** Direct URL / detail lookup: same gate as the list, so an unapproved poster is never served. */
+/** Post ids that occur more than once: ambiguous, so every copy is hidden (never guess which is current, #52). */
+export function duplicateClubPostIds(posts:readonly ClubPost[]):Set<string> {
+  const counts = new Map<string, number>();
+  for (const p of posts) counts.set(p.id, (counts.get(p.id) ?? 0) + 1);
+  return new Set([...counts].filter(([, n]) => n > 1).map(([id]) => id));
+}
+
+/** Direct URL / detail lookup: same gate as the list, so an unapproved or ambiguous poster is never served. */
 export function findVisibleClubPost(posts:readonly ClubPost[], id:string, asOf:string):ClubPost|undefined {
+  if (duplicateClubPostIds(posts).has(id)) return undefined;
   const post = posts.find(p => p.id === id);
   return post && clubHiddenReason(post, asOf) === undefined ? post : undefined;
 }
@@ -206,7 +214,8 @@ export function compareClubs(a:RankedClub, b:RankedClub):number {
 
 /** Pure and byte-stable for the same profile, posts and asOf. Nothing is keyed by student identity. */
 export function composeClubBoard(profile:ClubProfile, posts:readonly ClubPost[], options:{asOf:string}):ClubBoard {
-  const visible = posts.filter(p => clubHiddenReason(p, options.asOf) === undefined);
+  const duplicates = duplicateClubPostIds(posts);
+  const visible = posts.filter(p => !duplicates.has(p.id) && clubHiddenReason(p, options.asOf) === undefined);
   const ranked = visible.map(p => evaluateClub(profile, p, options.asOf)).sort(compareClubs);
   const perCategory = new Map<ClubCategory, number>();
   const recommended:RankedClub[] = [];

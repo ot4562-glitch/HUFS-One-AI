@@ -13,25 +13,15 @@
 
 **예외:** 소유자 승인된 문서-only `README.md`, `STATUS.md`, `AGENTS.md`, `Proposal.md`, `Architecture.md`, `docs/*.md` 정정은 blob SHA 충돌검사 후 직접 main 변경 가능. **코드, CI/workflow, API/DB, 공통 Zod, lockfile, 유료 자원/개인 원본**은 이 예외의 대상이 아닙니다. 2026-11-01의 과거 한시적 작성자 직접 병합 사례는 새 PR의 자동 승인권이 아닙니다.
 
-## 2026-11-03 PR/리뷰·병합 감사 — 현재 2건 OPEN
+## 2026-11-04 현재 리뷰·CI·병합 현황 (현재 상태의 증거는 STATUS/PR HEAD)
 
-| PR | 최신 HEAD / 결정 |
-| --- | --- |
-| [#134 빈 시연 프로필 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/134) | `eb376ca`, #131 먼저 main 병합된 뒤 **base=main으로 변경**. 현재 `mergeable_state=dirty`·19파일(이전 #131 중복 포함), 합성/PG/Chrome 기존 HEAD CI 3/3 SUCCESS이나 **최신 main 고유 diff 재기반/충돌 해결·타인 승인·CI 전 병합 금지**. 이번 회차 COMMENT 리뷰 등록 |
-| [#150 owner provider/Laya/통합 WIP](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150) | `2812806`, **Draft**, 동일 HEAD 합성/일회용 PG/Chrome 3/3 SUCCESS. #145/#148/#131 squash main과 겹치는 파일로 `mergeable_state=dirty`·비작성자 APPROVED 0. 현재 **작성자 COMMENT** 리뷰, 원장/wire 선행 부분 중복 제거·권한/결과/worker 독립 검수·새 HEAD CI 후 병합 결정. 실 NCP·권한·출시 검증 아님 |
-
-**이번 최신 점검에서 #149 추가 병합 완료. 아래 #145·#148·#131도 직전 회차에 병합됐으며, 모두 최신 HEAD 실제 비작성자 APPROVED + 필수 CI 3/3 SUCCESS + 미해결 스레드/변경요청 해소 후 main squash:**
-
-- [#145 OCR/HCX offline wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145), HEAD `633d665`, 김채윤 최신 HEAD 재승인 → main **`cade7c9b`**.
-- [#148 PostgreSQL AI 비용 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148), HEAD `54f09c6`, 이의상·김채윤 승인 → main **`e102516`**.
-- [#131 임시 개인화 설정 비교](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131), HEAD `8254dc17`, 이전 P2 두 개 수정·실제 remount와 REVIEWER 503 회귀, 심민성 재승인 → main **`6efc532`**.
-- **[#149 WIS 시간표 CSV/handoff](https://github.com/ot4562-glitch/HUFS-One-AI/pull/149)** HEAD `f797787`, 기존 P2 `UNKNOWN`→명시 캠퍼스 승격 수정·음성 회귀, 심민성 **APPROVED**, 합성/일회용 PG/Chrome CI 3/3, main **`efa13368`**. 같은 SHA의 main push TASK-00/Chrome도 SUCCESS. **변환 코드 완료≠학교 출처 이용권/실 4인 import 권리 승인**.
-
-**main push CI 증거:** #131/#145/#148/#149의 main 병합 SHA에 대한 GitHub Actions `TASK-00`(synthetic-contracts·postgres-integration) + Chrome **모두 SUCCESS**. 작업 중 승인된 외부 데이터·실 브라우저/실기기·유료 배포가 있다는 뜻은 아니다.
-
-**이전 병합:** [#138](https://github.com/ot4562-glitch/HUFS-One-AI/pull/138) 로컬 WIS HTML 변환, [#142](https://github.com/ot4562-glitch/HUFS-One-AI/pull/142) dry-run 기본 브랜치 정리, [#146](https://github.com/ot4562-glitch/HUFS-One-AI/pull/146) quote ≥2 Unicode 문자, [#147](https://github.com/ot4562-glitch/HUFS-One-AI/pull/147) 주·이중전공 안전 pure core, [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139)/[#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 합성 재계산/정정 회귀는 이미 main. [STATUS](../STATUS.md)의 최신 증거를 우선한다.
-
-**후속 PR 원칙:** 여러 PR의 `mergeable`은 main 병합 후 달라진다. 커밋 ancestry/중복 코드/작업자 브랜치를 무단 reset·force push해서 맞추지 말고, 작성자가 main과 안전하게 통합하여 고유 diff와 **최신 HEAD 비작성자 승인/CI**를 다시 확보한다. `Draft`는 발견된 오류를 기록·수정하는 용도로 유지할 수 있지만 병합 승인과는 별개다.
+- 일반 이슈 OPEN **34건**, PR OPEN **23건**. 과거 #150은 83경로의 원본 보존 후 CLOSED/NOT MERGED; Draft #166은 여전히 본격 운영 배포 대상이 아니다.
+- #152(UI)·#189(학업)은 현재 HEAD의 오류 방어/순수 로직에 **비작성자 APPROVED**가 등록됐지만 필수 최신 CI 실패. 그 승인으로 공식 RulePack·개인정보·전체 기능 E2E나 병합을 승인한 것은 아니다.
+- #175의 원래 실패 4건 중 JSON 직렬화 필드 순서, 엄격한 reviewer 세션 fixture, citation 텍스트 검사, 권한 철회 후의 HTTP 오류 범위를 수정했다. #177의 독립 합성 서버 로그인 제한 digest 공유와 #178의 신규 Google 세션 학교메일 OTP/CSRF 진입 차단을 수정했다. **새 HEAD 테스트 PASS는 확인 전**. 권한·rate limit의 운영 보호를 낮추지 않는다.
+- #176/#179/#180/#181/#182/#183/#184/#185에 합성 CI SUCCESS 기록이 있어도 비작성자 HEAD 승인 없이 본인 PR을 병합하지 않는다. #161은 독립 승인과 CI 기록이 있어도 main 충돌. #151/#152/#154/#155 등 팀 UI는 현재 main과의 고유 diff/CI/충돌을 해결한 다음 병합한다.
+- #186/#187/#188/#189/#190은 최신 TASK-00·Chrome 실행 실패; 일부는 job steps/log가 비어 있다. #190 재실행도 실패한 상태. 로그 미존재를 코드 PASS로 취급하거나 추측으로 무관한 보안 제한을 해제하지 않는다.
+- 개인 원본 #46·독립 사람 gold #61·운영 노출 #89는 각각 증거가 충족되기 전 계속 OPEN/RELEASE_BLOCKED. 실제 NCP/유료 모델/학생 원본 관련 적용은 별도 승인과 이서연의 비코드 운영 실증이 필요하다.
+- 인수된 하위 항목은 관련 이슈 댓글/체크리스트에서만 정확히 체크하고, 전체 이슈 종단/기관 인수까지 확정된 경우에만 GitHub 상태를 CLOSED(completed)로 변경한다. 더 자세한 개발 경과는 각 PR에 보존한다.
 
 ## 원격 브랜치 정리 절차
 
