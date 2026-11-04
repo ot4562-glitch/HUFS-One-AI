@@ -1,0 +1,63 @@
+# Unapplied deployment template. Supply the approved supervisor and read-only
+# model/runtime/driver manifest before installation; the raw IPC child is not a daemon.
+[Unit]
+Description=HUFS optional Laya isolated supervisor and single inference worker
+After=local-fs.target
+StartLimitIntervalSec=3600
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=hufs-laya
+Group=hufs-laya
+WorkingDirectory=/opt/hufs-one-ai
+# Deliberately OFF. An operator-approved drop-in must override this and supply pins.
+Environment=LAYA_ENABLED=false
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Environment=TOKENIZERS_PARALLELISM=false
+Environment=HF_HUB_OFFLINE=1
+Environment=TRANSFORMERS_OFFLINE=1
+ExecCondition=/usr/bin/sh -c 'test "$LAYA_ENABLED" = true'
+ExecStart=/usr/bin/node /opt/hufs-one-ai/infra/laya/laya-supervisor.mjs --config /etc/hufs-laya/config.json
+Restart=no
+KillMode=control-group
+TimeoutStopSec=2
+SendSIGKILL=yes
+CPUAccounting=yes
+CPUQuota=100%
+CPUQuotaPeriodSec=100ms
+CPUWeight=10
+Nice=10
+MemoryAccounting=yes
+MemoryHigh=2500M
+MemoryMax=3072M
+MemorySwapMax=0
+TasksMax=32
+OOMPolicy=stop
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+IPAddressDeny=any
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+RuntimeDirectory=hufs-laya
+RuntimeDirectoryMode=0700
+ReadOnlyPaths=/opt/hufs-one-ai /var/lib/hufs-laya /etc/hufs-laya
+ReadWritePaths=/run/hufs-laya
+
+[Install]
+WantedBy=multi-user.target
