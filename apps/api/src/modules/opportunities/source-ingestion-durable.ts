@@ -110,7 +110,12 @@ export function createApprovedDurableSourceExecutor(options:{
         throw new Error('Existing source permission changed');
       // The transport independently checks A/AAAA twice, rejects internal IPs
       // and connects to the pinned address using hostname/SNI TLS validation.
-      const transport=createApprovedPinnedTransport({canonicalUrl:u.href},options.egress);
+      const transport=createApprovedPinnedTransport({canonicalUrl:u.href,beforeSend:async()=>{
+        // Head lookup and both DNS checks may outlive the original grant.
+        // Revalidate the same COLLECT/STORE authority immediately before HTTP.
+        if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+          throw new Error('Source rights changed before HTTP');
+      }},options.egress);
       const headers:Record<string,string>={
         Accept:'text/plain,text/html,application/rss+xml,application/atom+xml,application/pdf,image/png,image/jpeg',
       };

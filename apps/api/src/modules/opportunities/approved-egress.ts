@@ -52,6 +52,9 @@ export interface ApprovedPinnedEgress {
 export interface ApprovedPinnedEgressPolicy {
   /** One reviewed HTTPS URL, not a wildcard origin or arbitrary user URL. */
   canonicalUrl:string;
+  /** Trusted server callback for the current request's purpose-scoped rights.
+   * Runs after DNS and immediately before pinned HTTP; never browser input. */
+  beforeSend?:()=>Promise<void>;
 }
 function deny():never{throw new Error('Approved egress policy denied request');}
 function canonicalUrl(raw:string):URL {
@@ -78,7 +81,8 @@ export function createApprovedPinnedTransport(
   policy:ApprovedPinnedEgressPolicy,
   egress:ApprovedPinnedEgress,
 ):typeof fetch {
-  const reviewed=canonicalUrl(policy.canonicalUrl);
+  const reviewed=canonicalUrl(policy.canonicalUrl),beforeSend=policy.beforeSend;
+  if(beforeSend!==undefined&&typeof beforeSend!=='function')deny();
   return (async(input:RequestInfo|URL,init?:RequestInit)=>{
     if(!(input instanceof URL)||input.href!==reviewed.href
       ||init?.method!=='GET'||init.redirect!=='error'
@@ -88,13 +92,37 @@ export function createApprovedPinnedTransport(
       'cookie','authorization','proxy-authorization','host',
       'x-forwarded-host','x-forwarded-for','x-real-ip',
     ])if(headers.has(forbidden))deny();
-    const first=checkedAnswers(await egress.resolveAddresses(reviewed.hostname));
-    const second=checkedAnswers(await egress.resolveAddresses(reviewed.hostname));
+    const signal=init.signal;
+    const bounded=async<T>(run:()=>Promise<T>,discard?:(value:T)=>void):Promise<T>=>{
+      if(signal?.aborted)deny();
+      let abort!:()=>void;
+      const stop=new Promise<never>((_resolve,reject)=>{
+        abort=()=>reject(new Error('Approved egress policy denied request'));
+        signal?.addEventListener('abort',abort,{once:true});
+      });
+      const operation=Promise.resolve().then(()=>{
+        if(signal?.aborted)deny();
+        return run();
+      });
+      try{
+        const value=await Promise.race([operation,stop]);
+        if(signal?.aborted)deny();
+        return value;
+      }catch(error){
+        // A cancelled wait does not guarantee the injected transport stopped.
+        // Observe late errors and dispose of any response still owned by it.
+        if(discard)void operation.then(discard).catch(()=>{});
+        throw error;
+      }finally{signal?.removeEventListener('abort',abort);}
+    };
+    const first=checkedAnswers(await bounded(()=>egress.resolveAddresses(reviewed.hostname)));
+    const second=checkedAnswers(await bounded(()=>egress.resolveAddresses(reviewed.hostname)));
     if(first.length!==second.length||first.some((ip,i)=>ip!==second[i]))deny();
-    const response=await egress.requestPinned({
+    if(beforeSend)await bounded(beforeSend);
+    const response=await bounded(()=>egress.requestPinned({
       url:reviewed,address:first[0]!,serverName:reviewed.hostname,init,
-    });
-    if(response.redirected
+    }),discardUnreadSourceBody);
+    if(signal?.aborted||response.redirected
       ||(response.status>=300&&response.status<400&&response.status!==304)
       ||(response.url&&response.url!==reviewed.href)){
       discardUnreadSourceBody(response);deny();
