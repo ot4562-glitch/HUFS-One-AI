@@ -20,7 +20,7 @@ run "host_nic_and_public_ip_are_pinned_to_approved_input" {
     approved_config_sha256 = sha256(jsonencode(var.request))
   }
   assert {
-    condition     = (ncloud_network_interface.preview.subnet_no == var.request.subnet_no && ncloud_network_interface.preview.access_control_groups == [var.request.access_control_group_no] && ncloud_server.preview.subnet_no == var.request.subnet_no)
+    condition     = (ncloud_network_interface.preview.subnet_no == var.request.subnet_no && length(ncloud_network_interface.preview.access_control_groups) == 1 && ncloud_network_interface.preview.access_control_groups[0] == var.request.access_control_group_no && ncloud_server.preview.subnet_no == var.request.subnet_no)
     error_message = "The server NIC and dedicated SSH-only ACG must use reviewed network IDs."
   }
   assert {
