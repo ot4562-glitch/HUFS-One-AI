@@ -4,6 +4,9 @@ import {compileMigrationPlan} from './migration-plan.js';
 import type {ReviewedMigrationPlan,CompiledMigrationPlan} from './migration-plan.js';
 
 export interface MigrationConnection {
+  /** Observed TCP destination from the connected client socket, not the server's
+   * container-local interface (which differs under Docker port forwarding). */
+  readonly peer:{address:string;port:number};
   query(sql:string,params?:readonly unknown[]):Promise<{rows:Record<string,unknown>[]}>;
   /** Must use PostgreSQL extended Parse, which refuses multiple commands. */
   querySingle(sql:string):Promise<{rows:Record<string,unknown>[]} >;
@@ -14,7 +17,15 @@ export interface MigrationPool {connect():Promise<MigrationConnection>}
  * independent of the envelope lexer. No pool/credential/connection is created. */
 export function postgresMigrationPool(pool:Pick<Pool,'connect'>):MigrationPool{
   return {connect:async()=>{
-    const c=await pool.connect();return {
+    const c=await pool.connect();
+    // Bind the reviewed address/port to the actual TCP socket. Server-side
+    // inet_server_addr() can be a different address behind Docker/NAT.
+    const stream=(c as unknown as {connection?:{stream?:{remoteAddress?:string;remotePort?:number}}}).connection?.stream;
+    if(typeof stream?.remoteAddress!=='string'||!Number.isInteger(stream.remotePort)){
+      c.release(new Error('Missing PostgreSQL TCP peer'));throw new MigrationRunError('TARGET_DENIED');
+    }
+    return {
+      peer:{address:stream.remoteAddress,port:stream.remotePort!},
       query:async(sql,params=[])=>{const result=await c.query(sql,[...params]);return {rows:Array.isArray(result)?[]:result.rows};},
       querySingle:async sql=>{
         // pg 8 implements queryMode; its installed declaration omits that field.
@@ -72,8 +83,8 @@ export async function createReviewedMigrationRunner(options:{workspace:string;pl
       COALESCE((SELECT ssl FROM pg_stat_ssl WHERE pid=pg_backend_pid()),false) AS tls
       FROM pg_roles r WHERE r.rolname=current_user`);
     const row=result.rows[0],wanted=plan.target;
-    if(result.rows.length!==1||!row||row.database!==wanted.database||row.role!==wanted.role||row.session_role!==wanted.role||row.address!==wanted.address
-      ||row.port!==wanted.port||typeof row.version!=='number'||row.version<wanted.minimumVersion
+    if(result.rows.length!==1||!row||row.database!==wanted.database||row.role!==wanted.role||row.session_role!==wanted.role||c.peer.address!==wanted.address
+      ||c.peer.port!==wanted.port||typeof row.address!=='string'||!Number.isInteger(row.port)||typeof row.version!=='number'||row.version<wanted.minimumVersion
       ||row.encoding!=='UTF8'||row.client_encoding!=='UTF8'
       ||row.rolsuper!==false||row.rolcreaterole!==false||row.rolbypassrls!==false
       ||wanted.requireTls&&row.tls!==true||['postgres','template0','template1'].includes(wanted.database))deny('TARGET_DENIED');
