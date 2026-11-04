@@ -53,6 +53,21 @@ describe('TASK-06 duplicate candidates (A05.1)', () => {
     expect(items).toHaveLength(3);
   });
 
+  it('keeps tuple boundaries when organizer or title contains a delimiter', () => {
+    const first=base('A',{organization:'Example|Lab',title:'Grant'});
+    const second=base('B',{organization:'Example',title:'Lab|Grant'});
+    expect(opportunityDedupeKey(first)).not.toBe(opportunityDedupeKey(second));
+    expect(findDuplicateCandidates([first,second])).toEqual([]);
+    expect(findDuplicateCandidates([first,base('C',{organization:'Example|Lab',title:'Grant'})]))
+      .toEqual([['A','C']]);
+  });
+
+  it('deduplicates repeated IDs and keeps stable group order without mutating inputs', () => {
+    const items=Object.freeze([base('C'),base('A'),base('B'),base('A')]);
+    expect(findDuplicateCandidates(items)).toEqual([['A','B','C']]);
+    expect(items.map(item=>item.id)).toEqual(['C','A','B','A']);
+  });
+
   it('a re-post with changed apply dates is not silently treated as the same', () => {
     const a = base('A');
     const b = base('B', {applyClosesAt:'2026-12-08T00:00:00.000Z'});
