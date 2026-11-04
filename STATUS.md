@@ -2,17 +2,24 @@
 
 > **2026-11-04 KST · GitHub 현재 HEAD/PR/리뷰/CI 및 이슈 수락 조건 대조.** 이 페이지는 변경 가능한 상태의 스냅샷이다. 최종 판정은 GitHub 현재 HEAD, 해당 PR 리뷰, Actions와 이슈 본문을 다시 조회한다.
 
+## 2026-11-04 공모전·수집 허가 정정과 개인정보 Git 기술 결함
+
+- **사용자 확인 완료:** 공모전 참여자 **5명 전원 동의**, HUFSAbility의 자료 수집 **허가 확보**. 실제 개인 수강/Forms 원본 제출 대상 **4명**과 구별. 이 확인을 '동의 자체 미확보/학교 수집 허가 전무'로 다시 집계하지 않는다. 허가 목적·이용·재배포/외부전송의 정확한 범위는 제한된 증빙에서 별도로 유지.
+- **교수 자료:** 공식 강의시간표에 공개된 교수명·강의명(수업 직무정보)만 수집. 허가 범위 내 안내 정보에 대해 교수 이름 일괄 마스킹은 **필수 출시 차단으로 산정하지 않음**. 비공개 연락처·교수 평가/사생활은 수집하지 않으며, 필요한 최소 항목·저장·노출 제어 유지.
+- **기술 결함 #46:** 현재 main Git 트리에 보호 원본 경로 **6개가 추적**돼, full checkout privacy의 기존 두 검사 실패와 연결된다. [PR #212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)에서 원본 바이트를 열지 않고 **PR HEAD 보호 경로 0개**로 만들고, `.gitignore`/full Git tree metadata·sparse CI 회귀를 보강. **아직 미병합/독립 승인 및 실제 full checkout PASS 미확인**, 기존 Git history/clone 남음. 검사 우회/동의 없는 외부 재게시/force push 없음.
+- **출시 별도 판단:** 공모전 동의·자료 수집 허가와 무관하게 #61 사람 독립 평가 0/200, #89 실 OIDC·HTTPS/TLS·직접 IP·운영 PostgreSQL·NCP/실호스트 검증이 남아 `RELEASE_BLOCKED` 유지. [자료 권한 정본](docs/DATA_GOVERNANCE.md).
+
 ## 한눈에 보기
 
 | 구분 | 확인한 상태 |
 | --- | --- |
 | 프로젝트 | 독립 Private HUFS One AI 팀 프로젝트. 한국외대 공식 HUFSAbility 개편/운영 서비스 아님 |
-| GitHub | **열린 PR 32건 / 열린 일반 이슈 40건** (#189/#152를 이 회차 병합한 직후) |
+| GitHub | **열린 PR 33건 / 열린 일반 이슈 40건** (#212 보호 원본 추적 해제 PR 신규 포함) |
 | main에 구현된 범위 | 계약/Zod, 합성 React, 학업·추천·일정 코어, 인가된 API/일회용 PostgreSQL, SourceRevision, OCR/Provider 비용·Laya 스케줄러의 **하위 코드**. 운영 서비스 조립·인적 수락은 별개 |
 | 최신 하위 병합 | **#189** 동일교과 승인 규칙 pure core → main 5718fd2; **#152** 현재 선택한 이중전공 합성 UI → main 28d4827. 두 PR 모두 HEAD 비작성자 APPROVED, 필수 TASK-00/Chrome 2/2 SUCCESS, 미해결 review thread 없음, mergeable 확인 후 squash 병합 |
 | 기존 개발 병합 | #169 Provider PostgreSQL 연결 main 045f2478, #179 Laya Linux 경로 main ef289537 등. 실 NCP/Provider 실행 승인으로 해석 금지 |
 | 코드 리뷰 | #151/#154/#155 UI, #191 WIS, #205 학업 속성, #210 정규화 benchmark에 GitHub **COMMENT 리뷰** 등록. AI 검토 의견은 비작성자 **사람의 APPROVED를 대신하지 않음** |
-| 출시 | **RELEASE_BLOCKED** (#46 개인정보, #61 독립 gold, #89 실제 인증/TLS/DB/NCP/권한 검증 미완료) |
+| 출시 | **RELEASE_BLOCKED** (#46 Git 추적 6경로의 PR 미병합/이력 감사, #61 독립 gold, #89 실제 인증/TLS/DB/NCP/권한 검증 미완료). 5명 참여 동의와 HUFSAbility 수집 허가는 사용자 확인 완료 |
 
 ## PR 병합 및 대기 분류
 
@@ -26,7 +33,7 @@
 
 - **현재 작성자 PR:** #161 Laya child/격리(HEAD 변경 후 과거 승인 재사용 금지), #166 private ingress **Draft**, #175/#177 Provider 웹/카오스(과거 #169 스택에서 main으로 retarget), #176 Owner 브라우저, #178 학교메일, #180~#188 Source·PG·Owner, #190 PG 복원 등. 각 HEAD/CI/mergeable과 타인 리뷰를 별도 확인한다.
 - **#193~#198 감사 결함 수정:** SSRF IP 분류, 브랜치 삭제 lease, 컨텍스트 용량, 중복 키/이력 성능, preview rollback, Node engine. PR HEAD CI 통과 기록은 **리뷰/병합 완료가 아님**.
-- **NCP/품질 후속:** #204(선행 #195), #206(#199), #207(CRLF), #208(선행 #207), #209(선행 #197), #211(선행 #208) — 합성/오프라인 검증과 현재 리뷰·병합 의존을 추적. 실서버 자원 생성·운영 공개 아님.
+- **개인정보 Git 수정:** #212 6개 보호 경로 HEAD untrack·sparse/full-tree 감사 CI PR. 리뷰·병합·full checkout 재검증 미완료. **NCP/품질 후속:** #204(선행 #195), #206(#199), #207(CRLF), #208(선행 #207), #209(선행 #197), #211(선행 #208) — 합성/오프라인 검증과 현재 리뷰·병합 의존을 추적. 실서버 자원 생성·운영 공개 아님.
 - **팀원 대기:** #151 공고 정정 UI, #154 수강계획 UI, #155 What-if UI는 #152를 보존하며 최신 main과 재통합한 HEAD 검증이 필요. #191 WIS 기초 탭, #205 학업 seeded 속성, #210 정규화 benchmark(선행 #196)는 코드 검토 COMMENT·CI 성공, 비작성자 인적 승인 및 병합 대기. 다른 팀원의 고유 diff/브랜치를 임의 덮어쓰지 않는다.
 
 **합병 규칙:** [PR_WORKFLOW](docs/PR_WORKFLOW.md) — 현재 HEAD 비작성자 APPROVED, 같은 HEAD의 필수 CI, CHANGES_REQUESTED 해소, 리뷰 thread/선행 스택 충돌 없음, 보안·권리 경계. 작성자 자체 검토나 AI COMMENT로 승인 대체 불가. 병합 후 새 main CI 실패가 발생하면 별도 원인 해결 전 추가 위험 병합 금지.
