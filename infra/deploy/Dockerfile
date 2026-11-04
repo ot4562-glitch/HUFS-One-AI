@@ -7,6 +7,8 @@ COPY packages/contracts/package.json ./packages/contracts/package.json
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY packages ./packages
 COPY apps ./apps
+COPY infra/ai/raster-worker.mjs ./infra/ai/raster-worker.mjs
+COPY infra/ai/pdf-render-worker.py ./infra/ai/pdf-render-worker.py
 COPY tools/strip_build_sourcemaps.mjs ./tools/strip_build_sourcemaps.mjs
 RUN npm run build:api && npm run build:web
 
@@ -18,6 +20,10 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/packages/contracts ./packages/contracts
 COPY --from=build --chown=node:node /app/dist/apps ./dist/apps
 COPY --from=build --chown=node:node /app/dist/packages ./dist/packages
+COPY --from=build --chown=node:node /app/infra/ai/raster-worker.mjs ./infra/ai/raster-worker.mjs
+COPY --from=build --chown=node:node /app/infra/ai/pdf-render-worker.py ./infra/ai/pdf-render-worker.py
+# Python/Poppler/fonts and isolation tools require a separately reviewed pinned runtime mount.
+# These copies package maintained worker code only; they do not enable PDF execution.
 USER node
 # Actual existing entrypoint deliberately refuses production until auth/DB integration.
 CMD ["node", "dist/apps/api/src/main.js"]
