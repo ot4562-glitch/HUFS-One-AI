@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -27,8 +28,23 @@ class NcpPreviewSafetyTests(unittest.TestCase):
 
     def test_all_shell_scripts_parse_in_linux_bash(self):
         for path in sorted(NCP.glob("*.sh")):
-            result = subprocess.run(["bash", "-n", str(path)], capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, f"{path}: {result.stderr}")
+            # Validate the exact bytes via stdin: a Linux Bash must not interpret
+            # a Windows C:\\... path as a Linux pathname. Do not normalize CRLF.
+            result = subprocess.run(["bash", "-n"], input=path.read_bytes(), capture_output=True)
+            self.assertEqual(result.returncode, 0, f"{path.name}: {result.stderr.decode(errors='replace')}")
+
+    def test_windows_autocrlf_checkout_preserves_shell_lf_bytes(self):
+        with tempfile.TemporaryDirectory(prefix="hufs-ncp-eol-") as directory:
+            prefix = Path(directory).as_posix() + "/"
+            for path in sorted(NCP.glob("*.sh")):
+                relative = path.relative_to(ROOT).as_posix()
+                result = subprocess.run(
+                    ["git", "-c", "core.autocrlf=true", "checkout-index", "--prefix=" + prefix, "--", relative],
+                    cwd=ROOT, capture_output=True, text=True,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                content = (Path(directory) / relative).read_bytes()
+                self.assertFalse(b"\r" in content, "Windows checkout must preserve executable Linux shell bytes")
 
     def test_preview_never_listens_publicly_or_starts_prod(self):
         self.assertIn("127.0.0.1", self.systemd)
