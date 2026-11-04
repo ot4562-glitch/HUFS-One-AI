@@ -74,7 +74,7 @@ export function createApi(options:ApiOptions) {
   const contextLimits=z.strictObject({perActor:z.number().int().min(1).max(200),
     perSession:z.number().int().min(1).max(200)})
     .refine(v=>v.perSession<=v.perActor)
-    .parse(options.contextLimits??{perActor:20,perSession:10});
+    .parse(options.contextLimits??{perActor:100,perSession:50});
   const app=Fastify({logger:false,trustProxy:false,bodyLimit:65536,requestIdHeader:false});
   const clock=options.now??(()=>new Date().toISOString());
   const newId=options.newId??randomUUID;

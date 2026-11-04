@@ -73,8 +73,8 @@ export interface AiCandidateProvider {
 }
 
 export interface ApiOptions {
-  /** Process-local leases only. Defaults support 5 subjects in 2 tabs/session,
-   * and 2 sessions/actor; global capacity stays 200. Trusted composition only. */
+  /** Process-local leases only. Defaults support 20 directed subject switches
+   * (40 selections), other tabs and 2 sessions/actor; global capacity is 200. */
   contextLimits?:{perActor:number;perSession:number};
   demoOverlay?:Pick<DemoOverlayService,'read'|'put'|'reset'>;
   /** Independent current operator allowlist; a BETA grant or OIDC email alone is insufficient. */

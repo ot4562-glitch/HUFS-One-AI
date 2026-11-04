@@ -68,8 +68,8 @@ describe('fair process-local context allocation and owner release',()=>{
   it.each(['BETA','REVIEWER'] as const)('%s preserves another actor capacity and limits all sessions of one actor',async role=>{
     const f=await fixture(role);
     for(let session=0;session<2;session++){
-      const responses=await Promise.all(Array.from({length:15},()=>f.create(0,session)));
-      expect(responses.filter(r=>r.statusCode===201)).toHaveLength(10);
+      const responses=await Promise.all(Array.from({length:55},()=>f.create(0,session)));
+      expect(responses.filter(r=>r.statusCode===201)).toHaveLength(50);
       expect(responses.filter(r=>r.statusCode===429)).toHaveLength(5);
       for(const r of responses.filter(r=>r.statusCode===429)){
         expect(r.headers['retry-after']).toBe('300');
@@ -100,7 +100,7 @@ describe('fair process-local context allocation and owner release',()=>{
     expect((await f.release(id)).statusCode).toBe(204);
     expect((await f.release('unknown-context')).statusCode).toBe(204);
     expect((await f.app.inject({url:`/api/demo/contexts/${id}/snapshot`,headers:f.headers()})).statusCode).toBe(403);
-    const responses=await Promise.all(Array.from({length:10},()=>f.create()));
+    const responses=await Promise.all(Array.from({length:50},()=>f.create()));
     expect(responses.every(r=>r.statusCode===201)).toBe(true);
     expect((await f.create()).statusCode).toBe(429);
   });
@@ -119,10 +119,10 @@ describe('fair process-local context allocation and owner release',()=>{
 
   it('logout releases its sessions capacity and leaves a second session active',async()=>{
     const f=await fixture('BETA');
-    for(let i=0;i<10;i++)expect((await f.create()).statusCode).toBe(201);
+    for(let i=0;i<50;i++)expect((await f.create()).statusCode).toBe(201);
     const other=(await f.create(0,1)).json().contextId;
     expect((await f.app.inject({method:'POST',url:'/api/auth/logout',headers:f.headers()})).statusCode).toBe(204);
-    for(let i=0;i<10;i++)expect((await f.create(0,2)).statusCode).toBe(201);
+    for(let i=0;i<50;i++)expect((await f.create(0,2)).statusCode).toBe(201);
     expect((await f.app.inject({url:`/api/demo/contexts/${other}/snapshot`,headers:f.headers(0,1)})).statusCode).toBe(200);
   });
 
