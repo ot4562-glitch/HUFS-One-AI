@@ -19,8 +19,8 @@ node dist/apps/api/src/admin/intake.js --plan
 `HUFS_INTAKE_OPERATOR_MODE=private-staging`,
 `HUFS_INTAKE_OPERATOR_ACK=PRIVATE_INTAKE_NOT_RELEASE`와
 `HUFS_INTAKE_CONFIG_MODULE`을 명시해야 한다. 모듈은
-`/etc/hufs-one/private/` 아래 root 소유의 일반 `.mjs` 파일이며,
-symlink/hardlink 및 group/world 접근을 거부한다. 상위 디렉터리도 root 소유이며
+`/etc/hufs-one/private/` 바로 아래 root 소유의 일반 `.mjs` 파일이며,
+중첩 폴더·상위 이동·비정규 경로와 symlink/hardlink 및 group/world 접근을 거부한다. 상위 디렉터리도 root 소유이며
 group/world 쓰기를 허용하지 않아야 한다. 모듈 크기는 64 KiB 이하로 제한한다.
 `APP_ENV=local`, `NODE_ENV=development` 같은 비공개 검증 환경을 사용하며,
 production 또는 미등록 환경값은 비공개 설정을 읽기 전에 거부한다.

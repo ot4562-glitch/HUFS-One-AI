@@ -2,10 +2,9 @@
  * --plan does not load private configuration or construct a database pool.
  */
 import {lstatSync,realpathSync} from 'node:fs';
-import {isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createPostgresDataPool} from '../db/pg-pool.js';
-import {runRestrictedIntakeCli} from './intake-runtime.js';
+import {privateIntakeConfigPath,runRestrictedIntakeCli} from './intake-runtime.js';
 import type {RestrictedIntakeConfig} from './intake-runtime.js';
 
 async function loadPrivateConfig():Promise<RestrictedIntakeConfig>{
@@ -13,10 +12,7 @@ async function loadPrivateConfig():Promise<RestrictedIntakeConfig>{
     ||process.env.HUFS_INTAKE_OPERATOR_MODE!=='private-staging'
     ||process.env.HUFS_INTAKE_OPERATOR_ACK!=='PRIVATE_INTAKE_NOT_RELEASE')
     throw new Error('Reviewed private intake operator runtime required');
-  const name=process.env.HUFS_INTAKE_CONFIG_MODULE;
-  if(!name||name.length>512||!isAbsolute(name)||!name.endsWith('.mjs')
-    ||!name.startsWith('/etc/hufs-one/private/'))
-    throw new Error('Separate private intake factory required');
+  const name=privateIntakeConfigPath(process.env.HUFS_INTAKE_CONFIG_MODULE);
   for(const directory of ['/etc','/etc/hufs-one','/etc/hufs-one/private']){
     const stat=lstatSync(directory);
     if(!stat.isDirectory()||stat.isSymbolicLink()||stat.uid!==0||stat.mode&0o022)

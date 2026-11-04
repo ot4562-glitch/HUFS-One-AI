@@ -1,3 +1,4 @@
+import {posix} from 'node:path';
 import type {IntakeIssue} from '@hufs-one/contracts';
 import type {DataPoolSettings,ManagedDataPool} from '../db/pg-pool.js';
 import {ApiFailure} from '../modules/auth/gates.js';
@@ -5,6 +6,17 @@ import {PostgresRestrictedIntakeImport} from '../modules/academics/intake-postgr
 import type {
   IntakeOperatorAuthority,IntakePreview,RestrictedIntakeInput,
 } from '../modules/academics/intake-postgres.js';
+
+/** Linux private factory path; reject nested directories before filesystem IO.
+ * Every permitted parent is checked by the executable loader before import.
+ */
+export function privateIntakeConfigPath(name:unknown):string {
+  if(typeof name!=='string'||name.length>512||!name.endsWith('.mjs')
+    ||!posix.isAbsolute(name)||posix.dirname(name)!=='/etc/hufs-one/private'
+    ||posix.normalize(name)!==name||name.includes('\\')||name.includes('\0'))
+    throw new Error('Private intake factory path refused');
+  return name;
+}
 
 export interface RestrictedIntakeConfig {
   /** Supplied only by the separately provisioned private operator factory. */

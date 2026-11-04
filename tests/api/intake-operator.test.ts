@@ -70,6 +70,24 @@ function fixture(versions:readonly number[]=[0,0,0,0]){
 }
 
 describe('private operator intake command',()=>{
+  it('accepts only a direct canonical private config module path',async()=>{
+    const {privateIntakeConfigPath}=await runtime();
+    expect(typeof privateIntakeConfigPath).toBe('function');
+    expect(privateIntakeConfigPath('/etc/hufs-one/private/intake-approved.mjs'))
+      .toBe('/etc/hufs-one/private/intake-approved.mjs');
+  });
+  it('refuses nested, traversal and symlink-directory spellings before private IO',async()=>{
+    const {privateIntakeConfigPath}=await runtime();
+    expect(typeof privateIntakeConfigPath).toBe('function');
+    for(const name of [
+      undefined,'','relative.mjs','/etc/hufs-one/private/other/adapter.mjs',
+      '/etc/hufs-one/private/linked/../adapter.mjs',
+      '/etc/hufs-one/private/../adapter.mjs','/etc/hufs-one/private/./adapter.mjs',
+      '/etc/hufs-one/private//adapter.mjs','/etc/hufs-one/private-copy/adapter.mjs',
+      '/etc/hufs-one/private/adapter.js','/etc/hufs-one/private/adapter.mjs/child.mjs',
+      '/etc/hufs-one/private/back\\\\slash.mjs','/etc/hufs-one/private/'+ 'a'.repeat(500)+'.mjs',
+    ])expect(()=>privateIntakeConfigPath(name)).toThrow('Private intake factory path refused');
+  });
   it('plans without loading private configuration or constructing a database pool',async()=>{
     const f=fixture(),{runRestrictedIntakeCommand}=await runtime();
     const result=await runRestrictedIntakeCommand(['--plan'],f.deps);
