@@ -1,6 +1,6 @@
 # HUFS One AI — 5인 담당 범위 진척·증거 원장
 
-## 2026-11-04 통합 후 수락률 정정 (최신 스냅샷)
+## 2026-11-04 통합 후 수락률 정정 (현재 기준·실운영 미검증)
 
 - **열린 PR 0건, 열린 일반 이슈 40건.** [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 통합 merge `f23b86bb`로 161개 파일·기존 개발 HEAD 보존. TASK-00/Chrome/NCP IaC 최신 HEAD 3종 CI PASS. 과거의 “PR 미병합” 표시는 이 섹션으로 대체되며 개별 CLOSED·unmerged와 #216 통합은 구분한다.
 - **코드 통합 완료 ≠ 외부 인수 완료.** 실제 OIDC·메일/실 PostgreSQL·실 NCP·비용·TLS·배포/복구·기관/원본 과거 Git 이력·#61 독립 gold 200건은 미검증. #89 `RELEASE_BLOCKED`.
@@ -8,14 +8,14 @@
 - **사용자 직접 통합 예외:** 이번 #216에 비작성자 GitHub APPROVED는 없고, 작성자·에이전트 COMMENT는 독립 인간 승인으로 대체되지 않는다. [검증 인수서](HUMAN_ACCEPTANCE_GATE_20261104.md)에 실제 담당자 승인/실행 근거를 추가해야 한다.
 
 
-> **현재 판정 기준: 2026-11-04 KST**, #189/#152 병합 직후 GitHub 열린 PR **32건**·일반 이슈 **40건**의 현재 상태와 고정 수락 게이트를 대조했습니다. 과거 일자별 PR 수·병합·CI 증거는 각각 당시 사실이며 **현재 HEAD 상태의 대체 자료가 아닙니다**. 수정된 합성 코드가 실제 학생 자료·유료 NCP·운영 서비스 인수가 되지는 않습니다.
+> **현재 판정 기준: 2026-11-04 통합 PR #216 병합 후** GitHub **열린 PR 0건 / 일반 이슈 40건**, main **f23b86bb**의 TASK-00/Chrome/NCP IaC 3/3 SUCCESS. 아래 과거 일자별 PR 수·변경 요청은 당시 시점의 기록이며 현재 HEAD를 대체하지 않습니다. [STATUS](../STATUS.md) 참조.
 
 ## 2026-11-04 공모전 동의·HUFSAbility 권한 최신 판단
 
 - [x] 사용자로부터 **공모전 참여자 5명 전원 동의**, **HUFSAbility 자료 수집 허가** 확보 확인. 5명 전체의 참여 동의와 실제 학업/Forms 원본 4명의 제출·목적별 4/4 응답을 구별한다. 학교 공식 운영·SSO/비공개 API/재배포·외부 AI 전송 전체 허가로 확대 해석하지 않는다.
 - [x] 공식 강의시간표에 공개된 **교수명·강의명**만 교수 관련 수집 범위. 허가된 수업 안내에서 교수 이름을 무조건 마스킹하는 추가 출시 게이트는 두지 않는다. 비공개 연락처/평가/사생활·원본 최소 보관/권한은 별도 보호.
-- [x] main의 보호 추적 경로 6개를 PR #212 HEAD Git 트리에서 **0개로 정정하는 코드 PR 제출**. `.gitignore`/metadata-only full-tree sparse CI 게이트·합성 회귀 추가. 이 값은 **PR 브랜치**, main/전체 로컬 checker PASS가 아니다.
-- [ ] #212 독립 비작성자 승인·새 HEAD CI·main 병합·실제 full private checkout privacy **기존 2 FAIL 재검증**·과거 Git history/clone 접근 검토 전 #46 전체 완료 표시 금지.
+- [x] #212 보호 추적 경로 **6→0개**로 수정해 main 병합. #216 통합 후 main **810개 path 중 보호 경로 0개** metadata-only 확인. full local privacy 검사 PASS와는 별개.
+- [ ] #212는 main 병합했으나 **full private checkout privacy의 기존 2 FAIL을 최신 환경에서 재검증**, 과거 Git history/clone/backup 접근 검토, 비공개 증거 보관이 남아 #46 전체 완료 표시 금지. #216에는 사람 비작성자 APPROVED가 없으며 사용자 요청 예외 merge라고 구분.
 - [ ] #61 독립 gold 200건·#89 실제 인증/TLS/운영 DB/NCP/철회/실기기 등은 **동의 확보와 별도**. 고정 수락률 변경 근거가 새로 확인되지 않아 기존 7/12 등 수치를 임의 상향하지 않는다.
 
 ## 2026-11-04 현재 하위 수락 증거 — 고정 수락률 변동 없음
