@@ -8,7 +8,7 @@
 | --- | --- |
 | main | **f23b86bb693a163c7f6a0330d1b9657c684724ff** — 통합 PR #216 merge commit |
 | 열린 PR | **0건** |
-| 열린 일반 이슈 | **40건** |
+| 열린 일반 이슈 | **15건** (정리 전 40건 중 중복 25건 이관·종료) |
 | 통합 PR | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) — 기존 기능·협업자 커밋·원본 조상을 보존하여 merge 방식 병합 |
 | 병합 후 3종 CI | [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022), [NCP IaC offline](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904), [Chrome browser](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS** |
 | 닫힌 미병합 PR | **10건**의 최신 HEAD가 현재 main Git ancestry에 포함됨(Git compare 10/10). 개별 PR의 merged_at가 없으므로 MERGED라고 표시하지 않음 |
@@ -42,5 +42,29 @@
 ## 4. 정리 결정
 
 - **PR 정리 종료: OPEN 0건.** 이미 main에 들어간 통합 코드를 중복 병합하거나 협업자에게 재작업 요청하지 않는다.
-- **이슈 40건:** 일부 합성 코드 완료·일부 추가 구현·일부 외부/인적 검증이 섞인 상위 수락 조건이다. 각 이슈의 최신 블록에서 **main 반영 / 코드 잔여 / 사람·실환경 잔여**를 구분하여 기록한다. 제품 출시·기관 승인이 필요한 이슈를 근거 없이 닫지 않는다.
+- **이슈 재편 완료:** 기존 OPEN 40건을 현재 **15건 OPEN + 25건 CLOSED(duplicate/이관)**로 통합했다. 각 열린 이슈는 **완료된 코드 설명 / 미완료만 체크리스트 / 명확한 책임자·연결 원본**으로 전면 교체했다. 닫힌 이슈는 완료를 가장하지 않고 정본 이슈로 이동·이력/댓글을 보존했다. 실서비스 인적 게이트 #46/#61/#89는 여전히 OPEN이다.
 - [인적 승인·검증 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 실제 환경 수락을 별도로 관리. **RELEASE_BLOCKED** 유지.
+
+## 5. 2026-11-04 이슈 구조 재정리 (기존 OPEN 40 → 현재 OPEN 15)
+
+**확인:** 일반 이슈 47개 중 원래 CLOSED 7건은 변경하지 않고, 기존 OPEN 40건에서 **25건을 중복 통합 종료**, **15건 유지**했다. 15건 모두 본문에 완료 코드와 미완료 체크리스트를 분리하고 `enhancement`(해당하는 경우) 및 `duplicate`(통합 종료) 라벨을 적용했다. **주담당 한 명 11건**, 실제 공동 작업이 불가피한 **공동 배정 4건(#61/#123/#132/#133)**.
+
+| 현재 OPEN 정본 | 주담당 | 이관한 이전 OPEN 이슈(현재 CLOSED) |
+| --- | --- | --- |
+| [#8 계약·CI](https://github.com/minseong-hufs/HUFS-One-AI/issues/8) | 심민성 | #18, #52, #199 |
+| [#9 UI·메뉴·접근성](https://github.com/minseong-hufs/HUFS-One-AI/issues/9) | 이의상 | #51, #85, #124, #141, #200 |
+| [#10 추천·품질](https://github.com/minseong-hufs/HUFS-One-AI/issues/10) | 김채윤 | #86, #201 |
+| [#11 학업·규칙](https://github.com/minseong-hufs/HUFS-One-AI/issues/11) | 박준영 | #87, #202 |
+| [#12 NCP 비코드 운영](https://github.com/minseong-hufs/HUFS-One-AI/issues/12) | 이서연 | #22 |
+| [#19 Source/RAG](https://github.com/minseong-hufs/HUFS-One-AI/issues/19) | 심민성 | #21 |
+| [#20 AI·Laya](https://github.com/minseong-hufs/HUFS-One-AI/issues/20) | 심민성 | #23 (Epic 범위는 #19/#20/#27/#89로 분산), #88, #143 |
+| [#27 API·Auth·DB](https://github.com/minseong-hufs/HUFS-One-AI/issues/27) | 심민성 | #25, #39, #203 |
+| [#46 개인정보·Git 감사](https://github.com/minseong-hufs/HUFS-One-AI/issues/46) | 심민성 | — |
+| [#61 독립 gold](https://github.com/minseong-hufs/HUFS-One-AI/issues/61) | 심민성·이의상 공동 | — |
+| [#89 NCP 코드·릴리스 게이트](https://github.com/minseong-hufs/HUFS-One-AI/issues/89) | 심민성 | #192 |
+| [#119 UI 기능 종단](https://github.com/minseong-hufs/HUFS-One-AI/issues/119) | 이의상 | #80, #81, #82, #144 |
+| [#123 가상 동아리](https://github.com/minseong-hufs/HUFS-One-AI/issues/123) | 이의상·심민성·김채윤 공동 | — |
+| [#132 빈 시연 계정](https://github.com/minseong-hufs/HUFS-One-AI/issues/132) | 심민성·이의상 공동 | — |
+| [#133 실제 4인 인입](https://github.com/minseong-hufs/HUFS-One-AI/issues/133) | 심민성·박준영 공동 | — |
+
+**단일 주관 집계:** 심민성 9건, 이의상 3건, 김채윤 1건, 박준영 1건, 이서연 1건. 공동 담당은 중복으로 세지 않음. 기존 PR/이슈 댓글·편집 이력은 그대로 남고, **코드 CI 통과를 사람 승인이나 RELEASE_BLOCKED 해제로 계산하지 않는다**.
