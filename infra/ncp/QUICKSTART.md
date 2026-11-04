@@ -1,5 +1,7 @@
 # 처음 준비하는 NCP 합성 미리보기
 
+> **2026-11-04 현재 코드:** 통합 [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)로 NCP 네트워크·호스트·설치/배포·롤백 코드 main 반영, OPEN PR 0건. 실제 계정/요금 승인·Terraform apply·SSH·TLS 공개·복구 현장 드릴은 **NOT_RUN / RELEASE_BLOCKED**. [STATUS](../../STATUS.md).
+
 현재 실행 가능한 배포는 **기존 #156의 SSH 터널 전용 합성 preview**다.
 `setup/00-preflight.mjs`는 계정 없이 비용·네트워크·SHA 계획만 검증한다.
 네트워크 IaC는 [별도 모듈](terraform/network/README.md)로 준비했으며 서버·NIC·IP
