@@ -12,7 +12,7 @@
 | 통합 PR | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) — 기존 기능·협업자 커밋·원본 조상을 보존하여 merge 방식 병합 |
 | 병합 후 3종 CI | [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022), [NCP IaC offline](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904), [Chrome browser](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS** |
 | 닫힌 미병합 PR | **10건**의 최신 HEAD가 현재 main Git ancestry에 포함됨(Git compare 10/10). 개별 PR의 merged_at가 없으므로 MERGED라고 표시하지 않음 |
-| 개인 원본 Git 추적 | 현재 main의 **810개 tracked path** 중 금지된 보호 경로 **0개** (#212). 전체 과거 이력/clone·full private checkout 개인정보 검사는 별도 |
+| 개인 원본 Git 추적 | 현재 main의 **811개 tracked path** 중 금지된 보호 경로 **0개** (#212). 전체 과거 이력/clone·full private checkout 개인정보 검사는 별도 |
 | 공개 운영 | **RELEASE_BLOCKED** — 실제 Google/학교메일·운영 PostgreSQL/RLS·TLS/직접 IP·유료 NCP/SSH·사람 검증 미수락 |
 
 **2026-11-04 예외:** 사용자가 소유자·협업자 작성 PR의 전수 직접 통합을 지시했고 #216을 병합했다. 해당 PR에 GitHub 비작성자 사람 APPROVED는 없었다. 작성자 또는 에이전트 COMMENT를 사람의 독립 APPROVED로 가장하지 않는다. 향후 일반 PR 정책은 [PR_WORKFLOW](docs/PR_WORKFLOW.md)대로 유지하며 이번 지시를 유료 인프라·운영 공개 승인으로 확장하지 않는다.
