@@ -1,5 +1,7 @@
 # 처음 준비하는 NCP 합성 미리보기
 
+> **2026-11-05 실행 분리:** 이 파일은 SSH 비공개 **합성 preview 단계**만 설명한다. 실 NCP staging·Google/PG/TLS·허가된 기능 활성화의 실행 게이트는 [제품 활성화 런북](../../docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md) 및 [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222). 사람/실학생·기관 원본·스크린리더는 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221). 기존 #61/#123/#132/#133은 코드 납품분만 CLOSED; **RELEASE_BLOCKED** 유지.
+
 > **2026-11-04 현재 코드:** 통합 [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)로 NCP 네트워크·호스트·설치/배포·롤백 코드 main 반영, OPEN PR 0건. 실제 계정/요금 승인·Terraform apply·SSH·TLS 공개·복구 현장 드릴은 **NOT_RUN / RELEASE_BLOCKED**. [STATUS](../../STATUS.md).
 
 현재 실행 가능한 배포는 **기존 #156의 SSH 터널 전용 합성 preview**다.
