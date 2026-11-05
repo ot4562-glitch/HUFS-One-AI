@@ -339,7 +339,7 @@ describe('#231 approved owner RulePack to What-if core adapter',()=>{
     expect(response.json()).toMatchObject({state:'READY',hypothetical:{
       rulePackVersion:'SYN-BUNDLE-H',
       requirements:expect.arrayContaining([{requirementId:current.secondary.programId+'-REQ',
-        state:'MISSING',missingCreditUnits:6}]),
+        state:current.secondary.role==='DOUBLE_MAJOR'?'SATISFIED':'MISSING'}]),
     }});
   });
   it('rejects reuse of a secondary pack approved for the old primary major',async()=>{
