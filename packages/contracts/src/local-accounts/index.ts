@@ -48,6 +48,6 @@ export const LocalAccountSnapshotSchema=z.strictObject({mode:z.literal('SYNTHETI
   clubs:z.strictObject({recommended:z.array(LocalAccountClubSchema).max(3),all:z.array(LocalAccountClubSchema)}),
   academics:UnknownAcademic,forecast:UnknownAcademic,
 }).refine(s=>s.asOf===s.feed.asOf&&s.asOf===s.notices.asOf,{message:'Derived sections must share one asOf'})
-  .refine(s=>[...s.feed.featured,...s.feed.compact].every(card=>card.dataMode==='SYNTHETIC'),
+  .refine(s=>[...s.feed.featured,...s.feed.compact,...(s.feed.ineligible??[])].every(card=>card.dataMode==='SYNTHETIC'),
     {path:['feed'],message:'A synthetic local account cannot contain real feed cards'});
 export type LocalAccountSnapshot=z.infer<typeof LocalAccountSnapshotSchema>;

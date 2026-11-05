@@ -67,6 +67,24 @@ async function harness(change:Mutator=s=>s){
 }
 
 describe('REVIEWER server must validate all nested synthetic academic evidence',()=>{
+  it.each(['dataMode','id','evidence'])('refuses non-synthetic %s in the additional condition-failure list (#230)',async field=>{
+    const h=await harness(s=>{
+      const card=s.feed.featured[0]??s.feed.compact[0];
+      if(!card)throw new Error('Synthetic fixture requires a card');
+      const ineligible={...card,displayMode:'COMPACT_LIST',eligibility:'INELIGIBLE',explanation:undefined,
+        opportunityId:field==='id'?'REAL-NOTICE':'SYN-ADDITIONAL',
+        dataMode:field==='dataMode'?'REAL':'SYNTHETIC',
+        evidenceRefs:field==='evidence'?['EV-REAL-PRIVATE']:['EV-SYN-ADDITIONAL']};
+      return {...s,feed:{...s.feed,ineligible:[ineligible]}};
+    });
+    const direct=await h.direct();
+    expect([403,422]).toContain(direct.statusCode);
+    expect(direct.body).not.toContain('REAL-NOTICE');
+    expect(direct.body).not.toContain('EV-REAL-PRIVATE');
+    const created=await h.context();
+    expect([403,422]).toContain(created.statusCode);
+    expect(created.body).not.toContain('EV-REAL-PRIVATE');
+  });
   it('serves a frozen fictitious November 20 scenario on November 10 without pretending it is live',async()=>{
     const h=await harness(),result=await h.direct();
     expect(result.statusCode).toBe(200);

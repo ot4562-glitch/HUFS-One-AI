@@ -1,5 +1,6 @@
 export * from './topics/index.js';
 export * from './corpus/index.js';
+export * from './recommendation-inputs/index.js';
 export * from './academics/index.js';
 export * from './identity/index.js';
 export * from './ai/index.js';

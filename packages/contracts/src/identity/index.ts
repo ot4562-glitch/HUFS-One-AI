@@ -49,6 +49,16 @@ export const DemoSnapshotSchema = z.strictObject({
   academics:z.union([AcademicSummarySchema,PendingSectionSchema]),
   forecast:z.union([ForecastSummarySchema,PendingSectionSchema]),
   aiProvenance:AiProvenanceSchema,
+}).superRefine((snapshot,ctx)=>{
+  // The new list is checked at the shared parsing boundary, including both
+  // server and browser REVIEWER consumers whose root must remain SYNTHETIC.
+  if(snapshot.datasetMode!=='SYNTHETIC')return;
+  for(const [index,card] of (snapshot.feed.ineligible??[]).entries()){
+    if(card.dataMode!=='SYNTHETIC'||!card.opportunityId.startsWith('SYN-')
+      ||card.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-'))
+      ||card.explanation?.eligibility.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-')))
+      ctx.addIssue({code:'custom',path:['feed','ineligible',index],message:'Synthetic feed contains non-synthetic evidence'});
+  }
 });
 export type DemoSnapshot = z.infer<typeof DemoSnapshotSchema>;
 
