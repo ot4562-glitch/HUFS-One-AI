@@ -6,7 +6,7 @@ const now='2026-11-05T00:00:00.000Z',before='2026-11-04T00:00:00.000Z',expires='
 const kind='PERSONAL_CONSENTED_CLEARED';
 const actor={actorId:'SYN-OWNER',role:'BETA' as const,sessionIdHash:'S'.repeat(32),csrfToken:'C'.repeat(32),
   betaAllowed:true,sessionExpiresAt:expires,schoolMailProofExpiresAt:expires};
-const packet={packetId:'OPAQUE-PACKET',task:'experience_skills',providerInputClass:kind,
+const packet={packetId:'OPAQUE-PACKET',task:'personal_action_brief',providerInputClass:kind,
   sourceTokens:[{token:'EXP1',paragraphs:[{id:'P1',text:'Synthetic owner describes a personally attributed project.'}]}],
   allowedTopicCodes:['DATA_ANALYTICS'],allowedObjectTokens:['EXP1'],approvedFacts:[],schemaVersion:'1',promptVersion:'1'};
 function setup(){
@@ -50,6 +50,10 @@ describe('owner-confirmed use of consented personal information',()=>{
     expect(result?.packet).toEqual(packet);
     expect(h.pool.connect).toHaveBeenCalledTimes(2);
     expect(h.query.mock.calls.every(([sql])=>!/^\s*(INSERT|UPDATE|DELETE|ALTER|CREATE)/.test(sql))).toBe(true);
+  });
+  it('refuses an unbound personal experience-skills packet even with project authorization',async()=>{
+    const h=setup();h.state.projection.safe_packet.task='experience_skills';
+    expect(await h.authority.read(h.request)).toBeNull();
   });
   it.each(['differentOwner','revokedSource','revokedConsent','staleVersion','unclassified','researchOnly'])('still refuses %s',async condition=>{
     const h=setup();
