@@ -3,6 +3,7 @@ import type {FastifyInstance} from 'fastify';
 import {OwnerFeedResponseSchema} from '@hufs-one/contracts';
 import type {OwnerFeedResponse} from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
+import {ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {betaActor,betaRecheck} from '../profiles/self-account-http.js';
 import type {BetaRouteVerifier} from '../profiles/self-account-http.js';
 import {OwnerRecommendationVersionConflict} from './owner-recommendations.js';
@@ -37,6 +38,7 @@ export function registerOwnerFeedRoutes(options:{app:FastifyInstance;session:Bet
     if(!source||!approval)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const available=async<T>(read:()=>Promise<T>):Promise<T>=>{
       try{return await read();}catch(error){
+        if(error instanceof ReceiptAdmissionError)throw error;
         if(error instanceof OwnerRecommendationVersionConflict)throw new ApiFailure('VERSION_CONFLICT');
         throw new ApiFailure('PROVIDER_UNAVAILABLE');
       }

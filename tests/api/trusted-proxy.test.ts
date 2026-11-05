@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {afterEach,describe,expect,it} from 'vitest';
 import {ReceiptAdmissionError} from '../../apps/api/src/modules/auth/owner-receipts.js';
 import type {ApiOptions} from '../../apps/api/src/types.js';
@@ -46,6 +47,29 @@ describe('owner receipt rate-limit response (#227)',()=>{
 });
 
 describe('explicit immediate-proxy client identity (#226)',()=>{
+  it('authenticates the nginx session subrequest through the configured trusted edge',async()=>{
+    // Offline template-to-HTTP contract; this does not claim a live nginx/TLS deployment.
+    const template=readFileSync(new URL('../../infra/deploy/nginx.private.conf.template',import.meta.url),'utf8');
+    const block=template.match(/location = \/_validated_session \{([^}]+)\}/)?.[1];
+    expect(block).toBeDefined();
+    const variables:Record<string,string>={'$remote_addr':'203.0.113.8',
+      '$http_cookie':'session=SYN-EDGE-SESSION','@@HOST@@':'synthetic.invalid',
+      '$http_x_forwarded_for':'198.51.100.4, 203.0.113.9'};
+    const headers:Record<string,string>={};
+    // proxy_pass_request_headers is off: only explicit nonempty header values are sent.
+    for(const directive of block!.matchAll(/proxy_set_header\s+(\S+)\s+([^;]+);/g)){
+      const name=directive[1]!.toLowerCase(),value=directive[2]!.trim();
+      const resolved=variables[value]??value.replace(/^"|"$/g,'');
+      if(resolved)headers[name]=resolved;
+    }
+    const app=makeApp(['10.20.0.2']);
+    let observedIp:string|undefined;
+    app.addHook('preHandler',async request=>{observedIp=request.ip;});
+    const response=await app.inject({url:'/api/auth/session',remoteAddress:'10.20.0.2',headers});
+    expect(response.statusCode).toBe(200);expect(response.json().role).toBe('BETA');
+    expect(observedIp).toBe('203.0.113.8');
+    expect(response.headers['cache-control']).toBe('no-store');
+  });
   it('keeps caller-supplied forwarding untrusted by default',async()=>{
     const result=await probe(makeApp(),'198.51.100.4','203.0.113.8');
     expect(result.statusCode).toBe(200);expect(result.json().ip).toBe('198.51.100.4');

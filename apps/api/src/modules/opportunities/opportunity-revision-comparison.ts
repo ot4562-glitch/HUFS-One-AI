@@ -9,6 +9,7 @@ import type {
   OpportunityComparisonRevision,
 } from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
+import {ReceiptAdmissionError} from '../auth/owner-receipts.js';
 
 type Scope={actorId:string;opportunityId:string;beforeRevisionId:string;afterRevisionId:string;asOf:string};
 /** A reader of server-reviewed immutable claims, not an extractor or model.
@@ -53,7 +54,7 @@ const StoredPair=z.strictObject({
 function unavailable():never{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
 function denied():never{throw new ApiFailure('FORBIDDEN');}
 async function call<T>(fn:()=>Promise<T>):Promise<T>{
-  try{return await fn();}catch{unavailable();}
+  try{return await fn();}catch(error){if(error instanceof ReceiptAdmissionError)throw error;unavailable();}
 }
 function publicRevision(r:z.infer<typeof StoredRevision>):OpportunityComparisonRevision {
   const {reviewState:_reviewState,status:_status,changeKind:_changeKind,...projection}=r;

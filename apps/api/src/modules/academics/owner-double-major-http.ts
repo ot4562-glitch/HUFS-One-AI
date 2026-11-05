@@ -4,6 +4,7 @@ import {OwnerDoubleMajorAuditSchema} from '../../../../../packages/contracts/src
 import type {OwnerDoubleMajorAudit} from '../../../../../packages/contracts/src/academics/double-major.js';
 import type {TrustedOwnerDoubleMajorSource} from './owner-double-major-source.js';
 import {ApiFailure} from '../auth/gates.js';
+import {ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {betaActor,betaRecheck} from '../profiles/self-account-http.js';
 import type {BetaRouteVerifier} from '../profiles/self-account-http.js';
 
@@ -30,7 +31,8 @@ export function registerOwnerDoubleMajorRoutes(options:{app:FastifyInstance;sess
     if(!inspect)throw new ApiFailure('FORBIDDEN');
     await betaRecheck(request,session,actor);
     let loaded:{check:OwnerDoubleMajorAudit;receipt:string};
-    try{loaded=await source.inspect({actorId:actor.actorId,now});}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    try{loaded=await source.inspect({actorId:actor.actorId,now});}
+    catch(error){if(error instanceof ReceiptAdmissionError)throw error;throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!loaded||typeof loaded.receipt!=='string'||loaded.receipt.length<8||loaded.receipt.length>256)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const parsed=OwnerDoubleMajorAuditSchema.safeParse(loaded.check);
     if(!parsed.success||parsed.data.asOf!==now)throw new ApiFailure('PROVIDER_UNAVAILABLE');
@@ -38,7 +40,7 @@ export function registerOwnerDoubleMajorRoutes(options:{app:FastifyInstance;sess
     await betaRecheck(request,session,actor);
     let authorization:Awaited<ReturnType<TrustedOwnerDoubleMajorRights['authorize']>>;
     try{authorization=await rights.authorize({actorId:actor.actorId,sourceReceipt:loaded.receipt,check:structuredClone(safe),now:session.now()});}
-    catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    catch(error){if(error instanceof ReceiptAdmissionError)throw error;throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!authorization?.allowed)throw new ApiFailure('FORBIDDEN');
     if(typeof authorization.rightsReceipt!=='string'||authorization.rightsReceipt.length<8||authorization.rightsReceipt.length>256)throw new ApiFailure('PROVIDER_UNAVAILABLE');
     const revalidate=async()=>{

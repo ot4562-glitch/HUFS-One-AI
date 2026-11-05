@@ -1,3 +1,4 @@
+import {ReceiptAdmissionError} from '../../apps/api/src/modules/auth/owner-receipts.js';
 import {describe,expect,it} from 'vitest';
 import {doubleMajorInput} from './owner-double-major-fixture.js';
 import {PostgresOwnerDoubleMajorSnapshotLoader,createPostgresOwnerDoubleMajorServices} from '../../apps/api/src/modules/academics/owner-double-major-postgres.js';
@@ -31,6 +32,21 @@ function fixture(){
     withdraw:()=>{active=false;},denyConsent:()=>{consent=false;},clock:(value:string)=>{now=value;},rehash:()=>{projection.payload_sha256=canonicalProjectionHash(payload);}};
 }
 describe('durable current double-major approved projection loader',()=>{
+  it('propagates rights-ticket saturation while preserving valid proofs and authorization denial',async()=>{
+    const h=fixture(),service=createPostgresOwnerDoubleMajorServices({pool:h.pool,authority:h.authority,now:()=>at});
+    const loaded=await service.source.inspect({actorId,now:at});
+    const input={actorId,sourceReceipt:loaded.receipt,check:loaded.check,now:at};
+    let firstRights:string|undefined;
+    for(let i=0;i<128;i++){
+      const authorized=await service.rights.authorize(input);
+      expect(authorized.allowed).toBe(true);firstRights??=authorized.rightsReceipt;
+    }
+    await expect(service.rights.authorize(input)).rejects.toBeInstanceOf(ReceiptAdmissionError);
+    expect(await service.rights.authorize({...input,check:{...loaded.check,selection:'NONE'}}))
+      .toEqual({allowed:false});
+    expect(await service.rights.revalidate({actorId,sourceReceipt:loaded.receipt,
+      rightsReceipt:firstRights!,now:at})).toBe(true);
+  });
   it('loads an actor/source-scoped two-pack snapshot in repeatable read and computes the source bridge',async()=>{
     const h=fixture(),value=await h.load();
     expect(value).toMatchObject({actorId,asOf:at,projectionVersion:'SYN-PROJ-V1'});
@@ -81,7 +97,7 @@ describe('durable current double-major approved projection loader',()=>{
     const h=fixture(),original=await h.load();
     h.projection.actor_id='SYN-NOISY';
     for(let i=0;i<128;i++)await h.loader.load({actorId:'SYN-NOISY',now:at});
-    await expect(h.loader.load({actorId:'SYN-NOISY',now:at})).rejects.toThrow();
+    await expect(h.loader.load({actorId:'SYN-NOISY',now:at})).rejects.toBeInstanceOf(ReceiptAdmissionError);
     h.projection.actor_id=actorId;
     expect(await h.loader.revalidate({actorId,receipt:original!.receipt,now:at})).toBe(true);
     h.clock('2026-11-03T00:00:31.000Z');

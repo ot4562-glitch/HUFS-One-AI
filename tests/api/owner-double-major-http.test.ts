@@ -1,17 +1,17 @@
+import {receiptFailure,receiptFailureCases} from './receipt-admission-fixture.js';
 import {afterEach,describe,expect,it} from 'vitest';
-import Fastify from 'fastify';
-import {z} from 'zod';
+import {createApi} from '../../apps/api/src/server.js';
+import {closedRepository} from '../../apps/api/src/repository.js';
 import {doubleMajorInput} from './owner-double-major-fixture.js';
 import {registerOwnerDoubleMajorRoutes} from '../../apps/api/src/modules/academics/owner-double-major-http.js';
 import type {TrustedOwnerDoubleMajorRights} from '../../apps/api/src/modules/academics/owner-double-major-http.js';
 import {createTrustedOwnerDoubleMajorSource} from '../../apps/api/src/modules/academics/owner-double-major-source.js';
 import type {TrustedOwnerDoubleMajorSource} from '../../apps/api/src/modules/academics/owner-double-major-source.js';
 import type {VerifiedActor} from '../../apps/api/src/types.js';
-import {ApiFailure} from '../../apps/api/src/modules/auth/gates.js';
 const at='2026-11-03T00:00:00.000Z';
 const actor={role:'BETA' as const,actorId:'SYN-OWNER',sessionIdHash:'H'.repeat(32),csrfToken:'C'.repeat(32),
   betaAllowed:true,sessionExpiresAt:'2026-12-01T00:00:00.000Z',schoolMailProofExpiresAt:'2026-12-01T00:00:00.000Z'};
-const apps:ReturnType<typeof Fastify>[]=[];
+const apps:Array<ReturnType<typeof createApi>>=[];
 afterEach(async()=>{for(const app of apps.splice(0))await app.close();});
 function fixture(){
   let session:VerifiedActor|null=actor,allowed=true,current=true,reads=0;
@@ -19,16 +19,23 @@ function fixture(){
     reads++;return {actorId:actor.actorId,asOf:at,receipt:'SYN-SOURCE-RECEIPT',projectionVersion:'SYN-PROJ-V1',input:doubleMajorInput()};
   },revalidate:async()=>current}});
   const rights:TrustedOwnerDoubleMajorRights={mayInspect:async()=>allowed,authorize:async()=>({allowed,rightsReceipt:'SYN-RIGHTS-RECEIPT'}),revalidate:async()=>allowed};
-  const app=Fastify();apps.push(app);
-  app.setErrorHandler((error,_request,reply)=>{
-    const code=error instanceof ApiFailure?error.code:error instanceof z.ZodError?'INVALID_INPUT':'PROVIDER_UNAVAILABLE';
-    return reply.code(({FORBIDDEN:403,UNAUTHENTICATED:401,INVALID_INPUT:422,PROVIDER_UNAVAILABLE:503} as Record<string,number>)[code]??500).send({code});
-  });
+  const app=createApi({allowedOrigin:'https://synthetic.invalid',repository:closedRepository,
+    verifySession:async()=>session,now:()=>at});apps.push(app);
   registerOwnerDoubleMajorRoutes({app,source,rights,session:{verify:async()=>session,now:()=>at}});
   return {app,source,rights,reads:()=>reads,revoke:()=>{session=null;},switchActor:()=>{session={...actor,actorId:'SYN-OTHER'};},
     deny:()=>{allowed=false;},stale:()=>{current=false;},reviewer:()=>{session={role:'REVIEWER',actorId:'SYN-REVIEWER',sessionIdHash:'R'.repeat(32),csrfToken:'C'.repeat(32),sessionExpiresAt:'2026-12-01T00:00:00.000Z',verifiedEmail:'synthetic@example.invalid',identityProofExpiresAt:'2026-12-01T00:00:00.000Z'};}};
 }
 describe('authorized current double-major GET',()=>{
+  for(const boundary of ['source','rights'] as const){
+    it.each(receiptFailureCases)(`preserves $failure through the double-major ${boundary} HTTP boundary`,async({failure,status,code})=>{
+      const h=fixture(),fail=receiptFailure(failure,actor.actorId);
+      if(boundary==='source')h.source.inspect=fail;else h.rights.authorize=fail;
+      const response=await h.app.inject({url:'/api/academics/double-major'});
+      expect(response.statusCode).toBe(status);expect(response.json().code).toBe(code);
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(response.body).not.toContain('SYNTHETIC-PRIVATE-PROVIDER-DETAIL');
+    });
+  }
   it('returns scoped current core output with no-store and no server receipt or transcript identity',async()=>{
     const h=fixture(),response=await h.app.inject({url:'/api/academics/double-major'});
     expect(response.statusCode).toBe(200);

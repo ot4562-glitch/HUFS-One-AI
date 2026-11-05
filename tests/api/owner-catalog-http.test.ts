@@ -1,3 +1,4 @@
+import {receiptFailure,receiptFailureCases} from './receipt-admission-fixture.js';
 import {afterEach,describe,expect,it} from 'vitest';
 import {
   CourseCatalogPageSchema,CourseOfferingsPageSchema,
@@ -67,6 +68,19 @@ function fixture(){
     }};
 }
 describe('A13 owner catalog and academic/transcript HTTP contract',()=>{
+  for(const [method,url] of [
+    ['readTranscript','/api/academics/transcript'],['listCourses','/api/courses'],
+    ['listOfferings','/api/courses/SYN-C01/offerings'],['listOpportunities','/api/opportunities'],
+    ['getOpportunity','/api/opportunities/SYN-OP01'],
+  ] as const){
+    it.each(receiptFailureCases)(`preserves $failure through ${method} HTTP admission`,async({failure,status,code})=>{
+      const h=fixture();h.replace(method,receiptFailure(failure,actor.actorId));
+      const response=await h.app.inject({url});
+      expect(response.statusCode).toBe(status);expect(response.json().code).toBe(code);
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(response.body).not.toContain('SYNTHETIC-PRIVATE-PROVIDER-DETAIL');
+    });
+  }
   it('authorizes all five read endpoints with current source token and no-store',async()=>{
     const h=fixture();
     for(const [url,check] of [

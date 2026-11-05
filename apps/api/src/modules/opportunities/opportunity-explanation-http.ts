@@ -5,6 +5,7 @@ import {
 } from '@hufs-one/contracts';
 import type {OpportunityExplanationRequest,OpportunityExplanationResponse} from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
+import {ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {betaActor,betaRecheck} from '../profiles/self-account-http.js';
 import type {BetaRouteVerifier} from '../profiles/self-account-http.js';
 import {OwnerRecommendationVersionConflict} from './owner-recommendations.js';
@@ -49,6 +50,7 @@ export function registerOpportunityExplanationRoutes(options:{
     const input={...query,opportunityId,actorId:actor.actorId,now:session.now()};
     const available=async<T>(perform:()=>Promise<T>):Promise<T>=>{
       try{return await perform();}catch(error){
+        if(error instanceof ReceiptAdmissionError)throw error;
         if(error instanceof OwnerRecommendationVersionConflict)throw new ApiFailure('VERSION_CONFLICT');
         throw new ApiFailure('PROVIDER_UNAVAILABLE');
       }

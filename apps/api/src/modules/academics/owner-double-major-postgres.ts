@@ -1,5 +1,5 @@
 import {randomBytes} from 'node:crypto';
-import {OwnerReceipts} from '../auth/owner-receipts.js';
+import {OwnerReceipts,ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {OwnerDoubleMajorAuditSchema} from '../../../../../packages/contracts/src/academics/double-major.js';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
@@ -154,7 +154,7 @@ export class PostgresOwnerDoubleMajorSnapshotLoader implements TrustedOwnerDoubl
       const rightsReceipt=randomBytes(32).toString('hex');
       this.rightsTickets.set(rightsReceipt,{actorId:input.actorId,sourceReceipt:input.sourceReceipt,fingerprint:current.ticket.fingerprint,expires:current.ticket.expires});
       return {allowed:true,rightsReceipt};
-    }catch{return {allowed:false};}
+    }catch(error){if(error instanceof ReceiptAdmissionError)throw error;return {allowed:false};}
   }
   async revalidateRights(input:Parameters<TrustedOwnerDoubleMajorRights['revalidate']>[0]):Promise<boolean>{
     try{
