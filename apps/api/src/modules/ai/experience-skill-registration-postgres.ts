@@ -120,7 +120,7 @@ export class PostgresExperienceSkillInputRegistrar {
       await c.query('BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE');begun=true;
       await c.query("SET LOCAL statement_timeout='5s'");
       await c.query("SELECT set_config('hufs.self_actor',$1,true)",[input.actorId]);
-      const consentRow=await c.query('SELECT version,choices_json,updated_at FROM api_self_consents WHERE actor_id=$1 FOR SHARE',
+      const consentRow=await c.query('SELECT version,choices_json,updated_at FROM api_self_consents WHERE actor_id=$1',
         [input.actorId]);
       if(consentRow.rows.length!==1)throw new ExperienceInputRegistrationDenied();
       const cRow=Consent.parse(consentRow.rows[0]);
@@ -131,7 +131,7 @@ export class PostgresExperienceSkillInputRegistrar {
         throw new ExperienceInputRegistrationDenied();
       const records=await c.query(`SELECT item_id,version,value_json,updated_at,deleted_at
         FROM api_self_workspace_records WHERE actor_id=$1 AND kind='EXPERIENCE'
-          AND item_id=$2 FOR SHARE`,[input.actorId,input.experienceId]);
+          AND item_id=$2`,[input.actorId,input.experienceId]);
       if(records.rows.length!==1)throw new ExperienceInputRegistrationDenied();
       const record=Workspace.parse(records.rows[0]);
       if(record.deleted_at!==null||record.item_id!==input.experienceId
