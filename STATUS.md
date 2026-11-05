@@ -7,16 +7,16 @@
 | 구분 | 실제 확인 상태 |
 | --- | --- |
 | main | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 선행 통합 이후 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) merge `8e0efb5`, [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) merge `6445fc4` 반영. 최신 branch SHA는 GitHub를 실시간 확인 |
-| 열린 PR | **2건:** [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219) 수정 HEAD 3종 CI 성공·독립 사람 재승인 대기; [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220) Draft, 최신 HEAD 3종 CI 성공·독립 사람 리뷰/운영 수락 대기 |
+| 열린 PR | **1건:** [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220) Draft, 최신 HEAD 3종 CI 성공·독립 사람 리뷰/운영 수락 대기. [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219)는 2026-11-05 별도 병합 완료 |
 | 열린 일반 이슈 | **15건** (#8, #9, #10, #11, #12, #19, #20, #27, #46, #61, #89, #119, #123, #132, #133). 2026-11-04 중복 25건 이관 종료 상태 유지 |
 | 완료된 코드 하위 수락 | #11에서 #217 What-if 합성 계산/보수적 인정보류 표시와 #218 동일교과 속성·seed 재현 코어를 **[x] 코드 단위 완료**로 기록. 공식 RulePack/실원장/권리·학업 운영은 미완료 |
 | #217/#218 CI | 두 PR의 병합 전 수정 HEAD에서 TASK-00 / NCP IaC offline / Chrome **각 3/3 SUCCESS**, 재검토 `COMMENT` 등록 |
-| #219 보안 | 선택적 `platform` PostgreSQL 풀의 검증 우회를 거부하고 별도 데모 role/TLS 풀을 조립·점검하도록 변경. 테스트 및 SECURITY DEFINER search_path 조정. **변경 HEAD TASK-00/NCP IaC/Chrome 3/3 SUCCESS; 비작성자 사람 재승인 대기**. 프록시 뒤 IP 제한 문제도 별도 남음 |
+| #219 보안 | 선택적 `platform` PostgreSQL 풀 검증 우회를 차단·격리 demo role/TLS·SECURITY DEFINER search_path 보강, 합성 CI **3/3 SUCCESS** 후 merge `1181d0f` 완료. 단 리뷰 이력은 자동/기존 `COMMENTED`만 확인되고 **독립 사람 `APPROVED` 없음**. 프록시 뒤 IP 분리·실운영 수락 문제는 #27/#89에서 계속 차단 |
 | #220 기능·회귀 | 최초 TASK-00 **1 FAIL / 2809 PASS / 84 SKIP**(BETA 세션이 `ADMIN` 응답을 잘못 허용). 첫 수정 `8340157` 이후 기존 ADMIN 전용 세션 테스트와 충돌을 확인해, 명시적 ADMIN 스키마와 **ADMIN→BETA/REVIEWER 권한 거부** 회귀를 더한 최신 수정 `0d8e176` 제출; **최신 HEAD `0d8e176` TASK-00/NCP IaC/Chrome CI 3/3 SUCCESS; 독립 리뷰·코드 및 실운영 수락 전 Draft 유지** |
 | 문서 | README / PR_WORKFLOW / STATUS와 #11 정본 이슈에서 코드 완료·합성 CI·남은 사람 게이트를 분리 |
 | 공개 운영 | **RELEASE_BLOCKED** — 실 Google/학교메일, 운영 PostgreSQL·RLS·백업, NCP/TLS/직접 IP, 실제 4인 원본 권리, 독립 추천 gold 200 및 기관 학칙/사람 검증 미수락 |
 
-**2026-11-05 병합 승인 기록:** 사용자의 명시적인 이번 PR 정리 요청에 따라 #217/#218의 원래 `CHANGES_REQUESTED`에서 요구한 수정과 합성 CI 성공을 확인한 뒤 병합했다. 이 작업의 리뷰는 **자동 기술 검토 `COMMENT`**였고 비작성자 사람 `APPROVED`가 아니었다. 팀의 반복 가능한 독립 리뷰 규칙과 #219/#220 보안/개인정보/릴리스 게이트는 계속 적용한다. 코드 병합·테스트 통과는 운영·학교·학생 데이터 승인으로 바뀌지 않는다.
+**2026-11-05 병합 승인 기록:** 사용자의 명시적인 이번 PR 정리 요청에 따라 #217/#218을 수정·CI 확인 후 병합했고, 리뷰는 자동 기술 검토 `COMMENT`로 독립 사람 `APPROVED`가 아니다. #219도 GitHub에서 2026-11-05 00:06 UTC merge `1181d0f` 완료됐음을 재조회해 반영했다(본 점검 중 별도 병합). #219의 리뷰 3건 모두 `COMMENTED`이며 **비작성자 사람 `APPROVED`는 확인되지 않았다**. 이미 병합됐더라도 R2 프록시 IP 제한 및 운영·개인정보/릴리스 게이트가 사라지지 않는다. #220은 계속 Draft·독립 사람 승인 대기. 코드 병합·테스트 통과는 운영·학교·학생 데이터 승인으로 바뀌지 않는다.
 
 ## 2. main에 반영된 코드와 경계
 
@@ -42,7 +42,7 @@
 
 ## 4. 정리 결정
 
-- **PR 정리 (2026-11-05): OPEN 2건 (#219 보안 재검토, #220 Draft).** 2026-11-04 통합 당시는 OPEN 0건이었으나 이후 PR이 생성되었다. #217/#218는 병합됐고 중복 통합이나 승인 없는 실서비스 배포를 하지 않는다.
+- **PR 정리 (2026-11-05): OPEN 1건 (#220 Draft).** #217/#218 및 #219는 모두 GitHub에서 `MERGED`로 확인된다. 2026-11-04 통합 당시 OPEN 0건은 역사 스냅샷이며 #220의 미수락 작업과 별도이다. 중복 통합이나 승인 없는 실서비스 배포를 하지 않는다.
 - **이슈 재편 완료:** 기존 OPEN 40건을 현재 **15건 OPEN + 25건 CLOSED(duplicate/이관)**로 통합했다. 각 열린 이슈는 **완료된 코드 설명 / 미완료만 체크리스트 / 명확한 책임자·연결 원본**으로 전면 교체했다. 닫힌 이슈는 완료를 가장하지 않고 정본 이슈로 이동·이력/댓글을 보존했다. 실서비스 인적 게이트 #46/#61/#89는 여전히 OPEN이다.
 - [인적 승인·검증 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 실제 환경 수락을 별도로 관리. **RELEASE_BLOCKED** 유지.
 
