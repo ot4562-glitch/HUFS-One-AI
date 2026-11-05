@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {CreditUnitsSchema,DemoProfileValueSchema,DemoProfileSaveSchema,DemoProfileRecordSchema,
-  blankDemoProfileValue} from '@hufs-one/contracts';
+  blankDemoProfileValue,blankDemoProfileWorkspace,DemoProfileSnapshotSchema} from '@hufs-one/contracts';
 
 describe('independent empty synthetic demo profile contract',()=>{
   it('preserves unset, zero earned half-credit units and the double-major tri-state',()=>{
@@ -24,5 +24,22 @@ describe('independent empty synthetic demo profile contract',()=>{
     expect(DemoProfileSaveSchema.safeParse({expectedVersion:0,value:blankDemoProfileValue()}).success).toBe(false);
     expect(DemoProfileSaveSchema.parse({expectedVersion:0,value:{primaryMajor:'가상 정보학',earnedCreditUnits:0,
       interestTopics:['AI_ML'],doubleMajor:{kind:'NONE'}}}).value.earnedCreditUnits).toBe(0);
+  });
+  it('rejects a real ineligible card while accepting synthetic and legacy empty-demo snapshots',()=>{
+    const asOf='2026-11-02T00:00:00.000Z',feed={asOf,featured:[],compact:[],hasMore:false,totalCandidates:0};
+    const snapshot={namespace:'EMPTY_DEMO',dataMode:'SYNTHETIC',verification:'UNVERIFIED_SELF_REPORT',version:0,asOf,feed,
+      notices:{asOf,items:[],pinnedIds:[]},clubs:{recommended:[],all:[]},
+      academics:{state:'UNKNOWN',reason:'검증 근거 없음'},forecast:{state:'UNKNOWN',reason:'검증 근거 없음'},
+      workspace:blankDemoProfileWorkspace(),
+      calendar:{asOf,from:asOf,to:asOf,entries:[],undated:[],needsConfirmation:[],ambiguousNoticeIds:[]},
+      catalog:[],allCards:[],experienceSignals:{mode:'OFF',topics:[]},
+      corpus:{version:'syn-corpus-v1',opportunities:40,notices:10,profiles:5,sha256:'a'.repeat(64)}};
+    expect(DemoProfileSnapshotSchema.safeParse(snapshot).success).toBe(true);
+    const card={opportunityId:'SYN-OPP-001',displayMode:'COMPACT_LIST',title:'가상 공고',eligibility:'INELIGIBLE',
+      lifecycle:'OPEN',topics:[],evidenceRefs:[],dataMode:'SYNTHETIC'};
+    const withIneligible={...snapshot,feed:{...feed,ineligible:[card]}};
+    expect(DemoProfileSnapshotSchema.safeParse(withIneligible).success).toBe(true);
+    card.dataMode='REAL';
+    expect(DemoProfileSnapshotSchema.safeParse(withIneligible).success).toBe(false);
   });
 });

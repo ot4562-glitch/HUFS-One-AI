@@ -27,14 +27,17 @@ describe('local account input contracts',()=>{
   it('bounds and strictly validates workspace records',()=>{
     expect(LocalAccountWorkspaceSchema.safeParse({bookmarks:[],experiences:[],planCourseIds:[],search:'',notifications:false,profile:{}}).success).toBe(false);
   });
-  it('rejects a mixed real feed card inside an explicitly synthetic account snapshot',()=>{
-    const asOf='2026-11-02T00:00:00.000Z',snapshot={mode:'SYNTHETIC',sessionId:'s',accountId:'BLANK_DEMO',revision:0,
+  it.each(['featured','compact','ineligible'] as const)('rejects a real %s card inside a synthetic account snapshot',section=>{
+    const asOf='2026-11-02T00:00:00.000Z',card={opportunityId:'SYN-1',
+      displayMode:section==='featured'?'FEATURED_LARGE':'COMPACT_LIST',title:'가상 공고',
+      eligibility:section==='ineligible'?'INELIGIBLE':'UNKNOWN',lifecycle:'OPEN',topics:[],evidenceRefs:[],dataMode:'SYNTHETIC'};
+    const snapshot={mode:'SYNTHETIC',sessionId:'s',accountId:'BLANK_DEMO',revision:0,
       profile:blank,workspace:{bookmarks:[],experiences:[],planCourseIds:[],search:'',notifications:false},asOf,
-      feed:{asOf,featured:[],compact:[{opportunityId:'SYN-1',displayMode:'COMPACT_LIST',title:'가상 공고',
-        eligibility:'UNKNOWN',lifecycle:'OPEN',topics:[],evidenceRefs:[],dataMode:'REAL'}],totalCandidates:1,hasMore:false},
+      feed:{asOf,featured:[],compact:[],[section]:[card],totalCandidates:section==='ineligible'?0:1,hasMore:false},
       notices:{asOf,items:[],pinnedIds:[]},clubs:{recommended:[],all:[]},
       academics:{state:'UNKNOWN',reason:'검증 근거 없음'},forecast:{state:'UNKNOWN',reason:'검증 근거 없음'}};
+    expect(LocalAccountSnapshotSchema.safeParse(snapshot).success).toBe(true);
+    card.dataMode='REAL';
     expect(LocalAccountSnapshotSchema.safeParse(snapshot).success).toBe(false);
-    snapshot.feed.compact[0]!.dataMode='SYNTHETIC';expect(LocalAccountSnapshotSchema.safeParse(snapshot).success).toBe(true);
   });
 });
