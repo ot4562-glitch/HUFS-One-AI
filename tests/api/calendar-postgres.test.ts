@@ -64,7 +64,7 @@ describe('PostgresCalendarInputSource: server-reviewed raw inputs and current gr
     const reader=new PostgresCalendarInputSource(db.pool);
     const bundle=await reader.readAuthorizedInputs(request);expect(bundle).not.toBeNull();
     expect(bundle!.notices[0]!.verificationState).toBe('NEEDS_REVIEW');
-    const result=computeAuthorizedSections(bundle!,{actorId:'SYN-ACTOR',role:'BETA',now});
+    const result=computeAuthorizedSections(bundle!,request);
     expect(result.notices.pinnedIds).toEqual([]);
     expect(result.notices.items[0]!.verificationState).toBe('NEEDS_REVIEW');
     expect(result.notices.items[0]!.priority).toBe('GENERAL');
