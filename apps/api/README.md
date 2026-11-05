@@ -151,6 +151,16 @@ PDF는 최대 4쪽의 `pdf-full-page-v1`만 지원한다. PDF는 암호화·첨�
 
 자동 `collectCurriculum`은 수동 정책을 거절하고 robots `ALLOWED`를 계속 요구한다. 수동 저장·브라우저 접근 가능 여부가 이용권을 대신하지 않는다. `cohort: UNKNOWN`, 9자리 원본 분반 코드와 category 원문을 허용하며 공식 RulePack을 추론하지 않는다. 실제 변환/수집물·권리 심사·운영 등록은 별도이며 현재 합성 테스트만 수행했다.
 
+## Owner What-if: 승인 스냅샷 → 실제 코어 연결 (#231)
+
+`createPostgresPlatformServices({..., majorWhatIf: {loader, rights, approvalGate}})`를 명시한 경우에만 `createOwnerMajorWhatIfSource`가 기존 `buildMajorWhatIf`를 호출한다. `loader`는 `TrustedOwnerMajorWhatIfLoader`를 구현하며 actor·scenario·asOf·현재 owner head·receipt에 결속된 `OWNER_MAJOR_WHAT_IF_V1` 입력을 원자적으로 읽고 마지막 재검사에서 현재 동의·출처·학업/승인 head와 철회를 확인해야 한다. 기본 DB/raw loader나 승인 authority는 제공하지 않는다.
+
+입력은 원본 hash/조항 inventory를 포함한 VNext RulePack, 검증된 프로필·canonical 수강 projection, 현재/가정 enrollment·학위 경로, 승인 bundle과 overlap policy manifest를 갖는다. 각 bundle의 `constituentVersions`는 주전공·두 번째 전공 순서의 실제 pack 버전과 같아야 한다. `profile.version`은 이 입력의 cohort applicability 버전이다. bundle/policy 버전은 독립 승인 registry가 정확한 구성 내용에 부여한 값이며 문자열 결합으로 생성하는 승인 증명이 아니다. 어댑터는 역할·전공·campus·cohort·입학/교육과정·선택 track·degreePath·원본/시점 및 core가 선택한 실제 구성원을 검사한다. canonical 세 경로를 그대로 전달하며 legacy alias 처리는 기존 순수 코어에만 남는다.
+
+HTTP의 조회 전 consent, 별도 공개 권한, 독립 학업 `approvalGate`, version conflict와 조회 후 재검사는 유지한다. 원장 행·과목 식별자·원본 hash·내부 receipt는 응답에 포함하지 않는다. 현 wire 계약에는 학업 재검토 표시가 없어 `reviewRequirementIds`가 남은 계산은 503으로 보류한다. core가 한 secondary role/program에 서로 다른 pack을 받을 수 없으므로, 주전공 변경 시 유지되는 secondary의 원래/가정 scope가 충돌하면 503이며 두 규칙을 임의 합치지 않는다.
+
+`tests/api/owner-major-what-if-source.test.ts`는 합성 승인 입력으로 플랫폼 → owner HTTP → 실제 코어 → wire 계약과 범위/시점/권한 거부를 검증한다. 세션·자료권리·공식 RulePack·실자료/독립 인적 인수와 운영 활성화는 #27/#235의 별도 수락 사항이며 `HYPOTHETICAL_NOT_OFFICIAL`·**RELEASE_BLOCKED**를 유지한다.
+
 ## 2026-11-02 로컬 후속: PostgreSQL 본인 수강계획 입력 연결
 
 `createPostgresPlatformServices`의 선택 항목 `ownerCatalog: {pool, authority}`는 기존 승인 카탈로그를, `studyPlanCheck: {pool, authority, rights, approvalGate}`는 `PostgresOwnerStudyPlanSnapshotLoader`와 기존 학업 순수 코어를 연결한다. 모든 인자는 서버 운영자가 독립적으로 제공하며 기본값·실자료 fallback·자동 활성화는 없다. `rights`는 조회 전후 개인 목적·정확한 공개 근거를, `approvalGate`는 학업 코어·RulePack의 현재 승인을 별도로 확인해야 한다.
