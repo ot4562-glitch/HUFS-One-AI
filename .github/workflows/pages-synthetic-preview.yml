@@ -79,18 +79,27 @@ jobs:
       - name: Build explicitly synthetic static React bundle
         env:
           VITE_STATIC_PAGES_PREVIEW: 'true'
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Public project Pages always use /<repo>/; the old private-site
+          # root can remain cached after switching repository visibility.
+          PAGES_BASE_PATH: ${{ github.event.repository.private == false && format('/{0}', github.event.repository.name) || steps.pages.outputs.base_path }}
         run: npm run build:web -- --mode pages-preview
-      - name: Require CSP that blocks all API/network connections
+      - name: Require CSP and correct public Pages asset path
+        env:
+          PAGES_PUBLIC_REPOSITORY: ${{ github.event.repository.private == false }}
         run: |
           test -s dist/web/index.html
           grep -Fq "connect-src 'none'" dist/web/index.html
           test -d dist/web/assets
           test ! -e dist/web/.env
+          if [ "$PAGES_PUBLIC_REPOSITORY" = 'true' ]; then
+            grep -Fq "/${GITHUB_REPOSITORY#*/}/assets/" dist/web/index.html
+          fi
       - name: Chrome desktop/mobile smoke with no API requests
         env:
           VITE_STATIC_PAGES_PREVIEW: 'true'
-          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          # Public project Pages always use /<repo>/; the old private-site
+          # root can remain cached after switching repository visibility.
+          PAGES_BASE_PATH: ${{ github.event.repository.private == false && format('/{0}', github.event.repository.name) || steps.pages.outputs.base_path }}
         run: node tools/check_pages_preview.mjs
       - name: Upload Pages artifact (only on default branch)
         if: github.event_name != 'pull_request'
