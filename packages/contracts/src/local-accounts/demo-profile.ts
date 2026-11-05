@@ -67,7 +67,7 @@ export const DemoProfileSnapshotSchema=z.strictObject({
   corpus:z.strictObject({version:z.literal('syn-corpus-v1'),opportunities:z.literal(40),notices:z.literal(10),
     profiles:z.literal(5),sha256:z.string().regex(/^[a-f0-9]{64}$/)}),
 }).refine(s=>s.asOf===s.feed.asOf&&s.asOf===s.notices.asOf&&s.asOf===s.calendar.asOf,{message:'One recomputation asOf required'})
-  .refine(s=>[...s.feed.featured,...s.feed.compact].every(c=>c.dataMode==='SYNTHETIC'),
+  .refine(s=>[...s.feed.featured,...s.feed.compact,...(s.feed.ineligible??[])].every(c=>c.dataMode==='SYNTHETIC'),
     {message:'Synthetic source pack only'})
   .refine(s=>s.catalog.every(o=>o.dataMode==='SYNTHETIC'&&!o.applicationUrlRef
     &&['DEMO_DISABLED','RECORD_ONLY'].includes(o.actualApplicationRoute)),{message:'Synthetic catalog cannot enable applications'})

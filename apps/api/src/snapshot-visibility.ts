@@ -1,8 +1,14 @@
+import {z} from 'zod';
 import {DemoSnapshotSchema} from '@hufs-one/contracts';
 
 /** Internal metadata only; it carries no precomputed or academic section. */
-export const SnapshotMetadataSchema=DemoSnapshotSchema.pick({
-  demoSubjectId:true,datasetMode:true,asOf:true,versions:true,
+// Full snapshots have cross-section refinements. Reuse the four field schemas
+// without deriving an object from (or removing checks on) the full wire schema.
+export const SnapshotMetadataSchema=z.strictObject({
+  demoSubjectId:DemoSnapshotSchema.shape.demoSubjectId,
+  datasetMode:DemoSnapshotSchema.shape.datasetMode,
+  asOf:DemoSnapshotSchema.shape.asOf,
+  versions:DemoSnapshotSchema.shape.versions,
 });
 
 /** Call only after checking current authority. Never read a hidden value:

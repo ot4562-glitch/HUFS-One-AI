@@ -33,6 +33,11 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
                 ? <ul className="rows">{view.feed.data.compact.map(c => <CompactRow key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
                 : <p className="muted">다른 공고가 없어요.</p>}
             </Section>
+            {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
+              <p className="muted">현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개를 표시합니다.</p>
+              <ul className="rows">{view.feed.data.ineligible!.map(c=>
+                <CompactRow key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
+            </Section>}
           </>
         ) : <Section title="공고"><p className="muted">{NOT_SHARED_TEXT}</p></Section>}
         {view.notices.kind === 'SHOW' && notices.length > 0 && (
@@ -60,6 +65,11 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
         {all.length ? <ul className="rows">{all.map(c => <CompactRow key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
           : <p className="muted">표시할 공고가 없어요.</p>}
         {view.feed.data.hasMore && <p className="muted">더 많은 공고는 검색·필터 기능과 함께 제공될 예정입니다.</p>}
+        {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
+          <p className="muted">현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개를 표시합니다.</p>
+          <ul className="rows">{view.feed.data.ineligible!.map(c=>
+            <CompactRow key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
+        </Section>}
       </>
     ),
   };
@@ -71,7 +81,7 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
   const view = screenViewOf(state);
   if (!view) return {title: '공고', body: <NoSnapshot state={state} />};
   const id = decodeURIComponent(m[1]!);
-  const card = view.feed.kind === 'SHOW' ? [...view.feed.data.featured, ...view.feed.data.compact].find(c => c.opportunityId === id) : undefined;
+  const card = view.feed.kind === 'SHOW' ? [...view.feed.data.featured, ...view.feed.data.compact, ...(view.feed.data.ineligible??[])].find(c => c.opportunityId === id) : undefined;
   // A card from a different subject/snapshot is never looked up elsewhere.
   if (!card) return {title: '공고를 찾을 수 없습니다', body: <p className="muted">지금 시연 대상의 화면에 없는 공고입니다.</p>};
   return {

@@ -206,7 +206,7 @@ describe('buildMajorWhatIf (#11, #82)', () => {
 
   it('dropping the double major switches the primary to its 전공심화 pack', () => {
     const result = ready(run({action:'REMOVE_DOUBLE_MAJOR'}));
-    expect(result.hypothetical.degreePath).toBe('MAJOR_DEEPENING');
+    expect(result.hypothetical.degreePath).toBe('ADVANCED_SINGLE');
     expect(result.hypothetical.rulePackVersions).toEqual(['SYN-A-MD-1']);
     // 전공심화 needs 36 in area A; A1 A2 S1 give 18, so 18 are missing. S1 is not shared any more.
     expect(result.hypothetical.requirements).toEqual([
@@ -225,7 +225,7 @@ describe('buildMajorWhatIf (#11, #82)', () => {
     expect(asDouble.current.rulePackVersions).toEqual(['SYN-A-MD-1']);
     expect(asDouble.hypothetical.rulePackVersions).toEqual(['SYN-A-DM-1', 'SYN-C-DM-1']);
     const asMinor = ready(run({action:'ADD_MINOR', targetMajorId:'SYN-MAJ-C'}, {current:A_ONLY}));
-    expect(asMinor.hypothetical.degreePath).toBe('MAJOR_DEEPENING_MINOR');
+    expect(asMinor.hypothetical.degreePath).toBe('ADVANCED_PLUS_MINOR');
     expect(asMinor.hypothetical.rulePackVersions).toEqual(['SYN-A-MM-1', 'SYN-C-MI-1']);
     // 전공심화+부전공 needs 30 in area A: 18 earned, 12 missing. The minor row is met by C1.
     expect(asMinor.hypothetical.requirements).toEqual([
@@ -343,6 +343,21 @@ describe('buildMajorWhatIf (#11, #82)', () => {
     expect(() => run({action:'CHANGE_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-C'}, {programs:noEvidence})).toThrow(/no evidence/);
     expect(() => run({action:'REMOVE_DOUBLE_MAJOR'}, {current:{primaryProgramId:'SYN-MAJ-A', secondary:{role:'DOUBLE_MAJOR', programId:'SYN-MAJ-A'}}}))
       .toThrow(/cannot be the primary/);
+  });
+
+  it('names a bad program ID instead of silently mapping unknown degree paths (#231 follow-up)', () => {
+    const malformed:ProgramOffer[] = CATALOG.map(offer => offer.role === 'PRIMARY_MAJOR'
+      && offer.programId === 'SYN-MAJ-D'
+      ? {...offer, degreePath:'UNKNOWN' as never} : offer);
+    expect(() => run({action:'CHANGE_PRIMARY_MAJOR',targetMajorId:'SYN-MAJ-D'}, {programs:malformed}))
+      .toThrow('Primary pack SYN-MAJ-D needs a supported degree path');
+    // A legitimate, canonical contract path must not be downgraded to UNKNOWN.
+    const canonical=CATALOG.map(offer => offer.role === 'PRIMARY_MAJOR'
+      && offer.programId === 'SYN-MAJ-A'
+      && offer.degreePath === 'MAJOR_DEEPENING'
+      ? {...offer,degreePath:'ADVANCED_SINGLE' as const} : offer);
+    const expected=run({action:'REMOVE_DOUBLE_MAJOR'});
+    expect(run({action:'REMOVE_DOUBLE_MAJOR'},{programs:canonical})).toEqual(expected);
   });
 
   it('undoing a change swaps the two sides, on seeded random transcripts', () => {

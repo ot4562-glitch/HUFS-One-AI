@@ -40,6 +40,9 @@ import {createPostgresOwnerStudyPlanServices} from './modules/academics/owner-st
 import type {OwnerStudyPlanAuthority} from './modules/academics/owner-study-plan-services-postgres.js';
 import {createPostgresOwnerRecommendations} from './modules/opportunities/owner-recommendations-postgres.js';
 import type {ApprovedOwnerRecommendationGate,OwnerRecommendationAuthority} from './modules/opportunities/owner-feed-http.js';
+import {createOwnerMajorWhatIfSource} from './modules/academics/owner-major-what-if-source.js';
+import type {TrustedOwnerMajorWhatIfLoader} from './modules/academics/owner-major-what-if-source.js';
+import type {TrustedOwnerMajorWhatIfRights,ApprovedMajorWhatIfGate} from './modules/profiles/owner-major-what-if-http.js';
 
 /** Supply independently restricted, verified pools after applying reviewed migrations.
  * This creates adapters only: no credentials, pool creation, migrations or live calls. */
@@ -82,6 +85,9 @@ export interface PostgresPlatformConfig {
     ownerAuthority:OwnerStudyPlanAuthority;approval:ApprovedStudyPlanGate};
   /** Owner-private, current approved double-major projection; never a browser rulepack. */
   doubleMajor?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
+  /** Explicit approved snapshot loader; no default DB/raw intake or activation authority. */
+  majorWhatIf?:{loader:TrustedOwnerMajorWhatIfLoader;
+    rights:TrustedOwnerMajorWhatIfRights;approvalGate:ApprovedMajorWhatIfGate};
   /** Exact independently approved SourceRevision claims; read-only. */
   revisionComparison?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
   /** Isolated EMPTY_DEMO synthetic profile only, never a personal-account fallback. */
@@ -121,6 +127,8 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
     ...(config.ownerStudyPlan?{studyPlanCheck:createPostgresOwnerStudyPlanServices({...config.ownerStudyPlan,now})}:{}),
     ...(config.ownerRecommendations?createPostgresOwnerRecommendations({...config.ownerRecommendations,now}):{}),
     ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
+    ...(config.majorWhatIf?{majorWhatIf:{source:createOwnerMajorWhatIfSource(config.majorWhatIf.loader),
+      rights:config.majorWhatIf.rights,approvalGate:config.majorWhatIf.approvalGate}}:{}),
     ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights,context:claims.context}}:{}),
     ...(config.demoProfile?{demoProfile:new DemoProfileService(
       new PostgresDemoProfileStore(config.demoProfile.pool))}:{}),

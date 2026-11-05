@@ -1,7 +1,8 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {canReadSharedSection,DatasetModeSchema,DemoContextSchema,DemoSnapshotSchema,EligibilityConditionSchema,
-  ISODateTimeSchema,OpportunitySchema,SharedSectionSchema,SharingGrantSchema,TopicCodeSchema} from '@hufs-one/contracts';
+  ISODateTimeSchema,OpportunitySchema,SharedSectionSchema,SharingGrantSchema,
+  RecommendationProfileInputSchema,NoticeStudentInputSchema,NoticeInputSchema} from '@hufs-one/contracts';
 import {scopeInputsToGrant} from '../../../../packages/core/src/opportunities/scope.js';
 import type {RevisionRecord} from '../../../../packages/core/src/normalization/revisions.js';
 import type {ReviewerSqlConnection,ReviewerSqlPool} from './auth/reviewer-postgres.js';
@@ -10,38 +11,24 @@ import type {DemoSnapshot} from '@hufs-one/contracts';
 import {maskUnsharedSnapshot} from '../snapshot-visibility.js';
 import {CalendarDeadlineProofSchema,verifyCalendarDeadlineProjection} from './calendar-deadline-evidence.js';
 import type {CalendarDeadlineProof} from './calendar-deadline-evidence.js';
+import {gateAcademicNoticeReferences} from './academics/notice-rulepack-gate.js';
 
 const Ref=z.string().min(1).max(200).regex(/^[A-Za-z0-9_.:@-]+$/);
 const Label=z.string().min(1).max(500);
 const Refs=z.array(Ref).max(400);
 const ScopeField=z.enum(['campus','college','majors','cohort','enrollmentState','admissionType']);
 const ConditionField=EligibilityConditionSchema.shape.field;
-const Fact=z.union([z.string().max(500),z.number().finite(),z.boolean(),z.array(z.string().max(500)).max(100)]);
-const Major=z.strictObject({major:Label,role:z.enum(['PRIMARY','DOUBLE','MINOR'])});
 const NormalizedInputs=z.strictObject({
-  profile:z.strictObject({interestTopics:z.array(TopicCodeSchema).max(24),desiredJobTopics:z.array(TopicCodeSchema).max(24),
-    approvedExperienceTopics:z.array(TopicCodeSchema).max(24),approvedLanguageCodes:z.array(Label).max(24),
-    officialMajorTopics:z.array(TopicCodeSchema).max(24),facts:z.partialRecord(ConditionField,Fact)}),
-  noticeStudent:z.strictObject({campus:Label.optional(),college:Label.optional(),majors:z.array(Major).max(16).optional(),
-    cohort:z.number().int().min(1900).max(2200).optional(),enrollmentState:Label.optional(),admissionType:Label.optional(),
-    targetGraduationTerm:z.string().regex(/^\d{4}-[12]$/).optional(),graduationTermVerified:z.boolean().optional(),
-    openRequirementIds:Refs.nullable(),courseIds:Refs,interestTopics:z.array(TopicCodeSchema).max(24)}),
+  profile:RecommendationProfileInputSchema,
+  noticeStudent:NoticeStudentInputSchema,
   provenance:z.strictObject({noticeScope:z.partialRecord(ScopeField,SharedSectionSchema).optional(),
     facts:z.partialRecord(ConditionField,SharedSectionSchema).optional()}),
   opportunities:z.array(OpportunitySchema).max(200),
-  notices:z.array(z.strictObject({id:Ref,sourceSnapshotId:Ref,title:Label,issuer:Label,
-    category:z.enum(['ACADEMIC','SCHOLARSHIP','EXCHANGE','CAREER','GENERAL']),campus:Label.optional(),college:Label.optional(),
-    majors:z.array(Label).max(32).optional(),majorRoles:z.array(z.enum(['PRIMARY','DOUBLE','MINOR'])).max(3).optional(),
-    cohortRange:z.strictObject({min:z.number().int().optional(),max:z.number().int().optional()}).optional(),
-    enrollmentStates:z.array(Label).max(32).optional(),admissionTypes:z.array(Label).max(32).optional(),
-    graduationTermScope:Refs.optional(),requirementRefs:Refs.optional(),courseRefs:Refs.optional(),
-    topicCodes:z.array(TopicCodeSchema).max(24).optional(),scholarshipConditions:z.array(Label).max(32).optional(),
-    studentDeadline:ISODateTimeSchema.optional(),adminReportDeadline:ISODateTimeSchema.optional(),
-    publishedAt:ISODateTimeSchema.optional(),validUntil:ISODateTimeSchema.optional(),
-    eventSessions:z.array(z.strictObject({start:ISODateTimeSchema,end:ISODateTimeSchema.optional()})).max(40).optional(),
-    verificationState:z.enum(['CANDIDATE','VERIFIED','NEEDS_REVIEW','REJECTED']),evidenceRefs:Refs,
-  })).max(200),deadlineProofs:z.array(CalendarDeadlineProofSchema).max(200).optional(),
+  notices:z.array(NoticeInputSchema).max(200),deadlineProofs:z.array(CalendarDeadlineProofSchema).max(200).optional(),
   savedOpportunityIds:Refs.optional(),
+  // Only independently approved private projection input. Invalid/missing
+  // binding causes a review hold, not a whole-list parse failure or approval.
+  academicNoticeRules:z.unknown().optional(),
 });
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const iso=(value:unknown)=>ISODateTimeSchema.parse(value instanceof Date?value.toISOString():value);
@@ -144,7 +131,7 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
       // undefined values from injected/fake adapters too and preserves exact optional TS contracts.
       const normalized=JSON.parse(JSON.stringify(NormalizedInputs.parse(p.input_json))) as
         Pick<CalendarInputBundle,'profile'|'noticeStudent'|'provenance'|'opportunities'|'notices'|'savedOpportunityIds'>
-        &{deadlineProofs?:CalendarDeadlineProof[]};
+        &{deadlineProofs?:CalendarDeadlineProof[];academicNoticeRules?:unknown};
       const sourceIds=z.array(Ref).max(100).parse(p.source_ids);
       if(new Set(sourceIds).size!==sourceIds.length)return null;
       // Writers in #34 lock these same HEAD rows before inserting a successor revision. Do not
@@ -153,7 +140,7 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         WHERE source_id=ANY($1::text[]) ORDER BY source_id LIMIT 101`,[sourceIds]);
       if(heads.length!==sourceIds.length||heads.some(h=>!sourceIds.includes(String(h.source_id))))return null;
       const rawRevisions=await this.rows(client,`SELECT revision_id,source_id,supersedes,status,change_kind,provenance,
-        permission_ref,published_at,fetched_at,last_verified_at,valid_from,valid_until FROM source_effective_revisions_vnext
+        permission_ref,original_sha256,published_at,fetched_at,last_verified_at,valid_from,valid_until FROM source_effective_revisions_vnext
         WHERE source_id=ANY($1::text[]) ORDER BY source_id,fetched_at,revision_id LIMIT 1001`,[sourceIds]);
       if(rawRevisions.length>1000)throw Error('Revision history needs a narrower approved projection');
       const revisions=rawRevisions.map(revision);
@@ -219,13 +206,18 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         revisionProvenance:Object.fromEntries(revisions.map(r=>[r.revisionId,r.provenance])),
         datasetMode:DatasetModeSchema.parse(p.dataset_mode),
       });
-      const {deadlineProofs:_privateProofs,...safeNormalized}=normalized;
+      const {deadlineProofs:_privateProofs,academicNoticeRules:_privateAcademicRules,...safeNormalized}=normalized;
+      const notices=gateAcademicNoticeReferences({
+        actorId:actor,asOf,academicsShared:grant.allowedSections.includes('ACADEMICS'),
+        academics:approvedSnapshot.academics,binding:_privateAcademicRules,
+        revisions:rawRevisions,authorizedRevisionIds,notices:verifiedDates.notices,
+      });
       const scopeKey=scopeInputsToGrant(normalized.profile,normalized.noticeStudent,grant.allowedSections,normalized.provenance).scopeKey;
       const sourceVersion=hash([heads,rawRevisions,rights,conflicts]);
       const authorizationToken=hash([context,grant,g.consent_ref,p,s,sourceVersion,scopeKey]);
       await client.query('COMMIT');transaction=false;
       return {actorId:actor,context,grant,asOf,datasetMode:DatasetModeSchema.parse(p.dataset_mode),
-        ...safeNormalized,opportunities:verifiedDates.opportunities,notices:verifiedDates.notices,
+        ...safeNormalized,opportunities:verifiedDates.opportunities,notices,
         deadlineClaimRefsByOpportunity:verifiedDates.acceptedClaimIdsByOpportunity,
         revisions,authorizedRevisionIds,scopeKey,sourceVersion,authorizationToken,approvedSnapshot};
     }catch{
