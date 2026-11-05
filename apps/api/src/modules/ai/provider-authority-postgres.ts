@@ -174,7 +174,7 @@ export class PostgresProviderAuthority {
       }
     }
     if(p.input_class==='PERSONAL_CONSENTED_CLEARED')requireThat(hasConsentedPersonalSource);
-    if(p.safe_packet?.task==='experience_skills'){
+    if(p.safe_packet?.task==='experience_skills'&&p.input_class==='PERSONAL_CONSENTED_CLEARED'){
       // A reviewed source packet cannot survive its owner experience being
       // edited/deleted, switched, or withdrawn. Enforce this in BOTH fresh
       // authority transactions, including readJob/cache disclosures.
