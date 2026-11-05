@@ -69,6 +69,7 @@ interface SharedDependencies {
   experienceApproval?:ExperienceApprovalPort;
   demoOverlay?:ApiOptions['demoOverlay'];
   adminAuthority?:ApiOptions['adminAuthority'];
+  adminUsage?:ApiOptions['adminUsage'];
   demoPreflight?:ApiOptions['demoPreflight'];
   allowedOrigin:string;
   trustedProxyAddresses?:ApiOptions['trustedProxyAddresses'];
@@ -166,6 +167,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
       ?{trustedProxyAddresses:deps.trustedProxyAddresses}:{}),
     ...(deps.demoOverlay?{demoOverlay:deps.demoOverlay}:{}),
     ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{}),
+    ...(deps.adminUsage?{adminUsage:deps.adminUsage}:{}),
     ...(deps.demoPreflight?{demoPreflight:deps.demoPreflight}:{}),
     ...(deps.googleAuth?{
       googleAuth:deps.googleAuth,
