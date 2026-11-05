@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {readFileSync} from 'node:fs';
-import {blankDemoProfileValue,type DemoProfileValue} from '@hufs-one/contracts';
+import {blankDemoProfileValue,blankDemoProfileWorkspace,type DemoProfileValue} from '@hufs-one/contracts';
 import {PostgresDemoProfileStore} from '../../apps/api/src/modules/profiles/demo-profile-postgres.js';
 import {DemoProfileConflict} from '../../apps/api/src/modules/profiles/demo-profile.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
@@ -14,7 +14,7 @@ function database(){
     if(fail&&sql.includes('FROM api_demo_profiles'))throw Error('storage failure');
     if(sql.includes('INSERT INTO api_demo_profiles')||sql.includes('UPDATE api_demo_profiles')){
       const old=rows.get(id),row={version:Number(old?.version??0)+1,value_json:JSON.parse(params[1] as string),
-        last_operation:params[2],last_expected_version:params[3],updated_at:new Date(NOW)};
+        workspace_json:JSON.parse(params[4] as string),last_operation:params[2],last_expected_version:params[3],updated_at:new Date(NOW)};
       rows.set(id,row);return {rows:[row]};
     }
     if(sql.includes('FROM api_demo_profiles'))return {rows:rows.has(id)?[rows.get(id)!]:[]};
@@ -24,7 +24,7 @@ function database(){
 describe('independent demo-profile SQL protocol',()=>{
   it('binds exact RLS actor per transaction; persists across adapters with zero and half-credit units',async()=>{
     const db=database(),a=new PostgresDemoProfileStore(db.pool),b=new PostgresDemoProfileStore(db.pool);
-    expect(await a.read('synthetic:a')).toEqual({version:0,value:blankDemoProfileValue(),updatedAt:null});
+    expect(await a.read('synthetic:a')).toEqual({version:0,value:blankDemoProfileValue(),workspace:blankDemoProfileWorkspace(),updatedAt:null});
     expect((await a.save('synthetic:a',{expectedVersion:0,value})).value.earnedCreditUnits).toBe(0);
     expect((await b.read('synthetic:a')).version).toBe(1);
     expect((await b.read('synthetic:b')).value).toEqual(blankDemoProfileValue());

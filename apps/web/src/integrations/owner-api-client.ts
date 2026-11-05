@@ -13,10 +13,13 @@ import {
   OpportunityRevisionComparisonContextResponseSchema,
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
   DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
+  DemoProfileWorkspaceSaveSchema,blankDemoProfileWorkspace,
   OwnerDoubleMajorAuditSchema,
   ApprovedProviderInputsSchema,ApprovedProviderInputSchema,ProviderRunRequestSchema,
   ProviderAcceptedSchema,ProviderStoredJobSchema,AI_TASK_PATHS,AiTaskPathSchema,
-  SyntheticClubDetailResponseSchema,
+  SyntheticClubDetailResponseSchema,SyntheticClubAdminListResponseSchema,SyntheticClubCreateSchema,
+  SyntheticClubEditSchema,SyntheticClubWriteResponseSchema,SyntheticClubDecisionRequestSchema,
+  SyntheticClubDecisionResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import type {ApprovedProviderInput,AiTaskPath} from '@hufs-one/contracts';
@@ -105,6 +108,32 @@ export class HufsOwnerApiClient {
     const detail=await this.request('/api/synthetic/clubs/'+id,
       SyntheticClubDetailResponseSchema,{signal});
     requireMatchingReceipt(detail.item.post.id===id);return detail;
+  }
+  /** Independent ADMIN-only synthetic publication; server rechecks the grant
+   * inside the durable transaction. This client never supplies actor/asOf/source. */
+  listSyntheticClubModeration(signal?:AbortSignal){
+    return this.request('/api/admin/synthetic/clubs',SyntheticClubAdminListResponseSchema,{signal});
+  }
+  async createSyntheticClub(change:z.infer<typeof SyntheticClubCreateSchema>,signal?:AbortSignal){
+    const input=clientInput(SyntheticClubCreateSchema,change);
+    const result=await this.mutate('/api/admin/synthetic/clubs',SyntheticClubWriteResponseSchema,'POST',input,signal);
+    const {id,state,createdAt,updatedAt,approvedAt,...content}=result.record.post;
+    requireMatchingReceipt(id===input.id&&result.record.version===1&&state==='REVIEW_PENDING'
+      &&approvedAt===undefined&&same(content,input.content));
+    return result;
+  }
+  async editSyntheticClub(clubId:string,change:z.infer<typeof SyntheticClubEditSchema>,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^SYN-CLUB-[0-9]{3}$/),clubId),input=clientInput(SyntheticClubEditSchema,change);
+    const result=await this.mutate('/api/admin/synthetic/clubs/'+id,SyntheticClubWriteResponseSchema,'PATCH',input,signal);
+    const {id:receivedId,state,createdAt,updatedAt,approvedAt,...content}=result.record.post;
+    requireMatchingReceipt(receivedId===id&&result.record.version===input.expectedVersion+1&&state==='REVIEW_PENDING'
+      &&approvedAt===undefined&&same(content,input.content));return result;
+  }
+  async decideSyntheticClub(clubId:string,change:z.infer<typeof SyntheticClubDecisionRequestSchema>,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^SYN-CLUB-[0-9]{3}$/),clubId),input=clientInput(SyntheticClubDecisionRequestSchema,change);
+    const result=await this.mutate('/api/admin/synthetic/clubs/'+id+'/decision',SyntheticClubDecisionResponseSchema,'POST',input,signal);
+    const state={APPROVE:'APPROVED',REJECT:'REJECTED',REVOKE:'REVOKED'}[input.decision];
+    requireMatchingReceipt(result.id===id&&result.version===input.expectedVersion+1&&result.state===state);return result;
   }
   getProfile(signal?:AbortSignal){return this.request('/api/profile',ProfileRead,{signal});}
   async updateProfile(change:z.infer<typeof SelfProfilePatchSchema>,signal?:AbortSignal){
@@ -278,11 +307,19 @@ export class HufsOwnerApiClient {
       &&same(result.profile.value,input.value));
     return result;
   }
+  async saveDemoWorkspace(change:z.infer<typeof DemoProfileWorkspaceSaveSchema>,signal?:AbortSignal){
+    const input=clientInput(DemoProfileWorkspaceSaveSchema,change);
+    const result=await this.mutate('/api/demo-profile/workspace',DemoProfileResponseSchema,'PUT',input,signal);
+    requireMatchingReceipt(result.profile.version===input.expectedVersion+1
+      &&same(result.profile.workspace,input.workspace));
+    return result;
+  }
   async resetDemoProfile(change:z.infer<typeof DemoProfileResetSchema>,signal?:AbortSignal){
     const input=clientInput(DemoProfileResetSchema,change);
     const result=await this.mutate('/api/demo-profile/reset',DemoProfileResponseSchema,'POST',input,signal);
     requireMatchingReceipt(result.profile.version===input.expectedVersion+1
-      &&same(result.profile.value,blankDemoProfileValue()));
+      &&same(result.profile.value,blankDemoProfileValue())
+      &&same(result.profile.workspace,blankDemoProfileWorkspace()));
     return result;
   }
 

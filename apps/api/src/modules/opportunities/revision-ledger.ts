@@ -25,7 +25,8 @@ export type TemporalPolicy=EvidenceActorScope & {
 };
 export type TemporalResult={
   envelope:RetrievalEnvelopeVNext;
-  hits:{sourceId:string;revisionId:string;paragraphId:string;quote:string;score:number}[];
+  hits:{sourceId:string;revisionId:string;paragraphId:string;quote:string;score:number;
+    imageSpan?:Extract<SourceSpanVNext,{kind:'IMAGE'}>}[];
 };
 const LIM_PARAGRAPHS=200;
 const LIM_CONTENT=500_000;

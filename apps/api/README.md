@@ -10,6 +10,112 @@
 
 > **2026-11-04 통합 후 현재 정본:** 2026-11-04: [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main f23b86bb에 #183/#213의 7분리 PostgreSQL ROLE/TLS 및 루프백 운영자 진입점·Source/Provider/owner SQL이 통합됐다. 열린 PR **0건**, main TASK-00/NCP IaC/Chrome **3/3 SUCCESS**. **실 Google code exchange·학교메일·운영 PostgreSQL/RLS·TLS/공개 production 기동은 NOT_RUN / RELEASE_BLOCKED**. 아래 과거의 'main 미병합', 스택 PR 대기·옛 HEAD CI 표현은 당시 이력이다. [STATUS](../../STATUS.md) · [잔여 구현](../../docs/REMAINING_IMPLEMENTATION_20261104.md).
 
+## 비공개 운영자 인입 명령 (#27 · A03.3)
+
+`apps/api/src/admin/intake.ts`는 기존 `PostgresRestrictedIntakeImport`의
+운영자 전용 소비자다. 브라우저 라우트나 자동 파일 탐색 없이, 별도로 준비한
+비공개 factory가 전달하는 4개 대상 Forms/CSV와 독립 목적 권한만 사용한다.
+
+먼저 API를 빌드한 후, 설정이나 원본을 읽지 않는 계획 확인을 실행할 수 있다.
+
+```bash
+npm run build:api
+node dist/apps/api/src/admin/intake.js --plan
+```
+
+실제 인입은 독립 검토를 마친 Linux 운영자 환경에서만 준비한다.
+`HUFS_INTAKE_OPERATOR_MODE=private-staging`,
+`HUFS_INTAKE_OPERATOR_ACK=PRIVATE_INTAKE_NOT_RELEASE`와
+`HUFS_INTAKE_CONFIG_MODULE`을 명시해야 한다. 모듈은
+`/etc/hufs-one/private/` 바로 아래 root 소유의 일반 `.mjs` 파일이며,
+중첩 폴더·상위 이동·비정규 경로와 symlink/hardlink 및 group/world 접근을 거부한다. 상위 디렉터리도 root 소유이며
+group/world 쓰기를 허용하지 않아야 한다. 모듈 크기는 64 KiB 이하로 제한한다.
+`APP_ENV=local`, `NODE_ENV=development` 같은 비공개 검증 환경을 사용하며,
+production 또는 미등록 환경값은 비공개 설정을 읽기 전에 거부한다.
+
+모듈의 `createRestrictedIntakeConfig()`는 `RestrictedIntakeConfig`
+(`input`, `authority`, 저장 시 `database`)를 반환한다.
+권한 어댑터는 실제 운영자와 대상의 `LOCAL_TRANSCRIPT_REVIEW` 목적·원본 이용권·
+현재 동의를 독립 확인해야 한다. 기본 권한, 기본 자격증명, 저장소 이력 CSV를
+읽는 구현은 제공하지 않는다. 저장용 DB는 기존 pool factory의
+`environment: 'production'` TLS/전용 nonprivileged LOGIN 검사를 사용한다.
+이 값은 DB 연결의 보안 모드이며 공개 앱의 production 기동을 허용하지 않는다.
+
+다음은 승인된 비공개 환경에서 사용할 명령 형식이다. 토큰·해시·버전은
+그 환경의 현재 값을 사용하고, 실명이나 학번을 인자로 넣지 않는다.
+
+```text
+node dist/apps/api/src/admin/intake.js --preview
+node dist/apps/api/src/admin/intake.js --apply --preview-hash <64자리 소문자 SHA256> --expected-version <익명대상A>=<현재버전> --expected-version <익명대상B>=<현재버전> --expected-version <익명대상C>=<현재버전> --expected-version <익명대상D>=<현재버전>
+```
+
+- `--preview`는 DB pool을 생성하거나 SQL을 실행하지 않는다. 원본·이름·경로·
+  대상별 레코드 대신 검토 해시, 전체 행 수, 오류 코드별 수, 학점 비교 결과 수만 출력한다.
+- `--apply`는 서로 다른 4개 익명 대상의 버전을 각각 받는다. 모든 값은
+  정규형 0 이상의 안전한 정수이며, 전체 입력·actor·대상/파일 매핑에 결속된
+  preview 해시와 일치해야 한다. 이 값들은 원본 열람·처리 권한을 대신하지 않는다.
+- 권한·동의·preview 확인에 실패하면 pool을 열지 않는다. 각 대상의 현재 head와
+  CAS를 확인하고 네 대상을 한 트랜잭션에 저장한다. 같은 배치 재실행은 재사용하며,
+  다른 배치의 오래된 버전은 전체 롤백한다. DB 연결·잠금·저장 대기 뒤에도
+  COMMIT 직전 네 대상의 현재 목적 권한을 다시 확인한다.
+- 결과는 항상 `STUDENT_REVIEW_PENDING`이다. 불명확한 학점이나 동의를
+  임의로 확정하거나 `DEMO_READY`·공식 졸업요건으로 승격하지 않는다.
+  명령 종료 때 pool을 닫고, 실패는 원본/경로/DB 오류를 숨긴
+  `INTAKE_COMMAND_REFUSED_OR_UNCONFIRMED`만 출력한다.
+  이 메시지는 이미 저장된 커밋의 롤백을 보증하지 않는다.
+
+검증은 `tests/api/intake-operator.test.ts`와
+`tests/api/intake-postgres.test.ts`의 합성 SQL 프로토콜 검사 및 빌드된
+`--plan`/미승인 `--preview` 거부 확인이다. 실제 비공개 factory, 원본 파일,
+운영 PostgreSQL/RLS·권한/동의 증명은 **NOT_RUN**이며 공개 출시는
+**RELEASE_BLOCKED**다.
+
+## 승인 이미지·PDF OCR의 저장·검수·검색 (#19/#20, 로컬 코드)
+
+`createApprovedDurableSourceExecutor`의 선택 항목 `imageExtractor`에
+`createApprovedImageExtractor`를 명시적으로 연결하면 PNG/JPEG의 원본 SHA,
+OCR 필드/좌표와 IMAGE 인용을 불변 판본으로 저장할 수 있다.
+PDF는 별도 `pdfExtractor: createApprovedPdfExtractor(...)`와
+`createPopplerPdfRenderer(...)`를 연결한다. `pdfRuntimeIdentity(runtime)`의
+정확한 렌더러 해시를 권한 영수증에 결속하며, 원본 PDF·페이지별 PNG·OCR 필드·
+원본 페이지 좌표 변환을 함께 보존한다. 조립·제한·검증 범위는
+[PDF_RUNTIME](../../infra/ai/PDF_RUNTIME.md)을 따른다.
+기본값은 OFF이며, 독립 `TRANSFORM`·`EXTERNAL_AI` 영수증과 기존
+COLLECT/STORE/EXTERNAL_TRANSFER 권한, 별도로 주입한 예산·취소 통제 OCR 포트가
+모두 필요하다. 비동기 처리 전후 같은 권한을 재검증한다. 실제 provider나
+자격증명은 기본 제공하지 않는다.
+
+업데이트한 reader/writer를 배포하기 전에 별도 검토한
+`infra/sql/20261105_source_image_evidence.sql`을 기존
+`20261101_source_review.sql` 뒤에 적용하고, 이어서
+`20261105_source_pdf_evidence.sql`을 적용해야 한다. 이 작업은 마이그레이션을
+실행하지 않는다. 기존 비공개 ingest 역할에는 revision/paragraph 메타데이터 조회와
+봉인 확인을 위한 originals의 `SELECT(revision_id)`가 필요하다. 새 마이그레이션은
+권한을 자동 부여하지 않으며, 검색 역할에는 원본 바이트 접근을 추가하지 않는다.
+PDF ingest/review 역할의 `source_pdf_rasters_vnext` 접근도 별도로 검토해야 한다.
+검색 view는 검증용 페이지 메타데이터만 제공하며 PDF/PNG 바이트는 제공하지 않는다.
+
+새 이미지는 항상 `NEEDS_REVIEW`다. 독립 검수자가 원본·문단·OCR/bbox 묶음의
+정확한 해시를 확인한 뒤에만 effective view와 검색이 IMAGE 근거를 사용한다.
+원본 묶음을 저장한 뒤 IMAGE 문단을 추가하는 순차 INSERT를 거부하며,
+동시 쓰기는 기존 source-head 잠금 프로토콜을 따라야 한다.
+같은 원본은 확인 시각만 갱신하고, 정정 이미지는 미검수 후속 판본을 만든다.
+
+네트워크 원본 상한은 256 KiB다. PNG/JPEG는 identity raster v1의 단일 페이지,
+PDF는 최대 4쪽의 `pdf-full-page-v1`만 지원한다. PDF는 암호화·첨부·스크립트·
+양식/주석·회전·잘라낸 페이지·비단위 UserUnit을 거부한다. 페이지당 PNG 256 KiB,
+원본과 모든 PNG 합계 1 MiB, 렌더러 10초 상한을 적용한다. pypdf 6.21.4와
+독립 검토한 Poppler/Python/라이브러리/폰트 전체 rootfs의 정확한 해시가 필요하다.
+패키지나 바이너리를 자동 설치하지 않으며 승인되지 않은 host 폴더를 mount하지 않는다.
+정규화 성공은 OCR 의미·레이아웃의 인적 정확성 판정이 아니다.
+`source-image-ingestion.test.ts`, `source-pdf-ingestion.test.ts`,
+`source-pdf-persistence.test.ts`는 합성 권한/취소/저장/검수/검색을 검사한다.
+두 `source-*-live-slice.ts`를 기존 opt-in PostgreSQL CI에 연결했으나 로컬 실 PG는
+미실행이다. 그 fixture는 admin writer/reviewer와 제한된 reader를 사용하므로
+운영 ingest/review 역할 설정이나 실제 포스터/PDF 평가를 증명하지 않는다.
+실제 합성 PDF를 렌더링한 worker 검증과 전체 bubblewrap 실행/운영 허가는 구별한다.
+기본 OFF 및 **RELEASE_BLOCKED**는 유지한다.
+
 ## 공유 컨텍스트 자원과 해제 (#203)
 
 `POST /api/demo/contexts`의 프로세스별 전역 200개 제한에 사용자당 100개,

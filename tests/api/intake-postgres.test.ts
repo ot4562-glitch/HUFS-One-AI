@@ -1,14 +1,14 @@
 import {describe,expect,it} from 'vitest';
 import {PostgresRestrictedIntakeImport} from
   '../../apps/api/src/modules/academics/intake-postgres.js';
-import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
+import {makeSyntheticIntake,syntheticOriginalPermission} from './synthetic-intake-fixture.js';
 
 function local(approved=true){
   let connections=0,permissions=0;
   const service=new PostgresRestrictedIntakeImport({connect:async()=>{
     connections++;
     throw new Error('Preview must not open a DB connection');
-  }},{mayProcess:async()=>{permissions++;return approved;}},
+  }},{mayProcess:async()=>{permissions++;return approved;},resolveOriginalPermission:async request=>syntheticOriginalPermission(request)},
   ()=> '2026-10-31T00:00:00.000Z');
   return {service,connections:()=>connections,permissions:()=>permissions};
 }
@@ -24,7 +24,7 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
     expect(JSON.stringify(result)).not.toContain('가상 기초과목');
     expect(JSON.stringify(result)).not.toContain('가상작성자');
     expect(h.connections()).toBe(0);
-    expect(h.permissions()).toBe(4);
+    expect(h.permissions()).toBe(8);
     expect((await h.service.preview(input)).previewHash).toBe(result.previewHash);
   });
   it('refuses parsing any potentially private text without operator+student purpose permission',async()=>{
@@ -59,9 +59,8 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
     const h=local(),input=makeSyntheticIntake();
     const changed={...input,courseFiles:[...input.courseFiles].map((f,i)=>i===0
       ?{...f,filename:'이수과목_타인.csv'}:f)};
-    const result=await h.service.preview(changed);
-    expect(result.ready).toBe(false);
-    expect(result.issues.map(i=>i.code)).toContain('UNAPPROVED_FILENAME');
+    await expect(h.service.preview(changed)).rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(h.permissions()).toBe(0);
   });
   it('flags a self-reported total mismatch for human review without asserting graduation',async()=>{
     const h=local(),input=makeSyntheticIntake();
@@ -77,5 +76,60 @@ describe('TASK-07 private intake preparation (synthetic inputs only)',()=>{
     const result=await h.service.preview(input);
     await expect(h.service.apply(input,{previewHash:'f'.repeat(64),expectedVersions}))
       .rejects.toMatchObject({code:'INVALID_INPUT'});
+  });
+  it('requires an explicit boolean purpose authorization',async()=>{
+    await expect(local('yes' as unknown as boolean).service.preview(makeSyntheticIntake()))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+  });
+  it.each(['connection','row lock','revision write'] as const)(
+    'rolls back the entire import when purpose rights are revoked during the %s',async stage=>{
+      let allowed=true,released=0;
+      const commands:string[]=[];
+      const service=new PostgresRestrictedIntakeImport({connect:async()=>{
+        if(stage==='connection')allowed=false;
+        return {release:()=>{released++;},query:async(sql:string)=>{
+          commands.push(sql);
+          if(sql.includes('SELECT current_version')){
+            if(stage==='row lock')allowed=false;
+            return {rows:[{current_version:0,current_batch_sha256:null}]};
+          }
+          if(sql.includes('INSERT INTO api_intake_revisions')){
+            if(stage==='revision write')allowed=false;
+            return {rows:[{import_version:1}]};
+          }
+          if(sql.includes('UPDATE api_intake_heads'))return {rows:[{current_version:1}]};
+          return {rows:[]};
+        }};
+      }},{mayProcess:async()=>allowed,resolveOriginalPermission:async request=>syntheticOriginalPermission(request)},()=> '2026-10-31T00:00:00.000Z');
+      const input=makeSyntheticIntake(),preview=await service.preview(input);
+      const expectedVersions=Object.fromEntries(input.formsOptions.expectedSubjectKeys.map(x=>[x,0]));
+      await expect(service.apply(input,{previewHash:preview.previewHash,expectedVersions}))
+        .rejects.toMatchObject({code:'FORBIDDEN'});
+      expect(commands).toContain('ROLLBACK');
+      expect(commands).not.toContain('COMMIT');
+      expect(released).toBe(1);
+    });
+  it('uses the completion-time clock when rechecking purpose rights before commit',async()=>{
+    let now='2026-10-31T00:00:00.000Z';
+    const commands:string[]=[];
+    const service=new PostgresRestrictedIntakeImport({connect:async()=>({
+      release:()=>{},query:async(sql:string)=>{
+        commands.push(sql);
+        if(sql.includes('SELECT current_version'))
+          return {rows:[{current_version:0,current_batch_sha256:null}]};
+        if(sql.includes('INSERT INTO api_intake_revisions')){
+          now='2026-10-31T00:01:00.000Z';
+          return {rows:[{import_version:1}]};
+        }
+        if(sql.includes('UPDATE api_intake_heads'))return {rows:[{current_version:1}]};
+        return {rows:[]};
+      },
+    })},{mayProcess:async input=>input.now<'2026-10-31T00:01:00.000Z',resolveOriginalPermission:async request=>syntheticOriginalPermission(request)},()=>now);
+    const input=makeSyntheticIntake(),preview=await service.preview(input);
+    const expectedVersions=Object.fromEntries(input.formsOptions.expectedSubjectKeys.map(x=>[x,0]));
+    await expect(service.apply(input,{previewHash:preview.previewHash,expectedVersions}))
+      .rejects.toMatchObject({code:'FORBIDDEN'});
+    expect(commands).toContain('ROLLBACK');
+    expect(commands).not.toContain('COMMIT');
   });
 });

@@ -30,7 +30,10 @@ describe('durable original preservation',()=>{
     const x=harness();await x.writer.append(input);
     const originalWrite=x.queries.find(q=>q.sql.includes('INSERT INTO source_originals_vnext'));
     expect(originalWrite).toBeDefined();
-    expect(originalWrite!.params).toEqual(['revision-1',input.revision.originalSha256,original,input.revision.fetchedAt]);
+    // HTML/TEXT originals carry no image bundle or image review digest.
+    expect(originalWrite!.params).toEqual([
+      'revision-1',input.revision.originalSha256,original,input.revision.fetchedAt,null,null,
+    ]);
     expect(x.queries.indexOf(originalWrite!)).toBeLessThan(x.queries.findIndex(q=>q.sql.includes('UPDATE source_ingest_heads')));
     expect(x.queries.at(-1)!.sql).toBe('COMMIT');
   });

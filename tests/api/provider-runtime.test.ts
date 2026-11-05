@@ -68,6 +68,85 @@ describe('provider execution gates and billing lifecycle',()=>{
     const f=fixture();f.reserve.mockRejectedValueOnce(Error('budget0'));
     expect((await createProviderExecutor(f.options).execute(request)).state).toBe('UNAVAILABLE');expect(f.post).not.toHaveBeenCalled();
   });
+  it.each(['timeout','cancel'] as const)('releases a newly committed reservation after %s without dispatching',async reason=>{
+    vi.useFakeTimers();
+    try{
+      const f=fixture(),reserve=f.reserve.getMockImplementation()!,cancel=new AbortController();
+      let entered!:()=>void,commit!:()=>Promise<void>;
+      const started=new Promise<void>(resolve=>{entered=resolve;});
+      f.reserve.mockImplementationOnce((a,v)=>new Promise<AiBudgetEntry&{hash:string}>(resolve=>{
+        commit=async()=>{resolve(await reserve(a,v));};entered();
+      }));
+      const req={...structuredClone(request),signal:cancel.signal};
+      const execution=createProviderExecutor(f.options).execute(req);
+      await started;
+      // Mutating the caller after admission must not change the cleanup identity.
+      req.actor.actorId='SYN-B';req.phaseId='OTHER-PHASE';req.idempotencyKey='OTHER-KEY';
+      if(reason==='timeout')await vi.advanceTimersByTimeAsync(1000);else cancel.abort();
+      const result=await execution;
+      expect(result.state).toBe('UNAVAILABLE');expect(f.records.size).toBe(0);
+      await commit();await vi.advanceTimersByTimeAsync(0);
+      expect(f.records.get('KEY1')?.state).toBe('RELEASED');
+      expect(result.billing).toBe('UNCONFIRMED');
+      expect(f.transition.mock.calls).toEqual([['SYN-A',{
+        phaseId:'SYN-PHASE',jobId:'00000000-0000-4000-8000-000000000001',
+        requestSha256:f.reserve.mock.calls[0]![1].requestSha256,action:'RELEASED',
+      }]]);
+      expect(f.post).not.toHaveBeenCalled();
+    }finally{vi.useRealTimers();}
+  });
+  it.each(['RESERVED','DISPATCHED'] as const)('does not release another executor\'s %s reservation returned after cancellation',async state=>{
+    vi.useFakeTimers();
+    try{
+      const f=fixture(),reserve=f.reserve.getMockImplementation()!,cancel=new AbortController();
+      let entered!:()=>void,finish!:()=>Promise<void>;
+      const started=new Promise<void>(resolve=>{entered=resolve;});
+      f.reserve.mockImplementationOnce((a,v)=>new Promise<AiBudgetEntry&{hash:string}>(resolve=>{
+        finish=async()=>{
+          const row=await reserve(a,v);f.records.get(v.idempotencyKey)!.state=state;
+          resolve({...row,state,changed:false});
+        };entered();
+      }));
+      const execution=createProviderExecutor(f.options).execute({...request,signal:cancel.signal});
+      await started;cancel.abort();const result=await execution;
+      await finish();await vi.advanceTimersByTimeAsync(0);
+      expect(result.billing).toBe('UNCONFIRMED');expect(f.records.get('KEY1')?.state).toBe(state);
+      expect(f.transition).not.toHaveBeenCalled();expect(f.post).not.toHaveBeenCalled();
+    }finally{vi.useRealTimers();}
+  });
+  it('keeps accounting unconfirmed when releasing a late reservation fails',async()=>{
+    vi.useFakeTimers();
+    try{
+      const f=fixture(),reserve=f.reserve.getMockImplementation()!,cancel=new AbortController();
+      let entered!:()=>void,commit!:()=>Promise<void>;
+      const started=new Promise<void>(resolve=>{entered=resolve;});
+      f.reserve.mockImplementationOnce((a,v)=>new Promise<AiBudgetEntry&{hash:string}>(resolve=>{
+        commit=async()=>{resolve(await reserve(a,v));};entered();
+      }));
+      f.transition.mockRejectedValueOnce(Error('private-accounting-failure'));
+      const execution=createProviderExecutor(f.options).execute({...request,signal:cancel.signal});
+      await started;cancel.abort();const result=await execution;
+      await commit();await vi.advanceTimersByTimeAsync(0);
+      expect(result).toEqual({state:'UNAVAILABLE',billing:'UNCONFIRMED'});
+      expect(f.records.get('KEY1')?.state).toBe('RESERVED');
+      expect(f.transition).toHaveBeenCalledOnce();expect(f.post).not.toHaveBeenCalled();
+    }finally{vi.useRealTimers();}
+  });
+  it('observes a late reservation rejection without claiming a successful release',async()=>{
+    vi.useFakeTimers();
+    try{
+      const f=fixture(),cancel=new AbortController();let entered!:()=>void,reject!:(error:Error)=>void;
+      const started=new Promise<void>(resolve=>{entered=resolve;});
+      f.reserve.mockImplementationOnce(()=>new Promise<AiBudgetEntry&{hash:string}>((_resolve,fail)=>{
+        reject=fail;entered();
+      }));
+      const execution=createProviderExecutor(f.options).execute({...request,signal:cancel.signal});
+      await started;cancel.abort();const result=await execution;
+      reject(Error('private-reservation-failure'));await vi.advanceTimersByTimeAsync(0);
+      expect(result).toEqual({state:'UNAVAILABLE',billing:'UNCONFIRMED'});
+      expect(f.records.size).toBe(0);expect(f.transition).not.toHaveBeenCalled();expect(f.post).not.toHaveBeenCalled();
+    }finally{vi.useRealTimers();}
+  });
   it('releases an unsent reservation when authority changes before dispatch',async()=>{
     const f=fixture();f.reserve.mockImplementationOnce(async(_a,v)=>{
       const row={jobId:'00000000-0000-4000-8000-000000000001',state:'RESERVED' as const,worstCaseUnits:v.worstCaseUnits,chargedUnits:null,changed:true,hash:v.requestSha256};

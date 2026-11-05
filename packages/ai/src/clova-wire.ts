@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {SafeLlmPacketSchema,TopicCodeSchema,AiTaskSchema} from '@hufs-one/contracts';
+import {SafeLlmPacketSchema,TopicCodeSchema,AiTaskSchema,AiTaskResultSchema,hasValidAiTaskResultBindings} from '@hufs-one/contracts';
+import {hasTaskResultContract,taskResultJsonSchema,validateTaskResult} from './task-results.js';
 
 /** Offline protocol boundary only. Nothing here reads keys or makes HTTP calls. */
 export class ClovaWireError extends Error {
@@ -72,7 +73,8 @@ export function parseOcrResponse(context:OcrContext,raw:unknown){
 
 const Candidate=z.strictObject({task:AiTaskSchema,reviewRequired:z.literal(true),
   citations:z.array(z.strictObject({sourceToken:Token,paragraphId:Token,quote:z.string().min(1).max(600).refine(s=>s.trim().length>0),
-    topicCode:TopicCodeSchema.optional()})).min(1).max(6),objectTokens:z.array(Token).max(3)});
+    topicCode:TopicCodeSchema.optional()})).min(1).max(6),objectTokens:z.array(Token).max(3),
+  result:AiTaskResultSchema.optional()}).refine(hasValidAiTaskResultBindings);
 const candidateSchema={type:'object',properties:{task:{type:'string',enum:AiTaskSchema.options},
   reviewRequired:{type:'boolean',enum:[true]},citations:{type:'array',minItems:1,maxItems:6,items:{type:'object',
     properties:{sourceToken:{type:'string'},paragraphId:{type:'string'},quote:{type:'string'},
@@ -88,24 +90,31 @@ const hcxContexts=new WeakMap<HcxContext,{packet:Packet;maxOutputTokens:number}>
 export function buildHcxRequest(input:{packet:Packet;model:'HCX-007'|'HCX-005';maxOutputTokens:number;media?:ClovaRaster}){
   return checked(()=>{
     const packet=SafeLlmPacketSchema.parse(input.packet);
+    const structured=hasTaskResultContract(packet);
+    const schema=structured?{...candidateSchema,properties:{...candidateSchema.properties,
+      task:{type:'string',enum:[packet.task]},result:taskResultJsonSchema(packet)},
+      required:[...candidateSchema.required,'result']}:candidateSchema;
+    const system=structured?SYSTEM+' result는 지정된 작업별 schema를 따른다. 모든 text는 인용문에서 그대로 추출하고 citationIndexes는 0부터 시작한다. '
+      +'행동/요건 token은 allowedObjectTokens 순서를 그대로 보존한다. 졸업 설명은 숫자 없이 작성하고 approvedFacts의 키만 참조한다. '
+      +'작업 결과 schema: '+JSON.stringify(schema):SYSTEM;
     const max=z.number().int().min(1).max(input.model==='HCX-005'?4096:1600).parse(input.maxOutputTokens);
     if(!['HCX-005','HCX-007'].includes(input.model)||(input.model==='HCX-005')!==Boolean(input.media))
       throw new ClovaWireError();
     const text=JSON.stringify(packet);
     // A byte cap is not a tokenizer. The future transport must count complete provider tokens.
     if(Buffer.byteLength(text,'utf8')>24000)throw new ClovaWireError();
-    const body:Record<string,unknown>={messages:[{role:'system',content:SYSTEM},{role:'user',content:text}],temperature:0};
+    const body:Record<string,unknown>={messages:[{role:'system',content:system},{role:'user',content:text}],temperature:0};
     if(input.model==='HCX-007'){
       body.maxCompletionTokens=max;
       // No tools/inference; fixed supported subset. No caller-supplied provider schema.
-      body.responseFormat={type:'json',schema:structuredClone(candidateSchema)};
+      body.responseFormat={type:'json',schema:structuredClone(schema)};
     }else{
       const image=raster(input.media!);
       if(image.width<4||image.height<4||Math.max(image.width,image.height)>2240
         ||image.width/image.height>5||image.height/image.width>5)throw new ClovaWireError();
       const mime=image.format==='png'?'png':'jpeg';
       body.maxTokens=max;
-      body.messages=[{role:'system',content:SYSTEM},{role:'user',content:[{type:'text',text},
+      body.messages=[{role:'system',content:system},{role:'user',content:[{type:'text',text},
         {type:'image_url',dataUri:{data:`data:image/${mime};base64,${image.data}`}}]}];
     }
     const context:HcxContext=Object.freeze({kind:'HCX_CONTEXT'});
@@ -139,11 +148,12 @@ export function validateHcxCandidate(packetRaw:unknown,raw:unknown){
     if(candidate.task!==packet.task||new Set(candidate.objectTokens).size!==candidate.objectTokens.length
       ||candidate.objectTokens.some(t=>!packet.allowedObjectTokens.includes(t)))throw new ClovaWireError();
     for(const citation of candidate.citations){
-      const matches=packet.sourceTokens.filter(s=>s.token===citation.sourceToken)
+      const matches=packet.sourceTokens.filter(s => s.token === citation.sourceToken)
         .flatMap(s=>s.paragraphs.filter(p=>p.id===citation.paragraphId));
       if(matches.length!==1||!matches[0]!.text.includes(citation.quote)
         ||(citation.topicCode&&!packet.allowedTopicCodes.includes(citation.topicCode)))throw new ClovaWireError();
     }
+    validateTaskResult(packet,candidate);
     return candidate;
   });
 }

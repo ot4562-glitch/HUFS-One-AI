@@ -11,13 +11,15 @@ import {createPostgresApplication} from '../../apps/api/src/application-postgres
 import {createPostgresSchoolMailAuth} from '../../apps/api/src/auth-postgres.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
-import {createGoogleIdTokenVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
+import {createGoogleIdTokenVerifier as idVerifier} from '../../apps/api/src/modules/auth/google-oidc.js';
 import {PostgresPersonalStateStore,PersonalStateDenied} from '../../apps/api/src/db/personal-state-postgres.js';
 import {PostgresApiProjectionRepository} from '../../apps/api/src/repository-postgres.js';
 import {PostgresAuthAttemptLimiter} from '../../apps/api/src/modules/auth/auth-attempt-limiter-postgres.js';
 import {PostgresTemporalEvidenceReader} from '../../apps/api/src/modules/opportunities/temporal-postgres.js';
 import {PostgresSourceIngestionQueue} from '../../apps/api/src/modules/opportunities/source-ingestion-queue-postgres.js';
 import {proveSourceJobControlPg} from './source-job-control-live-slice.js';
+import {proveSourceImagePg} from './source-image-live-slice.js';
+import {proveSourcePdfPg} from './source-pdf-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -33,7 +35,7 @@ import {PostgresDemoOverlayStore} from '../../apps/api/src/modules/demo-overlay-
 import {PostgresAiBudgetLedger} from '../../apps/api/src/modules/ai/budget-postgres.js';
 import {PostgresProviderResults} from '../../apps/api/src/modules/ai/provider-results-postgres.js';
 import {PostgresProviderAuthority} from '../../apps/api/src/modules/ai/provider-authority-postgres.js';
-import {makeSyntheticIntake} from './synthetic-intake-fixture.js';
+import {makeSyntheticIntake,syntheticOriginalPermission} from './synthetic-intake-fixture.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
@@ -53,7 +55,7 @@ const migrationNames=[
   '20261031_reviewer_invitations.sql','20261101_reviewer_sandbox.sql',
   '20261031_auth_attempt_windows.sql',
   '20261101_school_mail_network_limits.sql',
-  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261101_source_http_validators.sql',
+  '20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql','20261101_source_http_validators.sql',
   '20261101_source_ingest_queue.sql',
   '20261104_source_ingest_cancellation.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
@@ -167,6 +169,14 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(pool=>pool.end()));},30000);
 
+  it('retains reviewed IMAGE geometry through SQL guards and the least-privilege reader',async()=>{
+    await proveSourceImagePg(admin,temporal);
+  });
+
+  it('retains original PDF and page geometry through review and the least-privilege reader',async()=>{
+    await proveSourcePdfPg(admin,temporal);
+  });
+
   const billingHash='a'.repeat(64),usageReceipt='b'.repeat(64);
   async function provisionProvider(suffix:string){
     const actorId='SYN-PROVIDER-'+suffix,sourceId=actorId+'-SOURCE',revisionId=actorId+'-REV',permissionRef=actorId+'-PERM',projectionId=actorId+'-INPUT';
@@ -184,7 +194,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
       VALUES($1,$2,'SYN-INPUT','HCX_007',$3,'epoch-1','input-policy-1','1','SYN-INDEPENDENT-OPERATOR',$4,$5,'SYNTHETIC_CLEARED','SYN-PRIVACY-ATTESTATION',$6,$7)`,
       [projectionId,actorId,asOf,approved,expires,JSON.stringify([{sourceId,revisionId,permissionRef,originalSha256}]),packet]);
     await admin.query(`INSERT INTO api_ai_provider_input_heads(actor_id,input_ref,operation,projection_id) VALUES($1,'SYN-INPUT','HCX_007',$2)`,[actorId,projectionId]);
-    const request={actor:{actorId,role:'BETA' as const,sessionIdHash:'SYN-SESSION-HASH',csrfToken:'SYN-CSRF-TOKEN-123456',sessionExpiresAt:expires,schoolMailProofExpiresAt:expires,betaAllowed:true},
+    const request={actor:{actorId,role:'BETA' as const,sessionIdHash:'SYN-SESSION-HASH',csrfToken:'C'.repeat(32),sessionExpiresAt:expires,schoolMailProofExpiresAt:expires,betaAllowed:true},
       inputRef:'SYN-INPUT',operation:'HCX_007' as const,asOf,phaseId:'SYN-PHASE',idempotencyKey:'SYN-KEY',now:now()};
     const authority=new PostgresProviderAuthority(adapter(aiProvider),{policyVersion:'input-policy-1',sessionIsCurrent:async()=>true});
     return {authority,request,actorId,sourceId,revisionId,permissionRef,projectionId,before,expires};
@@ -698,7 +708,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const fixture=makeSyntheticIntake();
     const imports=new PostgresRestrictedIntakeImport(adapter(intake),{
       mayProcess:async()=>true,
-    });
+      resolveOriginalPermission:async request=>syntheticOriginalPermission(request),
+    },()=> '2026-10-31T00:00:00.000Z');
     const preview=await imports.preview(fixture);
     expect(preview.ready).toBe(true);
     expect(preview.formRowCount).toBe(4);
@@ -1229,7 +1240,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const config={pools:{sessions:adapter(sessions),admission:adapter(admission),attempts:adapter(limiter)},
       attemptDigestKey:randomBytes(32),google:{clientId,allowedOrigin:origin,now:()=>at,
         redirectUri:origin+'/api/auth/google/callback',
-        verifyIdToken:createGoogleIdTokenVerifier({clientId,jwks,now:()=>at}),
+        verifyIdToken:idVerifier({clientId,jwks,now:()=>at}),
         exchangeCode:async()=>new SignJWT({sub:currentSubject,email:'synthetic-otp@example.test',email_verified:true,nonce})
           .setProtectedHeader({alg:'RS256',kid:'otp'}).setIssuer('https://accounts.google.com')
           .setAudience(clientId).setIssuedAt(Math.floor(at.getTime()/1000)-1)
@@ -1316,7 +1327,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     const config={pools:{sessions:adapter(sessions),admission:adapter(admission),attempts:adapter(limiter)},
       attemptDigestKey:randomBytes(32),google:{clientId,allowedOrigin:origin,
         redirectUri:origin+'/api/auth/google/callback',now:()=>at,
-        verifyIdToken:createGoogleIdTokenVerifier({clientId,jwks,now:()=>at}),
+        verifyIdToken:idVerifier({clientId,jwks,now:()=>at}),
         exchangeCode:async()=>{
           exchanges++;return new SignJWT({sub:subject,email,email_verified:true,hd:'hufs.ac.kr',nonce})
             .setProtectedHeader({alg:'RS256',kid:'synthetic-pg-auth'}).setIssuer('https://accounts.google.com')

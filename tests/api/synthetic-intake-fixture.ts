@@ -1,6 +1,16 @@
 import {FORMS_HEADERS,COURSE_CSV_HEADERS} from '@hufs-one/contracts';
-import type {RestrictedIntakeInput} from
+import type {RestrictedIntakeInput,IntakeOriginalPermission,IntakeOriginalPermissionRequest} from
   '../../apps/api/src/modules/academics/intake-postgres.js';
+
+/** Invented test grant only. No real subject/original permission is provisioned. */
+export function syntheticOriginalPermission(request:Readonly<IntakeOriginalPermissionRequest>):IntakeOriginalPermission{
+  return {schemaVersion:'intake-original-permission-v1',actorRef:request.actorRef,subjectKey:request.subjectKey,
+    purpose:'LOCAL_TRANSCRIPT_REVIEW',formsSha256:request.formsSha256,courseSha256:request.courseSha256,
+    permissionRef:'SYN-ORIGINAL-'+request.subjectKey,permissionVersion:'1',
+    consentRef:'SYN-CONSENT-1',retentionRef:'SYN-RETENTION-1',actions:['PREVIEW','APPLY'],
+    collection:'ALLOWED',retention:'ALLOWED',reviewedAt:'2026-10-01T00:00:00.000Z',
+    expiresAt:'2026-12-01T00:00:00.000Z',revoked:false};
+}
 
 const csv=(cells:readonly string[])=>cells.map(v=>'"'+v.replaceAll('"','""')+'"').join(',');
 /** Fictional-only, not a copy or transformation of student files. */

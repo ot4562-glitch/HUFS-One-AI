@@ -152,6 +152,35 @@ describe('buildMajorWhatIf (#11, #82)', () => {
     expect(h.reviewRequirementIds).toEqual(['SYN-A-TOTAL', 'SYN-F-REQ-C1', 'SYN-F-ONE-OF-C1']);
   });
 
+  it.each([
+    ['pending recognition', {recognition:'PENDING' as const}, true],
+    ['a term not ended by asOf', {term:'2026-2'}, true],
+    ['an official exclusion', {recognition:'EXCLUDED' as const}, false],
+  ] as const)('composite rows preserve review holds for %s only where the course can contribute', (_label, change, held) => {
+    const packF:MajorRulePack = {rulePackVersion:'SYN-F-DM-1', rulePackState:'APPROVED',
+      courseAreas:{'SYN-C1':['SYN-AREA-C'], 'SYN-G1':['SYN-AREA-G']},
+      requirements:[
+        {id:'SYN-F-SPREAD-C1', kind:'AREA_SPREAD', areaIds:['SYN-AREA-C', 'SYN-AREA-G'],
+          minAreas:2, requiredCreditUnits:12, evidenceRefs:['EV-SYN-F']},
+        {id:'SYN-F-GROUP-C1', kind:'GROUP_CHOICE', groups:[['SYN-C1', 'SYN-G1'], ['SYN-F2']],
+          k:1, evidenceRefs:['EV-SYN-F']},
+        {id:'SYN-F-SPREAD-OTHER', kind:'AREA_SPREAD', areaIds:['SYN-AREA-F', 'SYN-AREA-H'],
+          minAreas:1, requiredCreditUnits:6, evidenceRefs:['EV-SYN-F']},
+        {id:'SYN-F-GROUP-OTHER', kind:'GROUP_CHOICE', groups:[['SYN-F2', 'SYN-F3'], ['SYN-H1']],
+          k:1, evidenceRefs:['EV-SYN-F']},
+      ]};
+    const attempts = ATTEMPTS.map(a => (a.canonicalCourseId === 'SYN-C1' ? {...a, ...change} : a));
+    const result = ready(run({action:'CHANGE_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-F'},
+      {attempts, programs:[...CATALOG, {role:'DOUBLE_MAJOR', programId:'SYN-MAJ-F', pack:packF}]}));
+    const h = result.hypothetical;
+    expect(h.requirements.filter(r => r.requirementId.startsWith('SYN-F')).map(r => r.state))
+      .toEqual(['MISSING', 'MISSING', 'MISSING', 'MISSING']);
+    expect(h.reviewRequirementIds).toEqual(held ? ['SYN-A-TOTAL', 'SYN-F-SPREAD-C1', 'SYN-F-GROUP-C1'] : []);
+    // C1 contributes no earned credits while unresolved or excluded, on either side of the scenario.
+    expect([result.current.earnedCreditUnits, h.earnedCreditUnits]).toEqual([30, 30]);
+    expect(h.remainingCreditUnits).toBe(230);
+  });
+
   it('a term not ended by asOf and an unapproved retake are undecided too; settled exclusions flag nothing', () => {
     const scenario:WhatIfScenario = {action:'CHANGE_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-C'};
     // A2 "earned" in 2026-2, which has not ended on 2026-11-01: A's area row has A1 + S1 = 12 of 18.

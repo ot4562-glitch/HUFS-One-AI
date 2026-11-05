@@ -28,7 +28,7 @@ const Overlap=z.strictObject({
 export const OwnerDoubleMajorAuditSchema=z.strictObject({
   status:z.enum(['CHECKED','INPUT_REQUIRED']),state:z.enum(['READY','NEEDS_REVIEW','INSUFFICIENT_DATA']),asOf:Time,
   selection:z.enum(['NONE','UNSET','SELECTED','INPUT_MISSING']),
-  missingInputs:z.array(z.enum(['CURRENT_PROFILE','TRANSCRIPT','PRIMARY_RULEPACK'])).max(3),
+  missingInputs:z.array(z.enum(['CURRENT_PROFILE','TRANSCRIPT','PRIMARY_RULEPACK','DEGREE_PATH','TRACK'])).max(5),
   uniqueCredits:z.strictObject({earnedCreditUnits:Units,inProgressCreditUnits:Units,plannedCreditUnits:Units,projectedCreditUnits:Units}).nullable(),
   primary:z.strictObject({...RoleFields,role:z.literal('PRIMARY_MAJOR')}),
   doubleMajor:z.strictObject({...RoleFields,role:z.literal('DOUBLE_MAJOR'),status:z.enum(['NOT_CHECKED','NOT_APPLICABLE','INPUT_REQUIRED','RULES_MISSING','CHECKED'])}),

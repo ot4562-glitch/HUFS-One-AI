@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "assetId": "SYN-POSTER-CLUB-090",
+      "fileName": "ai-club-poster-v1.png",
+      "sha256": "93446df5cc9a2859585e4801df7a74b7f602d71ae8084a4a51f5b563855af842",
+      "byteLength": 1528702,
+      "width": 1672,
+      "height": 941,
+      "mimeType": "image/png",
+      "alt": "가상 학생 세 명이 노트북과 작은 로봇을 함께 살펴보는 AI 생성 합성 그림. 실제 동아리나 학생이 아닙니다.",
+      "provenance": {
+        "kind": "AI_GENERATED_SYNTHETIC",
+        "generator": "OpenAI imagegen",
+        "generatedAt": null,
+        "recordedAt": "2026-11-04T23:10:31Z",
+        "reference": "GENERATED-CLUB-POSTER-20261105-V1"
+      }
+    }
+  ]
+}

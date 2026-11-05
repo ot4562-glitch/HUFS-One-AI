@@ -39,7 +39,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: independently approved source revision c
     const objects=await admin.query("SELECT (SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace)+(SELECT count(*) FROM pg_proc WHERE pronamespace='public'::regnamespace) AS n");
     if(Number(objects.rows[0]?.n)!==0)throw new Error('Preserve nonempty revision test database; no reset authorized');
     if((await admin.query('SELECT 1 FROM pg_roles WHERE rolname=$1',[role])).rows.length)throw new Error('Preserve existing revision test role');
-    for(const name of ['20261031_temporal_evidence.sql','20261101_source_review.sql',
+    for(const name of ['20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql',
       '20261101_verified_source_rights.sql','20261101_self_account.sql','20261103_approved_revision_claims.sql'])
       await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
     await admin.query(`CREATE ROLE hufs_test_revision_claims LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;

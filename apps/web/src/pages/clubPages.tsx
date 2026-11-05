@@ -1,5 +1,7 @@
 import {Fragment, useState} from 'react';
 import type {PageContext, PageRenderer} from '../App.js';
+import {OwnerClubBoard,type OwnerClubPort} from '../features/clubs/OwnerClubBoard.js';
+import {ClubModerationPanel,type ClubModerationPort} from '../features/clubs/ClubModerationPanel.js';
 import {ClubPoster} from '../features/clubs/ClubPoster.js';
 import {APPROVAL_TEXT, CATEGORY_TEXT, CLUB_DEMO_NOTE, filterClubs, NO_FILTER, type ClubCardView, type ClubFilter} from '../features/clubs/clubView.js';
 import {useClubBoard} from '../features/clubs/useClubBoard.js';
@@ -7,7 +9,7 @@ import {DDayText} from '../features/demo/DDayText.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {NoSnapshot} from './parts.js';
 
-const NOT_CONNECTED = '동아리 모집 데모는 합성 시연 모드에서 제공돼요. 실제 서버 연결은 준비 중입니다.';
+const NOT_CONNECTED = '동아리 모집 데모는 합성 시연 모드에서 제공돼요. 현재 계정의 승인된 서버 연결을 확인해 주세요.';
 
 function Note() {
   return <p className="board__note" role="note">{CLUB_DEMO_NOTE}</p>;
@@ -121,16 +123,26 @@ function ClubDetailScreen({ctx, id}: {ctx: PageContext; id: string}) {
   );
 }
 
+type ClubServices=PageContext['services']&{ownerClubs?:OwnerClubPort;clubModeration?:ClubModerationPort};
 /** #123 동아리 모집 (HUFS One AI 확장, SYNTHETIC). */
 export const clubsPage: PageRenderer = ctx => {
   if (ctx.path !== '/clubs') return null;
+  const owner=(ctx.services as ClubServices).ownerClubs;
+  if(owner)return {title:'동아리 모집',body:<OwnerClubBoard port={owner} navigate={ctx.navigate}/>};
   if (!ctx.services.clubs) return {title: '동아리 모집', body: <p className="muted">{NOT_CONNECTED}</p>};
   return {title: '동아리 모집', body: <ClubBoardScreen ctx={ctx} />};
 };
 
 export const clubDetailPage: PageRenderer = ctx => {
+  if(ctx.path==='/clubs/admin'){
+    const moderation=(ctx.services as ClubServices).clubModeration;
+    return {title:'가상 관리자 동아리 검수',body:moderation?<ClubModerationPanel port={moderation}/>:
+      <p role="alert">독립적으로 승인된 가상 관리자만 이 화면을 사용할 수 있어요.</p>};
+  }
   const m = /^\/clubs\/([^/]+)$/.exec(ctx.path);
   if (!m) return null;
+  const owner=(ctx.services as ClubServices).ownerClubs;
+  if(owner)return {title:'동아리 모집 글',body:<OwnerClubBoard port={owner} id={decodeURIComponent(m[1]!)} navigate={ctx.navigate}/>};
   if (!ctx.services.clubs) return {title: '동아리 모집', body: <p className="muted">{NOT_CONNECTED}</p>};
   return {title: '동아리 모집 글', body: <ClubDetailScreen ctx={ctx} id={decodeURIComponent(m[1]!)} />};
 };

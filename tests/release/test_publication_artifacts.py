@@ -63,6 +63,78 @@ class PublicationGateTests(unittest.TestCase):
         self._write(".dockerignore", ".git\nnode_modules\n")
         self.assertIn("DOCKER_CONTEXT_PRIVATE_EXCLUSION_MISSING", self._codes())
 
+    def test_workflow_policy_ancestor_symlinks_are_refused_before_open(self) -> None:
+        from unittest.mock import patch
+
+        workflow = self.root / ".github/workflows/task00-contracts.yml"
+        original_open = Path.open
+        for relative in (".github", ".github/workflows"):
+            with self.subTest(relative=relative):
+                ancestor = self.root / relative
+                private = self.root / "private" / "synthetic-policy"
+                private.parent.mkdir(exist_ok=True)
+                ancestor.rename(private)
+                try:
+                    ancestor.symlink_to(private, target_is_directory=True)
+                except OSError:
+                    private.rename(ancestor)
+                    self.skipTest("symlinks unavailable in this runner")
+
+                def guarded_open(path, *args, **kwargs):
+                    if path == workflow:
+                        raise AssertionError("Policy ancestor symlink was followed")
+                    return original_open(path, *args, **kwargs)
+
+                try:
+                    with patch.object(Path, "open", guarded_open):
+                        report = audit_publication_artifacts(self.root)
+                    self.assertEqual(report["gates"][0]["status"], "FAIL")
+                    self.assertIn("WORKFLOW_POLICY_MISSING",
+                                  {item["reason"] for item in report["findings"]})
+                    self.assertNotIn("synthetic-policy", json.dumps(report))
+                finally:
+                    ancestor.unlink()
+                    private.rename(ancestor)
+
+    def test_unreadable_policy_files_return_redacted_failed_evidence(self) -> None:
+        from unittest.mock import patch
+
+        original_open = Path.open
+        for relative, expected in (
+            (".dockerignore", "DOCKERIGNORE_POLICY_MISSING"),
+            (".github/workflows/task00-contracts.yml", "WORKFLOW_POLICY_MISSING"),
+        ):
+            with self.subTest(relative=relative):
+                target = self.root / relative
+
+                def denied_open(path, *args, **kwargs):
+                    if path == target:
+                        raise PermissionError("NEVER_PUBLISH_PRIVATE_POLICY_PATH")
+                    return original_open(path, *args, **kwargs)
+
+                with patch.object(Path, "open", denied_open):
+                    report = audit_publication_artifacts(self.root)
+                self.assertEqual(report["gates"][0]["status"], "FAIL")
+                self.assertIn(expected, {item["reason"] for item in report["findings"]})
+                self.assertNotIn("NEVER_PUBLISH", json.dumps(report))
+
+    def test_invalid_policy_encoding_returns_failed_evidence(self) -> None:
+        for relative, original, expected in (
+            (".dockerignore", "\n".join(sorted(DOCKER_EXCLUSIONS)) + "\n",
+             "DOCKERIGNORE_POLICY_MISSING"),
+            (".github/workflows/task00-contracts.yml",
+             "on:\n  pull_request:\npermissions:\n  contents: read\n",
+             "WORKFLOW_POLICY_MISSING"),
+        ):
+            with self.subTest(relative=relative):
+                (self.root / relative).write_bytes(b"\xff")
+                try:
+                    report = audit_publication_artifacts(self.root)
+                    self.assertEqual(report["gates"][0]["status"], "FAIL")
+                    self.assertIn(expected, {item["reason"] for item in report["findings"]})
+                finally:
+                    self._write(relative, original)
+
     def test_workflow_artifact_upload_or_privileged_event_is_rejected(self) -> None:
         for unsafe in (
             "steps:\n  - uses: actions/upload-artifact@v4\n",
@@ -91,6 +163,29 @@ class PublicationGateTests(unittest.TestCase):
         self.assertIn("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED", self._codes())
         output = json.dumps(report, ensure_ascii=True)
         self.assertNotIn("apps/api/Dockerfile.dockerignore", output)
+
+    def test_deploy_dockerfile_ignore_override_is_blocked_without_reading_it(self) -> None:
+        from unittest.mock import patch
+
+        relative = "infra/deploy/Dockerfile.dockerignore"
+        self._write(relative, "NEVER_PUBLISH_CONTENT\n!private/**\n")
+        override = self.root / relative
+        original_open = Path.open
+
+        def guarded_open(path, *args, **kwargs):
+            if path == override:
+                raise AssertionError("Docker override content must not be read")
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, "open", guarded_open):
+            report = audit_publication_artifacts(self.root)
+
+        self.assertIn("DOCKERFILE_SPECIFIC_IGNORE_UNREVIEWED",
+                      {entry["reason"] for entry in report["findings"]})
+        self.assertEqual(report["gates"][0]["status"], "FAIL")
+        output = json.dumps(report)
+        self.assertNotIn(relative, output)
+        self.assertNotIn("NEVER_PUBLISH_CONTENT", output)
 
     def test_non_web_sourcemap_must_never_be_in_release_artifact(self) -> None:
         for name in ("dist/apps/api/src/server.js.map",

@@ -4,7 +4,7 @@ import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {registerDemoProfileRoutes} from '../../apps/api/src/modules/profiles/demo-profile-http.js';
 import type {DemoProfileQuotaPort} from '../../apps/api/src/modules/profiles/demo-profile-http.js';
 import {DemoProfileConflict,recomputeDemoProfile,type DemoProfilePort} from '../../apps/api/src/modules/profiles/demo-profile.js';
-import {blankDemoProfileValue} from '@hufs-one/contracts';
+import {blankDemoProfileValue,blankDemoProfileWorkspace} from '@hufs-one/contracts';
 import type {VerifiedActor} from '../../apps/api/src/types.js';
 const NOW='2026-11-03T00:00:00.000Z',origin='https://synthetic.invalid';
 const actor={role:'BETA' as const,actorId:'synthetic:owner-a',sessionIdHash:'S'.repeat(32),
@@ -17,6 +17,8 @@ function fixture(absent=false,quota?:DemoProfileQuotaPort){
   const result=recomputeDemoProfile({version:0,value:blankDemoProfileValue(),updatedAt:null});
   const port:DemoProfilePort={read:async id=>{ids.push(id);return result;},
     save:async(id,input)=>{ids.push(id);return recomputeDemoProfile({version:input.expectedVersion+1,value:input.value,updatedAt:NOW});},
+    saveWorkspace:async(id,input)=>{ids.push(id);return recomputeDemoProfile({version:input.expectedVersion+1,
+      value:blankDemoProfileValue(),workspace:input.workspace,updatedAt:NOW});},
     reset:async(id,input)=>{ids.push(id);return recomputeDemoProfile({version:input.expectedVersion+1,value:blankDemoProfileValue(),updatedAt:NOW});}};
   const verify=async()=>identity;
   const app=createApi({repository:new MemoryApiRepository({profiles:[]}),allowedOrigin:origin,verifySession:verify,now:()=>NOW});
@@ -91,4 +93,47 @@ describe('standard product independent demo-profile HTTP',()=>{
     })).statusCode).toBe(503);
     expect(h.ids).toEqual([]);
   });
+
+  it('waits for shared WRITE quota before saving a demo workspace',async()=>{
+    let entered!:()=>void,releaseQuota!:(allowed:boolean)=>void;
+    const started=new Promise<void>(resolve=>{entered=resolve;});
+    const admission=new Promise<boolean>(resolve=>{releaseQuota=resolve;});
+    const seen:Array<[string,string]>=[];
+    const h=fixture(false,{consume:async(id,operation)=>{
+      seen.push([id,operation]);entered();return admission;
+    }});
+    let responded=false;
+    const pending=h.app.inject({method:'PUT',url:'/api/demo-profile/workspace',headers,
+      payload:{expectedVersion:0,workspace:blankDemoProfileWorkspace()}})
+      .then(response=>{responded=true;return response;});
+    await started;
+    // Give the handler a complete event-loop turn while the quota is unresolved.
+    await new Promise<void>(resolve=>setImmediate(resolve));
+    const savedBeforeAdmission=[...h.ids],respondedBeforeAdmission=responded;
+    releaseQuota(true);
+    const response=await pending;
+    expect(savedBeforeAdmission).toEqual([]);
+    expect(respondedBeforeAdmission).toBe(false);
+    expect(seen).toEqual([[actor.actorId,'WRITE']]);
+    expect(response.statusCode).toBe(200);
+    expect(h.ids).toEqual([actor.actorId]);
+  });
+
+  it.each([
+    {name:'denial',throws:false,status:429},
+    {name:'storage failure',throws:true,status:503},
+  ])('does not save a demo workspace after shared quota $name',async({throws,status})=>{
+    const seen:Array<[string,string]>=[];
+    const h=fixture(false,{consume:async(id,operation)=>{
+      seen.push([id,operation]);
+      if(throws)throw new Error('synthetic quota unavailable');
+      return false;
+    }});
+    const response=await h.app.inject({method:'PUT',url:'/api/demo-profile/workspace',headers,
+      payload:{expectedVersion:0,workspace:blankDemoProfileWorkspace()}});
+    expect(h.ids).toEqual([]);
+    expect(response.statusCode).toBe(status);
+    expect(seen).toEqual([[actor.actorId,'WRITE']]);
+  });
+
 });

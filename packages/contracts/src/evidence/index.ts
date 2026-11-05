@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import type {AcademicDegreePathVNext} from '../academics/vnext.js';
 import {SourceClassSchema,TopicCodeSchema} from '../topics/index.js';
 import {SafeLlmPacketSchema} from '../ai/index.js';
 
@@ -52,6 +53,9 @@ export interface EvidenceActorScope {
   college?:string|undefined;
   enrollmentState?:string|undefined;
   admissionType?:string|undefined;
+  degreePath?:AcademicDegreePathVNext|'UNSELECTED'|undefined;
+  track?:string|undefined;
+  curriculumVersion?:string|undefined;
   majorCode?:string|undefined; // legacy single official major, only without a role restriction
   majors?:readonly {code:string;role:'PRIMARY'|'DOUBLE'|'MINOR'}[]|undefined;
   cohort?:number|undefined;

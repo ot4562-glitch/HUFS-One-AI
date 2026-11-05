@@ -75,7 +75,7 @@ describe('#123 explicit, ephemeral synthetic server provider',()=>{
     const approved=await p.decide(id,'APPROVE');
     expect(approved.statusCode).toBe(200);
     expect(approved.json()).toMatchObject({id,state:'APPROVED',version:1,mode:'SYNTHETIC_DEMO'});
-    expect((await p.decide(id,'APPROVE')).statusCode).toBe(403);
+    expect((await p.decide(id,'APPROVE')).statusCode).toBe(409);
     p.choose('alpha');
     expect((await p.detail(id)).statusCode).toBe(200);
     expect(SyntheticClubBoardResponseSchema.parse((await p.list()).json()).items).toHaveLength(13);

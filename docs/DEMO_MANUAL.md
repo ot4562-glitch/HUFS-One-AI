@@ -1,5 +1,13 @@
 # HUFS One AI 로컬 시연 매뉴얼
 
+## 2026-11-05 PR #220: 독립 빈 계정 시연
+
+현재 작업 브랜치의 새 `/demo-profile` 실행법, 4개 설정과 경험·달력·저장정보의 실제 소비, 전체 RESET, 60초 및 10분 발표 절차는 [EMPTY_DEMO 실행 가이드](EMPTY_DEMO_RUNBOOK.md)를 따른다. 이 경로는 일반 BETA Owner API와 PostgreSQL 저장 어댑터를 사용한다. 로컬 재현용 서버는 명시적인 합성 인증·메모리 저장만 제공하며 실 Google/학교 로그인이나 운영 PG 실행 증거가 아니다. 현재 커밋의 자동 검증 결과와 인적 인수는 PR #220에서 별도로 확인한다.
+
+아래는 2026-11-04 이전 실행 기록 및 별도 `/local-demo` 계정 실험실 안내다. 과거의 미지원 표시·검증 숫자를 새 `/demo-profile` 구현의 상태로 사용하지 않는다.
+
+## 이전 실행 기록과 계정 실험실
+
 > **2026-11-04 통합 후 현재 정본:** 2026-11-04 최신 코드/시연 경계: [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)으로 #151 공고 정정·#154 수강계획·#155 What-if 등 UI가 main에 통합, OPEN PR 0건·main Chrome/TASK-00/NCP IaC 3/3 CI 성공. 아래 2026-11-02의 미병합/브라우저 숫자는 **옛 실행 기록**이므로 현재 main에서 재실행했다고 표시하지 않는다. 실제 학생 4인 자료·Google/학교 메일·실 PG/NCP·공식 학칙·접근성 인수는 **NOT_RUN, RELEASE_BLOCKED**. [STATUS](../STATUS.md).
 
 > **2026-11-02 최신 GitHub 정정:** [#137](https://github.com/ot4562-glitch/HUFS-One-AI/pull/137)은 합성 독립 계정 API·수집/권한 게이트 **main `f593b61` 병합**, [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 가상 설정/전공 재계산 **테스트-only main `26c559e`**, [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/피드 일치 **테스트-only main `41de619`**. 최신 HEAD 독립 승인/CI 성공 뒤 병합한 합성 테스트는 UI 시연 화면이 자동 구현됐다는 뜻이 아님. #131 설정 비교 CHANGES_REQUESTED, #134 설정 UI/매뉴얼이 #131에 종속되어 미병합, #138 Draft 시간표 변환기 변경 요청. 따라서 **이 매뉴얼에서 #134 화면·실 API 사용 동작을 main에서 시연 완료로 설명하면 안 됨**. #137 병합 후 최신 main에서 로컬 명령/브라우저를 **이번 문서 작업에서 독립 재실행하지 않았으며**, 아래 실행법과 기존 브라우저 통과 기록은 당시 체크포인트 증거다.

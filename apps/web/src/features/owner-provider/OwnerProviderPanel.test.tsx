@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
-import type {ApprovedProviderInput,ProviderAccepted,ProviderStoredJob} from '@hufs-one/contracts';
+import type {ApprovedProviderInput,ProviderAccepted,ProviderStoredJob,AiTask,AiTaskResult} from '@hufs-one/contracts';
 import {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerProviderPanel,type OwnerProviderPort} from './OwnerProviderPanel.js';
 
@@ -59,6 +59,69 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     expect(f.read).toHaveBeenCalledWith(jobId,'opportunity-terms',expect.any(AbortSignal));
     expect(screen.getByText(/독립 사람 검토 필요/)).toBeTruthy();
   });
+
+  it.each([
+    {task:'experience_skills',title:'경험 역량·역할 후보',objectTokens:[],result:{
+      kind:'experience_skills',skills:[{topicCode:'DATA_ANALYTICS',
+        skill:{text:'합성 분석',citationIndexes:[0]},role:{text:'담당합니다',citationIndexes:[0]}}]}},
+    {task:'opportunity_terms',title:'공고 조건 후보',objectTokens:[],result:{
+      kind:'opportunity_terms',topicCodes:['DATA_ANALYTICS'],
+      conditions:[{kind:'ELIGIBILITY',evidence:{text:'재학생 대상입니다',citationIndexes:[0]}}],
+      dates:[{kind:'APPLICATION_DEADLINE',evidence:{text:'11월 5일 마감입니다',citationIndexes:[0]}}],
+      roleSteps:[]}},
+    {task:'personal_action_brief',title:'선택된 행동 설명',objectTokens:['ACTION1','ACTION2'],result:{
+      kind:'personal_action_brief',headline:{text:'요건을 확인합니다',citationIndexes:[0]},
+      actions:[{actionToken:'ACTION1',explanation:{text:'합성 분석',citationIndexes:[0]}},
+        {actionToken:'ACTION2',explanation:{text:'재학생 대상입니다',citationIndexes:[0]}}]}},
+    {task:'graduation_explanation',title:'졸업 요건 설명 후보',objectTokens:['REQ1'],result:{
+      kind:'graduation_explanation',requirements:[{requirementToken:'REQ1',
+        explanation:{text:'요건을 확인합니다',citationIndexes:[0]},factKeys:['remainingCredits']}]}}
+  ] satisfies {task:AiTask;title:string;objectTokens:string[];result:AiTaskResult}[])(
+    'renders $task results and erases them on session revocation',async row=>{
+      vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+      const f=fixture('BETA',[{...item,task:row.task}]);
+      f.submit.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',provenance:'LIVE'});
+      f.read.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',billing:'SETTLED',provenance:'CANDIDATE_CACHE',
+        candidate:{...candidate,task:row.task,
+          citations:[{sourceToken:'DOC1',paragraphId:'p1',
+            quote:'합성 분석을 담당합니다. 재학생 대상입니다. 11월 5일 마감입니다. 요건을 확인합니다.'}],
+          objectTokens:row.objectTokens,result:row.result,usage:{...candidate.usage}}});
+      render(<OwnerProviderPanel port={f.port}/>);
+      fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+      fireEvent.click(screen.getByRole('checkbox'));
+      fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+      await screen.findByRole('heading',{name:row.title});
+      const result=screen.getByRole('region',{name:'작업별 검토 후보'});
+      expect(result.textContent).not.toContain('remainingCredits');
+      if(row.task==='personal_action_brief'){
+        const items=result.querySelectorAll('ol li');
+        expect(Array.from(items,item=>item.textContent)).toEqual([
+          '합성 분석 · 근거 1','재학생 대상입니다 · 근거 1',
+        ]);
+      }
+      expect(f.submit).toHaveBeenCalledTimes(1);
+      await act(async()=>{f.session.invalidateLocalSession();});
+      expect(screen.queryByRole('region',{name:'작업별 검토 후보'})).toBeNull();
+      expect(screen.queryByText('합성 분석')).toBeNull();
+    });
+
+  it('makes no additional provider calls across one hundred approved input switches',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture('BETA',[item,{...item,inputRef:'SYN-SECOND'}]);
+    f.submit.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',provenance:'LIVE'});
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/Synthetic approved notice/);
+    const choices=screen.getAllByRole('radio') as HTMLInputElement[];
+    for(let index=0;index<100;index++)fireEvent.click(choices[(index+1)%2]!);
+    expect(choices[0]!.checked).toBe(true);
+    expect(screen.queryByLabelText('현재 권한으로 재검증된 AI 후보')).toBeNull();
+    expect(f.submit).toHaveBeenCalledTimes(1);
+    expect(f.read).toHaveBeenCalledTimes(1);
+  });
+
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);

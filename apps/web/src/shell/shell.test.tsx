@@ -6,7 +6,7 @@ import type {DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias} from '@
 import {DemoController, type DemoClientPort} from '../app/index.js';
 import {HufsApiError} from '../integrations/api-client.js';
 import {SyntheticDemoClient} from '../dev/syntheticDemoClient.js';
-import {App} from '../App.js';
+import {App, type AppServices} from '../App.js';
 import type {HistoryPort} from './router.js';
 
 afterEach(cleanup);
@@ -65,6 +65,26 @@ describe('App shell', () => {
     expect(r.slice(0, 4).every(x => !(x as HTMLInputElement).disabled)).toBe(true);
     expect((r[4] as HTMLInputElement).disabled).toBe(true);
     expect(r[4]!.getAttribute('aria-label')).toContain('선택할 수 없음');
+    expect(screen.getByRole('status').textContent).toBe('시연 대상을 선택해 주세요.');
+  });
+
+  it.each(['/clubs', '/clubs/SYN-CLUB-090', '/clubs/admin'])('keeps selected S01 information out of the independent club header at %s', async path => {
+    const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'TEST-CLUB-OWNER');
+    // This shell fixture does not render a data page or invoke these ports.
+    const services:AppServices = path === '/clubs/admin' ? {}
+      : {ownerClubs:{} as NonNullable<AppServices['ownerClubs']>};
+    render(<App controller={controller} services={services} historyPort={memoryHistory(path)} />);
+    await flush();
+    await act(async () => { await controller.select('S01'); });
+    await flush();
+    expect(screen.queryByRole('group', {name:/시연 대상 선택/})).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText(/시연 대상: 가상 학생 1/)).toBeNull();
+  });
+
+  it('preserves the synthetic selector for the legacy REVIEWER club route', async () => {
+    await setup(undefined, '/clubs');
+    expect(radios()).toHaveLength(5);
     expect(screen.getByRole('status').textContent).toBe('시연 대상을 선택해 주세요.');
   });
 

@@ -28,7 +28,7 @@ const pools:Pool[]=[];
 const password=randomBytes(24).toString('hex');
 let admin:Pool,reader:Pool,writer:Pool;
 const now=()=>new Date().toISOString();
-const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql',
+const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
   '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql','20261101_owner_approved_catalog.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{
@@ -99,7 +99,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     await admin.query('INSERT INTO api_self_consents(actor_id,version,choices_json,updated_at) VALUES($1,1,$2,$3)',[actorId,
       {personalStorage:true,teamReview:false,externalAi:false,ncpStorage:false,presentation:false},before]);
     const resolver=new PostgresEvidenceRightsResolver(adapter(reader));
-    const authority:OwnerCatalogAuthority={resolve:({actorId,now})=>resolver.resolveFor({actor:{actorId,role:'BETA',sessionIdHash:'SYN-SESSION-HASH',csrfToken:'SYN-CSRF-TOKEN-0000',
+    const authority:OwnerCatalogAuthority={resolve:({actorId,now})=>resolver.resolveFor({actor:{actorId,role:'BETA',sessionIdHash:'SYN-SESSION-HASH',csrfToken:'C'.repeat(32),
       sessionExpiresAt:expires,schoolMailProofExpiresAt:expires,betaAllowed:true},now})};
     const grants=await authority.resolve({actorId,now:now()});if(!grants)throw new Error('Synthetic source authority unavailable');
     const payload=doubleMajorInput(),source={sourceId,revisionId,permissionRef};

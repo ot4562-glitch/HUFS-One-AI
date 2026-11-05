@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
-import {blankDemoProfileValue,type DemoProfileValue} from '@hufs-one/contracts';
+import {blankDemoProfileValue,blankDemoProfileWorkspace,type DemoProfileValue} from '@hufs-one/contracts';
 import {PostgresDemoProfileStore} from '../../apps/api/src/modules/profiles/demo-profile-postgres.js';
 import {DemoProfileService,DemoProfileConflict} from '../../apps/api/src/modules/profiles/demo-profile.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
@@ -44,6 +44,7 @@ describe.skipIf(!RUN)('REAL PG18 independent synthetic demo-profile persistence'
     const objects=await admin.query("SELECT (SELECT count(*) FROM pg_class WHERE relnamespace='public'::regnamespace)+(SELECT count(*) FROM pg_proc WHERE pronamespace='public'::regnamespace) AS n");
     if(Number(objects.rows[0]?.n)!==0)throw Error('Preserve nonempty demo-profile test database; no reset authorized');
     await admin.query(readFileSync(new URL('../../infra/sql/20261103_demo_profile.sql',import.meta.url),'utf8'));
+    await admin.query(readFileSync(new URL('../../infra/sql/20261105_demo_profile_workspace.sql',import.meta.url),'utf8'));
     await admin.query(`CREATE ROLE hufs_test_demo_profile LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
       GRANT USAGE ON SCHEMA public TO hufs_test_demo_profile;
       GRANT SELECT,INSERT,UPDATE ON api_demo_profiles TO hufs_test_demo_profile;`);
@@ -77,6 +78,27 @@ describe.skipIf(!RUN)('REAL PG18 independent synthetic demo-profile persistence'
       expect(result.filter(r=>r.status==='fulfilled')).toHaveLength(1);
       expect(result.filter(r=>r.status==='rejected'&&r.reason instanceof DemoProfileConflict)).toHaveLength(1);
     }
+  });
+  it('persists full workspace through a fresh service, races reset against workspace and refuses stale resurrection',async()=>{
+    const make=()=>new DemoProfileService(new PostgresDemoProfileStore(adapter(limited)));
+    const id='SYN-DEMO-WORKSPACE',workspace={...blankDemoProfileWorkspace(),bookmarks:['SYN-OPP-002'],
+      experiences:[{id:'SYN-EXP-001',title:'합성 활동',summary:'가상',topicCodes:['DATA_ANALYTICS' as const]}],
+      planCourseIds:['SYN-COURSE-001'],notifications:true,search:'가상',experienceOverlay:'ON' as const};
+    await make().save(id,{expectedVersion:0,value:A});
+    const result=await make().saveWorkspace(id,{expectedVersion:1,workspace});
+    expect(result.profile.workspace).toEqual(workspace);expect((await make().read(id)).snapshot).toEqual(result.snapshot);
+    const a=make(),b=make(),race=await Promise.allSettled([
+      a.reset(id,{expectedVersion:2}),b.saveWorkspace(id,{expectedVersion:2,workspace:{...workspace,search:'변경'}})]);
+    // A post-write recomputation can also lose to a later winner; exactly one database write commits.
+    expect((await make().read(id)).profile.version).toBe(3);
+    expect(race.some(r=>r.status==='rejected'&&r.reason instanceof DemoProfileConflict)).toBe(true);
+    const clean=await make().reset(id,{expectedVersion:3});
+    expect(clean.profile.workspace).toEqual(blankDemoProfileWorkspace());
+    expect(clean.snapshot.workspace).toEqual(blankDemoProfileWorkspace());
+    await expect(make().saveWorkspace(id,{expectedVersion:2,workspace})).rejects.toBeInstanceOf(DemoProfileConflict);
+    expect((await make().read('SYN-DEMO-WORKSPACE-OTHER')).profile.version).toBe(0);
+    await expect(admin.query('UPDATE api_demo_profiles SET version=version WHERE actor_id=$1',[id]))
+      .rejects.toMatchObject({code:'23514'});
   });
   it('enforces FORCE RLS for the least-privilege role and denies cross-actor reads/writes/deletion',async()=>{
     const flags=await admin.query("SELECT c.relrowsecurity,c.relforcerowsecurity,r.rolsuper,r.rolbypassrls FROM pg_class c,pg_roles r WHERE c.oid='api_demo_profiles'::regclass AND r.rolname=$1",[role]);

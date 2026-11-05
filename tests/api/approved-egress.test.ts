@@ -1,4 +1,4 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
 import {createApprovedPinnedTransport,isPublicIngestionIp} from
   '../../apps/api/src/modules/opportunities/approved-egress.js';
 
@@ -23,7 +23,73 @@ function transport(answers:readonly string[][],response:Response=new Response('s
   });
   return {request,calls,lookupCount:()=>lookups};
 }
+function deferred<T>(){
+  let resolve!:(value:T)=>void,reject!:(reason:Error)=>void;
+  const promise=new Promise<T>((done,fail)=>{resolve=done;reject=fail;});
+  return {promise,resolve,reject};
+}
+const nextTurn=()=>new Promise<void>(resolve=>setImmediate(resolve));
 describe('TASK-19 synthetic SSRF / HTTPS egress policy (NO real network)',()=>{
+  it('rejects an already aborted request without DNS or pinned HTTP',async()=>{
+    const cancel=new AbortController();cancel.abort();
+    const resolveAddresses=vi.fn(async()=>[GOOD]),requestPinned=vi.fn(async()=>new Response('synthetic'));
+    const request=createApprovedPinnedTransport({canonicalUrl:SOURCE_URL},{resolveAddresses,requestPinned});
+    await expect(request(new URL(SOURCE_URL),{...REQUEST,signal:cancel.signal})).rejects.toThrow();
+    expect(resolveAddresses).not.toHaveBeenCalled();expect(requestPinned).not.toHaveBeenCalled();
+  });
+  it.each(['first DNS','second DNS','authority'] as const)('settles cancellation during %s before the pending operation completes',async stage=>{
+    const gate=deferred<void>(),entered=deferred<void>(),cancel=new AbortController();
+    let lookups=0,state='PENDING';
+    const requestPinned=vi.fn(async()=>new Response('synthetic'));
+    const request=createApprovedPinnedTransport({canonicalUrl:SOURCE_URL,beforeSend:async()=>{
+      if(stage==='authority'){entered.resolve();await gate.promise;}
+    }},{
+      resolveAddresses:async()=>{
+        lookups++;
+        if(stage==='first DNS'&&lookups===1||stage==='second DNS'&&lookups===2){
+          entered.resolve();await gate.promise;
+        }
+        return [GOOD];
+      },
+      requestPinned,
+    });
+    const pending=request(new URL(SOURCE_URL),{...REQUEST,signal:cancel.signal})
+      .then(()=>{state='ACCEPTED';},()=>{state='DENIED';});
+    await Promise.race([entered.promise,pending]);cancel.abort();await nextTurn();
+    const whenCancelled=state;
+    gate.resolve();await pending;await nextTurn();
+    expect(whenCancelled).toBe('DENIED');
+    expect(requestPinned).not.toHaveBeenCalled();
+    expect(lookups).toBe(stage==='first DNS'?1:2);
+  });
+  it('requires the trusted pre-send authority check after DNS and before HTTP',async()=>{
+    const order:string[]=[];
+    const request=createApprovedPinnedTransport({canonicalUrl:SOURCE_URL,beforeSend:async()=>{
+      order.push('authority');throw Error('Private authority failure');
+    }},{
+      resolveAddresses:async()=>{order.push('DNS');return [GOOD];},
+      requestPinned:async()=>{order.push('HTTP');return new Response('synthetic');},
+    });
+    await expect(request(new URL(SOURCE_URL),REQUEST)).rejects.toThrow();
+    expect(order).toEqual(['DNS','DNS','authority']);
+  });
+  it.each(['response','rejection'] as const)('observes a late pinned %s after cancellation without exposing a response',async mode=>{
+    const gate=deferred<Response>(),entered=deferred<void>(),cancel=new AbortController();
+    const cancelBody=vi.fn();let state='PENDING';
+    const request=createApprovedPinnedTransport({canonicalUrl:SOURCE_URL},{
+      resolveAddresses:async()=>[GOOD],
+      requestPinned:async()=>{entered.resolve();return gate.promise;},
+    });
+    const pending=request(new URL(SOURCE_URL),{...REQUEST,signal:cancel.signal})
+      .then(()=>{state='ACCEPTED';},()=>{state='DENIED';});
+    await Promise.race([entered.promise,pending]);cancel.abort();await nextTurn();
+    const whenCancelled=state;
+    if(mode==='response')gate.resolve(new Response(new ReadableStream<Uint8Array>({cancel:cancelBody})));
+    else gate.reject(Error('Private late network error'));
+    await pending;await nextTurn();
+    expect(whenCancelled).toBe('DENIED');expect(state).toBe('DENIED');
+    expect(cancelBody).toHaveBeenCalledTimes(mode==='response'?1:0);
+  });
   it('accepts only public IPs and rejects private, metadata and special-use ranges',()=>{
     expect(isPublicIngestionIp(GOOD)).toBe(true);
     expect(isPublicIngestionIp('2001:4860:4860::8888')).toBe(true);

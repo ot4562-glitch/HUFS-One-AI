@@ -146,3 +146,35 @@ describe('TASK-21 source head and citation validation on SQL result return',()=>
     expect(reader.retrieve).not.toHaveBeenCalled();
   });
 });
+
+describe('IMAGE gateway bindings',()=>{
+  const rights=()=>({permissionRefs:new Set(['P-1']),sourceIds:new Set(['s1']),policyVersion:'rights-v1',sourceHeadVersion:'head-1'});
+  function imageAnswer():any{
+    const image={kind:'IMAGE',sourceRevisionId:'r1',assetId:'asset-1',originalSha256:'a'.repeat(64),
+      pageIndex:0,bboxNorm:[0,0,.5,.25],ocrLineIds:['field-1'],quote:'합성공고',
+      extractionEngine:'CLOVA_OCR_GENERAL',transformVersion:'raster-identity-v1'};
+    const value:any=answer();value.envelope.evidence=[image];value.hits[0].imageSpan=structuredClone(image);return value;
+  }
+  it('accepts exact reviewed IMAGE geometry and preserves the quote',async()=>{
+    const value=imageAnswer(),reader={retrieve:async()=>value};
+    const result=await createPostgresTemporalGateway(reader,{resolveFor:async()=>rights()}).query(query);
+    expect(result.envelope.retrievalState).toBe('READY');expect(result.envelope.evidence).toEqual(value.envelope.evidence);
+  });
+  it.each(['bbox','assetId','originalSha256','pageIndex','ocrLineIds','transformVersion','missing'] as const)
+    ('rejects differing %s between citation and bound SQL hit',async(field)=>{
+      const value=imageAnswer();
+      if(field==='missing')delete value.hits[0].imageSpan;
+      else if(field==='bbox')value.hits[0].imageSpan.bboxNorm=[0,0,.7,.25];
+      else if(field==='pageIndex')value.hits[0].imageSpan.pageIndex=1;
+      else if(field==='ocrLineIds')value.hits[0].imageSpan.ocrLineIds=['field-other'];
+      else value.hits[0].imageSpan[field]=field==='originalSha256'?'b'.repeat(64):'OTHER';
+      await expect(createPostgresTemporalGateway({retrieve:async()=>value},{resolveFor:async()=>rights()}).query(query))
+        .rejects.toThrow(/mismatch/);
+    });
+  it('discards IMAGE bytes when the current source head changes during retrieval',async()=>{
+    const scope=rights();
+    const result=await createPostgresTemporalGateway({retrieve:async()=>{scope.sourceHeadVersion='head-2';return imageAnswer();}},
+      {resolveFor:async()=>scope}).query(query);
+    expect(result.envelope.evidence).toEqual([]);expect(result.hits).toEqual([]);
+  });
+});

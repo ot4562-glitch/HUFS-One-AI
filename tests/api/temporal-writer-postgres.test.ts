@@ -138,6 +138,12 @@ describe('TASK-19 SQL append-only revisions and atomic cross-instance invalidati
       .rejects.toThrow(/integrity/);
     expect(x.calls).toHaveLength(0);
   });
+  it.each(['IMAGE','PDF'])('refuses %s revisions without retained image evidence and independent review',async mediaKind=>{
+    const x=db(),item=record();
+    await expect(x.store.append({...item,revision:{...item.revision,mediaKind,
+      status:'NEEDS_REVIEW',lastVerifiedAt:undefined}})).rejects.toThrow();
+    expect(x.calls).toHaveLength(0);
+  });
   it('updates 304 observations independently without modifying verification timestamps',async()=>{
     const x=db({head:'rev-1',headAt:T(20)});
     await x.store.observeUnchanged({

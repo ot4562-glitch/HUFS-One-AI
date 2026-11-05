@@ -14,7 +14,7 @@ const policy={sourceId:'SYN-DURABLE',canonicalUrl:url,
   provenance:'REAL_APPROVED' as const,rightsReviewed:true};
 const input={sourceId:policy.sourceId,permissionRef:policy.permissionRef,
   actorRef:'SYN-OPERATOR'};
-function harness(response?:()=>Response){
+function harness(response?:()=>Response,resolveAddresses:()=>Promise<readonly string[]>=async()=>['8.8.8.8']){
   let grant=true,material='가상 공고 첫 판',calls=0,nowCounter=0;
   let responseStatus:200|304=200,etag:string|null=null,lastModified:string|null=null;
   const sentValidators:string[]=[];
@@ -33,7 +33,7 @@ function harness(response?:()=>Response){
     rights:{resolve:async()=>permit()},
     now:()=>new Date(Date.parse('2026-10-31T00:00:00Z')+nowCounter++*1000).toISOString(),
     egress:{
-      resolveAddresses:async()=>['8.8.8.8'],
+      resolveAddresses,
       requestPinned:async({init})=>{
         calls++;
         const headers=new Headers(init.headers);
@@ -120,6 +120,19 @@ describe('TASK-19 durable approved-source fetch-to-Postgres adapter (synthetic t
     const x=harness();x.revoke();
     await expect(x.service.execute(input)).rejects.toThrow('rights');
     expect(x.calls()).toBe(0);
+  });
+  it.each([1,2])('refuses HTTP when rights are revoked during DNS lookup %s',async lookup=>{
+    let entered!:()=>void,resume!:()=>void,lookups=0;
+    const started=new Promise<void>(resolve=>{entered=resolve;});
+    const gate=new Promise<void>(resolve=>{resume=resolve;});
+    const x=harness(undefined,async()=>{
+      if(++lookups===lookup){entered();await gate;}
+      return ['8.8.8.8'];
+    });
+    const pending=x.service.execute(input);
+    const rejected=expect(pending).rejects.toThrow('rights');
+    await started;x.revoke();resume();await rejected;
+    expect(x.calls()).toBe(0);expect(x.head()).toBeNull();expect(x.observed()).toHaveLength(0);
   });
   it('requires actual source-content-specific extraction, not silent OCR for binary',async()=>{
     const extractor=new ApprovedPlainTextExtractor();

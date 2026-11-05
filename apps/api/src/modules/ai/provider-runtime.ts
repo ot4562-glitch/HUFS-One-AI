@@ -156,7 +156,7 @@ export function createProviderExecutor(options:ProviderRuntimeOptions){
   async function work(req:ProviderRequest,start:ProviderSnapshot,requestFingerprint:string):Promise<ProviderOutcome>{
     const controller=new AbortController(),cancel=()=>controller.abort();req.signal?.addEventListener('abort',cancel,{once:true});
     const timer=setTimeout(cancel,timeoutMs);if(req.signal?.aborted)cancel();
-    let jobId:string|undefined,reserved=false,dispatched=false,settled=false,release:(()=>void)|undefined;
+    let jobId:string|undefined,reserved=false,dispatched=false,settled=false,reservationUnconfirmed=false,release:(()=>void)|undefined;
     const bound=async<T>(operation:Promise<T>):Promise<T>=>{
       if(controller.signal.aborted)throw Error();
       let abort!:()=>void;
@@ -181,8 +181,27 @@ export function createProviderExecutor(options:ProviderRuntimeOptions){
       const cost=req.operation==='OCR_GENERAL'?BigInt(policy.ocrImageUnits):BigInt(policy.tokenizerUnits)
         +BigInt(policy.maxInputTokens)*BigInt(policy.inputUnitsPerToken)+BigInt(outputLimit)*BigInt(policy.outputUnitsPerToken);
       const worst=bill(cost);if(worst<=0||worst>1_000_000_000_000)throw Error();
-      const row=await bound(options.ledger.reserve(req.actor.actorId,{phaseId:req.phaseId,task:req.operation,
-        idempotencyKey:req.idempotencyKey,requestSha256:requestFingerprint,worstCaseUnits:worst}));
+      const reservation=options.ledger.reserve(req.actor.actorId,{phaseId:req.phaseId,task:req.operation,
+        idempotencyKey:req.idempotencyKey,requestSha256:requestFingerprint,worstCaseUnits:worst});
+      let row:Awaited<typeof reservation>;
+      try{row=await bound(reservation);}
+      catch(error){
+        if(controller.signal.aborted){
+          // Cancelling the wait does not cancel a database COMMIT. Reconcile
+          // only the reservation created by this call; a replay belongs to
+          // another executor and must never be released here.
+          reservationUnconfirmed=true;
+          void reservation.then(async late=>{
+            if(late.changed&&late.state==='RESERVED')
+              await options.ledger.transition(req.actor.actorId,{phaseId:req.phaseId,jobId:late.jobId,
+                requestSha256:requestFingerprint,action:'RELEASED'});
+          }).catch(()=>{
+            // The caller already received UNCONFIRMED. Keep any durable hold
+            // on failure and observe the rejection without exposing DB errors.
+          });
+        }
+        throw error;
+      }
       jobId=row.jobId;reserved=row.changed;
       if(!row.changed){
         if(row.state==='SETTLED')return await bound(cached(req,jobId,start));
@@ -233,7 +252,7 @@ export function createProviderExecutor(options:ProviderRuntimeOptions){
         try{await transition(dispatched?'UNKNOWN_BILLING':'RELEASED');return unavailable(dispatched?'UNKNOWN_BILLING':'RELEASED',jobId);}
         catch{return unavailable('UNCONFIRMED',jobId);}
       }
-      return unavailable();
+      return unavailable(reservationUnconfirmed?'UNCONFIRMED':'NONE');
     }finally{release?.();clearTimeout(timer);req.signal?.removeEventListener('abort',cancel);controller.abort();}
   }
   return {async execute(input:ProviderRequest):Promise<ProviderOutcome>{

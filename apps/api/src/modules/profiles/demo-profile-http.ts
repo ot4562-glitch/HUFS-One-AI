@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import type {FastifyInstance} from 'fastify';
-import {DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema} from '@hufs-one/contracts';
+import {DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,DemoProfileWorkspaceSaveSchema,blankDemoProfileWorkspace} from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
 import {betaActor,betaRecheck,type BetaRouteVerifier} from './self-account-http.js';
 import {DemoProfileConflict,type DemoProfilePort} from './demo-profile.js';
@@ -69,6 +69,17 @@ export function registerDemoProfileRoutes(app:FastifyInstance,port:DemoProfilePo
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     await betaRecheck(request,verifier,actor);return response;
   });
+  app.put('/api/demo-profile/workspace',async request=>{
+    Empty.parse(request.query);const actor=await betaActor(request,verifier);
+    const input=DemoProfileWorkspaceSaveSchema.parse(request.body);
+    if(!port?.saveWorkspace)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await admit(actor.actorId,true);
+    const response=await run(()=>port.saveWorkspace!(actor.actorId,input));
+    if(response.profile.version!==input.expectedVersion+1
+      ||JSON.stringify(response.profile.workspace)!==JSON.stringify(input.workspace))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    await betaRecheck(request,verifier,actor);return response;
+  });
   app.post('/api/demo-profile/reset',async request=>{
     Empty.parse(request.query);const actor=await betaActor(request,verifier);
     const input=DemoProfileResetSchema.parse(request.body);
@@ -77,7 +88,8 @@ export function registerDemoProfileRoutes(app:FastifyInstance,port:DemoProfilePo
     const response=await run(()=>port.reset(actor.actorId,input));
     if(response.profile.version!==input.expectedVersion+1
       ||response.profile.value.primaryMajor!==null||response.profile.value.earnedCreditUnits!==null
-      ||response.profile.value.interestTopics.length!==0||response.profile.value.doubleMajor!==null)
+      ||response.profile.value.interestTopics.length!==0||response.profile.value.doubleMajor!==null
+      ||JSON.stringify(response.profile.workspace)!==JSON.stringify(blankDemoProfileWorkspace()))
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     await betaRecheck(request,verifier,actor);return response;
   });

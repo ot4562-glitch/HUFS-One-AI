@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import type {EvidenceActorScope} from '@hufs-one/contracts';
+import {AcademicDegreePathSelectionVNextSchema,type EvidenceActorScope} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
 import type {VerifiedTeamActor} from '../../types.js';
 import type {ApprovedSourceRightsResolver,ApprovedSourceRights} from './approved-fetch.js';
@@ -17,6 +17,8 @@ const Receipt=z.object({receipt_id:Ref,actor_id:ActorId,source_id:Ref,permission
 const Scope=z.strictObject({
   campus:Ref.optional(),college:Ref.optional(),enrollmentState:Ref.optional(),
   admissionType:Ref.optional(),majorCode:Ref.optional(),
+  degreePath:AcademicDegreePathSelectionVNextSchema.optional(),
+  track:Ref.refine(v=>v!=='UNSELECTED',{message:'Unknown track must be UNDECIDED'}).optional(),curriculumVersion:Ref.optional(),
   majors:z.array(z.strictObject({code:Ref,role:z.enum(['PRIMARY','DOUBLE','MINOR'])})).max(16).optional(),
   cohort:z.number().int().min(1950).max(2200).optional(),
   graduationTerm:z.string().regex(/^(19|20|21|22)\d{2}-[12]$/).optional(),

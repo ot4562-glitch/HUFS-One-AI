@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "../..",
+    "outDir": "../../dist/evaluation",
+    "declaration": false,
+    "sourceMap": false,
+    "noEmitOnError": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "../../packages/core/src/evaluation/**/*.ts"
+  ],
+  "exclude": [
+    "../../**/*.test.ts"
+  ]
+}

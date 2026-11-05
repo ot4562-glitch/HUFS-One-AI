@@ -122,6 +122,7 @@ function namedCourses(requirements:readonly LedgerRequirement[]):Set<string> {
   for (const requirement of requirements) {
     if (requirement.kind === 'REQUIRED_COURSE') named.add(requirement.canonicalCourseId);
     if (requirement.kind === 'K_OF_N') for (const courseId of requirement.courseIds) named.add(courseId);
+    if (requirement.kind === 'GROUP_CHOICE') for (const courseId of requirement.groups.flat()) named.add(courseId);
   }
   return named;
 }
@@ -141,7 +142,8 @@ function runPack(asOf:string, attempts:readonly DoubleMajorAttempt[], pack:Major
  * courses from the ledger's own figures. Total and non-credit rows never depend on the overlap.
  */
 function rowImpacts(requirements:readonly LedgerRequirement[], audit:AcademicAuditVNext,
-  shared:ReadonlyMap<string, SharedCourse>, sharedAreas:(course:SharedCourse) => readonly string[]):OverlapRowImpact[] {
+  shared:ReadonlyMap<string, SharedCourse>, sharedAreas:(course:SharedCourse) => readonly string[],
+  withoutShared:AcademicAuditVNext):OverlapRowImpact[] {
   const rows = new Map(audit.requirements.map(row => [row.requirementId, row]));
   const earned = (course:SharedCourse) => course.ledger === 'EARNED';
   const impacts:OverlapRowImpact[] = [];
@@ -165,6 +167,16 @@ function rowImpacts(requirements:readonly LedgerRequirement[], audit:AcademicAud
       if (!course) continue;
       const metWithShared = earned(course);
       impacts.push({requirementId:requirement.id, decided:!metWithShared, metWithShared, metWithoutShared:false});
+    } else if (requirement.kind === 'AREA_SPREAD' || requirement.kind === 'GROUP_CHOICE') {
+      const contributes = requirement.kind === 'AREA_SPREAD'
+        ? [...shared.values()].some(course => sharedAreas(course).some(id => requirement.areaIds.includes(id)))
+        : requirement.groups.some(group => group.some(id => shared.has(id)));
+      if (!contributes) continue;
+      const without = withoutShared.requirements.find(item => item.requirementId === requirement.id)!;
+      const metWithShared = row.state === 'SATISFIED', metWithoutShared = without.state === 'SATISFIED';
+      impacts.push({requirementId:requirement.id,
+        decided:row.state !== 'NEEDS_REVIEW' && without.state !== 'NEEDS_REVIEW' && metWithShared === metWithoutShared,
+        metWithShared, metWithoutShared});
     } else if (requirement.kind === 'K_OF_N') {
       const inList = requirement.courseIds.flatMap(courseId => shared.get(courseId) ?? []);
       if (inList.length === 0) continue;
@@ -276,8 +288,11 @@ export function buildDoubleMajorAudit(input:DoubleMajorRequest):DoubleMajorAudit
   }
 
   const covered = status === 'NONE' || status === 'COVERED_BY_APPROVED_RULE';
-  const impactsPrimary = covered ? [] : rowImpacts(input.primary.requirements, primaryRaw, shared, course => course.primaryAreaIds);
-  const impactsDouble = covered ? [] : rowImpacts(pack.requirements, doubleRaw, shared, course => course.doubleMajorAreaIds);
+  const independentAttempts = input.attempts.filter(attempt => !shared.has(attempt.canonicalCourseId));
+  const impactsPrimary = covered ? [] : rowImpacts(input.primary.requirements, primaryRaw, shared,
+    course => course.primaryAreaIds, runPack(input.asOf, independentAttempts, input.primary, primaryAreas));
+  const impactsDouble = covered ? [] : rowImpacts(pack.requirements, doubleRaw, shared,
+    course => course.doubleMajorAreaIds, runPack(input.asOf, independentAttempts, pack, doubleAreas));
   const heldPrimary = impactsPrimary.filter(impact => !impact.decided).map(impact => impact.requirementId);
   const heldDouble = impactsDouble.filter(impact => !impact.decided).map(impact => impact.requirementId);
   const reason = status === 'OVER_APPROVED_LIMIT'

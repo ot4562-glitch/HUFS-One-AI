@@ -25,6 +25,8 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.overlay).toBeUndefined();
     expect(services.ownerDemoProfile).toBeUndefined();
     expect(services.ownerAcademics).toBeUndefined();
+    expect(services.ownerClubs).toBeUndefined();
+    expect(services.clubModeration).toBeUndefined();
     expect(services.sandbox).toBeUndefined();
     expect(api.getDemoOverlay).not.toHaveBeenCalled();
   });
@@ -45,7 +47,19 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.overlay).toBeUndefined();
     expect(services.ownerDemoProfile).toBeUndefined();
     expect(services.ownerAcademics).toBeUndefined();
+    expect(services.ownerClubs).toBeUndefined();
+    expect(services.clubModeration).toBeUndefined();
     expect([...services.sandbox!.allowedActions]).toEqual(['BOOKMARK']);
+  });
+
+  it('confirmed ADMIN receives only publication moderation, never BETA or REVIEWER capabilities', async () => {
+    const api = fakeApi(async () => ({...BETA,role:'ADMIN'}), async () => ({actions: []}));
+    const role=await resolveSessionRole(api);
+    expect(role).toEqual({role:'ADMIN'});
+    const services=roleServices(api,role);
+    expect(Object.keys(services)).toEqual(['clubModeration']);
+    expect(services.clubModeration).toBeDefined();
+    expect(api.loadReviewerCapabilities).not.toHaveBeenCalled();
   });
 
   it('confirmed BETA gets the overlay and never touches reviewer endpoints', async () => {
@@ -55,6 +69,8 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.ownerDemoProfile).toBeDefined();
     expect(services.ownerAcademics).toBeDefined();
     expect(services.ownerAcademics?.session).toBe(services.ownerDemoProfile?.session);
+    expect(services.ownerClubs?.session).toBe(services.ownerDemoProfile?.session);
+    expect(services.clubModeration).toBeUndefined();
     expect(services.ownerDemoProfile?.session.getState().status).toBe('IDLE');
     expect(services.sandbox).toBeUndefined();
     expect(api.loadReviewerCapabilities).not.toHaveBeenCalled();

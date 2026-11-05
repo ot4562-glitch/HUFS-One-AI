@@ -1,6 +1,7 @@
-// Type-only: erased at build. Replace with the club DTO once the integration track promotes it into
-// @hufs-one/contracts (#123); the UI never runs the ranking itself.
+// Legacy pure-demo types and current API DTOs share display formatting only.
+// Recommendation order, approval and eligibility are supplied by the server.
 import type {ClubActivity, ClubBoard, ClubCampus, ClubCategory, ClubLifecycle, RankedClub} from '../../../../../packages/core/src/opportunities/clubs.js';
+import {SyntheticClubBoardResponseSchema,SyntheticClubDetailResponseSchema,type SyntheticClubBoardResponse,type SyntheticClubPoster} from '@hufs-one/contracts';
 import {TOPIC_TEXT} from '../demo/topicText.js';
 import {ddayOf, type DDayView} from '../demo/dday.js';
 
@@ -50,6 +51,7 @@ export interface ClubCardView {
   readonly times: readonly {readonly label: string; readonly text: string}[];
   readonly posterSeed: string;
   readonly recommended: boolean;
+  readonly poster?: SyntheticClubPoster;
 }
 
 export interface ClubBoardView {
@@ -58,7 +60,7 @@ export interface ClubBoardView {
   readonly all: readonly ClubCardView[];
 }
 
-function cardView(r: RankedClub, asOf: string, recommended: boolean): ClubCardView {
+function cardView(r: Pick<RankedClub,'post'|'lifecycle'|'eligibility'|'reasons'>|SyntheticClubBoardResponse['items'][number], asOf: string, recommended: boolean, poster?:SyntheticClubPoster): ClubCardView {
   const p = r.post;
   const closes = p.recruitClosesAt;
   return {
@@ -87,6 +89,7 @@ function cardView(r: RankedClub, asOf: string, recommended: boolean): ClubCardVi
     ],
     posterSeed: p.posterAssetId,
     recommended,
+    ...(poster?{poster}:{}),
   };
 }
 
@@ -122,4 +125,18 @@ export function filterClubs(list: readonly ClubCardView[], f: ClubFilter): ClubC
     && (f.campus === 'ALL' || c.campus === f.campus || c.campus === 'BOTH')
     && (f.category === 'ALL' || c.category === f.category)
     && (!q || `${c.name} ${c.summary} ${c.categoryText} ${c.topicTexts.join(' ')}`.toLowerCase().includes(q)));
+}
+
+/** Preserve the API recommendation order; never fabricate scores or run ranking. */
+export function buildOwnerClubBoard(value:unknown):{ok:true;view:ClubBoardView}|{ok:false}{
+  const parsed=SyntheticClubBoardResponseSchema.safeParse(value);if(!parsed.success)return {ok:false};
+  const b=parsed.data,byId=new Map(b.items.map(item=>[item.post.id,item]));
+  const poster=(id:string)=>b.posters?.find(p=>p.clubId===id);
+  return {ok:true,view:{asOf:b.asOf,
+    all:b.items.map(item=>cardView(item,b.asOf,b.recommendedIds.includes(item.post.id),poster(item.post.id))),
+    recommended:b.recommendedIds.map(id=>cardView(byId.get(id)!,b.asOf,true,poster(id)))}};
+}
+export function buildOwnerClubDetail(value:unknown):{ok:true;asOf:string;club:ClubCardView}|{ok:false}{
+  const parsed=SyntheticClubDetailResponseSchema.safeParse(value);if(!parsed.success)return {ok:false};
+  return {ok:true,asOf:parsed.data.asOf,club:cardView(parsed.data.item,parsed.data.asOf,false,parsed.data.poster)};
 }

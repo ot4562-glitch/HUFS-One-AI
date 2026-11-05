@@ -30,7 +30,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     if((await admin.query(`SELECT count(*)::int AS n FROM pg_tables WHERE schemaname='public'`)).rows[0]?.n!==0)
       throw Error('Calendar live-test database must be empty');
     for(const name of ['20261031_api_projections.sql','20261031_temporal_evidence.sql',
-      '20261101_source_review.sql','20261101_calendar_inputs.sql'])
+      '20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql','20261101_calendar_inputs.sql'])
       await admin.query(readFileSync(new URL('../../infra/sql/'+name,import.meta.url),'utf8'));
     await admin.query(`CREATE ROLE hufs_test_calendar LOGIN PASSWORD '${rolePassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE;
       GRANT USAGE ON SCHEMA public TO hufs_test_calendar;

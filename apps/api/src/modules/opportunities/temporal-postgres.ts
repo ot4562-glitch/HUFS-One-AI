@@ -12,6 +12,9 @@ const Row=z.object({
   paragraph_id:Ref,
   paragraph_text:z.string().min(1).max(20_000),
   score:z.coerce.number().int().min(1).max(20),
+  media_kind:z.enum(['TEXT','HTML','IMAGE','PDF']).default('TEXT'),
+  original_sha256:z.string().regex(/^[a-f0-9]{64}$/).optional(),image_span:z.unknown().optional(),
+  pdf_page_assets:z.array(Ref).min(1).max(4).nullish(),
 });
 type EmptyReason='NO_EVIDENCE'|'STALE'|'CONFLICT'|'BLOCKED_RIGHTS'|'UNKNOWN';
 const ConflictResult=z.object({confirmed_conflict:z.boolean()});
@@ -63,7 +66,7 @@ export class PostgresTemporalEvidenceReader{
     // in the latest-version CTE.
     const sql=`WITH latest AS (
       SELECT DISTINCT ON (r.source_id)
-        r.source_id,r.revision_id,r.permission_ref,r.source_class,
+        r.source_id,r.revision_id,r.permission_ref,r.source_class,r.media_kind,r.original_sha256,r.pdf_page_assets,
         r.provenance,r.status,r.change_kind,r.last_verified_at,r.valid_from,r.valid_until,
         r.scope_campuses,r.scope_majors,r.scope_colleges,
         r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
@@ -74,7 +77,7 @@ export class PostgresTemporalEvidenceReader{
       ORDER BY r.source_id,r.fetched_at DESC,r.revision_id DESC
     )
     SELECT l.source_id,l.revision_id,p.paragraph_id,
-      p.paragraph_text,score.score
+      p.paragraph_text,score.score,l.media_kind,l.original_sha256,l.pdf_page_assets,p.image_span
     FROM latest l
     INNER JOIN source_paragraphs_vnext p ON p.revision_id=l.revision_id
     CROSS JOIN LATERAL (
@@ -119,7 +122,7 @@ export class PostgresTemporalEvidenceReader{
     // immutable, independently human-reviewed decision must prove it.
     const classifySql=`WITH latest AS (
       SELECT DISTINCT ON (r.source_id)
-        r.source_id,r.revision_id,r.permission_ref,r.source_class,
+        r.source_id,r.revision_id,r.permission_ref,r.source_class,r.media_kind,r.original_sha256,
         r.provenance,r.status,r.change_kind,r.fetched_at,r.last_verified_at,
         r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,r.scope_colleges,
         r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
@@ -179,7 +182,7 @@ export class PostgresTemporalEvidenceReader{
     // Human-reviewed RESOLVED decisions supersede earlier disputes.
     const conflictSql=`WITH latest AS (
       SELECT DISTINCT ON (r.source_id)
-        r.source_id,r.revision_id,r.permission_ref,r.source_class,
+        r.source_id,r.revision_id,r.permission_ref,r.source_class,r.media_kind,r.original_sha256,
         r.provenance,r.status,r.change_kind,r.last_verified_at,
         r.valid_from,r.valid_until,r.scope_campuses,r.scope_majors,r.scope_colleges,
         r.scope_major_roles,r.scope_admission_types,r.scope_enrollment_states,
@@ -269,11 +272,25 @@ export class PostgresTemporalEvidenceReader{
         throw new Error('Invalid reviewed conflict provider');
       const dispute=ConflictResult.parse(checkedConflicts.rows[0]);
       if(dispute.confirmed_conflict)return empty(input,'CONFLICT');
-      const evidence=matches.map(x=>SourceSpanVNextSchema.parse({
-        kind:'TEXT',sourceRevisionId:x.revision_id,
-        paragraphId:x.paragraph_id,startCodePoint:0,
-        endCodePoint:Array.from(x.paragraph_text).length,quote:x.paragraph_text,
-      }));
+      const evidence=matches.map(x=>{
+        if(x.media_kind==='IMAGE'||x.media_kind==='PDF'){
+          const span=SourceSpanVNextSchema.parse(x.image_span);
+          if(span.kind!=='IMAGE'||span.sourceRevisionId!==x.revision_id
+            ||span.originalSha256!==x.original_sha256||span.quote!==x.paragraph_text)
+            throw new Error('Source image evidence mismatch');
+          if(x.media_kind==='PDF'&&(!x.pdf_page_assets
+            ||span.pageIndex>=x.pdf_page_assets.length||span.assetId!==x.pdf_page_assets[span.pageIndex]
+            ||span.transformVersion!=='pdf-full-page-v1'))
+            throw new Error('Source PDF page evidence mismatch');
+          return span;
+        }
+        if(x.image_span!=null)throw new Error('Unexpected source image evidence');
+        return SourceSpanVNextSchema.parse({
+          kind:'TEXT',sourceRevisionId:x.revision_id,
+          paragraphId:x.paragraph_id,startCodePoint:0,
+          endCodePoint:Array.from(x.paragraph_text).length,quote:x.paragraph_text,
+        });
+      });
       const revisionIds=[...new Set(matches.map(x=>x.revision_id))];
       const envelope:RetrievalEnvelopeVNext=RetrievalEnvelopeVNextSchema.parse({
         queryVersion:'query-1',asOf,
@@ -282,9 +299,10 @@ export class PostgresTemporalEvidenceReader{
         retrievalConfigVersion:'pg-lexical-v1',
         retrievalState:'READY',evidence,
       });
-      return {envelope,hits:matches.map(x=>({
+      return {envelope,hits:matches.map((x,i)=>({
         sourceId:x.source_id,revisionId:x.revision_id,
         paragraphId:x.paragraph_id,quote:x.paragraph_text,score:x.score,
+        ...(evidence[i]?.kind==='IMAGE'?{imageSpan:evidence[i]}:{}),
       }))};
       })();
       // Do not return a READY envelope until the snapshot safely commits.

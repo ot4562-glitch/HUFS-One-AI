@@ -14,21 +14,23 @@ describe('permitted official curriculum collection (synthetic transport)',()=>{
   const original=Buffer.from('<html>SYNTHETIC saved timetable, no student records</html>');
   const hash=(value:string|Uint8Array)=>createHash('sha256').update(value).digest('hex');
   const savedCsv=csv.replace(',2024',',UNKNOWN');
+  const capture=()=>({capturedAt:now,term:'2026-2',campus:'Synthetic campus',scope:'Synthetic major',
+    converterVersion:'SYN-CONVERTER-1',permissionRef:policy.permissionRef,permissionVersion:policy.permissionVersion});
   const manual=()=>({...policy,acquisitionMethod:'OPERATOR_SAVED' as const,robots:'NOT_APPLICABLE' as const,
-    savedArtifactSha256:hash(original),normalizedCsvSha256:hash(savedCsv),capturedAt:now,
+    savedArtifactSha256:hash(original),normalizedCsvSha256:hash(savedCsv),...capture(),
     converterVersion:'SYN-CONVERTER-1',redistribution:'DENIED' as const});
   it('imports an explicitly approved operator snapshot without making an HTTP request',async()=>{
     const fetcher=vi.spyOn(globalThis,'fetch').mockRejectedValue(new Error('NETWORK_FORBIDDEN'));
     try{
-      const result=await importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,
-        authority:{resolve:async()=>manual()},now:()=>now});
+      const result=await importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,capture:capture(),
+        authority:{resolveSaved:async()=>manual()},now:()=>now});
       expect(fetcher).not.toHaveBeenCalled();
       expect(result.courses[0]).toMatchObject({cohort:'UNKNOWN',creditUnits:6,rulesStatus:'NEEDS_REVIEW'});
       expect(result.manualCapture).toMatchObject({originalSha256:hash(original),normalizedCsvSha256:hash(savedCsv),
         capturedAt:now,converterVersion:'SYN-CONVERTER-1',redistribution:'DENIED'});
       expect(JSON.stringify(result)).not.toContain('<html>');
-      const reused=await importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,
-        authority:{resolve:async()=>manual()},now:()=>now,previous:result});
+      const reused=await importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,capture:capture(),
+        authority:{resolveSaved:async()=>manual()},now:()=>now,previous:result});
       expect(reused.reused).toBe(true);expect(reused.version).toBe(result.version);
     }finally{fetcher.mockRestore();}
   });
@@ -43,16 +45,16 @@ describe('permitted official curriculum collection (synthetic transport)',()=>{
       {savedArtifactSha256:'a'.repeat(64)},{normalizedCsvSha256:'b'.repeat(64)},
       {redistribution:undefined},{expiresAt:now},{capturedAt:'2027-01-01T00:00:00Z'},
       {robots:'ALLOWED'},
-    ])await expect(importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,
-      authority:{resolve:async()=>({...manual(),...change})},now:()=>now})).rejects.toThrow();
+    ])await expect(importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,capture:capture(),
+      authority:{resolveSaved:async()=>({...manual(),...change})},now:()=>now})).rejects.toThrow();
   });
   it('rechecks withdrawal after parsing without promoting the original review timestamp',async()=>{
     let reads=0;
-    await expect(importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,
-      authority:{resolve:async()=>++reads===1?manual():null},now:()=>now})).rejects.toThrow('SOURCE_NOT_PERMITTED');
+    await expect(importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,capture:capture(),
+      authority:{resolveSaved:async()=>++reads===1?manual():null},now:()=>now})).rejects.toThrow('SOURCE_NOT_PERMITTED');
     const later='2026-11-03T00:00:00Z';
-    const result=await importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,
-      authority:{resolve:async()=>manual()},now:()=>later});
+    const result=await importSavedCurriculum({sourceUrl:policy.sourceUrl,originalBytes:original,csv:savedCsv,capture:capture(),
+      authority:{resolveSaved:async()=>manual()},now:()=>later});
     expect(result.verifiedAt).toBe(now);expect(result.courses[0]?.verifiedAt).toBe(now);
   });
   it('does not fetch unverified, revoked, private login or disallowed sources',async()=>{

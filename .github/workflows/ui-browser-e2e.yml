@@ -36,6 +36,8 @@ jobs:
             /apps/api/
             /apps/web/
             /tools/check_local_account_browser.mjs
+            /tools/check_empty_demo_browser.mjs
+            /tools/generate_demo_assets.mjs
             /tools/strip_build_sourcemaps.mjs
             /.github/workflows/ui-browser-e2e.yml
       - name: Assert no private student or raw data directories were checked out
@@ -61,3 +63,7 @@ jobs:
         run: npm run test:e2e:web -- --reporter=list
       - name: Run isolated synthetic account HTTP and Chrome E2E (9 scenarios)
         run: npm run test:e2e:accounts
+      - name: Validate ten original code-native demo assets and hashes
+        run: npm run assets:check
+      - name: Run EMPTY_DEMO owner UI, real HTTP, cross-tab RESET and Chrome
+        run: npm run test:e2e:empty-demo

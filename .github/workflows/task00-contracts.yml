@@ -33,6 +33,7 @@ jobs:
             /tests/contracts/
             /tests/consumers/
             /tests/api/
+            /tests/fixtures/academic-133.ts
             /tests/integration/
             /tests/e2e/
             /tests/evaluation/
@@ -63,6 +64,13 @@ jobs:
             /tools/audit_entrypoints.mjs
             /tools/entrypoints.json
             /tools/tests/entrypoint-inventory.node.mjs
+            /tools/evaluation/
+            /docs/INDEPENDENT_EVALUATION.md
+            /tools/audit_dependency_licenses.mjs
+            /tools/dependency_bom.mjs
+            /tools/audit_api_contracts.mjs
+            /tools/api_contract_inventory.json
+            /tools/tests/api-contract-inventory.node.mjs
             /.github/workflows/release-readiness.yml
             /.dockerignore
       - name: Prove real-student sources are not in this workspace
@@ -85,8 +93,17 @@ jobs:
         run: node --test tools/tests/prune-merged-branches.node.mjs
       - name: TypeScript, four-track contracts and synthetic API/React E2E regressions
         run: npm run check
+      - name: Compile independent evaluation tools and validate signed synthetic review fixtures
+        run: |
+          npm run build:evaluation
+          npm run test:evaluation:cli
+          npm run eval:review -- fixtures --action check
       - name: Verify read-only entrypoint inventory with isolated synthetic Git fixtures
         run: npm run test:entrypoints
+      - name: Verify offline license, BOM and API contract inventories with synthetic fixtures
+        run: |
+          npm run test:dependency-evidence
+          npm run test:api-contracts
       - name: Build local fail-closed Fastify API
         run: npm run build:api
       - name: Reject unsafe anonymous responses and false release readiness
@@ -135,6 +152,7 @@ jobs:
             /packages/fixtures/synthetic/
             /packages/fixtures/negative/
             /tests/api/
+            /tests/fixtures/academic-133.ts
             /apps/api/
             /apps/web/
             /infra/sql/
@@ -224,6 +242,7 @@ jobs:
             /packages/fixtures/synthetic/
             /packages/core/
             /tests/api/
+            /tests/fixtures/academic-133.ts
             /apps/api/
             /apps/web/
             /infra/sql/
@@ -258,15 +277,19 @@ jobs:
             createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_revision_claims_test
           docker exec -e PGPASSWORD=synthetic-ci-only hufs-revision-claims-pg \
             createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_demo_profile_test
+          docker exec -e PGPASSWORD=synthetic-ci-only hufs-revision-claims-pg \
+            createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_synthetic_club_test
       - name: Build revision claims contracts
         run: npm run build:contracts
-      - name: Execute real synthetic revision-claims and EMPTY_DEMO SQL and RLS checks
+      - name: Execute revision, EMPTY_DEMO and synthetic club SQL and RLS checks
         env:
           HUFS_PG_REVISION_CLAIMS_LIVE: '1'
           HUFS_PG_REVISION_CLAIMS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_revision_claims_test
           HUFS_PG_DEMO_PROFILE_LIVE: '1'
           HUFS_PG_DEMO_PROFILE_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_demo_profile_test
-        run: npx vitest run tests/api/pg-revision-claims-live-opt-in.test.ts tests/api/demo-profile-live-opt-in.test.ts --reporter=verbose
+          HUFS_PG_SYNTHETIC_CLUB_LIVE: '1'
+          HUFS_PG_SYNTHETIC_CLUB_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_synthetic_club_test
+        run: npx vitest run tests/api/pg-revision-claims-live-opt-in.test.ts tests/api/demo-profile-live-opt-in.test.ts tests/api/synthetic-club-live-opt-in.test.ts --reporter=verbose
       - name: Stop isolated synthetic SQL service
         if: always()
         run: docker stop hufs-revision-claims-pg || true

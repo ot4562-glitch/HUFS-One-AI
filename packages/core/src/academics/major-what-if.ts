@@ -211,6 +211,8 @@ function project(role:WhatIfProjection['role'], input:MajorWhatIfRequest, enroll
         case 'CATEGORY_MINIMUM': return (pack.courseAreas[course] ?? []).includes(definition.areaId);
         case 'REQUIRED_COURSE': return definition.canonicalCourseId === course;
         case 'K_OF_N': return definition.courseIds.includes(course);
+        case 'AREA_SPREAD': return (pack.courseAreas[course] ?? []).some(area => definition.areaIds.includes(area));
+        case 'GROUP_CHOICE': return definition.groups.some(group => group.includes(course));
         case 'NON_CREDIT': return false;
       }
     });

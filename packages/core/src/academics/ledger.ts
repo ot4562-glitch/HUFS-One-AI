@@ -54,6 +54,8 @@ export type LedgerRequirement =
   | (RequirementBase & {kind:'CATEGORY_MINIMUM'; areaId:string; requiredCreditUnits:number})
   | (RequirementBase & {kind:'REQUIRED_COURSE'; canonicalCourseId:string})
   | (RequirementBase & {kind:'K_OF_N'; courseIds:readonly string[]; k:number})
+  | (RequirementBase & {kind:'AREA_SPREAD'; areaIds:readonly string[]; minAreas:number; requiredCreditUnits:number})
+  | (RequirementBase & {kind:'GROUP_CHOICE'; groups:readonly (readonly string[])[]; k:number})
   | (RequirementBase & {
     kind:'NON_CREDIT';
     criterionId:string;
@@ -87,6 +89,10 @@ interface ProgressRow {
   projectedCreditUnits?:number;
   matchedCoursesCount?:number;
   requiredCoursesCount?:number;
+  matchedAreasCount?:number;
+  requiredAreasCount?:number;
+  matchedGroupsCount?:number;
+  requiredGroupsCount?:number;
   notCheckedReason?:'GPA_NOT_COLLECTED';
 }
 
@@ -391,6 +397,55 @@ function evaluateRequirement(
       evidenceRefs,
     };
   }
+  if (requirement.kind === 'AREA_SPREAD') {
+    const allowed = new Set(requirement.areaIds);
+    if (requirement.areaIds.length < 2 || requirement.areaIds.length > 30 || allowed.size !== requirement.areaIds.length)
+      throw new TypeError('AREA_SPREAD requires 2 to 30 distinct areas');
+    for (const id of allowed) assertId(id, 'spread area');
+    assertPositiveUnits(requirement.minAreas, 'minimum areas');
+    assertPositiveUnits(requirement.requiredCreditUnits, 'spread credit units');
+    if (requirement.minAreas > allowed.size) throw new TypeError('minimum areas exceeds available areas');
+    const earnedAreas = new Set<string>();
+    let earnedUnits = 0, projectedUnits = 0, ambiguous = false;
+    for (const course of winners.values()) {
+      if (course.creditUnits === 0) continue;
+      const eligible = course.areaIds.filter(id => allowed.has(id));
+      // Multiple applicable areas require an independently approved allocation.
+      if (eligible.length > 1) { ambiguous = true; continue; }
+      if (eligible.length === 0) continue;
+      projectedUnits = addUnits(projectedUnits, course.creditUnits);
+      if (course.ledger !== 'EARNED') continue;
+      earnedUnits = addUnits(earnedUnits, course.creditUnits);
+      earnedAreas.add(eligible[0]!);
+    }
+    return {requirementId:requirement.id,
+      state:ambiguous ? 'NEEDS_REVIEW' : earnedUnits >= requirement.requiredCreditUnits
+        && earnedAreas.size >= requirement.minAreas ? 'SATISFIED' : 'UNSATISFIED',
+      requiredCreditUnits:requirement.requiredCreditUnits, earnedCreditUnits:earnedUnits,
+      remainingCreditUnits:Math.max(0, requirement.requiredCreditUnits - earnedUnits),
+      projectedCreditUnits:projectedUnits, matchedAreasCount:earnedAreas.size,
+      requiredAreasCount:requirement.minAreas, evidenceRefs};
+  }
+  if (requirement.kind === 'GROUP_CHOICE') {
+    if (requirement.groups.length < 2 || requirement.groups.length > 10)
+      throw new TypeError('GROUP_CHOICE requires 2 to 10 groups');
+    assertPositiveUnits(requirement.k, 'required groups');
+    if (requirement.k > requirement.groups.length) throw new TypeError('k exceeds available groups');
+    const seen = new Set<string>();
+    let matchedGroupsCount = 0;
+    for (const group of requirement.groups) {
+      if (group.length < 1 || group.length > 10) throw new TypeError('Groups need 1 to 10 courses');
+      for (const id of group) {
+        assertId(id, 'group course');
+        if (seen.has(id)) throw new TypeError('Groups must contain distinct courses');
+        seen.add(id);
+      }
+      if (group.every(id => winners.get(id)?.ledger === 'EARNED')) matchedGroupsCount += 1;
+    }
+    return {requirementId:requirement.id, state:matchedGroupsCount >= requirement.k ? 'SATISFIED' : 'UNSATISFIED',
+      matchedGroupsCount, requiredGroupsCount:requirement.k, evidenceRefs};
+  }
+  if (requirement.kind !== 'K_OF_N') throw new TypeError('Unknown academic requirement kind');
   const seen = new Set<string>();
   if (requirement.courseIds.length < 2) throw new TypeError(`${requirement.id} needs at least two courses`);
   for (const courseId of requirement.courseIds) {
