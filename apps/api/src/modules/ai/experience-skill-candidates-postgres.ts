@@ -23,7 +23,7 @@ const Row=z.object({
   erased_at:Time.nullable(),safe_packet:z.object({task:z.literal('experience_skills'),
     providerInputClass:z.literal('PERSONAL_CONSENTED_CLEARED')}).passthrough(),
   record_version:Version,deleted_at:Time.nullable(),current_consent_version:Version,
-  choices_json:z.object({personalStorage:z.literal(true),externalAi:z.literal(true)}).passthrough(),
+  choices_json:z.object({personalStorage:z.boolean(),externalAi:z.boolean()}).passthrough(),
 });
 const hash=(v:unknown)=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 type Executor=Pick<ReturnType<typeof createProviderExecutor>,'readJob'>;
@@ -68,7 +68,9 @@ export class PostgresExperienceSkillCandidateReader implements ExperienceSkillCa
         LIMIT 2`,[actor.actorId,experienceId,inputRef]);
       if(query.rows.length!==1)return null;
       const row=Row.parse(query.rows[0]);
-      if(row.erased_at!==null||row.deleted_at!==null||row.content_version!==row.record_version
+      if(row.experience_id!==experienceId||row.input_ref!==inputRef
+        ||!row.choices_json.personalStorage||!row.choices_json.externalAi
+        ||row.erased_at!==null||row.deleted_at!==null||row.content_version!==row.record_version
         ||row.consent_version!==row.current_consent_version||Date.parse(row.as_of)!==Date.parse(asOf)
         ||row.approved_at>row.as_of)return null;
       await connection.query('COMMIT');begun=false;

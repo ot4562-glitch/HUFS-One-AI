@@ -39,7 +39,7 @@ function setup(){
   const executor={readJob:vi.fn(async()=>{callAfter();return {state:'NEEDS_REVIEW' as const,
     billing:'SETTLED' as const,jobId,candidate};})};
   const inputs={list:vi.fn(async()=>({items:[{inputRef:'SYN-INPUT',asOf:now,
-    expiresAt:'2026-11-06T00:00:00.000Z',task:'experience_skills',operation:'HCX_007'}]}))};
+    expiresAt:'2026-11-06T00:00:00.000Z',task:'experience_skills' as const,operation:'HCX_007' as const}]}))};
   const service=new PostgresExperienceSkillCandidateReader(pool as any,results as any,executor as any,()=>now,inputs);
   const read=()=>service.read({actor,experienceId:'SYN-EXPERIENCE',jobId});
   return {read,service,inputs,pool,query,results,executor,reads:()=>reads,
