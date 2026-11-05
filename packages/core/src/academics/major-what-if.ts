@@ -34,12 +34,12 @@ export type WhatIfScenario = OwnerMajorWhatIfRequest['scenario'];
 export type DegreePath = AcademicDegreePathVNext;
 /** Input compatibility only; never emitted into the current shared contract. */
 type LegacyDegreePath = 'MAJOR_DEEPENING'|'MAJOR_DEEPENING_MINOR';
-function canonicalDegreePath(value:unknown):DegreePath {
+function canonicalDegreePath(value:unknown,programId:string):DegreePath {
   // Exact, finite aliases: unknown values cannot silently become a degree path.
   if(value==='MAJOR_DEEPENING')return 'ADVANCED_SINGLE';
   if(value==='MAJOR_DEEPENING_MINOR')return 'ADVANCED_PLUS_MINOR';
   const parsed=AcademicDegreePathVNextSchema.safeParse(value);
-  if(!parsed.success)throw new TypeError('Primary pack needs a supported degree path');
+  if(!parsed.success)throw new TypeError(`Primary pack ${programId} needs a supported degree path`);
   return parsed.data;
 }
 export type SecondaryRole = 'DOUBLE_MAJOR'|'MINOR';
@@ -143,7 +143,7 @@ interface Resolved {
 function resolve(enrollment:ProgramEnrollment, programs:readonly ProgramOffer[]):Resolved {
   const path = pathOf(enrollment);
   const primaries = programs.filter((offer):offer is Extract<ProgramOffer, {role:'PRIMARY_MAJOR'}> =>
-    offer.role === 'PRIMARY_MAJOR' && offer.programId === enrollment.primaryProgramId && canonicalDegreePath(offer.degreePath) === path);
+    offer.role === 'PRIMARY_MAJOR' && offer.programId === enrollment.primaryProgramId && canonicalDegreePath(offer.degreePath,offer.programId) === path);
   const second = enrollment.secondary;
   const secondaries = second ? programs.filter((offer):offer is Extract<ProgramOffer, {role:SecondaryRole}> =>
     offer.role === second.role && offer.programId === second.programId) : [];
@@ -166,7 +166,7 @@ function checkCatalog(programs:readonly ProgramOffer[]):void {
       throw new TypeError('program role must be PRIMARY_MAJOR, DOUBLE_MAJOR or MINOR');
     }
     assertId(offer.programId, 'programId');
-    const degreePath=offer.role==='PRIMARY_MAJOR'?canonicalDegreePath(offer.degreePath):null;
+    const degreePath=offer.role==='PRIMARY_MAJOR'?canonicalDegreePath(offer.degreePath,offer.programId):null;
     // Canonical and legacy spellings of the same offer must not create two candidates.
     const key = JSON.stringify([offer.role, offer.programId, degreePath]);
     if (keys.has(key)) throw new TypeError(`the catalog lists ${offer.role} ${offer.programId} more than once`);
