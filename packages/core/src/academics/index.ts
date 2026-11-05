@@ -76,3 +76,19 @@ export type {
   VerifiedSection,
   Weekday,
 } from './plan.js';
+export {
+  describeCourseEvidence,
+  EXPERIENCE_EVIDENCE_CORE_VERSION,
+  resolveExperienceCourseLinks,
+} from './experience-evidence.js';
+export type {
+  AcademicEvidenceAccess,
+  CourseEvidence,
+  CourseEvidenceList,
+  CourseEvidenceState,
+  ExperienceCourseLink,
+  ExperienceCourseLinkReason,
+  ExperienceCourseLinkRequest,
+  ExperienceCourseLinkResult,
+  ExperienceCourseLinkRow,
+} from './experience-evidence.js';

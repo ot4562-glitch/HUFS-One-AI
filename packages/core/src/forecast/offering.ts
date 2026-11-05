@@ -312,8 +312,9 @@ function eventApplies(event:OfficialAcademicEvent, targetTerm:string, asOfMs:num
  * Asia/Seoul regular-semester bounds. Used to test whether an official event's effective
  * period meets the target term, and to count a past term only after it has ended by asOf.
  * Season 1 is March–June; season 2 is September–December.
+ * Also used by the rolling-origin evaluation, so both read the same calendar.
  */
-function termWindow(term:string):{start:number; end:number} {
+export function termWindow(term:string):{start:number; end:number} {
   const year = Number(term.slice(0, 4));
   if (term.endsWith('-1')) {
     return {

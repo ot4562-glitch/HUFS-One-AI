@@ -77,7 +77,7 @@ export interface AcademicLedgerRequest {
 }
 
 type ProgressState = 'SATISFIED'|'UNSATISFIED'|'NEEDS_REVIEW'|'NOT_APPLICABLE'|'NOT_CHECKED';
-type ExclusionReason = 'RETAKE_SUPERSEDED'|'DUPLICATE'|'PENDING_RECOGNITION'|'OFFICIAL_EXCLUSION'|'NEEDS_REVIEW';
+export type ExclusionReason = 'RETAKE_SUPERSEDED'|'DUPLICATE'|'PENDING_RECOGNITION'|'OFFICIAL_EXCLUSION'|'NEEDS_REVIEW';
 
 interface ProgressRow {
   requirementId:string;
@@ -336,6 +336,27 @@ function classify(attempts:readonly LedgerAttempt[], asOfMs:number):Classified {
   }
 
   return {winners, reasons, pendingUnits, ambiguous};
+}
+
+/** The ledger's own decision for each attempt, without any requirement or RulePack. */
+export interface LedgerAttemptClassification {
+  /** The one counted attempt per canonical course. */
+  winners:ReadonlyMap<string, LedgerAttempt>;
+  /** Why each other attempt is not counted, keyed by attemptToken. */
+  reasons:ReadonlyMap<string, ExclusionReason>;
+}
+
+/**
+ * Same attempt rules and input checks as buildAcademicLedger, for another core that must
+ * agree with the credit audit about which attempts count (experience evidence, #260).
+ */
+export function classifyLedgerAttempts(attempts:readonly LedgerAttempt[], asOf:string):LedgerAttemptClassification {
+  if (!AS_OF.test(asOf) || !Number.isFinite(Date.parse(asOf))) {
+    throw new TypeError('asOf must be an ISO-8601 datetime with a timezone offset');
+  }
+  if (!Array.isArray(attempts)) throw new TypeError('attempts must be an array');
+  const {winners, reasons} = classify(attempts, Date.parse(asOf));
+  return {winners, reasons};
 }
 
 function evaluateRequirement(
