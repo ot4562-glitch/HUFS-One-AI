@@ -35,7 +35,7 @@ jobs:
       contents: read
       pages: read
     steps:
-      - name: Checkout only allowlisted UI code and synthetic fixtures
+      - name: Checkout allowlisted code-only sources and synthetic fixtures
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 pinned
         with:
           persist-credentials: false
@@ -50,6 +50,8 @@ jobs:
             /packages/ai/src/
             /packages/fixtures/synthetic/
             /apps/web/
+            /apps/api/
+            /tests/api/
             /tools/check_pages_preview.mjs
             /.github/workflows/pages-synthetic-preview.yml
       - name: Reject protected input directories
