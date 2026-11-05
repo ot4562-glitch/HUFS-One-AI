@@ -2,7 +2,7 @@ import {describe, expect, it} from 'vitest';
 import {DEMO_AS_OF} from '../opportunities/demo-corpus.js';
 import {DEMO_STUDENTS} from '../opportunities/demo-profiles.js';
 import {DEMO_NOTICES} from './demo-notices.js';
-import {CRITICAL_DUE_DAYS, PINNED_MAX, composeNotices} from './notice.js';
+import {CRITICAL_DUE_DAYS, PINNED_MAX, composeNotices, type Notice} from './notice.js';
 
 /**
  * #10 / A07: full decision table for the 10 SYNTHETIC academic notices × 5 SYNTHETIC students at DEMO_AS_OF.
@@ -106,5 +106,29 @@ describe('#10 A07 grade invariants over every student (independent of the table)
       const b = composeNotices(s.noticeStudent, [...DEMO_NOTICES].reverse(), {asOf:DEMO_AS_OF});
       expect(JSON.stringify(b.result)).toBe(JSON.stringify(a.result));
     }
+  });
+});
+
+describe('#10 A07 CRITICAL_DUE 7-day boundary (test-only notice, DEMO_NOTICES unchanged)', () => {
+  const student = DEMO_STUDENTS.find(s => s.subject === 'S01')!.noticeStudent;
+  const at = (ms:number) => new Date(AS_OF + ms).toISOString();
+  const notice = (dueMs:number):Notice => {
+    const {adminReportDeadline:_admin, ...base} = byId.get('SYN-NOT-001')!;
+    return {...base, id:'SYN-NOT-EDGE', studentDeadline:at(dueMs)};
+  };
+  const grade = (dueMs:number) => composeNotices(student, [notice(dueMs)], {asOf:DEMO_AS_OF}).evaluations[0];
+  const WINDOW = CRITICAL_DUE_DAYS * 86_400_000;
+
+  it('exactly 7 days is CRITICAL_DUE and pinned; 7 days + 1 ms is ACADEMIC_REQUIRED', () => {
+    expect(grade(WINDOW)).toMatchObject({priority:'CRITICAL_DUE', overdue:false});
+    expect(composeNotices(student, [notice(WINDOW)], {asOf:DEMO_AS_OF}).result.pinnedIds).toEqual(['SYN-NOT-EDGE']);
+    expect(grade(WINDOW + 1)).toMatchObject({priority:'ACADEMIC_REQUIRED', overdue:false});
+    expect(grade(WINDOW + 1_000)).toMatchObject({priority:'ACADEMIC_REQUIRED'});
+  });
+
+  it('1 ms before asOf is still CRITICAL_DUE window; at asOf it is overdue ACADEMIC_REQUIRED, never CRITICAL_DUE', () => {
+    expect(grade(1)).toMatchObject({priority:'CRITICAL_DUE', overdue:false});
+    expect(grade(0)).toMatchObject({priority:'ACADEMIC_REQUIRED', overdue:true});
+    expect(grade(-1)).toMatchObject({priority:'ACADEMIC_REQUIRED', overdue:true});
   });
 });

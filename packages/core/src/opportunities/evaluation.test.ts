@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {OpportunitySchema, type Opportunity} from '@hufs-one/contracts';
-import {compareRankers, eligibilityAgreement, ndcgAtK, precisionAtK, type RecommendationProfile} from './index.js';
+import {compareRankers, compareTop3Quality, eligibilityAgreement, ndcgAtK, precisionAtK, type RecommendationProfile} from './index.js';
 
 // Synthetic only: fictional organizations, hand-made labels (A15.1 shape, not real evaluation data).
 const ASOF = '2026-11-20T00:00:00.000Z';
@@ -136,6 +136,13 @@ describe('#10 top-3 diversity and UNKNOWN per arm (label-free, hand-calculated)'
     expect(r.profiles[0]?.recommended.top3Quality).toEqual({slots:3, distinctGroups:3, distinctTopics:3, unknownEligibility:0});
     expect(r.top3Quality.recommended.groupDiversity).toEqual({num:3, den:3, value:1});
     expect(r.top3Quality.recommended.unknownEligibilityShare).toEqual({num:0, den:3, value:0});
+  });
+
+  it('compareTop3Quality needs no labels and equals the quality inside compareRankers', () => {
+    const q = compareTop3Quality(profiles.map(({profileId, profile}) => ({profileId, profile})), opportunities, {asOf:ASOF, publishedAtBySnapshotId:published});
+    expect({latestFirst:q.latestFirst, recommended:q.recommended}).toEqual(r.top3Quality);
+    expect(q.profiles).toEqual([{profileId:'SYN-Q1', latestFirst:r.profiles[0]!.latestFirst.top3Quality, recommended:r.profiles[0]!.recommended.top3Quality}]);
+    expect(q.rankConfigVersion).toBe(r.rankConfigVersion);
   });
 
   it('pools slots, so a profile with fewer than 3 candidates is not over-weighted', () => {
