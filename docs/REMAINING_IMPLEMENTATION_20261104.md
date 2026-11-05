@@ -2,6 +2,8 @@
 
 > **2026-11-05 갱신.** 파일명은 기존 링크 호환을 위해 유지한다. 최신 main/PR·CI/리뷰·이슈 상태는 [STATUS](../STATUS.md)가 정본이다. 과거 f23b86bb·OPEN PR 0·#216 당시 CI를 현재 HEAD 검증으로 재사용하지 않는다. **RELEASE_BLOCKED**.
 
+**2026-11-05 이슈 분할:** 원래 #61/#123/#132/#133은 **PR #220의 구현·합성 검증 납품 분만 CLOSED**. 아래 표의 이전 번호는 구현 추적을 위해 남기며, 그 **미수락 조건은 [#221 사람·실원본·기기 인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)와 [#222 NCP 실환경/기능 활성화](https://github.com/minseong-hufs/HUFS-One-AI/issues/222)에 OPEN으로 승계**했다. [실행 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). 인적 gold 0/200·0/32 및 실제 4인 원본 미반입은 불변. RELEASE_BLOCKED.
+
 ## 1. 코드 반영과 인수의 구분
 
 #216은 기존 UI·API·Provider·학업·NCP 자동화와 스택 PR 조상을 통합했고, #217은 What-if 합성 계산/보수적 검토, #218은 동일교과 속성 회귀를 추가했다. #219/#220의 후속 인증·SQL·Source/AI·private intake·빈 시연 연결은 각각의 최신 HEAD 검증과 병합 기록을 STATUS에서 확인한다.
@@ -16,11 +18,11 @@ GitHub의 CLOSED/NOT MERGED 스택 PR은 main 조상에 포함될 수 있지만 
 | P0 | #19 · 심민성 | source 권리/불변 revision·approved egress·image/PDF 근거·temporal reader/reviewer·취소/late 응답 회귀 | 승인된 실제 출처별 필드/목적·보관/외부 전송, 원본 SHA→PG/RLS→검색·인용→React 종단, 독립 OCR/정정/시간 근거 검수 |
 | P0 | #20 · 심민성 | 네 AI task 결과·인용 검증, 비용 예약/정산·미발송 취소 정리, Laya 기본 OFF·격리 코드 | 실제 provider token/finishReason·quota/과금·429/503·불명확 청구, 검토된 worker/rootfs 전체 실행, CPU/RSS/OOM/p95 및 허가된 입력 품질 |
 | P0 | #46 · 심민성 | #212 현재 보호 경로 제거, 현재/과거 Git 메타데이터·public artifact 차단 | 승인된 full private checkout 재검증, 과거 원본 6경로의 접근/clone/backup·최초 게시·원본별 권리. 현재 경로 0만으로 과거 배포 수락 불가 |
-| P0 | #61/#10 · 심민성·이의상 / 김채윤 | 40공고×5슬롯 초안·metric, 고정 tune/report split·서명 검증/원장/오프라인 검토 도구, PNG/HTML20쌍·temporal12 패키지 | 독립 사람 gold **0/200**·미디어/시간 **0/32**, 실제 검토 권한/서명·공정한 정책 비교·실출처/외부 provider 품질·실환경 성능 |
-| P0 | #12/#89 · 이서연 운영 / 심민성 코드 | NCP IaC·plan-only/SSH preview·설치/rollback 합성 검증 | 실계정/SKU/크레딧·지출 승인, ACG/NACL·TLS/직접 IP/IPv6·호스트·백업복구·청구/반납. 오프라인 CI는 실 NCP 실행 영수증이 아님 |
-| P1 | #11/#133 · 박준영·심민성 | WIS hash/현재 권한·원본 receipt/preview 결속, degreePath/track·문서별 SHA·AREA_SPREAD/GROUP_CHOICE·보수적 What-if와 4-owner atomic CAS | 실제 owner/cohort/입학유형 binding·원본별 권리, 공식 RulePack·언어 속성 근거·손계산과 실제 API/UI |
-| P1 | #9/#119/#132 · 이의상·심민성 | 메뉴/정정·학업/계획 UI·빈 시연 설정/저장/RESET·360px/키보드 합성 브라우저·runbook | 전체 메뉴/역할별 오류·철회·다중탭, 실제 스크린리더·발표 리허설/독립 인수. memory browser 결과와 PG 재시작/RLS 로그를 구분 |
-| P1 | #123 · 이의상·심민성·김채윤 | 영속 PG CAS/FORCE RLS·ADMIN 게시/수정/승인/철회·BETA 읽기/추천·인증 자산, AI 생성 PNG/출처/hash | 가상 ADMIN 게시/철회·영속 PG 연결과 독립 모바일/키보드/보조기기·전체 여정 인수. 실학교 모집/게시로 확장할 경우 별도 권리 승인 |
+| P0 | #221(구 #61)/#10 · 심민성·이의상 / 김채윤 | 40공고×5슬롯 초안·metric, 고정 tune/report split·서명 검증/원장/오프라인 검토 도구, PNG/HTML20쌍·temporal12 패키지 | 독립 사람 gold **0/200**·미디어/시간 **0/32**, 실제 검토 권한/서명·공정한 정책 비교·실출처/외부 provider 품질·실환경 성능 |
+| P0 | #12/#89/#222 · 이서연 운영 / 심민성 코드 | NCP IaC·plan-only/SSH preview·설치/rollback 합성 검증 | 실계정/SKU/크레딧·지출 승인, ACG/NACL·TLS/직접 IP/IPv6·호스트·백업복구·청구/반납. 오프라인 CI는 실 NCP 실행 영수증이 아님 |
+| P1 | #11/#221(구 #133) · 박준영·심민성 | WIS hash/현재 권한·원본 receipt/preview 결속, degreePath/track·문서별 SHA·AREA_SPREAD/GROUP_CHOICE·보수적 What-if와 4-owner atomic CAS | 실제 owner/cohort/입학유형 binding·원본별 권리, 공식 RulePack·언어 속성 근거·손계산과 실제 API/UI |
+| P1 | #9/#119/#221(구 #132) · 이의상·심민성 | 메뉴/정정·학업/계획 UI·빈 시연 설정/저장/RESET·360px/키보드 합성 브라우저·runbook | 전체 메뉴/역할별 오류·철회·다중탭, 실제 스크린리더·발표 리허설/독립 인수. memory browser 결과와 PG 재시작/RLS 로그를 구분 |
+| P1 | #221(구 #123) · 이의상·심민성·김채윤 | 영속 PG CAS/FORCE RLS·ADMIN 게시/수정/승인/철회·BETA 읽기/추천·인증 자산, AI 생성 PNG/출처/hash | 가상 ADMIN 게시/철회·영속 PG 연결과 독립 모바일/키보드/보조기기·전체 여정 인수. 실학교 모집/게시로 확장할 경우 별도 권리 승인 |
 | P1 | #8/#89 · 심민성 | API/TASK·entrypoint inventory, 공개 산출물·npm license evidence/CycloneDX | UNKNOWN route/consumer 대응, native/Python/font/model/asset 전체 라이선스·NOTICE·배포 산출물 수락 |
 
 ### #133의 공식 학업 계약 검토
