@@ -57,7 +57,7 @@
 - [x] Write and observe failing cross-artifact, stale permission and swapped-file regressions.
 - [x] Implement exact authority requests without raw echo, browser override or default credentials.
 - [x] Run focused intake/WIS tests and typecheck (25 saved-curriculum/WIS and 46 intake/CLI cases).
-- [ ] Complete independent code review, update this ledger, and commit exact paths.
+- [x] Complete independent code review, update this ledger, and commit exact paths.
 
 ## Implemented Contract Details
 
@@ -71,6 +71,8 @@
 
 ## Verification and Remaining Acceptance
 
-All regression inputs and authority receipts are invented fixtures. The observed RED runs covered missing A/B/C1/C2 code, owner authority binding, 30 saved/intake cases, an unrelated-track false denial, and a legacy candidate with a multi-document trusted inventory that could otherwise activate. Focused suites subsequently passed; the final Node 22.22.2 typecheck passed after both review corrections. The last scoped/approval run passed 41 cases, and 10 existing HTTP/browser checks also passed. Automated core/owner peer review found the asymmetric inventory path; its regression and fix were reread with no remaining concrete blocker. The saved/intake peer review is in progress while this scoped commit is handed off for integration.
+All regression inputs and authority receipts are invented fixtures. The observed RED runs covered missing A/B/C1/C2 code, owner authority binding, 30 saved/intake cases, an unrelated-track false denial, and a legacy candidate with a multi-document trusted inventory that could otherwise activate. Focused suites subsequently passed; the final Node 22.22.2 typecheck passed after both review corrections. The last scoped/approval run passed 41 cases, and 10 existing HTTP/browser checks also passed. Automated core/owner peer review found the asymmetric inventory path; its regression and fix were reread with no remaining concrete blocker. A second automated reviewer read the exact saved/intake production files and their focused regressions with no concrete blocker. Neither reviewer executed live PostgreSQL, private inputs or real grants. The scoped implementation was committed as `6325ea592ad5763844ddd1c3949922d99cca5364`.
+
+The latest main (`6445fc4aae4efabea2d94510bc6348cc3be9268a`) was subsequently merged without conflicts. Its new What-if consumer omitted the two composite requirement kinds when identifying unmet rows affected by undecided attempts. Two valid synthetic cases reproduced missing review holds for pending recognition and a term not ended by asOf; an official-exclusion control already passed. Two membership cases now preserve those holds without adding earned credit or changing shortfall fields. What-if, composite requirements/revisions and the new same-course property suite passed 45 cases together; the merged-tree typecheck passed. The follow-up adds no imports. CI needs only the exact new `tests/fixtures/academic-133.ts` fixture in addition to its existing selected directories; the root agent owns that workflow update.
 
 Actual four-person originals, source-specific withdrawal/retention records, official RulePack independent human approval, configured owner scope receipts, real accounts, and live PostgreSQL/RLS/session evidence remain external acceptance requirements. Existing participant consent and HUFSAbility collection permission are acknowledged; they are not substituted for those distinct proofs. Automated review and synthetic permissions do not constitute human or school approval.
