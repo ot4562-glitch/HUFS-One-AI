@@ -56,6 +56,27 @@ function fakeDatabase(){
 }
 
 describe('PostgresCalendarInputSource: server-reviewed raw inputs and current grants/rights',()=>{
+  it.each(['SYN-REQ','REQ-EXAMM'])('holds requirement-linked notice %s without a current approved RulePack (#225)',async ref=>{
+    const db=fakeDatabase(),input=db.projection.input_json as Record<string,unknown>;
+    input.notices=[{id:'SYN-NOTICE',sourceSnapshotId:'REV1',title:'Synthetic requirement notice',
+      issuer:'Synthetic department',category:'ACADEMIC',verificationState:'VERIFIED',
+      requirementRefs:[ref],evidenceRefs:['SYN-EVIDENCE']}];
+    const reader=new PostgresCalendarInputSource(db.pool);
+    const bundle=await reader.readAuthorizedInputs(request);expect(bundle).not.toBeNull();
+    expect(bundle!.notices[0]!.verificationState).toBe('NEEDS_REVIEW');
+    const result=computeAuthorizedSections(bundle!,{actorId:'SYN-ACTOR',role:'BETA',now});
+    expect(result.notices.pinnedIds).toEqual([]);
+    expect(result.notices.items[0]!.verificationState).toBe('NEEDS_REVIEW');
+    expect(result.notices.items[0]!.priority).toBe('GENERAL');
+  });
+  it('does not promote rejected requirement notices or demote unrelated notices (#225)',async()=>{
+    const db=fakeDatabase(),input=db.projection.input_json as Record<string,unknown>;
+    const n={id:'SYN-NOTICE',sourceSnapshotId:'REV1',title:'Synthetic notice',issuer:'Synthetic department',
+      category:'ACADEMIC',verificationState:'VERIFIED',evidenceRefs:['SYN-EVIDENCE']};
+    input.notices=[n,{...n,id:'SYN-REJECTED',verificationState:'REJECTED',requirementRefs:['SYN-REQ']}];
+    const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(bundle!.notices.map(n=>n.verificationState)).toEqual(['VERIFIED','REJECTED']);
+  });
   it('real approved calendar projection only exposes source-proven deadlines and claim IDs',async()=>{
     const db=fakeDatabase(),expiry='2026-11-03T15:00:00.000Z';
     db.projection.dataset_mode='REAL_CONSENTED';
