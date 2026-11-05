@@ -60,6 +60,13 @@ describe('server-owned durable PostgreSQL application assembly',()=>{
     opened.push(app);expect(app.server.listening).toBe(false);
     expect(invitations.connect).not.toHaveBeenCalled();expect(sandbox.connect).not.toHaveBeenCalled();
   });
+  it('wires an explicit ADMIN usage pool without opening it or bypassing anonymous denial',async()=>{
+    const c=config(),usage=pool(),authority={isApproved:vi.fn(async()=>true)};
+    const app=createPostgresApplication({...c,platform:{...c.platform,adminUsage:{pool:usage,authority}}});
+    opened.push(app);
+    expect((await app.inject({url:'/api/admin/usage'})).statusCode).toBe(401);
+    expect(usage.connect).not.toHaveBeenCalled();
+  });
   it.each(['APP_ENV','NODE_ENV'])('retains the production refusal through %s',name=>{
     vi.stubEnv(name,'production');
     const c=config();expect(()=>createPostgresApplication(c)).toThrow(/Production integration disabled/);

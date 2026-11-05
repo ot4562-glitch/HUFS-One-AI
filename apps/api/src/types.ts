@@ -8,6 +8,7 @@ import type {PublicSourceRevisionHistory} from './modules/opportunities/source-h
 import type {CalendarInputSource} from './modules/calendar.js';
 import type {PersonalStatePort} from './modules/personal-state.js';
 import type {DemoOverlayService} from './modules/demo-overlay.js';
+import type {AdminUsagePort} from './modules/admin/usage.js';
 import type {
   DemoProfileOption, DemoSnapshot, SafeLlmPacket, SharingGrant, SubjectAlias, AiTask,
 } from '@hufs-one/contracts';
@@ -87,6 +88,8 @@ export interface ApiOptions {
   demoOverlay?:Pick<DemoOverlayService,'read'|'put'|'reset'>;
   /** Independent current operator allowlist; a BETA grant or OIDC email alone is insufficient. */
   adminAuthority?:{isApproved(input:{actor:VerifiedTeamActor;now:string}):Promise<boolean>};
+  /** Explicit aggregate-only accounting port; no default role/pool or live provider. */
+  adminUsage?:AdminUsagePort;
   /** Read-only evidence collection; no crawling, infrastructure changes or generated approvals. */
   demoPreflight?:{
     inspect(input:{actor:VerifiedTeamActor;now:string}):Promise<unknown>;

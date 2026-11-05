@@ -17,6 +17,7 @@ import type {ApiOptions, VerifiedActor} from './types.js';
 import {digestInviteToken} from './modules/auth/reviewer.js';
 import {createTrustedProxyPolicy} from './modules/auth/trusted-proxy.js';
 import {ReceiptAdmissionError} from './modules/auth/owner-receipts.js';
+import {AdminUsageReportSchema} from './modules/admin/usage.js';
 import {ReviewerSandboxActionSchema} from './modules/auth/reviewer-sandbox.js';
 import type {ReviewerGrant} from './modules/auth/reviewer.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/auth/gates.js';
@@ -333,6 +334,22 @@ export function createApi(options:ApiOptions) {
     app.get('/api/auth/google/callback',async(req,reply)=>options.googleAuth!.callback(req,reply));
   }
   app.get('/api/auth/csrf',async(req)=>({csrfToken:principal(req).csrfToken}));
+  // Explicit read-only accounting port; never exposes raw jobs, actor ids or token payloads.
+  app.get('/api/admin/usage',async(req)=>{
+    const actor=principal(req);
+    if(actor.role!=='ADMIN')throw new ApiFailure('FORBIDDEN');
+    z.strictObject({}).parse(req.query);
+    if(!options.adminUsage)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const raw=await options.adminUsage.read({actorId:actor.actorId,now:clock()});
+    const checked=AdminUsageReportSchema.safeParse(raw);
+    if(!checked.success||Date.parse(checked.data.asOf)>nowEpoch(clock()))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const current=await verifiedSession(req);
+    if(current.role!=='ADMIN'||current.actorId!==actor.actorId
+      ||current.sessionIdHash!==actor.sessionIdHash)
+      throw new ApiFailure('FORBIDDEN');
+    return checked.data;
+  });
   app.post('/api/admin/demo/preflight',async(req)=>{
     const actor=principal(req);
     if(actor.role!=='ADMIN')throw new ApiFailure('FORBIDDEN');
