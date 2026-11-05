@@ -28,7 +28,7 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 
 ## A02. 대상 선택·문맥·철회 계약
 
-- 실제 로그인한 사람 `actorId`와 표시하려는 `demoSubjectId`는 다르다. 5개 합성 데모 슬롯 S01–S05는 개인정보 원본 제공자 4명·REVIEWER·EMPTY_DEMO와 다른 네임스페이스다.
+- 실제 로그인한 사람 `actorId`와 표시하려는 `demoSubjectId`는 다르다. 5개 합성 데모 슬롯 S01 / S02 / S03 / S04 / S05는 개인정보 원본 제공자 4명·REVIEWER·EMPTY_DEMO와 다른 네임스페이스다. `REAL_CONSENTED` 자료 모드는 해당 실제 원본·목적별 동의·접근권을 별도 증명하지 않은 합성 화면에서 활성화할 수 없다.
 - 문맥은 `contextId`, `demoRunId`, `sessionIdHash`, `datasetVersion`, `projectionVersion`, `sharingGrantVersion`, `expiresAt`, `asOf`, `selectionEpoch`를 바인딩한다.
 - 선택 A→B는 이전 요청 취소, 개인 UI·캐시/오버레이 비우기, B 권한을 조회한 뒤 **한 번에 새 snapshot 렌더**한다. 늦은 A 응답·다른 탭 결과·revoked Grant는 거절. B의 원본을 실제로 수정하지 않는다.
 - 최소 유향 5×4=20 전환, 반복 10회, 두 탭·철회·만료·race·409·403·429·503을 synthetic/browser/PG로 검증하고 실제 인수와 분리.
