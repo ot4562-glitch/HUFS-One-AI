@@ -114,7 +114,7 @@ describe('real-role PostgreSQL API operator composition',()=>{
   it('rejects all prebuilt platform SQL pools before startup and refuses a forged prepared port',async()=>{
     const ports=['sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace',
       'experienceApproval','demoOverlay','sourceReview','ownerCatalog','ownerRecommendations',
-      'studyPlanCheck','ownerStudyPlan','doubleMajor','revisionComparison','demoProfile',
+      'studyPlanCheck','ownerStudyPlan','doubleMajor','majorWhatIf','revisionComparison','demoProfile',
       'demoProfileQuota','reviewerSandbox','pools'];
     for(const field of ports){
       const config=makeConfig() as any;
@@ -127,6 +127,11 @@ describe('real-role PostgreSQL API operator composition',()=>{
     await expect(startOperatorPostgres({prepared:f.prepared,host:'127.0.0.1',port:0}))
       .rejects.toThrow(/verified role settings/);
     expect(f.connected).toEqual([]);
+    const major=fakePrepared();
+    (major.prepared.application.platform as any).majorWhatIf={loader:{load:vi.fn()},rights:{},approvalGate:{}};
+    await expect(startOperatorPostgres({prepared:major.prepared,host:'127.0.0.1',port:0}))
+      .rejects.toThrow(/verified role settings/);
+    expect(major.connected).toEqual([]);
   });
   it('wires demo quota only through distinct verified SQL roles',async()=>{
     const config=makeConfig() as any;
