@@ -17,13 +17,19 @@
 | AI/비용 | HCX 관리 SQL 3역할(입력·예산·결과), 필요시 네 번째 비공개 입력 등록 역할, 후보/근거/과금·중복·철회 검증 | 실제 공급자 사용·가격/토큰·비용 실측은 `NOT_RUN` |
 | UI·추천·학업 코어 | 기존 React UI, 합성 시연, 추천/공지/학업 로직, 팀 소유 트랙 유지 | #258/#259/#260 소유 기능과 실제 사용성/Gold 평가는 별도 |
 
-## 빌드와 검증
+## 분할 PR과 빌드/검증 (2026-11-06)
 
-`PR #264`의 **최신 정확한 HEAD**에 연결된 TypeScript·합성 테스트·일회용 PostgreSQL·Chrome E2E·NCP 오프라인 Actions 결과를 기준으로 판정합니다. 과거 HEAD 성공이나 합성 테스트가 운영/사람 인수를 보증하지 않습니다. SQL 파일이 존재한다는 사실을 운영 DB 적용으로 처리하지 않습니다.
+기존 대형 PR #264는 **병합하지 않고 미병합 종료**했습니다. 최신 `main` 기준으로 협업자 코드를 보존하고 아래 순서의 **스택형 PR**로 분할했습니다.
+
+[#267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267) → [#268](https://github.com/ot4562-glitch/HUFS-One-AI/pull/268) → [#269](https://github.com/ot4562-glitch/HUFS-One-AI/pull/269) → [#270](https://github.com/ot4562-glitch/HUFS-One-AI/pull/270) → [#272](https://github.com/ot4562-glitch/HUFS-One-AI/pull/272) → [#273](https://github.com/ot4562-glitch/HUFS-One-AI/pull/273) → [#274](https://github.com/ot4562-glitch/HUFS-One-AI/pull/274)
+
+- #267~#270과 #272: 해당 HEAD에서 합성 TypeScript·계약·일회용 PostgreSQL·Chrome·NCP 오프라인 CI 성공을 검증했습니다.
+- #273·#274: 경험→AI 후보→학생 승인→추천 HTTP 합성 종단 및 Forms 실양식 YES/NO 해석/음성 동의 테스트. HEAD 검사 결과는 PR Checks에서 **정확한 SHA로 확인**하며 미완료·실패를 자동 PASS로 쓰지 않습니다.
+- 실제 운영 서버/네트워크/Google/외대메일/CA TLS/실제 HCX/OCR·유료 청구/원본 파일·학교 공식 학칙은 합성 CI로 대체할 수 없습니다. 이에 대한 상태는 [인수 증거 원장](docs/OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)을 따릅니다. RELEASE_BLOCKED 상태를 유지합니다.
 
 ## 담당 범위
 
-- [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264) — 민성 담당 코드·문서/계약/API·DB·AI·운영·CI 변경, `main` 병합은 별도 검증.
+- [#267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267) → [#268](https://github.com/ot4562-glitch/HUFS-One-AI/pull/268) → [#269](https://github.com/ot4562-glitch/HUFS-One-AI/pull/269) → [#270](https://github.com/ot4562-glitch/HUFS-One-AI/pull/270) → [#272](https://github.com/ot4562-glitch/HUFS-One-AI/pull/272) → [#273](https://github.com/ot4562-glitch/HUFS-One-AI/pull/273) → [#274](https://github.com/ot4562-glitch/HUFS-One-AI/pull/274) — 소유자 담당 계약·경험/AI·DB·운영·시연 API·종단/동의 검증의 순차 병합 대상. 기존 [#264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)는 대체되어 닫혔으며 병합되지 않았습니다.
 - [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253) — API·인증·DB/Source·AI/NCP 및 전체 운영 조립.
 - [#257](https://github.com/ot4562-glitch/HUFS-One-AI/issues/257) — 경험·AI 후보·학생 승인·추천 연계 API.
 - [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252) — 실제 계정·학생·공급자/운영·인적 품질 증거.

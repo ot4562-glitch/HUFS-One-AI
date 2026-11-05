@@ -13,3 +13,6 @@
 5. 실환경 테스트·요금/CPU/RSS·복구·학생 경험/학사 결과·자료 원문·인용/미디어 품질·기기 사용성을 #252에 기록합니다.
 
 경험·태그/포트폴리오/추천·학업/AI 기능은 로그인한 소유자의 현재 자료·버전·권한을 따릅니다. 승인 완료는 타인 사칭·원문 오류·비밀키 노출이나 삭제 무시를 허용하지 않습니다. 실제 시험/측정하지 않은 값을 완료했다고 작성하지 않습니다.
+## 2026-11-06 분할 작업과 실행 증거
+
+현재 소유자 작업은 [#267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267) → [#268](https://github.com/ot4562-glitch/HUFS-One-AI/pull/268) → [#269](https://github.com/ot4562-glitch/HUFS-One-AI/pull/269) → [#270](https://github.com/ot4562-glitch/HUFS-One-AI/pull/270) → [#272](https://github.com/ot4562-glitch/HUFS-One-AI/pull/272) → [#273](https://github.com/ot4562-glitch/HUFS-One-AI/pull/273) → [#274](https://github.com/ot4562-glitch/HUFS-One-AI/pull/274) 순서로 병합해야 합니다. 이전 대형 PR #264는 미병합 종료됐습니다. [운영/실자료/품질 인수 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)에서 실제 계정·소스·공급자 확인 결과를 추적합니다. 합성 결과를 실환경·실비용의 PASS로 승격하지 않습니다.

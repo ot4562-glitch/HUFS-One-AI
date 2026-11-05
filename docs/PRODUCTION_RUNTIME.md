@@ -1,6 +1,6 @@
 # HUFS One AI — 승인된 운영 API 실행
 
-프로젝트 승인은 **OWNER_CONFIRMED_APPROVED**입니다. 운영 앱은 이미 완료된 승인 여부를 다시 묻는 대신 실제 설정·연결·사용자 권한을 검증합니다. 신규 구현은 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)의 작업 브랜치 기준입니다.
+프로젝트 승인은 **OWNER_CONFIRMED_APPROVED**입니다. 운영 앱은 이미 완료된 승인 여부를 다시 묻는 대신 실제 설정·연결·사용자 권한을 검증합니다. 운영 구현은 [PR #267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267) → [#268](https://github.com/ot4562-glitch/HUFS-One-AI/pull/268) → [#269](https://github.com/ot4562-glitch/HUFS-One-AI/pull/269) 스택과 후속 계약/시연/검증 PR의 대상입니다. 종전 PR #264는 분할 대체로 미병합 종료되었습니다. 실제 적용 여부와 설정 누락은 [증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)으로 판정합니다.
 
 ## 구성
 

@@ -2,7 +2,7 @@
 
 **승인:** `OWNER_CONFIRMED_APPROVED`. 이 정본은 승인 대기를 뜻하지 않습니다. 실제 배포·계정·원본·비용 및 제3자 품질 인수는 검증 증거가 있을 때만 완료로 기록합니다. 코드 담당은 #253/#257, 실행·인적 검증은 #252, 협업 총괄은 #255입니다.
 
-## 현재 PR #264에 있는 구현
+## 현재 분할 PR #267–#274에 있는 구현
 
 - 명시적인 production 구성과 안전한 `--plan`/`--apply` 실행, 관리 SQL 역할·RLS·독립 AI 예산/입력/정산, 소유권·철회·권한의 현재 상태 검사를 구현했습니다.
 - 경험 CRUD/포트폴리오, 다중 경험 선택, 운영자 전용 input 등록, 현재 판본/동의 결속, `NEEDS_REVIEW` AI 후보 조회와 학생 승인 태그 API가 존재합니다. 화면 #258과 추천 순수 코어 #259의 실제 소비 완료는 별도입니다.
@@ -18,6 +18,7 @@
 - 운영 API `production-main.js`는 loopback 기본 실행과 별도 승인 사설 컨테이너 IPv4 바인딩 코드를 갖춥니다. 하지만 실제 operator factory·NCP host·network/ingress·Google/학교메일·CA TLS/role GRANT·DB migration/backup/rollback 및 AI provider·가격·토큰을 구성한 종단 시험은 `CONFIGURATION_REQUIRED` 또는 `NOT_RUN`입니다.
 - SourceRevision/Temporal RAG·문서/이미지/PDF·native worker와 비용 정산의 전체 운영 소비와 취소/오류/동시성 회귀, native/NOTICE/SBOM·패키징·비밀 유출 검증은 #253에서 계속 확인해야 합니다.
 - 경험 후보→학생 승인→추천 projection을 UI #258·추천 #259의 실제 사용자 경로에서 검사하고, 학업 자료는 #260과 독립 교차 리뷰가 필요합니다.
+- 제공된 실제 Forms 26열/4응답은 구조 확인, 실 CSV 3개/128행은 6열·수치·이수상태 구조 확인을 수행했습니다. 모든 128행의 학수번호가 비어 있고 네 번째 CSV와 명시적인 4인 파일–행–actor 결속은 부재합니다. 따라서 운영 private intake를 완료하거나 개인별 공식 이수 결과를 판정한 것이 아닙니다. 전부 비공개 검사하고 원본은 Git/CI에 첨부하지 않았습니다. [증거](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md).
 - 합성 자동 CI와 운영/사람 인수를 혼동하지 않습니다. 최신 코드 SHA의 TypeScript·PostgreSQL·Chrome·NCP 오프라인 결과를 별도로 조회합니다.
 - 실제 학생·기관·학칙 원본, NCP/AI 사용량·비용, 독립 사람 Gold·스크린리더·최종 출시 판정은 #252에서 사실적 증거로 검증합니다.
 
