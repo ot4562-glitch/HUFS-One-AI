@@ -1,35 +1,17 @@
 # HUFS One AI — REVIEWER 공용 초대·전체 합성 체험 계약
 
-> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 2026-11-04 REVIEWER 현재 코드: 합성 기간제 초대·세션·권한·철회·Google OIDC/학교메일 PostgreSQL 어댑터의 구현은 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 통해 main에 포함, OPEN PR 0/기본 CI 3/3 SUCCESS. 아래 #72~#76 등의 미병합·실행 미검증 문구는 각 과거 시점 기록이며 현재 브랜치 상태가 아니다. **실 Google OIDC·운영 SMTP/메일 수신권·실 REVIEWER/PG/TLS·직접 URL/서버권한은 NOT_RUN / RELEASE_BLOCKED.** [STATUS](../STATUS.md), [인수 원장](HUMAN_ACCEPTANCE_GATE_20261104.md).
-
-## 2026-11-02 REVIEWER UI 최신 후속 수락/미완료
-
-- [x] [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 비합성 Calendar GET/같은 context snapshot 무효화 **main merge `717ce979`**. 401/403/409/동일문맥 overlay·늦은 응답 합성 테스트 PASS.
-- [ ] [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) 초대 UI HEAD `9b8bd6f`는 원래 부모 #72 병합 후 **main으로 retarget**. 현재 `getSession` 성공 Promise의 abort/lifecycle 확인 누락으로 독립 CHANGES_REQUESTED. 화면 unmount·로그아웃·StrictMode에서 늦은 성공 응답이 READY를 만들면 안 됨.
-- [x] [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) 합성 sandbox HEAD `d5f7905`의 정확한 snapshot/log 결속과 미저장 초안·경험·관심/초기화 확인의 S01/S02 격리 개선에 **비작성자 APPROVED**. **코드 승인만**: 아직 미병합이며 #73→#74 선행해야 함.
-- [ ] [#76](https://github.com/ot4562-glitch/HUFS-One-AI/pull/76) Playwright Edge 테스트는 작성자의 로컬 결과와 원격 Actions 합성·PG 2개를 혼동하지 않으며 별도 브라우저 재현이 필요. 실제 초대 메일·Google OIDC·TLS·REVIEWER 운영 세션 권한 검증/학생원본·NCP 처리 허가 없음. #46/#89 `RELEASE_BLOCKED`.
-
-## 2026-11-01 심사자 UI 최신 HEAD 안전 리뷰
-
-- [x] [#73](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73) `1cfc61f` 초대 화면 및 [#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) `0a19d1e` 합성 sandbox 독립 코드 리뷰를 등록. 이는 리뷰 완료 체크일 뿐 기능 수락·운영 초대 발송 완료가 아니다.
-- [ ] #73 `getSession`의 성공 응답도 abort/언마운트 후 READY로 반영되지 않도록 회귀 확인. #75는 **같은 context에서 snapshot 버전 교체 시 이전 action log가 잠시 READY로 보이는 문제**와 S01→S02 전환 때 미저장 **지원서 초안·경험 작성·관심 분야 선택** 값이 남지 않도록 렌더 단계에서 즉시 격리/초기화 필수. #75 CHANGES_REQUESTED.
-- [ ] #72 선행 미병합, #73/#75 현재 HEAD Actions 0건, 스택 후속 #76 local Edge 실행과 CI 증거 분리. 실 OIDC/HTTPS/기간 만료·철회/다중 탭 브라우저 시험과 관리자 초대 발급은 BLOCKED. `actualBrowserUiVerified:false` 유지.
-
-## 2026-11-01 최신 구현/미검증 구분
-
-- **main 서버·권한 완료(코드/합성 기준):** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 생성 합성 코퍼스/REVIEWER sandbox·일회용 PostgreSQL, [#105](https://github.com/ot4562-glitch/HUFS-One-AI/pull/105) `redeem()` 영속 기록 후 원 세션·동일 email/sub·활성 초대 재검증, [#100](https://github.com/ot4562-glitch/HUFS-One-AI/pull/100) 20회 대상 전환 2탭 합성 격리, [#110](https://github.com/ot4562-glitch/HUFS-One-AI/pull/110) URL fragment 1회 소비·선제 history 정리·실제 synthetic Fastify→브라우저 요청 검증. #110 HEAD Actions #41300314453 2 jobs 성공.
-- **UI 연동 미완료:** [#73 초대 화면](https://github.com/ot4562-glitch/HUFS-One-AI/pull/73)·[#75 합성 sandbox](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75) 및 #74/#76은 #72 UI 선행 차단 때문에 OPEN. `actualBrowserUiVerified:false`를 임의 true로 바꾸지 않는다.
-- **실심사자 배포 불가:** 실제 Google OIDC/메일 검증·운영 PostgreSQL·TLS·공용 초대 토큰 발급/전달·실브라우저/접근성 검증은 `NOT_RUN/BLOCKED`. 합성 REVIEWER 권한은 실학생 정보·공식 자격·유료 AI 접근을 부여하지 않는다.
+> **현재 구현·검증 상태:** [STATUS](../STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 소프트웨어 구현과 실제 인증·NCP·자료 권리·독립 사람 검수를 구분하며 **RELEASE_BLOCKED**를 유지합니다.
 
 
-> 합성 REVIEWER API는 `main`에 반영됐다. 실제 Google OIDC·PostgreSQL·웹 화면·NCP 배포는 출시 전 연동·검증 게이트다. **심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)** · **이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)** · **이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)**. 제안서는 [Proposal.md](../Proposal.md)를 따른다.
+
+합성 기간제 초대·세션/권한·철회·SQL adapter·UI와 OIDC/학교메일 연결 코드가 존재한다. 현재 병합/CI는 STATUS를 따르며, 과거 #72–#76의 미병합·특정 HEAD 리뷰는 Git 이력에서 확인한다. 실제 Google/운영 SMTP·심사자 수락·운영 PG/TLS·공용 활성 초대 발급은 별도다. 자동 리뷰는 사람 승인으로 세지 않는다.
 
 ## 0. 합성 API 범위와 웹 연동 조건
 
 - 신규 `GET /api/reviewer/capabilities`는 **활성 초대가 검증된 REVIEWER에게만** 학생용 10개 화면 범주(TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS)를 반환한다. 웹 화면과의 실제 연결은 이의상 UI 트랙의 후속 작업으로 관리한다.
 - 기존 BOOKMARK/MARK_READ/CHECKLIST/EXPERIENCE/APPLICATION_DRAFT/SIMULATE_APPLICATION 외에 SET_INTERESTS(공유 24 TopicCode), SET_DESIRED_JOBS, PLAN_COURSE, SET_SEARCH, SET_NOTIFICATIONS, RESET_SANDBOX를 각 reviewer·invite·합성 프로필별로 격리한다. 초기 구현은 메모리 샌드박스이고 **심민성 통합 PR #58에 옵션형 PostgreSQL 영속 adapter**를 추가했다(실 운영 DB 적용·실 Google 로그인은 별도). 타 계정/실제 학생 데이터·실제 지원·외부 요금 호출은 차단.
 - session/redeem의 `readOnly:false,sandboxOnly:true`는 **합성 sandbox 안에서만 수정 가능**한 접근을 뜻한다. `actualBrowserUiVerified:false`가 표시되는 한 공개 사용 준비 완료로 판정하지 않는다.
-- 이의상 [UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)가 웹 프런트 화면/인증 흐름/접근성 담당, 심민성 [API #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)이 OIDC·REST·DB·sandbox/권한 담당, 이서연 [NCP #12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)는 **비코드 Cloud 계정·크레딧/권한·요금·운영** 담당. 모든 NCP SDK·provider HTTP 호출·Laya worker 및 운영 자동화 코드는 **심민성 [#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)/[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)/[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)** 전담. [운영 요금·시기](NCP_OPERATIONS_2026.md).
+- 이의상 [UI #9](https://github.com/minseong-hufs/HUFS-One-AI/issues/9)가 웹 프런트 화면/인증 흐름/접근성 담당, 심민성 [API #27](https://github.com/minseong-hufs/HUFS-One-AI/issues/27)이 OIDC·REST·DB·sandbox/권한 담당, 이서연 [NCP #12](https://github.com/minseong-hufs/HUFS-One-AI/issues/12)는 **비코드 Cloud 계정·크레딧/권한·요금·운영** 담당. 모든 NCP SDK·provider HTTP 호출·Laya worker 및 운영 자동화 코드는 **심민성 [#20](https://github.com/minseong-hufs/HUFS-One-AI/issues/20)/[#88](https://github.com/minseong-hufs/HUFS-One-AI/issues/88)/[#143](https://github.com/minseong-hufs/HUFS-One-AI/issues/143)** 전담. [운영 요금·시기](NCP_OPERATIONS_2026.md).
 
 ## 1. 심사자 이메일을 사전에 모르는 공용 초대장
 
@@ -54,7 +36,7 @@
 
 공통 API UI 재사용: `GET /api/demo/profiles`, `POST /api/demo/contexts`, `GET /api/demo/contexts/:id/{snapshot,notices,graduation,outlook}`는 REVIEWER에게 합성 사본으로만 응답한다. 작업모의 API는 `/api/reviewer/demo/contexts/:id/actions` GET/POST. 네 작업 `/api/ai/:task`는 REVIEWER일 때 합성 packet + contextId로만 실행해 MOCK 후보를 돌려준다. 모든 요청은 관리자 아닌 REVIEWER role, 현재 초대·시간·계정 확인 후 허용. 원본 수집, 실제 관리/다른 팀원 데이터·재학 확인 API는 금지.
 
-**코드 현재 상태(2026-11-01 PR #58):** Fastify API, 초대 등록·만료, 메모리 sandbox 및 임의 클라우드 호출 없는 합성 리포지토리 DI 경계에 더해 `PostgresReviewerSandboxStore`·`20261101_reviewer_sandbox.sql`을 작성했다. 초대-actor-대상별 SQL row lock, 원자 저장, 만료/철회 차단, 복원/리셋을 **일회성 disposable DB에서 검증하는 통합 테스트**를 포함한다. 실제 영속 데이터베이스/Google/브라우저 UI/인증 배포는 별도 작업이다. '모든 기능이 실운영 준비 완료'와 혼동하지 않는다.
+**코드와 검증 경계:** Fastify API, 초대 등록·만료, 합성 repository, PostgreSQL sandbox store와 row lock·원자 저장·철회/RESET, 합성 UI/브라우저 연결이 구현되어 있다. 같은 SHA에서 실행한 일회용 DB·Chrome 결과는 STATUS를 따른다. 실제 영속 운영 DB·Google/메일·HTTPS·심사자 인적 인수는 별도이며 모든 기능이 실운영 준비 완료됐다는 뜻은 아니다.
 
 ## 3. 기간·철회
 
@@ -76,6 +58,6 @@
 - [ ] 이의상 UI #9: `/reviewer/invite` fragment 처리, 프로필/모든 화면 연결, 합성/REPLAY 배지, 기한 종료 시 화면 삭제, 모바일·접근성·다중 탭·실 데이터 미노출 E2E.
 - [ ] 심민성 API #27: `PostgresReviewerSandboxStore` 영속 어댑터/원자 격리·철회·복원 코드를 #58에서 구현했다. **이슈 전체 완료 조건**은 실제 Google 인증·실 운영 DB/프런트 연계·최신 독립 리뷰 및 브라우저 E2E까지 포함하므로 아직 미충족이다.
 - [ ] 이서연 NCP #12: High Memory-g3 4vCPU32GB·CB 50GB·CLOVA/보안/크레딧 운영환경. 본선 확정 전 NCP 개통 없음.
-- [x] PR #24 기초 API → 원본 #26 코드 [복구 PR #30](https://github.com/ot4562-glitch/HUFS-One-AI/pull/30) 순서로 main 반영 확인(기존 GitHub PR #26은 #24 브랜치에 병합된 기록 보존). 추천/공지 #15/#16 공유 설정 충돌 여부 확인. 교차 코드 리뷰와 원격 CI 및 실제 시연 화면 시험 전 자동 병합 금지.
+- [x] PR #24 기초 API → 원본 #26 코드 [복구 PR #30](https://github.com/minseong-hufs/HUFS-One-AI/pull/30) 순서로 main 반영 확인(기존 GitHub PR #26은 #24 브랜치에 병합된 기록 보존). 추천/공지 #15/#16 공유 설정 충돌 여부 확인. 교차 코드 리뷰와 원격 CI 및 실제 시연 화면 시험 전 자동 병합 금지.
 
-관련: [API 개발 #27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27), [심사자 #25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25), [기술 계약](../Architecture.md), [Laya CPU](LAYA_CPU_SPIKE_PROTECTION.md).
+관련: [API 개발 #27](https://github.com/minseong-hufs/HUFS-One-AI/issues/27), [심사자 #25](https://github.com/minseong-hufs/HUFS-One-AI/issues/25), [기술 계약](../Architecture.md), [Laya CPU](LAYA_CPU_SPIKE_PROTECTION.md).

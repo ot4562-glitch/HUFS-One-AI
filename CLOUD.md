@@ -1,14 +1,13 @@
 # HUFS One AI | 도메인·Google 로그인·외대 이메일 검증·클라우드 경계
 
-> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 2026-11-04 클라우드 코드 최신: #207/#208/#211/#214 NCP 네트워크·서버 Terraform, #197/#209/#215 설치/SSH 미리보기·rollback, #183/#213 7 PG ROLE/TLS·loopback API는 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)으로 main 통합. OPEN PR 0, 실제 NCP 자원/API·공인 443·TLS/Google OIDC/SMTP/운영 PostgreSQL·유료 호출은 **NOT_RUN / RELEASE_BLOCKED**. 사용자 승인 전 실 리소스 생성·실학생 업로드/모델 다운로드 금지. 실제 운영 계획은 [NCP](docs/NCP_OPERATIONS_2026.md), 상태는 [STATUS](STATUS.md).
-
-> **NCP 합성 SSH 미리보기 실행서:** [NCP 설치·접속·네트워크·PuTTY/WinSCP](infra/ncp/README.md) 및 [운영 인수인계 양식](infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md). 이 문서는 [PR #156](https://github.com/ot4562-glitch/HUFS-One-AI/pull/156)의 검토용이며 실제 개통·공개·유료 호출·운영 배포는 **NOT_RUN / RELEASE_BLOCKED**입니다.
+> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
+> **NCP 합성 SSH 미리보기 실행서:** [NCP 설치·접속·네트워크·PuTTY/WinSCP](infra/ncp/README.md) 및 [운영 인수인계 양식](infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md). 이 문서는 [PR #156](https://github.com/minseong-hufs/HUFS-One-AI/pull/156)의 검토용이며 실제 개통·공개·유료 호출·운영 배포는 **NOT_RUN / RELEASE_BLOCKED**입니다.
 
 <!-- 2026-11-03-owner-boundary:start -->
-> **2026-11-03 운영/코드 소유 확정:** **이서연 `lhh42001`은 NCP 계정·크레딧·VPC·서버/스토리지·서비스 entitlement/키·IAM/TLS·비용/호스트 실측·중단/반납만 담당하며 SDK·worker·코드·스크립트/CI/IaC 구현을 하지 않는다**([#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)·[#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)). **심민성 `ot4562-glitch`은 일반 API뿐 아니라 NCP General OCR·HCX Vision/Studio provider SDK/HTTP·bbox·비용/권한 hard gate·Laya ONNX worker/cgroup·OS/CI/배포 자동화 코드 전부 담당**([#20](https://github.com/ot4562-glitch/HUFS-One-AI/issues/20)·[#88](https://github.com/ot4562-glitch/HUFS-One-AI/issues/88)·[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143)). **비밀·학생 원본·유료 자원·운영 공개는 사용자 명시 승인/기관 권리·#46/#89 전 미실행**. 아래의 과거 PR/이슈 수치·역할은 작성 당시 기록이며, 최신 검증 결과는 [STATUS](STATUS.md)·[TEAM_PROGRESS](docs/TEAM_PROGRESS.md) 우선.
+> **2026-11-03 운영/코드 소유 확정:** **이서연 `lhh42001`은 NCP 계정·크레딧·VPC·서버/스토리지·서비스 entitlement/키·IAM/TLS·비용/호스트 실측·중단/반납만 담당하며 SDK·worker·코드·스크립트/CI/IaC 구현을 하지 않는다**([#12](https://github.com/minseong-hufs/HUFS-One-AI/issues/12)·[#22](https://github.com/minseong-hufs/HUFS-One-AI/issues/22)). **심민성 `ot4562-glitch`은 일반 API뿐 아니라 NCP General OCR·HCX Vision/Studio provider SDK/HTTP·bbox·비용/권한 hard gate·Laya ONNX worker/cgroup·OS/CI/배포 자동화 코드 전부 담당**([#20](https://github.com/minseong-hufs/HUFS-One-AI/issues/20)·[#88](https://github.com/minseong-hufs/HUFS-One-AI/issues/88)·[#143](https://github.com/minseong-hufs/HUFS-One-AI/issues/143)). **비밀·학생 원본·유료 자원·운영 공개는 사용자 명시 승인/기관 권리·#46/#89 전 미실행**. 아래의 과거 PR/이슈 수치·역할은 작성 당시 기록이며, 최신 검증 결과는 [STATUS](STATUS.md)·[TEAM_PROGRESS](docs/TEAM_PROGRESS.md) 우선.
 <!-- 2026-11-03-owner-boundary:end -->
 
-**2026-11-03 현재 코드/운영 경계:** [#145 General OCR·HCX 오프라인 wire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/145) `cade7c9b`와 [#148 AI 원자 예산 원장](https://github.com/ot4562-glitch/HUFS-One-AI/pull/148) `e102516`은 각각 비작성자 승인·합성/일회용 PG/Chrome CI 뒤 **main 병합**됐습니다. [#150 provider 전송/권한 재검증·Laya worker/배포 템플릿](https://github.com/ot4562-glitch/HUFS-One-AI/pull/150)은 **Draft/충돌/독립 승인 0건, 미병합**이며 실 NCP·model inference·운영 실행은 하지 않았습니다. [#131 설정 UI](https://github.com/ot4562-glitch/HUFS-One-AI/pull/131) 역시 main `6efc532`의 **합성/역할 안전 코드**일 뿐 실 Google/실자료/유료 NCP 승인 아님. **#46 privacy 2 FAIL·#89 RELEASE_BLOCKED** 유지. 이서연의 계정/크레딧/호스트 **비코드 운영**과 심민성의 모든 SDK/worker/CI/IaC 코드 책임은 위 최신 역할 경계가 우선합니다. 이전 날짜별 감사/당시 OPEN PR 수치는 [Git 이력](https://github.com/ot4562-glitch/HUFS-One-AI/commits/main/CLOUD.md)에 보존되어 있습니다.
+**코드와 운영:** NCP 네트워크·서버 IaC, 설치·SSH 미리보기·복구와 격리된 API/PG 조립은 #216을 통해 main에 반영했습니다. 그 뒤의 Google/SMTP·출처/Provider·DB 보강은 STATUS의 실제 병합 증거를 따릅니다. 운영 계정·DNS/TLS·실 PostgreSQL·유료 OCR/HCX·Laya 호스트 실행은 별도 수락 전입니다.
 
 **NCP 새 운영 정본:** [NCP_OPERATIONS_2026.md](docs/NCP_OPERATIONS_2026.md) — 2026-11-06~12-09(816h 예산 상한), 실제 본선 발표 11/16 및 크레딧·사용자 승인 이후 개통. 한국 VPC Linux High Memory-g3 4vCPU/32GB 326원/h + 50GB CB SSD 8원/h(선택 공인 IP 5.6원/h); 816h 서버+CB 272,544원, IP 포함 277,113.6원(VAT 등 제외).
 
@@ -53,7 +52,7 @@ Google ID token 위조/만료, Gmail 단독, `hd` 요청값 변조, 외대 이�
 
 검증 근거: [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect) · [Google 서버 로그인 검증](https://developers.google.com/identity/sign-in/web/backend-auth).
 
-## 2026-10-31 High Memory-g3·Laya·OCR/Vision·Temporal RAG 설계 (미구현)
+## High Memory-g3·Laya·OCR/Vision·Temporal RAG 운영 계약
 
 - **NCP 단일 VPC 서버(본선 선정·크레딧·사용자 승인 후):** KR Linux High Memory-g3 4 vCPU/32GB 326원/h + CB SSD 50GB 8원/h(공인 IP 필요 시 5.6원/h). 11/6~12/9 예산 상한 816h 서버+CB **272,544원**, IP 포함 **277,113.6원**(VAT/egress/OCR/HCX/backup 제외). 11/16 본선 발표일~12/9 상한 576h 서버+CB **192,384원**, IP 포함 **195,609.6원**. 실제 유료 개통 11/16보다 빠르다고 간주하지 않음. [공식 단가·계산·작업표](docs/NCP_OPERATIONS_2026.md).
 - **Laya:** Apache-2.0 `laya-multilingual` 322M, ONNX FP32 CPU pinned revision, 워커 1개·최대 RSS 3GiB 가설. peak/지연/한국어 분류 성능 검증 실패면 `LAYA_ENABLED=false`로 폴백. 실제 weight 다운로드/프로세스 가동은 별도 승인.

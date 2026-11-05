@@ -1,33 +1,10 @@
 # HUFS One AI | Architecture.md
 
-> **2026-11-04 최신 상태 (과거 일자별 기록보다 우선):** 현재 아키텍처 코드 기준 2026-11-04: PR #216으로 운영자 루프백 API + 분리된 PostgreSQL 7 ROLE/TLS, NCP 네트워크/host IaC와 설치·복구, UI/학업/추천 종단이 main f23b86bb에 통합됐다. main 코드 필수 CI 3/3 성공, OPEN PR 0. 이 문서 아래 2026-11-01~02 PR 대기/당시 구현 현황은 역사 기록이며 현재 HEAD는 [STATUS](STATUS.md), 미구현과 실인증/RulePack/NCP/사람 검증은 [잔여 과제](docs/REMAINING_IMPLEMENTATION_20261104.md). RELEASE_BLOCKED 유지.
+> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
 
-> **2026-11-02 UI/IA 설계 최신 결정(우선):** [텍스트 학생용 HUFSAbility 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)는 데스크톱 **76개 관찰 화면·11개 상위 탐색 영역**(검증 전 리다이렉트 1건)을 형태·치수·목적별로 정리한 참고 증거다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)의 공식 공개 안내 **5분류/24기능+비로그인 4영역**과 **동일한 목록이라고 가정하지 말고** 명칭·계층·관찰 범위·별칭·미확인 경로를 대응한다. [UI 현대화 담당 이슈 #141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 기능을 모두 찾을 수 있는 전체 메뉴로 보존하되 `NOT_IMPLEMENTED/UNVERIFIED`는 실제 비활성 **🚫 미지원/검증 전**(텍스트+접근성), `DEMO_AVAILABLE`만 실제 main에 검증된 기능 route로 연결, `OFFICIAL_LINK_ONLY`는 별도 공식 링크. 사용자에게 HUFSAbility의 자연스러운 발전처럼 **익숙한 정보/사용자 여정**을 제공하되 화면/색/레이아웃·자산을 똑같이 구현하는 것이 아니라 **명료한 정보 계층, 탐색, 개인화·기한 근거, 모바일·키보드·스크린리더가 더 좋은 독립 UI**를 설계한다. 학교 정식 서비스/업데이트·SSO/API/소스/학생 개인정보 허가가 있다는 암시는 금지. 중앙 #137 manifest 소비 연결, 실제 route/권한/동의·연결 해제의 실패-닫힘과 자체 제품 색/디자인 토큰/사용자 안내 기준을 우선한다.
+이 문서는 제품·권한·자료·API·시험의 **설계 계약**입니다. 일자별 PR 대기 목록은 Git 이력에 보존하고 현재 구현 여부는 STATUS를 따릅니다. 학교 공식 서비스나 기존 HUFSAbility의 동일 화면 복제 대신, 공개 기능 5분류/24기능과 학생 계정 관찰 11영역/76화면의 출처를 구분한 독립 UI를 제공합니다. 미구현 메뉴는 `🚫 미지원/검증 전`으로 유지합니다.
 
-> **2026-11-02 구현 검증 범위:** #139 합성 계정·전공 변경 재계산 테스트 main `26c559e` 및 #140 판본 정정·피드 일치 테스트 main `41de619`, 각 HEAD 타인 APPROVED+합성/PG/Chrome CI 3/3. UI/실자료/운영 구현이 아님. #131 CHANGES_REQUESTED, #134 #131 종속/미병합, #138 Draft+CHANGES_REQUESTED. 최신 이슈/문서 결과는 [STATUS.md](STATUS.md) 참조; #46/#89 RELEASE_BLOCKED.
-
-> **2026-11-02 동아리 순수 코어 추가 실병합(최신 정정):** [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b` 가상 클럽 12개 승인·10분야/5 합성 학생 개인화 추천·미공유 입력 분리, `updatedAt > asOf`/수정 후 재승인 필요·시점 역전에서 **목록/추천/상세 공통 fail-closed** 보강. 독립 최신 HEAD APPROVED·Actions 2/2 SUCCESS 후 **main merge `8f76c388`**. 이로써 이번 #122/#72/#125 코드 PR **3건 병합/열린 PR 7건**. [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 게시판 UI/독창적 포스터 실제 생성/관리자 승인 API는 없음, [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) 기존 HUFSAbility 메뉴 5분류·24개/🚫 미구현은 기획 단계. 아래 이전 #125 변경요청은 수정 전 감사 이력이며 실 학교 동아리/학생자료·출시 허가는 계속 별개.
-
-> **2026-11-02 제품/정보구조 방향 최신:** **HUFS One AI는 HUFSAbility를 강화하는 서비스명**이다. [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)에 HUFSAbility 공식 공개 학생 기능 **역량관리·교과/비교과·채용·경력개발·통합상담**(5분류·24기능), 공개 진입의 비교과/장학/공지/채용(4영역) 매핑을 보존한다. **완전 흡수 = 메뉴·학생 여정 존중**이고 모든 기능의 구현/권한/공식 학교 운영 확보가 아니다. 중앙 capability manifest의 `DEMO_AVAILABLE`만 합성 시연에서 실행; `OFFICIAL_LINK_ONLY`, `NOT_IMPLEMENTED/UNVERIFIED`는 **🚫 미지원/검증 전**으로 표시하고 기존 공식 링크를 확인해 별도 연결한다. 실제 원래 HUFSAbility/SSO/저작물/데이터를 무단 복제하지 않는다.
-
-> **2026-11-02 동아리 합성 데모:** [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 가상 동아리·AI 합성 포스터·관심사 추천·가상 관리자 승인 게시판을 계획. [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125)에는 12개 합성 승인 fixture/결정론 코어·placeholder 포스터 ID가 있지만 미래 `updatedAt > asOf`를 과거 시점에 내보내는 결함으로 CHANGES_REQUESTED/미병합. 실제 동아리 게시권한/학교 공식 채널이나 에브리타임 데이터 수집은 없음.
-
-> **2026-11-02 실제 코드:** [#122](https://github.com/ot4562-glitch/HUFS-One-AI/pull/122) 구판 부활 방지 합성 회귀 **main bb5b76d**, [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72) 캘린더 실 GET 소비·snapshot 렌더 가드 **main 717ce979**. #73 구 세션 비동기 callback·#125 과거 시점 누출 변경 요청, #74/#75/#117 최신 코드 승인/의존 PR 미해결, #120의 이유 enum와 #117 코어 불일치·#121 후속 API 미병합. #46/#89 출시 차단/실학생·학교 기관권한 검증 없음. [STATUS](STATUS.md).
-
-> **2026-11-01 당시 구현 현황:** 결과 캐시 키의 필수 `permissionPolicyVersion`은 [#118](https://github.com/ot4562-glitch/HUFS-One-AI/pull/118)로 독립 승인·합성/PG CI 뒤 main merge `fdf0b09b`. [#117](https://github.com/ot4562-glitch/HUFS-One-AI/pull/117) 제외 이유 코어는 조직·종류 상한/주제 다양성에 따른 제외를 `OUTRANKED`로 오설명할 수 있어 변경 요청. [#120](https://github.com/ot4562-glitch/HUFS-One-AI/pull/120)의 reviewed revision 비교·단일 공고 사유 strict 계약과 후속 [#121](https://github.com/ot4562-glitch/HUFS-One-AI/pull/121)의 인가 read-only route·수강계획 코어 adapter·What-if 실행 gate·owner 브라우저 client는 **합성 CI 성공했지만 미병합(비작성자 APPROVED 요청)**. 실제 source/rights·RulePack loader·What-if 계산 엔진·React 화면/기관 운영권한이 자동 제공되는 것은 아니다. [STATUS](STATUS.md).
-
-> **2026-11-01 추가 기능 최초 설계(당시 제안):** [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119)은 동일 허용 공고의 두 `SourceRevision`을 permission/asOf/승인 claim 범위 안에서만 비교해 정정값·확인 시각·원문 인용을 표시한다(수집=검수 아님). [#86](https://github.com/ot4562-glitch/HUFS-One-AI/issues/86)은 허용된 후보에 한해 마감 경과·자격 미확인·낮은 관련성 등의 안전한 제외/보류 이유 enum을 제공하며 숨겨진 후보 수/미공유 입력을 공개하지 않는다. [#80](https://github.com/ot4562-glitch/HUFS-One-AI/issues/80)은 `main`의 #97/#106/#115 owner BOOKMARK stage/CAS를 실제 React 보드에서 소비할 **미완료 UI**이고 실제 기관 지원·합격을 대행하지 않는다. [#82](https://github.com/ot4562-glitch/HUFS-One-AI/issues/82)는 #107 가상 전공 DTO 뒤 공식 RulePack·순수 계산·인가 API·비공식 판정 경고 UI를 별도 구현해야 한다. 공통 게이트: actor/grant/epoch/버전 변경·401/403/409 fail-closed, 합성 E2E, 독립 현재 HEAD 승인/CI, 실자료 권리 및 유료 인프라 별도 승인.
-
-> **2026-11-01 추가 코드 리뷰 정본:** 현재 열린 UI [#72](https://github.com/ot4562-glitch/HUFS-One-AI/pull/72)→#73→#74→[#75](https://github.com/ot4562-glitch/HUFS-One-AI/pull/75)→#76 전체 5건에 HEAD 리뷰 등록. #72는 비합성 캘린더 실제 API 미연결/동일 context snapshot 버전 갱신 READY 잔상, #75는 REVIEWER sandbox 로그와 **미저장 편집 input의 선택 학생 간 노출 위험**으로 CHANGES_REQUESTED; #73 초대 getSession 성공 콜백 취소 검사, #74 비공식 졸업안내 항상 노출, #76 E2E Actions 증거는 보완 COMMENT. 5개 HEAD의 Actions run/check-run이 확인되지 않아 신규 merge 0건. **기존 #83/#116은 이미 main 병합**. 합성 테스트 결과와 운영 인가·개인정보·실브라우저/기관 자료권리/Google/NCP 검증은 분리; #46 개인정보 전체 checkout 2 FAIL, #89 RELEASE_BLOCKED 유지. [상태](STATUS.md)·[PR_WORKFLOW](docs/PR_WORKFLOW.md) 우선.
-
-> **2026-11-01 현재 구현 정본:** [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 인증·원자 PG/권한·SourceRevision/Temporal RAG·본인 API·합성 REVIEWER main 병합. 후속 #99/#102/#105/#112/#113에서 출처/동의/동시성 보강, #97/#106/#115에서 지원 보관함 단계+웹 소비자, #103에서 수강계획 **읽기 전용 인가 gate**, #116에서 순수 학업 계산의 #103 strict 응답 정합(독립 HEAD 승인/CI 병합), #107에서 전공 What-if **가정 요청/결과 DTO만** main 병합했다. #90 RulePack 개정판 비교는 #82 가상 전공 계산과 다르다. #89 오프라인 보안 CI도 main에 있으나 실제 DNS/TLS/클라우드/권리/동의/실브라우저 `RELEASE_BLOCKED`. #72~#76 UI 스택은 #72 비합성 달력 연결과 snapshot 갱신 잔상 문제로 미병합/CHANGES_REQUESTED. 아래 이력의 '#83 OPEN'은 당시의 기록이다. 세부 상태 [STATUS.md](STATUS.md)·[계약](docs/CONTRACT_BOUNDARIES.md) 참고.
-
-
-
-> **2026-11-01 최신 구현 상태 (이하 상세 설계/과거 기록과 구분):** API/인증·일반 PG·Temporal RAG·권한·캘린더 서버 #58, UI 공통 셸 #68에 이어 **문서 이력 #78(`83b4dab8`), 브라우저 캘린더 GET #77(`552ad35e`), 오늘·기회·공지 UI #69(`5617222f`) main 병합 완료**. #69 작성자가 force push 없이 main 일반 merge로 #68 조상 문제를 해소하여 #69 본문만 clean diff임을 확인했고 merge commit으로 후속 스택을 보호했다. #71 API 메서드 이슈 CLOSED. #72(현재 main base, 비합성 `loadCalendar` 미연결·CHANGES_REQUESTED) → #73 초대 → #74 졸업 → #75 합성 REVIEWER → #76 브라우저 E2E는 OPEN. owner [#83](https://github.com/ot4562-glitch/HUFS-One-AI/pull/83) 추가 PG/권한/원본 검수/overlay 코드는 Ready for review / 3명 독립 리뷰 요청/합성 CI 성공이나 신규 실제 PG opt-in 30 SKIP·타인 APPROVED/최신 main 정렬 전이라 미병합. 학업 #70 activation은 `0a8d44bd` main 병합. 공식 학칙·실학생 동의/기관 출처권리·Google/SMTP/TLS/운영 PG/NCP/CLOVA/실기기 E2E·공개 배포는 검증/승인 전. [STATUS](STATUS.md)·[PR 병합 게이트](docs/PR_WORKFLOW.md)를 현재 기준으로 따른다.
-
-> **2026-11-03 최종 소유 정정·2026-10-31 가격 시나리오:** [NCP 단가·816h/576h 계산](docs/NCP_OPERATIONS_2026.md) · High Memory-g3 Linux VPC 4vCPU/32GB 326원/h, CB 50GB 8원/h; 11/6~12/9 전체 816h 비용 상한이고 실제 VM 개통은 공식 11/16 본선 진출·크레딧·사용자 승인 이후. 심민성은 웹/API·인증·일반 DB·RAG 및 **NCP/CLOVA OCR/HCX provider SDK/호출·Laya ONNX worker·비용/CPU/CI/Docker/IaC/OS 설정 자동화 등 모든 코딩**, 이서연은 **NCP 계정·인프라·서비스 entitlement/비용·호스트/실측·종료 운영(비코드)** 전담. 독립 UI·추천·학업 소유 불변.
-
+심민성은 API·통합 및 모든 NCP 관련 코드를, 이서연은 NCP 비코드 운영을 담당합니다. [역할 정본](docs/WORKSTREAMS.md)과 [자료 권리](docs/DATA_GOVERNANCE.md)를 함께 적용합니다.
 
 **다중 AI 개발·검증 에이전트용 구현 계약**  
 버전: `2026-10-31.trusted-rag-laya-media-design-r9` · 상태: 설계 승인 검토용 (Google OAuth·학교 메일 검증·도메인 가동 전) · 팀원 문서: [Proposal.md](Proposal.md)
@@ -52,9 +29,9 @@
 
 최신 사용자 승인 → 실제 개인정보/기관/서비스 이용조건 → 본 문서 타입·판정·권한·시험 → Proposal의 설명·예시 → 외부 디자인 영감 순이다. 공식 규정이 소프트웨어 가정과 다르면 대상 규칙팩을 검수 상태로 돌린다. 모든 예시는 `SYNTHETIC`이며 실제 5명의 정보로 보지 않는다.
 
-`Proposal.md`는 팀원 설명, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 이미지·시간·검색·Laya 실행 세부 계약, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 반면 웹·API·DB·학교 연동·NCP/CLOVA 실서비스 코드는 아직 구현 완료로 판단하지 않는다. **도메인은 사용자 확보 신고만 있는 상태**이며, Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스는 구현/검증됐다고 표시하지 않는다.
+`Proposal.md`는 팀원 설명, `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`는 이미지·시간·검색·Laya 실행 세부 계약, `Architecture.md`는 구현 계약, `AGENTS.md`는 지속 안전규칙, `STATUS.md`는 실제 완료 사실, `README.md`는 진입점이다. 동일 사실은 두 문서에 같은 의미로 쓰되 제안서에 코드/로그/원본 개인정보를 넣지 않는다. 이 계약은 설계 정본이다. **TASK-00의 TypeScript/Zod 계약 스키마와 합성 검증은 `packages/contracts/` 및 `tests/contracts/`, `tests/consumers/`에 구현**돼 있다. 웹·API·DB 및 NCP/CLOVA 연동 소프트웨어의 현재 구현은 STATUS와 코드로 확인하고, 학교 연동·실서비스 운영 수락은 별도로 판단한다. **도메인은 사용자 확보 신고만 있는 상태**이며, 실제 Google 로그인·외대 메일 소유 확인·공개 HTTPS 서비스의 운영 검증이 완료됐다고 표시하지 않는다.
 
-**현재 입력 경계(2026-10-31 `main` 관찰):** Private `csv/`에 수강과목 6열 CSV **4개**(61/39/48/28 데이터 행, 모두 BOM 없는 UTF-8)와 통합 Google Forms CSV **1개**(26열·응답 4행)가 존재하며 구조/인코딩만 확인했다. 4인 개인별 identity/표시이름 대응, 개별 GitHub 게시 권한·SharingGrant·NCP/AI 처리 동의, 이수원장의 학점/상태·학칙 정합성은 미확인이다. 이전의 '3개/이서연 미수령/Forms 통합본 없음' 기재는 현재 파일 존재 기준으로만 갱신하고, 동의 완료나 출시 승인으로 승격하지 않는다. 박준영은 제출 대상이 아니다. 상세: docs/DATA_GOVERNANCE.md.
+**입력·Git 경계:** 2026-10-31에는 수강 CSV 4개와 통합 Forms 1개의 Private Git 존재·형식만 확인했습니다. 이후 #212에서 현재 추적 경로를 제거했으며, 과거 Git 객체·clone/backup·게시 범위 검토는 #46에 남습니다. 사용자가 확인한 공모전 참여 5명 동의·HUFSAbility 수집 허가와 실제 개인 자료 제공자 4명을 구분하고, 파일별 사용·외부 전송·철회 영수증은 비공개 원장에서 검증합니다. [DATA_GOVERNANCE](docs/DATA_GOVERNANCE.md).
 
 ### A00.3 규범 용어와 증거 상태
 
@@ -70,13 +47,27 @@
 
 `LIVE_NCP`, `VALIDATED_CACHE`, `MOCK`는 처리 출처다. `REAL_CONSENTED`, `SYNTHETIC`, `MIXED`는 시연 자료 종류다. 두 차원을 별도 표시한다. 합성 데이터로 CLOVA를 실제 호출하면 `SYNTHETIC + LIVE_NCP`가 맞다.
 
-### A00.4 사용자 최신 리뷰 기준과 실제 병합 결과 (2026-10-31 최종 동기화)
+### A00.4 리뷰·구현 증거의 기준
 
-- **병합 정책:** PR의 작성자가 아닌 **최소 1명의 현재 HEAD APPROVED**와 동일 HEAD 필수 GitHub Actions 성공, main 병합 가능, 보안·개인정보 blocker 해결 후 통합 담당자가 병합한다. CODEOWNERS/리뷰 요청자 전원 승인은 기본 요건에서 제외됐다. 본인 PR은 타인 승인 필요, COMMENTED/과거 HEAD 승인은 불충분. 문서 보정은 PR_WORKFLOW의 운영문서 직접 커밋 예외를 사용한다.
-- **main 병합 완료:** 추천 [#15](https://github.com/ot4562-glitch/HUFS-One-AI/pull/15), 학업 계약 [#36](https://github.com/ot4562-glitch/HUFS-One-AI/pull/36), Notice overdue 계약 [#44](https://github.com/ot4562-glitch/HUFS-One-AI/pull/44), 추천 설명 계약 [#47](https://github.com/ot4562-glitch/HUFS-One-AI/pull/47), 캘린더 결과 계약 [#53](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53), React/API 합성 통합 [#37](https://github.com/ot4562-glitch/HUFS-One-AI/pull/37), A15 평가코어 [#48](https://github.com/ot4562-glitch/HUFS-One-AI/pull/48), 중요공지 실제 출력 [#16](https://github.com/ot4562-glitch/HUFS-One-AI/pull/16), scopeInputsToGrant 공유 입력 [#49](https://github.com/ot4562-glitch/HUFS-One-AI/pull/49), 시간/출처 gate [#40](https://github.com/ot4562-glitch/HUFS-One-AI/pull/40), 신규 캘린더 계산 [#50](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50). [#41 추천 설명·관련도 실제 FeedCard 직렬화](https://github.com/ot4562-glitch/HUFS-One-AI/pull/41)(코어·합성 검증, merge `563e9f24`) 추가. **병합은 합성 코드 단계만** 뜻하고 실학생·live PostgreSQL/Google/NCP/브라우저 E2E는 해당되지 않는다.
-- **남은 PR 5건:** #32 Google OIDC/메일 인증(타인 현재 HEAD 승인·main 충돌 대기), #33 EvidenceScope(학사/UI 승인·충돌 대기)→#34 Temporal RAG PG(과거 HEAD 승인만, 새 CI/충돌 해소 및 실 PG 검증 대기), #35 SharingGrant PG(부분공유 관련 CHANGES_REQUESTED 재검토·충돌), #55 Fastify 원자적 조회(합성 CI 통과, 타인 현재 HEAD APPROVED 대기). #54는 최신 main 통합/부분공유 수정의 successor #55로 미병합 폐쇄. #41 추천 설명은 현재 HEAD 승인·CI 후 main 병합됐으나 화면·실 API 실제 소비는 별도. #35의 사전계산 FEED/NOTICES는 ACADEMICS·EXPERIENCE 부분 미공유이면 fail-closed, 범위별 재계산은 미구현.
-- **새 기능 동기화:** 계약 #53 + 계산 #50이 모두 main. [#52](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52) actor/grant/source-scoped 캘린더 REST API와 [#51](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51) 이의상 모바일/접근성 React 위젯은 미구현. 신규 기능은 Proposal, A07.3·A11·A13·A17, WORKSTREAMS, STATUS, README, 이슈에 실제 상태를 유지한다.
-- **운영 안전:** 출처 권한·학생 개별 동의·공식 학업 검수·실 PG 원자 철회/캐시·Google OIDC/외대 메일·NCP 사용승인·시연/브라우저 E2E가 빠진 공개 제공은 BLOCKED. raw 학생 CSV/Forms를 코드/CI/PR/모델로 재배포 금지.
+- **기본 병합 정책:** 작성자 아닌 최소 1명의 현재 HEAD GitHub APPROVED, 동일 HEAD 필수 CI 성공, 유효한 변경 요청·선행 의존·충돌 및 보안·자료 경계 해소를 확인합니다. 문서 직접 수정 예외와 사용자 지시는 [PR_WORKFLOW](docs/PR_WORKFLOW.md)를 따릅니다. 자동 검토와 작성자 COMMENT를 사람 APPROVED로 기록하지 않습니다.
+- **현재 구현:** 코드·계약·UI·일회용 PostgreSQL·실브라우저 검증은 [STATUS](STATUS.md)의 정확한 커밋과 실행 결과를 따릅니다. 과거 PR 대기 목록을 현재 작업 지시로 재사용하지 않습니다.
+- **기능 동기화:** 신규·변경 기능은 관련 A절과 담당 이슈의 요구사항, 실제 코드/테스트, 사용자 문서에 같은 의미로 반영합니다. [API/작업 원장](tools/README.md)의 검증과 coverage UNKNOWN은 서로 다른 판정입니다.
+- **운영 경계:** 원본·권한·공식 학업 규칙·독립 품질·실 Google/학교메일·운영 PostgreSQL·NCP 수락 전 공개 제공은 BLOCKED입니다. 실제 학생 CSV/Forms를 코드/CI/PR/모델에 재배포하지 않습니다.
+
+### A00.5 추가 제품·메뉴 계약
+
+**메뉴 상태는 중앙 capability manifest를 소비한다.** 공개 5분류/24기능+4영역과 관찰 11영역/76화면의 명칭·계층·별칭·미확인 경로를 대응한다. 학교 공식 운영·SSO/API·학생자료 접근 권한을 메뉴 이름이나 수집 허가만으로 추정하지 않는다.
+
+| capability 상태 | 화면과 route 계약 |
+| --- | --- |
+| `DEMO_AVAILABLE` | 현재 main에서 검증된 합성 기능 route만 연결하고 실제 권한·철회·버전을 검사 |
+| `OFFICIAL_LINK_ONLY` | 확인된 공식 링크를 외부 이동으로 분리하며 내부 기능/API처럼 동작시키지 않음 |
+| `NOT_IMPLEMENTED` | 메뉴는 보존하되 텍스트/접근성 이름으로 🚫 미지원 표시, 실제 기능 route 비활성 |
+| `UNVERIFIED` | 🚫 검증 전 표시, 미확인 경로·자료·권한의 실행을 허용하지 않음 |
+
+**가상 동아리 (#123):** 공모전 범위는 AI 창작 가상 동아리·독창적 합성 포스터·관심사 추천·가상 ADMIN 승인/수정/철회 시뮬레이션이다. 기존 12개 합성 fixture·결정론 추천과 #220의 PostgreSQL CAS/FORCE RLS 게시·ADMIN 생성/수정/승인/철회·BETA 읽기/인증 포스터 경로를 구분해 검증한다. 실제 AI 생성 PNG 1개와 byte hash/크기/alt/출처 기록은 [생성 기록](docs/GENERATED_CLUB_POSTER_20261105.md)에 있으며, 독립 사람·실학교 운영 인수는 별도다. 승인 시각·`updatedAt > asOf`·수정 후 재승인·취소/권리철회에서 목록/상세/추천이 같은 보수적 거절 규칙을 따라야 한다. 수작업 SVG를 AI 생성물로 표시하지 않으며, 실제 학교 동아리 승인·모집 신청이나 에브리타임 게시글/개인 연락처 수집을 제공한다고 주장하지 않는다.
+
+**정정·제외 이유·지원/학업 (#119/#10/#11):** 동일 허용 공고의 두 SourceRevision을 현재 permission/asOf/승인 claim 안에서만 비교해 변경값·확인 시각·원문 인용을 표시한다. 제외/보류 사유는 허용 후보의 안전한 enum으로 제공하고 숨겨진 후보 수·미공유 입력을 공개하지 않는다. 지원 보드는 owner BOOKMARK stage/CAS의 자가기록이며 실제 기관 접수/합격을 대행하지 않는다. What-if는 현재/가정 변경 전공을 구분하고 공식 RulePack·인가 API·계산·비공식 경고 UI를 함께 검증한다. #217의 합성 계산 코어는 존재하지만 공식 학칙·실원장 수락을 대신하지 않는다. actor/grant/epoch/version 변경 및 401/403/409에서 이전 자료를 숨기는 계약을 유지한다.
 
 ## A01. 사람이 이해할 시스템 지도와 실행 구조
 
@@ -180,7 +171,7 @@ private raw → approved derived projection → per-actor overlay라는 3층 구
 - **접근 횟수와 기간:** 최초 등록 이후 **동일 인증 주체가 심사기간 중 횟수 제한 없이 재로그인** 가능. 초대 코드 재사용은 동일 계정에만 멱등 허용. `startsAt <= now < endsAt`(UTC 서버, KST 화면), 최대 45일 설계. 초대 철회·기간만료는 **매 요청마다 서버의 영속 상태를 재조회해 403**으로 자동 차단한다. 자동 차단은 JS 타이머/cron에 의존하지 않는다.
 - **권한 분리:** `/api/reviewer/demo/*`의 GET과 초대 등록/자신의 로그아웃만 최소 허용하며 일반 `/api/demo`·AI 작업·팀원 섹션·실제 학생 데이터·관리/수정/내보내기/유료 LLM 호출 금지. 리뷰 데모의 `datasetMode`와 공고 card는 `SYNTHETIC`, `aiProvenance`는 mock/cache로만 제한한다. 초대 코드를 가진 익명인/다른 email/sub는 접근 불가.
 - **보안 운영:** Origin/CSRF + 등록시도 5회/15분/actor(실서비스 분산/IP 방어 추가), no-store·정확한 허용 origin, 영속 DB `SELECT ... FOR UPDATE` 등록·revoke, 세션 재검증, 클릭/방문 횟수 자체에는 제한을 두지 않되 폭주·유료 API에는 별도 방어 정책을 유지한다.
-- **현재 상태:** API/합성 테스트와 SQL adapter는 PR #24와 원본 #26을 재적용한 #30이 main에 반영됨. 합성 REVIEWER 액션과 통합 CI는 PR #31을 통해 `main`에 반영됐다. 실제 Google verifier·UI·DB·도메인·메일 발송·NCP 배포는 미완료이며, 공식 심사 기간/수신 이메일을 알기 전에는 활성 초대 발급 금지. 자세한 계약/운영·검수: [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md), 담당 이슈 [#25](https://github.com/ot4562-glitch/HUFS-One-AI/issues/25).
+- **현재 상태:** API·세션/초대·SQL adapter와 REVIEWER UI·합성 브라우저 경계는 구현되어 있다. 후속 OIDC/학교메일·운영자 DB 역할 연결의 정확한 병합·CI는 [STATUS](STATUS.md)를 따른다. 실제 Google/학교메일·운영 DB/TLS·NCP 인수는 별도이며 공식 심사 기간/수신 이메일이 확정되기 전 활성 초대 발급을 완료로 표시하지 않는다. 정본은 [REVIEWER_ACCESS.md](docs/REVIEWER_ACCESS.md)와 [#27](https://github.com/minseong-hufs/HUFS-One-AI/issues/27)이다.
 
 ### A02.3 상단 selector 화면 동작
 
@@ -287,7 +278,7 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 
 ### A03.3 import 계약
 
-**현재 구현:** `@hufs-one/contracts`의 `validateApprovedIntakeBundle` / `validateFormsCsv` / `validateCourseCsv`는 제한된 로컬 호출자가 전달한 원문을 **순수 함수로 검증**한다. 실제 사람 이름↔불투명 subject key·파일명 binding은 승인된 외부 registry로만 주입한다. `intake:preview`/`intake:apply --expected-version V`와 DB 트랜잭션·원본 hash 보존·self-report 일치 검사는 **TASK-07 후속 미구현**이며 구현된 CLI로 오인하지 않는다. 향후에는 actor·대상·목적·헤더hash를 확인하고 건수·중복·원장/합계 차이를 제한된 출력만으로 대조한다. 동일 파일hash+학생+importversion은 idempotent. 원장은 원자적으로 commit하고 기존 sourceVersion을 보존한다. 미확정 인정은 해당 계산을 확정값으로 만들지 않는다.
+**구현과 인수:** `@hufs-one/contracts`의 `validateApprovedIntakeBundle` / `validateFormsCsv` / `validateCourseCsv`는 제한된 로컬 호출자가 전달한 원문을 순수 함수로 검증한다. 후속 #220은 검토된 factory의 private intake plan/preview/apply, preview hash·현재 권한·4-owner atomic CAS/rollback을 연결한다. 정확한 CLI 사용법과 병합·CI는 `apps/api/README.md` 및 [STATUS](STATUS.md)를 따른다. 이를 실제 학생 원본 import 완료로 계산하지 않는다. 이름↔불투명 subject key·파일 binding은 승인된 외부 registry로만 주입한다. actor·대상·목적·헤더hash·건수·중복·원장/합계를 제한된 출력으로 대조하고, 같은 파일hash+학생+importversion의 idempotency·원자 commit·기존 sourceVersion 보존을 검증한다. 미확정 인정은 확정 계산값으로 승격하지 않는다.
 
 상태: `FORM_RECEIVED → COURSES_RECEIVED → STUDENT_REVIEWED → RULE_MATCHED → INDEPENDENTLY_VERIFIED → SHARING_APPROVED → DEMO_READY`. 부분 준비와 동의는 별개다. 현재 예시 응답 1건만 확인한 것을 전체 DEMO_READY로 세지 않는다.
 
@@ -295,8 +286,8 @@ Forms 원본 26열을 그대로 읽는다. 원본 질문 헤더를 단순 열번
 
 **5인 개발팀:** 심민성=GitHub/공통 계약·기술 통합, 김채윤=추천·공지, 이의상=UI·모바일, 박준영=졸업·전망(개인 원장 제출 제외), 이서연=NCP 계정·VPC/인프라·서비스 권한·크레딧/요금·호스트 실측/종료 등 **비코드 운영 전담**(구현/SDK/worker/CI/IaC 코드 작성 0건); **심민성=API·계약·OCR/HCX provider·Laya ONNX/worker·오프라인 테스트·OS 자동화·NCP 관련 모든 코드**. 자세한 구독·편집 소유권은 `docs/WORKSTREAMS.md`가 정본이다.
 
-- **4인 수집 목표와 형식 결과:** Forms 통합 1파일(26열·응답 4행) + 과목 CSV 4파일(각 6열)의 **Private `main` 파일 존재와 문법적 구조**를 확인했다. 각 행의 개인별 소유자·중복 응답·표시이름/본인 대조와 팀 공유·외부 처리 동의는 아직 `PENDING`; 실제 제출 완료/사용 승인으로 해석하지 않는다.
-- **이전 확인된 별명:** 요청자가 `이수과목_까마르.csv`가 **김채윤 제출물**임을 확인했다. 추가 이서연 명의 파일은 현재 GitHub Private에 존재하나 최초 업로드의 당사자 승인과 학사 내용·Forms 연결 검토는 별도로 남는다. 이름↔내부 ID 매핑을 코드·합성 fixture·이슈 본문에 복사하지 않고 승인된 비공개 import registry에서만 관리한다.
+- **4인 수집 형식의 과거 확인:** 2026-10-31 당시 Forms 통합 1파일(26열·응답 4행)과 과목 CSV 4파일(각 6열)의 존재/문법 구조를 확인했다. #212 이후 현재 Git 추적에서 보호 경로를 제거했다. 사용자 확인으로 참여 5명 동의/HUFSAbility 수집 허가는 확보되었지만, 원본별 owner binding·검수·보관/외부 전송·과거 Git 게시 권리 인수는 #46/#133에서 확인한다.
+- **비공개 매칭:** 이전 제출자 확인 기록은 제한된 원장에서 보존한다. 이름↔내부 ID·원본 파일명 매핑을 코드·합성 fixture·이슈 본문에 추가하지 않고 승인된 비공개 import registry에서만 관리한다.
 - **5개 시연 슬롯:** `S01`~`S05`는 UI 계약을 위해 유지. 실제 데이터가 없는 다섯째 슬롯은 `PENDING` 또는 데이터 출처가 명시된 `SYNTHETIC`이다. 타인 조회를 위해 `SharingGrant` 목적·허용 섹션·만료·철회·버전이 모두 확인되어야 한다.
 - **통합 검증:** 26개 헤더·중복/alias, 6열 과목 상태/학점/원장 구분, 실제 학생별 독립 근거 RulePack, 본인 보고 총학점과 계산 차이, 파일 hash/idempotent import, consent/revocation을 제한된 로컬 환경에서 검증한다. 개인정보·이름↔S번호 매핑·원본 학업행은 GitHub CI·합성 fixture·외부 AI·로그에 복제하지 않는다.
 
@@ -557,11 +548,11 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 3. 제공자 구조화 출력이 JSON 형식에 맞더라도 문장 누락을 막지 못하므로, 후보 조항이 하나라도 누락/충돌하면 `NEEDS_REVIEW`로 처리한다. 문구 탐지 정규식은 보조 경고일 뿐 표·각주·상충 규정의 완전성 보증은 아니다. 사람 학사 검수 + 독립 검증 후 승인된 RulePack 버전만 코어에 적용한다.
 4. 모델 호출을 사용한다면 공식 Structured Outputs 지원 모델/Schema subset과 provider 정책, 허용 원문, 원화 예산 승인을 먼저 확인한다. 승인 전에는 합성 안내문과 사람이 작성한 후보만 사용한다. 승인된 호출에서도 안전 packet hash, 모델/스키마/프롬프트 버전, 누락 검사 결과를 보존하되 비밀키·원문 개인정보를 로그에 남기지 않는다.
 
-**선행 검수 보고의 업데이트(2026-10-31, PR #4 병합 후 [학업 팀원 검토](https://github.com/ot4562-glitch/HUFS-One-AI/pull/4#pullrequestreview-5721561166)):** 초기 HCX-007 3회에서 숫자·과목 대조는 통과했으나 `※` 예외 3/3을 누락했다. 이후 [변환기 후속 실험](sandbox/taewangim-alt/converter-tests.md) 17회에서는 보강 지시문 조건의 원래 안내문 5/5에서 예외가 표기됐지만, 문서 안의 **함정 명령은 6/6 따랐고** 보강한 코드 검사기가 6/6 경고했다. 정정 충돌 2/2도 검사에서 경고했으나 어느 규정이 맞는지 자동 확정하지 못했다. **승인 저장 절차는 경고가 있는 후보도 원본 승인 규칙을 덮어쓰는 결함**이 있었으므로, 경고의 존재만으로 안전을 보증하지 않는다. 이 숫자는 개인 sandbox의 기록이며 입력/응답 전체·권한·비용을 독립 재현하지 못했고 HUFS One AI 제품의 CLOVA 실측·RulePack 승인 근거가 아니다. 필수 정책은 **서버의 승인 단계에서 원본 조항 역방향 대조·경고 0·인적 독립 검수·불변 버전**을 검증하는 것이다.
+**선행 검수 보고의 업데이트(2026-10-31, PR #4 병합 후 [학업 팀원 검토](https://github.com/minseong-hufs/HUFS-One-AI/pull/4#pullrequestreview-5721561166)):** 초기 HCX-007 3회에서 숫자·과목 대조는 통과했으나 `※` 예외 3/3을 누락했다. 이후 [변환기 후속 실험](sandbox/taewangim-alt/converter-tests.md) 17회에서는 보강 지시문 조건의 원래 안내문 5/5에서 예외가 표기됐지만, 문서 안의 **함정 명령은 6/6 따랐고** 보강한 코드 검사기가 6/6 경고했다. 정정 충돌 2/2도 검사에서 경고했으나 어느 규정이 맞는지 자동 확정하지 못했다. **승인 저장 절차는 경고가 있는 후보도 원본 승인 규칙을 덮어쓰는 결함**이 있었으므로, 경고의 존재만으로 안전을 보증하지 않는다. 이 숫자는 개인 sandbox의 기록이며 입력/응답 전체·권한·비용을 독립 재현하지 못했고 HUFS One AI 제품의 CLOVA 실측·RulePack 승인 근거가 아니다. 필수 정책은 **서버의 승인 단계에서 원본 조항 역방향 대조·경고 0·인적 독립 검수·불변 버전**을 검증하는 것이다.
 
-### A06.9 이미지 공고·Temporal RAG·선택형 Laya 결정 모델 (신규 설계, 미구현)
+### A06.9 이미지 공고·Temporal RAG·선택형 Laya 결정 모델
 
-**설계 확정 후보:** NCP `High Memory-g3 4vCPU/32GB + 별도 CB 50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
+**코드와 운영의 경계:** Source/Temporal RAG·이미지/PDF·Provider·Laya의 합성 코드와 후속 연결이 존재하며 병합/CI는 STATUS를 따른다. 아래 모델·서버는 실운영 인수 전 구성 계약이다. NCP `High Memory-g3 4vCPU/32GB + 별도 CB 50GB` 서버, 오픈 가중치 `Laya multilingual 322M` CPU ONNX worker(비동기·feature flag), CLOVA **General OCR + 선택적 HCX-005 Vision**, 기존 HCX-007 구조화 추출, Postgres 기반 권한·시간 선필터 lexical RAG를 결합한다. 이는 세션/권한/추천 계산을 LLM으로 옮기거나 새로운 공개 제품 AI 작업을 추가하는 것이 아니다. 모델 설치·호출·NCP 자원 생성은 별도 승인 전 실행하지 않는다.
 
 1. **발견·버전:** 이용 권리가 확인된 allowlist 공식 출처/RSS/API부터 변경 탐색. HTTP validator(`ETag`/`Last-Modified`) + HTML/image/PDF의 개별 SHA-256와 정정·취소 연결. 스냅샷은 불변, current pointer만 승인 후 이동. 크롤러가 로그인/CAPTCHA를 우회하지 않는다.
 2. **OCR+Vision:** 최초 새 포스터는 CLOVA General OCR(라인/좌표/원본변환 기록). 날짜 누락·작은 글자·복잡한 표 등 규칙상 필요할 때만 HCX-005 Vision을 **병행**해 의미 후보를 얻는다. Vision 결과가 OCR 원문과 일치하지 않거나 근거 좌표가 없으면 NEEDS_REVIEW. HCX-005 Structured Outputs 지원을 전제하지 않으며 검증된 스키마로 후검사한다.
@@ -602,9 +593,9 @@ cache key: task+safeInputHash+model+prompt+schema+policy+sourceVersion. 개인�
 
 **사용자 가치와 UI:** '오늘' 화면 하단에 별도 탭 없이 2주/월간 미니 뷰로 학생 본인에게 해당하는 날짜를 표시한다. STUDENT_DEADLINE(학생 제출), APPLY_DEADLINE(실제 접수), EVENT(시험·행사)를 구분한다. 행정 내부 보고 마감은 학생 마감으로 쓰지 않는다. ROLLING/DEADLINE_UNKNOWN은 날짜를 꾸며 넣지 않고 별도 '날짜 미정' 목록으로 표시한다. UNKNOWN 적용 범위나 모호한 notice ID는 확정 중요 일정이 아닌 '적용 여부 확인 필요'로 격리한다. 지난 마감은 '기한 경과·담당부서 확인'으로 안내한다.
 
-**계약과 계산은 main 병합:** [#53 CalendarResultSchema/validateCalendarWire](https://github.com/ot4562-glitch/HUFS-One-AI/pull/53)와 [#50 순수 buildCalendar](https://github.com/ot4562-glitch/HUFS-One-AI/pull/50)가 실제 병합됐다. 결과는 asOf/from/to, entries, undated, needsConfirmation, ambiguousNoticeIds를 구분하고 서울 날짜/중복/기한·asOf/검수 상태와 합성 음성 사례를 검사한다. **아직 미구현:** [#52 인증된 캘린더 HTTP 전달](https://github.com/ot4562-glitch/HUFS-One-AI/issues/52), [#51 React 미니 위젯](https://github.com/ot4562-glitch/HUFS-One-AI/issues/51). .ics 내보내기·푸시 알림은 이번 범위 밖이다.
+**계약과 계산은 main 병합:** [#53 CalendarResultSchema/validateCalendarWire](https://github.com/minseong-hufs/HUFS-One-AI/pull/53)와 [#50 순수 buildCalendar](https://github.com/minseong-hufs/HUFS-One-AI/pull/50)가 실제 병합됐다. 결과는 asOf/from/to, entries, undated, needsConfirmation, ambiguousNoticeIds를 구분하고 서울 날짜/중복/기한·asOf/검수 상태와 합성 음성 사례를 검사한다. **후속 구현:** 인증 calendar GET #58·브라우저 port #77·snapshot race 방어 #95 및 UI #72가 반영되어 있다. 실제 계정·권리철회·보조기기 수락은 정본 #9/#27에서 추적한다. .ics 내보내기·푸시 알림은 이번 필수 범위 밖이다.
 
-**보안과 API:** 화면이 FeedResult/NoticeResult를 독자 재계산하지 않는다. 별도 인증된 GET /api/demo/contexts/:contextId/calendar (no-store, **예정/미구현**)을 사용한다. 요청별 server actor/subject/context/grantVersion, 공유 섹션/만료/철회, scopeInputsToGrant, 검증된 source rights·asOf·scopeKey 캐시를 같은 권한 경계에서 확인한다. ACADEMICS 미공유의 학업 마감, EXPERIENCE 미공유의 추천 근거, FEED 미공유의 관심정보는 파생 일정에도 새지 않아야 한다. 불확실하면 403/UNKNOWN으로 실패를 닫는다. REVIEWER는 합성만. #35/#49/#55 및 동시 철회·부분공유·과거/미래 출처 부정 E2E 없이는 운영 완료로 보지 않는다.
+**보안과 API:** 화면이 FeedResult/NoticeResult를 독자 재계산하지 않는다. 별도 인증된 GET /api/demo/contexts/:contextId/calendar (no-store)을 사용한다. 요청별 server actor/subject/context/grantVersion, 공유 섹션/만료/철회, scopeInputsToGrant, 검증된 source rights·asOf·scopeKey 캐시를 같은 권한 경계에서 확인한다. ACADEMICS 미공유의 학업 마감, EXPERIENCE 미공유의 추천 근거, FEED 미공유의 관심정보는 파생 일정에도 새지 않아야 한다. 불확실하면 403/UNKNOWN으로 실패를 닫는다. REVIEWER는 합성만. #35/#49/#55 및 동시 철회·부분공유·과거/미래 출처 부정 E2E 없이는 운영 완료로 보지 않는다.
 
 **책임 분리:** 김채윤 캘린더 계산(#50), 심민성 계약·API·DB/권한(#52), 이의상 모바일·스크린리더·색 이외 아이콘/텍스트 UI(#51), 박준영 시험/학사 마감 검수. 360px, 다섯 슬롯, 교차탭·철회·근거 링크를 통합 테스트한다.
 
@@ -870,9 +861,9 @@ AI 생성물은 도구·일자·promptVersion·hash·검수 기록을 남긴다.
 | academic_event, course_outlook | 공식 사건·전망·평가 | asOf·유효기간·미래 유출 방지 |
 | experience_card, approved_tag | 기록·근거·승인 | 수정·철회 후 파생결과 무효화 |
 | source_snapshot, opportunity, notice | 원문hash·정형값·AI후보 | 사용권한·가상/실제 분리 |
-| source_revision, media_asset_revision, ocr_span | 이미지/PDF/HTML별 불변 hash·OCR 좌표·검수·최신성 | 원문 권리·원본 좌표·시계열 provenance 격리(설계, 미구현) |
-| verified_claim, retrieval_index_revision | 문단/이미지 근거·임계시각/asOf·검색 정책 버전 | 권한·정정·미래 정보 누출 방지(설계, 미구현) |
-| model_decision_advice, crawl_job | Laya 처리 제안·문서 변경 확인·이중 호출 차단 | 비동기/예산 예약, 학생 원본 미저장(설계, 미구현) |
+| source_revision, media_asset_revision, ocr_span | 이미지/PDF/HTML별 불변 hash·OCR 좌표·검수·최신성 | 원문 권리·원본 좌표·시계열 provenance 격리(논리 모델; 실제 SQL/소비자 매핑은 inventory와 #8/#19/#20 확인) |
+| verified_claim, retrieval_index_revision | 문단/이미지 근거·임계시각/asOf·검색 정책 버전 | 권한·정정·미래 정보 누출 방지(논리 모델; 실제 SQL/소비자 매핑은 inventory와 #8/#19/#20 확인) |
+| model_decision_advice, crawl_job | Laya 처리 제안·문서 변경 확인·이중 호출 차단 | 비동기/예산 예약, 학생 원본 미저장(논리 모델; 실제 SQL/소비자 매핑은 inventory와 #8/#19/#20 확인) |
 | topic_dictionary, opportunity_topic | 폐쇄 분류·alias·근거 | enum·사전 버전 |
 | recommendation_run, notice_run | 후보·점수·이유·입력 버전 | 같은 입력 재현 |
 | saved_item, action_plan | 저장·준비·마감 | 공식 접수 결과와 구분 |
@@ -893,7 +884,7 @@ DB 시간은 timestamptz, 화면은 Asia/Seoul이다. 원본 성적·GPA 필드�
 | GET /api/demo/profiles | 다섯 표시 옵션 | actor·grant·준비상태 |
 | POST /api/demo/contexts | 대상 문맥 발급 | session·target·grant·dataset |
 | GET /api/demo/contexts/:id/snapshot | feed·공지·학업 요약 | context binding·버전 |
-| GET /api/demo/contexts/:contextId/calendar (**신규 예정, 미구현**) | A07.3 검증된 CalendarResult | actor·context·subject·현재 grant/section/sourceRights/asOf, no-store, REVIEWER 합성 |
+| GET /api/demo/contexts/:contextId/calendar | A07.3 검증된 CalendarResult | actor·context·subject·현재 grant/section/sourceRights/asOf, no-store, REVIEWER 합성 |
 | PATCH /api/demo/contexts/:id/overlay | 관심·계획 가상변경 | 허용 필드·expectedVersion |
 | POST /api/demo/contexts/:id/reset | 내 overlay 복원 | 원본 불변 |
 | GET /api/demo/contexts/:id/graduation | 허용 학업결과 | grant section·규칙 버전 |

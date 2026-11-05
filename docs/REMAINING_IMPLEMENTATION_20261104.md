@@ -1,48 +1,40 @@
-# HUFS One AI | 2026-11-04 PR 통합 후 남은 개발·인수 보고
+# HUFS One AI | 남은 개발·실환경·인적 인수
 
-**작성 기준:** GitHub main 코드 HEAD [f23b86bb](https://github.com/minseong-hufs/HUFS-One-AI/commit/f23b86bb693a163c7f6a0330d1b9657c684724ff). PR [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) merge 완료. **열린 PR 0건 / 일반 이슈 15건(정리 전 40건, 25건 중복 종료)**. 최신 main 코드 HEAD의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815023022)·[NCP Terraform mock](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022904)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41815022895) **3/3 SUCCESS**. 실제 운영 공개는 **RELEASE_BLOCKED**.
+> **2026-11-05 갱신.** 파일명은 기존 링크 호환을 위해 유지한다. 최신 main/PR·CI/리뷰·이슈 상태는 [STATUS](../STATUS.md)가 정본이다. 과거 f23b86bb·OPEN PR 0·#216 당시 CI를 현재 HEAD 검증으로 재사용하지 않는다. **RELEASE_BLOCKED**.
 
-**이슈 현황 추가 정정(2026-11-04):** 문서 최초 작성 시 40건 OPEN이었으나 이후 [이슈 40→15 전수 재구성](../STATUS.md#5-2026-11-04-이슈-구조-재정리-기존-open-40--현재-open-15)이 실제 반영됐다. 이 문서는 *기능·환경별 남은 구현 내용*을 보존하며 미완료의 단일 체크리스트·현재 담당은 해당 15개 정본 이슈를 따른다. 과거 #23/#22/#192 등의 작업은 사라진 것이 아니라 연결된 정본에 이관했다.
+## 1. 코드 반영과 인수의 구분
 
-## 1. 병합 내용의 증거 수준
+#216은 기존 UI·API·Provider·학업·NCP 자동화와 스택 PR 조상을 통합했고, #217은 What-if 합성 계산/보수적 검토, #218은 동일교과 속성 회귀를 추가했다. #219/#220의 후속 인증·SQL·Source/AI·private intake·빈 시연 연결은 각각의 최신 HEAD 검증과 병합 기록을 STATUS에서 확인한다.
 
-- 기존 열린 PR들을 #216 통합 merge commit으로 반영. 10개의 개별 CLOSED/NOT MERGED 스택 PR도 **각각의 최신 HEAD가 main Git 조상(10/10)**. 협업자 커밋·브랜치 보존, 일괄 squash/force push로 덮어쓴 것이 아니다.
-- UI #151/#154/#155, Provider 브라우저/PG, Source jobs, NCP host·rollback, academic property tests 등 이번 스윕 코드가 main에 존재. 통합 CI 성공은 **합성/일회용 PG/오프라인 mock** 중심이다.
-- 사용자 지시 1회 예외로 #216의 비작성자 사람 APPROVED 없이 병합했다. 이를 타인의 GitHub 승인으로 가장하지 않음. **향후 변경·릴리스 사람 인수는 별도**.
+GitHub의 CLOSED/NOT MERGED 스택 PR은 main 조상에 포함될 수 있지만 개별 PR 자체를 MERGED로 표기하지 않는다. 자동 리뷰 COMMENT와 비작성자 사람 APPROVED, 일회용 PG/Chrome 시험과 실제 서비스 인수를 각각 분리한다.
 
-## 2. 심민성 담당 — 남은 구현(코드 vs 운영/인적 인수)
+## 2. 기능별 남은 작업
 
-| 순위 | 작업 묶음 | main에 존재하는 코드 | 앞으로 직접 구현·검증할 것 | 구분 / 이슈 |
-| --- | --- | --- | --- | --- |
-| P0-1 | **운영 API 기동·세션** | Google OIDC·학교메일·PG store, 7개 TLS/ROLE pool, 루프백 내부 operator entrypoint #183/#213 | 실환경 신뢰 Google code exchange·학교메일 송신·config/secret 공급 및 운영용 전용 composition root, 세션/CSRF/철회·실세션 오류/다중 replica/브라우저 부정시험. production guard 무단 제거 금지 | **코드+실환경** #27 #25 #89 |
-| P0-2 | **운영 SQL/권한·복구** | PG adapter·RLS/권한 부정시험·export/restore drill #190 등 | 최소권한 역할 7개와 TLS CA·실 migration 재현, 백업/복원/재시작 시 actor/rights·로그/캐시·삭제 불변식, 다중 서버 조건·실 Postgres 격리 증명 | **코드 통합+실환경** #27 #39 #89 |
-| P0-3 | **SourceRevision·실자료 안전 연결** | Source permission, revision, approved fetch/extract, job queue/API #187, temporal RAG·권리 소멸/캐시 무효화 코드 | HUFSAbility 허가 범위의 실제 문서별 source/revision/저장본 SHA·영수증·철회 정책을 승인된 비공개 저장소로 연결, 출처 손실·중복/취소·수정/마감 조회·본인 권한 E2E | **코드 연결+기관 증빙** #19 #21 #39 #133 |
-| P0-4 | **실 OCR/HCX Provider 종단** | offline CLOVA/HCX transport·budget/UNKNOWN_BILLING·Provider PG/HTTP, 승인 입력·timeout/cancel, Laya OFF | 실제 서비스 이용권·제공자 token/과금 한도·승인된 입력 경계를 private secret manager에 연결해 권한/late response/중복/429·503 시험. 허가 없는 원본 전송 금지. OCR 20건 bbox 품질 독립 판정 | **코드/인적+NCP 외부** #20 #88 #18 |
-| P0-5 | **공개 서비스 보안·배포 전환** | Nginx/Docker private template, 검증용 내부 루프백 API, #214 server/network Terraform, #215 install/deploy/rollback | 출시 허가 후 production용 proxy/TLS/hosted DNS·CDN/WAF/Geo/직접 IP·사전 로그인 asset 차단, startup/shutdown/backup/rollback·포트/키 격리·실서비스 smoke. **현재 public ingress 출시 코드 승인·실수행 없음** | **별도 코드/운영** #89 #192 |
-| P0-6 | **학생/학교 자료 영수증·Git 개인정보** | #212 current Git tree 810 path 중 보호 0; Forms 응답자 4/4 목적별 기록 | 실제 출처별 필드·용도/보관/전송/철회/자료별 권리, 4인 원본–세션 안전 매칭, 승인된 **full private checkout privacy 검사와 과거 Git history/clone** 증거 검토 | **실자료/인적 인수, 필요 시 코드 수정** #46 #133 |
-| P1-1 | **공식 학업 종단/RulePack** | 동등/재수강·전공/학점·plan/What-if DTO, WIS 로컬 parser, #191/#205, #154/#155 화면 | 학번·학과·입학유형별 승인 RulePack, K-of-N·중복인정·전공 변경의 실제 계산 엔진/SourceArtifact SHA·독립 정답 및 실본인 owner API 권한 연결 | **코드+학칙 인수(박준영 범위 연계)** #11 #81 #82 #87 #133 |
-| P1-2 | **독립 빈 시연/관리자·게시·UI 전체 흐름** | 합성 5슬롯/기본 empty owner reset·합성 club core/owner UI·menu manifest | 빈 시연 전 기능/RESET·권한 제한/만료, 가상 관리자 승인·철회/이미지 자산, 안전한 HUFSAbility 11영역 76화면 메뉴 맵/미지원 표시 및 접근성/브라우저 종단 | **코드+UI 인수(이의상 범위 연계)** #9 #123 #124 #132 #141 |
-| P2-1 | **실환경 품질** | #161 Laya 격리 supervisor, #195/#204 컨텍스트 분리, #206 엔트리포인트, #210 benchmark, #205 academic property tests | 배포형 multi-replica quota/actor fair-use와 회복성, Laya CPU/RSS/OOM/p95 실측, automated axe/forced-colors/스크린리더, bench 환경/독립 기대값·실데이터 없는 재현 보고 | **후속 코드/현장 평가** #88 #143 #199 #200 #201 #202 #203 |
+| 우선 | 정본/책임 | 구현·자동검증으로 인정할 부분 | 남은 코드·연결·인수 |
+| --- | --- | --- | --- |
+| P0 | #27/#89 · 심민성 | OIDC PKCE/OTP·SMTP 포트, 7개 기본 SQL 역할·확장 pool lifecycle, loopback API, owner CAS/세션·일회용 PG | 운영용 composition root·검증된 proxy client-IP/한도, 실 Google/메일·운영 CA/TLS·최소권한·다중 인스턴스·영속 철회/복원. production guard 무단 제거 금지 |
+| P0 | #19 · 심민성 | source 권리/불변 revision·approved egress·image/PDF 근거·temporal reader/reviewer·취소/late 응답 회귀 | 승인된 실제 출처별 필드/목적·보관/외부 전송, 원본 SHA→PG/RLS→검색·인용→React 종단, 독립 OCR/정정/시간 근거 검수 |
+| P0 | #20 · 심민성 | 네 AI task 결과·인용 검증, 비용 예약/정산·미발송 취소 정리, Laya 기본 OFF·격리 코드 | 실제 provider token/finishReason·quota/과금·429/503·불명확 청구, 검토된 worker/rootfs 전체 실행, CPU/RSS/OOM/p95 및 허가된 입력 품질 |
+| P0 | #46 · 심민성 | #212 현재 보호 경로 제거, 현재/과거 Git 메타데이터·public artifact 차단 | 승인된 full private checkout 재검증, 과거 원본 6경로의 접근/clone/backup·최초 게시·원본별 권리. 현재 경로 0만으로 과거 배포 수락 불가 |
+| P0 | #61/#10 · 심민성·이의상 / 김채윤 | 40공고×5슬롯 초안·metric, 고정 tune/report split·서명 검증/원장/오프라인 검토 도구, PNG/HTML20쌍·temporal12 패키지 | 독립 사람 gold **0/200**·미디어/시간 **0/32**, 실제 검토 권한/서명·공정한 정책 비교·실출처/외부 provider 품질·실환경 성능 |
+| P0 | #12/#89 · 이서연 운영 / 심민성 코드 | NCP IaC·plan-only/SSH preview·설치/rollback 합성 검증 | 실계정/SKU/크레딧·지출 승인, ACG/NACL·TLS/직접 IP/IPv6·호스트·백업복구·청구/반납. 오프라인 CI는 실 NCP 실행 영수증이 아님 |
+| P1 | #11/#133 · 박준영·심민성 | WIS hash/현재 권한·원본 receipt/preview 결속, degreePath/track·문서별 SHA·AREA_SPREAD/GROUP_CHOICE·보수적 What-if와 4-owner atomic CAS | 실제 owner/cohort/입학유형 binding·원본별 권리, 공식 RulePack·언어 속성 근거·손계산과 실제 API/UI |
+| P1 | #9/#119/#132 · 이의상·심민성 | 메뉴/정정·학업/계획 UI·빈 시연 설정/저장/RESET·360px/키보드 합성 브라우저·runbook | 전체 메뉴/역할별 오류·철회·다중탭, 실제 스크린리더·발표 리허설/독립 인수. memory browser 결과와 PG 재시작/RLS 로그를 구분 |
+| P1 | #123 · 이의상·심민성·김채윤 | 영속 PG CAS/FORCE RLS·ADMIN 게시/수정/승인/철회·BETA 읽기/추천·인증 자산, AI 생성 PNG/출처/hash | 가상 ADMIN 게시/철회·영속 PG 연결과 독립 모바일/키보드/보조기기·전체 여정 인수. 실학교 모집/게시로 확장할 경우 별도 권리 승인 |
+| P1 | #8/#89 · 심민성 | API/TASK·entrypoint inventory, 공개 산출물·npm license evidence/CycloneDX | UNKNOWN route/consumer 대응, native/Python/font/model/asset 전체 라이선스·NOTICE·배포 산출물 수락 |
 
-## 3. 개발 코드로 대체 불가능한 별도 검증
+### #133의 공식 학업 계약 검토
 
-- **독립 추천 gold:** 합성 40공고×5프로필 = 200개 작성자·합성 초안이 있어도 **독립 사람 최종 확인 0/200**. #61. 사용자가 직접 수행할 수는 있으나 작성자가 자신의 답을 독립 평가한 것으로 기록하면 안 됨.
-- **공모전 참여·학교 수집 허가:** 사용자 확인으로 참여 5명 전원 동의 및 **HUFSAbility 자료 수집 허가 확보**. 개인 수강/Forms 원본 실제 대상은 **4명**. 공식 강의시간표의 공개 교수명·강의명은 필요한 용도 한정; 무조건 이름 마스킹을 출시 차단이라고 하지 않음. 세부 허가 필드/학교 운영·SSO·외부 AI/재배포는 별도 확인.
-- **NCP 실운영:** 이서연에게만 비코드 실계정/크레딧/SKU/요금/VPC/호스트 CPU/지출/반납 근거를 배정한 기존 범위를 유지. 개발·IaC·SDK·OS·배포 자동화 **모두 심민성 코드 책임**. 현재 실제 NCP provision/SSH/OCR/HCX/VM 실측 **NOT_RUN**이고 사용자 명시 지출 승인 필요.
-- **출시 보안:** #89의 실 Google 메일/OIDC, 운영 PostgreSQL/RLS, TLS/직접 IP/익명 유출, 영속 권한 철회·복구, 실제 모바일/스크린리더 테스트 **아직 수락 없음**. **RELEASE_BLOCKED**.
+#220은 #133 반례 중 degreePath/track별 pack 선택, 문서별 근거 SHA, AREA_SPREAD/GROUP_CHOICE의 계약·원장·개정 비교와 What-if 검토 보류를 확장했다. 이를 공식 학칙 승인으로 계산하지 않는다. 실제 학교 문서·언어 속성·예외/중복인정과 4인 손계산 대조를 독립 검수하며, 근거 없는 팩은 DRAFT/UNKNOWN_APPLICABILITY를 유지한다.
 
-## 4. “얼마나 남았나” — 수치와 한계
+## 3. 실제 완료로 바꾸지 않는 조건
 
-| 구분 | 현재 | 정확한 해석 |
-| --- | ---: | --- |
-| PR 소진 | **0 OPEN / 정리 종료** | PR 대기 업무가 0이라는 뜻. 기능 개발 완료 100%가 아님 |
-| 일반 이슈 | **15 OPEN**, 40개 중복·하위 작업을 15개 정본으로 통합해 25개 종료 | 큰 상위 이슈가 실자료/기관/실서비스 인수까지 포함. 숫자 40이 곧 40개의 미구현 함수는 아님 |
-| **심민성** 고정 수락 | **7/12 = 58.3%**, 나머지 **5개 복합 게이트 미수락** | 코드량과 독립 운영·인적 증거가 섞인 수락률. “41.7% 코드 미구현”이라 계산 불가 |
-| 이의상 UI | 9/12 = 75.0% | 실제 전체 UI/접근성 미수락 |
-| 김채윤 추천 | 7/12 = 58.3% | 독립 추천 gold 0/200 |
-| 박준영 학업 | 8/12 = 66.7% | 공식 학칙/RulePack·실학사 자료 미수락 |
-| 이서연 NCP 비코드 운영 | 1/5 = 20.0% | 범위 재정의된 운영 증거율. API/SDK 코딩 평가 아님 |
+- 사용자 확인으로 **공모전 참여 5명 전원 동의 및 HUFSAbility 자료 수집 허가 확보**. 실제 개인 수강/Forms 제공자 **4명**과 구분한다. 파일별 사용·외부 전송/게시·보관/철회 및 과거 Git 검수는 별도다.
+- 독립 사람 gold는 확인된 **0/200**이다. 작성자/AI 초안·검사 스크립트를 사람 서명으로 처리하지 않는다.
+- ASSET01–10 original SVG fallback, #61의 코드 생성 PNG/HTML20쌍, #123의 AI 생성 PNG 1개를 각각 구분한다. 자산 생성과 hash 확인은 독립 사람 검수가 아니다.
+- 실제 Google/학교메일·운영 PostgreSQL/TLS·NCP·유료 OCR/HCX/Laya host·실학생 반입은 해당 실행/수락 증거가 있어야 완료다.
+- 열린 정본 이슈는 완료한 코드 하위항목을 표시하되 미수락 복합 조건이 남으면 OPEN을 유지한다. 중복 이관 CLOSED를 기능 완료로 합산하지 않는다.
 
-**권고 순서:** (1) P0-1~P0-3 운영 API/rights/DB 통합 테스트 → (2) P0-4 OCR/HCX와 데이터 전송 권한, P0-5 릴리스 보안 코드 → (3) P1-1 학업 RulePack·P1-2 demo/UI 전 기능 → (4) P2 자동 접근성/분산 quota 및 독립 평가 → (5) 사전 승인 후 유료 NCP 현장·실 Google/PG/OCR/복구/출시 검증. 각각 합성 코드/실사용/인적 승인 결과를 따로 기록한다.
+## 4. 진행률과 다음 판단
 
-이 보고서는 제품 완성도를 임의로 단일 퍼센트로 환산하지 않는다. [현재 상태](../STATUS.md), [인적 검증](HUMAN_ACCEPTANCE_GATE_20261104.md), [담당별 고정 게이트](TEAM_PROGRESS.md), [원본 개인정보](DATA_GOVERNANCE.md) 참조.
+고정 수락률은 심민성 **7/12**, 이의상 **9/12**, 김채윤 **7/12**, 박준영 **8/12**, 이서연 **1/5**를 유지한다. 분모·미수락 조건은 [TEAM_PROGRESS](TEAM_PROGRESS.md), 작업 책임은 [WORKSTREAMS](WORKSTREAMS.md)에 있다. 코드·통합·품질/권리·NCP 운영의 네 축은 [서비스 계획](SERVICE_DELIVERY_PLAN.md)으로 관리하며 임의의 전체 완성률·출시일은 만들지 않는다.

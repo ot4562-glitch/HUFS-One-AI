@@ -1,28 +1,22 @@
 # HUFS One AI 로컬 시연 매뉴얼
 
-## 2026-11-05 PR #220: 독립 빈 계정 시연
+> **현재 구현·검증 상태:** [STATUS](../STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 소프트웨어 구현과 실제 인증·NCP·자료 권리·독립 사람 검수를 구분하며 **RELEASE_BLOCKED**를 유지합니다.
 
-현재 작업 브랜치의 새 `/demo-profile` 실행법, 4개 설정과 경험·달력·저장정보의 실제 소비, 전체 RESET, 60초 및 10분 발표 절차는 [EMPTY_DEMO 실행 가이드](EMPTY_DEMO_RUNBOOK.md)를 따른다. 이 경로는 일반 BETA Owner API와 PostgreSQL 저장 어댑터를 사용한다. 로컬 재현용 서버는 명시적인 합성 인증·메모리 저장만 제공하며 실 Google/학교 로그인이나 운영 PG 실행 증거가 아니다. 현재 커밋의 자동 검증 결과와 인적 인수는 PR #220에서 별도로 확인한다.
 
-아래는 2026-11-04 이전 실행 기록 및 별도 `/local-demo` 계정 실험실 안내다. 과거의 미지원 표시·검증 숫자를 새 `/demo-profile` 구현의 상태로 사용하지 않는다.
 
-## 이전 실행 기록과 계정 실험실
+## 독립 빈 계정 시연
 
-> **2026-11-04 통합 후 현재 정본:** 2026-11-04 최신 코드/시연 경계: [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)으로 #151 공고 정정·#154 수강계획·#155 What-if 등 UI가 main에 통합, OPEN PR 0건·main Chrome/TASK-00/NCP IaC 3/3 CI 성공. 아래 2026-11-02의 미병합/브라우저 숫자는 **옛 실행 기록**이므로 현재 main에서 재실행했다고 표시하지 않는다. 실제 학생 4인 자료·Google/학교 메일·실 PG/NCP·공식 학칙·접근성 인수는 **NOT_RUN, RELEASE_BLOCKED**. [STATUS](../STATUS.md).
+`/demo-profile`의 실행법, 네 설정·경험·달력·저장정보, 전체 RESET과 60초/10분 발표 절차는 [EMPTY_DEMO 실행 가이드](EMPTY_DEMO_RUNBOOK.md)를 따른다. 일반 BETA owner API와 PostgreSQL 어댑터가 있으며, **로컬 시연 fixture는 합성 인증·메모리 저장**을 사용한다. 해당 브라우저 통과를 실 Google/학교 로그인·운영 PG·스크린리더 인수로 확대하지 않는다.
 
-> **2026-11-02 최신 GitHub 정정:** [#137](https://github.com/ot4562-glitch/HUFS-One-AI/pull/137)은 합성 독립 계정 API·수집/권한 게이트 **main `f593b61` 병합**, [#139](https://github.com/ot4562-glitch/HUFS-One-AI/pull/139) 가상 설정/전공 재계산 **테스트-only main `26c559e`**, [#140](https://github.com/ot4562-glitch/HUFS-One-AI/pull/140) 정정/피드 일치 **테스트-only main `41de619`**. 최신 HEAD 독립 승인/CI 성공 뒤 병합한 합성 테스트는 UI 시연 화면이 자동 구현됐다는 뜻이 아님. #131 설정 비교 CHANGES_REQUESTED, #134 설정 UI/매뉴얼이 #131에 종속되어 미병합, #138 Draft 시간표 변환기 변경 요청. 따라서 **이 매뉴얼에서 #134 화면·실 API 사용 동작을 main에서 시연 완료로 설명하면 안 됨**. #137 병합 후 최신 main에서 로컬 명령/브라우저를 **이번 문서 작업에서 독립 재실행하지 않았으며**, 아래 실행법과 기존 브라우저 통과 기록은 당시 체크포인트 증거다.
+## 별도 로컬 계정 실험실
 
-> **메뉴 시연의 앞으로의 UX 방향:** [#141](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141) 담당자에게 [HUFSAbility UI 관찰 아틀라스](HUFSABILITY_UI_COMPONENT_ATLAS.md)의 **11개 메뉴 그룹/76화면**과 #124 공개 공식 **5분류/24기능+4영역**을 서로 대응하게 했다. 데모 진행 시 **기존 메뉴를 보존했지만 미지원은 🚫, 실동작은 허가된 합성 데이터만** 명확하게 보여야 한다. 더 나은 독립 UI 디자인은 **아직 구현 요청/검수 대기**. 학교 공식 개편, 원본 UI/학생 데이터 연동으로 주장하지 않는다. [정본](../STATUS.md).
+아래는 기존 `/local-demo` 경로 안내다. `/demo-profile`, S01–S05, REVIEWER와 각각 데이터·권한 경계가 다르다. 메뉴·가상 동아리·지원 보드는 합성 기능이며 학교 공식 서비스·실제 지원·AI 생성 포스터를 뜻하지 않는다. 과거 특정 커밋의 14/14·9/9 결과는 Git 이력에 보존하고 현재 SHA의 결과는 STATUS로 확인한다.
 
-기준: `feat/owner-integrated-20261102` 통합 브랜치(2026-11-02). 이 매뉴얼은 **로컬 합성 시연만** 설명하며 운영 배포·학교 공식 서비스가 아니다. 실제 Google/학교 인증·운영 PostgreSQL·NCP/CLOVA·기관 자료 사용권은 별도 검증 대상이다.
-
-**현재 통합 재현:** main의 #129 메뉴·#130 합성 동아리를 합친 코드 `346e636`에서 타입/API/웹 build와 실제 Chromium 기존 UI **14/14**·독립 계정 **9/9**를 통과했다. 기존 S01–S05 시연의 `/menus`·`/clubs`·`/applications`는 각각 전체 메뉴, 가상 동아리 추천/필터/상세, 학생 자가기록 지원 단계 보드다. 동아리 SVG는 수작업 합성 그림이며 AI 생성·실제 지원/학교 관리자 승인이 아니다. #131 설정 비교/#134 추가 프로필 화면/#138 변환기는 미병합 상태이므로 현재 main 기능으로 시연하지 않는다. #137은 main에 병합되었으며 새 HEAD·실행 검증/운영 경계는 [STATUS](../STATUS.md)를 확인한다.
-
-가상 동아리 관리자 승인은 게시판의 합성 `DEMO_AS_OF`에 기록하고 실제 세션·관리자 권한·조회 토큰 만료는 실제 시계를 사용한다. 공식 교과목 수집/변환은 `taewangim-alt` 담당 [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133)/#138이며 원본·변환 hash와 실제 이용권 확인 없이 수동 저장본을 수집 완료로 표시하지 않는다.
+메뉴는 공개 5분류/24기능과 관찰 11영역/76화면의 매핑을 따르며 미지원은 명시한다. 학교 UI를 그대로 복제했다거나 전체 메뉴가 동작한다고 주장하지 않는다.
 
 ## 실행과 표기
 
-Node 24.15.0에서 검증한다. WSL의 지정 작업 트리에서 터미널 두 개를 연다.
+체크아웃의 package.json/CI에 명시된 Node 버전을 사용한다. 과거 Node 24.15.0 실행 기록을 현재 검증으로 재사용하지 않는다. WSL의 지정 작업 트리에서 터미널 두 개를 연다.
 
 ```sh
 npm run start:api:synthetic-accounts
@@ -67,10 +61,10 @@ npm run dev:web -- --mode synthetic
 
 실제 자료 연결은 제한된 로컬 운영 도구와 `createRestrictedOwnerDirectory`를 사용한다. 본인 확인된 외부 로그인 바인딩 전에는 운영 계정 로그인으로 제공하지 않는다. `/api/private-intake/self`는 검증된 BETA 서버 세션과 등록부 접근권한을 요구하며, provider 미구성은 503이다. 읽기 결과도 `STUDENT_REVIEW_PENDING` 또는 `NEEDS_REVIEW`이고 졸업 판정이 아니다. 다른 사람 ID를 URL·query로 보내 선택할 수 없다.
 
-공식 공개 교과목/교육과정/개설 정보는 수집·재사용 허가, robots/약관, 적용 학번/학기/캠퍼스/판본을 검증한 source policy가 있어야 수집한다. 이번에는 공식 수집 허가가 확인되지 않아 실제 교과목 수집 성공으로 표시하지 않는다. 기존 개인 원장으로 공개 카탈로그를 대체하지 않는다. 학교 로그인·SSO 우회와 빈 계정 원장 자동 주입은 없다.
+공식 공개 교과목/교육과정/개설 정보는 수집·재사용 허가, robots/약관, 적용 학번/학기/캠퍼스/판본을 검증한 source policy가 있어야 수집한다. 사용자 확인으로 HUFSAbility 수집 허가는 확보되었다. 이 사실만으로 모든 교육과정 사이트·필드·외부 전송의 허가나 실제 수집 성공을 주장하지 않고 출처별 범위와 실행 증거를 확인한다. 기존 개인 원장으로 공개 카탈로그를 대체하지 않는다. 학교 로그인·SSO 우회와 빈 계정 원장 자동 주입은 없다.
 
 ## 자동 검증 재현
 
 `npm run typecheck`, `npm run build:api`, `npm run build:web`, `npm test`를 실행한다. 실제 PostgreSQL 선택형 테스트의 SKIP은 성공 수에 넣지 않는다. 기존 UI는 설치된 Edge로 `npm run test:e2e:web`, Chrome은 `PW_CHANNEL=chrome npm run test:e2e:web`를 사용한다. 새 계정은 서버 두 개를 종료한 뒤 `npm run test:e2e:accounts`; 기본 Chrome 대신 Edge를 쓰려면 `PW_CHANNEL=msedge` 또는 이 계정 스크립트의 `PW_EXECUTABLE_PATH`를 지정한다. 설치되지 않은 채널은 실패하며 브라우저 바이너리를 자동 다운로드하지 않는다.
 
-검증 근거는 위 실제 합성 브라우저 재현 및 [현재 상태](../STATUS.md)를 따른다. PR의 현재 HEAD Actions 성공·비작성자 승인은 로컬 시험과 별도로 확인한다. 개인정보 경계는 기존 Git 추적 보호 자료 6건으로 **178/180 PASS, 2 FAIL**이며 원본을 수정·추가 게시하지 않는다. 실제 스크린리더 사용자 검수·Google/학교메일·운영 PostgreSQL·NCP·DNS/TLS·학교 수집허가는 미검증으로 #46 이력 검토와 #89 `RELEASE_BLOCKED`를 유지한다.
+최신 SHA별 합성 브라우저·일회용 PostgreSQL·CI 결과는 [STATUS](../STATUS.md)를 따른다. 현재 Git 보호 경로 0과 과거 이력 6경로의 메타데이터 검사는 구분한다. 과거 private checkout의 178/180·2 FAIL을 현재 CI 실패 또는 180/180로 바꾸지 않는다. 전체 private checkout·과거 이력/권리·실제 스크린리더·Google/학교메일·운영 PostgreSQL/NCP/TLS 인수는 #46/#89에서 추적하며 RELEASE_BLOCKED를 유지한다.

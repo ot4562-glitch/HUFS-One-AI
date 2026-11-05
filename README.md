@@ -1,7 +1,6 @@
 # HUFS One AI
 
-> **2026-11-05 코드 통합:** #216 선행 통합에 이어 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) 동일교과 속성 테스트와 [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) What-if 합성 코어를 `main`에 병합했다. [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219)는 SQL 역할 보안 보강과 CI 3/3 확인 뒤 merge `1181d0f`로 병합됐다. [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220)은 대규모 Source·AI·EMPTY_DEMO **Draft로 최신 HEAD 합성 CI 3/3 성공**, 독립 사람 검토 대기다. #219의 독립 사람 `APPROVED`는 이력상 확인되지 않았고 **병합/합성 CI는 운영 승인과 별개**다. **코드 병합은 실학생 자료·공식 학칙·사람 gold 200·운영 PostgreSQL/Google/NCP/TLS 인수가 아니다. RELEASE_BLOCKED.** 최신 PR·CI/미완료 조건은 [STATUS](STATUS.md)와 [인적 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 확인한다.
-
+> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
 
 **한국외대 학생의 정보 탐색·개인화를 돕는 독립 팀 프로젝트**입니다. 기존 HUFSAbility의 익숙한 기능과 메뉴를 보존하는 사용자 경험을 목표로 하지만, **학교 공식 HUFSAbility 개편·운영 서비스가 아닙니다**. 원본 UI/학교 저작물·학생 데이터·공식 로그인·자료 이용권을 허가 없이 복제·연동하지 않습니다.
 
@@ -10,27 +9,24 @@
 **GitHub 개발의 최종 목표는 사용 가능한 HUFS One AI 서비스의 완성**이다. 단순 PR 개수·기능 코드 추가·합성 데모가 출시를 뜻하지 않는다. **서비스 완성 및 검증 → 사용자 승인에 따른 NCP 배포 → NCP 배포 후 지속적인 유지보수·품질 개선**으로 단계가 바뀐다.
 
 1. **서비스 완성:** 허용·동의된 사용자와 자료만으로 학생 주요 여정(맞춤 기회/공지/학업/일정/시연)을 실제 UI↔API↔영속 DB까지 연결하고, 인가·로그인(실 Google OIDC/외대 메일 확인)·접근성·원본 권리·독립 품질 평가를 수락 기준대로 통과한다. 안 된 항목을 합성 테스트 통과로 완료 처리하지 않는다.
-2. **NCP 배포 준비와 운영 전환:** 실제 서버는 사용자 **별도 과금/배포 승인**, [#46 개인정보 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)와 [#89 릴리스 보안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 해제, 실 Google/TLS/PG·영속 철회/직접 IP/GeoIP 경계 등 독립 검증이 선행되어야 한다. 서버 생성·공인/사설 IP·VPC/ACG/NACL·포트·NCP 인증키/초기 암호·PuTTY/WinSCP·한국 IP Wall·시스템 설치는 [NCP 운영 정본](docs/NCP_OPERATIONS_2026.md)과 [병합된 #156 서버 실행서](infra/ncp/README.md)에 기록했다. **PR #156은 main `2e39c86a` 병합됐으며 자동화는 SSH 전용 합성 미리보기까지만**이다. 실제 production 자동 배포가 이미 가능하다고 주장하지 않는다.
+2. **NCP 배포 준비와 운영 전환:** 실제 서버는 사용자 **별도 과금/배포 승인**, [#46 개인정보 감사](https://github.com/minseong-hufs/HUFS-One-AI/issues/46)와 [#89 릴리스 보안](https://github.com/minseong-hufs/HUFS-One-AI/issues/89) 해제, 실 Google/TLS/PG·영속 철회/직접 IP/GeoIP 경계 등 독립 검증이 선행되어야 한다. 서버 생성·공인/사설 IP·VPC/ACG/NACL·포트·NCP 인증키/초기 암호·PuTTY/WinSCP·한국 IP Wall·시스템 설치는 [NCP 운영 정본](docs/NCP_OPERATIONS_2026.md)과 [병합된 #156 서버 실행서](infra/ncp/README.md)에 기록했다. **PR #156은 main `2e39c86a` 병합됐으며 자동화는 SSH 전용 합성 미리보기까지만**이다. 실제 production 자동 배포가 이미 가능하다고 주장하지 않는다.
 3. **배포 후 유지보수:** 출시 뒤 GitHub의 일차 목표를 안정 운영으로 전환한다. OS/Node/의존성 보안 패치, 신뢰·접근성/오류 회귀, 로그인/권한 철회, API p95/CPU·메모리·디스크, NCP 크레딧·청구·비밀키 회전, 데이터 백업·복원·롤백/장애 대응, 출처·개인정보 권리/삭제 요청과 운영 종료·반납을 실제 영수증으로 관리한다. 변경은 이슈→PR→독립 리뷰/CI→배포/롤백 증거 순으로 기록한다.
 
 현재 승인·진행 상태와 출시 차단은 [STATUS](STATUS.md) 및 [서비스 완성/유지보수 계획(#156 병합)](docs/SERVICE_DELIVERY_PLAN.md)을 참조한다. 서버/비밀키/실학생 자료/유료 API를 PR, CI, 에이전트 메시지에 넣지 않는다.
 
 ## 제품 방향
 
-- 기존 **비교과·장학·공지·채용·역량·상담·진로·학업** 메뉴와 학생 여정을 쉽게 찾도록 구성합니다. [공식 공개 기능 5분류/24기능·비로그인 4영역](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124)과 [학생 계정 관찰 UI 11개 대분류/76화면](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)은 관찰 범위가 다르며 명칭·계층을 별도로 대응합니다.
+- 기존 **비교과·장학·공지·채용·역량·상담·진로·학업** 메뉴와 학생 여정을 쉽게 찾도록 구성합니다. [공식 공개 기능 5분류/24기능·비로그인 4영역](https://github.com/minseong-hufs/HUFS-One-AI/issues/124)과 [학생 계정 관찰 UI 11개 대분류/76화면](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md)은 관찰 범위가 다르며 명칭·계층을 별도로 대응합니다.
 - 실제 구현·인가된 **합성 데모**에 한해 기능을 켭니다. 미연동 기존 메뉴도 사라지지 않고 **🚫 이번 시연 미지원 / 검증 전**을 명시합니다.
 - 같은 허용 공고를 관심사·선택한 경험·진로에 따라 다르게 정렬해 큰 추천 카드/작은 일반 목록, 추천 이유·마감/정정 근거, 일정·자기기록·별도 학업 계획을 안내합니다. AI의 분류 후보는 확정 결과가 아니고 자격·마감·학점은 코드 및 검수 근거로 판정합니다.
-- [#141 UI/UX 고도화](https://github.com/ot4562-glitch/HUFS-One-AI/issues/141): 기존 HUFSAbility와 동일한 픽셀·컴포넌트를 복제하는 대신 **탐색·정보 위계·모바일·접근성이 더 좋은 독립적인 디자인**을 개발합니다.
+- [#141 UI/UX 고도화](https://github.com/minseong-hufs/HUFS-One-AI/issues/141): 기존 HUFSAbility와 동일한 픽셀·컴포넌트를 복제하는 대신 **탐색·정보 위계·모바일·접근성이 더 좋은 독립적인 디자인**을 개발합니다.
 
-## 2026-11-04 구현·협업 판단 (역사 스냅샷; 현행은 STATUS 참조)
+## 구현·협업 판단
 
-- **GitHub 기준 (2026-11-04):** 열린 일반 이슈 **15건** (기존 40건에서 25건 정본으로 이관 후 종료), 열린 PR **0건**. [통합 PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)이 main f23b86bb에 merge commit으로 병합됐고, 병합 후 TASK-00/NCP IaC/Chrome **3/3 CI SUCCESS**. 제품 공개는 별개. [실시간 STATUS](STATUS.md)를 정본으로 사용하며 오래된 HEAD 또는 PR 수를 그대로 재사용하지 않습니다.
-- **2026-11-04 이슈 정리:** 중복되던 열린 이슈 **40건→15건**, 25건 `duplicate` 이관 종료. 현행 이슈는 **11건 단독 담당/4건 실제 공동 작업**이고, 완료 구현은 설명으로·미완료만 체크리스트로 분리했다. [정본 이슈 15개와 이관 원장](STATUS.md#5-2026-11-04-이슈-구조-재정리-기존-open-40--현재-open-15)을 참고한다. 원래 7개 닫힌 이슈는 변경하지 않았다.
-- **main 합성 하위 수락:** #156 SSH-only 프리뷰, #157 승인 입력 권한, #158 SETTLED PostgreSQL 결과, #159 기본 OFF Laya 스케줄러, #160 Raster/OCR, #162 Owner 이중전공 SQL, #163 EMPTY_DEMO CAS/RESET, #164 승인 SourceRevision, #168 PostgreSQL 인증 조립. 이는 실제 운영 서비스 배포 완료가 아닙니다.
-- **오류 PR 수정 진행:** #175 Provider Owner UI/API·테스트, #177 PostgreSQL 동시성 합성 격리, #178 학교메일 OTP/REVIEWER 진입 권한에 새 수정 커밋을 제출했습니다. 최신 HEAD CI 통과가 확인되기 전 **수정 최종 완료/병합 완료로 표기하지 않습니다**.
-- **협업자 코드 리뷰:** #152 strict 이중전공 입력 검증 P2 수정, #189 공식 승인 동일 교과목 규칙만 적용하는 순수 로직은 비작성자 리뷰 APPROVED. 그러나 둘 다 최신 CI 실패, 운영 학사 RulePack/권리/서비스 E2E는 미수락. #161은 CI/비작성자 승인 이력이 있으나 main 충돌. #166은 Draft.
-- **CI 관측:** #186–#190의 최신 워크플로는 실행 실패, 일부는 job 실행 단계가 비어 근본 원인이 아직 불명확. 작성자 PR의 일부 과거 Vitest/실 PostgreSQL 실패는 #175/#177/#178 브랜치에 수정했으나 다시 검증해야 합니다.
-- **출시 상태 RELEASE_BLOCKED:** [#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 현재 HEAD 보호 추적 경로 **0개**(#212 main 병합), 과거 Git 게시·clone/권리와 **이전 full private checkout 2 FAIL 재검증 필요**, [#61](https://github.com/ot4562-glitch/HUFS-One-AI/issues/61) 독립 사람 gold **0/200**, [#89](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89) 실 OIDC·학교메일/TLS·NCP·영속 PG·권한 E2E 미검증. 실제 자료 반입/유료 호출/공개 배포는 별도 승인 전 금지.
+- **현재 코드:** 공통 계약, 개인화·공지·캘린더, 졸업·수강계획·전공 What-if 코어, 권한을 확인하는 API·PostgreSQL 어댑터와 합성 UI가 구현되어 있습니다. 최근 PR의 실제 병합 여부와 실패 수정 결과는 [STATUS](STATUS.md)에 기록합니다.
+- **검증 수준:** 단위·통합·실제 Chrome과 일회용 PostgreSQL 검사는 실행한 HEAD별로 판단합니다. 실학생 결과, 운영 Google/학교메일·TLS·NCP 검증으로 확대하지 않습니다.
+- **완료 판단:** [열린 정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues?q=is%3Aissue+is%3Aopen)의 요구사항별로 코드·테스트·독립 검수·운영 증거를 대조합니다. PR 병합이나 부분 체크가 상위 이슈 전체 완료를 뜻하지 않습니다.
+- **출시 차단:** #46 과거 Git 게시·clone/자료 권리, #61 독립 사람 gold, #89 운영 인증·HTTPS·NCP 수락은 별도입니다. 담당별 고정 수락률은 [TEAM_PROGRESS](docs/TEAM_PROGRESS.md)의 복합 조건 충족률이며 제품 코드 완성률이 아닙니다.
 
 ## 로컬 합성 개발
 
@@ -67,7 +63,7 @@ npm run dev:web -- --mode synthetic
 | --- | --- |
 | 팀/심사 기획 | [Proposal](Proposal.md), [APPLICATION](APPLICATION.md) |
 | 제품 계약·권한·API·학업·시연 설계 | [Architecture](Architecture.md), [데이터 거버넌스](docs/DATA_GOVERNANCE.md) |
-| 현재 구현/검증·차단 | [STATUS](STATUS.md), [GitHub Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) |
+| 현재 구현/검증·차단 | [STATUS](STATUS.md), [GitHub Issues](https://github.com/minseong-hufs/HUFS-One-AI/issues) |
 | 개발 규칙·승인 | [AGENTS](AGENTS.md), [PR_WORKFLOW](docs/PR_WORKFLOW.md) |
 | 팀 소유·진행 | [WORKSTREAMS](docs/WORKSTREAMS.md), [TEAM_PROGRESS](docs/TEAM_PROGRESS.md) |
 | 사용성 참고/시연 | [UI 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md), [DEMO_MANUAL](docs/DEMO_MANUAL.md) |

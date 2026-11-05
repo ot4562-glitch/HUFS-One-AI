@@ -1,8 +1,12 @@
 # HUFS One AI | 공모전 동의·공식 자료 수집·Git 보존 경계
 
-## 2026-11-04 PR #216 통합 후 검증 · 개인정보 경계
+> **현재 구현·검증 상태:** [STATUS](../STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 소프트웨어 구현과 실제 인증·NCP·자료 권리·독립 사람 검수를 구분하며 **RELEASE_BLOCKED**를 유지합니다.
 
-- [x] [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 보호 대상 6개 Git-tracked 경로 HEAD untrack 코드 **main 병합**; 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 뒤에도 main 현재 tree **보호 경로 0 / 811 tracked path** 재검증. 이 증거는 **현재 트리의 Git 메타데이터**만 의미한다.
+
+
+## 현재 개인정보 경계 — 2026-11-05 점검
+
+- [x] [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 보호 대상 6개 Git-tracked 경로 HEAD untrack 코드 **main 병합**; 2026-11-04 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 당시 **보호 경로 0 / 811 tracked path**를 확인했다. 전체 tracked 수는 그 당시의 수치이고 현재 총 파일 수가 아니다. 보호 경로 0과 과거 원본 경로 이력 검토를 구분하며, 이 증거는 원문 내용이나 모든 clone의 정리를 증명하지 않는다.
 - [ ] **실제로 남은 개인정보 승인/검사:** 별도 원본 보존·현재 사용/철회/게시 권한, 과거 Git commit·협업자 clone/backup의 원본 접근 검토 및 승인된 full private checkout 개인정보 검사. 과거 검사 2 FAIL을 현재 Git tree 0만으로 180/180 PASS로 선언하지 않는다.
 - [x] 공모전 5명 전원 동의·HUFSAbility 자료 수집 허가는 사용자 확인. 공식 시간표의 공개 교수명·강의명은 최소 범위로 사용하며 이름 일괄 마스킹을 강제하지 않는다. 개인정보 적법한 이용·저장·외부 전송 범위는 별도 관리.
 - 인가된 실제 Google/운영 NCP/TLS·PG/사람 gold 미검증으로 **RELEASE_BLOCKED** 유지. 현재 [STATUS](../STATUS.md) 참고.
@@ -27,22 +31,22 @@
 
 ## 2026-11-02 동아리 코어의 승인/시점 보안 후속 정정
 
-- [x] [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) HEAD `8e88a4b`의 미래 수정/승인 후 콘텐츠 변경 노출 방지 및 타인 APPROVED/Actions 2/2 SUCCESS를 검증해 **main `8f76c388` 실제 병합**. 제공물은 **SYNTHETIC 클럽 메타/결정론 추천 함수**이며 posterAssetId는 실제 이미지가 아닌 자리표시자.
-- [ ] 순수 코어 `APPROVED` 값과 시각 검사만으로 **학교 또는 임의 사용자의 관리자 자격/게시 승인 권한을 증명하지 않음**. #123의 신뢰된 서버 관리자 권한·불변 revision 저장·권리 철회/접근 통제·실제 AI 창작 포스터/게시판 UI 미구현. 에브리타임/실동아리 게시글·개인 연락처 재사용 금지.
+- [x] [#125](https://github.com/minseong-hufs/HUFS-One-AI/pull/125) HEAD `8e88a4b`의 미래 수정/승인 후 콘텐츠 변경 노출 방지 및 타인 APPROVED/Actions 2/2 SUCCESS를 검증해 **main `8f76c388` 실제 병합**. 제공물은 **SYNTHETIC 클럽 메타/결정론 추천 함수**이며 posterAssetId는 실제 이미지가 아닌 자리표시자.
+- [ ] 순수 코어 `APPROVED` 값과 시각 검사만으로 **학교 또는 임의 사용자의 관리자 자격/게시 승인 권한을 증명하지 않음**. #123의 서버 ADMIN decision API와 합성 화면은 구현되어 있으며, 신뢰된 영속 moderation·불변 revision·철회/접근 통제·AI 포스터·전체 인수는 별도. 에브리타임/실동아리 게시글·개인 연락처 재사용 금지.
 - [ ] #124 HUFSAbility 전체 IA/🚫는 공개 이름을 참조하는 시연 UX로 제한, 학교 계정/원본 API·디자인의 무단 이식 아님. #46 Private Privacy 2 FAIL·#89 RELEASE_BLOCKED 유지. 이 아래 #125의 과거 CHANGES_REQUESTED는 최신 HEAD 수정 전의 사실 기록.
 
 ## 2026-11-02 새 HUFSAbility 메뉴·동아리 데모 데이터/게시 경계
 
-- [#124](https://github.com/ot4562-glitch/HUFS-One-AI/issues/124) HUFSAbility 메뉴 정보구조 채택은 **공개 이름·대분류의 참조 및 시연 UX 설계**만 허용한다는 제안이다. 공식 학교 시스템의 로그인·SSO·사유지 API·성적/상담·교내 포스터 원본·원본 디자인 규정의 복제나 비공개 자료 수집 권한은 발생하지 않는다. 미이식 메뉴는 🚫 미지원과 확인된 공식 외부 링크를 분리한다.
-- [#123](https://github.com/ot4562-glitch/HUFS-One-AI/issues/123) 동아리 게시판은 **AI 창작 가상 이름/가상 모집내용/가상 포스터/합성 프로필만** 사용한다. 실제 동아리명·연락처, 에브리타임 작성자/게시물·포스터를 스크래핑/재사용하지 않는다. 가상 관리자 `APPROVED` 상태는 학교 승인·실운영 게시권한이 아니며, 브라우저가 승인 필드를 임의 설정해도 신뢰하지 않는다.
-- [#125](https://github.com/ot4562-glitch/HUFS-One-AI/pull/125) 코어의 `updatedAt > asOf` 미래 수정 내용 노출은 **CHANGES_REQUESTED**, 과거 시점/최신 권한 확인 후에만 화면·추천·직접 상세 노출할 수 있다. 포스터 asset id는 지금 합성 이미지 생성완료를 뜻하지 않는다.
-- #46 원본 Git 추적 보호 경로 6개/전체 Privacy 153/155 PASS·2 FAIL 미해결; #89 `RELEASE_BLOCKED`. 합성 CI 성공·신규 Issue 생성/문서화만으로 실제 원본 권리, 개인정보 동의, 외부 AI/NCP 업로드/출시를 승인하지 않는다.
+- [#124](https://github.com/minseong-hufs/HUFS-One-AI/issues/124) HUFSAbility 메뉴 정보구조 채택은 **공개 이름·대분류의 참조 및 시연 UX 설계**만 허용한다는 제안이다. 공식 학교 시스템의 로그인·SSO·사유지 API·성적/상담·교내 포스터 원본·원본 디자인 규정의 복제나 비공개 자료 수집 권한은 발생하지 않는다. 미이식 메뉴는 🚫 미지원과 확인된 공식 외부 링크를 분리한다.
+- [#123](https://github.com/minseong-hufs/HUFS-One-AI/issues/123) 동아리 게시판은 **AI 창작 가상 이름/가상 모집내용/가상 포스터/합성 프로필만** 사용한다. 실제 동아리명·연락처, 에브리타임 작성자/게시물·포스터를 스크래핑/재사용하지 않는다. 가상 관리자 `APPROVED` 상태는 학교 승인·실운영 게시권한이 아니며, 브라우저가 승인 필드를 임의 설정해도 신뢰하지 않는다.
+- [#125](https://github.com/minseong-hufs/HUFS-One-AI/pull/125) 코어의 `updatedAt > asOf` 미래 수정 내용 노출은 **CHANGES_REQUESTED**, 과거 시점/최신 권한 확인 후에만 화면·추천·직접 상세 노출할 수 있다. 포스터 asset id는 지금 합성 이미지 생성완료를 뜻하지 않는다.
+- #46의 당시 원본 Git 보호 6경로/153·155·2 FAIL 보고(현재 추적은 #212 이후 0경로; 과거 이력 검수는 별도); #89 `RELEASE_BLOCKED`. 합성 CI 성공·신규 Issue 생성/문서화만으로 실제 원본 권리, 개인정보 동의, 외부 AI/NCP 업로드/출시를 승인하지 않는다.
 
-## 2026-11-01 개인정보 코드 게이트 최신 정본
+## 2026-11-01 개인정보 코드 게이트 (과거 감사 기록)
 
-- **main 코드 검증:** 개인 동의 철회/원장 원자 삭제 [#102](https://github.com/ot4562-glitch/HUFS-One-AI/pull/102), 삭제한 owner workspace의 값 비움·옛 tombstone 정리 [#112](https://github.com/ot4562-glitch/HUFS-One-AI/pull/112), Git index의 `csv/private` 등 보호 경로를 **읽지 않고** 개수만 감지·보고값 해시 처리 [#104](https://github.com/ot4562-glitch/HUFS-One-AI/pull/104), Docker ignore/서버 source map 우회 차단 [#108](https://github.com/ot4562-glitch/HUFS-One-AI/pull/108) 및 공개 합성 아티팩트 검사는 main 병합. 합성/일회용 PG CI PASS는 실제 4인 개인정보의 새로운 동의·기관 권리 부여가 아니다.
+- **main 코드 검증:** 개인 동의 철회/원장 원자 삭제 [#102](https://github.com/minseong-hufs/HUFS-One-AI/pull/102), 삭제한 owner workspace의 값 비움·옛 tombstone 정리 [#112](https://github.com/minseong-hufs/HUFS-One-AI/pull/112), Git index의 `csv/private` 등 보호 경로를 **읽지 않고** 개수만 감지·보고값 해시 처리 [#104](https://github.com/minseong-hufs/HUFS-One-AI/pull/104), Docker ignore/서버 source map 우회 차단 [#108](https://github.com/minseong-hufs/HUFS-One-AI/pull/108) 및 공개 합성 아티팩트 검사는 main 병합. 합성/일회용 PG CI PASS는 실제 4인 개인정보의 새로운 동의·기관 권리 부여가 아니다.
 - **전체 로컬 Private checkout 검사:** 2026-11-01 `npm run check:privacy` **155개 중 153개 PASS, 2개 FAIL**, `no_protected_tracked_files`/`no_protected_publication_candidates`와 보호된 추적 경로 **6개**가 확인됐다. 원본 바이트·실제 파일명은 열거나 출력하지 않았다. 이 결과는 합성/희소 체크아웃 CI의 PASS와 다르며 #46 실자료 이력·동의 차단을 직접 뒷받침한다.
-- **[#46](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46) 계속 OPEN:** 과거 Private Git 커밋/협업자 clone에 존재하는 원본의 당사자별 목적·기간·접근 승인과 반환/보존/이력 처리 검증은 미완료. 스캔 우회/파일 무시만으로 Git history 게시·외부 AI/NCP/웹 공개 승인 또는 완전 삭제를 뜻하지 않는다.
+- **[#46](https://github.com/minseong-hufs/HUFS-One-AI/issues/46) 계속 OPEN:** 과거 Private Git 커밋/협업자 clone에 존재하는 원본의 당사자별 목적·기간·접근 승인과 반환/보존/이력 처리 검증은 미완료. 스캔 우회/파일 무시만으로 Git history 게시·외부 AI/NCP/웹 공개 승인 또는 완전 삭제를 뜻하지 않는다.
 - 릴리스는 실동의·자료권리·실 계정/도메인/브라우저 확인 전 `RELEASE_BLOCKED`이며, 실제 CSV/Forms 파일 내용을 CI·PR·로그·AI 또는 문서에 다시 인용하지 않는다.
 
 
@@ -79,7 +83,7 @@
 
 공개 게시물이라는 이유만으로 **이미지 다운로드·재배포·OCR 결과 보관·NCP 전송·CLOVA 입력**이 자동 허용되는 것은 아니다. 출처별 허용된 **수집/보존/변환/외부 AI 제공/전시** 범위를 확인하고, `RESEARCH_REFERENCE_ONLY`나 비승인 학생 원본을 제품 RAG 색인·HCX-005/007·OCR·Laya 입력·CI fixture에 사용하지 않는다. 학생 가명만 제거한다고 비식별화됐다고 단정하지 않는다. `SourceSpan IMAGE`는 원본 구역 좌표를 보관하되 이미지 원본은 비공개 권한 별도 검증으로 열람한다. 정정·취소된 자료의 hash/revision 기록도 보존기간·권리 검토에 따른다. 로그에 개인정보·이미지 원문·OCR 전문·모델 safe packet을 찍지 않는다. [세부 수집·권한 규칙](TRUSTED_RAG_MEDIA_VERSIONING.md).
 
-## 심사자 REVIEWER 합성자료 전용 접근 (Issue #25)
+## 심사자 REVIEWER 합성자료 전용 접근 (정본 #27, 이전 #25)
 
 심사자가 담당자라는 이유로 Forms/과목 CSV/학번·성적/비동의 원본의 열람·외부 AI 제출 권한이 생기지 않는다. 심사자는 전용 합성 리플레이만 접근하며, `dataMode=SYNTHETIC` 검증은 API와 UI 양쪽에서 하고 실제/혼합 자료가 섞이면 전부 차단한다. 시연 슬롯 S01~S05는 사람 계정이 아니며 5번째 미준비 슬롯을 허위 실제 자료로 채우지 않는다. PDF 개인별 초대 코드·심사자 이메일·Google sub·IP는 공개 GitHub/CI/analytics/log에 남기지 않는다. 평가 종료 `endsAt`(UTC exclusive)에 모든 API 열람을 차단하고 브라우저/SW/cache에 남은 민감 내용을 정리한다. 개발·테스트는 합성만 사용. 정확한 접근정책: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).
 

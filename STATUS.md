@@ -1,52 +1,63 @@
 # HUFS One AI | 현재 상태 (2026-11-05 검증)
 
-> **최신 운영·개발 정본.** 현재 PR/이슈는 [GitHub PR](https://github.com/minseong-hufs/HUFS-One-AI/pulls), [15개 정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues), [인적 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md), [책임별 진행](docs/TEAM_PROGRESS.md)과 함께 확인한다. 이하 2026-11-04 이슈 이관 및 과거 통합 증거는 역사 기록으로 유지한다.
+> 현황 정본. 정확한 코드 검증 SHA와 PR/CI 근거는 아래 표를 따른다. 이후 문서 전용 커밋은 코드 검증 대상과 구분한다. [PR](https://github.com/minseong-hufs/HUFS-One-AI/pulls) · [정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues) · [인적 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md) · [고정 게이트](docs/TEAM_PROGRESS.md).
 
-## 1. GitHub와 CI — 2026-11-05
+## 1. GitHub와 CI
 
-| 구분 | 실제 확인 상태 |
+| 항목 | 확인한 결과와 근거 |
 | --- | --- |
-| main | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 선행 통합 이후 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) merge `8e0efb5`, [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) merge `6445fc4` 반영. 최신 branch SHA는 GitHub를 실시간 확인 |
-| 열린 PR | **1건:** [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220) Draft, 최신 HEAD 3종 CI 성공·독립 사람 리뷰/운영 수락 대기. [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219)는 2026-11-05 별도 병합 완료 |
-| 열린 일반 이슈 | **15건** (#8, #9, #10, #11, #12, #19, #20, #27, #46, #61, #89, #119, #123, #132, #133). 2026-11-04 중복 25건 이관 종료 상태 유지 |
-| 완료된 코드 하위 수락 | #11에서 #217 What-if 합성 계산/보수적 인정보류 표시와 #218 동일교과 속성·seed 재현 코어를 **[x] 코드 단위 완료**로 기록. 공식 RulePack/실원장/권리·학업 운영은 미완료 |
-| #217/#218 CI | 두 PR의 병합 전 수정 HEAD에서 TASK-00 / NCP IaC offline / Chrome **각 3/3 SUCCESS**, 재검토 `COMMENT` 등록 |
-| #219 보안 | 선택적 `platform` PostgreSQL 풀 검증 우회를 차단·격리 demo role/TLS·SECURITY DEFINER search_path 보강, 합성 CI **3/3 SUCCESS** 후 merge `1181d0f` 완료. 단 리뷰 이력은 자동/기존 `COMMENTED`만 확인되고 **독립 사람 `APPROVED` 없음**. 프록시 뒤 IP 분리·실운영 수락 문제는 #27/#89에서 계속 차단 |
-| #220 기능·회귀 | 최초 TASK-00 **1 FAIL / 2809 PASS / 84 SKIP**(BETA 세션이 `ADMIN` 응답을 잘못 허용). 첫 수정 `8340157` 이후 기존 ADMIN 전용 세션 테스트와 충돌을 확인해, 명시적 ADMIN 스키마와 **ADMIN→BETA/REVIEWER 권한 거부** 회귀를 더한 최신 수정 `0d8e176` 제출; **최신 HEAD `0d8e176` TASK-00/NCP IaC/Chrome CI 3/3 SUCCESS; 독립 리뷰·코드 및 실운영 수락 전 Draft 유지** |
-| 문서 | README / PR_WORKFLOW / STATUS와 #11 정본 이슈에서 코드 완료·합성 CI·남은 사람 게이트를 분리 |
-| 공개 운영 | **RELEASE_BLOCKED** — 실 Google/학교메일, 운영 PostgreSQL·RLS·백업, NCP/TLS/직접 IP, 실제 4인 원본 권리, 독립 추천 gold 200 및 기관 학칙/사람 검증 미수락 |
+| main 코드 통합 기준 | [`d4d6874c6d59929cdabb6a0e74adccb9eeb1ef69`](https://github.com/minseong-hufs/HUFS-One-AI/commit/d4d6874c6d59929cdabb6a0e74adccb9eeb1ef69), #220 merge. 검증 HEAD `8eb7730a100bafe5514d1dddedd88144ed60b3e2`와 최종 파일 diff **0개**. 이후 문서 전용 커밋과 구분 |
+| 열린 PR / 일반 이슈 | **PR 0건 / 일반 이슈 15건 OPEN**. 이전 중복 이슈 통합 종료 이력은 §5 유지 |
+| #217 / #218 | [What-if #217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) merge `6445fc4`, [동일교과 QA #218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) merge `8e0efb5` 선행 통합 확인. 각 수정 HEAD의 3종 CI 성공 |
+| #219 | [PR](https://github.com/minseong-hufs/HUFS-One-AI/pull/219), HEAD `1bcf820823ffe10829c3c64457c8e06e9f9b7787` → merge `1181d0f77fb1a05d5ffd787f4e900a4e7480f269`. [최종 자동 COMMENT](https://github.com/minseong-hufs/HUFS-One-AI/pull/219#pullrequestreview-5777800975). 병합 전 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41937263215)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41937263210)·[NCP](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41937263224) **3/3 SUCCESS** |
+| #219 병합 후 | merge SHA의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41938792380)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41938792289)·[NCP](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41938792240) **3/3 SUCCESS** |
+| #220 | [PR](https://github.com/minseong-hufs/HUFS-One-AI/pull/220), HEAD `8eb7730a100bafe5514d1dddedd88144ed60b3e2` → merge `d4d6874`. [최종 자동 COMMENT](https://github.com/minseong-hufs/HUFS-One-AI/pull/220#pullrequestreview-5778026456). 같은 HEAD의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41941124556)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41941124587)·[NCP](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41941124549) **3개 workflow / 5개 job SUCCESS** |
+| #220 시험 범위 | 일반 Vitest **290파일 / 3003 PASS**, PG opt-in **9파일 / 89 SKIP**. 별도 실제 일회용 PG에서 **6파일/73 PASS + 3파일/16 PASS**. TypeScript·API/web build·evaluation compile/CLI/fixture·publication/익명 경계 검사 성공. Chrome 기본20 tests + 기존 demo9 checks + EMPTY/동아리8 checks 성공 |
+| #220 평가 도구 | 신규 5파일 **38 PASS**, CLI/HTML **6 PASS**, PNG/HTML20쌍·시간12건 **CANONICAL_BYTES_VERIFIED**. 추천 사람 gold **0/200**, 미디어/시간 사람 판정 **0/32**. synthetic 서명·라틴 bitmap·로컬 core 측정과 실제 인적/외부 provider 수락을 구분 |
+| 후속 main 실행 | #220 merge SHA의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41941973164)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41941973104)·[NCP](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41941973263) 및 이후 문서 커밋별 최종 상태는 [main Actions](https://github.com/minseong-hufs/HUFS-One-AI/actions?query=branch%3Amain)에서 확인. 위 확정 PASS 표시는 명시한 검증 SHA의 결과 |
+| 공개 운영 | **RELEASE_BLOCKED**. 코드 병합은 실제 로그인·운영 PG/NCP/TLS·자료별 권리·독립 사람/기기 인수 또는 유료 실행을 승인하지 않음 |
 
-**2026-11-05 병합 승인 기록:** 사용자의 명시적인 이번 PR 정리 요청에 따라 #217/#218을 수정·CI 확인 후 병합했고, 리뷰는 자동 기술 검토 `COMMENT`로 독립 사람 `APPROVED`가 아니다. #219도 GitHub에서 2026-11-05 00:06 UTC merge `1181d0f` 완료됐음을 재조회해 반영했다(본 점검 중 별도 병합). #219의 리뷰 3건 모두 `COMMENTED`이며 **비작성자 사람 `APPROVED`는 확인되지 않았다**. 이미 병합됐더라도 R2 프록시 IP 제한 및 운영·개인정보/릴리스 게이트가 사라지지 않는다. #220은 계속 Draft·독립 사람 승인 대기. 코드 병합·테스트 통과는 운영·학교·학생 데이터 승인으로 바뀌지 않는다.
+**회귀 수정:** #219의 선택 SQL pool lifecycle/TLS 검증 우회, #220의 ADMIN 신원과 학생 권한 분리, 비동기 quota를 기다리지 않고 workspace를 저장하던 통합 결함, 잘못된 테스트 옵션·철회 뒤 화면 재조회 시점을 확인했다. quota pending/거절/오류에서 저장 0, 승인 뒤 200 및 거절/오류의 429/503을 검증한다. 동아리 Chrome은 철회된 PNG 직접 URL 차단과 **명시적 새로고침 뒤** 상세 제거를 검증하며 실제 자동 focus 전환·스크린리더 인수를 대신하지 않는다.
+
+**이번 통합 결정:** 사용자가 요청한 실패 수정·리뷰·병합 유지관리에 따라 수정된 코드를 통합했다. #217/#218의 선행 병합을 확인했고 #219/#220도 정확한 HEAD의 결함 수정·자동 독립 검토·CI를 근거로 처리했다. 자동 COMMENT는 **비작성자 사람 APPROVED가 아니다**. 일반 독립 리뷰 정책을 변경하거나 실제 배포·자료권리·유료 실행을 승인하지 않는다. **RELEASE_BLOCKED** 유지.
 
 ## 2. main에 반영된 코드와 경계
 
-- **API·PostgreSQL:** 서버 소유 인증 및 영속 어댑터 조립, 구분된 7개 PostgreSQL TLS/ROLE 풀, 운영자 루프백 전용 API 진입점, 세션/권한/철회·SourceRevision/추천·Provider SQL, 권한 부정/PG 복구·혼잡 시험. 그러나 실제 운영용 인증/메일 서버·운영 DB·공개 서비스는 NOT_RUN. apps/api/src/main.ts의 APP_ENV=production 차단을 유지.
-- **UI·학업·추천:** 공고 정정 전/후, 졸업·계획 나란히 보기, What-if 가정 UI 및 #217에서 병합된 합성 What-if 순수 계산 코어, #218에서 병합된 동일교과 300-seed 탐색/단일 seed 재현, 합성 owner Provider/학업 화면, 추천 중복/정규화 benchmark·학점 속성 회귀 통합. **공식 학칙 RulePack·원본 권리·실학생 결과 및 독립 금지 경계 수락은 별개**.
-- **NCP·AI:** 승인형 VPC/ACG/NACL·NIC/Ubuntu VM/Public IP Terraform, 오프라인 mock, plan 우선 설치·고정 SSH 합성 preview/rollback, CLOVA/HCX 오프라인 wire·원자 비용·Laya 기본 OFF 격리 프로세스. **실 NCP API apply·요금·SSH·OCR/HCX 유료 호출·실호스트 성능 확인은 0회/NOT_RUN**.
-- **비공개 ingress:** Nginx/Docker/Compose는 검증 전 템플릿과 차단된 로컬 점검. 외부 포트/HTTPS/직접IP/운영 공개를 구현 완료로 간주하지 않음.
-- **자료:** 사용자 확인으로 공모전 참여 **5명 전원 동의**, **HUFSAbility 자료 수집 허가 확보**. 실제 개인 수강/Forms 원본 제공자 **4명**과 구분. 공식 강의시간표에 공개된 교수명·강의명은 승인된 수업정보의 필요 범위로 제한하고 일괄 이름 마스킹을 필수 개발 게이트로 놓지 않음. 허가의 상세 필드/재배포/외부 모델 전송·철회는 별도 원장 검증.
+- **API/인증/DB (#219):** OIDC code-exchange/PKCE, OTP/SMTP 포트, 기본 7개와 활성 확장 SQL 역할의 TLS/role·startup/shutdown, 분산 demo quota. 검증되지 않은 선택 platform SQL 포트 13개는 런처에서 거부한다. loopback-only와 production 차단을 유지한다.
+- **AI/Source (#220):** 네 AI task의 결과/근거·UI 인용, 취소 후 신규 미발송 예약 정리, 승인 egress 재확인, 이미지 및 bounded PDF 원본/페이지 근거의 불변 저장·검수/검색 연결. 실제 provider/worker host/자료 권리 인수는 별도다.
+- **owner/시연 (#220):** private intake plan/preview/apply·현재 권한/preview hash·4-owner 원자 CAS, 독립 EMPTY workspace/RESET, 합성 자산·발표 가이드 및 Chrome 시나리오. ADMIN 신원 파싱과 BETA owner/REVIEWER 권한을 분리한다. 비동기 quota 거절/장애 전에 workspace 저장을 차단하는 통합 회귀를 포함한다.
+- **동아리 게시 (#220):** 영속 PG CAS/FORCE RLS·ADMIN 생성/승인/수정/철회·BETA 읽기/인증 포스터와 실제 AI 생성 PNG 1개를 연결했다. [생성 기록](docs/GENERATED_CLUB_POSTER_20261105.md). 인적·실기관 승인은 별도다.
+- **독립 평가 도구 (#220):** 40공고×5프로필의 200초안과 고정 split을 보존하고 검토 패키지·오프라인 HTML·Ed25519 권한/서명 검증·append 원장·비교 지표를 구현했다. 별도 PNG/HTML20쌍·시간12건과 로컬 core benchmark가 있으며 사람 판정은 추천 **0/200**, 미디어·시간 **0/32**다. [실행 가이드](docs/INDEPENDENT_EVALUATION.md).
+- **학업/추천/UI:** #216의 정정/계획·학업/Provider 화면과 코어, #217 What-if 계산/보수적 검토, #218 동일교과 속성 회귀. #220은 degreePath/track·문서별 SHA·AREA_SPREAD/GROUP_CHOICE 및 보수적 What-if, WIS/원본 receipt·권한 재검증을 확장했다. 공식 RulePack·실제 원장·독립 정답/보조기기 인수는 별도다.
+- **품질/릴리스:** publication·현재/과거 Git 메타데이터·API/TASK/entrypoint inventory·npm license/CycloneDX 검사. 정적 UNKNOWN과 전체 native/Python/font/model/asset 권리 수락은 남는다.
+- **NCP:** IaC·plan-only·SSH preview·설치/복구 자동화와 오프라인 mock. 실제 계정·지출·VM/SSH·요금/유료 OCR/HCX·실호스트 실측은 이 유지관리에서 실행하지 않았다.
+- **자료:** 사용자 확인으로 공모전 참여 **5명 전원 동의**, **HUFSAbility 수집 허가 확보**. 실제 개인 원본 제공자는 **4명**이다. 공식 강의시간표 공개 교수명·강의명은 필요한 승인 범위로 관리하며 일괄 마스킹을 새 필수 게이트로 추가하지 않는다. 원본별 용도·게시/외부 전송·철회와 과거 Git 검수는 별도다.
 
-## 3. 남은 구현 — 심민성 우선순위
+## 3. 남은 구현·인수
 
-| 우선 | 아직 구현/연결·검증되지 않은 완료 조건 | 관련 이슈 |
+| 우선 | 미수락 조건 | 정본 이슈 |
 | --- | --- | --- |
-| P0 | 신뢰된 Google code exchange/학교메일 OTP·allowlist/실세션·CSRF·철회 + 운영 PG/TLS + 공개 ingress의 **production 전용 안전한 서비스 진입점**, 실부정시험 | #27 #89 #25 |
-| P0 | 승인된 실제 원본·출처별 권리 영수증/SourceRevision·외부모델 전송 범위·현재 철회, 실제 개인 4인 owner 자료 및 학교 RulePack 인적 검수/종단 | #19 #21 #39 #11 #133 #20 |
-| P0 | 보호 파일 현재 트리 제거 이후 **full private checkout 개인정보 검사·과거 Git history/clone/접근 검토** | #46 |
-| P0 | 합성 40공고×5슬롯 **200 라벨의 독립 사람 gold 승인(현재 확인 0/200)**, 실제 기관 공고 근거·Recall/설명 품질 수락 | #61 #10 #86 |
-| P0 | NCP 실제 계정·요금·크레딧·SKU/VPC/ACG/SSH·Ubuntu 설치·백업/롤백 드릴·직접 IP/TLS 검증. 코드는 있지만 **사용자 별도 유료 승인과 현장 실증이 아직 없음** | #12 #22 #192 #89 |
-| P1 | 미완성 HUFSAbility 11영역/76화면의 안전한 메뉴 매핑·미지원 UI, 빈 시연 계정/RESET 종단, 가상 AI 포스터 파일·게시 승인 API, 공식 RulePack 기반 실제 What-if 계산 | #9 #82 #123 #124 #132 #141 |
-| P2 | role/error별 자동 접근성·스크린리더, 추천·학점/컨텍스트 bench 후속, 다중 인스턴스 quota, 실제 Laya CPU/RSS/p95, 진입점 원장 수락 | #88 #143 #199 #200 #201 #202 #203 |
+| P0 | 실제 Google/학교메일·운영 PG CA/TLS·최소권한/영속 철회·복원, proxy client-IP/신뢰 헤더·다중 인스턴스와 공개 ingress 전용 진입점 | #27 #89 |
+| P0 | 실제 출처별 사용/전송/표시 권리, 공식 RulePack·문서별 SHA·4인 owner binding/손계산·실제 API/UI | #19 #11 #133 #20 |
+| P0 | full private checkout 개인정보 검사·과거 Git history/clone/backup 접근·최초 게시 권리. 현재 보호 0과 조회 가능한 과거 6경로를 구분 | #46 |
+| P0 | 독립 사람 gold **0/200**·미디어/시간 **0/32**, 공식 공고·실 OCR/외부 provider·공정한 정책 비교/실성능 | #61 #10 |
+| P0 | 실제 NCP 계정/SKU/크레딧·비용승인·네트워크/TLS/직접IP·호스트/복구/청구·출시 서명 | #12 #89 |
+| P1 | 메뉴/역할별 상태·실스크린리더·학업/정정/빈 시연 전체 인수·발표 리허설, 동아리/AI 포스터·가상 ADMIN 게시/철회 흐름의 독립 인수 | #9 #119 #132 #123 |
+| P1 | API/설계의 UNKNOWN mapping, 실제 worker/rootfs·CPU/RSS/OOM/p95·provider quota/billing 및 전체 의존성/자산 라이선스 | #8 #20 #89 |
 
-**코드 병합 100%와 제품 기능 완성 100%는 다르다.** 기존 고정된 복합 인수 게이트는 심민성 **7/12(58.3%)**, 이의상 **9/12(75.0%)**, 김채윤 **7/12(58.3%)**, 박준영 **8/12(66.7%)**, 이서연 **운영 전용 1/5(20.0%)**. 합성 코드 진척만으로 실제 운영/사람 승인 분자를 증가시키지 않는다. 이 다섯 비율의 평균은 제품 전체 완성률이 아니다.
+#133의 과정/track별 RulePack·문서별 SHA·AREA_SPREAD/GROUP_CHOICE는 #220에서 계약/코어/소비자와 합성 반례 회귀를 확장했다. 실제 문서의 언어 속성·예외·적용범위와 공식 학칙 승인·4인 손계산 검수는 남아 있다.
+
+고정 복합 게이트는 심민성 **7/12**, 이의상 **9/12**, 김채윤 **7/12**, 박준영 **8/12**, 이서연 **1/5**를 유지한다. 코드 진척으로 사람/운영 인수의 분자를 올리지 않는다. [남은 구현](docs/REMAINING_IMPLEMENTATION_20261104.md)과 [작업 책임](docs/WORKSTREAMS.md)을 함께 확인한다.
 
 ## 4. 정리 결정
 
-- **PR 정리 (2026-11-05): OPEN 1건 (#220 Draft).** #217/#218 및 #219는 모두 GitHub에서 `MERGED`로 확인된다. 2026-11-04 통합 당시 OPEN 0건은 역사 스냅샷이며 #220의 미수락 작업과 별도이다. 중복 통합이나 승인 없는 실서비스 배포를 하지 않는다.
-- **이슈 재편 완료:** 기존 OPEN 40건을 현재 **15건 OPEN + 25건 CLOSED(duplicate/이관)**로 통합했다. 각 열린 이슈는 **완료된 코드 설명 / 미완료만 체크리스트 / 명확한 책임자·연결 원본**으로 전면 교체했다. 닫힌 이슈는 완료를 가장하지 않고 정본 이슈로 이동·이력/댓글을 보존했다. 실서비스 인적 게이트 #46/#61/#89는 여전히 OPEN이다.
-- [인적 승인·검증 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 실제 환경 수락을 별도로 관리. **RELEASE_BLOCKED** 유지.
+15개 정본 이슈의 본문을 실제 코드/동일 SHA 검사와 대조해 갱신했다. 기존 #11의 완료 표시 **2개**를 유지하고 검증된 코드 하위 항목 **37개**를 추가해 **완료 39개**로 정리했다. 미수락 복합 조건 **127개**와 담당자/라벨을 유지한다. 상위 이슈는 실제 인적·운영·권리 조건이 남아 **15개 OPEN**, 이번에 전체 완료로 새로 닫은 이슈는 **0개**다.
 
-**2026-11-05 정본 이슈 전수 점검:** 15건 (#8/#9/#10/#11/#12/#19/#20/#27/#46/#61/#89/#119/#123/#132/#133)의 상태와 남은 수락 조건을 확인했다. **#11의 #217/#218 합성 코드 하위 항목 2건만 [x] 완료** 처리했다. #8/#27/#89/#119/#132에는 최신 PR·CI·의존 경계를 반영했다. 나머지는 공식 학칙·실원장/출처 권리·운영 NCP/OIDC/PG/TLS·사람 gold 200·실 브라우저/접근성 등 미완료가 있어 **이번에 CLOSED로 변경한 상위 이슈는 0건**이다. 이는 정리 누락이 아니라 이슈 전체 수락 기준을 충족하지 않은 판단이다.
+README·Architecture·Proposal·STATUS·PR 운영/역할/진척/인적 인수·시연/자료권리·구현 기록 등 **19개 Markdown 문서**의 현황을 일관되게 정리했다. 새 #61 평가 패키지·#123 AI 생성 포스터/가상 ADMIN·#133 학업 계약을 반영하며 해당 코드 완료를 공식 승인으로 확대하지 않는다.
+
+- 사용자·기관·실환경 증거가 필요한 항목은 구체적 미수락 조건으로 남긴다. 참여 동의와 HUFSAbility 수집 허가가 없다고 반복하지 않는다.
+- 역사적인 PR 숫자·CI·미병합 상태를 각 문서의 현재 설명에서 정리했다. 과거 근거는 Git 이력과 원래 PR/Actions에 보존한다.
+- 실제 원본·비밀키·유료 자원·운영 배포를 변경하지 않았으며 AI 유료 실행/Laya 기본 OFF와 RELEASE_BLOCKED를 유지한다.
 
 ## 5. 2026-11-04 이슈 구조 재정리 (기존 OPEN 40 → 현재 OPEN 15)
 
@@ -99,3 +110,4 @@
 | A19 OSS 라이선스·부속/원본 권리 | #89, #8, #46 | release artifact/SBOM/NOTICE/비밀 노출 검사 |
 
 **이슈만으로 가능한 것과 불가능한 것:** 15개 이슈는 **작업 큐·담당자·미완료 수락 기준의 단일 진입점**이다. 하지만 구현 시 [AGENTS](AGENTS.md)·담당 [Architecture](Architecture.md) 조항과 **현재 코드·테스트**를 읽어야 한다. 이슈를 체크했다고 계약/CI/권리·실환경 증거가 자동 충족되지 않는다. P2 확장(전교생·학교 DB/공식 SSO·앱스토어/푸시·완전 오프라인·고급 시간표 최적화)과 선택형 `.ics`·RulePack 작성 보조는 **명시 승인 전 현재 필수 구현으로 간주하지 않는다**. 단위 코드 완료·운영 배포·개인정보/출처·독립 인적 수락을 혼동하지 않고 #46/#61/#89 `RELEASE_BLOCKED`를 유지한다.
+

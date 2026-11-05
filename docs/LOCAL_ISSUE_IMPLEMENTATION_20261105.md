@@ -1,4 +1,6 @@
-# Local implementation for issues #8, #19, #20, #27, #46 and #89
+# Initial local implementation checkpoint for issues #8, #19, #20, #27, #46 and #89
+
+> Historical local checkpoint before PR #220 was submitted. The counts and environment below describe that checkpoint, not the latest branch. Subsequent commits, remote disposable PostgreSQL/Chrome CI, reviews and merge status are recorded in [STATUS](../STATUS.md) and [PR #220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220). Local SKIP/NOT_RUN results remain valid for the stated local environment; they are not a claim that no later CI ran.
 
 ## Scope and source of truth
 
@@ -155,7 +157,5 @@ for those native operations.
 | #46 | Field/purpose/revocation/Git/cloud/model rights and review of historical distribution; prior consent records alone do not establish every purpose. |
 | #89 | Real NCP/DNS/TLS/ingress/restore checks, complete runtime/model/asset license and NOTICE evidence, current-head independent human acceptance and handoff. |
 
-`AI_ENABLED=false`, Laya OFF and `RELEASE_BLOCKED` remain. No push, PR, issue
-closure, real student-data upload, paid provider call, production migration or
-deployment was performed. Independent automated code review is recorded
+`AI_ENABLED=false`, Laya OFF and `RELEASE_BLOCKED` remain. At this initial local checkpoint no push, PR or issue closure had been performed. Subsequent repository maintenance is tracked in STATUS. This checkpoint did not perform real student-data upload, paid provider calls, production migrations or deployment. Independent automated code review is recorded
 separately from human acceptance.
