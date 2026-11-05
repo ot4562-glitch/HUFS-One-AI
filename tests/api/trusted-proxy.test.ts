@@ -40,7 +40,7 @@ describe('owner receipt rate-limit response (#227)',()=>{
     app.get('/api/synthetic/receipt-cap',async()=>{throw new ReceiptAdmissionError();});
     const response=await app.inject({url:'/api/synthetic/receipt-cap'});
     expect(response.statusCode).toBe(429);
-    expect(response.json().error.code).toBe('RATE_LIMITED');
+    expect(response.json().code).toBe('RATE_LIMITED');
     expect(response.headers['cache-control']).toBe('no-store');
   });
 });
