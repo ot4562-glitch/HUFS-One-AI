@@ -67,4 +67,25 @@ describe('durable current double-major approved projection loader',()=>{
     expect(await service.rights.authorize({actorId,sourceReceipt:result.receipt,check:{...result.check,selection:'NONE'},now:at})).toMatchObject({allowed:false});
     expect(await service.source.revalidate({actorId:'SYN-OTHER',receipt:result.receipt,now:at})).toBe(false);
   });
+  it('does not let another actor evict a valid in-flight receipt (#227)',async()=>{
+    const h=fixture(),original=await h.load();
+    expect(original).not.toBeNull();
+    // Each query still receives a row for its exact actor; this is not an RLS bypass.
+    h.projection.actor_id='SYN-NOISY';
+    for(let i=0;i<128;i++)
+      expect(await h.loader.load({actorId:'SYN-NOISY',now:at})).not.toBeNull();
+    h.projection.actor_id=actorId;
+    expect(await h.loader.revalidate({actorId,receipt:original!.receipt,now:at})).toBe(true);
+  });
+  it('fails only new noisy-actor admission at its cap, preserving other live receipts (#227)',async()=>{
+    const h=fixture(),original=await h.load();
+    h.projection.actor_id='SYN-NOISY';
+    for(let i=0;i<128;i++)await h.loader.load({actorId:'SYN-NOISY',now:at});
+    await expect(h.loader.load({actorId:'SYN-NOISY',now:at})).rejects.toThrow();
+    h.projection.actor_id=actorId;
+    expect(await h.loader.revalidate({actorId,receipt:original!.receipt,now:at})).toBe(true);
+    h.clock('2026-11-03T00:00:31.000Z');
+    expect(await h.loader.revalidate({actorId,receipt:original!.receipt,now:at})).toBe(false);
+    expect(await h.load()).not.toBeNull();
+  });
 });

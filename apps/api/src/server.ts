@@ -14,6 +14,7 @@ import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectio
 import type {FastifyRequest} from 'fastify';
 import type {ApiOptions, VerifiedActor} from './types.js';
 import {digestInviteToken} from './modules/auth/reviewer.js';
+import {createTrustedProxyPolicy} from './modules/auth/trusted-proxy.js';
 import {ReviewerSandboxActionSchema} from './modules/auth/reviewer-sandbox.js';
 import type {ReviewerGrant} from './modules/auth/reviewer.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/auth/gates.js';
@@ -64,6 +65,22 @@ function nowEpoch(now:string):number {
   return at;
 }
 
+/** The current grant must be checked first. Hidden values are not inspected:
+ * their schema or asOf must not change the visible response. */
+function maskUnsharedSnapshot(source:unknown,academics:boolean,forecast:boolean):unknown {
+  if(source===null||typeof source!=='object'||Array.isArray(source))return source;
+  const input=source as Record<string,unknown>;
+  const visible:Record<string,unknown>=Object.create(null);
+  for(const key of Object.keys(input)){
+    if(key==='academics'&&!academics)continue;
+    if(key==='forecast'&&!forecast)continue;
+    visible[key]=input[key];
+  }
+  if(!academics)visible.academics={state:'NOT_SHARED'};
+  if(!forecast)visible.forecast={state:'NOT_SHARED'};
+  return visible;
+}
+
 /** Every route starts by denying unverified credentials; no mock header bypass exists. */
 export function createApi(options:ApiOptions) {
   if(!options.allowedOrigin||new URL(options.allowedOrigin).origin!==options.allowedOrigin)
@@ -76,7 +93,8 @@ export function createApi(options:ApiOptions) {
     perSession:z.number().int().min(1).max(200)})
     .refine(v=>v.perSession<=v.perActor)
     .parse(options.contextLimits??{perActor:100,perSession:50});
-  const app=Fastify({logger:false,trustProxy:false,bodyLimit:65536,requestIdHeader:false});
+  const proxy=createTrustedProxyPolicy(options.trustedProxyAddresses);
+  const app=Fastify({logger:false,trustProxy:proxy.trust,bodyLimit:65536,requestIdHeader:false});
   const clock=options.now??(()=>new Date().toISOString());
   const newId=options.newId??randomUUID;
   const verifier=options.verifySession??options.googleAuth?.verifySession??(async()=>null);
@@ -120,6 +138,8 @@ export function createApi(options:ApiOptions) {
     reply.header('Referrer-Policy','no-referrer');
     reply.header('Content-Security-Policy',"default-src 'none'; frame-ancestors 'none'");
     if(!request.raw.url?.startsWith('/api/'))throw new ApiFailure('FORBIDDEN');
+    if(!proxy.accepts(request.raw.socket.remoteAddress,request.headers['x-forwarded-for'],request.raw.rawHeaders))
+      throw new ApiFailure('FORBIDDEN');
     const path=request.url.split('?')[0];
     if(options.googleAuth&&request.method==='GET'&&(
       path==='/api/auth/google/start'||path==='/api/auth/google/callback'))return;
@@ -275,7 +295,10 @@ export function createApi(options:ApiOptions) {
       now:clock(),
     });
     if(!source)throw new ApiFailure('FORBIDDEN',id);
-    const snapshot=DemoSnapshotSchema.parse(source);
+    const snapshot=DemoSnapshotSchema.parse(maskUnsharedSnapshot(source,
+      allowed(grant,actor,context.demoSubjectId,'ACADEMICS'),
+      allowed(grant,actor,context.demoSubjectId,'FORECAST'),
+    ));
     if(snapshot.demoSubjectId!==context.demoSubjectId
       ||snapshot.versions.dataset!==context.datasetVersion
       ||snapshot.versions.projection!==context.projectionVersion
@@ -667,7 +690,10 @@ export function createApi(options:ApiOptions) {
       requiredSections:['FEED','NOTICES'],now:clock(),
     });
     if(!snapshotValue)throw new ApiFailure('FORBIDDEN');
-    const snapshot=DemoSnapshotSchema.parse(snapshotValue);
+    const snapshot=DemoSnapshotSchema.parse(maskUnsharedSnapshot(snapshotValue,
+      allowed(grant,actor,body.demoSubjectId,'ACADEMICS'),
+      allowed(grant,actor,body.demoSubjectId,'FORECAST'),
+    ));
     if(snapshot.demoSubjectId!==body.demoSubjectId
       ||Date.parse(snapshot.asOf)>nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT');
     if(body.expectedDatasetVersion&&body.expectedDatasetVersion!==snapshot.versions.dataset)
