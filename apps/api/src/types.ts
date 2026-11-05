@@ -46,6 +46,11 @@ export interface ApiRepository {
   /** Unsafe subject-only read: internal REVIEWER/synthetic legacy use only.
    * BETA HTTP routes must call readAuthorizedSnapshot instead. */
   readSnapshot(subject: SubjectAlias): Promise<DemoSnapshot|null>;
+  /** Internal scoped computation only, after a live grant check. Implementations
+   * must project only these fields without parsing unused snapshot sections.
+   * This is metadata, never an authorized browser snapshot or academic result. */
+  readSnapshotMetadata?(subject:SubjectAlias):
+    Promise<Pick<DemoSnapshot,'demoSubjectId'|'datasetMode'|'asOf'|'versions'>|null>;
   /**
    * One repository operation must validate current actor+subject+grant version,
    * requested sections, revoke/expiry and return only a scope-safe projection.
@@ -76,6 +81,9 @@ export interface ApiOptions {
   /** Process-local leases only. Defaults support 20 directed subject switches
    * (40 selections), other tabs and 2 sessions/actor; global capacity is 200. */
   contextLimits?:{perActor:number;perSession:number};
+  /** Exact reviewed immediate ingress IPs. Omit to ignore forwarding headers.
+   * Ingress must overwrite X-Forwarded-For with exactly one observed peer. */
+  trustedProxyAddresses?:readonly string[];
   demoOverlay?:Pick<DemoOverlayService,'read'|'put'|'reset'>;
   /** Independent current operator allowlist; a BETA grant or OIDC email alone is insufficient. */
   adminAuthority?:{isApproved(input:{actor:VerifiedTeamActor;now:string}):Promise<boolean>};

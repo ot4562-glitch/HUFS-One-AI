@@ -128,4 +128,44 @@ describe('REVIEWER server must validate all nested synthetic academic evidence',
       expect((await h.app.inject({url:'/api/demo/contexts/'+created.json().contextId+'/snapshot'})).statusCode).toBe(403);
     }else expect(created.statusCode).toBe(403);
   });
+
+  it('permits explicitly older synthetic summaries under the frozen REVIEWER clock',async()=>{
+    // Unlike live BETA projections, a fictitious scenario can retain an earlier
+    // synthetic summary. Neither timestamp changes the live invitation clock.
+    const earlier='2026-11-19T00:00:00.000Z';
+    const h=await harness(s=>({...s,academics:academic(earlier),forecast:forecast(earlier)}));
+    const direct=await h.direct();expect(direct.statusCode).toBe(200);
+    expect(direct.json().asOf).toBe('2026-11-20T00:00:00.000Z');
+    expect(direct.json().academics.asOf).toBe(earlier);
+    expect(direct.json().forecast.asOf).toBe(earlier);
+    const created=await h.context();expect(created.statusCode).toBe(201);
+    const result=await h.app.inject({url:'/api/demo/contexts/'+created.json().contextId+'/snapshot'});
+    expect(result.statusCode).toBe(200);
+    expect(result.json().academics.asOf).toBe(earlier);
+    expect(result.json().forecast.items[0].asOf).toBe(earlier);
+  });
+  it('replaces unverified reviewer caveats with fixed synthetic notices on every snapshot path',async()=>{
+    const academicClaim='한국외국어대학교가 졸업을 최종 승인했습니다.';
+    const forecastClaim='2027학년도 개설이 공식 확정되었습니다.';
+    const h=await harness(s=>({...s,
+      academics:{...academic(s.asOf),caveats:[academicClaim]},
+      forecast:{...forecast(s.asOf),items:[{...forecast(s.asOf).items[0],caveat:forecastClaim}]},
+    }));
+    const direct=await h.direct();expect(direct.statusCode).toBe(200);
+    const created=await h.context();expect(created.statusCode).toBe(201);
+    const prefix='/api/demo/contexts/'+created.json().contextId;
+    const snapshot=await h.app.inject({url:prefix+'/snapshot'});
+    const graduation=await h.app.inject({url:prefix+'/graduation'});
+    const outlook=await h.app.inject({url:prefix+'/outlook'});
+    expect([snapshot.statusCode,graduation.statusCode,outlook.statusCode]).toEqual([200,200,200]);
+    for(const response of [direct,snapshot,graduation,outlook]){
+      expect(response.body).not.toContain(academicClaim);
+      expect(response.body).not.toContain(forecastClaim);
+    }
+    expect(direct.json().academics.caveats).toEqual(['합성 시나리오의 학업 요약이며 공식 졸업 판정이 아닙니다.']);
+    expect(direct.json().forecast.items[0].caveat).toBe('합성 시나리오의 개설 전망이며 공식 개설 일정이 아닙니다.');
+    expect(snapshot.json().academics).toEqual(direct.json().academics);
+    expect(graduation.json()).toEqual(direct.json().academics);
+    expect(outlook.json()).toEqual(direct.json().forecast);
+  });
 });

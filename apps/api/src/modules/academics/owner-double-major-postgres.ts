@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {OwnerReceipts,ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {OwnerDoubleMajorAuditSchema} from '../../../../../packages/contracts/src/academics/double-major.js';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
@@ -22,8 +23,8 @@ type RightsTicket={actorId:string;sourceReceipt:string;fingerprint:string;expire
  */
 export class PostgresOwnerDoubleMajorSnapshotLoader implements TrustedOwnerDoubleMajorSnapshots {
   private readonly reader:PostgresApprovedOwnerReader;
-  private readonly tickets=new Map<string,Ticket>();
-  private readonly rightsTickets=new Map<string,RightsTicket>();
+  private readonly tickets=new OwnerReceipts<Ticket>(value=>value.input.actorId);
+  private readonly rightsTickets=new OwnerReceipts<RightsTicket>(value=>value.actorId);
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){
     this.reader=new PostgresApprovedOwnerReader(pool,authority,clock);
@@ -92,8 +93,6 @@ export class PostgresOwnerDoubleMajorSnapshotLoader implements TrustedOwnerDoubl
   private cleanup(now:number){
     for(const [key,ticket] of this.tickets)if(ticket.expires<=now)this.tickets.delete(key);
     for(const [key,ticket] of this.rightsTickets)if(ticket.expires<=now)this.rightsTickets.delete(key);
-    while(this.tickets.size>=128)this.tickets.delete(this.tickets.keys().next().value!);
-    while(this.rightsTickets.size>=128)this.rightsTickets.delete(this.rightsTickets.keys().next().value!);
   }
   async load(input:ReadInput):Promise<OwnerDoubleMajorSnapshot|null>{
     const result=await this.read(input);if(!result)return null;
@@ -155,7 +154,7 @@ export class PostgresOwnerDoubleMajorSnapshotLoader implements TrustedOwnerDoubl
       const rightsReceipt=randomBytes(32).toString('hex');
       this.rightsTickets.set(rightsReceipt,{actorId:input.actorId,sourceReceipt:input.sourceReceipt,fingerprint:current.ticket.fingerprint,expires:current.ticket.expires});
       return {allowed:true,rightsReceipt};
-    }catch{return {allowed:false};}
+    }catch(error){if(error instanceof ReceiptAdmissionError)throw error;return {allowed:false};}
   }
   async revalidateRights(input:Parameters<TrustedOwnerDoubleMajorRights['revalidate']>[0]):Promise<boolean>{
     try{

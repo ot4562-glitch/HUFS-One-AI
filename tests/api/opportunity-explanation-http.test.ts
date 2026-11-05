@@ -1,3 +1,4 @@
+import {receiptFailure,receiptFailureCases} from './receipt-admission-fixture.js';
 import {afterEach,describe,expect,it} from 'vitest';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
@@ -38,12 +39,22 @@ function harness(){
   const post=(body:unknown=query,id='SYN-OPP')=>app.inject({method:'POST',
     url:'/api/opportunities/'+id+'/explanation',
     headers:{origin:ORIGIN,'x-csrf-token':actor.csrfToken},payload:body as object});
-  return {app,post,seen,set:(x:unknown)=>{value=x;},deny:()=>{allowed=false;},
+  return {app,post,seen,source,rights,set:(x:unknown)=>{value=x;},deny:()=>{allowed=false;},
     stale:()=>{current=false;},logout:()=>{enabled=false;},unapprove:()=>{approved=false;},
     onPreauthorize:(hook:()=>void)=>{onPreauthorize=hook;},
     onSourceRecheck:(hook:()=>void)=>{onSourceRecheck=hook;}};
 }
 describe('#86 safe visible-opportunity explanations',()=>{
+  for(const boundary of ['source','rights'] as const){
+    it.each(receiptFailureCases)(`preserves $failure through the explanation ${boundary} HTTP boundary`,async({failure,status,code})=>{
+      const h=harness(),fail=receiptFailure(failure,actor.actorId);
+      if(boundary==='source')h.source.inspect=fail;else h.rights.authorize=fail;
+      const response=await h.post();
+      expect(response.statusCode).toBe(status);expect(response.json().code).toBe(code);
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(response.body).not.toContain('SYNTHETIC-PRIVATE-PROVIDER-DETAIL');
+    });
+  }
   it('binds an optional expected owner-feed version without echoing it as an explanation field',async()=>{
     const same=harness(),ok=await same.post({...query,expectedFeedVersion:'a'.repeat(64)});
     expect(ok.statusCode).toBe(200);expect(ok.json()).toEqual(explanation);

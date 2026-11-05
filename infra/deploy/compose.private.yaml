@@ -53,7 +53,9 @@ services:
         target: /run/operator/tls
         read_only: true
         bind: {create_host_path: false}
-    networks: [backend]
+    networks:
+      backend:
+        ipv4_address: ${HUFS_EDGE_IPV4:?operator-reviewed ingress IPv4 required}
     read_only: true
     tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
     cap_drop: [ALL]
@@ -64,6 +66,12 @@ services:
     restart: "no"
 # No database creation or published API/DB ports. An operator must separately
 # provide approved durable DB connectivity and firewall evidence; never guessed.
+# Operator must review the private subnet, static edge IP, host routing and
+# XFF overwrite together. Never infer a trusted proxy from arbitrary Docker DNS.
+# This compose profile still does NOT enable the production API entrypoint.
 networks:
   backend:
     internal: true
+    ipam:
+      config:
+        - subnet: ${HUFS_BACKEND_SUBNET:?operator-reviewed private subnet required}

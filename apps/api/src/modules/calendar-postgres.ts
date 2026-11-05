@@ -8,6 +8,7 @@ import type {RevisionRecord} from '../../../../packages/core/src/normalization/r
 import type {ReviewerSqlConnection,ReviewerSqlPool} from './auth/reviewer-postgres.js';
 import type {CalendarAuthorizationReceipt,CalendarInputBundle,CalendarInputSource,CalendarReadRequest} from './calendar.js';
 import type {DemoSnapshot} from '@hufs-one/contracts';
+import {maskUnsharedSnapshot} from '../snapshot-visibility.js';
 import {CalendarDeadlineProofSchema,verifyCalendarDeadlineProjection} from './calendar-deadline-evidence.js';
 import type {CalendarDeadlineProof} from './calendar-deadline-evidence.js';
 import {gateAcademicNoticeReferences} from './academics/notice-rulepack-gate.js';
@@ -113,8 +114,13 @@ export class PostgresCalendarInputSource implements CalendarInputSource {
         ||s.projection_version!==context.projectionVersion||s.current!==true
         ||typeof s.approved_by!=='string'||!s.approved_by.length||s.approved_by===actor
         ||Date.parse(iso(s.approved_at))>Date.parse(asOf))return null;
-      if(Buffer.byteLength(JSON.stringify(s.snapshot_json),'utf8')>65536)throw Error('Oversized approved snapshot');
-      const approvedSnapshot=DemoSnapshotSchema.parse(s.snapshot_json);
+      // The locked current grant above determines visibility before any summary
+      // size/schema inspection. Keep s untouched: the receipt below still binds
+      // the exact approved row, including hidden changes during this operation.
+      const visibleSnapshot=maskUnsharedSnapshot(s.snapshot_json,
+        grant.allowedSections.includes('ACADEMICS'),grant.allowedSections.includes('FORECAST'));
+      if(Buffer.byteLength(JSON.stringify(visibleSnapshot),'utf8')>65536)throw Error('Oversized approved snapshot');
+      const approvedSnapshot=DemoSnapshotSchema.parse(visibleSnapshot);
       if(approvedSnapshot.demoSubjectId!==context.demoSubjectId||approvedSnapshot.versions.dataset!==context.datasetVersion
         ||approvedSnapshot.versions.projection!==context.projectionVersion||approvedSnapshot.datasetMode!==p.dataset_mode
         ||[approvedSnapshot.asOf,approvedSnapshot.feed.asOf,approvedSnapshot.notices.asOf]

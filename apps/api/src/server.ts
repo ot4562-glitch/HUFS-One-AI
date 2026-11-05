@@ -1,3 +1,4 @@
+import {maskUnsharedSnapshot} from './snapshot-visibility.js';
 import Fastify from 'fastify';
 import {randomUUID} from 'node:crypto';
 import {z} from 'zod';
@@ -14,6 +15,8 @@ import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectio
 import type {FastifyRequest} from 'fastify';
 import type {ApiOptions, VerifiedActor} from './types.js';
 import {digestInviteToken} from './modules/auth/reviewer.js';
+import {createTrustedProxyPolicy} from './modules/auth/trusted-proxy.js';
+import {ReceiptAdmissionError} from './modules/auth/owner-receipts.js';
 import {ReviewerSandboxActionSchema} from './modules/auth/reviewer-sandbox.js';
 import type {ReviewerGrant} from './modules/auth/reviewer.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/auth/gates.js';
@@ -76,7 +79,8 @@ export function createApi(options:ApiOptions) {
     perSession:z.number().int().min(1).max(200)})
     .refine(v=>v.perSession<=v.perActor)
     .parse(options.contextLimits??{perActor:100,perSession:50});
-  const app=Fastify({logger:false,trustProxy:false,bodyLimit:65536,requestIdHeader:false});
+  const proxy=createTrustedProxyPolicy(options.trustedProxyAddresses);
+  const app=Fastify({logger:false,trustProxy:proxy.trust,bodyLimit:65536,requestIdHeader:false});
   const clock=options.now??(()=>new Date().toISOString());
   const newId=options.newId??randomUUID;
   const verifier=options.verifySession??options.googleAuth?.verifySession??(async()=>null);
@@ -120,6 +124,8 @@ export function createApi(options:ApiOptions) {
     reply.header('Referrer-Policy','no-referrer');
     reply.header('Content-Security-Policy',"default-src 'none'; frame-ancestors 'none'");
     if(!request.raw.url?.startsWith('/api/'))throw new ApiFailure('FORBIDDEN');
+    if(!proxy.accepts(request.raw.socket.remoteAddress,request.headers['x-forwarded-for'],request.raw.rawHeaders))
+      throw new ApiFailure('FORBIDDEN');
     const path=request.url.split('?')[0];
     if(options.googleAuth&&request.method==='GET'&&(
       path==='/api/auth/google/start'||path==='/api/auth/google/callback'))return;
@@ -275,7 +281,10 @@ export function createApi(options:ApiOptions) {
       now:clock(),
     });
     if(!source)throw new ApiFailure('FORBIDDEN',id);
-    const snapshot=DemoSnapshotSchema.parse(source);
+    const snapshot=DemoSnapshotSchema.parse(maskUnsharedSnapshot(source,
+      allowed(grant,actor,context.demoSubjectId,'ACADEMICS'),
+      allowed(grant,actor,context.demoSubjectId,'FORECAST'),
+    ));
     if(snapshot.demoSubjectId!==context.demoSubjectId
       ||snapshot.versions.dataset!==context.datasetVersion
       ||snapshot.versions.projection!==context.projectionVersion
@@ -303,6 +312,7 @@ export function createApi(options:ApiOptions) {
     const code=err instanceof GoogleAuthFlowError||err instanceof SchoolMailProofError
       ?'FORBIDDEN':
       err instanceof ApiFailure?err.code:
+      err instanceof ReceiptAdmissionError?'RATE_LIMITED':
       (err instanceof z.ZodError || (typeof err==='object'&&err!==null&&'statusCode' in err
         &&(err.statusCode===400||err.statusCode===413)))
         ?'INVALID_INPUT':'PROVIDER_UNAVAILABLE';
@@ -498,8 +508,10 @@ export function createApi(options:ApiOptions) {
       ||(snap.aiProvenance!=='MOCK'&&snap.aiProvenance!=='NONE')
       ||snap.feed.asOf!==snap.asOf||snap.notices.asOf!==snap.asOf
       )throw new ApiFailure('FORBIDDEN');
-    // Scenario asOf is a frozen fictitious clock; only the live authenticated
-    // invitation session and rights checks use the actual request clock.
+    // REVIEWER uses a frozen fictitious scenario clock: synthetic summaries may
+    // be older, never later, than that scenario. BETA's approved live projection
+    // instead requires exact summary/snapshot asOf equality in checkedContext
+    // and ScopedApiRepository. Live invitation/session rights use request time.
     const syntheticEvidence=(refs:readonly string[])=>refs.every(ref=>ref.startsWith('EV-SYN-'));
     const academic=snap.academics;
     if('rulePackVersion' in academic
@@ -521,7 +533,14 @@ export function createApi(options:ApiOptions) {
       ||snap.notices.items.some(n=>!n.noticeId.startsWith('SYN-')
       ||n.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-'))))
       throw new ApiFailure('FORBIDDEN');
-    return snap;
+    // A SYN identifier is not an attestation of arbitrary prose. REVIEWER
+    // summaries carry fixed synthetic notices, never unverified official claims.
+    return DemoSnapshotSchema.parse({...snap,
+      academics:'rulePackVersion' in academic?{...academic,
+        caveats:['합성 시나리오의 학업 요약이며 공식 졸업 판정이 아닙니다.']}:academic,
+      forecast:'items' in forecast?{...forecast,items:forecast.items.map(item=>({...item,
+        caveat:'합성 시나리오의 개설 전망이며 공식 개설 일정이 아닙니다.'}))}:forecast,
+    });
   };
   // UI can expose the full student navigation without granting any real-world side effects.
   // This manifest is served only after active enrollment has been rechecked.
@@ -667,7 +686,10 @@ export function createApi(options:ApiOptions) {
       requiredSections:['FEED','NOTICES'],now:clock(),
     });
     if(!snapshotValue)throw new ApiFailure('FORBIDDEN');
-    const snapshot=DemoSnapshotSchema.parse(snapshotValue);
+    const snapshot=DemoSnapshotSchema.parse(maskUnsharedSnapshot(snapshotValue,
+      allowed(grant,actor,body.demoSubjectId,'ACADEMICS'),
+      allowed(grant,actor,body.demoSubjectId,'FORECAST'),
+    ));
     if(snapshot.demoSubjectId!==body.demoSubjectId
       ||Date.parse(snapshot.asOf)>nowEpoch(clock()))throw new ApiFailure('VERSION_CONFLICT');
     if(body.expectedDatasetVersion&&body.expectedDatasetVersion!==snapshot.versions.dataset)

@@ -66,6 +66,23 @@ describe('real-role PostgreSQL API operator composition',()=>{
     expect(result.application.platform.pools.evidence).toBe(result.pools.evidence);
     await Promise.all(REQUIRED_SQL_ROLES.map(role=>result.pools[role].close()));
   });
+  it('wires only explicitly reviewed immediate proxy IPs into the real operator application',async()=>{
+    const input={...makeConfig(),trustedProxyAddresses:['127.0.0.1']};
+    const prepared=prepareOperatorPostgres(input as any);
+    expect(prepared.application.trustedProxyAddresses).toEqual(['127.0.0.1']);
+    // Mutating a caller-owned setting after prepare cannot silently change trust.
+    input.trustedProxyAddresses[0]='10.20.0.99';
+    expect(prepared.application.trustedProxyAddresses).toEqual(['127.0.0.1']);
+    await Promise.all(Object.values(prepared.pools).map(pool=>pool.close()));
+    const safeDefault=prepareOperatorPostgres(makeConfig() as any);
+    expect(safeDefault.application.trustedProxyAddresses).toBeUndefined();
+    await Promise.all(Object.values(safeDefault.pools).map(pool=>pool.close()));
+    for(const invalid of [[],['0.0.0.0'],['::'],['10.20.0.0/24'],['localhost'],
+      ['10.20.0.2','10.20.0.2/32']]){
+      expect(()=>prepareOperatorPostgres({...makeConfig(),
+        trustedProxyAddresses:invalid} as any)).toThrow();
+    }
+  });
   it('accepts isolated reviewer/mail roles but rejects role aliases and missing reviewer',async()=>{
     const config=makeConfig() as any;
     const extra=(name:string)=>({

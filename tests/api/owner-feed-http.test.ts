@@ -1,3 +1,4 @@
+import {receiptFailure,receiptFailureCases} from './receipt-admission-fixture.js';
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
@@ -23,6 +24,14 @@ function fixture(){
   return {source,approval,open,logout:()=>{identity=null;},revoke:()=>{current=false;},unapprove:()=>{approved=false;}};
 }
 describe('BETA owner feed HTTP gate',()=>{
+  it.each(receiptFailureCases)('preserves $failure through the feed source HTTP boundary',async({failure,status,code})=>{
+    const f=fixture();
+    f.source.inspect.mockImplementation(receiptFailure(failure,owner.actorId));
+    const response=await f.open().inject({url:'/api/owner/feed'});
+    expect(response.statusCode).toBe(status);expect(response.json().code).toBe(code);
+    expect(response.headers['cache-control']).toBe('no-store');
+    expect(response.body).not.toContain('SYNTHETIC-PRIVATE-PROVIDER-DETAIL');
+  });
   it('checks independent owner permission before inspecting private feed inputs',async()=>{
     const f=fixture();f.source.mayInspect.mockResolvedValue(false);
     expect((await f.open().inject({url:'/api/owner/feed'})).statusCode).toBe(403);

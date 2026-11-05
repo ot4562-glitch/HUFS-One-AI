@@ -5,6 +5,7 @@ import {
 import type {OwnerStudyPlanCheckResponse} from '@hufs-one/contracts';
 import {termEndMs} from '../../../../../packages/core/src/academics/ledger.js';
 import {ApiFailure} from '../auth/gates.js';
+import {ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {betaActor,betaRecheck} from './self-account-http.js';
 import type {BetaRouteVerifier} from './self-account-http.js';
 
@@ -94,7 +95,7 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
     try{result=await source.inspect({
       actorId:actor.actorId,term:input.term,now,
       ...(input.expectedPlanVersion?{expectedPlanVersion:input.expectedPlanVersion}:{}),
-    });}catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    });}catch(error){if(error instanceof ReceiptAdmissionError)throw error;throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!result||typeof result.receipt!=='string'
       ||result.receipt.length<8||result.receipt.length>256)
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
@@ -130,7 +131,7 @@ export function registerOwnerStudyPlanCheckRoutes(options:{
         throw new ApiFailure('PROVIDER_UNAVAILABLE');
       rightsReceipt=checked.rightsReceipt;
     }catch(error){
-      if(error instanceof ApiFailure)throw error;
+      if(error instanceof ApiFailure||error instanceof ReceiptAdmissionError)throw error;
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
     }
     const requiresApproval=safe.state==='READY'||!!safe.approval||safe.creditCapUnits!==undefined;

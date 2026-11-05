@@ -1,3 +1,4 @@
+import {receiptFailure,receiptFailureCases} from './receipt-admission-fixture.js';
 import {afterEach,describe,expect,it} from 'vitest';
 import {createApi} from '../../apps/api/src/server.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
@@ -53,7 +54,7 @@ function fixture(options:{missingSource?:boolean;missingRights?:boolean}={}){
   const post=(payload:Record<string,unknown>=input)=>app.inject({method:'POST',
     url:'/api/opportunities/opp1/revisions/compare',
     headers:{origin:ORIGIN,'x-csrf-token':actor.csrfToken},payload});
-  return {app,post,seen,set:(next:unknown)=>{value=next;},
+  return {app,post,seen,source,rights,set:(next:unknown)=>{value=next;},
     denyRead:()=>{mayRead=false;},denyDisclosure:()=>{mayDisclose=false;},
     revokeSource:()=>{sourceValid=false;},revokeRights:()=>{rightsValid=false;},
     logout:()=>{identity=null;},changeActorLate:()=>{late=()=>{identity={...actor,actorId:'other'};};},
@@ -62,6 +63,16 @@ function fixture(options:{missingSource?:boolean;missingRights?:boolean}={}){
   };
 }
 describe('#119 reviewed opportunity revision comparison',()=>{
+  for(const boundary of ['source','rights'] as const){
+    it.each(receiptFailureCases)(`preserves $failure through the revision ${boundary} HTTP boundary`,async({failure,status,code})=>{
+      const h=fixture(),fail=receiptFailure(failure,actor.actorId);
+      if(boundary==='source')h.source.inspect=fail;else h.rights.authorize=fail;
+      const response=await h.post();
+      expect(response.statusCode).toBe(status);expect(response.json().code).toBe(code);
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(response.body).not.toContain('SYNTHETIC-PRIVATE-PROVIDER-DETAIL');
+    });
+  }
   it('compares 11/20 to 11/25 as an extension with separate observed/reviewed times',async()=>{
     const h=fixture(),r=await h.post();expect(r.statusCode).toBe(200);
     expect(r.json()).toMatchObject({state:'READY',opportunityId:'opp1',asOf:NOW,

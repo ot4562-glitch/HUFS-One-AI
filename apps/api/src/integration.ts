@@ -71,6 +71,7 @@ interface SharedDependencies {
   adminAuthority?:ApiOptions['adminAuthority'];
   demoPreflight?:ApiOptions['demoPreflight'];
   allowedOrigin:string;
+  trustedProxyAddresses?:ApiOptions['trustedProxyAddresses'];
   repository:ApiRepository;
   reviewer?:{
     access:ReviewerAccessStore;
@@ -161,6 +162,8 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
 
   const options:ApiOptionsWithAgent1={
     allowedOrigin:deps.allowedOrigin,repository:deps.repository,
+    ...(deps.trustedProxyAddresses!==undefined
+      ?{trustedProxyAddresses:deps.trustedProxyAddresses}:{}),
     ...(deps.demoOverlay?{demoOverlay:deps.demoOverlay}:{}),
     ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{}),
     ...(deps.demoPreflight?{demoPreflight:deps.demoPreflight}:{}),

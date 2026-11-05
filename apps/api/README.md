@@ -1,5 +1,37 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 스냅샷 공유 범위와 시점 계약 (#229)
+
+BETA HTTP는 현재 세션·actor·대상·SharingGrant를 먼저 확인합니다.
+`ScopedApiRepository`는 기반 projection의 학업·전망 결과를 재사용하지 않고,
+서버 내부 `readSnapshotMetadata`로 대상·자료 모드·asOf·판본만 읽습니다.
+PostgreSQL은 이 네 필드만 SQL에서 선택하며 기존 전체 `readSnapshot`의
+엄격한 검증은 유지합니다. 피드·공지는 현재 승인 원천으로 다시 계산합니다.
+
+같은 거래의 현재 grant가 허용하지 않은 학업·전망은 승인 스냅샷의
+크기·스키마·시점 검사 전에 `NOT_SHARED`로 가립니다. 허용된 한 섹션은
+다른 미공유 섹션과 독립적으로 검증합니다. 원본 승인 행은 수정하지 않고
+영수증 해시에 계속 포함하므로, 처리 중 행·판본·권리·공유 범위가 바뀌면
+현재성 재검증이 실패합니다. 마스킹은 철회나 오래된 영수증의 재사용을
+허용하지 않습니다.
+
+| 경로 | 학업·전망 시점 | 현재 권한 시각 |
+| --- | --- | --- |
+| BETA 승인 projection | 공유한 요약의 `asOf`는 snapshot/input bundle과 정확히 일치. 미래 전망 항목과 미래 snapshot 거부 | 실제 요청 시각 |
+| REVIEWER 합성 시나리오 | 요약·전망 항목은 고정된 가상 snapshot 시각 이하. 더 오래된 합성 요약은 허용하며 snapshot 시각으로 바꾸지 않음 | 실제 요청 시각으로 세션·초대·철회 재확인 |
+
+REVIEWER의 `SYN-` 식별자는 자유 문구를 검증한 증거가 아닙니다.
+학업 `caveats`와 전망 항목 `caveat`는 서버가 정한 합성 안내 문구로
+대체합니다. 실제 학칙·졸업 승인·개설 확정 문구를 그대로 전달하지 않습니다.
+합성 자료 모드·학칙/과목/근거 식별자·미래 시점의 기존 거부 조건은 유지합니다.
+
+회귀는 실제 `PostgresApiProjectionRepository → ScopedApiRepository → createApi`
+HTTP 경로에 합성 SQL transport/신뢰 원천을 연결하여 읽기·컨텍스트 생성,
+부분 공유·철회·권한 승격 동시성을 확인합니다. Calendar PostgreSQL adapter
+검사는 숨긴 잘못된 값·큰 문구를 가리면서 원본 행 해시 변화는 여전히
+기존 영수증을 무효화하는지 확인합니다. 실제 운영 DB·학생 자료·외부 provider
+또는 배포 인수 결과를 뜻하지 않으며 `RELEASE_BLOCKED`를 유지합니다.
+
 ## 2026-11-04 로컬 추가 구현 (원격 미병합)
 
 - **인증·메일:** `createOperatorGoogleIdentity` → 기존 OIDC/JWKS·PKCE, `createOperatorSchoolMailProof` → 승인된 계정/제한 DB·OTP, `createOperatorSmtpMailSender` → 운영자 승인 SMTP/TLS(465). 설정은 운영자만 소유하며 소스/브라우저·CI에 인증 정보를 넣지 않는다.

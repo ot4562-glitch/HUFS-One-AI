@@ -110,4 +110,25 @@ describe('server-owned per-grant recomputation before HTTP context creation',()=
     };
     expect(await h.repository.readAuthorizedSnapshot(request)).toBeNull();
   });
+
+  it.each(['base','approved'] as const)('does not evaluate hidden %s getters before masking',async target=>{
+    const h=fixture();
+    const hidden=()=>{
+      const value=DemoSnapshotSchema.parse({...snapshotRaw,asOf:now});
+      for(const key of ['academics','forecast'])
+        Object.defineProperty(value,key,{enumerable:true,get:()=>{throw Error('Hidden value was evaluated');}});
+      return value;
+    };
+    if(target==='base')h.base.readSnapshot=async()=>hidden();
+    else{
+      const read=h.source.readAuthorizedInputs;
+      h.source.readAuthorizedInputs=async input=>{
+        const bundle=await read(input);
+        return bundle?{...bundle,approvedSnapshot:hidden()}:null;
+      };
+    }
+    const result=await h.repository.readAuthorizedSnapshot(request);
+    expect(result?.academics).toEqual({state:'NOT_SHARED'});
+    expect(result?.forecast).toEqual({state:'NOT_SHARED'});
+  });
 });

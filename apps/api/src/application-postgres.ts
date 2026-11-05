@@ -10,6 +10,8 @@ import type {ReviewerSqlPool} from './modules/auth/reviewer-postgres.js';
 import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 
 export interface PostgresApplicationConfig {
+  /** Reviewed immediate ingress IPs, never caller input or a blanket proxy flag. */
+  trustedProxyAddresses?:readonly string[];
   auth:PostgresGoogleAuthConfig;
   /** Optional separately assembled approved sender/challenge service. The
    * REVIEWER enrollment stores must also be configured for this login stage. */
@@ -45,6 +47,8 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   const platform=createPostgresPlatformServices({...config.platform,now});
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
+    ...(config.trustedProxyAddresses!==undefined
+      ?{trustedProxyAddresses:config.trustedProxyAddresses}:{}),
     ...(config.schoolMailProof?{schoolMailProof:config.schoolMailProof}:{}),
     ...(config.reviewer&&platform.reviewerSandbox?{reviewer:{
       access:new PostgresReviewerAccessStore(config.reviewer.invitations,

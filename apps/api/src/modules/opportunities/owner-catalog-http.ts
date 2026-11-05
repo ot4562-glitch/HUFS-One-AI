@@ -10,6 +10,7 @@ import type {
   OpportunityCatalogPage,OpportunityCatalogDetail,
 } from '@hufs-one/contracts';
 import {ApiFailure} from '../auth/gates.js';
+import {ReceiptAdmissionError} from '../auth/owner-receipts.js';
 import {betaActor,betaRecheck} from '../profiles/self-account-http.js';
 import type {BetaRouteVerifier} from '../profiles/self-account-http.js';
 
@@ -77,7 +78,7 @@ export function registerOwnerCatalogRoutes(
     const actor=await betaActor(request,session);
     let value:ReadReceipt<T>|null;
     try{value=await fetch(actor.actorId,session.now());}
-    catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    catch(error){if(error instanceof ReceiptAdmissionError)throw error;throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!value)throw new ApiFailure('FORBIDDEN');
     if(!value.scopeToken||value.scopeToken.length>2048)
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
