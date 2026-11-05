@@ -49,6 +49,37 @@ describe('TASK-14 scope (A07.2-1)', () => {
     expect(noticeAppliesTo({...candidate, graduationTermVerified:true}, only20262).appliesTo).toBe('YES');
   });
 
+  it('quarantines malformed notice graduation terms instead of silently marking an academic notice NO', () => {
+    for (const term of ['2026-02','2026-2학기','2026-3']) {
+      const n=notice('BAD-TERM',{category:'ACADEMIC',graduationTermScope:[term],
+        requirementRefs:['REQ-GRAD-CERT']});
+      expect(validateNotice(n)).toBe('INVALID_TERM');
+      expect(composeNotices(student,[n],{asOf:ASOF}).excluded)
+        .toEqual([{noticeId:'BAD-TERM',reason:'INVALID_TERM'}]);
+    }
+  });
+
+  it('holds invalid student graduation terms as UNKNOWN, without false negatives', () => {
+    const n=notice('G',{graduationTermScope:['2026-2'],requirementRefs:['REQ-GRAD-CERT']});
+    for(const term of ['2026-02','2026-2학기','2026-3']){
+      const s={...student,targetGraduationTerm:term,graduationTermVerified:true};
+      expect(noticeAppliesTo(s,n)).toEqual({appliesTo:'UNKNOWN',unknownScope:['graduationTerm']});
+      expect(evaluateNotice(s,n,ASOF)).toMatchObject({priority:'ACADEMIC_REQUIRED',
+        appliesTo:'UNKNOWN'});
+    }
+  });
+
+  it('maps vNext contract major-role strings to legacy notice roles without guessing', () => {
+    const n=notice('M',{majors:['가상전공A'],majorRoles:['PRIMARY']});
+    expect(noticeAppliesTo({...student,majors:[{major:'가상전공A',role:'PRIMARY_MAJOR'}]},n).appliesTo).toBe('YES');
+    expect(noticeAppliesTo(student,{...n,majorRoles:['PRIMARY_MAJOR']}).appliesTo).toBe('YES');
+    expect(noticeAppliesTo({...student,majors:[{major:'가상전공A',role:'DOUBLE_MAJOR'}]},n).appliesTo).toBe('NO');
+    const badRole='PRIMARY_GUESSED' as never; // Simulates malformed runtime data.
+    expect(noticeAppliesTo({...student,majors:[{major:'가상전공A',role:badRole}]},n))
+      .toEqual({appliesTo:'UNKNOWN',unknownScope:['majors']});
+    expect(validateNotice({...n,majorRoles:[badRole]})).toBe('INVALID_MAJOR_ROLE');
+  });
+
   it('admission type: "외국인 학생만" does not apply to a regular student (review P-graduation exam)', () => {
     expect(noticeAppliesTo(student, notice('F', {admissionTypes:['FOREIGN']})).appliesTo).toBe('NO');
   });
