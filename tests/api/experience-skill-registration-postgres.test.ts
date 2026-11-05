@@ -34,7 +34,8 @@ function setup(allowed=true){
     if(text.includes('FROM api_self_consents'))return {rows:[state.consent]};
     if(text.includes('FROM api_self_workspace_records'))return {rows:[state.record]};
     if(text.includes('FROM source_ingest_heads'))return {rows:[state.evidence]};
-    if(text.startsWith('INSERT'))return {rows:[{projection_id:params?.[0]}]};
+    if(text.startsWith('INSERT'))return {rows:[{projection_id:
+      text.includes('INSERT INTO api_ai_provider_input_heads')?params?.[2]:params?.[0]}]};
     if(text==='COMMIT'||text==='ROLLBACK')commits.push(text);
     return {rows:[],rowCount:1};
   });
