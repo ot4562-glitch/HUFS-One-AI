@@ -542,6 +542,34 @@
           }
         ]
       }
+    },
+    {
+      "id": "experience-skill-candidate",
+      "source": "apps/api/src/modules/profiles/experience-skill-candidate-http.ts",
+      "registrar": "registerExperienceSkillCandidateRoute",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Authenticated BETA session only, mounted only when the server supplies experienceCandidates.",
+          "Operator-provisioned SETTLED provider evidence and current owner experience/consent source binding; missing or changed records are refused. Runtime verification remains NOT_RUN at inventory time."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          },
+          {
+            "path": "apps/api/src/modules/profiles/experience-skill-candidate-http.ts",
+            "symbol": "registerExperienceSkillCandidateRoute"
+          }
+        ]
+      }
     }
   ],
   "routes": [
@@ -1339,6 +1367,28 @@
       "consumerRefs": [
         "apps/web/src/integrations/api-client.ts"
       ]
+    },
+    {
+      "id": "get-api-experience-cards-id-ai-skills-jobid",
+      "surface": "experience-skill-candidate",
+      "method": "GET",
+      "path": "/api/experience/cards/:id/ai-skills/:jobId",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/experience-skill-candidate.ts",
+            "symbol": "ExperienceSkillCandidateResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/experience-skill-candidate-http.test.ts",
+        "tests/api/experience-skill-candidates-postgres.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "#257 backend candidate read; must be independently provisioned, no automatic student approval; UI consumer #258 remains separately owned."
     },
     {
       "id": "put-api-experience-cards-id-tag-approval",
