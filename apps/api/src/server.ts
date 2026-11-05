@@ -15,6 +15,7 @@ import type {FastifyRequest} from 'fastify';
 import type {ApiOptions, VerifiedActor} from './types.js';
 import {digestInviteToken} from './modules/auth/reviewer.js';
 import {createTrustedProxyPolicy} from './modules/auth/trusted-proxy.js';
+import {ReceiptAdmissionError} from './modules/auth/owner-receipts.js';
 import {ReviewerSandboxActionSchema} from './modules/auth/reviewer-sandbox.js';
 import type {ReviewerGrant} from './modules/auth/reviewer.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './modules/auth/gates.js';
@@ -326,6 +327,7 @@ export function createApi(options:ApiOptions) {
     const code=err instanceof GoogleAuthFlowError||err instanceof SchoolMailProofError
       ?'FORBIDDEN':
       err instanceof ApiFailure?err.code:
+      err instanceof ReceiptAdmissionError?'RATE_LIMITED':
       (err instanceof z.ZodError || (typeof err==='object'&&err!==null&&'statusCode' in err
         &&(err.statusCode===400||err.statusCode===413)))
         ?'INVALID_INPUT':'PROVIDER_UNAVAILABLE';
