@@ -11,6 +11,7 @@ import {liveServices} from './liveServices.js';
 import {resolveSessionRole, roleServices} from './roleServices.js';
 import {boardPort} from './features/applications/boardPort.js';
 import {appPages} from './pages/index.js';
+import {STATIC_PAGES_PREVIEW} from './shell/router.js';
 import './styles.css';
 
 // First synchronous step on load, before any network call or render: take the REVIEWER code out of
@@ -30,10 +31,11 @@ async function start() {
   let transportLabel: string | null = null;
   let services: AppServices = {...liveServices(api), reviewerInvite: {port: api, holder: inviteHolder}};
   let localAccountWorkbench:ComponentType|undefined;
-  // Synthetic transport only for `vite --mode synthetic` on a loopback host. The literal
-  // import.meta.env.DEV check lets the production build drop this branch and its chunk.
-  if (import.meta.env.DEV && import.meta.env.MODE === 'synthetic'
-    && (location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
+  // Normal production remains API-only. The explicitly opted-in Pages build uses
+  // synthetic in-memory fixtures and never creates a live API transport for its UI.
+  const localSynthetic = import.meta.env.DEV && import.meta.env.MODE === 'synthetic'
+    && (location.hostname === '127.0.0.1' || location.hostname === 'localhost');
+  if (localSynthetic || STATIC_PAGES_PREVIEW) {
     const dev = await import('./dev/syntheticDemoClient.js');
     const synthetic = new dev.SyntheticDemoClient({snapshotErrors: {S04: 'SHARING_REVOKED'}});
     const owner = await import('./dev/syntheticOwnerServer.js');
@@ -45,7 +47,8 @@ async function start() {
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
     services = {
-      ...services,
+      // Never expose live API, Google login or REVIEWER invite ports on static Pages.
+      ...(localSynthetic ? services : {}),
       loadCalendar: (ctx, signal) => synthetic.getCalendar(ctx.contextId, signal),
       // #80: the real HufsApiClient over an in-memory fictitious owner (dev only).
       applications: boardPort(new HufsApiClient(new owner.SyntheticOwnerServer().fetch)),
@@ -65,7 +68,8 @@ async function start() {
         save: (ctx, action, signal) => synthetic.saveAction(ctx.contextId, action, signal),
       },
     };
-    localAccountWorkbench = (await import('./features/local-accounts/LocalAccountWorkbench.js')).LocalAccountWorkbench;
+    // The local-account lab needs a local HTTP API; it is deliberately absent on Pages.
+    if (localSynthetic) localAccountWorkbench = (await import('./features/local-accounts/LocalAccountWorkbench.js')).LocalAccountWorkbench;
   } else {
     // REVIEWER: synthetic sandbox only. Confirmed BETA: the #85 overlay. Unknown/outage: neither.
     services = {...services, ...roleServices(api, await resolveSessionRole(api))};
