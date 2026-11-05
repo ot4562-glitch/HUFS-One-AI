@@ -57,13 +57,16 @@ export async function readExperiencePortfolio(input:ExperiencePortfolioPorts&{
   }
   if(!same(await currentConsent(),consent))throw new ApiFailure('VERSION_CONFLICT');
   const topics=new Map<string,Set<string>>();
-  for(const item of evidence){
-    if(item.approval.state!=='ACTIVE')continue;
+  for(const [index,item] of evidence.entries()){
+    // Display synthetic experience for demo, never count it as an owner
+    // evidence signal; the recommendation adapter has the same distinction.
+    if(item.approval.state!=='ACTIVE'||page.items[index]?.value.dataMode!=='OWNER_CONSENTED')continue;
     for(const topic of item.approval.topics){
       const ids=topics.get(topic)??new Set<string>();ids.add(item.experienceId);topics.set(topic,ids);
     }
   }
-  return ExperiencePortfolioSchema.parse({...page,portfolio:{asOf,consentVersion:consent.version,evidence,
+  return ExperiencePortfolioSchema.parse({...page,portfolio:{asOf,
+    consentVersion:consent.version,coverage:'PAGE',complete:page.nextCursor===null,evidence,
     topics:[...topics].sort(([a],[b])=>a<b?-1:a>b?1:0)
       .map(([topicCode,ids])=>({topicCode,experienceIds:[...ids].sort()})),
   }});
