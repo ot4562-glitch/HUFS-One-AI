@@ -1,4 +1,7 @@
-# 독립 평가·인적 검토 실행 패키지 (#61 / #132)
+# 독립 평가·인적 검토 실행 패키지 (#61 / #132 코드 납품, 인수 #221)
+
+> **2026-11-05 이슈 분리:** 기존 #61/#132의 평가 UI/서명·코어·코퍼스/합성 회귀는 PR #220의 코드 납품으로 CLOSED. **200 추천·20 PNG·12 temporal의 비작성자 사람 판정은 현재 0/200·0/32로 계속 OPEN인 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)에서 검수**, 실제 OCR/HCX/운영 성능은 [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) 및 #20에서 검증한다. 이 패키지에 테스트 서명을 입력해도 인적 수락은 증가하지 않는다. 실행 순서: [PRODUCT_ACTIVATION_RUNBOOK](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). RELEASE_BLOCKED.
+
 
 ## 현재 상태와 정본
 
