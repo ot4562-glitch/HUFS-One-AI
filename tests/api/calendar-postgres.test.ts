@@ -77,6 +77,27 @@ function academicBinding(db:ReturnType<typeof fakeDatabase>){
 }
 
 describe('PostgresCalendarInputSource: server-reviewed raw inputs and current grants/rights',()=>{
+  it.each([
+    ['PRIMARY','PRIMARY'],['DOUBLE','DOUBLE'],['MINOR','MINOR'],
+    ['PRIMARY_MAJOR','PRIMARY'],['DOUBLE_MAJOR','DOUBLE'],
+    ['PRIMARY','PRIMARY_MAJOR'],['DOUBLE','DOUBLE_MAJOR'],
+  ])('preserves approved %s student / %s notice roles through the shared PG input parser',async(studentRole,noticeRole)=>{
+    const db=fakeDatabase(),input=db.projection.input_json as Record<string,unknown>;
+    db.grant.allowed_sections=['FEED','NOTICES','ACADEMICS'];
+    input.provenance={noticeScope:{majors:'ACADEMICS'}};
+    input.noticeStudent={openRequirementIds:null,courseIds:[],interestTopics:[],
+      majors:[{major:'SYN-MAJOR',role:studentRole}]};
+    input.notices=[{id:'SYN-ROLE-NOTICE',sourceSnapshotId:'REV1',title:'Synthetic major notice',
+      issuer:'Synthetic department',category:'GENERAL',verificationState:'VERIFIED',
+      majors:['SYN-MAJOR'],majorRoles:[noticeRole],evidenceRefs:['SYN-EVIDENCE']}];
+    const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(bundle).not.toBeNull();
+    expect(bundle!.noticeStudent.majors).toEqual([{major:'SYN-MAJOR',role:studentRole}]);
+    expect(bundle!.notices[0]!.majorRoles).toEqual([noticeRole]);
+    expect(computeAuthorizedSections(bundle!,request).notices.items).toEqual([
+      expect.objectContaining({noticeId:'SYN-ROLE-NOTICE',appliesTo:'YES'}),
+    ]);
+  });
   it('binds a valid academic notice to the current approved pack without returning private approval material (#225)',async()=>{
     const db=fakeDatabase();academicBinding(db);
     const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);

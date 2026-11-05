@@ -21,9 +21,29 @@ describe('#133 composite requirements consume the unique earned ledger',()=>{
     expect(audit.requirements[0]).toMatchObject({state:'SATISFIED',earnedCreditUnits:12,matchedAreasCount:2});
     expect(audit.earnedCreditUnits).toBe(12);
   });
-  it('holds a multi-area allocation instead of turning one course into two areas',()=>{
+  it('does not let one multi-area earned course count for two areas',()=>{
     expect(run(area,[attempt('AB',['A','B'],'EARNED',12)]).requirements[0]).toMatchObject({
-      state:'NEEDS_REVIEW',earnedCreditUnits:0,matchedAreasCount:0});
+      state:'UNSATISFIED',earnedCreditUnits:12,matchedAreasCount:0});
+  });
+  it('does not let ambiguous uncompleted courses invalidate an earned spread',()=>{
+    for(const slot of ['PLANNED','IN_PROGRESS'] as const){
+      expect(run(area,[attempt('A1',['A']),attempt('B1',['B']),attempt('AB',['A','B'],slot)])
+        .requirements[0]).toMatchObject({state:'SATISFIED',earnedCreditUnits:12,
+          matchedAreasCount:2,projectedCreditUnits:18});
+    }
+  });
+  it('keeps definitive earned SAT after adding another multi-area course',()=>{
+    expect(run(area,[attempt('A1',['A']),attempt('B1',['B']),attempt('AB',['A','B'])])
+      .requirements[0]).toMatchObject({state:'SATISFIED',earnedCreditUnits:18,matchedAreasCount:2});
+  });
+  it('holds only when the earned allocation changes the result',()=>{
+    expect(run(area,[attempt('A1',['A']),attempt('AB',['A','B'])])
+      .requirements[0]?.state).toBe('NEEDS_REVIEW');
+    expect(run(area,[attempt('AB',['A','B']),attempt('AC',['A','C'])])
+      .requirements[0]?.state).toBe('NEEDS_REVIEW');
+    const fourAreas={...area,areaIds:['A','B','C','D']};
+    expect(run(fourAreas,[attempt('AB',['A','B']),attempt('CD',['C','D'])])
+      .requirements[0]?.state).toBe('SATISFIED');
   });
   it('does not count planned, in-progress, pending or zero-credit area membership as earned',()=>{
     for(const candidate of [attempt('B1',['B'],'IN_PROGRESS'),attempt('B1',['B'],'PLANNED'),
