@@ -1,5 +1,6 @@
 import {describe,expect,it,vi} from 'vitest';
 import {readExperiencePortfolio} from '../../apps/api/src/modules/profiles/experience-portfolio.js';
+import {ExperiencePortfolioSchema} from '@hufs-one/contracts';
 
 const now='2026-11-05T00:00:00.000Z';
 const consent={version:2,updatedAt:now,choices:{personalStorage:true,teamReview:true,externalAi:true,ncpStorage:true,presentation:true}};
@@ -21,11 +22,28 @@ describe('owner experience portfolio is explicit owner selection, never skill ce
     const h=fixture(),result=await readExperiencePortfolio(h.input as any);
     expect(result.items[0]?.itemId).toBe(record.itemId);
     expect(result.portfolio.consentVersion).toBe(2);
+    expect(result.portfolio).toMatchObject({coverage:'PAGE',complete:true});
     expect(result.portfolio.topics).toEqual([{topicCode:'DATA_ANALYTICS',experienceIds:['EXP-ONE']}]);
     expect(result.portfolio.evidence[0]?.approval.state).toBe('ACTIVE');
     expect(h.readConsents).toHaveBeenCalledWith('OWNER-A');
     expect(h.read).toHaveBeenCalledWith({actorId:'OWNER-A',kind:'EXPERIENCE',itemId:'EXP-ONE'});
     expect(h.readApproval).toHaveBeenCalledWith({actorId:'OWNER-A',experienceId:'EXP-ONE'});
+  });
+  it('explicitly flags partial-page coverage and rejects a forged complete claim',async()=>{
+    const h=fixture(),result=await readExperiencePortfolio({...h.input,
+      page:{items:[structuredClone(record)],nextCursor:'EXP-ONE'}} as any);
+    expect(result.portfolio).toMatchObject({coverage:'PAGE',complete:false});
+    expect(ExperiencePortfolioSchema.safeParse({...result,
+      portfolio:{...result.portfolio,complete:true}}).success).toBe(false);
+  });
+  it('shows synthetic evidence without converting it into a real owner recommendation topic',async()=>{
+    const h=fixture(),synthetic={...record,value:{...record.value,dataMode:'SYNTHETIC' as const}};
+    h.read.mockResolvedValue(synthetic as any);
+    const result=await readExperiencePortfolio({...h.input,
+      page:{items:[synthetic],nextCursor:null}} as any);
+    expect(result.portfolio.evidence[0]?.approval.state).toBe('ACTIVE');
+    expect(result.portfolio.topics).toEqual([]);
+    expect(result.items[0]?.value.dataMode).toBe('SYNTHETIC');
   });
   it('keeps an unapproved experience but does not fabricate topic or proficiency',async()=>{
     const h=fixture();h.readApproval.mockResolvedValue({state:'INACTIVE',version:0,reason:'NOT_APPROVED'} as any);
