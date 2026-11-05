@@ -1,4 +1,6 @@
 import type {ReviewerSqlPool} from './modules/auth/reviewer-postgres.js';
+import {PostgresAdminUsageReader} from './modules/admin/usage.js';
+import type {ApiOptions} from './types.js';
 import {PostgresApiProjectionRepository} from './repository-postgres.js';
 import type {PurposeConsentVerifier} from './repository-postgres.js';
 import {ScopedApiRepository} from './scoped-repository.js';
@@ -49,6 +51,8 @@ import type {TrustedOwnerMajorWhatIfRights,ApprovedMajorWhatIfGate} from './modu
 export interface PostgresPlatformConfig {
   pools:{projections:ReviewerSqlPool;calendar:ReviewerSqlPool;personal:ReviewerSqlPool;evidence:ReviewerSqlPool};
   evidenceRights:EvidenceRightsResolver;
+  /** Optional separately role-verified aggregate accounting port and live ADMIN policy. */
+  adminUsage?:{pool:ReviewerSqlPool;authority:NonNullable<ApiOptions['adminAuthority']>};
   displayConsent?:PurposeConsentVerifier;
   personalConsent?:PersonalDataConsentVerifier;
   syntheticAuthority?:SyntheticPersonalFixtureAuthority;
@@ -102,6 +106,8 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
   if(config.sourceIngestionOperator&&!config.sourceIngestion)throw new Error('Source control requires an explicit queue');
   if(config.studyPlanCheck&&config.ownerStudyPlan)throw new Error('Ambiguous owner study-plan services');
   if(config.demoProfileQuota&&!config.demoProfile)throw new Error('Demo profile quota requires an explicit profile store');
+  if(config.adminUsage&&typeof config.adminUsage.authority?.isApproved!=='function')
+    throw new Error('Admin usage requires independent operator approval');
   const now=config.now??(()=>new Date().toISOString());
   const source=config.sourceIngestion,operator=config.sourceIngestionOperator;
   const sourceIngestion=source?new PostgresSourceIngestionQueue(source.pool,operator?{
@@ -124,6 +130,8 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       :config.reviewerCalendar?.revalidateAuthorization(input,receipt,at)??Promise.resolve(false),
   };
   return {
+    ...(config.adminUsage?{adminUsage:new PostgresAdminUsageReader(config.adminUsage.pool),
+      adminAuthority:config.adminUsage.authority}:{}),
     ...(config.ownerStudyPlan?{studyPlanCheck:createPostgresOwnerStudyPlanServices({...config.ownerStudyPlan,now})}:{}),
     ...(config.ownerRecommendations?createPostgresOwnerRecommendations({...config.ownerRecommendations,now}):{}),
     ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),

@@ -114,8 +114,8 @@ describe('real-role PostgreSQL API operator composition',()=>{
   it('rejects all prebuilt platform SQL pools before startup and refuses a forged prepared port',async()=>{
     const ports=['sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace',
       'experienceApproval','demoOverlay','sourceReview','ownerCatalog','ownerRecommendations',
-      'studyPlanCheck','ownerStudyPlan','doubleMajor','revisionComparison','demoProfile',
-      'demoProfileQuota','reviewerSandbox','pools'];
+      'studyPlanCheck','ownerStudyPlan','doubleMajor','majorWhatIf','revisionComparison','demoProfile',
+      'demoProfileQuota','adminUsage','reviewerSandbox','pools'];
     for(const field of ports){
       const config=makeConfig() as any;
       config.platform={[field]:{pool:{connect:vi.fn(),close:vi.fn()}}};
@@ -127,6 +127,17 @@ describe('real-role PostgreSQL API operator composition',()=>{
     await expect(startOperatorPostgres({prepared:f.prepared,host:'127.0.0.1',port:0}))
       .rejects.toThrow(/verified role settings/);
     expect(f.connected).toEqual([]);
+    const major=fakePrepared();
+    (major.prepared.application.platform as any).majorWhatIf={loader:{load:vi.fn()},rights:{},approvalGate:{}};
+    await expect(startOperatorPostgres({prepared:major.prepared,host:'127.0.0.1',port:0}))
+      .rejects.toThrow(/verified role settings/);
+    expect(major.connected).toEqual([]);
+    const usage=fakePrepared();
+    (usage.prepared.application.platform as any).adminUsage={pool:{connect:vi.fn()},
+      authority:{isApproved:async()=>true}};
+    await expect(startOperatorPostgres({prepared:usage.prepared,host:'127.0.0.1',port:0}))
+      .rejects.toThrow(/verified role settings/);
+    expect(usage.connected).toEqual([]);
   });
   it('wires demo quota only through distinct verified SQL roles',async()=>{
     const config=makeConfig() as any;
@@ -146,6 +157,24 @@ describe('real-role PostgreSQL API operator composition',()=>{
     expect(()=>prepareOperatorPostgres(config)).toThrow(/independent digest key/);
   });
 
+  it('wires an opt-in ADMIN usage reader only with a dedicated role and independent policy',async()=>{
+    const config=makeConfig() as any;
+    const settings={connectionString:'postgresql://hufs_usage:synthetic@private-db.example.test/hufs_usage',
+      expectedRole:'hufs_usage',environment:'production' as const,
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\nSYNTHETIC-CA\n-----END CERTIFICATE-----'};
+    const authority={isApproved:vi.fn(async()=>true)};
+    config.adminUsage={settings,authority};
+    const prepared=prepareOperatorPostgres(config);
+    expect(Object.keys(prepared.extraPools??{})).toEqual(['adminUsage']);
+    expect(prepared.application.platform.adminUsage?.pool).toBe(prepared.extraPools?.adminUsage);
+    expect(prepared.application.platform.adminUsage?.authority).toBe(authority);
+    await Promise.all([...Object.values(prepared.pools),...Object.values(prepared.extraPools??{} )].map(p=>p.close()));
+    config.adminUsage.settings=config.roles.calendar;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/Seven independently restricted/);
+    config.adminUsage.settings=settings;
+    config.adminUsage.authority={};
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator policy/);
+  });
   it('starts only loopback AFTER all seven checks and closes app/pools',async()=>{
     const fixture=fakePrepared();
     vi.stubEnv('NODE_ENV','test');
