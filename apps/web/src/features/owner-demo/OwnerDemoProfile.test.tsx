@@ -57,7 +57,7 @@ describe('#132 independent EMPTY_DEMO BETA browser UI', () => {
     }), expect.any(AbortSignal));
     fireEvent.click(screen.getByRole('button', {name: '설정·보관함 전체 초기화'}));
     expect(f.port.reset).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(screen.getByRole('button',{name:'취소',exact:true}));
+    expect(document.activeElement).toBe(screen.getByRole('button',{name:'취소'}));
     fireEvent.keyDown(screen.getByRole('group',{name:'프로필 초기화 확인'}),{key:'Escape'});
     expect(f.port.reset).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(screen.getByRole('button',{name:'설정·보관함 전체 초기화'}));
