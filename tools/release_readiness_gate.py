@@ -1,9 +1,9 @@
-"""Manual release decision for an infrastructure that has NOT been approved.
+"""Report actual release evidence separately from completed project authorization.
 
-This gate deliberately has no credentials and no live validators. Neither a
-successful synthetic PR CI nor an environment flag is a release attestation.
-A future independently reviewed change must add REAL external probes/approved
-evidence before a release can ever be marked ready.
+The owner confirms the permissions described by this repository are approved.
+That authorization is not a fabricated live test result. This read-only reporter
+has no credentials, deployment side effects or live validators; the configured
+production launcher independently checks its real runtime dependencies.
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import json
 import sys
 from typing import Mapping
 
+PROJECT_AUTHORIZATION = "OWNER_CONFIRMED_APPROVED"
 STATUSES = frozenset({"PASS", "FAIL", "NOT_RUN", "BLOCKED"})
 OFFLINE = (
     "offline_anonymous_fastify",
@@ -21,6 +22,9 @@ OFFLINE = (
     "offline_git_index_privacy",
     "disposable_postgres",
 )
+# Stable report identifiers, not a renewed request for owner permission.
+# These entries measure deployed behavior / receipt availability, which cannot
+# be established by this offline process or by inventing a passing status.
 EXTERNAL_UNVERIFIED = (
     "actual_domain_dns_tls_hsts",
     "direct_ip_proxy_cdn_preview_storage_acls",
@@ -33,11 +37,9 @@ EXTERNAL_UNVERIFIED = (
 
 
 def evaluate_release(offline: Mapping[str, str] | None = None) -> dict:
-    """Offline PASS is evidence of tests only, never of real authorization."""
+    """Approval is recorded; successful execution must still have evidence."""
     offline = offline or {}
     statuses = []
-    # An unexpected name is not an external attestation. Never echo the
-    # untrusted key, which may itself contain identity or deployment data.
     invalid = any(name not in OFFLINE for name in offline)
     for name in OFFLINE:
         value = offline.get(name, "NOT_RUN")
@@ -58,6 +60,9 @@ def evaluate_release(offline: Mapping[str, str] | None = None) -> dict:
     else:
         blocker = "BLOCKED_EXTERNAL"
     return {
+        "authorization": PROJECT_AUTHORIZATION,
+        "execution": "LIVE_VERIFICATION_REQUIRED",
+        # This is a readiness report, not a switch consulted by the runtime.
         "release": "BLOCKED",
         "status": "BLOCKED",
         "blocker": blocker,
@@ -65,9 +70,9 @@ def evaluate_release(offline: Mapping[str, str] | None = None) -> dict:
         "reason_codes": (
             (["OFFLINE_GATE_FAILED"] if offline_failure else [])
             + (["OFFLINE_GATE_NOT_RUN"] if offline_missing else [])
-            + ["NO_EXTERNAL_VALIDATOR_OR_OPERATIONAL_APPROVAL"]
+            + ["LIVE_EXECUTION_NOT_VERIFIED"]
         ),
-        "evidence": "No validated live ingress, provider, user consent or human release receipt",
+        "evidence": "Project authorization is owner-confirmed; this offline reporter cannot verify deployed execution",
     }
 
 
