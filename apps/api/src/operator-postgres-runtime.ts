@@ -59,7 +59,7 @@ const LOOPBACK=new Set(['127.0.0.1','::1']);
 const UNVERIFIED_PLATFORM_PORTS=[
   'sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace','experienceApproval',
   'demoOverlay','sourceReview','ownerCatalog','ownerRecommendations','studyPlanCheck',
-  'ownerStudyPlan','doubleMajor','revisionComparison',
+  'ownerStudyPlan','doubleMajor','majorWhatIf','revisionComparison',
 ] as const;
 const hasUnverifiedPlatformPort=(platform:PostgresPlatformConfig|undefined):boolean=>
   !!platform&&UNVERIFIED_PLATFORM_PORTS.some(field=>Object.prototype.hasOwnProperty.call(platform,field));
