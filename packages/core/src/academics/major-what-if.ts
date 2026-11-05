@@ -15,6 +15,8 @@ import {assertId, type LedgerRequirement} from './ledger.js';
  *   is the same on both sides and every course still counts once.
  * - A primary major can have a different pack per degree path (double major, 전공심화, 전공심화 +
  *   minor), so dropping or adding a second program can switch the primary pack too.
+ * - A second program's pack can be approved for one primary major (primaryProgramId). Changing the
+ *   primary major then switches the second program's pack too, instead of reusing the old one.
  * - Only earned credit counts. A row the core cannot decide is reported as MISSING with the
  *   conservative figures and listed in reviewRequirementIds, so a caller never shows it as a settled
  *   shortfall: a shared course without an approved overlap rule, a non-credit check, or an unmet row
@@ -53,7 +55,16 @@ export interface ProgramEnrollment {
 /** One approved (or not yet approved) pack in the caller's catalog for this student's cohort. */
 export type ProgramOffer =
   | {role:'PRIMARY_MAJOR'; programId:string; degreePath:DegreePath|LegacyDegreePath; pack:MajorRulePack}
-  | {role:SecondaryRole; programId:string; pack:MajorRulePack & {overlapRule?:OverlapRule}};
+  | {
+    role:SecondaryRole; programId:string;
+    /**
+     * The primary major this pack was approved for. Omit it only when one pack serves this second
+     * program under every primary major. A second program has either one pack without it, or at
+     * most one pack per primary major with it; the catalog refuses a mix.
+     */
+    primaryProgramId?:string;
+    pack:MajorRulePack & {overlapRule?:OverlapRule};
+  };
 
 export interface MajorWhatIfRequest {
   asOf:string;
@@ -145,8 +156,10 @@ function resolve(enrollment:ProgramEnrollment, programs:readonly ProgramOffer[])
   const primaries = programs.filter((offer):offer is Extract<ProgramOffer, {role:'PRIMARY_MAJOR'}> =>
     offer.role === 'PRIMARY_MAJOR' && offer.programId === enrollment.primaryProgramId && canonicalDegreePath(offer.degreePath,offer.programId) === path);
   const second = enrollment.secondary;
+  // A pack approved for another primary major never stands in for this one.
   const secondaries = second ? programs.filter((offer):offer is Extract<ProgramOffer, {role:SecondaryRole}> =>
-    offer.role === second.role && offer.programId === second.programId) : [];
+    offer.role === second.role && offer.programId === second.programId
+    && (offer.primaryProgramId === undefined || offer.primaryProgramId === enrollment.primaryProgramId)) : [];
   const resolved:Resolved = {unavailable:primaries.length === 0 || (second !== undefined && secondaries.length === 0)};
   if (primaries[0]) resolved.primary = primaries[0];
   if (secondaries[0]) resolved.secondary = secondaries[0];
@@ -161,14 +174,33 @@ function checkCatalog(programs:readonly ProgramOffer[]):void {
   if (!Array.isArray(programs)) throw new TypeError('programs must be an array');
   const keys = new Set<string>();
   const versions = new Set<string>();
+  const scoping = new Map<string, boolean>();
   for (const offer of programs) {
     if (offer.role !== 'PRIMARY_MAJOR' && offer.role !== 'DOUBLE_MAJOR' && offer.role !== 'MINOR') {
       throw new TypeError('program role must be PRIMARY_MAJOR, DOUBLE_MAJOR or MINOR');
     }
     assertId(offer.programId, 'programId');
-    const degreePath=offer.role==='PRIMARY_MAJOR'?canonicalDegreePath(offer.degreePath,offer.programId):null;
-    // Canonical and legacy spellings of the same offer must not create two candidates.
-    const key = JSON.stringify([offer.role, offer.programId, degreePath]);
+    let scope:string|null;
+    if (offer.role === 'PRIMARY_MAJOR') {
+      if ((offer as {primaryProgramId?:unknown}).primaryProgramId !== undefined) {
+        throw new TypeError(`primary pack ${offer.programId} cannot name a primaryProgramId`);
+      }
+      // Canonical and legacy spellings of the same offer must not create two candidates.
+      scope = canonicalDegreePath(offer.degreePath, offer.programId);
+    } else {
+      scope = offer.primaryProgramId ?? null;
+      if (scope !== null) {
+        assertId(scope, `${offer.programId} primaryProgramId`);
+        if (scope === offer.programId) throw new TypeError(`${offer.role} ${offer.programId} cannot be scoped to itself`);
+      }
+      const program = JSON.stringify([offer.role, offer.programId]);
+      const scoped = scoping.get(program);
+      if (scoped !== undefined && scoped !== (scope !== null)) {
+        throw new TypeError(`${offer.role} ${offer.programId} mixes a program-wide pack with packs for one primary major`);
+      }
+      scoping.set(program, scope !== null);
+    }
+    const key = JSON.stringify([offer.role, offer.programId, scope]);
     if (keys.has(key)) throw new TypeError(`the catalog lists ${offer.role} ${offer.programId} more than once`);
     keys.add(key);
     assertId(offer.pack.rulePackVersion, `${offer.programId} rulePackVersion`);

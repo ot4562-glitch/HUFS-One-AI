@@ -37,7 +37,7 @@ function binding(programId:string,role:'PRIMARY_MAJOR'|'DOUBLE_MAJOR'|'MINOR',pa
   ];
   const clauseInventory=requirements.map(r=>({clauseId:r.id+'-CLAUSE',kind:'RULE' as const,sourceSpanRef:r.id+'-SPAN',
     coverage:{state:'LINKED' as const,requirementIds:[r.id]}}));
-  const pack:AcademicRulePackVNext={version:programId+'-'+path+'-V1',sourceDocumentVersion:programId+'-DOC-1',
+  const pack:AcademicRulePackVNext={version:programId+'-'+path+(primaryRole?'':'-'+primary)+'-V1',sourceDocumentVersion:programId+'-DOC-1',
     sourceDocumentUrl:ORIGIN+'/rules/'+programId,sourceDocumentSha256:'a'.repeat(64),
     sourcePublishedAt:APPROVED,effectiveFrom:APPROVED,
     scope:{campus:'SEOUL',primaryMajor:primary,...(!primaryRole?{secondaryMajor:programId}:{}),
@@ -329,9 +329,32 @@ describe('#231 approved owner RulePack to What-if core adapter',()=>{
       expect((await setup(value).post()).statusCode).toBe(503);
     }
   });
-  it('does not collapse conflicting secondary scope bindings during a primary change',async()=>{
+  it.each([
+    ['DOUBLE_MAJOR',double],['MINOR',minor],
+  ] as const)('selects the independently approved %s secondary pack when the primary major changes',async(_role,current)=>{
+    const hypothetical={primaryProgramId:'SYN-Q',secondary:current.secondary};
+    const value=snapshot(current,hypothetical,{action:'CHANGE_PRIMARY_MAJOR',targetMajorId:'SYN-Q'});
+    const response=await setup(value).post();
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({state:'READY',hypothetical:{
+      rulePackVersion:'SYN-BUNDLE-H',
+      requirements:expect.arrayContaining([{requirementId:current.secondary.programId+'-REQ',state:'SATISFIED'}]),
+    }});
+  });
+  it('rejects reuse of a secondary pack approved for the old primary major',async()=>{
     const value=snapshot(double,{primaryProgramId:'SYN-Q',secondary:double.secondary},
       {action:'CHANGE_PRIMARY_MAJOR',targetMajorId:'SYN-Q'});
+    value.input.hypothetical.secondary=value.input.current.secondary;
+    value.input.hypothetical.constituentVersions[1]=value.input.current.secondary!.pack.version;
     expect((await setup(value).post()).statusCode).toBe(503);
   });
+  it.each(['current','hypothetical'] as const)(
+    'refuses a %s primary pack with no attested degree path rather than inferring applicability',async(side)=>{
+      const value=snapshot(double,single,{action:'REMOVE_DOUBLE_MAJOR'});
+      delete value.input[side].primary.pack.scope.degreePath;
+      const response=await setup(value).post();
+      expect(response.statusCode).toBe(503);
+      expect(response.json().code).toBe('PROVIDER_UNAVAILABLE');
+    },
+  );
 });
