@@ -1,33 +1,23 @@
-# 추천 코어 (TASK-06) — 호출 전 계약
+# HUFS One AI — 추천/적격 순수 코어
 
-`evaluateOpportunity` / `rankOpportunities` / `composeFeed`는 **순수 함수**입니다. 입력이 허가·검수된 자료인지 스스로 확인할 수 없으므로, 아래 사전조건은 **호출하는 API 서비스가 보장**해야 합니다(일반 웹·REST API 담당 심민성, [#19](https://github.com/ot4562-glitch/HUFS-One-AI/issues/19)·[#27](https://github.com/ot4562-glitch/HUFS-One-AI/issues/27)).
+`evaluateOpportunity`, `rankOpportunities`, `composeFeed`는 **순수 계산**이다. 호출 서비스(Fastify/SQL)가 현재 actor·SharingGrant/Consent, `SourceRights`(collect/store/display), 승인된 SourceRevision·검수 시각/asOf, paragraph/image 근거·active status/원본 무효화를 먼저 검증해야 한다.
 
-## API가 호출 전에 보장할 것 (코어가 검사하지 못함)
+## 호출 전 API 필수 조건
 
-| 사전조건 | 이유 |
-|---|---|
-| `Opportunity`는 **active·검수 완료**(삭제/금지/REJECTED/비활성 제외) | 코어 계약 타입에 활성/금지 상태 필드가 없음 |
-| `sourceSnapshotId`가 가리키는 `SourceSnapshot`은 `permissionRef`가 유효하고 금지 출처가 아님 | 허가 여부는 DB·출처 원장에서만 판단 가능 |
-| `SourceSnapshot.fetchedAt ≤ asOf`인 판만 사용 (시점 조회 시 그 시점의 snapshot 버전) | 코어는 받은 snapshot이 asOf 시점의 판인지 모름 |
-| `publishedAtBySnapshotId`는 정본 `SourceSnapshot.publishedAt`에서만 생성 | `Opportunity`에 게시시각 중복 필드를 두지 않음(통합 담당 결정) |
-| `RecommendationProfile`은 **인증된 actor가 공유 승인한 projection**에서만 생성, 다른 학생 값 혼입 금지 | 코어는 학생 식별자를 받지 않음 |
-| `facts`는 확인된 값만 넣고, 모르면 키를 생략 | 생략 = UNKNOWN, 추측값은 잘못된 적격 판정을 만듦 |
+| 입력 | 책임 |
+| --- | --- |
+| 현재 활성·검토 완료 opportunity/source revision | 금지/취소/정정·미검수/비활성·미래판본 제외 |
+| 허용된 student projection/TopicCode·학사·경험 | 현재 actor+grant/consent·subject/asOf에 바인딩, 다른 학생 원본/내부 metadata 차단 |
+| 확정 마감/verified claim과 원문 paragraph SHA | 출처가 보증한 시점/적용 scope/claimCheckedAt. 후보/이미지 bbox·분쟁 상태는 코드가 검증 후 보수적 `UNKNOWN` |
+| 순수 계산 캐시와 상태 | source/claim/retrieval·profile/grant/version/asOf·rank 정책 변경시 재계산/철회 |
 
-## 코어가 스스로 하는 방어
+## 코어 자체의 안전 규칙
 
-- `publishedAt > asOf` → `excludedFuture`로 격리, featured/compact/all에 노출하지 않음.
-- 게시시각 미상 → `publication: 'UNKNOWN'`, 신선도 F=0, 노출은 유지.
-- 24개 enum 밖의 TopicCode는 무시, `asOf`가 잘못되면 `RangeError`.
-- `CONFLICT`·`PARTIAL`·`STALE` 자료는 ELIGIBLE을 주지 않음, `CLOSED`·`INELIGIBLE`은 별도 목록.
+- `publishedAt > asOf`는 미래 노출을 격리. 출처/게시 시각 미확인은 `UNKNOWN`으로 보류하며 새 확정 자격/마감을 만들어 내지 않는다.
+- `ELIGIBLE`, `INELIGIBLE`, `UNKNOWN`과 `OPEN/UPCOMING/CLOSED/STALE/CONFLICT`는 다른 차원. 원문 비검수/철회/시간 충돌·권리 미확인 상태를 ELIGIBLE로 올리지 않는다.
+- TopicCode24 enum/alias 검증, 검색·추천 근거/score/eligibility를 구별. 점수는 **취업 확률/합격률이나 지원 자격의 확정 비율이 아님**.
+- source head/rights 검수시각/asOf·claim exact text/image bbox가 맞는 현재 증거만 입증된 정보로 사용한다. Laya/HCX confidence 자체가 검수·자격이 아니다.
 
-`FeedCard.score`는 디버그용 분해 총점입니다. 취업 확률이나 적격성 %로 표시하지 않습니다.
+**품질 목표:** 고정 40공고×5 합성 슬롯 200개 케이스의 실제 비작성자 Gold(현재 0/200), 근거/조건 precision/recall·P@3/nDCG/false eligibility 평가. 개발 코드·CI는 실출처 이용권·독립 사람 판정과 구분.
 
-## 신뢰형 출처 게이트 (#10 vNext, contracts #18/PR #33 구조 호환)
-
-API는 아래 순서로 코어를 부릅니다. 코어 입력 타입(`RevisionRecord`, `ClaimRecord`)은 vNext `SourceRevisionVNext`/`VerifiedClaimVNext`의 **구조적 부분집합**이라 PR #33 병합 후 그대로 넘길 수 있습니다.
-
-1. `selectCurrentRevisions(revisions, asOf)` — 출처별로 asOf에 알 수 있었던 최신 revision만 고르고, `ACTIVE`·검증됨(`lastVerifiedAt ≤ asOf`)·취소 아님·유효기간 안일 때만 사용. 미래 수집/게시, 대체됨(SUPERSEDED), 분기(FORKED_CHAIN), RETRACTED/STALE/BLOCKED_RIGHTS, RESEARCH_ONLY는 `quarantined`.
-2. `gateBySourceRevision(items, selection)` — `Opportunity`/`Notice`의 `sourceSnapshotId`가 사용 가능한 revisionId일 때만 통과. 모르는 revision은 `UNKNOWN_REVISION`으로 격리(현재판으로 가정하지 않음).
-3. `resolveDeadlineClaims(claims, {currentRevisionId, asOf, paragraphs})` — 마감은 **asOf 이전(`claimCheckedAt ≤ asOf`)에 검증자(`reviewerId`)가 VERIFIED로 확정한 현재 revision의 claim + 맞는 dateKind**(APPLY/STUDENT/ADMIN) + **현재 revision 문단과 정확히 일치하는 TEXT 근거**만. 늦게 끝난 검증은 과거 조회에 쓰지 않음(`CHECKED_AFTER_ASOF`). EVENT 날짜·후보·이전판·모호한 문구·IMAGE 근거(API가 contracts `matchesImageSpan`으로 검증해야 함)는 사유와 함께 `ignored`. 서로 다른 VERIFIED 값은 `conflicts`로 비워 둠. 검증자 권한 자체는 API가 확인. Laya/HCX confidence는 입력이 아님.
-4. `checkTopicCandidates(candidates, allowed, paragraphs)` — AI 주제 후보는 24 enum·패킷 허용목록·원문 문단의 실제 인용일 때만 CANDIDATE로 통과(자동 확정·자격 부여 없음).
-5. `composeFeed` / `composeNotices`, 결과는 `resultCacheKey(...)`로 저장 — source revision·claim·retrieval config·projection·asOf 등 하나라도 바뀌면 키가 달라져 이전 결과를 재사용하지 않음. 학생별 projection이 키에 들어가 타 학생 캐시와 섞이지 않음.
+[계약](../../../../Architecture.md) · [RAG](../../../../docs/TRUSTED_RAG_MEDIA_VERSIONING.md) · [인수 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).

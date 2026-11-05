@@ -1,5 +1,3 @@
-# 졸업·학점·계획
+# 졸업·학점·학사 계획
 
-- 주 소유자: GPT 학업 트랙. Architecture.md A08와 docs/WORKSTREAMS.md 참조.
-- 실제 학번별 규칙, 세 원장, 중복·재수강·UNKNOWN 유지. 하드코딩 금지.
-- 다른 담당 경로는 읽기/리뷰만 가능하며 사전 합의 없는 동시 편집은 금지. 이번 PR은 구현코드를 작성하지 않는다.
+**박준영 학업 코어 소유**, 심민성 API/SQL·이의상 UI와 교차 검토. 취득·수강 중·계획 별도 정수 CreditUnits, 재수강/동등인정·AREA_SPREAD/GROUP_CHOICE·cohort/전공/문서별 RulePack/What-if 버전 유지. 공식 규정/실 4명 원본·선수/중복·언어 등 검증 불명은 UNKNOWN/NEEDS_REVIEW, 공식 졸업 확정 불가. 순수 계산·반례·버전 회귀는 합성, 공식 원본/독립 손계산은 #252 B03.

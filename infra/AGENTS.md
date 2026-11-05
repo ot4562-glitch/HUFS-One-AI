@@ -1,8 +1,9 @@
-# NCP 인프라 운영 · 배포 코드 경계
+# NCP IaC·OS 배포·worker 소유권과 차단
 
-**2026-11-03 사용자 최신 지시** · [루트 AGENTS](../AGENTS.md), [WORKSTREAMS](../docs/WORKSTREAMS.md), [NCP 운영](../docs/NCP_OPERATIONS_2026.md), [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)/[#22](https://github.com/ot4562-glitch/HUFS-One-AI/issues/22)/[#143](https://github.com/ot4562-glitch/HUFS-One-AI/issues/143) 우선.
+**심민성 `ot4562-glitch`:** NCP/CLOVA의 모든 소프트웨어·SDK/HTTP·OCR/HCX·ONNX·systemd/cgroup/Docker·Terraform/IaC/PowerShell/쉘·CPU/비용·rollback 스크립트/CI 개발. **이서연 `lhh42001`:** 계정/IAM/리전/SKU/크레딧·실서버/서비스 이용권·요금/CPU/RSS/백업·중단/반납 **비코드 운영** 전담.
 
-- **이서연 `lhh42001` = NCP 비코드 운영 담당:** 사용권·크레딧/SKU·VPC·콘솔·ACG/TLS·IAM/secret 권한·실호스트 CPU/RSS·비용·백업/종료 증빙. 이 디렉터리의 코드를 작성하지 않는다.
-- **심민성 `ot4562-glitch` = 이 디렉터리의 모든 코드·설정 파일·배포 자동화 소유:** Docker/IaC/YAML/systemd/cgroup/shell/CLI·비밀 노출 차단·NCP SDK/client·worker/비용/CPU 코드·CI 검증. 공통 API/계약 소비자 리뷰 후 진행한다. 이서연의 운영 환경 정보·사용 승인 없이 리소스를 실제 생성/변경하지 않는다.
-- Cloud 사용 전 **사용자 별도 승인**·실제 본선/크레딧/요금/권리 확인 필수. 비승인 모델 다운로드·NCP 서버/키 생성/유료 호출·학생 원본/학교 저작물 외부 전송은 금지. `LAYA_ENABLED=false`가 기본이며 4vCPU·32GB/가격은 운영 설계 가정이다.
-- `main` 직접 코드 변경/force push·타인 dirty worktree reset 금지. 비작성자 최신 HEAD 리뷰와 필수 CI 후 병합. [#46 개인정보 감사](https://github.com/ot4562-glitch/HUFS-One-AI/issues/46)·[#89 출시 게이트](https://github.com/ot4562-glitch/HUFS-One-AI/issues/89)는 `RELEASE_BLOCKED`.
+현재 IaC는 오프라인 모의 검증/SSH 127.0.0.1 합성 미리보기까지. 실 VM/TLS/DB/학교 Google·유료 AI/원본 데이터는 미가동·`RELEASE_BLOCKED`. 사용자 별도 서면 비용·공개/자료 권리 승인 없이 `terraform apply`, 실제 배포/비밀 업로드/모델 다운로드 금지.
+
+키·host 지문/공인 IP·DNS/TLS/ACG/NACL/직접 원본/IPv6·proxy XFF·복원 실패·systemd/OOM/비용 hard stop/rollback은 실제 운영에서 별도 검증. Code PR 비작성자 최신 HEAD 승인·CI와 실운영 #252 인수는 별개. 타인 worktree/branch 강제 reset/삭제 금지.
+
+[NCP 운영](../docs/NCP_OPERATIONS_2026.md) · [개발 #253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [인수 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).

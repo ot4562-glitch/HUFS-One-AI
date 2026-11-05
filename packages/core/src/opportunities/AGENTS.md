@@ -1,5 +1,3 @@
-# 추천·자격
+# 기회 추천·적격·시점 코어
 
-- 주 소유자: GPT 추천 트랙. Architecture.md A04~05,A15와 docs/WORKSTREAMS.md 참조.
-- 지원자격과 관련성 구분. FEATURED_LARGE/COMPACT_LIST 결정론 계산.
-- 다른 담당 경로는 읽기/리뷰만 가능하며 사전 합의 없는 동시 편집은 금지. 이번 PR은 구현코드를 작성하지 않는다.
+**김채윤 추천 코어 소유**. 결정론 `evaluateOpportunity`, `rankOpportunities`, `composeFeed`와 featured/compact, 출처 revision/기한·ELIGIBLE/INELIGIBLE/UNKNOWN/숨은 조건/제외 사유를 구별. 실제 개인 원본/권한/출처·검토 시점은 API가 보장해야 하며 모델 후보/관련도 점수를 실제 합격·지원 가능성으로 표시 금지. 독립 Gold 200은 #252.

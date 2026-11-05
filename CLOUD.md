@@ -19,7 +19,7 @@ Nginx 앞에 NCP LB/Edge가 있는 경우 **명시적으로 신뢰한 프록시 
 
 - NCP 계정·SKU·KRW/h/VAT·크레딧·저장/트래픽·서비스 quota·중지 상한/책임자는 운영자가 현재 콘솔과 견적으로 확인.
 - 비공개 preview는 루프백 127.0.0.1 + SSH 터널의 합성 자료 전용. 공개/운영 모드 기동 가드를 강제로 우회하지 않음.
-- 운영 PostgreSQL은 CA TLS·최소 역할/FORCE RLS·허가된 migration/role/EXCECUTE GRANT·백업/복원·재시작 철회·다중 인스턴스 부정시험 필요.
+- 운영 PostgreSQL은 CA TLS·최소 역할/FORCE RLS·허가된 migration/role/EXECUTE GRANT·백업/복원·재시작 철회·다중 인스턴스 부정시험 필요.
 - OCR/HCX/선택 Laya는 출처/개인정보 외부전송 권리·비용 승인, token/usage/429/503·`UNKNOWN_BILLING` 재정산·CPU/RSS/OOM/p95·kill switch 검증 전 OFF.
 
 **구현 잔여:** [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · **현장 수락/지출:** [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), [#12](https://github.com/minseong-hufs/HUFS-One-AI/issues/12) · **안전한 계획·복구:** [NCP 가이드](infra/ncp/README.md).

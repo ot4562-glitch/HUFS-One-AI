@@ -155,7 +155,7 @@ Claude/GPT 기반 바이브코딩은 초안 코드·문서·테스트/재현을 
 | TASK-07 DB·인증 | A02·A03·A13·A14 / 심민성 | OIDC/학교메일·RLS/SQL roles·초대·CSRF·부정시험 |
 | TASK-08 CLOVA | A06·A15 / 심민성 | 4 task·safe packet·OCR/HCX·quota/중복 정산·fallback |
 | TASK-09 통합 여정 | A02·A05·A10·A11 / 전 트랙 | 동일 actor/grant/asOf·UI→API→PG·권한/시점/캐시 |
-| TASK-10 복구/오프라인 | A11·A14 / 심민성·이의상 | OFFLINE_READONLY·STAlE·권한 복귀·late 응답 안전 |
+| TASK-10 복구/오프라인 | A11·A14 / 심민성·이의상 | OFFLINE_READONLY·STALE·권한 복귀·late 응답 안전 |
 | TASK-11 NCP | A14 / 심민성 코드·이서연 운영 | IaC/SSH preview와 승인된 실 host/TLS/요금 구분 |
 | TASK-12 출시 보안 | A14·A15·A18 / 독립 검증 | 401/403·direct-IP·데이터 원본/비밀·role·롤백/권리 |
 | TASK-13 합성·미디어 | A12 / 이의상·심민성 | 40공고·10공지·이미지/판본/alt·20+12 독립 평가 |
