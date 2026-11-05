@@ -2,6 +2,11 @@
  * own allocation but cannot evict another owner's live in-flight proof.
  * Adapters retain their expiry, current-rights and consume-once checks. This is
  * not a cross-process quota or an authorization cache. */
+/** Capacity exhaustion is a client-scoped admission decision, not provider failure. */
+export class ReceiptAdmissionError extends Error {
+  constructor(){super('Receipt admission unavailable');this.name='ReceiptAdmissionError';}
+}
+
 export class OwnerReceipts<T> implements Iterable<[string,T]> {
   private readonly entries=new Map<string,{owner:string;value:T}>();
   private readonly counts=new Map<string,number>();
@@ -21,8 +26,9 @@ export class OwnerReceipts<T> implements Iterable<[string,T]> {
     // Synchronous admission prevents an await race; never replace an existing
     // receipt, silently evict a live entry, or reveal another owner's counts.
     const used=this.counts.get(owner)??0;
-    if(this.entries.has(key)||used>=this.perOwner||this.entries.size>=this.total)
-      throw new Error('Receipt admission unavailable');
+    if(this.entries.has(key))throw new Error('Receipt admission unavailable');
+    if(used>=this.perOwner||this.entries.size>=this.total)
+      throw new ReceiptAdmissionError();
     this.entries.set(key,{owner,value});
     this.counts.set(owner,used+1);
     return this;
