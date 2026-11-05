@@ -3,6 +3,7 @@ import {RevisionComparison} from '../features/revisions/RevisionComparison.js';
 import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
+import {TodaySummary} from '../features/today/TodaySummary.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
 import {DDayText} from '../features/demo/DDayText.js';
 import {Badges, CompactRow, FeaturedCard, NOT_SHARED_TEXT, NoSnapshot, NoticeRow, Section, screenViewOf} from './parts.js';
@@ -18,6 +19,7 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
     body: (
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
+        <TodaySummary view={view} navigate={navigate} />
         {view.feed.kind === 'SHOW' ? (
           <>
             <Section title="나에게 맞춘 공고">

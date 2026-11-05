@@ -12,13 +12,13 @@ const AS_OF = '2026-11-20T00:00:00.000Z';
 
 describe('#79 ddayOf: Seoul calendar days from the server asOf', () => {
   it('counts Seoul dates, not 24h blocks', () => {
-    expect(ddayOf('2026-11-24T00:00:00.000Z', AS_OF)).toEqual({text: 'D-4', spoken: '4일 남음'});
+    expect(ddayOf('2026-11-24T00:00:00.000Z', AS_OF)).toEqual({text: 'D-4', spoken: '4일 남음', days: 4});
     // 11-20 23:59 Seoul is still today; 11-21 00:00 Seoul is tomorrow even though only 15h later.
-    expect(ddayOf('2026-11-20T14:59:00.000Z', AS_OF)).toEqual({text: '오늘 마감', spoken: '오늘 마감'});
-    expect(ddayOf('2026-11-20T15:00:00.000Z', AS_OF)).toEqual({text: 'D-1', spoken: '1일 남음'});
+    expect(ddayOf('2026-11-20T14:59:00.000Z', AS_OF)).toEqual({text: '오늘 마감', spoken: '오늘 마감', days: 0});
+    expect(ddayOf('2026-11-20T15:00:00.000Z', AS_OF)).toEqual({text: 'D-1', spoken: '1일 남음', days: 1});
   });
   it('asOf late in the Seoul day: a deadline early next morning is D-1', () => {
-    expect(ddayOf('2026-11-21T00:30:00+09:00', '2026-11-20T23:30:00+09:00')).toEqual({text: 'D-1', spoken: '1일 남음'});
+    expect(ddayOf('2026-11-21T00:30:00+09:00', '2026-11-20T23:30:00+09:00')).toEqual({text: 'D-1', spoken: '1일 남음', days: 1});
   });
   it('past or exactly-at-asOf deadlines and invalid input give no D-day (no D+N)', () => {
     expect(ddayOf('2026-11-18T00:00:00.000Z', AS_OF)).toBeNull();

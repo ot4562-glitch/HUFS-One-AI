@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import {afterEach, describe, expect, it} from 'vitest';
-import {act, cleanup, render, screen, within} from '@testing-library/react';
+import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import {DemoController} from '../app/index.js';
 import {SyntheticDemoClient} from '../dev/syntheticDemoClient.js';
 import {SyntheticOwnerServer} from '../dev/syntheticOwnerServer.js';
@@ -82,7 +82,8 @@ describe('#124 menu rendering', () => {
     expect(off.querySelector('a, button, [tabindex]')).toBeNull();
     // Original menus with the same name as one of our screens are still not links to it.
     for (const name of ['비교과 프로그램', '채용정보(교내)']) expect(within(page).getByText(name).closest('a')).toBeNull();
-    expect(within(page).getAllByRole('link').filter(a => a.getAttribute('href')?.startsWith('/')).length).toBe(
+    const tree = page.querySelector('.menu--page') as HTMLElement;
+    expect(within(tree).getAllByRole('link').filter(a => a.getAttribute('href')?.startsWith('/')).length).toBe(
       MENU_GROUPS.flatMap(g => g.items).filter(i => i.route).length);
   });
 
@@ -107,11 +108,27 @@ describe('#124 menu rendering', () => {
     expect(link.textContent).toContain('학교 공식 사이트');
   });
 
-  it('the sidebar navigation carries the same menu, and an unsupported function has no direct URL', async () => {
+  it('the top menu lists our screens; HUFSAbility originals sit in one disclosure that says why, with no direct URL', async () => {
     await open('/');
-    const nav = screen.getByRole('navigation', {name: '전체 메뉴'});
-    expect(within(nav).getByText('외대친화기업(HUFFi)').closest('a')).toBeNull();
+    const nav = screen.getByRole('navigation', {name: '주요 메뉴'});
     expect(within(nav).getByRole('link', {name: '지원 현황'}).getAttribute('href')).toBe('/applications');
+    expect(within(nav).getAllByRole('link')).toHaveLength(8);
+    expect(screen.queryByText('외대친화기업(HUFFi)')).toBeNull();
+    const button = screen.getByRole('button', {name: /HUFSAbility 메뉴/});
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(button);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    const panel = screen.getByRole('region', {name: 'HUFSAbility 원래 메뉴'});
+    expect(panel.textContent).toContain('원래 메뉴는 이름과 순서만 보여 드려요');
+    expect(within(panel).getByText('외대친화기업(HUFFi)').closest('a, button')).toBeNull();
+    expect(within(panel).getAllByText('미지원')).toHaveLength(24);
+    for (const link of within(panel).getAllByRole('link').filter(a => a.getAttribute('target') === '_blank')) {
+      expect(link.getAttribute('href')).toBe(OFFICIAL_HUFSABILITY_URL);
+      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    }
+    fireEvent.keyDown(document, {key: 'Escape'});
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(button);
     cleanup();
     await open('/competency-test');
     expect(screen.getByRole('heading', {level: 1}).textContent).toBe('페이지를 찾을 수 없습니다');
