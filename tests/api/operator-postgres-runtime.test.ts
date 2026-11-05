@@ -114,7 +114,7 @@ describe('real-role PostgreSQL API operator composition',()=>{
   it('rejects all prebuilt platform SQL pools before startup and refuses a forged prepared port',async()=>{
     const ports=['sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace',
       'experienceApproval','demoOverlay','sourceReview','ownerCatalog','ownerRecommendations',
-      'studyPlanCheck','ownerStudyPlan','doubleMajor','majorWhatIf','revisionComparison','demoProfile',
+      'studyPlanCheck','ownerStudyPlan','doubleMajor','majorWhatIf','majorWhatIfPostgres','revisionComparison','demoProfile',
       'demoProfileQuota','adminUsage','reviewerSandbox','pools'];
     for(const field of ports){
       const config=makeConfig() as any;
@@ -175,6 +175,33 @@ describe('real-role PostgreSQL API operator composition',()=>{
     config.adminUsage.authority={};
     expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator policy/);
   });
+
+  it('routes current What-if through a distinct managed SQL role and independent authorities',async()=>{
+    const input=makeConfig() as any;
+    const settings={connectionString:'postgresql://hufs_whatif:synthetic@private-db.example.test/hufs_whatif',
+      environment:'production',expectedRole:'hufs_whatif',
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----'};
+    const authority={resolve:vi.fn(async()=>null)};
+    const rights={mayInspect:vi.fn(async()=>false),
+      authorize:vi.fn(async()=>({allowed:false,rightsReceipt:''})),
+      revalidate:vi.fn(async()=>false)};
+    const approvalGate={authorize:vi.fn(async()=>({allowed:false,approvalReceipt:''})),
+      revalidate:vi.fn(async()=>false)};
+    input.extensions={majorWhatIfPostgres:{settings,authority,rights,approvalGate}};
+    const prepared=prepareOperatorPostgres(input);
+    expect(prepared.application.platform.majorWhatIfPostgres?.pool).toBe(prepared.extraPools?.majorWhatIfPostgres);
+    expect(prepared.application.platform.majorWhatIfPostgres?.rights).toBe(rights);
+    await Promise.all([...Object.values(prepared.pools),...Object.values(prepared.extraPools??{})].map(pool=>pool.close()));
+    input.extensions.majorWhatIfPostgres.authority={};
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/Managed What-if/);
+    input.extensions.majorWhatIfPostgres.authority=authority;
+    input.extensions.majorWhatIfPostgres.rights={...rights,revalidate:undefined};
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/Managed What-if/);
+    input.extensions.majorWhatIfPostgres.rights=rights;
+    input.extensions.majorWhatIfPostgres.settings=input.roles.calendar;
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/independently restricted/);
+  });
+
   it('starts only loopback AFTER all seven checks and closes app/pools',async()=>{
     const fixture=fakePrepared();
     vi.stubEnv('NODE_ENV','test');

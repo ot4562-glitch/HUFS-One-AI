@@ -43,6 +43,7 @@ import type {OwnerStudyPlanAuthority} from './modules/academics/owner-study-plan
 import {createPostgresOwnerRecommendations} from './modules/opportunities/owner-recommendations-postgres.js';
 import type {ApprovedOwnerRecommendationGate,OwnerRecommendationAuthority} from './modules/opportunities/owner-feed-http.js';
 import {createOwnerMajorWhatIfSource} from './modules/academics/owner-major-what-if-source.js';
+import {PostgresOwnerMajorWhatIfSnapshotLoader} from './modules/academics/owner-major-what-if-postgres.js';
 import type {TrustedOwnerMajorWhatIfLoader} from './modules/academics/owner-major-what-if-source.js';
 import type {TrustedOwnerMajorWhatIfRights,ApprovedMajorWhatIfGate} from './modules/profiles/owner-major-what-if-http.js';
 
@@ -92,6 +93,9 @@ export interface PostgresPlatformConfig {
   /** Explicit approved snapshot loader; no default DB/raw intake or activation authority. */
   majorWhatIf?:{loader:TrustedOwnerMajorWhatIfLoader;
     rights:TrustedOwnerMajorWhatIfRights;approvalGate:ApprovedMajorWhatIfGate};
+  /** Dedicated operator-managed role for actual current approved What-if inputs. */
+  majorWhatIfPostgres?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority;
+    rights:TrustedOwnerMajorWhatIfRights;approvalGate:ApprovedMajorWhatIfGate};
   /** Exact independently approved SourceRevision claims; read-only. */
   revisionComparison?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
   /** Isolated EMPTY_DEMO synthetic profile only, never a personal-account fallback. */
@@ -105,6 +109,7 @@ export interface PostgresPlatformConfig {
 export function createPostgresPlatformServices(config:PostgresPlatformConfig){
   if(config.sourceIngestionOperator&&!config.sourceIngestion)throw new Error('Source control requires an explicit queue');
   if(config.studyPlanCheck&&config.ownerStudyPlan)throw new Error('Ambiguous owner study-plan services');
+  if(config.majorWhatIf&&config.majorWhatIfPostgres)throw new Error('Ambiguous owner What-if sources');
   if(config.demoProfileQuota&&!config.demoProfile)throw new Error('Demo profile quota requires an explicit profile store');
   if(config.adminUsage&&typeof config.adminUsage.authority?.isApproved!=='function')
     throw new Error('Admin usage requires independent operator approval');
@@ -135,7 +140,11 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
     ...(config.ownerStudyPlan?{studyPlanCheck:createPostgresOwnerStudyPlanServices({...config.ownerStudyPlan,now})}:{}),
     ...(config.ownerRecommendations?createPostgresOwnerRecommendations({...config.ownerRecommendations,now}):{}),
     ...(config.doubleMajor?{doubleMajor:createPostgresOwnerDoubleMajorServices({...config.doubleMajor,now})}:{}),
-    ...(config.majorWhatIf?{majorWhatIf:{source:createOwnerMajorWhatIfSource(config.majorWhatIf.loader),
+    ...(config.majorWhatIfPostgres?{majorWhatIf:{
+      source:createOwnerMajorWhatIfSource(new PostgresOwnerMajorWhatIfSnapshotLoader(
+        config.majorWhatIfPostgres.pool,config.majorWhatIfPostgres.authority,now)),
+      rights:config.majorWhatIfPostgres.rights,approvalGate:config.majorWhatIfPostgres.approvalGate,
+    }}:config.majorWhatIf?{majorWhatIf:{source:createOwnerMajorWhatIfSource(config.majorWhatIf.loader),
       rights:config.majorWhatIf.rights,approvalGate:config.majorWhatIf.approvalGate}}:{}),
     ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights,context:claims.context}}:{}),
     ...(config.demoProfile?{demoProfile:new DemoProfileService(

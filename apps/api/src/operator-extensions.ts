@@ -6,7 +6,7 @@ import type {PostgresPlatformConfig} from './platform-postgres.js';
 export const MANAGED_PLATFORM_EXTENSIONS=[
   'sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace','experienceApproval',
   'demoOverlay','sourceReview','ownerCatalog','ownerRecommendations','studyPlanCheck',
-  'ownerStudyPlan','doubleMajor','revisionComparison',
+  'ownerStudyPlan','doubleMajor','majorWhatIfPostgres','revisionComparison',
 ] as const;
 export type ManagedPlatformExtension=typeof MANAGED_PLATFORM_EXTENSIONS[number];
 export type OperatorExtensions={
@@ -20,7 +20,8 @@ const required:Record<ManagedPlatformExtension,readonly string[]>={
   demoOverlay:[],sourceReview:['authority'],ownerCatalog:['authority'],
   ownerRecommendations:['authority','ownerAuthority','approval'],
   studyPlanCheck:['authority','rights','approvalGate'],
-  ownerStudyPlan:['authority','ownerAuthority','approval'],doubleMajor:['authority'],revisionComparison:['authority'],
+  ownerStudyPlan:['authority','ownerAuthority','approval'],doubleMajor:['authority'],
+  majorWhatIfPostgres:['authority','rights','approvalGate'],revisionComparison:['authority'],
 };
 const object=(value:unknown):value is Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const own=(value:object,key:string)=>Object.prototype.hasOwnProperty.call(value,key);
@@ -40,6 +41,12 @@ export function extensionSettings(input:OperatorExtensions|undefined):Partial<Re
     if((name==='experienceApproval'||name==='ownerWorkspace')
       &&(!object(raw.authority)||typeof raw.authority.mayOperate!=='function'))
       throw new Error('Owner extension requires a current operation authority');
+    if(name==='majorWhatIfPostgres'&&(!object(raw.authority)||typeof raw.authority.resolve!=='function'
+      ||!object(raw.rights)||typeof raw.rights.mayInspect!=='function'
+      ||typeof raw.rights.authorize!=='function'||typeof raw.rights.revalidate!=='function'
+      ||!object(raw.approvalGate)||typeof raw.approvalGate.authorize!=='function'
+      ||typeof raw.approvalGate.revalidate!=='function'))
+      throw new Error('Managed What-if requires independent current authorities');
     entries.push([name,raw.settings as unknown as DataPoolSettings]);
   }
   if(input.studyPlanCheck&&input.ownerStudyPlan)

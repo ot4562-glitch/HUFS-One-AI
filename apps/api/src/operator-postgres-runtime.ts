@@ -51,7 +51,7 @@ export interface PreparedOperatorPostgres {
   readonly extraPools?:ExtraSqlPools;
 }
 const LOOPBACK=new Set(['127.0.0.1','::1']);
-const RAW_PLATFORM_PORTS=[...MANAGED_PLATFORM_EXTENSIONS,'majorWhatIf','pools','reviewerSandbox','demoProfile','demoProfileQuota','adminUsage'] as const;
+const RAW_PLATFORM_PORTS=[...MANAGED_PLATFORM_EXTENSIONS,'majorWhatIf','majorWhatIfPostgres','pools','reviewerSandbox','demoProfile','demoProfileQuota','adminUsage'] as const;
 const own=(value:object,key:string)=>Object.prototype.hasOwnProperty.call(value,key);
 
 export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOperatorPostgres{
