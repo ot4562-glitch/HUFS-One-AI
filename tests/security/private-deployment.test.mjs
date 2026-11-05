@@ -75,7 +75,7 @@ test('dry validation inspects fixed paths only, never treating present secret/re
       apiImage: 'local-api:reviewed', edgeImage: 'local-edge:reviewed',
     }, runOfflineProbe: false});
     assert.equal(validShape.releaseDecision, 'RELEASE_BLOCKED');
-    assert.ok(validShape.reasonCodes.includes('PRODUCTION_BOOTSTRAP_NOT_INTEGRATED'));
+    assert.ok(validShape.reasonCodes.includes('PRODUCTION_RUNTIME_NOT_APPLIED'));
     assert.ok(validShape.reasonCodes.includes('OPERATOR_EVIDENCE_NOT_VALIDATED'));
     assert.ok(validShape.reasonCodes.includes('OFFLINE_ENTRYPOINT_PROBE_NOT_RUN'));
   } finally {
@@ -87,7 +87,16 @@ test('containers use actual compiled outputs and default to an explicitly disabl
   const dockerfile = readFileSync(new URL('../../infra/deploy/Dockerfile', import.meta.url), 'utf8');
   const compose = readFileSync(new URL('../../infra/deploy/compose.private.yaml', import.meta.url), 'utf8');
   assert.match(dockerfile, /npm run build:api && npm run build:web/);
-  assert.match(dockerfile, /CMD \["node", "dist\/apps\/api\/src\/main.js"\]/);
+  assert.match(dockerfile, /CMD \["node", "dist\/apps\/api\/src\/production-main.js", "--apply"\]/);
+  assert.match(dockerfile, /install -d -o root -g node -m 0750 \/etc\/hufs-one\/private/);
+  assert.match(compose, /HUFS_PRODUCTION_CONFIG: \/etc\/hufs-one\/private\/production.mjs/);
+  assert.match(compose, /HUFS_API_INTERNAL_PORT: "3000"/);
+  assert.match(compose, /HUFS_API_BIND_HOST: \$\{HUFS_API_BACKEND_IPV4:\?/);
+  assert.match(compose, /ipv4_address: \$\{HUFS_API_BACKEND_IPV4:\?/);
+  assert.match(compose, /source: \$\{HUFS_OPERATOR_ROOT\}\/production.mjs[\s\S]*target: \/etc\/hufs-one\/private\/production.mjs[\s\S]*read_only: true/);
+  assert.match(compose, /approved-egress:[\s\S]*external: true[\s\S]*HUFS_APPROVED_EGRESS_NETWORK/);
+  assert.ok(OPERATOR_FILES.includes('production.mjs'));
+  assert.doesNotMatch(dockerfile, /COPY .*production\.mjs|CMD \["node", "dist\/apps\/api\/src\/main.js"\]/);
   assert.match(dockerfile, /COPY --from=build \/app\/dist\/web/);
   assert.doesNotMatch(dockerfile, /COPY \. /);
   assert.equal((compose.match(/profiles: \[private-deployment\]/g) ?? []).length, 2);

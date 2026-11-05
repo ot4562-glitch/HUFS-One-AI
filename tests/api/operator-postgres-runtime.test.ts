@@ -114,7 +114,7 @@ describe('real-role PostgreSQL API operator composition',()=>{
   it('rejects all prebuilt platform SQL pools before startup and refuses a forged prepared port',async()=>{
     const ports=['sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace',
       'experienceApproval','demoOverlay','sourceReview','ownerCatalog','ownerRecommendations',
-      'studyPlanCheck','ownerStudyPlan','doubleMajor','majorWhatIf','revisionComparison','demoProfile',
+      'studyPlanCheck','ownerStudyPlan','doubleMajor','majorWhatIf','majorWhatIfPostgres','revisionComparison','demoProfile',
       'demoProfileQuota','adminUsage','reviewerSandbox','pools'];
     for(const field of ports){
       const config=makeConfig() as any;
@@ -175,6 +175,110 @@ describe('real-role PostgreSQL API operator composition',()=>{
     config.adminUsage.authority={};
     expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator policy/);
   });
+
+  it('routes current What-if through a distinct managed SQL role and independent authorities',async()=>{
+    const input=makeConfig() as any;
+    const settings={connectionString:'postgresql://hufs_whatif:synthetic@private-db.example.test/hufs_whatif',
+      environment:'production',expectedRole:'hufs_whatif',
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----'};
+    const authority={resolve:vi.fn(async()=>null)};
+    const rights={mayInspect:vi.fn(async()=>false),
+      authorize:vi.fn(async()=>({allowed:false,rightsReceipt:''})),
+      revalidate:vi.fn(async()=>false)};
+    const approvalGate={authorize:vi.fn(async()=>({allowed:false,approvalReceipt:''})),
+      revalidate:vi.fn(async()=>false)};
+    input.extensions={majorWhatIfPostgres:{settings,authority,rights,approvalGate}};
+    const prepared=prepareOperatorPostgres(input);
+    expect(prepared.application.platform.majorWhatIfPostgres?.pool).toBe(prepared.extraPools?.majorWhatIfPostgres);
+    expect(prepared.application.platform.majorWhatIfPostgres?.rights).toBe(rights);
+    await Promise.all([...Object.values(prepared.pools),...Object.values(prepared.extraPools??{})].map(pool=>pool.close()));
+    input.extensions.majorWhatIfPostgres.authority={};
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/Managed What-if/);
+    input.extensions.majorWhatIfPostgres.authority=authority;
+    input.extensions.majorWhatIfPostgres.rights={...rights,revalidate:undefined};
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/Managed What-if/);
+    input.extensions.majorWhatIfPostgres.rights=rights;
+    input.extensions.majorWhatIfPostgres.settings=input.roles.calendar;
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/independently restricted/);
+  });
+
+  it('wires configured inference into exact three independent managed SQL roles without a provider call',async()=>{
+    const input=makeConfig() as any;
+    const settings=(role:string)=>({connectionString:'postgresql://hufs_'+role+':synthetic@private-db.example.test/hufs_'+role,
+      environment:'production',expectedRole:'hufs_'+role,
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----'});
+    const secret=vi.fn(async()=>{throw Error('No credentials in offline suite');});
+    const transport={post:vi.fn(async()=>{throw Error('No paid provider in offline suite');})};
+    const enabled=vi.fn(()=>false);
+    input.managedAi={operation:'HCX_007',
+      roles:{authority:settings('ai_authority'),budget:settings('ai_budget'),results:settings('ai_results')},
+      phaseId:'SYN-PHASE',inputPolicyVersion:'P1',
+      sessionIsCurrent:vi.fn(async()=>false),enabled,secret,transport,
+      policy:{version:'SYN-P1',approvedBy:'SYN-OPERATOR',approvedAt:'2026-11-01T00:00:00Z',
+        expiresAt:'2026-11-30T00:00:00Z',inputUnitsPerToken:1,outputUnitsPerToken:1,
+        tokenizerUnits:1,ocrImageUnits:10,maxInputTokens:1000,maxOutputTokens:600,framingTokens:0}};
+    const prepared=prepareOperatorPostgres(input);
+    expect(Object.keys(prepared.extraPools??{}).sort()).toEqual(['aiAuthority','aiBudget','aiResults']);
+    expect(prepared.application.ai?.runtime.operation).toBe('HCX_007');
+    expect(prepared.managedAiBinding?.ai).toBe(prepared.application.ai);
+    expect(prepared.managedAiBinding?.pools.authority).toBe(prepared.extraPools?.aiAuthority);
+    expect(await prepared.application.ai?.inputs.list({role:'BETA',actorId:'SYN-A',sessionIdHash:'H'.repeat(32),
+      sessionExpiresAt:'2026-12-01T00:00:00Z',schoolMailProofExpiresAt:'2026-12-01T00:00:00Z',
+      betaAllowed:true,csrfToken:'C'.repeat(32)})).toEqual({items:[]});
+    expect(secret).not.toHaveBeenCalled();expect(transport.post).not.toHaveBeenCalled();
+    await Promise.all([...Object.values(prepared.pools),...Object.values(prepared.extraPools??{})].map(p=>p.close()));
+    input.managedAi.roles.results=input.managedAi.roles.budget;
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/independently restricted/);
+    input.managedAi.roles.results=settings('ai_results');
+    input.ai=prepared.application.ai;
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/AI provider must use managed SQL/);
+    input.ai=undefined;
+    input.managedAi.sessionIsCurrent=undefined;
+    expect(()=>prepareOperatorPostgres(input)).toThrow(/Managed AI requires/);
+  });
+  it('refuses forged raw AI at startup before opening a SQL connection',async()=>{
+    const h=fakePrepared();vi.stubEnv('NODE_ENV','test');
+    (h.prepared.application as any).ai={
+      runtime:{phaseId:'FAKE',operation:'HCX_007',executor:{execute:vi.fn(),readJob:vi.fn()}},
+      inputs:{list:vi.fn()}};
+    await expect(startOperatorPostgres({prepared:h.prepared,host:'127.0.0.1',port:0}))
+      .rejects.toThrow(/managed SQL authority/);
+    expect(h.connected).toEqual([]);
+  });
+
+
+  it('makes independently reviewed experience registration operator-only on its own SQL role',async()=>{
+    const config=makeConfig() as any;
+    const settings=(name:string)=>({connectionString:'postgresql://hufs_'+name+':synthetic@private-db.example.test/hufs_'+name,
+      expectedRole:'hufs_'+name,environment:'production',
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----'});
+    const verify=vi.fn(async()=>true),secret=vi.fn(async()=>{throw Error('Offline');});
+    config.managedAi={operation:'HCX_007',roles:{
+      authority:settings('authority'),budget:settings('budget'),results:settings('results')},
+      phaseId:'SYN-PHASE',inputPolicyVersion:'SYN-POLICY',
+      sessionIsCurrent:vi.fn(async()=>true),enabled:()=>false,secret,transport:{post:vi.fn()},
+      policy:{version:'SYN-POLICY',approvedBy:'SYN-REVIEWER',
+        approvedAt:'2026-11-01T00:00:00.000Z',expiresAt:'2026-12-01T00:00:00.000Z',
+        inputUnitsPerToken:1,outputUnitsPerToken:1,tokenizerUnits:1,
+        ocrImageUnits:1,maxInputTokens:1000,maxOutputTokens:500,framingTokens:0}};
+    config.aiInputRegistration={settings:settings('registration'),reviewer:{verify}};
+    const p=prepareOperatorPostgres(config);
+    expect(p.operatorRegistration?.pool).toBe(p.extraPools?.aiInputOperator);
+    expect(typeof p.operatorRegistration?.service.register).toBe('function');
+    expect(secret).not.toHaveBeenCalled();expect(verify).not.toHaveBeenCalled();
+    expect(Object.keys(p.extraPools??{}).sort()).toEqual([
+      'aiAuthority','aiBudget','aiInputOperator','aiResults',
+    ]);
+    await Promise.all([...Object.values(p.pools),...Object.values(p.extraPools??{})].map(x=>x.close()));
+    config.aiInputRegistration.settings=config.managedAi.roles.budget;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independently restricted/);
+    config.aiInputRegistration.settings=settings('registration');
+    config.aiInputRegistration.reviewer={};
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator role/);
+    config.aiInputRegistration.reviewer={verify};delete config.managedAi;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator role/);
+  });
+
   it('starts only loopback AFTER all seven checks and closes app/pools',async()=>{
     const fixture=fakePrepared();
     vi.stubEnv('NODE_ENV','test');

@@ -99,7 +99,8 @@ function validateBinding(input:Input,bundle:RuleBundle,binding:RuleBinding,
     ||scope.campus!==profile.campus||scope.admissionType!==profile.admissionType
     ||scope.curriculumVersion!==profile.curriculumVersion
     ||profile.cohort<scope.cohortFrom||profile.cohort>scope.cohortTo
-    ||scope.degreePath!==undefined&&scope.degreePath!==bundle.degreePath
+    ||role==='PRIMARY_MAJOR'&&scope.degreePath===undefined
+     ||scope.degreePath!==undefined&&scope.degreePath!==bundle.degreePath
     ||scope.track!==undefined&&scope.track!==profile.track
     ||Date.parse(pack.sourcePublishedAt)>asOf||Date.parse(pack.effectiveFrom)>asOf
     ||pack.effectiveUntil!==undefined&&Date.parse(pack.effectiveUntil)<=asOf
@@ -127,7 +128,7 @@ function programsFor(input:Input,asOf:string):ProgramOffer[] {
   const catalog=new Map<string,{offer:ProgramOffer;binding:RuleBinding;overlap?:RuleBundle['overlapRule']}>();
   const overlapRules=new Map<string,NonNullable<RuleBundle['overlapRule']>>();
   const add=(offer:ProgramOffer,binding:RuleBinding,overlap?:RuleBundle['overlapRule'])=>{
-    const key=JSON.stringify([offer.role,offer.programId,offer.role==='PRIMARY_MAJOR'?offer.degreePath:null]);
+    const key=JSON.stringify([offer.role,offer.programId,offer.role==='PRIMARY_MAJOR'?offer.degreePath:offer.primaryProgramId??null]);
     const candidate={offer,binding,...(overlap?{overlap}:{})},previous=catalog.get(key);
     if(previous&&!isDeepStrictEqual(previous,candidate))throw new Error('Conflicting academic program bindings');
     catalog.set(key,candidate);
@@ -156,6 +157,7 @@ function programsFor(input:Input,asOf:string):ProgramOffer[] {
     add({role:'PRIMARY_MAJOR',programId:bundle.enrollment.primaryProgramId,
       degreePath:bundle.degreePath,pack:corePack(bundle.primary)},bundle.primary);
     if(second&&bundle.secondary)add({role:second.role,programId:second.programId,
+       primaryProgramId:bundle.enrollment.primaryProgramId,
       pack:{...corePack(bundle.secondary),...(overlap?{overlapRule:{
         maxSharedCreditUnits:overlap.maxSharedCreditUnits,evidenceRefs:overlap.evidenceRefs}}:{})}},
     bundle.secondary,overlap);

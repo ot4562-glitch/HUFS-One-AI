@@ -1,0 +1,40 @@
+[Unit]
+Description=HUFS One AI production API
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=hufs-one
+Group=hufs-one
+WorkingDirectory=/opt/hufs-one/current
+Environment=NODE_ENV=production
+Environment=APP_ENV=production
+Environment=HUFS_API_INTERNAL_PORT=3000
+Environment=HUFS_PRODUCTION_CONFIG=/etc/hufs-one/private/production.mjs
+ExecStart=/usr/bin/node /opt/hufs-one/current/dist/apps/api/src/production-main.js --apply
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LimitNOFILE=4096
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,61 @@
+# HUFS One AI — 승인된 운영 API 실행
+
+프로젝트 승인은 **OWNER_CONFIRMED_APPROVED**입니다. 운영 앱은 이미 완료된 승인 여부를 다시 묻는 대신 실제 설정·연결·사용자 권한을 검증합니다. 신규 구현은 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)의 작업 브랜치 기준입니다.
+
+## 구성
+
+`createPostgresApplication({runtime:'production', ...})`은 Google OIDC·학교메일 서비스, 명시적 SQL pool과 HTTPS origin을 사용합니다. `prepareOperatorPostgres`는 기본 7개 role 및 선택 서비스의 별도 role/DSN/CA TLS를 관리합니다. 경험 승인, 계정/동의, owner workspace·추천·학업·Source ingestion/review 등 13개 확장 서비스는 `extensions`로 연결합니다. raw pool 주입이나 다른 역할을 재사용한 설정은 거부합니다.
+
+현재 지원 목록은 `apps/api/src/operator-extensions.ts`의 `MANAGED_PLATFORM_EXTENSIONS`입니다. 학업 What-if는 `majorWhatIfPostgres` 확장에서 독립 관리 SQL 역할·현재 소스/원문·학업 승인·학생 권한을 검증한 읽기 전용 로더로 연결합니다. 직접 주입되는 loader-only 포트는 운영자 설정에서 계속 거부합니다.
+
+### 운영 AI 입력·경험 등록
+
+- `managedAi`는 `HCX_005` 또는 `HCX_007`의 입력/권한(`aiAuthority`), 예산(`aiBudget`), 정산·결과(`aiResults`)를 서로 다른 관리 SQL 역할로 조립합니다.
+- 선택적 `aiInputRegistration`은 네 번째 독립 SQL 역할 `aiInputOperator`와 외부의 검증된 `reviewer.verify`를 요구합니다. **공개 API로 노출되지 않는** `operatorRegistration.service.register`가 현재 경험·동의·소스/검토 근거를 검증해 불변 provider input과 현재 HEAD를 같은 트랜잭션에 기록합니다. 이 서비스는 운영 설정 없이 자동 실행되지 않습니다.
+- 선행 schema와 역할은 `20261103_ai_provider_inputs.sql` → `20261105_ai_consented_personal_inputs.sql` → `20261105_ai_experience_bindings.sql` → `20261106_ai_experience_input_operator.sql` 순서로 준비합니다. 후속 migration은 같은 운영 DB와 operator 검증용 비공개 역할에서만 적용합니다. 직접 개인 데이터·역할·계정·유료 모델을 자동 생성하지 않습니다.
+- 경험 수정·삭제, 개별 모델 동의 철회, 버전·세션 변경은 기존 입력의 payload와 HEAD를 폐기/재검증합니다. 학생은 `POST /api/experience/ai-skills/prepare`에서 승인된 자신의 경험을 선택하고, 결과를 확인한 뒤 `tag-approval`에서 명시적으로 선택합니다. AI 후보는 숙련도 인증이 아닙니다.
+
+## 비공개 서버 factory
+
+Linux 호스트의 `/etc/hufs-one/private/production.mjs`에서 `createOperatorConfig()`를 export합니다. 실제 DB 연결·CA·Google exchange·메일 sender·현재 권한 resolver와 선택 AI executor를 서버 비밀 저장소에서 구성합니다. 선택 `close()` export는 AI HTTP transport 등 보조 자원을 정리합니다.
+
+파일과 모든 상위 디렉터리는 root 소유, group/world 쓰기 불가, symlink 불가 조건을 만족해야 합니다. 파일은 단일 regular file이며 서비스 계정에 필요한 읽기 권한만 제공합니다. 실제 키·비밀번호는 저장소나 공개 로그에 복사하지 않습니다.
+
+## 빌드·계획·실행
+
+```sh
+npm run build:api
+node dist/apps/api/src/production-main.js --plan
+```
+
+`--plan`은 factory를 읽거나 네트워크/DB를 열지 않고 승인 완료·구성 요구사항을 출력합니다. 빌드 위치는 `apps/api/tsconfig.build.json`의 저장소 rootDir와 `dist` outDir 기준입니다.
+
+실제 구성 후:
+
+```sh
+HUFS_PRODUCTION_CONFIG=/etc/hufs-one/private/production.mjs \
+HUFS_API_INTERNAL_PORT=3000 NODE_ENV=production APP_ENV=production \
+node dist/apps/api/src/production-main.js --apply
+```
+
+`127.0.0.1`에서 TLS 인그레스 뒤에 바인딩합니다. 모든 관리 DB 역할을 확인한 뒤 HTTP를 엽니다. `infra/deploy/hufs-production-api.service`는 서비스 계정·읽기 전용 파일시스템·종료 처리·재시작 제한을 제공하는 설치용 unit입니다. unit이 저장소에 있다는 사실은 서버에 설치됐다는 의미가 아닙니다.
+
+## AI
+
+`createPostgresProviderRuntime`에 실제 정책·가격·secret·SQL 역할·`enabled:()=>true`를 주입하면 이미 확인된 프로젝트 승인을 별도 기본-false 플래그로 재차 차단하지 않습니다. 명시적인 `liveApproved:()=>false`는 비상 정지로 존중합니다. 입력 actor/현재 세션·버전·source 근거·예산/중복 정산은 그대로 검증합니다.
+
+## 검증
+
+OIDC·메일·운영 SQL migration/backup·NCP/TLS·실 client IP·실제 공급자와 요금은 #252에서 실제 실행 결과로 기록합니다. 구성 누락은 CONFIGURATION_REQUIRED, 미실행은 NOT_RUN입니다. 합성 launcher를 실제 사용자 인증으로 바꾸지 않습니다.
+
+[승인 정본](AUTHORIZATION.md) · [현재 상태](../STATUS.md).
+## 비공개 컨테이너 구성 (설정형, 실행·배포 검증 별도)
+
+`infra/deploy/Dockerfile`의 API 이미지 진입점은 이제 `production-main.js --apply`입니다. 이전 개발용 `main.js`를 production에서 실행하지 않습니다. `infra/deploy/compose.private.yaml`의 `private-deployment` 프로필은 기본적으로 비활성이며, 실제 실행에는 **미리 구성된 비공개 운영 디렉터리, 이미지 및 네트워크**가 필요합니다.
+
+- `${HUFS_OPERATOR_ROOT}/production.mjs`는 **컨테이너 이미지에 COPY하지 않고 읽기 전용으로** `/etc/hufs-one/private/production.mjs`에 연결합니다. 로그인한 API 프로세스 `node`가 읽을 수 있으면서 파일과 디렉터리는 root 소유, group/world 쓰기 불가, symlink와 hard-link 없는 상태여야 합니다. 예를 들어 검증된 운영 Linux에서 `root:node`와 파일 `0440`·디렉터리 `0750`을 점검합니다. 키·실자료를 Git/CLI 출력에 적지 않습니다.
+- `HUFS_PRODUCTION_CONFIG`와 `HUFS_API_INTERNAL_PORT=3000`을 명시합니다. API는 포트를 공개하지 않고 관리형 역할·OIDC·학교메일이 모두 준비된 후 `127.0.0.1`에 바인딩합니다. 컨테이너에서는 `HUFS_API_BIND_HOST=${HUFS_API_BACKEND_IPV4}`로 *실제 API 전용 backend 인터페이스*를 명시하고, root가 관리하는 `production.mjs`가 `approvePrivateBridge()`로 정확히 같은 사설 IPv4를 승인해야 합니다. 예를 들어 `{mode:'CONTAINER_PRIVATE_IPV4',approvedHost:'172.22.4.9'}` 형식입니다(주소는 가짜 예시). 서버는 주소가 네트워크 네임스페이스에 할당됐는지 확인하고 공인 IP/와일드카드/불일치를 거부합니다. 별도 edge는 내부 Docker DNS `api:3000`으로만 연결합니다. 이 코드는 컨테이너 네트워크·client IP/방화벽 운영 검증을 대체하지 않습니다.
+- API의 운영 DB·Google/메일·승인된 모델 egress는 미리 프로비저닝하고 방화벽으로 제한한 외부 Docker 네트워크 `HUFS_APPROVED_EGRESS_NETWORK`에만 연결합니다. 내부 `backend` 네트워크는 그대로 private이며, edge에 외부 egress를 주지 않습니다. 네트워크 이름의 존재 자체는 허가/차단 정책을 증명하지 않습니다.
+- 기존 `infra/deploy/private-deployment.mjs`는 메타데이터만 검사하고 `RELEASE_BLOCKED`를 유지합니다. `PRODUCTION_RUNTIME_NOT_APPLIED`는 **실제 적용·인수 미검증**이지 코드 진입점 미구현을 뜻하지 않습니다.
+
+실제 operator secrets/migrations, 신뢰 프록시·직접 origin·두 client IP, Docker-container loopback 연결 및 배포/복구는 `#252` 실행 증거와 `#253`의 추가 조립/부정시험을 거쳐야 합니다.
