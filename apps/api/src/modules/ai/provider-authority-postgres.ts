@@ -1,11 +1,11 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {SafeLlmPacketSchema,SelfConsentSchema} from '@hufs-one/contracts';
+import {SafeLlmPacketSchema,SelfConsentSchema,ClearedProviderInputClassSchema} from '@hufs-one/contracts';
 import type {AiTask,SafeLlmPacket} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
 import type {VerifiedActor} from '../../types.js';
 import {authorizeSession} from '../auth/gates.js';
-/** Authority-only preflight contract. NO provider HTTP, costs or production wiring. */
+/** Current-actor input authority. No provider HTTP, original discovery or writes. */
 export type ProviderOperation='OCR_GENERAL'|'HCX_005'|'HCX_007';
 export interface ProviderRequest {
   actor:VerifiedActor;
@@ -38,11 +38,10 @@ export interface ProviderSnapshot {
 const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,128}$/),Hash=z.string().regex(/^[a-f0-9]{64}$/);
 const Iso=z.iso.datetime({offset:true}),Time=z.preprocess(v=>v instanceof Date?v.toISOString():v,Iso);
 const Operation=z.enum(['OCR_GENERAL','HCX_005','HCX_007']);
-const InputClass=z.enum(['PUBLIC_CLEARED','SYNTHETIC_CLEARED','NON_IDENTIFYING_REVIEWED']);
 const SourceRef=z.strictObject({sourceId:Ref,revisionId:Ref,permissionRef:Ref,originalSha256:Hash});
 const Projection=z.object({projection_id:Ref,actor_id:Ref,input_ref:Ref,operation:Operation,as_of:Time,
   epoch:Ref,policy_version:Ref,consent_version:z.string().regex(/^[1-9][0-9]{0,15}$/),approved_by:Ref,approved_at:Time,expires_at:Time,
-  input_class:InputClass,privacy_review_ref:Ref,source_refs:z.array(SourceRef).min(1).max(20),erased_at:Time.nullable(),
+  input_class:ClearedProviderInputClassSchema,privacy_review_ref:Ref,source_refs:z.array(SourceRef).min(1).max(20),erased_at:Time.nullable(),
   safe_packet:SafeLlmPacketSchema.nullable(),media_bytes:z.instanceof(Uint8Array).nullable(),media_source_revision_id:Ref.nullable(),
   media_asset_id:Ref.nullable(),media_original_sha256:Hash.nullable()});
 const Source=z.object({source_id:Ref,revision_id:Ref,permission_ref:Ref,original_sha256:Hash,content_sha256:Hash,
@@ -52,9 +51,8 @@ const Source=z.object({source_id:Ref,revision_id:Ref,permission_ref:Ref,original
   receipt_id:Ref,rights_actor_id:Ref,reviewed_by:Ref,reviewed_at:Time,starts_at:Time,expires_at:Time,policy_version:Ref,
   canonical_url:z.string().min(9).max(2048),purposes:z.array(z.enum(['COLLECT','STORE','SEARCH','EXTERNAL_TRANSFER'])).min(1).max(4),revoked_at:Time.nullable()});
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
-/** Both fresh reads independently hash-check the media bytes against originalSha256.
- * Compare only bound metadata here: JSON.stringify(Buffer) otherwise expands a 5 MB
- * image into tens of MB twice, which is unnecessary and avoidable memory pressure. */
+/** Both fresh reads hash-check actual media bytes. Compare only bound metadata
+ * here to avoid expanding a 5 MB Buffer into a much larger JSON number array. */
 function snapshotFingerprint(value:ProviderSnapshot):string{
   const media=value.media;
   return hash({...value,...(media?{media:{sourceRevisionId:media.sourceRevisionId,
@@ -68,9 +66,9 @@ function canonical(value:string){try{const u=new URL(value);return u.href===valu
 function version(raw:unknown){requireThat(typeof raw==='string'||typeof raw==='number');const n=Number(raw);requireThat(Number.isSafeInteger(n)&&n>0);return n;}
 type Request=ProviderRequest&{now:string};
 export interface PostgresProviderAuthorityOptions {
-  /** Input/privacy review policy, independent of the executor's pricing policy. */
+  /** Input policy version, independent of the executor's pricing policy. */
   policyVersion:string;
-  /** Must check current server session/beta admission/revocation, not caller flags. */
+  /** Current server session/admission/revocation, not caller flags. */
   sessionIsCurrent(input:{actor:VerifiedActor;now:string}):Promise<boolean>;
   now?:()=>string;
 }
@@ -87,8 +85,9 @@ const SOURCES=`SELECT h.source_id,r.revision_id,r.permission_ref,r.original_sha2
   LEFT JOIN source_rights_revocations v ON v.receipt_id=g.receipt_id
   ORDER BY h.source_id LIMIT 21`;
 
-/** Private operator-provisioned projections only. No writes, original discovery,
- * browser packet ingestion, network, credentials, approval manufacture or cache.
+/** Private server-provisioned projections. Project authorization permits an
+ * honestly classified consented personal payload; current per-owner binding,
+ * source revision and revocation are still checked on each request.
  * Use a dedicated SELECT-only non-owner/non-BYPASSRLS DB role. */
 export class PostgresProviderAuthority {
   private readonly policyVersion:string;
@@ -102,7 +101,6 @@ export class PostgresProviderAuthority {
     authorizeSession(req.actor,now);
     requireThat(Date.parse(req.now)<=Date.parse(now)&&Date.parse(req.asOf)<=Date.parse(now));
     requireThat(await this.options.sessionIsCurrent({actor:structuredClone(req.actor),now})===true);
-    // A trusted session check may itself await DB/network work.
     const after=Iso.parse(this.now());authorizeSession(req.actor,after);
     requireThat(!req.signal?.aborted&&Date.parse(req.asOf)<=Date.parse(after));
     return after;
@@ -114,14 +112,12 @@ export class PostgresProviderAuthority {
       await this.current(req);
       const first=await this.snapshot(req);
       await this.current(req);
-      // A second fresh transaction observes consent/rights/head revocations which
-      // REPEATABLE READ intentionally cannot see inside the first transaction.
+      // A fresh second transaction sees withdrawals hidden by REPEATABLE READ.
       const second=await this.snapshot(req);
       const after=await this.current(req);
       requireThat(snapshotFingerprint(first)===snapshotFingerprint(second)&&Date.parse(second.expiresAt)>Date.parse(after));
       return second;
     }catch(error){if(error instanceof Denied||error instanceof z.ZodError)return null;
-      // Session denial is deliberately indistinguishable from missing input.
       if(error instanceof Error&&['UNAUTHENTICATED','FORBIDDEN'].includes(error.message))return null;
       throw denied();}
   }
@@ -133,7 +129,7 @@ export class PostgresProviderAuthority {
       await c.query("SELECT set_config('hufs.self_actor',$1,true)",[req.actor.actorId]);
       const result=await this.project(c,req);
       await c.query('COMMIT');begun=false;return result;
-    }catch(error){if(begun)try{await c.query('ROLLBACK');}catch{/* preserve bounded denial */}throw error;}
+    }catch(error){if(begun)try{await c.query('ROLLBACK');}catch{/* bounded denial */}throw error;}
     finally{c.release();}
   }
   private async project(c:ReviewerSqlConnection,req:Request):Promise<ProviderSnapshot>{
@@ -156,6 +152,7 @@ export class PostgresProviderAuthority {
     requireThat(sources.rows.length===p.source_refs.length);
     const parsed=sources.rows.map(r=>Source.parse(r));
     requireThat(new Set(parsed.map(r=>r.source_id)).size===p.source_refs.length);
+    let hasConsentedPersonalSource=false;
     for(const r of parsed){
       const ref=p.source_refs.find(s=>s.sourceId===r.source_id);
       requireThat(ref&&r.revision_id===ref.revisionId&&r.permission_ref===ref.permissionRef&&r.original_sha256===ref.originalSha256);
@@ -169,8 +166,13 @@ export class PostgresProviderAuthority {
       if(r.valid_until)expires.push(Date.parse(r.valid_until));
       expires.push(Date.parse(r.expires_at));
       if(p.input_class==='SYNTHETIC_CLEARED')requireThat(r.source_class==='SYNTHETIC'&&r.provenance==='SYNTHETIC');
-      if(r.source_class==='PERSONAL_CONSENTED')requireThat(p.input_class==='NON_IDENTIFYING_REVIEWED');
+      if(r.source_class==='PERSONAL_CONSENTED'){
+        requireThat(p.input_class==='NON_IDENTIFYING_REVIEWED'||p.input_class==='PERSONAL_CONSENTED_CLEARED');
+        if(p.input_class==='PERSONAL_CONSENTED_CLEARED')requireThat(r.provenance==='REAL_APPROVED');
+        hasConsentedPersonalSource=true;
+      }
     }
+    if(p.input_class==='PERSONAL_CONSENTED_CLEARED')requireThat(hasConsentedPersonalSource);
     requireThat((req.operation==='OCR_GENERAL')===(p.safe_packet===null));
     if(p.safe_packet){requireThat(p.safe_packet.providerInputClass===p.input_class
       &&Buffer.byteLength(JSON.stringify(p.safe_packet))<=24000);}

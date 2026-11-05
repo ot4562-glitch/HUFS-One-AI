@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {TopicCodeSchema} from '../topics/index.js';
+import {TopicCodeSchema,ClearedProviderInputClassSchema} from '../topics/index.js';
 
 // A06.3: only these FOUR tasks are part of the product; RulePack drafting is separate.
 export const AI_TASK_PATHS = {
@@ -16,7 +16,7 @@ export type AiTaskPath = z.infer<typeof AiTaskPathSchema>;
 export const SafeLlmPacketSchema=z.strictObject({
   packetId:z.string().min(1), // opaque request-local token, NEVER actor/subject id
   task:AiTaskSchema,
-  providerInputClass:z.enum(['PUBLIC_CLEARED','SYNTHETIC_CLEARED','NON_IDENTIFYING_REVIEWED']),
+  providerInputClass:ClearedProviderInputClassSchema,
   sourceTokens:z.array(z.strictObject({
     token:z.string().min(1),paragraphs:z.array(z.strictObject({id:z.string().min(1),text:z.string().min(1)})).max(20),
   })).max(20),
@@ -29,7 +29,8 @@ export const SafeLlmPacketSchema=z.strictObject({
 });
 export type SafeLlmPacket = z.infer<typeof SafeLlmPacketSchema>;
 
-/** Runtime schema is necessary, NOT sufficient: the API must perform privacy/permission review. */
+/** Schema validity is not authentication. Runtime checks the current owner,
+ * source/content version and individual deletion or withdrawal state. */
 export function parseSafeLlmPacket(value:unknown): SafeLlmPacket {
   return SafeLlmPacketSchema.parse(value);
 }
