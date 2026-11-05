@@ -2,7 +2,7 @@ import {z} from 'zod';
 import type {Opportunity} from '@hufs-one/contracts';
 import {DEMO_AS_OF,DEMO_OPPORTUNITIES,DEMO_PUBLISHED_AT,DEMO_SPLIT} from '../opportunities/demo-corpus.js';
 import {DEMO_LABELS,DEMO_STUDENTS} from '../opportunities/demo-profiles.js';
-import {compareRankers,eligibilityAgreement,type GoldEligibility,type LabelSet,type RelevanceLabel} from '../opportunities/evaluation.js';
+import {compareRankers,compareTop3Quality,eligibilityAgreement,type GoldEligibility,type LabelSet,type RelevanceLabel} from '../opportunities/evaluation.js';
 import {evaluateOpportunity} from '../opportunities/evaluate.js';
 import {composeFeed} from '../opportunities/feed.js';
 import {RANK_CONFIG_V1} from '../opportunities/rank.js';
@@ -80,6 +80,8 @@ export function recommendationReport(packet:ReviewPackage,ledger:unknown,context
     const qualityState=reference==='TRACK_OWNER_SELF'?'TRACK_OWNER_SELF_REFERENCE_ONLY':labelCount===0?'NOT_RUN':
       labelCount===cases.length?'SIGNED_REFERENCE':'PARTIAL_SIGNED_REFERENCE';
     const comparison=labelCount===0?null:compareRankers(profiles,opportunities,options);
+    // Label-free (#10): diversity and UNKNOWN share of each arm's top 3. Reported without gold; never an accuracy.
+    const top3Quality=compareTop3Quality(profiles,opportunities,options);
     const predicted:Record<string,GoldEligibility>={},gold:Record<string,GoldEligibility>={};
     let conditionTp=0,conditionPredicted=0,conditionExpected=0,conditionGoldCount=0,predictedUnknown=0;
     for(const student of DEMO_STUDENTS)for(const opportunity of opportunities){
@@ -100,7 +102,7 @@ export function recommendationReport(packet:ReviewPackage,ledger:unknown,context
       conditionFieldPrecision:ratio(conditionTp,conditionPredicted),conditionFieldRecall:ratio(conditionTp,conditionExpected),
       definiteConditionGold:conditionGoldCount}:null;
     let codePlusLlm;
-    if(!patch)codePlusLlm={status:'NOT_RUN' as const,reason:'NO_BOUND_PROVIDER_OBSERVATION',comparison:null,measurement:null};
+    if(!patch)codePlusLlm={status:'NOT_RUN' as const,reason:'NO_BOUND_PROVIDER_OBSERVATION',comparison:null,top3Quality:null,measurement:null};
     else{
       const enhanced=selected(patch.opportunities);
       const same=profiles.every(s=>{
@@ -110,11 +112,12 @@ export function recommendationReport(packet:ReviewPackage,ledger:unknown,context
       if(!same)throw new Error('Evaluation candidate sets differ');
       codePlusLlm={status:patch.value.provenance,candidateSetMatches:true,
         comparison:labelCount===0?null:compareRankers(profiles,enhanced,options),
+        top3Quality:compareTop3Quality(profiles,enhanced,options),
         measurement:{...patch.value.measured,latency:distribution(patch.value.measured.latencyMs),
           evidence:'IMPORTED_OBSERVATION_NOT_PROVIDER_OR_HUMAN_ACCEPTANCE'}};
     }
     return {partition,opportunityIds,qualityState,labelCoverage:ratio(labelCount,cases.length),
-      comparison,eligibility,predictedUnknown,eligibilityPopulation:'ALL_CANONICAL_CASES',
+      comparison,top3Quality,eligibility,predictedUnknown,eligibilityPopulation:'ALL_CANONICAL_CASES',
       codePlusLlm};
   });
   return {schemaVersion:'recommendation-evaluation-report-v1',packageSha256:p.packageSha256,

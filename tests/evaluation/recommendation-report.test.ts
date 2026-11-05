@@ -2,7 +2,7 @@ import {describe,expect,it} from 'vitest';
 import {buildReviewPackage} from '../../packages/core/src/evaluation/review-package.js';
 import {emptyReviewLedger} from '../../packages/core/src/evaluation/review-ledger.js';
 import {recommendationReport,eligibilityMetrics} from '../../packages/core/src/evaluation/recommendation-report.js';
-import {compareRankers} from '../../packages/core/src/opportunities/evaluation.js';
+import {compareRankers,compareTop3Quality} from '../../packages/core/src/opportunities/evaluation.js';
 import {DEMO_AS_OF,DEMO_OPPORTUNITIES,DEMO_PUBLISHED_AT,DEMO_SPLIT} from '../../packages/core/src/opportunities/demo-corpus.js';
 import {DEMO_LABELS,DEMO_STUDENTS} from '../../packages/core/src/opportunities/demo-profiles.js';
 import {RANK_CONFIG_V1} from '../../packages/core/src/opportunities/rank.js';
@@ -47,6 +47,37 @@ describe('fixed split and fair recommendation comparisons',()=>{
     expect(()=>recommendationReport(p,emptyReviewLedger(p),{now,enrichment:bad})).toThrow();
     bad.patches[0]=observation.patches[0]!;bad.rankConfigSha256='a'.repeat(64);
     expect(()=>recommendationReport(p,emptyReviewLedger(p),{now,enrichment:bad})).toThrow();
+  });
+  const opts={asOf:DEMO_AS_OF,publishedAtBySnapshotId:DEMO_PUBLISHED_AT,config:RANK_CONFIG_V1};
+  const plain=DEMO_STUDENTS.map(s=>({profileId:s.subject,profile:s.profile}));
+  const splitOpportunities=(partition:string)=>DEMO_OPPORTUNITIES.filter(o=>partition==='ALL'||DEMO_SPLIT[o.id]===partition);
+  it('#10: with 0 independent gold the label-free top-3 quality is reported while every accuracy stays null',()=>{
+    const p=packet(),r=recommendationReport(p,emptyReviewLedger(p),{now});
+    expect(r.independentHumanLabelled).toBe(0);expect(r.humanAcceptance).toBe('NOT_ESTABLISHED');
+    for(const split of r.splits){
+      expect(split.qualityState).toBe('NOT_RUN');expect(split.comparison).toBeNull();expect(split.eligibility).toBeNull();
+      expect(split.top3Quality).toEqual(compareTop3Quality(plain,splitOpportunities(split.partition),opts));
+      expect(split.top3Quality.profiles).toHaveLength(5);
+      expect(JSON.stringify(split.top3Quality)).not.toMatch(/p3|ndcg|precision/i);
+      // No bound provider observation: the third arm is not run and reports nothing.
+      expect(split.codePlusLlm).toMatchObject({status:'NOT_RUN',reason:'NO_BOUND_PROVIDER_OBSERVATION',comparison:null,top3Quality:null,measurement:null});
+    }
+  });
+  it('#10: with 0 independent gold a bound synthetic enrichment reports top-3 quality for the third arm only, no accuracy',()=>{
+    const p=packet();
+    const observation={schemaVersion:'rank-enrichment-observation-v1',packageSha256:p.packageSha256,targetCommit:p.targetCommit,
+      provenance:'SYNTHETIC_PROTOCOL',rankConfigSha256:hashCanonical(RANK_CONFIG_V1),observationId:'SYN-PROTOCOL-2',
+      measured:{latencyMs:[12,18],inputTokens:20,outputTokens:10,billedKrw:null,errors:0},
+      patches:DEMO_OPPORTUNITIES.map(o=>({opportunityId:o.id,topicCodes:[...o.topicCodes],
+        evidenceIds:[p.cases.find(c=>c.opportunityId===o.id)!.evidence[0]!.evidenceId]}))};
+    const r=recommendationReport(p,emptyReviewLedger(p),{now,enrichment:observation});
+    expect(r.referenceKind).toBe('INDEPENDENT');expect(r.humanAcceptance).toBe('NOT_ESTABLISHED');
+    for(const split of r.splits){
+      expect(split.comparison).toBeNull();expect(split.eligibility).toBeNull();
+      expect(split.codePlusLlm.status).toBe('SYNTHETIC_PROTOCOL');expect(split.codePlusLlm.comparison).toBeNull();
+      expect(split.codePlusLlm.top3Quality).toEqual(compareTop3Quality(plain,splitOpportunities(split.partition),opts));
+      expect(split.codePlusLlm.measurement?.evidence).toBe('IMPORTED_OBSERVATION_NOT_PROVIDER_OR_HUMAN_ACCEPTANCE');
+    }
   });
   it('counts definite false eligibility and unsupported ELIGIBLE separately from UNKNOWN and missing coverage',()=>{
     const r=eligibilityMetrics({a:'ELIGIBLE',b:'ELIGIBLE',c:'UNKNOWN',d:'INELIGIBLE'},
