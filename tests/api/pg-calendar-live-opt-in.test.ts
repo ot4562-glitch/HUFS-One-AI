@@ -8,7 +8,7 @@ import snapshotRaw from '../../packages/fixtures/synthetic/demo-snapshot.json';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {DemoContextSchema} from '@hufs-one/contracts';
 import {PostgresCalendarInputSource} from '../../apps/api/src/modules/calendar-postgres.js';
-import {computeAuthorizedCalendar} from '../../apps/api/src/modules/calendar.js';
+import {computeAuthorizedCalendar,computeAuthorizedSections} from '../../apps/api/src/modules/calendar.js';
 import type {CalendarReadRequest} from '../../apps/api/src/modules/calendar.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 const RUN=process.env.HUFS_PG_CALENDAR_LIVE==='1';
@@ -90,7 +90,13 @@ describe.skipIf(!RUN)('REAL PostgreSQL calendar: scoped recomputation and receip
     const bundle=await source.readAuthorizedInputs({...request,now:now()});expect(bundle).not.toBeNull();
     expect(bundle?.grant?.allowedSections).toEqual(['FEED','NOTICES']);
     const result=computeAuthorizedCalendar(bundle!,{...request,now:now()});
-    expect(result.entries).toEqual([]);expect(result.needsConfirmation.map(v=>v.refId)).toEqual(['SYN-NOTICE']);
+    // There is no approved RulePack binding and ACADEMICS is not shared. Keep
+    // the notice visible as review-pending, not as an asserted academic event.
+    expect(bundle!.notices[0]!.verificationState).toBe('NEEDS_REVIEW');
+    expect(result.entries).toEqual([]);expect(result.needsConfirmation).toEqual([]);
+    const notices=computeAuthorizedSections(bundle!,{...request,now:now()}).notices;
+    expect(notices.items[0]).toMatchObject({noticeId:'SYN-NOTICE',priority:'GENERAL',verificationState:'NEEDS_REVIEW'});
+    expect(notices.pinnedIds).toEqual([]);
     await expect(reader.query(`UPDATE api_sharing_grants SET version='BYPASS'`)).rejects.toMatchObject({code:'42501'});
     await expect(reader.query(`UPDATE source_ingest_heads SET last_checked_at=clock_timestamp()`)).rejects.toMatchObject({code:'42501'});
   });
