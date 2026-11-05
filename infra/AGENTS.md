@@ -1,9 +1,7 @@
-# NCP IaC·OS 배포·worker 소유권과 차단
+# NCP·OS·배포 코드 책임
 
-**심민성 `ot4562-glitch`:** NCP/CLOVA의 모든 소프트웨어·SDK/HTTP·OCR/HCX·ONNX·systemd/cgroup/Docker·Terraform/IaC/PowerShell/쉘·CPU/비용·rollback 스크립트/CI 개발. **이서연 `lhh42001`:** 계정/IAM/리전/SKU/크레딧·실서버/서비스 이용권·요금/CPU/RSS/백업·중단/반납 **비코드 운영** 전담.
+심민성은 NCP SDK/IaC/Terraform·PowerShell/OS·systemd/worker·배포/복구·CI의 코드 소유자이고 이서연은 계정/IAM·리전/SKU·가격·실호스트·청구/반납의 비코드 담당입니다.
 
-현재 IaC는 오프라인 모의 검증/SSH 127.0.0.1 합성 미리보기까지. 실 VM/TLS/DB/학교 Google·유료 AI/원본 데이터는 미가동·`RELEASE_BLOCKED`. 사용자 별도 서면 비용·공개/자료 권리 승인 없이 `terraform apply`, 실제 배포/비밀 업로드/모델 다운로드 금지.
+프로젝트에 필요한 운영·자료/모델 전송·출시 승인은 소유자가 모두 완료 확인했습니다. 승인 미취득을 이유로 같은 요청을 반복하지 않습니다. 실제 명령은 구체적인 대상 계정/주소/자격증명·비용 설정과 rollback 대상을 확인한 환경에서 실행합니다. 이것이 없으면 CONFIGURATION_REQUIRED입니다.
 
-키·host 지문/공인 IP·DNS/TLS/ACG/NACL/직접 원본/IPv6·proxy XFF·복원 실패·systemd/OOM/비용 hard stop/rollback은 실제 운영에서 별도 검증. Code PR 비작성자 최신 HEAD 승인·CI와 실운영 #252 인수는 별개. 타인 worktree/branch 강제 reset/삭제 금지.
-
-[NCP 운영](../docs/NCP_OPERATIONS_2026.md) · [개발 #253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [인수 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+계획 명령은 부작용 없이 유지하고, 실제 적용은 명시적으로 선택합니다. TLS·host key·네트워크·역할/비밀·실 client IP·서비스 종료/청구·복구를 실제 결과로 검증합니다. 승인 완료와 실행 성공은 다릅니다. [승인 정본](../docs/AUTHORIZATION.md) · [production 실행](../docs/PRODUCTION_RUNTIME.md).

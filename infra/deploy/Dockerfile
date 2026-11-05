@@ -25,9 +25,11 @@ COPY --from=build --chown=root:root /app/infra/ai/raster-worker.mjs ./infra/ai/r
 COPY --from=build --chown=root:root --chmod=0444 /app/infra/ai/pdf-render-worker.py ./infra/ai/pdf-render-worker.py
 # Python/Poppler/fonts and isolation tools require a separately reviewed pinned runtime mount.
 # These copies package maintained worker code only; they do not enable PDF execution.
+# The launcher checks every ancestor's root ownership and writable bits.
+# The operator supplies production.mjs by a separate read-only bind; never COPY it.
+RUN install -d -o root -g node -m 0750 /etc/hufs-one/private
 USER node
-# Actual existing entrypoint deliberately refuses production until auth/DB integration.
-CMD ["node", "dist/apps/api/src/main.js"]
+CMD ["node", "dist/apps/api/src/production-main.js", "--apply"]
 
 FROM nginx:1.28-alpine AS edge
 COPY --from=build /app/dist/web /srv/web

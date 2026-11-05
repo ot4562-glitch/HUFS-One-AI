@@ -8,7 +8,7 @@ import {isIP} from 'node:net';
 const here = dirname(fileURLToPath(import.meta.url));
 const repository = resolve(here, '../..');
 export const OPERATOR_FILES = Object.freeze([
-  'auth/oidc.client-secret', 'db/connection-string', 'api.env',
+  'auth/oidc.client-secret', 'db/connection-string', 'api.env', 'production.mjs',
   'tls/fullchain.pem', 'tls/privkey.pem',
   'nginx/private.conf', 'nginx/private-proxy.conf',
   'receipts/operator-approval.json', 'receipts/oidc-mail-validation.json',
@@ -74,7 +74,7 @@ export async function inspectOperatorInputs(operatorRoot) {
 /** Offline evidence stays separate from operational approval. No env override. */
 export async function validateDeployment({manifest, runOfflineProbe = true} = {}) {
   const reasonCodes = [
-    'PRODUCTION_BOOTSTRAP_NOT_INTEGRATED',
+    'PRODUCTION_RUNTIME_NOT_APPLIED',
     'OPERATOR_EVIDENCE_NOT_VALIDATED',
     'LIVE_INGRESS_OIDC_DB_AND_RIGHTS_GATES_NOT_RUN',
   ];
