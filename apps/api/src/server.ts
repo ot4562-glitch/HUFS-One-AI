@@ -9,6 +9,7 @@ import {
   RetrievalEnvelopeVNextSchema,
   DemoPreflightStateSchema,DemoPreflightReportSchema,
   DemoOverlayPutSchema,DemoOverlayResetSchema,DemoOverlayStateSchema,CalendarResultSchema,
+  DemoPlanSimulationRequestSchema,DemoOutlookScenarioRequestSchema,
   ApprovedProviderInputsSchema,
 } from '@hufs-one/contracts';
 import type {DemoContext, DemoSnapshot, SharingGrant, SubjectAlias, SharedSectionSchema} from '@hufs-one/contracts';
@@ -27,6 +28,7 @@ import {validateModelCandidate} from './modules/ai/candidate.js';
 import {computeAuthorizedCalendar} from './modules/calendar.js';
 import type {CalendarReadRequest} from './modules/calendar.js';
 import {registerPersonalStateRoutes} from './modules/personal-state.js';
+import {simulateDemoPlan,simulateDemoOutlook} from './modules/demo/demo-scenarios.js';
 
 const SelectBody=z.strictObject({
   demoSubjectId:SubjectAliasSchema,
@@ -766,6 +768,32 @@ export function createApi(options:ApiOptions) {
   app.get('/api/demo/contexts/:id/outlook',async(req)=>{
     const {id}=ContextParams.parse(req.params);
     return (await checkedContext(req,id,['FEED','NOTICES','FORECAST'])).result.forecast;
+  });
+  app.post('/api/demo/contexts/:id/plans/simulate',async(req)=>{
+    const {id}=ContextParams.parse(req.params);
+    z.strictObject({}).parse(req.query);
+    const input=DemoPlanSimulationRequestSchema.parse(req.body);
+    const {actor,context,result}=await checkedContext(req,id,['FEED','NOTICES','ACADEMICS']);
+    if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
+    if(input.expectedDatasetVersion!==context.datasetVersion
+      ||input.expectedProjectionVersion!==context.projectionVersion
+      ||input.expectedGrantVersion!==context.sharingGrantVersion
+      ||input.expectedAsOf!==result.asOf)
+      throw new ApiFailure('VERSION_CONFLICT',id);
+    return simulateDemoPlan(result,input);
+  });
+  app.post('/api/demo/contexts/:id/outlook/scenarios',async(req)=>{
+    const {id}=ContextParams.parse(req.params);
+    z.strictObject({}).parse(req.query);
+    const input=DemoOutlookScenarioRequestSchema.parse(req.body);
+    const {actor,context,result}=await checkedContext(req,id,['FEED','NOTICES','FORECAST']);
+    if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
+    if(input.expectedDatasetVersion!==context.datasetVersion
+      ||input.expectedProjectionVersion!==context.projectionVersion
+      ||input.expectedGrantVersion!==context.sharingGrantVersion
+      ||input.expectedAsOf!==result.asOf)
+      throw new ApiFailure('VERSION_CONFLICT',id);
+    return simulateDemoOutlook(result,input);
   });
 
   app.get('/api/reviewer/demo/contexts/:id/actions',async(req)=>{

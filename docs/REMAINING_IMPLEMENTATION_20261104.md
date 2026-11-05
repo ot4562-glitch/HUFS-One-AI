@@ -7,9 +7,9 @@
 - 명시적인 production 구성과 안전한 `--plan`/`--apply` 실행, 관리 SQL 역할·RLS·독립 AI 예산/입력/정산, 소유권·철회·권한의 현재 상태 검사를 구현했습니다.
 - 경험 CRUD/포트폴리오, 다중 경험 선택, 운영자 전용 input 등록, 현재 판본/동의 결속, `NEEDS_REVIEW` AI 후보 조회와 학생 승인 태그 API가 존재합니다. 화면 #258과 추천 순수 코어 #259의 실제 소비 완료는 별도입니다.
 - 학업 What-if의 PostgreSQL 읽기 어댑터와 관리형 연결을 구현했습니다. #265에서 병합된 주전공별 이중전공/부전공 RulePack 선택을 통합하고, 학업 경로가 지정되지 않은 주전공 팩을 거부하도록 강화했습니다. 공식 학칙·실학생 자료의 판정이 검증되었다는 뜻은 아닙니다.
-- API/설계 inventory의 직접 미매핑 9개 경로를 실행 가능한 정적 감사에서 다음과 같이 분류하고, 관련 API를 **정확한 대체 URL인 것처럼 주장하지 않도록** 했습니다.
+- API/설계 inventory의 직접 미매핑 7개 경로를 실행 가능한 정적 감사에서 다음과 같이 분류하고, 관련 API를 **정확한 대체 URL인 것처럼 주장하지 않도록** 했습니다.
   - `POST /api/auth/login`: 의도적으로 폐기된 비밀번호 로그인.
-  - `POST /api/demo/contexts/:id/plans/simulate`, `POST /api/demo/contexts/:id/outlook/scenarios`: 설계된 별도 API는 아직 구현 필요; 기존 학생 계획/What-if API는 서로 다른 권한·DTO입니다.
+  - `POST /api/demo/contexts/:id/plans/simulate`, `POST /api/demo/contexts/:id/outlook/scenarios`: 시연 문맥에서 별도 가정 DTO·현행 grant/source/asOf·CSRF 검사를 수행하는 API를 별도 기능 PR에서 구현했습니다. 학생의 실제 학점/공식 개설 확정으로 바꾸지 않습니다. 사용자 UI 소비와 운영 실측은 미검증입니다.
   - `GET /api/demo/contexts/:id/experiences`, `GET /api/demo/contexts/:id/saved-items`, `POST /api/demo/contexts/:id/actions`: 개인 상태/보관함/REVIEWER 관련 **별도 범위의 현행 API**가 있으나 설계 URL과 정확히 일치하지 않습니다.
   - `POST /api/academics/import/preview`, `POST /api/academics/import/apply`, `POST /api/admin/corpus/approve`: 개인 원본·승인 관련 **운영자 전용 비공개 절차**로 유지; 무인증 공개 엔드포인트를 추가하지 않습니다.
 

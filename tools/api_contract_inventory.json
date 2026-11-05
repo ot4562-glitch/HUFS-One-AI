@@ -2909,6 +2909,56 @@
       "consumerRefs": [
         "apps/web/src/integrations/owner-api-client.ts"
       ]
+    },
+    {
+      "id": "post-api-demo-contexts-id-plans-simulate",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/demo/contexts/:id/plans/simulate",
+      "primaryIssue": 119,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/demo-scenarios/index.ts",
+            "symbol": "DemoPlanSimulationRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/demo-scenarios/index.ts",
+            "symbol": "DemoPlanSimulationResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-scenarios-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Owner/session/grant/version-bound BETA demo-only hypothetical result; not a private transcript or official course offering"
+    },
+    {
+      "id": "post-api-demo-contexts-id-outlook-scenarios",
+      "surface": "core",
+      "method": "POST",
+      "path": "/api/demo/contexts/:id/outlook/scenarios",
+      "primaryIssue": 11,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/demo-scenarios/index.ts",
+            "symbol": "DemoOutlookScenarioRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/demo-scenarios/index.ts",
+            "symbol": "DemoOutlookScenarioResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-scenarios-http.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Owner/session/grant/version-bound BETA demo-only hypothetical result; not a private transcript or official course offering"
     }
   ],
   "designContracts": [
@@ -3013,12 +3063,10 @@
     {
       "design": "POST /api/demo/contexts/:id/plans/simulate",
       "primaryIssue": 119,
-      "actualRouteIds": [],
-      "notes": "The demo-context simulation API/DTO is not implemented. POST /api/study-plans/check is an independently scoped authenticated owner contract, not a substitute.",
-      "disposition": "IMPLEMENTATION_REQUIRED",
-      "relatedRouteIds": [
-        "post-api-study-plans-check"
-      ]
+      "actualRouteIds": [
+        "post-api-demo-contexts-id-plans-simulate"
+      ],
+      "notes": "Separate demo-context hypothetical planned-credit simulation, independent of private study-plan service; no official academic status."
     },
     {
       "design": "GET /api/demo/contexts/:id/outlook",
@@ -3031,12 +3079,10 @@
     {
       "design": "POST /api/demo/contexts/:id/outlook/scenarios",
       "primaryIssue": 11,
-      "actualRouteIds": [],
-      "notes": "The demo-context outlook scenario API/DTO is not implemented. Owner academic What-if has separate ownership, semantics and approval; never alias one to the other.",
-      "disposition": "IMPLEMENTATION_REQUIRED",
-      "relatedRouteIds": [
-        "post-api-academics-major-what-if"
-      ]
+      "actualRouteIds": [
+        "post-api-demo-contexts-id-outlook-scenarios"
+      ],
+      "notes": "Separate permitted demo-context scenario with evidence-bound baseline and always NEEDS_REVIEW hypothetical result, not an owner What-if alias."
     },
     {
       "design": "GET /api/demo/contexts/:id/notices",
