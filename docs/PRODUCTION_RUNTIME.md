@@ -1,12 +1,19 @@
 # HUFS One AI — 승인된 운영 API 실행
 
-프로젝트 승인은 **OWNER_CONFIRMED_APPROVED**입니다. 운영 앱은 이미 완료된 승인 여부를 다시 묻는 대신 실제 설정·연결·사용자 권한을 검증합니다. 신규 구현은 [PR #264](https://github.com/minseong-hufs/HUFS-One-AI/pull/264)의 작업 브랜치 기준입니다.
+프로젝트 승인은 **OWNER_CONFIRMED_APPROVED**입니다. 운영 앱은 이미 완료된 승인 여부를 다시 묻는 대신 실제 설정·연결·사용자 권한을 검증합니다. 신규 구현은 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)의 작업 브랜치 기준입니다.
 
 ## 구성
 
 `createPostgresApplication({runtime:'production', ...})`은 Google OIDC·학교메일 서비스, 명시적 SQL pool과 HTTPS origin을 사용합니다. `prepareOperatorPostgres`는 기본 7개 role 및 선택 서비스의 별도 role/DSN/CA TLS를 관리합니다. 경험 승인, 계정/동의, owner workspace·추천·학업·Source ingestion/review 등 13개 확장 서비스는 `extensions`로 연결합니다. raw pool 주입이나 다른 역할을 재사용한 설정은 거부합니다.
 
-현재 지원 목록은 `apps/api/src/operator-extensions.ts`의 `MANAGED_PLATFORM_EXTENSIONS`입니다. `majorWhatIf`의 loader-only 포트는 아직 관리형 loader 연결이 없으므로 이 경로에 직접 주입할 수 없습니다. 이것은 미완료 코드 연결이며 승인 대기가 아닙니다.
+현재 지원 목록은 `apps/api/src/operator-extensions.ts`의 `MANAGED_PLATFORM_EXTENSIONS`입니다. 학업 What-if는 `majorWhatIfPostgres` 확장에서 독립 관리 SQL 역할·현재 소스/원문·학업 승인·학생 권한을 검증한 읽기 전용 로더로 연결합니다. 직접 주입되는 loader-only 포트는 운영자 설정에서 계속 거부합니다.
+
+### 운영 AI 입력·경험 등록
+
+- `managedAi`는 `HCX_005` 또는 `HCX_007`의 입력/권한(`aiAuthority`), 예산(`aiBudget`), 정산·결과(`aiResults`)를 서로 다른 관리 SQL 역할로 조립합니다.
+- 선택적 `aiInputRegistration`은 네 번째 독립 SQL 역할 `aiInputOperator`와 외부의 검증된 `reviewer.verify`를 요구합니다. **공개 API로 노출되지 않는** `operatorRegistration.service.register`가 현재 경험·동의·소스/검토 근거를 검증해 불변 provider input과 현재 HEAD를 같은 트랜잭션에 기록합니다. 이 서비스는 운영 설정 없이 자동 실행되지 않습니다.
+- 선행 schema와 역할은 `20261103_ai_provider_inputs.sql` → `20261105_ai_consented_personal_inputs.sql` → `20261105_ai_experience_bindings.sql` → `20261106_ai_experience_input_operator.sql` 순서로 준비합니다. 후속 migration은 같은 운영 DB와 operator 검증용 비공개 역할에서만 적용합니다. 직접 개인 데이터·역할·계정·유료 모델을 자동 생성하지 않습니다.
+- 경험 수정·삭제, 개별 모델 동의 철회, 버전·세션 변경은 기존 입력의 payload와 HEAD를 폐기/재검증합니다. 학생은 `POST /api/experience/ai-skills/prepare`에서 승인된 자신의 경험을 선택하고, 결과를 확인한 뒤 `tag-approval`에서 명시적으로 선택합니다. AI 후보는 숙련도 인증이 아닙니다.
 
 ## 비공개 서버 factory
 
