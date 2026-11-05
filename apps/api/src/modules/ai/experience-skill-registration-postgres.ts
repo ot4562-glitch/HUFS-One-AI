@@ -113,7 +113,6 @@ export class PostgresExperienceSkillInputRegistrar {
   async register(raw:ExperienceInputRegistration):Promise<RegisteredExperienceInput>{
     const input=Request.parse(raw),asOf=Time.parse(this.now());
     if(input.policyVersion!==this.policyVersion||input.approvedBy===input.actorId
-      ||input.approvedBy===input.privacyReviewRef
       ||iso(input.approvedAt)>iso(asOf)||iso(input.expiresAt)<=iso(asOf))
       throw new ExperienceInputRegistrationDenied();
     const c=await this.pool.connect();let begun=false;
@@ -161,19 +160,23 @@ export class PostgresExperienceSkillInputRegistrar {
           consent_version,approved_by,approved_at,expires_at,input_class,
           privacy_review_ref,source_refs,safe_packet)
         VALUES($1,$2,$3,'HCX_007',$4,$5,$6,$7,$8,$9,$10,
-          'PERSONAL_CONSENTED_CLEARED',$11,$12::jsonb,$13::jsonb)`,
+          'PERSONAL_CONSENTED_CLEARED',$11,$12::jsonb,$13::jsonb)
+        RETURNING projection_id`,
       [projectionId,input.actorId,inputRef,asOf,epoch,input.policyVersion,
         String(input.consentVersion),input.approvedBy,input.approvedAt,expiresAt,
         input.privacyReviewRef,sourceRefs,JSON.stringify(packet)]);
-      if(inserted.rowCount!==1)throw new ExperienceInputRegistrationDenied();
+      if(inserted.rows.length!==1||inserted.rows[0]?.projection_id!==projectionId)
+        throw new ExperienceInputRegistrationDenied();
       const linked=await c.query(`INSERT INTO api_ai_experience_bindings(
         projection_id,actor_id,experience_id,content_version,consent_version,
         input_ref,operation,source_id,source_revision_id,approved_by,approved_at)
-        VALUES($1,$2,$3,$4,$5,$6,'HCX_007',$7,$8,$9,$10)`,
+        VALUES($1,$2,$3,$4,$5,$6,'HCX_007',$7,$8,$9,$10)
+        RETURNING projection_id`,
       [projectionId,input.actorId,input.experienceId,input.contentVersion,
         input.consentVersion,inputRef,input.source.sourceId,
         input.source.revisionId,input.approvedBy,input.approvedAt]);
-      if(linked.rowCount!==1)throw new ExperienceInputRegistrationDenied();
+      if(linked.rows.length!==1||linked.rows[0]?.projection_id!==projectionId)
+        throw new ExperienceInputRegistrationDenied();
       // Remove only old HEAD pointers for this owner/experience. Immutable old
       // records remain auditable, and provider runtime rejects stale packets.
       await c.query(`DELETE FROM api_ai_provider_input_heads h WHERE h.actor_id=$1
@@ -182,9 +185,10 @@ export class PostgresExperienceSkillInputRegistrar {
           WHERE b.actor_id=$1 AND b.experience_id=$2 AND b.projection_id<>$3)`,
         [input.actorId,input.experienceId,projectionId]);
       const current=await c.query(`INSERT INTO api_ai_provider_input_heads(
-        actor_id,input_ref,operation,projection_id) VALUES($1,$2,'HCX_007',$3)`,
+        actor_id,input_ref,operation,projection_id) VALUES($1,$2,'HCX_007',$3) RETURNING projection_id`,
       [input.actorId,inputRef,projectionId]);
-      if(current.rowCount!==1||await this.reviewer.verify({
+      if(current.rows.length!==1||current.rows[0]?.projection_id!==projectionId
+        ||await this.reviewer.verify({
         ...input,now:Time.parse(this.now()),packetSha256,
       })!==true)throw new ExperienceInputRegistrationDenied();
       await c.query('COMMIT');begun=false;

@@ -34,12 +34,12 @@ function setup(allowed=true){
     if(text.includes('FROM api_self_consents'))return {rows:[state.consent]};
     if(text.includes('FROM api_self_workspace_records'))return {rows:[state.record]};
     if(text.includes('FROM source_ingest_heads'))return {rows:[state.evidence]};
-    if(text.startsWith('INSERT'))return {rows:[],rowCount:1};
+    if(text.startsWith('INSERT'))return {rows:[{projection_id:params?.[0]}]};
     if(text==='COMMIT'||text==='ROLLBACK')commits.push(text);
     return {rows:[],rowCount:1};
   });
   const release=vi.fn(),pool={connect:vi.fn(async()=>({query,release}))};
-  const verify=vi.fn(async()=>allowed);
+  const verify=vi.fn(async(_input:unknown)=>allowed);
   const service=new PostgresExperienceSkillInputRegistrar(pool as any,{verify},'SYN-POLICY',()=>now);
   return {service,query,release,verify,sql,commits,state};
 }
