@@ -1,26 +1,10 @@
-# 처음 준비하는 NCP 합성 미리보기
+# HUFS One AI — NCP 비공개 합성 프리뷰 준비
 
-> **2026-11-05 현재 추적 정본:** 이 가이드는 SSH 비공개 **합성 preview만** 설명한다. 승인된 NCP 실계정/요금/TLS/Google/PG·LB IP·복구·D03 검증은 [#252 실환경·인적·권리 인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), 운영 조립·안전 자동화 코드 결함은 [#253 구현](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에서 추적한다. 기존 #222/#221/#89 등은 이관 종료된 원 이슈다. 실제 적용·비용/공개/학생 자료 반입 승인 전 **NOT_RUN / RELEASE_BLOCKED**.
+**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 티켓 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), 코드 준비 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).
 
-> **2026-11-04 현재 코드:** 통합 [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)로 NCP 네트워크·호스트·설치/배포·롤백 코드 main 반영, OPEN PR 0건. 실제 계정/요금 승인·Terraform apply·SSH·TLS 공개·복구 현장 드릴은 **NOT_RUN / RELEASE_BLOCKED**. [STATUS](../../STATUS.md).
+## 0. 안전한 PLAN (신규 리소스 0)
 
-현재 실행 가능한 배포는 **기존 #156의 SSH 터널 전용 합성 preview**다.
-`setup/00-preflight.mjs`는 계정 없이 비용·네트워크·SHA 계획만 검증한다.
-네트워크 IaC는 [별도 모듈](terraform/network/README.md)로 준비했으며 서버·NIC·IP
-구성은 후속 구현이다. 운영 배포/수동 rollback/반납 자동화는 아직 별도 구현·수락
-대상이며 이 Quickstart가 완료됐다는 뜻으로 해석하지 않는다. #46/#89
-`RELEASE_BLOCKED`와 사용자 과금/호스트 승인은 계속 필요하다.
-
-1. **관리 PC에서** 저장소의 AGENTS/STATUS, [운영 인계 양식](OPERATIONS_HANDOFF_TEMPLATE.md)을
-   확인한다. Node/npm은 현재 승인된 `package.json` engines와 lockfile을 따른다.
-   원본 CSV·Forms·키를 열거나 서버로 복사하지 않는다.
-2. 작업 checkout에서 `git fetch origin main` 후, GitHub의 승인된 merge SHA와
-   최신 CI를 확인한다. 계획 도구는 캐시된 `origin/main` 조상만 인정하며 실제
-   원격 최신 상태나 독립 승인을 자동 증명하지 않는다.
-3. 다음 예시를 **무시되는 local_only 폴더**에 저장한다. 예시 IP·SKU·가격은
-   모두 합성이며 연결 대상/실제 견적이 아니다. 실제 관리자 공인 IPv4/32,
-   충돌 없는 사설 CIDR, 운영자가 확인한 SKU·시간·저장소·IP 보유료·VAT·추가비용,
-   예산, 승인된 40자리 SHA로 바꾸고 `OPERATOR_QUOTE` 여부를 정확히 기록한다.
+현재 approved SHA와 변경/검증 결과를 확인하고 계정/키/개인 원본이 없는 승인된 checkout의 `local_only/`에 **합성 예시 입력**을 저장한다. 예시 IP/SKU/비용은 실제 허가값이 아니다.
 
 ```powershell
 New-Item -ItemType Directory -Force local_only | Out-Null
@@ -30,27 +14,25 @@ Get-Content local_only/ncp-setup.json -Raw |
   node infra/ncp/setup/00-preflight.mjs --plan
 ```
 
-출력의 `planSha256`·예상 금액·리소스·차단 항목·00~06 단계를 함께 검토한다.
-비용은 입력 견적의 정밀 소수 계산·원 단위 올림이며 **실제 청구 hard limit이
-아니다**. 누락 트래픽/라이선스/중지 후 IP·스토리지 보유 비용과 크레딧 적용은
-운영자 확인 사항이다. 입력은 64 KiB 이하 strict JSON이며 키/토큰 필드를
-추가하면 거부한다. `--apply`는 지원하지 않으며 아무 계정·호스트도 변경하지 않는다.
+계획형 테스트:
 
-4. **사용자 승인 후 이서연 운영 담당**이 [기존 가이드 1~2절](README.md)의
-   VPC→subnet→ACG/NACL→Ubuntu→공인 IP를 준비한다. 관리자 PC의 공인 IP와
-   서버 공인/사설 IP를 구별한다. ACG SSH /32 및 NACL 반환 트래픽을 확인한다.
-   공인 IP 없이 접근하면 별도 승인된 bastion/VPN이 선행돼야 한다.
-5. [기존 가이드](README.md)의 bootstrap을 사용하고 두 번째 SSH 키 세션을
-   확인한 뒤 harden한다. 기존 `Deploy-NcpPreview.ps1 -Ref <승인SHA>` 기본 plan을
-   검토한다. 실제 전송/실행에는 사용자 승인·독립 확인된 host fingerprint·로컬
-   SSH 키·명시적 `-Apply`가 추가로 필요하다. 통째 Git clone/원본 동기화를 피하고
-   `Prepare-NcpPreview.ps1`의 고정 allowlist ZIP만 사용한다.
-6. systemd/loopback 5173/SSH 터널을 검증한다. 80/443/3000/5432 외부 공개,
-   실제 Google/메일/학생/유료 Provider는 이번 preview에 포함되지 않는다.
-   실패 시 기존 deploy의 자동 rollback 결과를 확인하고 수동 복구가 필요하면
-   중단한다. 반납은 실제 리소스 ID·소유·보존·과금 확인과 운영자 영수증 없이
-   자동 삭제하지 않는다.
+```sh
+node --test tests/security/ncp-setup-plan.test.mjs
+node --test tests/security/ncp-network-iac.test.mjs
+```
 
-계획 오류는 입력을 수정해 다시 실행한다. 예산 초과·CIDR 충돌·원격 SHA 불확실을
-우회하지 않는다. 소프트웨어 검사: `node --test tests/security/ncp-setup-plan.test.mjs`.
-Codex/Claude Code의 준비·작업 분기는 [에이전트 매뉴얼](AGENT_DEPLOYMENT_MANUAL.md)을 따른다.
+## 1. 실제 비용 적용 전 게이트
+
+이서연 NCP 비코드 운영 담당이 실제 IAM/한국 리전·Ubuntu amd64 서버 SKU/이미지·CB/공인 IP/요금·VAT/크레딧/quota/관리 공인 IPv4/32·SSH host key 및 반납 책임을 **공식 콘솔**에서 재확인하고, 최종 사용자가 지출/허가/중단 한도를 명시적으로 승인해야 한다. 승인 없으면 실제 키/VM/public IP/`terraform apply`/`-Apply`/모델 다운로드·외부 원본 전송 금지.
+
+## 2. 승인된 SSH 합성 preview
+
+승인된 Git SHA와 allowlist ZIP/hash만 `Prepare-NcpPreview.ps1`로 계획/준비, `Deploy-NcpPreview.ps1`는 기본 PLAN 모드로 먼저. 실제 전송/기동 옵션 `-Apply`는 승인된 운영자 환경에서만. 부팅 준비/SSH 지문·키 재로그인/UFW/ACG/NACL·Node/systemd를 검증하고 **127.0.0.1:5173 SSH tunnel**로만 접근한다. 외부 80/443, 실 API/Google/PG/학생 원본·OCR/HCX/Laya ON은 OFF.
+
+실호스트 CPU/RSS/p95·서버 boot/restart·실패/last-good rollback·비용·종료/반납은 별도 영수증. 프리뷰 성공으로 공개 서비스를 활성화하지 않는다.
+
+## 3. 운영 staging/공개는 별도
+
+`production composition`·Google OIDC/외대 메일·최소 PG RLS/TLS·Nginx/Edge/실 두 사용자 client IP/직접IP·IPv6·CDN 차단·실기관 자료 권리·비작성자 Gold/기기·D03 승인 확인 전 `RELEASE_BLOCKED/NO_GO`.
+
+[상세 NCP 가이드](README.md) · [Terraform network](terraform/network/README.md) · [host](terraform/host/README.md) · [운영 인계](OPERATIONS_HANDOFF_TEMPLATE.md).
