@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
+import type {VerifiedActor} from '../../types.js';
 import {PostgresAiBudgetLedger} from './budget-postgres.js';
 import {PostgresProviderAuthority} from './provider-authority-postgres.js';
 import type {PostgresProviderAuthorityOptions} from './provider-authority-postgres.js';
@@ -12,7 +13,7 @@ import type {ProviderRuntimeOptions} from './provider-runtime.js';
 
 export interface PostgresProviderConfig {
   pools:{authority:ReviewerSqlPool;budget:ReviewerSqlPool;results:ReviewerSqlPool};
-  phaseId:string;operation:'HCX_005'|'HCX_007';inputPolicyVersion:string;
+  phaseId:string;operation:'OCR_GENERAL'|'HCX_005'|'HCX_007';inputPolicyVersion:string;
   sessionIsCurrent:PostgresProviderAuthorityOptions['sessionIsCurrent'];
   policy:ProviderRuntimeOptions['policy'];secret:NodeClovaOptions['secret'];ocrEndpoint?:string;
   enabled?:()=>boolean;liveApproved?:()=>boolean;now?:()=>string;timeoutMs?:number;
@@ -22,13 +23,19 @@ export interface PostgresProviderConfig {
 }
 /** Construction has no side effects. Every activation/price/credential is a
  * private server dependency; no environment flag alone manufactures approval. */
-export function createPostgresProviderRuntime(config:PostgresProviderConfig){
+export function createPostgresProviderRuntime<O extends PostgresProviderConfig['operation']>(
+  config:PostgresProviderConfig & {operation:O}){
   const phaseId=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).parse(config.phaseId);
-  const operation=z.enum(['HCX_005','HCX_007']).parse(config.operation);
+  const operation=z.enum(['OCR_GENERAL','HCX_005','HCX_007']).parse(config.operation) as O;
+  if(operation==='OCR_GENERAL'&&!config.transport&&!config.ocrEndpoint)
+    throw new Error('Reviewed General OCR endpoint required');
   const now=config.now??(()=>new Date().toISOString());
   const authority=new PostgresProviderAuthority(config.pools.authority,{policyVersion:config.inputPolicyVersion,
     sessionIsCurrent:config.sessionIsCurrent,now});
-  const directory=new PostgresApprovedProviderDirectory(config.pools.authority,authority,phaseId,operation,now);
+  // General OCR is a privileged processing operation. It is never offered
+  // through the student HCX packet discovery endpoint.
+  const directory=operation==='OCR_GENERAL'?undefined:new PostgresApprovedProviderDirectory(
+    config.pools.authority,authority,phaseId,operation,now);
   const executor=createProviderExecutor({
     enabled:config.enabled??(()=>false),liveApproved:config.liveApproved??(()=>false),now,
     authority,
@@ -40,8 +47,8 @@ export function createPostgresProviderRuntime(config:PostgresProviderConfig){
   return {phaseId,operation,executor,
     // This metadata-only directory does not activate the provider and is empty
     // whenever the explicitly approved runtime is OFF. No browser/ENV override.
-    approvedInputs:{list:(actor:Parameters<typeof directory.list>[0])=>
-      (config.enabled?.()===true&&config.liveApproved?.()===true)
+    approvedInputs:{list:(actor:VerifiedActor)=>
+      (directory&&config.enabled?.()===true&&config.liveApproved?.()===true)
         ?directory.list(actor):Promise.resolve({items:[]})},
   };
 }

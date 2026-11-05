@@ -35,6 +35,7 @@ import {createPostgresOwnerDoubleMajorServices} from './modules/academics/owner-
 import {PostgresApprovedRevisionClaims} from './modules/opportunities/approved-revision-claims-postgres.js';
 import {DemoProfileService} from './modules/profiles/demo-profile.js';
 import {PostgresDemoProfileStore} from './modules/profiles/demo-profile-postgres.js';
+import {PostgresDemoProfileQuota} from './modules/profiles/demo-profile-quota-postgres.js';
 import {createPostgresOwnerStudyPlanServices} from './modules/academics/owner-study-plan-services-postgres.js';
 import type {OwnerStudyPlanAuthority} from './modules/academics/owner-study-plan-services-postgres.js';
 import {createPostgresOwnerRecommendations} from './modules/opportunities/owner-recommendations-postgres.js';
@@ -85,6 +86,8 @@ export interface PostgresPlatformConfig {
   revisionComparison?:{pool:ReviewerSqlPool;authority:OwnerCatalogAuthority};
   /** Isolated EMPTY_DEMO synthetic profile only, never a personal-account fallback. */
   demoProfile?:{pool:ReviewerSqlPool};
+  /** Shared, approved SQL quota role and replica-stable private HMAC key. */
+  demoProfileQuota?:{pool:ReviewerSqlPool;digestKey:Buffer};
   now?:()=>string;
 }
 
@@ -92,6 +95,7 @@ export interface PostgresPlatformConfig {
 export function createPostgresPlatformServices(config:PostgresPlatformConfig){
   if(config.sourceIngestionOperator&&!config.sourceIngestion)throw new Error('Source control requires an explicit queue');
   if(config.studyPlanCheck&&config.ownerStudyPlan)throw new Error('Ambiguous owner study-plan services');
+  if(config.demoProfileQuota&&!config.demoProfile)throw new Error('Demo profile quota requires an explicit profile store');
   const now=config.now??(()=>new Date().toISOString());
   const source=config.sourceIngestion,operator=config.sourceIngestionOperator;
   const sourceIngestion=source?new PostgresSourceIngestionQueue(source.pool,operator?{
@@ -120,6 +124,8 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
     ...(claims?{revisionComparison:{source:claims.source,rights:claims.rights,context:claims.context}}:{}),
     ...(config.demoProfile?{demoProfile:new DemoProfileService(
       new PostgresDemoProfileStore(config.demoProfile.pool))}:{}),
+    ...(config.demoProfileQuota?{demoProfileQuota:new PostgresDemoProfileQuota(
+      config.demoProfileQuota.pool,config.demoProfileQuota.digestKey)}:{}),
     ...(config.ownerCatalog?{
       ownerCatalog:new PostgresTrustedOwnerCatalog(config.ownerCatalog.pool,config.ownerCatalog.authority,now),
     }:{}),

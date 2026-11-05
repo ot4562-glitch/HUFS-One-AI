@@ -11,6 +11,7 @@ import {registerOwnerWorkspaceRoutes} from './modules/profiles/self-workspace-ht
 import {registerOwnerStudyPlanCheckRoutes} from './modules/profiles/owner-study-plan-check-http.js';
 import {registerOwnerDoubleMajorRoutes} from './modules/academics/owner-double-major-http.js';
 import {registerDemoProfileRoutes} from './modules/profiles/demo-profile-http.js';
+import type {DemoProfileQuotaPort} from './modules/profiles/demo-profile-http.js';
 import type {DemoProfilePort} from './modules/profiles/demo-profile.js';
 import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
@@ -58,6 +59,8 @@ interface SharedDependencies {
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
   doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
   demoProfile?:DemoProfilePort;
+  /** Approved, atomic cross-replica quota; missing means local synthetic quota only. */
+  demoProfileQuota?:DemoProfileQuotaPort;
   majorWhatIf?:Omit<Parameters<typeof registerOwnerMajorWhatIfRoutes>[0],'app'|'session'>;
   opportunityExplanation?:Omit<Parameters<typeof registerOpportunityExplanationRoutes>[0],'app'|'session'>;
   revisionComparison?:Omit<Parameters<typeof registerOpportunityRevisionComparisonRoutes>[0],'app'|'session'>;
@@ -194,7 +197,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{})});
   registerOwnerStudyPlanCheckRoutes({...deps.studyPlanCheck,app,session:ownerSession});
   registerOwnerDoubleMajorRoutes({...deps.doubleMajor,app,session:ownerSession});
-  registerDemoProfileRoutes(app,deps.demoProfile,ownerSession);
+  registerDemoProfileRoutes(app,deps.demoProfile,ownerSession,deps.demoProfileQuota);
   registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
   registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});

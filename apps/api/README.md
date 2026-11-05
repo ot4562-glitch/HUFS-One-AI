@@ -1,5 +1,13 @@
 # HUFS One AI API — 권한 기반 플랫폼 구현
 
+## 2026-11-04 로컬 추가 구현 (원격 미병합)
+
+- **인증·메일:** `createOperatorGoogleIdentity` → 기존 OIDC/JWKS·PKCE, `createOperatorSchoolMailProof` → 승인된 계정/제한 DB·OTP, `createOperatorSmtpMailSender` → 운영자 승인 SMTP/TLS(465). 설정은 운영자만 소유하며 소스/브라우저·CI에 인증 정보를 넣지 않는다.
+- **PostgreSQL:** `prepareOperatorPostgres`는 기본 7개 역할에 REVIEWER·OTP용 4개 제한 역할을 선택적으로 추가한다. 시작 전 모든 풀의 현재 역할·TLS/권한을 검사한다. `PostgresDemoProfileQuota`는 사전 승인된 `20261104_demo_profile_distributed_quota.sql` 적용·전용 EXECUTE 허가 후에만 주입한다.
+- **SourceRevision:** `createOperatorApprovedSource`의 exact URL·COLLECT/STORE 권리·분리 DB 풀·pinned egress가 모두 필요. `platform.sourceIngestion`으로 명시 주입하고, 운영자 권한 없는 큐/작업과 unreviewed 원문은 거부한다.
+- **OCR/HCX:** `createPostgresProviderRuntime`의 `OCR_GENERAL`은 허용된 OCR endpoint 또는 검수된 offline transport가 필요하고 기본 OFF다. OCR 입력은 HCX 학생 목록에 노출하지 않는다. 비용·철회·출처·인용 검증은 기존 executor/PG 원장을 따른다.
+- **검증 경계:** 합성 테스트 통과와 실제 Google/SMTP/운영 PG·NCP/OCR·기관 허가/실학생 자료 검수는 다르다. 운영 비밀·유료 호출/공개 배포는 수행하지 않았으며 기존 `RELEASE_BLOCKED`를 유지한다.
+
 > **2026-11-04 통합 후 현재 정본:** 2026-11-04: [PR #216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) main f23b86bb에 #183/#213의 7분리 PostgreSQL ROLE/TLS 및 루프백 운영자 진입점·Source/Provider/owner SQL이 통합됐다. 열린 PR **0건**, main TASK-00/NCP IaC/Chrome **3/3 SUCCESS**. **실 Google code exchange·학교메일·운영 PostgreSQL/RLS·TLS/공개 production 기동은 NOT_RUN / RELEASE_BLOCKED**. 아래 과거의 'main 미병합', 스택 PR 대기·옛 HEAD CI 표현은 당시 이력이다. [STATUS](../../STATUS.md) · [잔여 구현](../../docs/REMAINING_IMPLEMENTATION_20261104.md).
 
 ## 비공개 운영자 인입 명령 (#27 · A03.3)
