@@ -20,6 +20,16 @@ GET /api/experience/cards?view=portfolio&limit=20
 
 `ExperiencePortfolioQuerySchema`, `ExperiencePortfolioSchema`가 공통 계약입니다. 응답의 ACTIVE 승인 태그만 선택된 경험의 개인화 신호로 사용합니다. 서버 응답으로 돌아온 사용자 승인과 AI 후보를 구분하며, 후보를 생성하거나 자동 승인했다고 표시하지 않습니다.
 
-**잔여 구현:** 사용자 선택 경험을 실제 provider input에 등록하고 AI 후보/근거 버전에 결속하는 어댑터, UI와 추천 소비자 연결은 #257/#258/#259에서 별도 완료 증거가 필요합니다. 현재 portfolio endpoint만으로 전체 AI 커리어 기능이 완성됐다고 주장하지 않습니다.
+## 승인된 AI 역량 후보 조회 (PR #264)
+
+```http
+GET /api/experience/cards/:id/ai-skills/:jobId
+```
+
+운영자가 검토한 experience→source revision→provider input 결속을 등록하면, 본인 BETA 세션의 정산된 `experience_skills` 후보를 조회합니다. 서버는 **같은 세션의 실제 SETTLED job, 현재 경험 내용 버전·개인 AI 동의 버전·원본 근거, 권한·삭제·철회 상태를 재검증**합니다. 변경 중이면 후보를 반환하지 않습니다. 모델 결과는 `NEEDS_REVIEW`이며 **사용자가 기존 `tag-approval` API에서 직접 확인·선택**해야 추천 신호로 들어갑니다. 후보를 자동 승인하거나 역량 인증으로 표시하지 않습니다.
+
+실제 전제 조건: `20261105_ai_consented_personal_inputs.sql` 이후 `20261105_ai_experience_bindings.sql` 적용, operator 전용 current provider input/출처·승인 결속 행 등록, 독립 SQL role 권한, 운영 provider 설정과 승인된 개인 동의. 이 경로가 존재한다는 사실만으로 실제 등록된 경험/모델 처리·통합 UX가 완료된 것은 아닙니다. UI/추천 소비는 #258/#259 담당입니다.
+
+**잔여 구현:** 외부 운영자의 사전 검토 수집을 실제 개인 경험 provider input 등록과 연결하는 관리 기능과 사용자 선택·실운영 비용/원본 검증은 #257/#252의 구현/운영 증거가 추가로 필요합니다.
 
 테스트: `tests/api/experience-portfolio.test.ts`, `tests/api/experience-portfolio-http.test.ts`; 기존 경험 승인·삭제/철회·PostgreSQL 회귀도 함께 실행합니다.
