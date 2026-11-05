@@ -22,7 +22,7 @@
 
 ## 4. 구현 현황 및 실제 서비스 실현 가능성
 
-React/Vite, Fastify/Zod, 개인화·학업 순수 코어, SQL role/RLS·영수증/CAS, Source/RAG·AI 예산·NCP 자동화 기반이 존재합니다. 현재 민성 담당 [PR #264](https://github.com/minseong-hufs/HUFS-One-AI/pull/264)는 **구성된 production 앱의 일괄 거부를 제거하고**, 운영용 진입점과 관리되는 선택 DB 서비스·경험 API를 연결합니다. 실제 접속 주소·Google/메일·CA TLS DB 역할·공급자 자격증명은 서버에 구성되어야 합니다.
+React/Vite, Fastify/Zod, 개인화·학업 순수 코어, SQL role/RLS·영수증/CAS, Source/RAG·AI 예산·NCP 자동화 기반이 존재합니다. 민성 담당 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)는 **운영 API·관리형 DB/AI 역할·What-if의 승인 자료 로더**, 경험/포트폴리오·복수 경험 선택, 외부 검토 기반 AI 입력 등록 및 학생의 AI 후보 검토 API를 연결합니다. 모델 후보는 학생이 명시적으로 선택하기 전에는 역량 인증이나 추천 입력으로 취급하지 않습니다. 실제 접속 주소·Google/메일·CA TLS DB 역할·공급자 자격증명은 서버에 구성되어야 합니다.
 
 승인은 완료 상태로 처리합니다. 실제 환경이 아직 설정되지 않았다면 `CONFIGURATION_REQUIRED`, 시험을 수행하지 않았다면 `NOT_RUN`으로 표시하며, 승인 완료만으로 배포 성공이나 정확도 성과를 만들지 않습니다. 소유권·세션/CSRF·비밀키 보호·삭제/철회는 운영 기능의 일부로 유지합니다.
 
@@ -39,7 +39,7 @@ npm run build:web
 
 관련 있는 공고·마감을 찾는 비용을 줄이고, 경험을 설명 가능한 기록으로 정리하며, 학업·진로 계획에서 확인해야 할 근거를 명확히 할 수 있습니다. 코드 기반 판단과 생성형 AI 후보를 분리하여 오판·비용·권한 문제를 관리하는 개발 사례를 제공합니다. 시간 절감·추천 정확도·학생 만족도 향상은 실제 측정 전에는 기대효과로만 표현합니다.
 
-**현재 작업:** [#253 구현](https://github.com/minseong-hufs/HUFS-One-AI/issues/253), [#257 경험 API](https://github.com/minseong-hufs/HUFS-One-AI/issues/257), [#252 실행 검증](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+**현재 작업:** [#253 구현](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253), [#257 경험 API](https://github.com/ot4562-glitch/HUFS-One-AI/issues/257), [#252 실행 검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).
 
 ## 6. 전체 문서 목록
 
