@@ -11,7 +11,6 @@ import {liveServices} from './liveServices.js';
 import {resolveSessionRole, roleServices} from './roleServices.js';
 import {boardPort} from './features/applications/boardPort.js';
 import {appPages} from './pages/index.js';
-import {STATIC_PAGES_PREVIEW} from './shell/router.js';
 import './styles.css';
 
 // First synchronous step on load, before any network call or render: take the REVIEWER code out of
@@ -35,7 +34,10 @@ async function start() {
   // synthetic in-memory fixtures and never creates a live API transport for its UI.
   const localSynthetic = import.meta.env.DEV && import.meta.env.MODE === 'synthetic'
     && (location.hostname === '127.0.0.1' || location.hostname === 'localhost');
-  if (localSynthetic || STATIC_PAGES_PREVIEW) {
+  if (localSynthetic || (
+    import.meta.env.PROD && import.meta.env.MODE === 'pages-preview'
+    && import.meta.env.VITE_STATIC_PAGES_PREVIEW === 'true'
+  )) {
     const dev = await import('./dev/syntheticDemoClient.js');
     const synthetic = new dev.SyntheticDemoClient({snapshotErrors: {S04: 'SHARING_REVOKED'}});
     const owner = await import('./dev/syntheticOwnerServer.js');
