@@ -1,8 +1,8 @@
 # HUFS One AI — Fastify API·PostgreSQL·권한/AI
 
-**현재 구현:** TypeScript/Fastify·Zod 계약과 여러 PostgreSQL role/영속 SQL 어댑터, Owner/REVIEWER/ADMIN·합성 계정, 승인 SourceRevision/Temporal RAG·이미지/PDF 근거·AI 4작업/예산 API가 `main`에 존재합니다. **production 조립·실 Google/학교메일·운영 PG TLS/RLS·NCP/유료 Provider·실원본은 미승인**입니다. `APP_ENV=production` 기동 거부·미검증 SQL 포트 거부, `AI_ENABLED=false`, Laya OFF 및 `RELEASE_BLOCKED`를 유지합니다.
+**현재 구현:** `main`에는 TypeScript/Fastify·Zod·다중 PostgreSQL 역할·Owner/REVIEWER/ADMIN 및 SourceRevision/Temporal RAG·이미지/PDF·AI 4작업·예산 API가 있습니다. 소유자 확인 프로젝트 이용/모델/운영 승인은 **`OWNER_CONFIRMED_APPROVED`**입니다. 미병합 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)에는 별도의 production factory·관리 PG 역할·경험 AI·What-if/사설 컨테이너 조립이 있습니다. 이 승인/코드는 실제 Google/학교메일, PG CA TLS/RLS migration, NCP/유료 Provider, 실학생 원본의 설치·실행·결과를 뜻하지 않습니다. `main.js`의 안전 거부와 production-only `production-main.js --apply`는 명확히 분리하며, 실환경은 `CONFIGURATION_REQUIRED/NOT_RUN/RELEASE_BLOCKED`입니다.
 
-현재 상태 [STATUS](../../STATUS.md) · 개발 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · 실인수 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+현재 상태 [STATUS](../../STATUS.md) · 개발 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253) · 실인수 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).
 
 ## 계층과 책임
 
@@ -33,7 +33,7 @@ UI·동일 사용자의 다른 브라우저/탭이 보낸 raw actor/email/`hd`/X
 | AI | 4 task job/상태·provider results·budget/receipt | safe packet·인용 exact match·취소/늦은 예약·불명확 과금 |
 | ADMIN | `GET /api/admin/usage`, synthetic preflight/club moderation | 검증된 독립 admin authority, SQL role·공유/원본 정보 비노출 |
 
-**설계 직접 미매핑 9경로:** 기존 비밀번호 로그인 `POST /api/auth/login`은 retired. `/api/academics/import/preview|apply`는 **private operator 명령** 경계이며 공개 HTTP API가 아니다. 나머지 demo-context experiences/saved/actions, plans/simulate, outlook/scenarios, corpus approve 등은 실제 대체/미구현/보안상 제외 판정 후에만 변경. 상세 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).
+**설계 직접 미매핑 9경로:** `tools/api_contract_inventory.json` 및 실행 가능한 정적 감사에서 분류 완료. 비밀번호 로그인은 `INTENTIONALLY_RETIRED`, demo 계획 시뮬레이션·전망 시나리오는 `IMPLEMENTATION_REQUIRED`, 경험·보관함·행동 엔드포인트는 실제 권한/DTO가 다른 `ALTERNATIVE_SCOPED_API`, academic import preview/apply 및 corpus approve는 `OPERATOR_PRIVATE`입니다. 관련 API를 설계 URL의 정확한 별칭으로 간주하거나 존재하지 않는 라우트를 구현 완료로 세지 않습니다. [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253).
 
 ## 보안·데이터
 
@@ -49,7 +49,7 @@ UI·동일 사용자의 다른 브라우저/탭이 보낸 raw actor/email/`hd`/X
 - 수집: 허용된 HTTPS source URL·필드/권리·DNS/IP pin/redirect/content bound·동시 global lease·원본/paragraph SHA·304 observation·리비전·취소/재시도·권한 전후 검사.
 - 이미지: PNG/JPEG·bounded PDF 원본/페이지 raster/OCR bbox·원문 SHA/좌표/asOf·reviewer 별도 권한·temporal retrieval. PDF v1 형식/크기/지원 범위는 [runtime](../../infra/ai/PDF_RUNTIME.md).
 - AI: `experience_skills`, `opportunity_terms`, `personal_action_brief`, `graduation_explanation`는 권리·actor/asOf·SafeLlmPacket의 정확한 허용 출처만. 추론 문장·숫자/마감·공식 학칙을 확정 결과로 사용하지 않음. budget RESERVED→DISPATCHED→SETTLED/UNKNOWN_BILLING·중복/취소/late-result 안전 폴백.
-- 외부 OCR/HCX/모델 다운로드/Laya ON·학생 원본 외부 전송은 별도 권리·비용/운영/비작성자 품질 승인 전 **비활성**.
+- 외부 OCR/HCX/모델 다운로드/Laya ON·학생 원본 외부 전송의 **프로젝트 승인 상태는 완료 확인**입니다. 실제 사용은 독립 원본 권리·학생별 현재 동의/철회·비용 상한·신뢰할 수 있는 서버 구성 및 실측 검증이 일치할 때만 활성화합니다. 현재 제공자 설정이 없으면 `CONFIGURATION_REQUIRED`, 미실행이면 `NOT_RUN`입니다.
 
 ## 개발과 테스트
 

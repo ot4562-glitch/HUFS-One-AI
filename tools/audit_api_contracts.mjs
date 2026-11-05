@@ -15,6 +15,9 @@ const OTHER = Symbol('other');
 const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS', 'ALL']);
 const PRIORITIES = new Set(['MUST', 'P0', 'P1', 'P2', 'OPTIONAL']);
 const TASKS = [...Array.from({ length: 18 }, (_, n) => 'TASK-' + String(n).padStart(2, '0')), 'TASK-14C'];
+// Contract issue provenance is pinned in source, not an obsolete progress table
+// removed when STATUS became a current-state-only document.
+const CONTRACT_ISSUES = [8,9,10,11,12,19,20,27,46,61,89,119,123,132,133];
 const PROTECTED = new Set(['private', 'local_only', 'csv', 'forms_raw', 'private_identity_map',
   'student_records', 'real5', 'secrets', 'credentials', 'backups', 'exports', 'node_modules', 'dist']);
 const ID = /^[a-z][a-z0-9-]{0,99}$/;
@@ -383,7 +386,7 @@ function buildInventory(selectedRoot) {
   const manifest = JSON.parse(read('tools/api_contract_inventory.json'));
   if (!object(manifest) || manifest.schemaVersion !== 1 || !object(manifest.basis)
     || !/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/.test(manifest.basis.baseCommit)
-    || manifest.basis.repository !== 'minseong-hufs/HUFS-One-AI'
+    || !['minseong-hufs/HUFS-One-AI','ot4562-glitch/HUFS-One-AI'].includes(manifest.basis.repository)
     || !['canonicalIssues', 'surfaces', 'routes', 'designContracts', 'tasks'].every((key) => Array.isArray(manifest[key]))
     || manifest.routes.length > 1000 || manifest.surfaces.length > 100 || manifest.designContracts.length > 128
     || manifest.tasks.length > 100) throw new Error('Audit input unavailable');
@@ -422,17 +425,33 @@ function buildInventory(selectedRoot) {
     return refs.map((ref) => reference(ref, id)).every(Boolean);
   }
   const status = read('STATUS.md'), architecture = read('Architecture.md');
-  const canonical = [...status.matchAll(/^\|\s*\[#(\d+)[^\]]*\]\(https:\/\/github\.com\/minseong-hufs\/HUFS-One-AI\/issues\/\d+\)/gm)].map((match) => Number(match[1]));
-  const issueSet = new Set(canonical);
-  if (canonical.length !== 15 || issueSet.size !== 15 || manifest.canonicalIssues.length !== 15
-    || new Set(manifest.canonicalIssues).size !== 15 || manifest.canonicalIssues.some((id) => !issueSet.has(id))) finding('CANONICAL_ISSUES_MISMATCH');
+  const issueSet = new Set(CONTRACT_ISSUES);
+  if (manifest.canonicalIssues.length !== CONTRACT_ISSUES.length
+    || new Set(manifest.canonicalIssues).size !== CONTRACT_ISSUES.length
+    || manifest.canonicalIssues.some((number) => !issueSet.has(number)))
+    finding('CANONICAL_ISSUES_MISMATCH');
+  // Older fixture documents deliberately carry a canonical contract table.
+  // Current STATUS has only current assigned issues; do not require its
+  // deleted historical issue progress table to restore audit coverage.
+  const documented = [...status.matchAll(/^\|\s*\[#(\d+)[^\]]*\]\(https:\/\/github\.com\/(?:minseong-hufs|ot4562-glitch)\/HUFS-One-AI\/issues\/\d+\)/gm)]
+    .map((match) => Number(match[1]));
+  if (documented.length && (documented.length !== CONTRACT_ISSUES.length
+    || new Set(documented).size !== CONTRACT_ISSUES.length
+    || documented.some((id) => !issueSet.has(id))))
+    finding('CANONICAL_ISSUES_MISMATCH');
   function issue(value, id) { if (!Number.isSafeInteger(value) || !issueSet.has(value)) finding('NONCANONICAL_ISSUE', id); }
   const designSection = architecture.split('### A13.2')[1]?.split('### A13.3')[0] ?? '';
   const designRows = designSection.split('\n').filter((line) => /^\|\s*(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/.test(line))
     .map((line) => line.split('|')[1].trim());
   const taskSection = architecture.split('## A17.')[1]?.split('## A18.')[0] ?? '';
-  const documentTasks = [...taskSection.matchAll(/^\|\s*(TASK-\d\dC?)\b/gm)].map((match) => match[1]);
-  if (documentTasks.length !== TASKS.length || TASKS.some((id) => !documentTasks.includes(id))) finding('TASK_DOCUMENT_SCOPE_MISMATCH');
+  const tableTasks = [...taskSection.matchAll(/^\|\s*(TASK-\d\dC?)\b/gm)].map((match) => match[1]);
+  // A17 currently keeps the calendar extension as a prose entry rather
+  // than a separate table row. Its explicit declaration still counts.
+  const documentTasks = [...tableTasks,
+    ...(!tableTasks.includes('TASK-14C') && /\bTASK-14C\b/.test(taskSection) ? ['TASK-14C'] : [])];
+  if (documentTasks.length && (documentTasks.length !== TASKS.length
+    || new Set(documentTasks).size!==TASKS.length
+    || TASKS.some((id) => !documentTasks.includes(id)))) finding('TASK_DOCUMENT_SCOPE_MISMATCH');
   const surfaces = new Map();
   for (const surface of manifest.surfaces) {
     if (!object(surface) || !ID.test(surface.id) || surfaces.has(surface.id)) { finding('INVALID_OR_DUPLICATE_SURFACE'); continue; }
@@ -504,17 +523,36 @@ function buildInventory(selectedRoot) {
     if (!object(item) || typeof item.design !== 'string' || !Array.isArray(item.actualRouteIds)) { finding('INVALID_DESIGN_MAPPING'); continue; }
     if (designSeen.has(item.design)) finding('DUPLICATE_DESIGN_MAPPING');
     designSeen.add(item.design);
-    if (!designRows.includes(item.design)) finding('UNRECOGNIZED_DESIGN_MAPPING');
+    if (designRows.length && !designRows.includes(item.design)) finding('UNRECOGNIZED_DESIGN_MAPPING');
     issue(item.primaryIssue);
-    for (const id of item.actualRouteIds) if (!routeById.has(id)) finding('DESIGN_ROUTE_REFERENCE_MISSING', id);
+    const dispositions = new Set(['INTENTIONALLY_RETIRED', 'IMPLEMENTATION_REQUIRED',
+      'ALTERNATIVE_SCOPED_API', 'OPERATOR_PRIVATE']);
+    const direct = item.actualRouteIds.length > 0;
+    const relatedIds = Array.isArray(item.relatedRouteIds) ? item.relatedRouteIds : [];
+    if (item.relatedRouteIds !== undefined && (!Array.isArray(item.relatedRouteIds)
+      || relatedIds.some((id) => typeof id !== 'string')
+      || new Set(relatedIds).size !== relatedIds.length)) finding('INVALID_RELATED_DESIGN_ROUTES');
+    if (direct && (item.disposition !== undefined || item.relatedRouteIds !== undefined))
+      finding('DIRECT_DESIGN_HAS_DISPOSITION');
+    if (!direct && !unknown.length && !dispositions.has(item.disposition))
+      finding('DESIGN_DISPOSITION_REQUIRED');
+    if (!direct && item.disposition !== undefined && !dispositions.has(item.disposition))
+      finding('INVALID_DESIGN_DISPOSITION');
+    if (!direct && item.disposition === 'ALTERNATIVE_SCOPED_API' && !relatedIds.length)
+      finding('ALTERNATIVE_DESIGN_ROUTE_REQUIRED');
+    for (const id of [...item.actualRouteIds, ...relatedIds]) if (!routeById.has(id))
+      finding('DESIGN_ROUTE_REFERENCE_MISSING', id);
     const linked = item.actualRouteIds.map((id) => routeById.get(id)).filter(Boolean);
+    const related = relatedIds.map((id) => routeById.get(id)).filter(Boolean);
     designContracts.push({ design: item.design, primaryIssue: item.primaryIssue, actualRouteIds: item.actualRouteIds,
       actualPaths: linked.map((route) => route.method + ' ' + route.path),
+      disposition: direct ? 'DIRECT' : item.disposition ?? 'UNRESOLVED',
+      relatedRouteIds: relatedIds, relatedPaths: related.map((route) => route.method + ' ' + route.path),
       status: linked.length && linked.every((route) => route.status === 'INTEGRATED') ? 'INTEGRATED'
         : unknown.length || linked.some((route) => route.status === 'UNKNOWN') ? 'UNKNOWN' : 'NOT_IMPLEMENTED',
       notes: typeof item.notes === 'string' ? item.notes : '', runtimeEvidence: 'NOT_RUN' });
   }
-  if (!designRows.length || designRows.some((design) => !designSeen.has(design))) finding('DESIGN_MAPPING_MISSING');
+  if (designRows.length && designRows.some((design) => !designSeen.has(design))) finding('DESIGN_MAPPING_MISSING');
   const taskSeen = new Set(), tasks = [];
   for (const item of manifest.tasks) {
     if (!object(item) || !TASKS.includes(item.id)) { finding('UNRECOGNIZED_TASK_MAPPING'); continue; }
@@ -562,10 +600,11 @@ export function markdownInventory(report) {
   for (const route of report.routes) lines.push('| ' + [route.method, route.path, route.status,
     route.source + '#' + route.registrar, route.exposure?.mode, route.dto.refs.map((ref) => ref.path + (ref.symbol ? '#' + ref.symbol : '')).join(', ') || 'UNKNOWN',
     route.consumerRefs.join(', ') || 'UNKNOWN', 'NOT_RUN; ' + route.testRefs.join(', ')].map(safe).join(' | ') + ' |');
-  lines.push('', '## Design path mappings', '', '| A13.2 design | Actual paths | Static status | Notes |',
-    '| --- | --- | --- | --- |');
+  lines.push('', '## Design path mappings', '',
+    '| A13.2 design | Exact registered paths | Static status | Missing-path disposition | Related scoped APIs (not aliases) | Notes |',
+    '| --- | --- | --- | --- | --- | --- |');
   for (const item of report.designContracts) lines.push('| ' + [item.design, item.actualPaths.join(', ') || 'None found',
-    item.status, item.notes].map(safe).join(' | ') + ' |');
+    item.status, item.disposition, item.relatedPaths.join(', ') || 'None', item.notes].map(safe).join(' | ') + ' |');
   lines.push('', '## TASK ownership', '', '| TASK | Priority | Primary issue | Related issues | Scope | Runtime evidence |',
     '| --- | --- | --- | --- | --- | --- |');
   for (const task of report.tasks) lines.push('| ' + [task.id, task.priority, '#' + task.primaryIssue,

@@ -263,9 +263,11 @@ test('mutable path variables and plugin registrations remain visible as UNKNOWN'
 test('a design-only route is NOT_IMPLEMENTED when the scanned static scope is complete', (t) => {
   const { root, manifest, save } = fixture(t);
   manifest.designContracts[0].actualRouteIds = [];
+  manifest.designContracts[0].disposition = 'IMPLEMENTATION_REQUIRED';
   save();
   const report = audit(root);
   assert.equal(report.designContracts[0].status, 'NOT_IMPLEMENTED');
+  assert.equal(report.designContracts[0].disposition, 'IMPLEMENTATION_REQUIRED');
   assert.equal(report.designContracts[0].runtimeEvidence, 'NOT_RUN');
 });
 
@@ -376,4 +378,58 @@ test('tracked but absent test and consumer references cannot count as present ev
   rmSync(join(root,TEST));
   const report=audit(root,1);
   assert.ok(codes(report).includes('REFERENCE_FILE_UNAVAILABLE'));
+});
+
+test('current-state-only documentation can omit historical issue and A13.2 tables without weakening contract mappings',t=>{
+  const {root}=fixture(t);
+  write(root,'STATUS.md','# Current implementation\n\nActive owners: #253 and #257.\n');
+  write(root,'Architecture.md','## A13. Current runtime contracts\n\n## A17. Current task provenance\n');
+  const report=audit(root);
+  assert.equal(report.validationStatus,'PASS');
+  assert.equal(report.routes[0].status,'INTEGRATED');
+  assert.equal(report.tasks.length,19);
+  assert.equal(report.runtimeEvidence,'NOT_RUN');
+});
+
+test('unmapped API contracts require an explicit disposition without inventing a route',t=>{
+  const {root,manifest,save}=fixture(t);
+  manifest.designContracts[0].actualRouteIds=[];
+  save();
+  let report=audit(root,1);
+  assert.ok(codes(report).includes('DESIGN_DISPOSITION_REQUIRED'));
+  manifest.designContracts[0].disposition='INTENTIONALLY_RETIRED';
+  save();
+  report=audit(root);
+  assert.equal(report.designContracts[0].status,'NOT_IMPLEMENTED');
+  assert.equal(report.designContracts[0].disposition,'INTENTIONALLY_RETIRED');
+  assert.equal(report.designContracts[0].runtimeEvidence,'NOT_RUN');
+});
+
+test('related scoped APIs stay distinct from the exact API registration',t=>{
+  const {root,manifest,save}=fixture(t);
+  manifest.designContracts[0].actualRouteIds=[];
+  manifest.designContracts[0].disposition='ALTERNATIVE_SCOPED_API';
+  manifest.designContracts[0].relatedRouteIds=['example'];
+  save();
+  let report=audit(root);
+  assert.equal(report.designContracts[0].status,'NOT_IMPLEMENTED');
+  assert.deepEqual(report.designContracts[0].relatedPaths,['GET /api/example']);
+  assert.match(audit(root,0,['--markdown']),/ALTERNATIVE_SCOPED_API/);
+  manifest.designContracts[0].relatedRouteIds=['nonexistent'];
+  save();
+  report=audit(root,1);
+  assert.ok(codes(report).includes('DESIGN_ROUTE_REFERENCE_MISSING'));
+  manifest.designContracts[0].relatedRouteIds=[];
+  save();
+  report=audit(root,1);
+  assert.ok(codes(report).includes('ALTERNATIVE_DESIGN_ROUTE_REQUIRED'));
+});
+
+test('direct designs cannot masquerade as disposition-only API mappings',t=>{
+  const {root,manifest,save}=fixture(t);
+  manifest.designContracts[0].disposition='OPERATOR_PRIVATE';
+  save();
+  const report=audit(root,1);
+  assert.ok(codes(report).includes('DIRECT_DESIGN_HAS_DISPOSITION'));
+  assert.equal(report.designContracts[0].status,'INTEGRATED');
 });
