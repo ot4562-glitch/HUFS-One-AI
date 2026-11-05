@@ -141,6 +141,8 @@ export const FeedResultSchema = z.strictObject({
   asOf:z.iso.datetime({offset:true}),
   featured:z.array(FeedCardSchema).max(3),
   compact:z.array(FeedCardSchema).max(6),
+  /** Separate, bounded condition-failure area; excluded from candidate counts. */
+  ineligible:z.array(FeedCardSchema).max(20).optional(),
   hasMore:z.boolean(),
   totalCandidates:z.number().int().nonnegative(),
 }).superRefine((feed,ctx) => {
@@ -154,6 +156,12 @@ export const FeedResultSchema = z.strictObject({
     }
   }
   if(feed.totalCandidates < all.size)ctx.addIssue({code:'custom',path:['totalCandidates'],message:'total below shown count'});
+  for(const [index,item] of (feed.ineligible??[]).entries()){
+    if(item.displayMode!=='COMPACT_LIST'||item.eligibility!=='INELIGIBLE')
+      ctx.addIssue({code:'custom',path:['ineligible',index],message:'condition-failure items must be compact and INELIGIBLE'});
+    if(all.has(item.opportunityId))ctx.addIssue({code:'custom',path:['ineligible',index,'opportunityId'],message:'duplicate opportunity'});
+    all.add(item.opportunityId);
+  }
 });
 export type FeedResult = z.infer<typeof FeedResultSchema>;
 

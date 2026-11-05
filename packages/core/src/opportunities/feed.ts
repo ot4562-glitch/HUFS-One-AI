@@ -155,6 +155,8 @@ export function composeFeed(profile:RecommendationProfile, opportunities:readonl
     compact:compact.map((r, i) => toCard(r, 'COMPACT_LIST', explanations[featured.length + i]!)),
     hasMore:visible.length > featured.length + compact.length,
     totalCandidates:visible.length,
+    ...(ineligible.length?{ineligible:ineligible.slice(0,20)
+      .map(r=>toCard(r,'COMPACT_LIST',explainRecommendation(r,cfg)))}:{}),
   });
   return {feed, ineligible, closed, excludedFuture, excludedDuplicateIds, all:[...featured, ...ordered], explanations, rankConfigVersion:cfg.version};
 }

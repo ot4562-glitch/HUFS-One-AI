@@ -1,4 +1,4 @@
-import type {Opportunity, TopicCode} from '@hufs-one/contracts';
+import type {Opportunity, TopicCode, RecommendationProfileInput} from '@hufs-one/contracts';
 
 type Eligibility = 'ELIGIBLE'|'INELIGIBLE'|'UNKNOWN';
 type Lifecycle = 'UPCOMING'|'OPEN'|'CLOSED'|'UNKNOWN';
@@ -9,19 +9,9 @@ export type FactValue = string|number|boolean|readonly string[];
 /**
  * Recommendation input built by the API from the student's own approved projection.
  * Only explicit choices and approved experience are relevance signals (A05.2-2).
- * Core-local until promoted into @hufs-one/contracts by the integration owner.
+ * Shape shared with the API input contract; approval is still checked by the API.
  */
-export interface RecommendationProfile {
-  interestTopics:readonly TopicCode[];
-  desiredJobTopics:readonly TopicCode[];
-  approvedExperienceTopics:readonly TopicCode[];
-  /** Student-approved canonical language tags (self-reported ≠ certified). */
-  approvedLanguageCodes:readonly string[];
-  /** Topics from the official major↔topic mapping v1; empty when no mapping evidence. */
-  officialMajorTopics:readonly TopicCode[];
-  /** Verified facts for eligibility fields. A missing field is UNKNOWN, never assumed. */
-  facts:Readonly<Partial<Record<ConditionField, FactValue>>>;
-}
+export type RecommendationProfile = RecommendationProfileInput;
 
 export type ConditionOutcome = 'PASS'|'FAIL'|'UNKNOWN';
 export interface ConditionResult {field:ConditionField; operator:Condition['operator']; outcome:ConditionOutcome; evidenceId:string}

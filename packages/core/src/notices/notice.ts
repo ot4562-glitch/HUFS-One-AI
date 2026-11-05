@@ -1,4 +1,4 @@
-import {ISODateTimeSchema, NoticeResultSchema, type AcademicSummary, type NoticeResult, type TopicCode} from '@hufs-one/contracts';
+import {ISODateTimeSchema, NoticeResultSchema, type AcademicSummary, type NoticeResult, type TopicCode, type NoticeInput, type NoticeStudentInput} from '@hufs-one/contracts';
 import {byCodeUnit} from '../normalization/dedupe.js';
 import {onlyKnownTopics} from '../normalization/topics.js';
 
@@ -8,11 +8,11 @@ type VerificationState = 'CANDIDATE'|'VERIFIED'|'NEEDS_REVIEW'|'REJECTED';
 export type MajorRole = 'PRIMARY'|'DOUBLE'|'MINOR';
 
 /**
- * A07.1 notice input. Core-local until promoted into @hufs-one/contracts by the integration owner.
+ * A07.1 notice input. Extends the shared server contract; approval remains a separate gate.
  * Every scope field is optional: an absent field means the notice did not restrict it.
  * All datetimes must be ISO with an offset; use endOfSeoulDay() for "~까지" date-only deadlines.
  */
-export interface Notice {
+export interface Notice extends NoticeInput {
   id:string;
   sourceSnapshotId:string;
   title:string;
@@ -49,7 +49,7 @@ export interface Notice {
 }
 
 /** Verified student scope from the approved projection. Missing values give UNKNOWN. */
-export interface NoticeStudent {
+export interface NoticeStudent extends NoticeStudentInput {
   campus?:string;
   college?:string;
   majors?:readonly {major:string; role:MajorRole}[];

@@ -132,6 +132,7 @@ export function computeAuthorizedSections(bundle:CalendarInputBundle,input:Calen
     feed:FeedResultSchema.parse({...feed.feed,
       featured:feed.feed.featured.map(c=>({...c,evidenceRefs:withRefs(c.opportunityId,c.evidenceRefs)})),
       compact:feed.feed.compact.map(c=>({...c,evidenceRefs:withRefs(c.opportunityId,c.evidenceRefs)})),
+      ...(feed.feed.ineligible?{ineligible:feed.feed.ineligible.map(c=>({...c,evidenceRefs:withRefs(c.opportunityId,c.evidenceRefs)}))}:{}),
     }),
   };
   const evaluated=composeNotices(scoped.noticeStudent,notices,{asOf});

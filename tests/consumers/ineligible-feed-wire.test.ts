@@ -48,4 +48,25 @@ describe('authorized ineligible feed wire and consumer (#230)',()=>{
   it('continues accepting legacy payloads without the optional field',()=>{
     expect(FeedResultSchema.safeParse({asOf:ASOF,featured:[],compact:[],hasMore:false,totalCandidates:0}).success).toBe(true);
   });
+  it('rejects duplicate IDs, invalid placement, wrong verdict and oversized additional wire data',()=>{
+    const feed=composeFeed(profile,[opp('SYN-A')],{asOf:ASOF}).feed;
+    const card=feed.ineligible![0]!;
+    for(const ineligible of [[card,card],[{...card,displayMode:'FEATURED_LARGE'}],
+      [{...card,eligibility:'ELIGIBLE'}],Array.from({length:21},(_,i)=>({...card,opportunityId:'SYN-'+i,explanation:undefined}))])
+      expect(FeedResultSchema.safeParse({...feed,ineligible}).success).toBe(false);
+    expect(FeedResultSchema.safeParse({...feed,compact:[card],totalCandidates:1}).success).toBe(false);
+  });
+  it('blocks non-synthetic additional cards at the same shared parsing boundary used by REVIEWER API and browser',()=>{
+    const feed=composeFeed(profile,[opp('SYN-A')],{asOf:ASOF}).feed;
+    const card=feed.ineligible![0]!;
+    for(const changed of [{...card,dataMode:'REAL'},{...card,opportunityId:'REAL-CARD',explanation:undefined},
+      {...card,evidenceRefs:['EV-REAL-PRIVATE']},
+      {...card,explanation:{...card.explanation!,dataMode:'REAL'}},
+      {...card,explanation:{...card.explanation!,eligibility:{...card.explanation!.eligibility,
+        conditions:card.explanation!.eligibility.conditions.map(c=>({...c,evidenceId:'EV-REAL-PRIVATE'}))}}}])
+      expect(DemoSnapshotSchema.safeParse({...snapshot,asOf:ASOF,
+        feed:{...feed,ineligible:[changed]}}).success).toBe(false);
+    expect(DemoSnapshotSchema.safeParse({...snapshot,asOf:ASOF,datasetMode:'REAL_CONSENTED',
+      feed:{...feed,ineligible:[{...card,dataMode:'REAL',explanation:undefined}]}}).success).toBe(true);
+  });
 });

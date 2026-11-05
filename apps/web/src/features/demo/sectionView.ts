@@ -32,6 +32,7 @@ export interface FeedCardView {
 export interface FeedView {
   readonly featured: readonly FeedCardView[];
   readonly compact: readonly FeedCardView[];
+  readonly ineligible?: readonly FeedCardView[];
   readonly hasMore: boolean;
 }
 
@@ -106,7 +107,7 @@ export function buildDemoScreenView(snapshot: DemoSnapshot, allowedSections: rea
   return {
     snapshotBadges,
     feed: allow.has('FEED')
-      ? {kind: 'SHOW', data: {featured: snapshot.feed.featured.map(c => cardView(c, snapshot.feed.asOf)), compact: snapshot.feed.compact.map(c => cardView(c, snapshot.feed.asOf)), hasMore: snapshot.feed.hasMore}}
+      ? {kind: 'SHOW', data: {featured: snapshot.feed.featured.map(c => cardView(c, snapshot.feed.asOf)), compact: snapshot.feed.compact.map(c => cardView(c, snapshot.feed.asOf)), ineligible: (snapshot.feed.ineligible??[]).map(c => cardView(c, snapshot.feed.asOf)), hasMore: snapshot.feed.hasMore}}
       : {kind: 'HIDDEN'},
     notices: allow.has('NOTICES') ? {kind: 'SHOW', data: snapshot.notices} : {kind: 'HIDDEN'},
     academics: gated<AcademicSummary>(allow.has('ACADEMICS'), snapshot.academics),

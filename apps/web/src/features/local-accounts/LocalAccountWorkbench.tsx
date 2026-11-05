@@ -83,6 +83,7 @@ function DerivedViews({snapshot,onWorkspace}:{snapshot:LocalAccountSnapshot;onWo
   return <div className="local-account__grid">
     <Section title="맞춤 공고"><p>서버가 현재 저장한 관심 분야·희망 진로로 다시 계산한 합성 결과 · 후보 {feed.totalCandidates}개</p>{cards(feed.featured)}</Section>
     <Section title="일반 공고">{cards(feed.compact)}{feed.hasMore&&<p>추가 후보가 있습니다. 이 로컬 화면의 전체 후보 조회는 미지원입니다.</p>}</Section>
+    {!!feed.ineligible?.length&&<Section title="조건 미충족">{cards(feed.ineligible)}<p>현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개만 표시합니다.</p></Section>}
     <Section title="공지">{notices.items.length===0?<p>표시할 공지가 없습니다.</p>:notices.items.map(notice=><article key={notice.noticeId}><h3>{notice.title}</h3>
       <p>{notice.appliesTo==='YES'?'적용 대상':notice.appliesTo==='NO'?'적용 대상 아님':'적용 확인 필요'} · {notice.verificationState}</p>
       {notice.studentDeadline&&<p>학생 마감: <time dateTime={notice.studentDeadline}>{notice.studentDeadline}</time>{notice.overdue?' · 마감 지남':''}</p>}
