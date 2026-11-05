@@ -78,7 +78,7 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
                 continue
             # The ordinary build must not distribute orphaned Pages/local-only
             # synthetic fixture chunks. The Pages preview has a separate build.
-            if re.fullmatch(r"synthetic(?:DemoClient|OwnerServer|Clubs|WhatIf|PlanCheck|Revisions|DoubleMajor)-[^/]+\\.js", artifact.name, re.I):
+            if re.fullmatch(r"synthetic(?:DemoClient|OwnerServer|Clubs|WhatIf|PlanCheck|Revisions|DoubleMajor)-[^/]+\.js", artifact.name, re.I):
                 fail("SYNTHETIC_PREVIEW_CHUNK_IN_OPERATIONAL_BUNDLE", relative)
             if WORKER_FILENAMES.fullmatch(artifact.name):
                 fail("UNREVIEWED_SERVICE_WORKER_FILE", relative)
