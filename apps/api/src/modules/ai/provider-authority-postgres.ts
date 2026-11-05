@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {SafeLlmPacketSchema,SelfConsentSchema,ClearedProviderInputClassSchema} from '@hufs-one/contracts';
+import {SafeLlmPacketSchema,SelfConsentSchema,ClearedProviderInputClassSchema,OwnerWorkspaceRecordSchema} from '@hufs-one/contracts';
 import type {AiTask,SafeLlmPacket} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
 import type {VerifiedActor} from '../../types.js';
@@ -200,8 +200,10 @@ export class PostgresProviderAuthority {
         &&Date.parse(Time.parse(binding.updated_at))<=asOf
         &&p.source_refs[0]?.sourceId===binding.source_id
         &&p.source_refs[0]?.revisionId===binding.source_revision_id);
-      const experience={itemId:binding.experience_id,version:recordVersion,
-        updatedAt:Time.parse(binding.updated_at),value:binding.value_json};
+      const experience=OwnerWorkspaceRecordSchema.parse({
+        itemId:binding.experience_id,version:recordVersion,
+        updatedAt:Time.parse(binding.updated_at),value:binding.value_json,
+      });
       const expected=buildExperienceSkillPacket({packetId:p.safe_packet.packetId,experience});
       requireThat(JSON.stringify(expected)===JSON.stringify(p.safe_packet));
     }
