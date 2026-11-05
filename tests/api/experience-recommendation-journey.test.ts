@@ -19,7 +19,7 @@ const consent=SelfConsentSchema.parse({version:2,updatedAt:NOW,
   choices:{personalStorage:true,teamReview:true,externalAi:true,ncpStorage:true,presentation:false}});
 // Synthetic-only provider fixture; the consented owner record is NOT sent to the mock model.
 const pack=SafeLlmPacketSchema.parse(buildExperienceSkillPacket({
-  packetId:'SYN-E2E-PACKET',experience:{...record,value:{...record.value,dataMode:'SYNTHETIC'}}}));
+  packetId:'SYNTHETIC_E2E_OPAQUE_PACKET_001',experience:{...record,value:{...record.value,dataMode:'SYNTHETIC'}}}));
 const opportunities=[ownerOpportunity('SYN-COMPUTE',['AI_ML']),
   ownerOpportunity('SYN-TRADE',['TRADE_OVERSEAS'])];
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
