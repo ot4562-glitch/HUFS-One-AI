@@ -48,6 +48,19 @@ describe('What-if consumes the canonical degree-path contract (#231)',()=>{
     expect(value.current.earnedCreditUnits).toBe(0);
     expect(value.hypothetical.earnedCreditUnits).toBe(0);
   });
+  it('rejects two primary offers that normalize to the same canonical path',()=>{
+    const catalog=programs();
+    const original=catalog.find(p=>p.role==='PRIMARY_MAJOR'&&p.programId==='SYN-A'&&p.degreePath==='ADVANCED_SINGLE')!;
+    catalog.push({...original,role:'PRIMARY_MAJOR',degreePath:'MAJOR_DEEPENING',
+      pack:{...original.pack,rulePackVersion:'SYN-ALIAS-DUPLICATE'}});
+    expect(()=>run({primaryProgramId:'SYN-A'},{action:'ADD_MINOR',targetMajorId:'SYN-B'},catalog)).toThrow('more than once');
+  });
+  it('preserves legacy inputs while emitting canonical output without changing their packs',()=>{
+    const catalog=programs().map(p=>p.role==='PRIMARY_MAJOR'&&p.degreePath==='ADVANCED_SINGLE'
+      ?{...p,degreePath:'MAJOR_DEEPENING' as const}:p);
+    expect(run({primaryProgramId:'SYN-A'},{action:'ADD_MINOR',targetMajorId:'SYN-B'},catalog))
+      .toEqual(run({primaryProgramId:'SYN-A'},{action:'ADD_MINOR',targetMajorId:'SYN-B'}));
+  });
   it('keeps unapproved packs blocked instead of treating spelling normalization as approval',()=>{
     const catalog=programs().map(p=>({...p,pack:{...p.pack,rulePackState:'DRAFT' as const}}));
     expect(run({primaryProgramId:'SYN-A'},{action:'ADD_MINOR',targetMajorId:'SYN-B'},catalog).state)
