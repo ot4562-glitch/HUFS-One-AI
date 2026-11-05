@@ -1,7 +1,10 @@
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {ExperienceSkillCandidateResponseSchema} from '@hufs-one/contracts';
-import type {ExperienceSkillCandidateResponse} from '@hufs-one/contracts';
+import {
+  ExperienceSkillCandidateResponseSchema,ExperienceSkillPrepareResponseSchema,ApprovedProviderInputsSchema,
+} from '@hufs-one/contracts';
+import type {ApprovedProviderInputs} from '@hufs-one/contracts';
+import type {ExperienceSkillCandidateResponse,ExperienceSkillPrepareResponse} from '@hufs-one/contracts';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import type {VerifiedActor} from '../../types.js';
 import {authorizeSession} from '../auth/gates.js';
@@ -27,6 +30,8 @@ type Executor=Pick<ReturnType<typeof createProviderExecutor>,'readJob'>;
 export interface ExperienceSkillCandidatePort {
   read(input:{actor:VerifiedActor;experienceId:string;jobId:string}):
     Promise<ExperienceSkillCandidateResponse|null>;
+  prepare(input:{actor:VerifiedActor;experienceIds:readonly string[]}):
+    Promise<ExperienceSkillPrepareResponse>;
 }
 
 /** Same-session, same-owner current source/experience/consent candidate read.
@@ -38,7 +43,8 @@ export class PostgresExperienceSkillCandidateReader implements ExperienceSkillCa
   constructor(private readonly pool:ReviewerSqlPool,
     private readonly results:Pick<PostgresProviderResults,'get'>,
     private readonly executor:Executor,
-    private readonly now:()=>string=()=>new Date().toISOString()){}
+    private readonly now:()=>string=()=>new Date().toISOString(),
+    private readonly inputs?:{list(actor:VerifiedActor):Promise<ApprovedProviderInputs>}){}
   private async binding(actor:VerifiedActor,experienceId:string,inputRef:string,asOf:string){
     const connection=await this.pool.connect();let begun=false;
     try{
@@ -63,12 +69,49 @@ export class PostgresExperienceSkillCandidateReader implements ExperienceSkillCa
       if(query.rows.length!==1)return null;
       const row=Row.parse(query.rows[0]);
       if(row.erased_at!==null||row.deleted_at!==null||row.content_version!==row.record_version
-        ||row.consent_version!==row.current_consent_version||row.as_of!==asOf
+        ||row.consent_version!==row.current_consent_version||Date.parse(row.as_of)!==Date.parse(asOf)
         ||row.approved_at>row.as_of)return null;
       await connection.query('COMMIT');begun=false;
       return {contentVersion:row.content_version,consentVersion:row.consent_version,
         fingerprint:hash(row)};
     }finally{if(begun)try{await connection.query('ROLLBACK');}catch{/* never expose SQL */}connection.release();}
+  }
+  /** Explicit selection: no implicit model/paid call, approval, or auto-tag. */
+  async prepare(input:{actor:VerifiedActor;experienceIds:readonly string[]}):
+    Promise<ExperienceSkillPrepareResponse>{
+    const ids=z.array(Id).min(1).max(16).refine(values=>new Set(values).size===values.length)
+      .parse(input.experienceIds);
+    const actor=input.actor;
+    if(actor.role!=='BETA'||!this.inputs)throw new Error('Current approved AI input directory unavailable');
+    authorizeSession(actor,Utc.parse(this.now()));
+    const listed=ApprovedProviderInputsSchema.parse(await this.inputs.list(actor));
+    const matching=listed.items.filter(item=>item.task==='experience_skills'&&item.operation==='HCX_007');
+    const items:ExperienceSkillPrepareResponse['items']=[],unavailable:string[]=[];
+    for(const experienceId of ids){
+      let selected:ExperienceSkillPrepareResponse['items'][number]|null=null;
+      // Do not expose other owners' mappings: the SQL query uses exact current actor
+      // and each candidate input must have a current reviewed binding.
+      for(const entry of matching){
+        const row=await this.binding(actor,experienceId,entry.inputRef,entry.asOf);
+        if(!row)continue;
+        const next={experienceId,inputRef:entry.inputRef,operation:'HCX_007' as const,
+          asOf:entry.asOf,expiresAt:entry.expiresAt,
+          contentVersion:row.contentVersion,consentVersion:row.consentVersion};
+        if(selected){selected=null;break;} // Ambiguous multiple current approvals.
+        selected=next;
+      }
+      if(selected)items.push(selected);else unavailable.push(experienceId);
+    }
+    authorizeSession(actor,Utc.parse(this.now()));
+    // Recheck each selected item again after every awaited directory/SQL read.
+    for(const item of items){
+      const current=await this.binding(actor,item.experienceId,item.inputRef,item.asOf);
+      if(!current||current.contentVersion!==item.contentVersion
+        ||current.consentVersion!==item.consentVersion)
+        throw new Error('Experience AI preparation changed during request');
+    }
+    authorizeSession(actor,Utc.parse(this.now()));
+    return ExperienceSkillPrepareResponseSchema.parse({items,unavailable});
   }
   async read(raw:{actor:VerifiedActor;experienceId:string;jobId:string}):
     Promise<ExperienceSkillCandidateResponse|null>{

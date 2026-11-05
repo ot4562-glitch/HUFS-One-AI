@@ -136,7 +136,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
         inputs:provider.approvedInputs,
         experienceCandidates:new PostgresExperienceSkillCandidateReader(aiPools!.authority,
           new PostgresProviderResults(aiPools!.results),provider.executor,
-          input.managedAi?.now??(()=>new Date().toISOString()))}:undefined;
+          input.managedAi?.now??(()=>new Date().toISOString()),provider.approvedInputs)}:undefined;
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(ai?{ai}:{}),
