@@ -123,11 +123,21 @@ describe('durable approved owner study-plan snapshot',()=>{
     const h=fixture(),snapshot=await h.load(),later='2026-11-02T00:00:10Z';h.setClock(later);
     expect(await h.loader.revalidate({actorId,receipt:snapshot!.receipt,now:later})).toBe(true);
   });
-  it('evicts abandoned tickets without making the provider unavailable to the next owner read',async()=>{
-    const h=fixture(),first=await h.load();let latest=first;
-    for(let i=0;i<128;i++)latest=await h.load();
+  it('refuses noisy-owner overflow without evicting another current receipt',async()=>{
+    const h=fixture(),first=await h.load(),originalRows=h.getRows();
+    h.projection.actor_id='SYN-NOISY';
+    h.setRows(originalRows.map(row=>({...row,actor_id:'SYN-NOISY'})));
+    const noisy={...h.input,actorId:'SYN-NOISY'};
+    for(let i=0;i<128;i++)expect(await h.loader.load(noisy)).not.toBeNull();
+    await expect(h.loader.load(noisy)).rejects.toThrow('Receipt admission unavailable');
+    h.projection.actor_id=actorId;h.setRows(originalRows);
+    expect(await h.loader.revalidate({actorId,receipt:first!.receipt,now:at})).toBe(true);
     expect(await h.loader.revalidate({actorId,receipt:first!.receipt,now:at})).toBe(false);
-    expect(await h.loader.revalidate({actorId,receipt:latest!.receipt,now:at})).toBe(true);
+    expect(await h.load()).not.toBeNull();
+    h.setClock('2026-11-02T00:00:31.000Z');
+    h.projection.actor_id='SYN-NOISY';
+    h.setRows(originalRows.map(row=>({...row,actor_id:'SYN-NOISY'})));
+    expect(await h.loader.load({...noisy,now:'2026-11-02T00:00:31.000Z'})).not.toBeNull();
   });
   it('rejects foreign, future, malformed or oversized workspace inputs and wrong term/consent binding',async()=>{
     for(const mutate of [
