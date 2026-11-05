@@ -67,3 +67,96 @@ npm run build:web
 ---
 
 기술 설계 [Architecture](Architecture.md) · 팀 역할 [WORKSTREAMS](docs/WORKSTREAMS.md) · 개인정보/권리 [DATA_GOVERNANCE](docs/DATA_GOVERNANCE.md) · 검증 [INDEPENDENT_EVALUATION](docs/INDEPENDENT_EVALUATION.md) · 개발 규칙 [AGENTS](AGENTS.md)
+
+---
+
+## 6. 전체 문서 목록
+
+각 문서의 현재 용도를 한 줄로 정리했습니다. 실제 구현·출시 여부는 [현재 상태](STATUS.md)와 연결된 검증 기록을 우선합니다.
+
+### 프로젝트 소개·상태·설계
+
+- [`AGENTS.md`](AGENTS.md) — 저장소 전체의 개발 규칙·책임 경계·검증 원칙.
+- [`APPLICATION.md`](APPLICATION.md) — 공모전 제출 자료의 작성 항목과 사실 확인 체크리스트.
+- [`Architecture.md`](Architecture.md) — 제품 아키텍처·권한·API·데이터·검증 계약의 기술 설계 기준.
+- [`CLOUD.md`](CLOUD.md) — NCP 운영 배치·인증·접근 통제·보안 승인 기준.
+- [`PROJECT.md`](PROJECT.md) — 서비스의 문제 정의·제품 방향·현재 제공 범위.
+- [`Proposal.md`](Proposal.md) — 팀원·심사자를 위한 서비스 제안 배경과 구현·운영 계획.
+- [`README.md`](README.md) — 프로젝트 소개·차별점·AI 활용·구현 현황·기대 효과를 정리한 시작 문서.
+- [`REPORT.md`](REPORT.md) — 자동화 테스트와 사람·실환경 검증을 구분한 현재 평가 보고 기준.
+- [`STATUS.md`](STATUS.md) — 현재 코드 구현·검증 상태와 출시 가능 여부의 기준.
+- [`TEAM_SURVEY.md`](TEAM_SURVEY.md) — 학생 원본 자료·동의·공식 규칙 입력과 확인 항목.
+
+### 서비스·시연·협업 문서 (`docs/`)
+
+- [`docs/CONTRACT_BOUNDARIES.md`](docs/CONTRACT_BOUNDARIES.md) — 공통 TypeScript/Zod 계약과 각 소비 트랙의 책임 경계.
+- [`docs/DATA_GOVERNANCE.md`](docs/DATA_GOVERNANCE.md) — 개인정보·공식 자료 이용권·동의·게시 및 외부 전송 기준.
+- [`docs/DEMO_MANUAL.md`](docs/DEMO_MANUAL.md) — 가상 학생 데이터로 실행하는 기본 합성 시연 절차.
+- [`docs/EMPTY_DEMO_RUNBOOK.md`](docs/EMPTY_DEMO_RUNBOOK.md) — 빈 합성 계정과 가상 동아리 관리자 시연 실행 방법.
+- [`docs/GENERATED_CLUB_POSTER_20261105.md`](docs/GENERATED_CLUB_POSTER_20261105.md) — 가상 동아리 합성 포스터의 생성·파일·사용 권리 명세.
+- [`docs/HUFSABILITY_UI_COMPONENT_ATLAS.md`](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md) — HUFSAbility 학생 화면 76개를 관찰한 텍스트 기반 UI 구성요소 조사서.
+- [`docs/HUMAN_ACCEPTANCE_GATE_20261104.md`](docs/HUMAN_ACCEPTANCE_GATE_20261104.md) — 실환경·자료 권리·비작성자 검증·출시 수락 체크리스트.
+- [`docs/INDEPENDENT_EVALUATION.md`](docs/INDEPENDENT_EVALUATION.md) — 추천·포스터·시점 판단의 독립 평가 세트와 사람 검수 기준.
+- [`docs/LAYA_CPU_SPIKE_PROTECTION.md`](docs/LAYA_CPU_SPIKE_PROTECTION.md) — Laya AI 워커의 CPU·메모리 격리와 안전 중단 정책.
+- [`docs/NCP_OPERATIONS_2026.md`](docs/NCP_OPERATIONS_2026.md) — NCP 계정·비용·운영 책임·가동 승인 정책.
+- [`docs/PR_WORKFLOW.md`](docs/PR_WORKFLOW.md) — 코드 검토·CI 확인·승인·병합의 협업 절차.
+- [`docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md`](docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md) — 합성 제품에서 실제 운영 인수까지의 단계별 실행 절차.
+- [`docs/REMAINING_IMPLEMENTATION_20261104.md`](docs/REMAINING_IMPLEMENTATION_20261104.md) — 아직 필요한 구현과 별도 실인수 항목의 진행 지도.
+- [`docs/REVIEWER_ACCESS.md`](docs/REVIEWER_ACCESS.md) — 학교 심사자의 합성 데이터 전용 접근·초대·권한 제한 기준.
+- [`docs/SERVICE_DELIVERY_PLAN.md`](docs/SERVICE_DELIVERY_PLAN.md) — 서비스 완성·승인된 배포·유지보수와 단계별 완료 조건.
+- [`docs/TEAM_GUIDE.md`](docs/TEAM_GUIDE.md) — 팀원이 현재 서비스와 시연 범위를 설명하는 안내서.
+- [`docs/TEAM_PROGRESS.md`](docs/TEAM_PROGRESS.md) — 팀별 담당 범위와 증거 기반 인수 진행 현황.
+- [`docs/TRUSTED_RAG_MEDIA_VERSIONING.md`](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) — 문서·이미지·PDF의 출처 판본·시점·검수·RAG 인용 계약.
+- [`docs/UI_MENU_COVERAGE.md`](docs/UI_MENU_COVERAGE.md) — HUFS One AI 화면과 참고 HUFSAbility 메뉴의 기능 대응표.
+- [`docs/WORKSTREAMS.md`](docs/WORKSTREAMS.md) — 팀원별 소유 코드·업무·공동 검수 책임 분장표.
+
+### 웹·API·자산 문서
+
+- [`apps/api/AGENTS.md`](apps/api/AGENTS.md) — Fastify API·인증·PostgreSQL·AI 개발의 소유권과 보안 규칙.
+- [`apps/api/README.md`](apps/api/README.md) — API 서버의 모듈 구조·권한·데이터베이스·실행 및 검증 안내.
+- [`apps/web/AGENTS.md`](apps/web/AGENTS.md) — React 웹·모바일 UI·접근성·시연 기능 개발 규칙.
+- [`apps/web/README.md`](apps/web/README.md) — 웹 화면 경로·주요 기능·반응형 UI와 테스트 안내.
+- [`apps/web/src/shell/assets/README.md`](apps/web/src/shell/assets/README.md) — 웹 배너 장식 이미지의 생성 이력·배포 권리·접근성 안내.
+- [`assets/AGENTS.md`](assets/AGENTS.md) — 합성 이미지와 웹 자산의 저작권·검증·공개 기준.
+
+### AI·공통 계약·코어 패키지
+
+- [`packages/ai/AGENTS.md`](packages/ai/AGENTS.md) — CLOVA OCR·HCX·Laya AI 코드의 책임·안전 사용 규칙.
+- [`packages/ai/README.md`](packages/ai/README.md) — 생성형 AI 네 가지 작업·OCR·HCX 계약과 사용 제한.
+- [`packages/contracts/AGENTS.md`](packages/contracts/AGENTS.md) — 공통 타입·Zod 계약 변경과 소비자 교차 검증 규칙.
+- [`packages/contracts/README.md`](packages/contracts/README.md) — 전체 제품에서 공유하는 API·데이터 타입·버전·권한 스키마 안내.
+- [`packages/core/src/academics/AGENTS.md`](packages/core/src/academics/AGENTS.md) — 학점·졸업·학사 What-if 계산 코어의 개발·검증 기준.
+- [`packages/core/src/forecast/AGENTS.md`](packages/core/src/forecast/AGENTS.md) — 과목 개설·학사 사건 전망의 근거와 불확실성 처리 규칙.
+- [`packages/core/src/normalization/AGENTS.md`](packages/core/src/normalization/AGENTS.md) — 공고·관심사·TopicCode 정규화 코어의 구현 규칙.
+- [`packages/core/src/notices/AGENTS.md`](packages/core/src/notices/AGENTS.md) — 학생별 중요 공지의 적용 조건·출처·시점 판단 규칙.
+- [`packages/core/src/opportunities/AGENTS.md`](packages/core/src/opportunities/AGENTS.md) — 기회 추천·지원 자격·순위·판본 판단 코어의 개발 규칙.
+- [`packages/core/src/opportunities/README.md`](packages/core/src/opportunities/README.md) — 기회 추천 순수 함수와 API 호출 전 권한·근거 검증 조건.
+- [`packages/core/src/privacy/AGENTS.md`](packages/core/src/privacy/AGENTS.md) — 동의·공유 권한·자료 전송·철회에 관한 순수 정책 구현 규칙.
+- [`packages/fixtures/AGENTS.md`](packages/fixtures/AGENTS.md) — 합성 테스트 자료의 생성·보관과 실제 학생 자료 반입 금지 기준.
+- [`packages/ui/AGENTS.md`](packages/ui/AGENTS.md) — 공용 UI 컴포넌트·접근성·자산 사용 규칙.
+
+### 인프라·배포
+
+- [`infra/AGENTS.md`](infra/AGENTS.md) — NCP IaC·서버 배포·AI 워커의 개발 소유권과 실행 제한.
+- [`infra/ai/PDF_RUNTIME.md`](infra/ai/PDF_RUNTIME.md) — 비공개 PDF 렌더링·OCR·페이지 근거 추출 런타임 안내.
+- [`infra/ncp/AGENT_DEPLOYMENT_MANUAL.md`](infra/ncp/AGENT_DEPLOYMENT_MANUAL.md) — 개발 에이전트가 NCP 인프라 코드를 안전하게 검토·배포하는 절차.
+- [`infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md`](infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md) — NCP 운영자의 승인·비용·배포·복구 증거 인수 양식.
+- [`infra/ncp/QUICKSTART.md`](infra/ncp/QUICKSTART.md) — NCP 비공개 합성 미리보기와 적용 전 계획 점검 절차.
+- [`infra/ncp/README.md`](infra/ncp/README.md) — NCP 네트워크·호스트·배포·복구 자동화 종합 안내.
+- [`infra/ncp/terraform/host/README.md`](infra/ncp/terraform/host/README.md) — NCP Ubuntu 호스트 Terraform 모듈의 사전 검증과 승인 조건.
+- [`infra/ncp/terraform/network/README.md`](infra/ncp/terraform/network/README.md) — NCP VPC·서브넷·방화벽 Terraform 모듈의 계획 및 검증 안내.
+
+### 참고 자료·심사자 양식
+
+- [`reference/hufsability/DATA_PERMISSION_GATE.md`](reference/hufsability/DATA_PERMISSION_GATE.md) — HUFSAbility 및 학생 자료의 수집·활용·재배포 권한 구분.
+- [`reference/hufsability/INVENTORY.md`](reference/hufsability/INVENTORY.md) — HUFSAbility 공개 기능·학생 메뉴·조사 범위의 출처 목록.
+- [`reference/ncp/COST_AND_ARCHITECTURE.md`](reference/ncp/COST_AND_ARCHITECTURE.md) — NCP 배치 구조·비용 후보·운영 책임과 승인 검토 기준.
+- [`reference/ncp/SERVICE_CATALOG.md`](reference/ncp/SERVICE_CATALOG.md) — 제품에 필요한 NCP 서비스 후보와 보류·제외 기준.
+- [`reference/reviewer/ReviewerInvitation.TEMPLATE.pdf`](reference/reviewer/ReviewerInvitation.TEMPLATE.pdf) — 학교 심사자를 위한 비활성 예시 초대장 PDF 양식.
+
+### 검증·도구·GitHub 템플릿
+
+- [`.github/ISSUE_TEMPLATE/agent-task.md`](.github/ISSUE_TEMPLATE/agent-task.md) — 에이전트 작업 이슈의 담당 범위·완료 조건·검증 증거를 작성하는 양식.
+- [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) — PR 변경 내용·권한 영향·테스트·리뷰 결과를 점검하는 양식.
+- [`tests/AGENTS.md`](tests/AGENTS.md) — 합성·PG·Chrome·NCP 모의 시험과 실제 인수의 구분 원칙.
+- [`tools/README.md`](tools/README.md) — API 계약·의존성·배포 산출물의 감사 도구 사용 안내.
