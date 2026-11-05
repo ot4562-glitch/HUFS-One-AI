@@ -6,12 +6,18 @@ services:
     environment:
       APP_ENV: production
       NODE_ENV: production
-      API_INTERNAL_PORT: "3000"
+      HUFS_API_INTERNAL_PORT: "3000"
+      HUFS_PRODUCTION_CONFIG: /etc/hufs-one/private/production.mjs
       AI_PROVIDER_ENABLED: "false"
       LAYA_ENABLED: "false"
     env_file:
       - ${HUFS_OPERATOR_ROOT:?external operator directory required}/api.env
     volumes:
+      - type: bind
+        source: ${HUFS_OPERATOR_ROOT}/production.mjs
+        target: /etc/hufs-one/private/production.mjs
+        read_only: true
+        bind: {create_host_path: false}
       - type: bind
         source: ${HUFS_OPERATOR_ROOT}/auth
         target: /run/operator/auth
@@ -22,7 +28,9 @@ services:
         target: /run/operator/db
         read_only: true
         bind: {create_host_path: false}
-    networks: [backend]
+    # External OIDC/SMTP/approved model and database traffic is allowed only
+    # through an operator-provisioned, independently filtered egress network.
+    networks: [backend, approved-egress]
     read_only: true
     tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
     cap_drop: [ALL]
@@ -68,10 +76,14 @@ services:
 # provide approved durable DB connectivity and firewall evidence; never guessed.
 # Operator must review the private subnet, static edge IP, host routing and
 # XFF overwrite together. Never infer a trusted proxy from arbitrary Docker DNS.
-# This compose profile still does NOT enable the production API entrypoint.
+# The private-deployment profile is disabled by default. Explicit invocation,
+# external reviewed egress, production factory and runtime tests are required.
 networks:
   backend:
     internal: true
     ipam:
       config:
         - subnet: ${HUFS_BACKEND_SUBNET:?operator-reviewed private subnet required}
+  approved-egress:
+    external: true
+    name: ${HUFS_APPROVED_EGRESS_NETWORK:?preprovisioned filtered egress network required}

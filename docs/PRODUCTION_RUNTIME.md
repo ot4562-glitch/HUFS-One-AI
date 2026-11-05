@@ -49,3 +49,13 @@ node dist/apps/api/src/production-main.js --apply
 OIDC·메일·운영 SQL migration/backup·NCP/TLS·실 client IP·실제 공급자와 요금은 #252에서 실제 실행 결과로 기록합니다. 구성 누락은 CONFIGURATION_REQUIRED, 미실행은 NOT_RUN입니다. 합성 launcher를 실제 사용자 인증으로 바꾸지 않습니다.
 
 [승인 정본](AUTHORIZATION.md) · [현재 상태](../STATUS.md).
+## 비공개 컨테이너 구성 (설정형, 실행·배포 검증 별도)
+
+`infra/deploy/Dockerfile`의 API 이미지 진입점은 이제 `production-main.js --apply`입니다. 이전 개발용 `main.js`를 production에서 실행하지 않습니다. `infra/deploy/compose.private.yaml`의 `private-deployment` 프로필은 기본적으로 비활성이며, 실제 실행에는 **미리 구성된 비공개 운영 디렉터리, 이미지 및 네트워크**가 필요합니다.
+
+- `${HUFS_OPERATOR_ROOT}/production.mjs`는 **컨테이너 이미지에 COPY하지 않고 읽기 전용으로** `/etc/hufs-one/private/production.mjs`에 연결합니다. 로그인한 API 프로세스 `node`가 읽을 수 있으면서 파일과 디렉터리는 root 소유, group/world 쓰기 불가, symlink와 hard-link 없는 상태여야 합니다. 예를 들어 검증된 운영 Linux에서 `root:node`와 파일 `0440`·디렉터리 `0750`을 점검합니다. 키·실자료를 Git/CLI 출력에 적지 않습니다.
+- `HUFS_PRODUCTION_CONFIG`와 `HUFS_API_INTERNAL_PORT=3000`을 명시합니다. API는 포트를 공개하지 않고 관리형 역할·OIDC·학교메일이 모두 준비된 후 `127.0.0.1`에 바인딩합니다. **주의:** Docker 컨테이너 내 loopback은 다른 컨테이너에서 접근할 수 없습니다. 현재 API 런처의 loopback-only 정책과 기존 Compose의 별도 `edge` 서비스 사이에는 네트워크 연결 설계가 더 필요하며, 이 상태를 실제 동작하는 컨테이너 배포라고 주장하지 않습니다. 운영 시에는 systemd 단일 호스트의 검증된 loopback ingress를 우선합니다.
+- API의 운영 DB·Google/메일·승인된 모델 egress는 미리 프로비저닝하고 방화벽으로 제한한 외부 Docker 네트워크 `HUFS_APPROVED_EGRESS_NETWORK`에만 연결합니다. 내부 `backend` 네트워크는 그대로 private이며, edge에 외부 egress를 주지 않습니다. 네트워크 이름의 존재 자체는 허가/차단 정책을 증명하지 않습니다.
+- 기존 `infra/deploy/private-deployment.mjs`는 메타데이터만 검사하고 `RELEASE_BLOCKED`를 유지합니다. `PRODUCTION_RUNTIME_NOT_APPLIED`는 **실제 적용·인수 미검증**이지 코드 진입점 미구현을 뜻하지 않습니다.
+
+실제 operator secrets/migrations, 신뢰 프록시·직접 origin·두 client IP, Docker-container loopback 연결 및 배포/복구는 `#252` 실행 증거와 `#253`의 추가 조립/부정시험을 거쳐야 합니다.
