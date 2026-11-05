@@ -30,7 +30,7 @@ export function extensionSettings(input:OperatorExtensions|undefined):Partial<Re
   if(input===undefined)return {};
   if(!object(input))throw new Error('Operator extensions must be a configuration object');
   const entries:Array<[ManagedPlatformExtension,DataPoolSettings]>=[];
-  for(const [key,raw] of Object.entries(input)){
+  for(const [key,raw] of Object.entries(input as Record<string,unknown>)){
     if(!MANAGED_PLATFORM_EXTENSIONS.includes(key as ManagedPlatformExtension)||!object(raw))
       throw new Error('Unknown or invalid operator extension');
     const name=key as ManagedPlatformExtension,keys=required[name];
