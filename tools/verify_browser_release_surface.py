@@ -76,6 +76,10 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
             if artifact.is_symlink():
                 fail("SYMLINK_IN_PUBLIC_BUNDLE", relative)
                 continue
+            # The ordinary build must not distribute orphaned Pages/local-only
+            # synthetic fixture chunks. The Pages preview has a separate build.
+            if re.fullmatch(r"synthetic(?:DemoClient|OwnerServer|Clubs|WhatIf|PlanCheck|Revisions|DoubleMajor)-[^/]+\\.js", artifact.name, re.I):
+                fail("SYNTHETIC_PREVIEW_CHUNK_IN_OPERATIONAL_BUNDLE", relative)
             if WORKER_FILENAMES.fullmatch(artifact.name):
                 fail("UNREVIEWED_SERVICE_WORKER_FILE", relative)
             if artifact.name.endswith((".map", ".ts", ".tsx")):
@@ -91,6 +95,10 @@ def audit_browser_surface(root: Path = ROOT) -> dict:
             except (UnicodeError, OSError):
                 fail("PUBLIC_TEXT_UNREADABLE", relative)
                 continue
+            if artifact.suffix.casefold() in {".js", ".mjs"} and (
+                "시연가상기관" in body or "합성 모의 연결" in body
+            ):
+                fail("SYNTHETIC_FIXTURE_TEXT_IN_OPERATIONAL_BUNDLE", relative)
             for code, pattern in PERSISTENCE:
                 if pattern.search(body):
                     fail(code, relative)
