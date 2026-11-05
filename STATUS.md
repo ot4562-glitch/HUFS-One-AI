@@ -7,12 +7,12 @@
 | 구분 | 실제 확인 상태 |
 | --- | --- |
 | main | [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 선행 통합 이후 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) merge `8e0efb5`, [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) merge `6445fc4` 반영. 최신 branch SHA는 GitHub를 실시간 확인 |
-| 열린 PR | **2건:** [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219) 수정 HEAD 3종 CI 성공·독립 사람 재승인 대기; [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220) Draft, 대규모 기능 및 회귀 검증 대기 |
+| 열린 PR | **2건:** [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219) 수정 HEAD 3종 CI 성공·독립 사람 재승인 대기; [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220) Draft, 최신 HEAD 3종 CI 성공·독립 사람 리뷰/운영 수락 대기 |
 | 열린 일반 이슈 | **15건** (#8, #9, #10, #11, #12, #19, #20, #27, #46, #61, #89, #119, #123, #132, #133). 2026-11-04 중복 25건 이관 종료 상태 유지 |
 | 완료된 코드 하위 수락 | #11에서 #217 What-if 합성 계산/보수적 인정보류 표시와 #218 동일교과 속성·seed 재현 코어를 **[x] 코드 단위 완료**로 기록. 공식 RulePack/실원장/권리·학업 운영은 미완료 |
 | #217/#218 CI | 두 PR의 병합 전 수정 HEAD에서 TASK-00 / NCP IaC offline / Chrome **각 3/3 SUCCESS**, 재검토 `COMMENT` 등록 |
 | #219 보안 | 선택적 `platform` PostgreSQL 풀의 검증 우회를 거부하고 별도 데모 role/TLS 풀을 조립·점검하도록 변경. 테스트 및 SECURITY DEFINER search_path 조정. **변경 HEAD TASK-00/NCP IaC/Chrome 3/3 SUCCESS; 비작성자 사람 재승인 대기**. 프록시 뒤 IP 제한 문제도 별도 남음 |
-| #220 기능·회귀 | 최초 TASK-00 **1 FAIL / 2809 PASS / 84 SKIP**(BETA 세션이 `ADMIN` 응답을 잘못 허용). 첫 수정 `8340157` 이후 기존 ADMIN 전용 세션 테스트와 충돌을 확인해, 명시적 ADMIN 스키마와 **ADMIN→BETA/REVIEWER 권한 거부** 회귀를 더한 최신 수정 `0d8e176` 제출; **최신 HEAD 전체 CI와 독립 리뷰 확인 전 Draft 유지** |
+| #220 기능·회귀 | 최초 TASK-00 **1 FAIL / 2809 PASS / 84 SKIP**(BETA 세션이 `ADMIN` 응답을 잘못 허용). 첫 수정 `8340157` 이후 기존 ADMIN 전용 세션 테스트와 충돌을 확인해, 명시적 ADMIN 스키마와 **ADMIN→BETA/REVIEWER 권한 거부** 회귀를 더한 최신 수정 `0d8e176` 제출; **최신 HEAD `0d8e176` TASK-00/NCP IaC/Chrome CI 3/3 SUCCESS; 독립 리뷰·코드 및 실운영 수락 전 Draft 유지** |
 | 문서 | README / PR_WORKFLOW / STATUS와 #11 정본 이슈에서 코드 완료·합성 CI·남은 사람 게이트를 분리 |
 | 공개 운영 | **RELEASE_BLOCKED** — 실 Google/학교메일, 운영 PostgreSQL·RLS·백업, NCP/TLS/직접 IP, 실제 4인 원본 권리, 독립 추천 gold 200 및 기관 학칙/사람 검증 미수락 |
 
