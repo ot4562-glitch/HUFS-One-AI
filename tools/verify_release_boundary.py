@@ -6,6 +6,17 @@ from pathlib import Path
 from urllib.parse import urlsplit, unquote
 ROOT=Path(__file__).resolve().parent.parent
 OUT=ROOT/'local_only/reports';OUT.mkdir(parents=True,exist_ok=True)
+# Owner-directed, read-only Git inputs (2026-11-06). A private import is
+# NOT automatically permitted for any account; this inventory only prevents
+# unauthorized CSV deletion, replacement and additional publication.
+# Metadata-only: CI sparse checkout never loads the CSV blob contents.
+APPROVED_CSV_BLOBS={
+  'csv/HUFS One AI _ Google Forms.csv':'f3245df721cf57d46a9c788c180769bb52f90e08',
+  'csv/이수과목_까마르.csv':'6d059d79c471e11c30b95b92ec89da6a4d8282d0',
+  'csv/이수과목_심민성.csv':'c82b2c6e6dc4205a66aeced7a7ba42f1e8296b9a',
+  'csv/이수과목_이서연.csv':'d4bbf3a8bf18caacd91bd3a544dd407f633cbb4e',
+  'csv/이수과목_이의상.csv':'1602bddcee96f9d6da06a8713ff8de1ccf12736c',
+}
 checks=[]
 def check(name,passed,detail=None): checks.append({'name':name,'passed':bool(passed),'detail':detail})
 def git(*args):
@@ -15,6 +26,8 @@ def path_id(name):
     # Stable trace identifier without disclosing a student's filename in a report.
     return hashlib.sha256(name.encode('utf-8','surrogateescape')).hexdigest()[:16]
 def forbidden(name):
+    if name in APPROVED_CSV_BLOBS:
+        return False
     lower=name.replace('\\','/').lower()
     return (any(x in lower.split('/') for x in ['local_only','retire','private','secrets','student_records','real5','csv','backups','exports','credentials']) or
             lower.startswith(('templates/real5-intake/','data/student/','data/students/','data/incoming/')) or
@@ -25,16 +38,34 @@ def forbidden(name):
 # Sparse checkout omits working files, not the complete commit tree. Check the
 # full HEAD path inventory without fetching/opening any protected blob or name.
 if sys.argv[1:] == ['--committed-tree-only']:
-    tree_result = git('ls-tree', '-r', '-z', '--name-only', 'HEAD')
-    if tree_result.returncode != 0:
+    tree_result=git('ls-tree','-r','-z','HEAD')
+    if tree_result.returncode!=0:
         print(json.dumps({'result':'FAIL','scope':'GIT_TREE_METADATA_ONLY','reason':'TREE_UNAVAILABLE'}))
         sys.exit(1)
-    tree_paths = entries(tree_result)
-    count = sum(1 for path in tree_paths if forbidden(path))
-    print(json.dumps({'result':'PASS' if count == 0 else 'FAIL',
-                      'scope':'GIT_TREE_METADATA_ONLY', 'total_paths':len(tree_paths),
-                      'protected_count':count, 'history_not_scanned':True}))
-    sys.exit(0 if count == 0 else 1)
+    objects={}
+    malformed=0
+    for item in tree_result.stdout.split(b'\\0'):
+        if not item:continue
+        metadata,separator,path=item.partition(b'\\t')
+        parts=metadata.split(b' ')
+        if not separator or len(parts)!=3:
+            malformed+=1
+            continue
+        name=path.decode('utf-8','surrogateescape')
+        objects[name]=(parts[0].decode('ascii','replace'),
+                       parts[1].decode('ascii','replace'),
+                       parts[2].decode('ascii','replace'))
+    unapproved=sum(1 for name in objects if forbidden(name))
+    drift=sum(1 for name,sha in APPROVED_CSV_BLOBS.items()
+              if objects.get(name)!=('100644','blob',sha))
+    count=malformed+unapproved+drift
+    print(json.dumps({'result':'PASS' if count==0 else 'FAIL',
+                      'scope':'GIT_TREE_METADATA_ONLY','total_paths':len(objects),
+                      'protected_count':count,'unapproved_count':unapproved,
+                      'preserved_csv_count':len(APPROVED_CSV_BLOBS)-drift,
+                      'preserved_csv_mismatch_count':drift,
+                      'history_not_scanned':True,'csv_contents_read':False}))
+    sys.exit(0 if count==0 else 1)
 
 tracked_result=git('ls-files','-z');check('git_index_readable',tracked_result.returncode==0)
 tracked=entries(tracked_result)
@@ -46,6 +77,11 @@ protected_candidates=[x for x in candidates if forbidden(x)]
 # the violation, and reports do not replicate filenames or student identifiers.
 check('no_protected_tracked_files',not protected_tracked,{'count':len(protected_tracked)})
 check('no_protected_publication_candidates',not protected_candidates,{'count':len(protected_candidates)})
+# Protect tracked source blobs from accidental local edits without inspecting contents.
+csv_diff=git('diff','--name-only','--','csv/')
+csv_staged=git('diff','--cached','--name-only','--','csv/')
+check('preserved_csv_worktree_unchanged',csv_diff.returncode==0 and not csv_diff.stdout.strip())
+check('preserved_csv_index_unchanged',csv_staged.returncode==0 and not csv_staged.stdout.strip())
 probe=['HUFS_UI.pdf','local_only/real5/intake_status.json','reference/hufsability/screenshots/index.png','reference/hufsability/snapshots/2026-10-29/raw/academic/2026_2_seoul_handbook.pdf','reference/hufsability/snapshots/2026-10-29-followup/raw/BRAND-01-6.html','retire/README.md','.env','secrets/a.key','packages/fixtures/real5/student.json']
 for name in probe:
     result=git('check-ignore','--no-index','--quiet',name)

@@ -3,7 +3,7 @@
  * node tools/private_owner_registry.mjs attest attestation.json HEAD
  * node tools/private_owner_registry.mjs verify registry.json HEAD
  * attestation.json is an operator-authored restricted input containing explicit
- * bindings [{formsDisplayName,courseFilename,method,evidenceRef}], evidenceRef,
+ * bindings [{formsDisplayName,courseFilename,actorId,identityRef,method,evidenceRef}], evidenceRef,
  * verifiedAt, localReview:'VERIFIED'. No mapping is guessed by this tool.
  */
 import {randomUUID} from 'node:crypto';
@@ -53,12 +53,20 @@ async function main(){
   const source=loadGitIntake(revision);
   const parsed=Papa.parse(source.formsCsv.replace(/^\uFEFF/,''),{skipEmptyLines:'greedy'});
   if(parsed.errors.length||parsed.data.length!==5)throw new Error('SOURCE_BINDING');
+  // The session actor ID must come from a verified BETA identity attestation.
+  // Random local-owner UUIDs are not usable by real authenticated accounts.
+  const ownerIds=attestation.bindings.map(binding=>binding.actorId);
+  const identityRefs=attestation.bindings.map(binding=>binding.identityRef);
+  if(new Set(ownerIds).size!==4||new Set(identityRefs).size!==4
+    ||ownerIds.some(v=>typeof v!=='string'||!/^[A-Za-z0-9_.:@-]{2,128}$/.test(v))
+    ||identityRefs.some(v=>typeof v!=='string'||!/^[A-Za-z0-9_.:@-]{2,128}$/.test(v)))
+    throw new Error('IDENTITY_ATTESTATION_REQUIRED');
   const owners=attestation.bindings.map(binding=>{
     const matches=parsed.data.slice(1).filter(row=>row[6]?.trim().normalize('NFKC')===binding.formsDisplayName?.trim().normalize('NFKC'));
     const file=source.courseFiles.find(f=>f.filename===binding.courseFilename);
     if(matches.length!==1||!file)throw new Error('SOURCE_BINDING');
-    return {subjectKey:'owner-'+randomUUID(),actorId:'local-owner-'+randomUUID(),
-      storageNamespace:'space-'+randomUUID(),identityRef:'person-'+randomUUID(),
+    return {subjectKey:'owner-'+randomUUID(),actorId:binding.actorId,
+      storageNamespace:'space-'+randomUUID(),identityRef:binding.identityRef,
       mapping:{method:binding.method,evidenceRef:binding.evidenceRef,verifiedAt:attestation.verifiedAt,
         formsRowSha256:formRowDigest(matches[0]),courseFilename:file.filename,courseSha256:sourceDigest(file.content),sourceVersion:1},
       consents:{selectedClova:'VERIFIED',refinedPrivateNcp:'VERIFIED',reviewedPseudonymousPresentation:'VERIFIED',localReview:'VERIFIED'},

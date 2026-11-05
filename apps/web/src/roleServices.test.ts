@@ -11,7 +11,7 @@ function fakeApi(session: () => Promise<unknown>, caps: () => Promise<{actions: 
     readReviewerActions: vi.fn(), saveReviewerAction: vi.fn(),
     getDemoOverlay: vi.fn(), setDemoOverlay: vi.fn(), resetDemoOverlay: vi.fn(),
     owner: {readDemoProfile: vi.fn(), saveDemoProfile: vi.fn(), resetDemoProfile: vi.fn(),
-      getDoubleMajor: vi.fn(),checkStudyPlan: vi.fn(),checkMajorWhatIf: vi.fn()},
+      getDoubleMajor: vi.fn(),checkStudyPlan: vi.fn(),checkMajorWhatIf: vi.fn(),getPrivateIntake: vi.fn()},
   } as never as Parameters<typeof roleServices>[0] & Record<string, ReturnType<typeof vi.fn>>;
 }
 const down = () => Promise.reject(new HufsApiError('PROVIDER_UNAVAILABLE', 503));
@@ -27,6 +27,7 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.ownerAcademics).toBeUndefined();
     expect(services.ownerClubs).toBeUndefined();
     expect(services.clubModeration).toBeUndefined();
+    expect(services.ownerIntake).toBeUndefined();
     expect(services.sandbox).toBeUndefined();
     expect(api.getDemoOverlay).not.toHaveBeenCalled();
   });
@@ -69,6 +70,8 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.ownerDemoProfile).toBeDefined();
     expect(services.ownerAcademics).toBeDefined();
     expect(services.ownerAcademics?.session).toBe(services.ownerDemoProfile?.session);
+    expect(services.ownerIntake).toBeDefined();
+    expect(services.ownerIntake?.session).toBe(services.ownerDemoProfile?.session);
     expect(services.ownerClubs?.session).toBe(services.ownerDemoProfile?.session);
     expect(services.clubModeration).toBeUndefined();
     expect(services.ownerDemoProfile?.session.getState().status).toBe('IDLE');
