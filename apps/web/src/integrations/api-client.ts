@@ -57,11 +57,18 @@ const TeamSessionSchema = z.strictObject({
   actorId:z.string().min(1),role:z.literal('BETA'),
   schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),
 });
+/** ADMIN identity may be read by administrator UI, but never grants BETA owner rights.
+ * TeamSessionSchema is deliberately BETA-only; roleServices/OwnerSessionController
+ * reject ADMIN regardless of beta-shaped flags from the server. */
+const AdminSessionSchema = z.strictObject({
+  actorId:z.string().min(1),role:z.literal('ADMIN'),
+  schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),
+});
 const ReviewerSessionSchema = z.strictObject({
   role:z.literal('REVIEWER'),accessEndsAt:z.iso.datetime({offset:true}),
   dataMode:z.literal('SYNTHETIC'),readOnly:z.literal(false),sandboxOnly:z.literal(true),
 });
-const SessionSchema = z.union([TeamSessionSchema,ReviewerSessionSchema]);
+const SessionSchema = z.union([TeamSessionSchema,AdminSessionSchema,ReviewerSessionSchema]);
 const SchoolMailChallengeSchema=z.strictObject({
   challengeId:z.string().regex(/^[A-Za-z0-9_-]{22}$/),
   expiresAt:z.iso.datetime({offset:true}),
