@@ -42,7 +42,7 @@ export function OwnerDemoFeatures({response,busy,onSave}:Props){
   const [course,setCourse]=useState(''),[error,setError]=useState('');
   const [filter,setFilter]=useState<'CURRENT'|'INELIGIBLE'|'CLOSED'>('CURRENT');
   const detail=useRef<HTMLElement>(null),opener=useRef<HTMLElement|null>(null);
-  useEffect(()=>{setSelected(null);setSearch(w.search);setTitle('');setSummary('');setCourse('');setError('');},[profile.version]);
+  useEffect(()=>{setSelected(null);setSearch(w.search);setTitle('');setSummary('');setTopic('AI_ML');setFilter('CURRENT');setCourse('');setError('');},[profile.version]);
   useEffect(()=>{if(selected)detail.current?.focus();},[selected]);
   const show=(id:string)=>{opener.current=document.activeElement instanceof HTMLElement?document.activeElement:null;setSelected(id);};
   const save=(next:DemoProfileWorkspace)=>{

@@ -69,6 +69,14 @@ export function OwnerDemoProfile({port}: {port: OwnerDemoProfilePort}) {
   const [notice, setNotice] = useState('');
   const [ended,setEnded]=useState(false),[endAfterReset,setEndAfterReset]=useState(false);
   const changes=useRef<DemoProfileChanges|null>(null);
+  const resetButton=useRef<HTMLButtonElement>(null),endButton=useRef<HTMLButtonElement>(null),cancelButton=useRef<HTMLButtonElement>(null);
+  const resetOrigin=useRef<'RESET'|'END'|null>(null);
+  useEffect(()=>{
+    if(confirmReset)cancelButton.current?.focus();
+    else if(!busy&&resetOrigin.current){
+      (resetOrigin.current==='END'?endButton:resetButton).current?.focus();resetOrigin.current=null;
+    }
+  },[confirmReset,busy]);
 
   useEffect(() => { void port.session.initialize(); }, [port]);
   useEffect(()=>{
@@ -182,14 +190,16 @@ export function OwnerDemoProfile({port}: {port: OwnerDemoProfilePort}) {
         </label>}
         <button type="submit" disabled={busy || !candidate}>프로필 저장·재계산</button>
       </form>
-      {!confirmReset ? <button type="button" disabled={busy} onClick={() => {setEndAfterReset(false);setConfirmReset(true);}}>
+      {!confirmReset ? <button ref={resetButton} type="button" disabled={busy} onClick={() => {resetOrigin.current="RESET";setEndAfterReset(false);setConfirmReset(true);}}>
         설정·보관함 전체 초기화
-      </button> : <div role="group" aria-label="프로필 초기화 확인">
+      </button> : <div role="group" aria-label="프로필 초기화 확인" onKeyDown={event=>{
+        if(event.key==="Escape"){event.preventDefault();setConfirmReset(false);}
+      }}>
         <p>저장된 네 가지 설정, 경험 초안과 신호, 저장 목록, 검색, 계획, 알림 선호를 함께 비웁니다. 계속할까요?</p>
         <button type="button" disabled={busy} onClick={() => { void reset(); }}>초기화 확인</button>
-        <button type="button" disabled={busy} onClick={() => setConfirmReset(false)}>취소</button>
+        <button ref={cancelButton} type="button" disabled={busy} onClick={() => setConfirmReset(false)}>취소</button>
       </div>}
-      <button type="button" disabled={busy} onClick={()=>{setEndAfterReset(true);setConfirmReset(true);}}>초기화 후 시연 종료</button>
+      <button ref={endButton} type="button" disabled={busy} onClick={()=>{resetOrigin.current="END";setEndAfterReset(true);setConfirmReset(true);}}>초기화 후 시연 종료</button>
       {notice && <p role="status">{notice}</p>}
       <section aria-label="합성 재계산 결과">
         <h2>개인화 재계산 (합성)</h2>
