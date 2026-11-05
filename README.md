@@ -1,6 +1,6 @@
 # HUFS One AI
 
-> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
+> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. **#61/#123/#132/#133은 구현 납품분만 CLOSED, 실인수는 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)·[NCP #222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) OPEN**입니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
 
 **한국외대 학생의 정보 탐색·개인화를 돕는 독립 팀 프로젝트**입니다. 기존 HUFSAbility의 익숙한 기능과 메뉴를 보존하는 사용자 경험을 목표로 하지만, **학교 공식 HUFSAbility 개편·운영 서비스가 아닙니다**. 원본 UI/학교 저작물·학생 데이터·공식 로그인·자료 이용권을 허가 없이 복제·연동하지 않습니다.
 
@@ -25,10 +25,12 @@
 
 - **현재 코드:** 공통 계약, 개인화·공지·캘린더, 졸업·수강계획·전공 What-if 코어, 권한을 확인하는 API·PostgreSQL 어댑터와 합성 UI가 구현되어 있습니다. 최근 PR의 실제 병합 여부와 실패 수정 결과는 [STATUS](STATUS.md)에 기록합니다.
 - **검증 수준:** 단위·통합·실제 Chrome과 일회용 PostgreSQL 검사는 실행한 HEAD별로 판단합니다. 실학생 결과, 운영 Google/학교메일·TLS·NCP 검증으로 확대하지 않습니다.
-- **완료 판단:** [열린 정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues?q=is%3Aissue+is%3Aopen)의 요구사항별로 코드·테스트·독립 검수·운영 증거를 대조합니다. PR 병합이나 부분 체크가 상위 이슈 전체 완료를 뜻하지 않습니다.
-- **출시 차단:** #46 과거 Git 게시·clone/자료 권리, #61 독립 사람 gold, #89 운영 인증·HTTPS·NCP 수락은 별도입니다. 담당별 고정 수락률은 [TEAM_PROGRESS](docs/TEAM_PROGRESS.md)의 복합 조건 충족률이며 제품 코드 완성률이 아닙니다.
+- **완료 판단:** [열린 정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues?q=is%3Aissue+is%3Aopen)의 요구사항별로 코드·테스트·독립 검수·운영 증거를 대조합니다. 구현 종료 이슈의 미수락 항목은 [#221 실인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)와 [#222 NCP 스테이징/기능 활성화](https://github.com/minseong-hufs/HUFS-One-AI/issues/222)로 승계되며 출시 완료로 계산하지 않습니다. PR 병합이나 부분 체크가 상위 이슈 전체 완료를 뜻하지 않습니다.
+- **출시 차단:** #46 과거 Git 게시·clone/자료 권리, #221(구 #61) 독립 사람 gold, #89 운영 인증·HTTPS·NCP 수락은 별도입니다. 담당별 고정 수락률은 [TEAM_PROGRESS](docs/TEAM_PROGRESS.md)의 복합 조건 충족률이며 제품 코드 완성률이 아닙니다.
 
 ## 로컬 합성 개발
+
+**시작/검증/운영 인계:** [제품 기능 활성화 런북](docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md)에서 **실행 가능한 합성 기능**과 **NCP/운영에서 새로 구현·승인해야 하는 기능**을 분리합니다. 현재 production 기동 가드를 바꿔 모든 기획 기능을 억지로 켜는 방법은 허용하지 않습니다.
 
 **Node.js 22.22.2+ (22.x) / 24.15.0+ (24.x)**, npm 기반 프로젝트이며 아래 명령은 **개발용**입니다(새로 실행했다는 뜻 아님).
 
@@ -66,6 +68,7 @@ npm run dev:web -- --mode synthetic
 | 현재 구현/검증·차단 | [STATUS](STATUS.md), [GitHub Issues](https://github.com/minseong-hufs/HUFS-One-AI/issues) |
 | 개발 규칙·승인 | [AGENTS](AGENTS.md), [PR_WORKFLOW](docs/PR_WORKFLOW.md) |
 | 팀 소유·진행 | [WORKSTREAMS](docs/WORKSTREAMS.md), [TEAM_PROGRESS](docs/TEAM_PROGRESS.md) |
+| 단계별 실행·실 NCP 제품 인수 | [제품 활성화 런북](docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md), [#221 인적 검수](https://github.com/minseong-hufs/HUFS-One-AI/issues/221), [#222 NCP 실환경](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) |
 | 사용성 참고/시연 | [UI 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md), [DEMO_MANUAL](docs/DEMO_MANUAL.md) |
 
 세부 역사적 실험 결과는 GitHub PR/커밋에 보존합니다. 오래된 문서 헤더의 "현재" 표시보다 해당 이슈 최신 판정·현재 `main`을 우선합니다.
