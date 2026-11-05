@@ -1,6 +1,6 @@
 # HUFS One AI
 
-> **2026-11-05 코드 통합:** #216 선행 통합에 이어 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) 동일교과 속성 테스트와 [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) What-if 합성 코어를 `main`에 병합했다. [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219)는 인증/SQL 역할 보안 수정, [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220)은 대규모 Source·AI·EMPTY_DEMO Draft로 **각 최신 HEAD 합성 CI 3/3 성공**했다. 단 두 PR 모두 독립 사람 리뷰와 운영 수락 전이며 #220은 Draft를 유지한다. **코드 병합은 실학생 자료·공식 학칙·사람 gold 200·운영 PostgreSQL/Google/NCP/TLS 인수가 아니다. RELEASE_BLOCKED.** 최신 PR·CI/미완료 조건은 [STATUS](STATUS.md)와 [인적 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 확인한다.
+> **2026-11-05 코드 통합:** #216 선행 통합에 이어 [#218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) 동일교과 속성 테스트와 [#217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) What-if 합성 코어를 `main`에 병합했다. [#219](https://github.com/minseong-hufs/HUFS-One-AI/pull/219)는 SQL 역할 보안 보강과 CI 3/3 확인 뒤 merge `1181d0f`로 병합됐다. [#220](https://github.com/minseong-hufs/HUFS-One-AI/pull/220)은 대규모 Source·AI·EMPTY_DEMO **Draft로 최신 HEAD 합성 CI 3/3 성공**, 독립 사람 검토 대기다. #219의 독립 사람 `APPROVED`는 이력상 확인되지 않았고 **병합/합성 CI는 운영 승인과 별개**다. **코드 병합은 실학생 자료·공식 학칙·사람 gold 200·운영 PostgreSQL/Google/NCP/TLS 인수가 아니다. RELEASE_BLOCKED.** 최신 PR·CI/미완료 조건은 [STATUS](STATUS.md)와 [인적 인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)에서 확인한다.
 
 
 **한국외대 학생의 정보 탐색·개인화를 돕는 독립 팀 프로젝트**입니다. 기존 HUFSAbility의 익숙한 기능과 메뉴를 보존하는 사용자 경험을 목표로 하지만, **학교 공식 HUFSAbility 개편·운영 서비스가 아닙니다**. 원본 UI/학교 저작물·학생 데이터·공식 로그인·자료 이용권을 허가 없이 복제·연동하지 않습니다.
