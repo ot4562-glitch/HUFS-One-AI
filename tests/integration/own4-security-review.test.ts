@@ -2,6 +2,8 @@ import {describe,expect,it} from 'vitest';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
+import {OwnerSessionController} from '../../apps/web/src/app/owner-session-controller.js';
+import {resolveSessionRole,roleServices} from '../../apps/web/src/roleServices.js';
 import snapshot from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
 const origin='https://synthetic.invalid';
@@ -57,13 +59,26 @@ describe('integration security review: deny unsupported production startups',()=
 
 describe('reviewer browser: prove all nested academic/AI evidence is synthetic',()=>{
   it('refuses ADMIN sessions without verified proof and allowlist flags',async()=>{
-    // #123 adds a distinct ADMIN consumer. OwnerSessionController still accepts
-    // BETA only; tests/api/admin-browser-session.test.ts proves that separation.
     for(const flags of [{schoolMailProofValid:false,betaAllowed:true},
       {schoolMailProofValid:true,betaAllowed:false}]){
       const client=new HufsApiClient(async()=>respond({actorId:'SYN-ADMIN',role:'ADMIN',...flags}));
       await expect(client.getSession()).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE',status:503});
     }
+  });
+
+  it('keeps ADMIN outside all BETA/REVIEWER paths even with beta-shaped flags',async()=>{
+    const client=new HufsApiClient(async()=>respond({
+      actorId:'SYN-ADMIN',role:'ADMIN',schoolMailProofValid:true,betaAllowed:true,
+    }));
+    // Identity resolution is shared with the distinct #123 ADMIN portal.
+    // It grants no owner or REVIEWER capability, and publication still needs server authority.
+    expect((await client.getSession()).role).toBe('ADMIN');
+    const owner=new OwnerSessionController(client);
+    await owner.initialize();
+    expect(owner.getState().status).toBe('FORBIDDEN');
+    const role=await resolveSessionRole(client);
+    expect(role).toEqual({role:'ADMIN'});
+    expect(Object.keys(roleServices(client,role))).toEqual(['clubModeration']);
   });
 
   it('blocks a supposedly synthetic snapshot with potentially live cached model provenance',async()=>{
