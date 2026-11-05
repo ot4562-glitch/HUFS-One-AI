@@ -45,6 +45,14 @@ node --test tests/security/ncp-network-iac.test.mjs
 - 공개 80/443·API/PG·학교메일/Google/유료 CLOVA/실학생 데이터/외부 네트워크 배포는 **SSH 합성 preview에서 사용하지 않는다**.
 - 운영 배포를 위한 안전 코드 수정과 인적/운영 검증은 [제품 런북](../../docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md)을 따른다. production 거부 환경변수를 강제로 바꿔 공개하지 않음.
 
+### 실제 도구·거부 포트와 안전 검증
+
+- Windows 운영 PC에서 **PuTTY**로 서버가 제공한 SSH host key 지문을 고정해 비교하고, **WinSCP** SFTP로 승인된 합성 ZIP/hash만 전송한다. 관리자 **비밀번호** 또는 root SSH 로그인을 일시적인 설치 편의로 남기지 않으며 새 키의 두 번째 독립 로그인 성공 후만 차단 정책 적용.
+- 실제 **Network ACL**(stateless의 출발지/목적지·반환 포트), **ACG**(상태 추적), Ubuntu UFW를 서로 다른 정책/영수증으로 검수. 합성 preview는 **5173** 루프백 전용, 운영 API 포트 **3000** 및 PostgreSQL **5432**/worker/debug는 인터넷에서 직접 접근할 수 없어야 한다.
+- **한국 IP** 제한은 대한민국 리전 선택만으로 활성화되지 않는다. 별도 승인된 **Global Edge** 접근정책 **Whitelist > Geo**에서 Korea와 제외/우회 경계를 확인해야 하며, 직접 원본 IP·IPv6·다른 호스트/preview 경로 차단과 실제 정상/비정상 지역 테스트가 필요하다.
+- **실제 운영 서비스는 A01–D03 독립 인수 전까지 차단**한다. `APP_ENV=production` 보호 거부를 값만 바꿔 우회하지 않는다. 코드 합성 mock, preview/계획을 실제 운영 준비/지출 완료로 승격하지 않는다.
+- **현재 CI 보안 검사 식별자:** `#46`(개인 원본 위험), `#89`(출시/인그레스 보안)는 `tests/release/test_ncp_preview_safety.py`의 검증 기준에 아직 포함된 **정적 호환 표기**이다. 이 번호들은 현재 열린 작업이나 승인 상태가 아니며, 실제 소유 이슈는 **#252(실수락)/#253(코드)**이다.
+
 ## 운영 TLS·인증·관측/복구 조건
 
 승인된 public 운영 진입점에서 Host/SNI/DNS/TLS/Nginx/LB/WAF/Edge KR whitelist·미인증 HTML/JS/API/media/CDN·직접 origin IP/IPv6/preview bypass, 실 Google sub/JWKS/학교메일 OTP·REVIEWER 세션/철회, PostgreSQL CA TLS/최소 RLS·backup/restore·role 분리를 검증해야 한다.
