@@ -12,13 +12,13 @@
 GET /api/experience/cards?view=portfolio&limit=20
 ```
 
-`view`를 생략하면 기존 `{items,nextCursor}` 형식을 그대로 반환합니다. 포트폴리오는 페이지당 최대20개 경험과 `asOf`, `consentVersion`, 경험별 `contentVersion`/현재 태그 승인, 태그별 근거 experience ID를 제공합니다. `afterId`로 페이지를 넘깁니다. **페이지에 포함된 경험만 집계**하며 전체 경력 총점·숙련도·부족 능력 등은 추정하지 않습니다.
+`view`를 생략하면 기존 `{items,nextCursor}` 형식을 그대로 반환합니다. 포트폴리오는 페이지당 최대20개 경험과 `asOf`, `consentVersion`, 경험별 `contentVersion`/현재 태그 승인, 태그별 근거 experience ID를 제공합니다. `afterId`로 페이지를 넘깁니다. `portfolio.coverage:'PAGE'`는 집계 범위를 현재 페이지로 고정하고, `portfolio.complete`는 현재 응답의 `nextCursor===null`과 일치합니다. **페이지에 포함된 실제 본인 경험(`OWNER_CONSENTED`)에서 학생이 승인한 태그만 `portfolio.topics`에 집계**합니다. 합성 경험은 본인 경력·실추천 신호로 오해하지 않도록 증거 목록에는 표시하되 토픽 합계에서는 제외합니다. 전체 경력 총점·숙련도·부족 능력을 추정하지 않습니다.
 
 필수 서버 서비스는 selfAccount, ownerWorkspace, experienceApproval입니다. 이 중 하나라도 없으면 portfolio 조회는503입니다. 실제 사용자 role·세션 확인 및 no-store는 유지됩니다. 조회 중 내용/승인/동의 버전이 달라지면409, 현재 저장 동의가 철회됐으면403, 세션이 만료되면401로 응답합니다. 이 조회는 의존 버전을 재검사하지만 DB 전체에 걸친 원자적 write receipt는 아닙니다.
 
 ## 프런트엔드/추천 인계
 
-`ExperiencePortfolioQuerySchema`, `ExperiencePortfolioSchema`가 공통 계약입니다. 응답의 ACTIVE 승인 태그만 선택된 경험의 개인화 신호로 사용합니다. 서버 응답으로 돌아온 사용자 승인과 AI 후보를 구분하며, 후보를 생성하거나 자동 승인했다고 표시하지 않습니다.
+`ExperiencePortfolioQuerySchema`, `ExperiencePortfolioSchema`가 공통 계약입니다. 실제 본인 경험(`OWNER_CONSENTED`)에 연결된 ACTIVE 승인 태그만 해당 페이지의 개인화 신호로 사용합니다. `coverage:'PAGE'`일 때 전체 계정 역량이 아니라 부분 집계이며, `complete:false`면 다음 페이지 확인이 필요합니다. 서버 응답으로 돌아온 사용자 승인과 AI 후보를 구분하며, 후보를 생성하거나 자동 승인했다고 표시하지 않습니다.
 
 ## 선택 경험 → AI 역량 후보 → 학생 승인 연계 (PR #264)
 
@@ -49,6 +49,6 @@ GET /api/experience/cards/:id/ai-skills/:jobId
 
 실제 전제 조건: `20261105_ai_consented_personal_inputs.sql` 이후 `20261105_ai_experience_bindings.sql` 적용, operator 전용 current provider input/출처·승인 결속 행 등록, 독립 SQL role 권한, 운영 provider 설정과 승인된 개인 동의. 이 경로가 존재한다는 사실만으로 실제 등록된 경험/모델 처리·통합 UX가 완료된 것은 아닙니다. UI/추천 소비는 #258/#259 담당입니다.
 
-**잔여 구현:** 외부 운영자의 사전 검토 수집을 실제 개인 경험 provider input 등록과 연결하는 관리 기능과 사용자 선택·실운영 비용/원본 검증은 #257/#252의 구현/운영 증거가 추가로 필요합니다.
+**현재 구현 경계:** `PostgresExperienceSkillInputRegistrar`의 운영자 전용 등록 코드와 분리된 SQL 역할·독립 검증 포트가 존재합니다. 실제 검토 기록, 학생의 개인별 정보 동의·원본 접근권, 운영 계정/DB·공급자 비용 및 종단 실행은 별도 운영 실측으로 확인합니다. UI·추천 순수 코어의 실제 화면 소비는 각각 #258·#259 담당입니다.
 
 테스트: `tests/api/experience-portfolio.test.ts`, `tests/api/experience-portfolio-http.test.ts`; 기존 경험 승인·삭제/철회·PostgreSQL 회귀도 함께 실행합니다.
