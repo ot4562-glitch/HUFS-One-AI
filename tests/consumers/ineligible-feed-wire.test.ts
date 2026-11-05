@@ -63,7 +63,7 @@ describe('authorized ineligible feed wire and consumer (#230)',()=>{
       {...card,evidenceRefs:['EV-REAL-PRIVATE']},
       {...card,explanation:{...card.explanation!,dataMode:'REAL'}},
       {...card,explanation:{...card.explanation!,eligibility:{...card.explanation!.eligibility,
-        conditions:card.explanation!.eligibility.conditions.map(c=>({...c,evidenceId:'EV-REAL-PRIVATE'}))}}}])
+        evidenceRefs:['EV-REAL-PRIVATE']}}}])
       expect(DemoSnapshotSchema.safeParse({...snapshot,asOf:ASOF,
         feed:{...feed,ineligible:[changed]}}).success).toBe(false);
     expect(DemoSnapshotSchema.safeParse({...snapshot,asOf:ASOF,datasetMode:'REAL_CONSENTED',

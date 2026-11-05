@@ -56,8 +56,7 @@ export const DemoSnapshotSchema = z.strictObject({
   for(const [index,card] of (snapshot.feed.ineligible??[]).entries()){
     if(card.dataMode!=='SYNTHETIC'||!card.opportunityId.startsWith('SYN-')
       ||card.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-'))
-      ||card.explanation&&(card.explanation.dataMode!=='SYNTHETIC'
-        ||card.explanation.eligibility.conditions.some(c=>!c.evidenceId.startsWith('EV-SYN-'))))
+      ||card.explanation?.eligibility.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-')))
       ctx.addIssue({code:'custom',path:['feed','ineligible',index],message:'Synthetic feed contains non-synthetic evidence'});
   }
 });
