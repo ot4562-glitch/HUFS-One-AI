@@ -1,4 +1,5 @@
 import {afterEach,describe,expect,it} from 'vitest';
+import {ReceiptAdmissionError} from '../../apps/api/src/modules/auth/owner-receipts.js';
 import type {ApiOptions} from '../../apps/api/src/types.js';
 import {createApi} from '../../apps/api/src/server.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
@@ -32,6 +33,17 @@ function makeApp(trusted?:unknown,google=false){
 const probe=(app:ReturnType<typeof createApi>,remoteAddress:string,forwarded?:string)=>
   app.inject({url:'/api/synthetic/client-ip',remoteAddress,
     ...(forwarded===undefined?{}:{headers:{'x-forwarded-for':forwarded}})});
+
+describe('owner receipt rate-limit response (#227)',()=>{
+  it('returns 429 without falsely diagnosing a provider outage',async()=>{
+    const app=makeApp();
+    app.get('/api/synthetic/receipt-cap',async()=>{throw new ReceiptAdmissionError();});
+    const response=await app.inject({url:'/api/synthetic/receipt-cap'});
+    expect(response.statusCode).toBe(429);
+    expect(response.json().error.code).toBe('RATE_LIMITED');
+    expect(response.headers['cache-control']).toBe('no-store');
+  });
+});
 
 describe('explicit immediate-proxy client identity (#226)',()=>{
   it('keeps caller-supplied forwarding untrusted by default',async()=>{
