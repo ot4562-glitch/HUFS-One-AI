@@ -12,7 +12,7 @@ const actor={actorId:'SYN-PLANNER',role:'BETA' as const,betaAllowed:true,
   schoolMailProofExpiresAt:'2026-11-05T00:00:00.000Z'};
 const grant=SharingGrantSchema.parse({grantId:'SYN-GRANT',actorId:actor.actorId,
   demoSubjectId:'S01',version:'G-SYN',expiresAt:actor.sessionExpiresAt,
-  allowedSections:['FEED','NOTICES','ACADEMICS','FORECAST'],
+  allowedSections:['FEED','NOTICES','ACADEMICS','FORECAST','EXPERIENCE'],
   displayNameAllowed:false,recordingAllowed:false});
 const headers={origin:ORIGIN,'x-csrf-token':actor.csrfToken};
 const apps:Array<ReturnType<typeof createApi>>=[];
@@ -94,7 +94,7 @@ describe('separate demo-context plan/outlook scenario contracts',()=>{
     h.repo.setGrant({...grant,version:'REVOKED-GRANT'});
     const stale=await h.app.inject({method:'POST',url:h.path+'/plans/simulate',headers,payload:plan});
     expect(stale.statusCode).toBe(409);
-    const limited=await setup(['FEED','NOTICES','ACADEMICS']);
+    const limited=await setup(['FEED','NOTICES','ACADEMICS','EXPERIENCE']);
     const outlook=await limited.app.inject({method:'POST',url:limited.path+'/outlook/scenarios',headers,
       payload:{...limited.scope,targetTerm:'2027-1',courseIds:['SYN-CS'],assumption:'UNCHANGED'}});
     expect(outlook.statusCode).toBe(403);
