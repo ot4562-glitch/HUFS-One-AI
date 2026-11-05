@@ -525,10 +525,29 @@ function buildInventory(selectedRoot) {
     designSeen.add(item.design);
     if (designRows.length && !designRows.includes(item.design)) finding('UNRECOGNIZED_DESIGN_MAPPING');
     issue(item.primaryIssue);
-    for (const id of item.actualRouteIds) if (!routeById.has(id)) finding('DESIGN_ROUTE_REFERENCE_MISSING', id);
+    const dispositions = new Set(['INTENTIONALLY_RETIRED', 'IMPLEMENTATION_REQUIRED',
+      'ALTERNATIVE_SCOPED_API', 'OPERATOR_PRIVATE']);
+    const direct = item.actualRouteIds.length > 0;
+    const relatedIds = Array.isArray(item.relatedRouteIds) ? item.relatedRouteIds : [];
+    if (item.relatedRouteIds !== undefined && (!Array.isArray(item.relatedRouteIds)
+      || relatedIds.some((id) => typeof id !== 'string')
+      || new Set(relatedIds).size !== relatedIds.length)) finding('INVALID_RELATED_DESIGN_ROUTES');
+    if (direct && (item.disposition !== undefined || item.relatedRouteIds !== undefined))
+      finding('DIRECT_DESIGN_HAS_DISPOSITION');
+    if (!direct && !unknown.length && !dispositions.has(item.disposition))
+      finding('DESIGN_DISPOSITION_REQUIRED');
+    if (!direct && item.disposition !== undefined && !dispositions.has(item.disposition))
+      finding('INVALID_DESIGN_DISPOSITION');
+    if (!direct && item.disposition === 'ALTERNATIVE_SCOPED_API' && !relatedIds.length)
+      finding('ALTERNATIVE_DESIGN_ROUTE_REQUIRED');
+    for (const id of [...item.actualRouteIds, ...relatedIds]) if (!routeById.has(id))
+      finding('DESIGN_ROUTE_REFERENCE_MISSING', id);
     const linked = item.actualRouteIds.map((id) => routeById.get(id)).filter(Boolean);
+    const related = relatedIds.map((id) => routeById.get(id)).filter(Boolean);
     designContracts.push({ design: item.design, primaryIssue: item.primaryIssue, actualRouteIds: item.actualRouteIds,
       actualPaths: linked.map((route) => route.method + ' ' + route.path),
+      disposition: direct ? 'DIRECT' : item.disposition ?? 'UNRESOLVED',
+      relatedRouteIds: relatedIds, relatedPaths: related.map((route) => route.method + ' ' + route.path),
       status: linked.length && linked.every((route) => route.status === 'INTEGRATED') ? 'INTEGRATED'
         : unknown.length || linked.some((route) => route.status === 'UNKNOWN') ? 'UNKNOWN' : 'NOT_IMPLEMENTED',
       notes: typeof item.notes === 'string' ? item.notes : '', runtimeEvidence: 'NOT_RUN' });
@@ -581,10 +600,11 @@ export function markdownInventory(report) {
   for (const route of report.routes) lines.push('| ' + [route.method, route.path, route.status,
     route.source + '#' + route.registrar, route.exposure?.mode, route.dto.refs.map((ref) => ref.path + (ref.symbol ? '#' + ref.symbol : '')).join(', ') || 'UNKNOWN',
     route.consumerRefs.join(', ') || 'UNKNOWN', 'NOT_RUN; ' + route.testRefs.join(', ')].map(safe).join(' | ') + ' |');
-  lines.push('', '## Design path mappings', '', '| A13.2 design | Actual paths | Static status | Notes |',
-    '| --- | --- | --- | --- |');
+  lines.push('', '## Design path mappings', '',
+    '| A13.2 design | Exact registered paths | Static status | Missing-path disposition | Related scoped APIs (not aliases) | Notes |',
+    '| --- | --- | --- | --- | --- | --- |');
   for (const item of report.designContracts) lines.push('| ' + [item.design, item.actualPaths.join(', ') || 'None found',
-    item.status, item.notes].map(safe).join(' | ') + ' |');
+    item.status, item.disposition, item.relatedPaths.join(', ') || 'None', item.notes].map(safe).join(' | ') + ' |');
   lines.push('', '## TASK ownership', '', '| TASK | Priority | Primary issue | Related issues | Scope | Runtime evidence |',
     '| --- | --- | --- | --- | --- | --- |');
   for (const task of report.tasks) lines.push('| ' + [task.id, task.priority, '#' + task.primaryIssue,

@@ -2916,7 +2916,9 @@
       "design": "POST /api/auth/login",
       "primaryIssue": 27,
       "actualRouteIds": [],
-      "notes": "Legacy password login remains intentionally retired. No matching registration in maintained source; private dynamic adapters remain UNKNOWN."
+      "notes": "Password login is intentionally retired. Production uses verified OIDC/school-mail flows; never reintroduce public password login.",
+      "disposition": "INTENTIONALLY_RETIRED",
+      "relatedRouteIds": []
     },
     {
       "design": "GET /api/auth/session",
@@ -3012,7 +3014,11 @@
       "design": "POST /api/demo/contexts/:id/plans/simulate",
       "primaryIssue": 119,
       "actualRouteIds": [],
-      "notes": "No exact demo-context plans/simulate registration. Owner POST /api/study-plans/check is separately inventoried with a different authorization/DTO scope."
+      "notes": "The demo-context simulation API/DTO is not implemented. POST /api/study-plans/check is an independently scoped authenticated owner contract, not a substitute.",
+      "disposition": "IMPLEMENTATION_REQUIRED",
+      "relatedRouteIds": [
+        "post-api-study-plans-check"
+      ]
     },
     {
       "design": "GET /api/demo/contexts/:id/outlook",
@@ -3026,7 +3032,11 @@
       "design": "POST /api/demo/contexts/:id/outlook/scenarios",
       "primaryIssue": 11,
       "actualRouteIds": [],
-      "notes": "No exact outlook/scenarios registration. Owner major-what-if is a separate academic scenario contract."
+      "notes": "The demo-context outlook scenario API/DTO is not implemented. Owner academic What-if has separate ownership, semantics and approval; never alias one to the other.",
+      "disposition": "IMPLEMENTATION_REQUIRED",
+      "relatedRouteIds": [
+        "post-api-academics-major-what-if"
+      ]
     },
     {
       "design": "GET /api/demo/contexts/:id/notices",
@@ -3040,19 +3050,33 @@
       "design": "GET /api/demo/contexts/:id/experiences",
       "primaryIssue": 27,
       "actualRouteIds": [],
-      "notes": "No dedicated context experiences route. Context personal kind EXPERIENCE is separately inventoried with a different DTO/query contract."
+      "notes": "Current demo context personal-state GET supports context-scoped records including EXPERIENCE kind, with different query/response contract. No dedicated experiences route exists.",
+      "disposition": "ALTERNATIVE_SCOPED_API",
+      "relatedRouteIds": [
+        "get-api-demo-contexts-id-personal"
+      ]
     },
     {
       "design": "GET /api/demo/contexts/:id/saved-items",
       "primaryIssue": 27,
       "actualRouteIds": [],
-      "notes": "No dedicated context saved-items route. Context personal BOOKMARK and owner saved-items are separate contracts."
+      "notes": "Context BOOKMARK personal-state and authenticated owner saved-items are separately scoped existing APIs; neither is the exact design route.",
+      "disposition": "ALTERNATIVE_SCOPED_API",
+      "relatedRouteIds": [
+        "get-api-demo-contexts-id-personal",
+        "get-api-saved-items"
+      ]
     },
     {
       "design": "POST /api/demo/contexts/:id/actions",
       "primaryIssue": 27,
       "actualRouteIds": [],
-      "notes": "No generic context actions route. Synthetic REVIEWER actions and personal APPLICATION_DRAFT storage are separately scoped APIs."
+      "notes": "Context APPLICATION_DRAFT personal-state writes and reviewer-only actions are different authorized APIs; no generic context actions endpoint exists.",
+      "disposition": "ALTERNATIVE_SCOPED_API",
+      "relatedRouteIds": [
+        "post-api-demo-contexts-id-personal",
+        "post-api-reviewer-demo-contexts-id-actions"
+      ]
     },
     {
       "design": "GET/PATCH /api/profile",
@@ -3084,13 +3108,17 @@
       "design": "POST /api/academics/import/preview",
       "primaryIssue": 27,
       "actualRouteIds": [],
-      "notes": "No HTTP academic import preview registration. Private intake parser/storage code exists and is not counted as an HTTP endpoint."
+      "notes": "Use server-only intake:preview CLI with private operator authorization and original-data handling. No public HTTP upload/preview endpoint is authorized.",
+      "disposition": "OPERATOR_PRIVATE",
+      "relatedRouteIds": []
     },
     {
       "design": "POST /api/academics/import/apply",
       "primaryIssue": 27,
       "actualRouteIds": [],
-      "notes": "No HTTP academic import apply registration. Operator-only intake requires separate private authorization; no route is inferred from CLI code."
+      "notes": "Use server-only intake:apply CLI with operator authorization and apply/rollback evidence. Never open a public academic-import mutation API.",
+      "disposition": "OPERATOR_PRIVATE",
+      "relatedRouteIds": []
     },
     {
       "design": "GET /api/courses",
@@ -3206,7 +3234,9 @@
       "design": "POST /api/admin/corpus/approve",
       "primaryIssue": 61,
       "actualRouteIds": [],
-      "notes": "No corpus approve HTTP registration. Source review/storage code exists; independent rights and approval remain unverified."
+      "notes": "Source review/approval is an independent private operator action with current rights/revision/actor checks, not an unauthenticated public HTTP endpoint.",
+      "disposition": "OPERATOR_PRIVATE",
+      "relatedRouteIds": []
     },
     {
       "design": "POST /api/admin/demo/preflight",

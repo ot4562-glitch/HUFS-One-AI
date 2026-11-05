@@ -1,21 +1,24 @@
 # 현재 남은 코드와 실제 구성·검증
 
-**승인:** OWNER_CONFIRMED_APPROVED. 이 목록은 승인 대기가 아니라 실제 구현/구성/실행의 작업 목록입니다. 사용자 소유 #253/#257, 실제 결과 #252, 협업 조정 #255.
+**승인:** `OWNER_CONFIRMED_APPROVED`. 이 정본은 승인 대기를 뜻하지 않습니다. 실제 배포·계정·원본·비용 및 제3자 품질 인수는 검증 증거가 있을 때만 완료로 기록합니다. 코드 담당은 #253/#257, 실행·인적 검증은 #252, 협업 총괄은 #255입니다.
 
-## PR #264에 구현된 범위
+## 현재 PR #264에 있는 구현
 
-- 명시적 production 구성의 무조건 거부를 제거하고 OIDC/메일·HTTPS origin·실제 서버 포트를 검사.
-- 기본 7개 SQL 역할 + 기존 owner/경험/추천/학업/Source 서비스 13종의 별도 managed pool 구성·중복/원시 pool 거부·시작/실패/종료 정리.
-- 서버 비공개 factory 기반 `production-main` plan/apply와 systemd unit.
-- 기존 경험 목록에 선택형 `view=portfolio`를 추가, 현재 승인 태그/내용/동의 버전·변경/철회 재검사·정확한 근거 ID 집계.
-- 구성된 AI provider의 별도 승인 기본false 제거, 명시적 중지·현재 입력/세션/예산 검증 유지.
-- 승인 상태와 실제 실행 결과를 구분한 문서 및 release evidence 보고.
+- 명시적인 production 구성과 안전한 `--plan`/`--apply` 실행, 관리 SQL 역할·RLS·독립 AI 예산/입력/정산, 소유권·철회·권한의 현재 상태 검사를 구현했습니다.
+- 경험 CRUD/포트폴리오, 다중 경험 선택, 운영자 전용 input 등록, 현재 판본/동의 결속, `NEEDS_REVIEW` AI 후보 조회와 학생 승인 태그 API가 존재합니다. 화면 #258과 추천 순수 코어 #259의 실제 소비 완료는 별도입니다.
+- 학업 What-if의 PostgreSQL 읽기 어댑터와 관리형 연결을 구현했습니다. #265에서 병합된 주전공별 이중전공/부전공 RulePack 선택을 통합하고, 학업 경로가 지정되지 않은 주전공 팩을 거부하도록 강화했습니다. 공식 학칙·실학생 자료의 판정이 검증되었다는 뜻은 아닙니다.
+- API/설계 inventory의 직접 미매핑 9개 경로를 실행 가능한 정적 감사에서 다음과 같이 분류하고, 관련 API를 **정확한 대체 URL인 것처럼 주장하지 않도록** 했습니다.
+  - `POST /api/auth/login`: 의도적으로 폐기된 비밀번호 로그인.
+  - `POST /api/demo/contexts/:id/plans/simulate`, `POST /api/demo/contexts/:id/outlook/scenarios`: 설계된 별도 API는 아직 구현 필요; 기존 학생 계획/What-if API는 서로 다른 권한·DTO입니다.
+  - `GET /api/demo/contexts/:id/experiences`, `GET /api/demo/contexts/:id/saved-items`, `POST /api/demo/contexts/:id/actions`: 개인 상태/보관함/REVIEWER 관련 **별도 범위의 현행 API**가 있으나 설계 URL과 정확히 일치하지 않습니다.
+  - `POST /api/academics/import/preview`, `POST /api/academics/import/apply`, `POST /api/admin/corpus/approve`: 개인 원본·승인 관련 **운영자 전용 비공개 절차**로 유지; 무인증 공개 엔드포인트를 추가하지 않습니다.
 
-## 아직 완료로 표시하지 않은 범위
+## 미완료 범위 — 코드/설정/실행 결과를 구분
 
-- 경험 선택→provider input 등록→AI 태그 후보/원문 근거→학생 확인을 묶는 전체 어댑터와 UI/추천 소비자 종단 연결.
-- loader-only `majorWhatIf` 관리형 운영 연결과 설계 API 9경로의 현재 대체/미구현/의도적 제외 판단 정리.
-- 실제 운영 host/DB migration·계정/메일·가격/AI 입력·TLS/Proxy/복구 구성을 사용한 시험과 비용/품질 측정.
-- 광범위한 #253의 source/native worker·전체 문서/API inventory·공급망/현장 인수 전 항목의 정확한 완료 근거.
+- 실제 운영 OIDC/메일·CA TLS/role GRANT·NCP host/ingress, DB migration/backup/rollback 및 AI provider·가격·토큰을 구성한 종단 시험은 `CONFIGURATION_REQUIRED` 또는 `NOT_RUN`입니다.
+- SourceRevision/Temporal RAG·문서/이미지/PDF·native worker와 비용 정산의 전체 운영 소비와 취소/오류/동시성 회귀, native/NOTICE/SBOM·패키징·비밀 유출 검증은 #253에서 계속 확인해야 합니다.
+- 경험 후보→학생 승인→추천 projection을 UI #258·추천 #259의 실제 사용자 경로에서 검사하고, 학업 자료는 #260과 독립 교차 리뷰가 필요합니다.
+- 합성 자동 CI와 운영/사람 인수를 혼동하지 않습니다. 최신 코드 SHA의 TypeScript·PostgreSQL·Chrome·NCP 오프라인 결과를 별도로 조회합니다.
+- 실제 학생·기관·학칙 원본, NCP/AI 사용량·비용, 독립 사람 Gold·스크린리더·최종 출시 판정은 #252에서 사실적 증거로 검증합니다.
 
-UI·추천 순수 코어·학업 알고리즘은 다른 협업자 소유입니다. 본 PR의 코드/합성 테스트만으로 전체 서비스 또는 민성 담당 모든 이슈가 완료됐다고 계산하지 않습니다. 현재 PR HEAD의 결과를 [Actions](https://github.com/minseong-hufs/HUFS-One-AI/actions)에서 확인합니다.
+개인별 현재 동의/철회·신원/역할, RLS, CSRF, 비밀키·토큰 보호는 프로젝트 전체 승인이 완료됐어도 유지합니다.
