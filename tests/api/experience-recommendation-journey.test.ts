@@ -104,7 +104,10 @@ function setup(){
       modelCalls++;
       return {task:'experience_skills',reviewRequired:true,citations:[{
         sourceToken:'EXPERIENCE',paragraphId:'SUMMARY',
-        quote:'analysis of overseas trade data'}]};
+        quote:'analysis of overseas trade data'}],objectTokens:[],
+        result:{kind:'experience_skills',skills:[{topicCode:'TRADE_OVERSEAS',
+          skill:{text:'overseas trade data',citationIndexes:[0]},
+          role:{text:'analysis',citationIndexes:[0]}}]}};
     }},
     ownerFeed:{source:feedSource,approval:{isApproved:async()=>true}},
   } as any);
