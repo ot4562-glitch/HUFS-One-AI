@@ -233,4 +233,34 @@ describe('PostgresCalendarInputSource: server-reviewed raw inputs and current gr
     expect(db.log.some(x=>x.sql==='ROLLBACK')).toBe(true);
     expect(db.releases).toBe(1);
   });
+
+  it.each([
+    {name:'invalid pending shape',academics:{state:'PENDING'},forecast:{status:'PENDING'}},
+    {name:'malformed',academics:null,forecast:{unexpected:'SYN-HIDDEN'}},
+    {name:'older',academics:{state:'READY',rulePackVersion:'SYN-RULE',asOf:'2026-10-29T00:00:00.000Z',
+      earnedCreditUnits:0,inProgressCreditUnits:0,plannedCreditUnits:0,deficits:[],caveats:[]},
+      forecast:{status:'PARTIAL',asOf:'2026-10-29T00:00:00.000Z',items:[]}},
+    {name:'future',academics:{state:'READY',rulePackVersion:'SYN-RULE',asOf:'2026-11-02T00:00:00.000Z',
+      earnedCreditUnits:0,inProgressCreditUnits:0,plannedCreditUnits:0,deficits:[],caveats:[]},
+      forecast:{status:'PARTIAL',asOf:'2026-11-02T00:00:00.000Z',items:[]}},
+    {name:'large hidden prose',academics:{caveats:['SYN-HIDDEN-'.repeat(7000)]},forecast:null},
+  ])('masks $name only after authorizing the grant, retaining the raw receipt fingerprint',async hidden=>{
+    const db=fakeDatabase(),source=new PostgresCalendarInputSource(db.pool);
+    const original=await source.readAuthorizedInputs(request);
+    const snapshot=db.snapshotRow.snapshot_json as Record<string,unknown>;
+    snapshot.academics=hidden.academics;snapshot.forecast=hidden.forecast;
+    const bundle=await source.readAuthorizedInputs(request);
+    expect(bundle).not.toBeNull();
+    expect(bundle?.approvedSnapshot.academics).toEqual({state:'NOT_SHARED'});
+    expect(bundle?.approvedSnapshot.forecast).toEqual({state:'NOT_SHARED'});
+    expect(computeAuthorizedSections(bundle!,request)).toEqual(computeAuthorizedSections(original!,request));
+    expect(await source.revalidateAuthorization(request,bundle!,now)).toBe(true);
+    expect(await source.revalidateAuthorization(request,original!,now)).toBe(false);
+  });
+  it('does not mask malformed summaries for an academic/forecast grant',async()=>{
+    const db=fakeDatabase();db.grant.allowed_sections=['FEED','NOTICES','ACADEMICS','FORECAST'];
+    (db.snapshotRow.snapshot_json as Record<string,unknown>).academics=null;
+    await expect(new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request))
+      .rejects.toThrow('Calendar input source unavailable');
+  });
 });

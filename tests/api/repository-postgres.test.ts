@@ -170,4 +170,18 @@ describe('TASK-27 PostgreSQL privacy-scoped API repository (synthetic SQL stub)'
     await expect(h.repo.readGrant(ACTOR,'S01')).rejects.toThrow(/synthetic/);
     expect(h.released).toHaveLength(1);
   });
+
+  it('returns only version metadata for scoped computation without weakening the full snapshot reader',async()=>{
+    const metadata={demoSubjectId:snapshot.demoSubjectId,datasetMode:snapshot.datasetMode,
+      asOf:snapshot.asOf,versions:snapshot.versions};
+    const h=stub(()=>[{subject_id:'S01',snapshot_metadata:metadata,
+      snapshot_json:{...snapshot,academics:null,forecast:null}}]);
+    expect(await h.repo.readSnapshotMetadata('S01')).toEqual(metadata);
+    expect(h.queries[0]?.params).toEqual(['S01']);
+    expect(h.queries[0]?.sql).toContain('jsonb_build_object');
+    expect(h.queries[0]?.sql).toContain('WHERE subject_id=$1 AND current=true');
+    expect(h.queries[0]?.sql).not.toContain("snapshot_json->'academics'");
+    expect(h.queries[0]?.sql).not.toContain("snapshot_json->'forecast'");
+    await expect(h.repo.readSnapshot('S01')).rejects.toThrow();
+  });
 });

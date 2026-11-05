@@ -1,3 +1,4 @@
+import {maskUnsharedSnapshot} from './snapshot-visibility.js';
 import Fastify from 'fastify';
 import {randomUUID} from 'node:crypto';
 import {z} from 'zod';
@@ -64,22 +65,6 @@ function nowEpoch(now:string):number {
   const at=Date.parse(now);
   if(!Number.isFinite(at))throw new Error('Invalid trusted server clock');
   return at;
-}
-
-/** The current grant must be checked first. Hidden values are not inspected:
- * their schema or asOf must not change the visible response. */
-function maskUnsharedSnapshot(source:unknown,academics:boolean,forecast:boolean):unknown {
-  if(source===null||typeof source!=='object'||Array.isArray(source))return source;
-  const input=source as Record<string,unknown>;
-  const visible:Record<string,unknown>=Object.create(null);
-  for(const key of Object.keys(input)){
-    if(key==='academics'&&!academics)continue;
-    if(key==='forecast'&&!forecast)continue;
-    visible[key]=input[key];
-  }
-  if(!academics)visible.academics={state:'NOT_SHARED'};
-  if(!forecast)visible.forecast={state:'NOT_SHARED'};
-  return visible;
 }
 
 /** Every route starts by denying unverified credentials; no mock header bypass exists. */
@@ -523,8 +508,10 @@ export function createApi(options:ApiOptions) {
       ||(snap.aiProvenance!=='MOCK'&&snap.aiProvenance!=='NONE')
       ||snap.feed.asOf!==snap.asOf||snap.notices.asOf!==snap.asOf
       )throw new ApiFailure('FORBIDDEN');
-    // Scenario asOf is a frozen fictitious clock; only the live authenticated
-    // invitation session and rights checks use the actual request clock.
+    // REVIEWER uses a frozen fictitious scenario clock: synthetic summaries may
+    // be older, never later, than that scenario. BETA's approved live projection
+    // instead requires exact summary/snapshot asOf equality in checkedContext
+    // and ScopedApiRepository. Live invitation/session rights use request time.
     const syntheticEvidence=(refs:readonly string[])=>refs.every(ref=>ref.startsWith('EV-SYN-'));
     const academic=snap.academics;
     if('rulePackVersion' in academic
@@ -546,7 +533,14 @@ export function createApi(options:ApiOptions) {
       ||snap.notices.items.some(n=>!n.noticeId.startsWith('SYN-')
       ||n.evidenceRefs.some(ref=>!ref.startsWith('EV-SYN-'))))
       throw new ApiFailure('FORBIDDEN');
-    return snap;
+    // A SYN identifier is not an attestation of arbitrary prose. REVIEWER
+    // summaries carry fixed synthetic notices, never unverified official claims.
+    return DemoSnapshotSchema.parse({...snap,
+      academics:'rulePackVersion' in academic?{...academic,
+        caveats:['합성 시나리오의 학업 요약이며 공식 졸업 판정이 아닙니다.']}:academic,
+      forecast:'items' in forecast?{...forecast,items:forecast.items.map(item=>({...item,
+        caveat:'합성 시나리오의 개설 전망이며 공식 개설 일정이 아닙니다.'}))}:forecast,
+    });
   };
   // UI can expose the full student navigation without granting any real-world side effects.
   // This manifest is served only after active enrollment has been rechecked.

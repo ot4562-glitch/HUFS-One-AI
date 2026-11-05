@@ -46,6 +46,11 @@ export interface ApiRepository {
   /** Unsafe subject-only read: internal REVIEWER/synthetic legacy use only.
    * BETA HTTP routes must call readAuthorizedSnapshot instead. */
   readSnapshot(subject: SubjectAlias): Promise<DemoSnapshot|null>;
+  /** Internal scoped computation only, after a live grant check. Implementations
+   * must project only these fields without parsing unused snapshot sections.
+   * This is metadata, never an authorized browser snapshot or academic result. */
+  readSnapshotMetadata?(subject:SubjectAlias):
+    Promise<Pick<DemoSnapshot,'demoSubjectId'|'datasetMode'|'asOf'|'versions'>|null>;
   /**
    * One repository operation must validate current actor+subject+grant version,
    * requested sections, revoke/expiry and return only a scope-safe projection.

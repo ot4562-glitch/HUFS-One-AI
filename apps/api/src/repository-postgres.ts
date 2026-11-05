@@ -10,6 +10,7 @@ import type {
   AiTask,DemoProfileOption,DemoSnapshot,SafeLlmPacket,SharingGrant,SubjectAlias,
 } from '@hufs-one/contracts';
 import type {ReviewerSqlConnection,ReviewerSqlPool} from './modules/auth/reviewer-postgres.js';
+import {SnapshotMetadataSchema} from './snapshot-visibility.js';
 
 const RAW_JSON_LIMIT=64*1024;
 const OPAQUE_ACTOR=/^[A-Za-z0-9_.:@-]{1,200}$/;
@@ -151,6 +152,27 @@ export class PostgresApiProjectionRepository implements ApiRepository {
       SELECT subject_id,snapshot_json FROM api_demo_snapshot_projections
       WHERE subject_id=$1 AND current=true LIMIT 2`,[id]);
     return this.checkSnapshot(rows,id);
+  }
+
+  /** Metadata for ScopedApiRepository after its current-grant check. Keep the
+   * legacy full readSnapshot strict; unused summaries do not cross this query. */
+  async readSnapshotMetadata(subject:SubjectAlias){
+    const id=SubjectAliasSchema.parse(subject);
+    const rows=await queryOnce(this.pool,`
+      SELECT subject_id,jsonb_build_object(
+        'demoSubjectId',snapshot_json->'demoSubjectId',
+        'datasetMode',snapshot_json->'datasetMode',
+        'asOf',snapshot_json->'asOf',
+        'versions',snapshot_json->'versions') AS snapshot_metadata
+      FROM api_demo_snapshot_projections
+      WHERE subject_id=$1 AND current=true LIMIT 2`,[id]);
+    if(!rows.length)return null;
+    if(rows.length!==1)throw new Error('Ambiguous projection');
+    const metadata=SnapshotMetadataSchema.parse(parsedJson(rows[0]?.snapshot_metadata));
+    if(rows[0]?.subject_id!==id||metadata.demoSubjectId!==id
+      ||Date.parse(metadata.asOf)>Date.parse(this.now()))
+      throw new Error('Cross-subject or future snapshot metadata');
+    return metadata;
   }
 
   /**
