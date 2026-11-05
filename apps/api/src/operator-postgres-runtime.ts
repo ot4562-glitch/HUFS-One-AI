@@ -129,7 +129,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     }:undefined;
     const provider=input.managedAi&&aiPools
       ?createPostgresProviderRuntime({...input.managedAi,pools:aiPools}):undefined;
-    const ai:PostgresApplicationConfig['ai']=provider&&provider.operation!=='OCR_GENERAL'
+    const ai:PostgresApplicationConfig['ai']=provider
       ?{runtime:{phaseId:provider.phaseId,operation:provider.operation,executor:provider.executor},
         inputs:provider.approvedInputs}:undefined;
     const application:PostgresApplicationConfig={
