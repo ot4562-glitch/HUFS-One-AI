@@ -2,6 +2,8 @@ import {describe,expect,it} from 'vitest';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
+import {OwnerSessionController} from '../../apps/web/src/app/owner-session-controller.js';
+import {resolveSessionRole} from '../../apps/web/src/roleServices.js';
 import snapshot from '../../packages/fixtures/synthetic/demo-snapshot.json';
 
 const origin='https://synthetic.invalid';
@@ -56,13 +58,17 @@ describe('integration security review: deny unsupported production startups',()=
 });
 
 describe('reviewer browser: prove all nested academic/AI evidence is synthetic',()=>{
-  it('refuses ADMIN in the BETA login response even with beta-shaped flags',async()=>{
+  it('keeps ADMIN outside all BETA/REVIEWER paths even with beta-shaped flags',async()=>{
     const client=new HufsApiClient(async()=>respond({
       actorId:'SYN-ADMIN',role:'ADMIN',schoolMailProofValid:true,betaAllowed:true,
     }));
-    await expect(client.getSession()).rejects.toMatchObject({
-      code:'PROVIDER_UNAVAILABLE',status:503,
-    });
+    // Identity resolution is shared with the ADMIN portal, but must never grant
+    // owner or REVIEWER capabilities. A generic 200 response is not BETA consent.
+    expect((await client.getSession()).role).toBe('ADMIN');
+    const owner=new OwnerSessionController(client);
+    await owner.initialize();
+    expect(owner.getState().status).toBe('FORBIDDEN');
+    expect(await resolveSessionRole(client)).toEqual({role:'UNKNOWN'});
   });
 
   it('blocks a supposedly synthetic snapshot with potentially live cached model provenance',async()=>{
