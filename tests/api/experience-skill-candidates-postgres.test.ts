@@ -38,9 +38,11 @@ function setup(){
   const results={get:vi.fn(async()=>stored)};
   const executor={readJob:vi.fn(async()=>{callAfter();return {state:'NEEDS_REVIEW' as const,
     billing:'SETTLED' as const,jobId,candidate};})};
-  const service=new PostgresExperienceSkillCandidateReader(pool as any,results as any,executor as any,()=>now);
+  const inputs={list:vi.fn(async()=>({items:[{inputRef:'SYN-INPUT',asOf:now,
+    expiresAt:'2026-11-06T00:00:00.000Z',task:'experience_skills',operation:'HCX_007'}]}))};
+  const service=new PostgresExperienceSkillCandidateReader(pool as any,results as any,executor as any,()=>now,inputs);
   const read=()=>service.read({actor,experienceId:'SYN-EXPERIENCE',jobId});
-  return {read,pool,query,results,executor,reads:()=>reads,
+  return {read,service,inputs,pool,query,results,executor,reads:()=>reads,
     edit(){version=3;},revokeConsent(){consent=false;},erase(){erased=true;},
     changeOwner(){owner='OTHER';},after(fn:()=>void){callAfter=fn;}};
 }
@@ -79,5 +81,39 @@ describe('current experience skill candidate private read',()=>{
     const f=setup();f.executor.readJob.mockImplementation(async()=>({state:'NEEDS_REVIEW',billing:'SETTLED',
       jobId,candidate:{...candidate,task:'opportunity_terms'}} as any));
     expect(await f.read()).toBeNull();
+  });
+});
+
+describe('explicit multi-experience AI preparation',()=>{
+  it('returns only current, trusted inputs without running a model',async()=>{
+    const f=setup(),res=await f.service.prepare({actor,experienceIds:['SYN-EXPERIENCE','SYN-MISSING']});
+    expect(res).toMatchObject({unavailable:['SYN-MISSING'],items:[{
+      experienceId:'SYN-EXPERIENCE',inputRef:'SYN-INPUT',
+      operation:'HCX_007',contentVersion:2,consentVersion:3}]});
+    expect(f.inputs.list).toHaveBeenCalledTimes(1);
+    expect(f.executor.readJob).not.toHaveBeenCalled();
+    expect(f.results.get).not.toHaveBeenCalled();
+  });
+  it('rejects invalid, duplicate and excessively large owner selections',async()=>{
+    const f=setup();
+    for(const ids of [[],['X','X'],['BAD/ID'],Array.from({length:17},(_,i)=>'ID-'+i)]){
+      await expect(f.service.prepare({actor,experienceIds:ids})).rejects.toThrow();
+    }
+    expect(f.inputs.list).not.toHaveBeenCalled();
+  });
+  it('never returns READY if a current owner experience changes during selection',async()=>{
+    const f=setup();const original=f.query.getMockImplementation()!;
+    let seen=0;
+    f.query.mockImplementation(async(sql,params)=>{
+      const result=await original(sql,params);
+      if(String(sql).includes('SELECT b.projection_id')&&++seen===1)f.edit();
+      return result;
+    });
+    await expect(f.service.prepare({actor,experienceIds:['SYN-EXPERIENCE']})).rejects.toThrow();
+  });
+  it('returns unavailable rather than disclosing withdrawn model inputs',async()=>{
+    const f=setup();f.revokeConsent();
+    const res=await f.service.prepare({actor,experienceIds:['SYN-EXPERIENCE']});
+    expect(res).toEqual({items:[],unavailable:['SYN-EXPERIENCE']});
   });
 });

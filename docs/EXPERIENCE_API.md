@@ -20,6 +20,25 @@ GET /api/experience/cards?view=portfolio&limit=20
 
 `ExperiencePortfolioQuerySchema`, `ExperiencePortfolioSchema`가 공통 계약입니다. 응답의 ACTIVE 승인 태그만 선택된 경험의 개인화 신호로 사용합니다. 서버 응답으로 돌아온 사용자 승인과 AI 후보를 구분하며, 후보를 생성하거나 자동 승인했다고 표시하지 않습니다.
 
+## 선택 경험 → AI 역량 후보 → 학생 승인 연계 (PR #264)
+
+```http
+POST /api/experience/ai-skills/prepare
+Content-Type: application/json
+
+{"experienceIds":["EXP-001","EXP-002"]}
+```
+
+본인 BETA 세션과 CSRF를 확인해 **이미 실제 소스·AI 전송 권한·입력 개인정보 분류가 검토된** 경험에 대한 `inputRef`/`asOf`를 반환합니다. 최대16개 카드, 변경/미승인 항목은 `unavailable`; 없는 등록을 승인된 것처럼 생성하지 않습니다. 이 단계는 **무료 메타데이터 조회**이며 모델 과금·AI 역량 자동 승인은 발생하지 않습니다.
+
+사용자가 해당 입력으로 기존 `POST /api/ai/experience-skills`를 호출하면 모델 실행기가 예산·동의·근거를 다시 검증합니다. 반환된 job ID는 아래 GET 후보 조회와 연결합니다. 결과를 확인한 사용자가 기존 `PUT /api/experience/cards/:id/tag-approval`에서 직접 선택해야 포트폴리오/추천의 ACTIVE 신호가 됩니다.
+
+### 운영자 전용 실제 입력 등록
+
+`PostgresExperienceSkillInputRegistrar.register`는 **공개 HTTP가 아닌 서버 내부 작업**입니다. 독립 개인정보 리뷰 검증기를 주입해야 하며 현재 사용자 경험 버전·저장/외부 AI 동의·현재 원본 판본/해시·독립 source 검토와 전달 권한을 같은 PostgreSQL 트랜잭션에서 확인합니다. 운영자는 `20261106_ai_experience_input_operator.sql`을 검증된 환경에 적용하고, 독립 non-BYPASSRLS LOGIN에 `hufs_ai_input_operator` 그룹을 직접 부여해야 합니다. 준비 단계는 실제 등록과 다르며 SQL 연결·유료 모델 호출·승인 기록을 임의로 만들지 않습니다.
+
+경험 내용이 변경/삭제되면 데이터베이스 트리거가 기존 provider input 본문을 폐기하고 HEAD를 제거합니다. 개인정보/외부 AI 동의 철회도 기존 입력 payload erasure trigger와 현재 세션 검증을 거칩니다. 원본 확인·사람 리뷰·실제 계정은 본 코드 외부에서 제공되어야 합니다.
+
 ## 승인된 AI 역량 후보 조회 (PR #264)
 
 ```http

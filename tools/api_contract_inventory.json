@@ -2767,6 +2767,32 @@
         "apps/web/src/integrations/api-client.ts",
         "apps/web/src/integrations/owner-api-client.ts"
       ]
+    },
+    {
+      "id": "post-api-experience-ai-skills-prepare",
+      "surface": "experience-skill-candidate",
+      "method": "POST",
+      "path": "/api/experience/ai-skills/prepare",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/experience-skill-candidate.ts",
+            "symbol": "ExperienceSkillPrepareRequestSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/experience-skill-candidate.ts",
+            "symbol": "ExperienceSkillPrepareResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/experience-skill-candidate-http.test.ts",
+        "tests/api/experience-skill-candidates-postgres.test.ts"
+      ],
+      "consumerRefs": [],
+      "notes": "Private owner selection of existing independently reviewed provider inputs. No automatic model call, gold or skill approval."
     }
   ],
   "designContracts": [

@@ -17,13 +17,17 @@ afterEach(async()=>{await Promise.all(apps.splice(0).map(app=>app.close()));});
 function setup(){
   let current=true;
   const read=vi.fn(async()=>response);
+  const prepare=vi.fn(async()=>({items:[{experienceId:'SYN-EXP',
+    inputRef:'SYN-INPUT',operation:'HCX_007' as const,asOf:now,
+    expiresAt:'2026-11-06T00:00:00.000Z',contentVersion:2,consentVersion:3}],
+    unavailable:['SYN-MISSING']}));
   const app=createIntegratedApi({
     allowedOrigin:origin,repository:new MemoryApiRepository({profiles:[]}),now:()=>now,
     auth:{verifySession:async()=>current?actor:null,revokeSession:async()=>{current=false;}},
-    experienceCandidates:{read},
+    experienceCandidates:{read,prepare},
   } as any);
   apps.push(app);
-  return {app,read,revoke(){current=false;}};
+  return {app,read,prepare,revoke(){current=false;}};
 }
 describe('authenticated experience skill candidate HTTP',()=>{
   it('returns a review-only candidate, no store and no implicit tag approval',async()=>{
@@ -53,5 +57,35 @@ describe('authenticated experience skill candidate HTTP',()=>{
     const h=setup();h.read.mockImplementationOnce(async()=>{h.revoke();return response;});
     const res=await h.app.inject({url:'/api/experience/cards/SYN-EXP/ai-skills/'+jobId});
     expect(res.statusCode).toBe(401);expect(res.body).not.toContain('Synthetic title');
+  });
+});
+
+describe('student-selected experience AI preparation HTTP',()=>{
+  const url='/api/experience/ai-skills/prepare';
+  const headers={origin,'x-csrf-token':actor.csrfToken};
+  it('prepares selected owner inputs without triggering a model or approving tags',async()=>{
+    const h=setup(),r=await h.app.inject({method:'POST',url,headers,
+      payload:{experienceIds:['SYN-EXP','SYN-MISSING']}});
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['cache-control']).toBe('no-store');
+    expect(r.json()).toMatchObject({items:[{experienceId:'SYN-EXP',inputRef:'SYN-INPUT'}],
+      unavailable:['SYN-MISSING']});
+    expect(h.prepare).toHaveBeenCalledWith({actor,experienceIds:['SYN-EXP','SYN-MISSING']});
+    expect(h.read).not.toHaveBeenCalled();
+  });
+  it('denies untrusted actor IDs and duplicate selections before querying',async()=>{
+    const h=setup();
+    for(const body of [{experienceIds:['SYN-EXP','SYN-EXP']},{experienceIds:['X'],actorId:'OTHER'},
+      {experienceIds:[]}])expect((await h.app.inject({method:'POST',url,headers,payload:body})).statusCode).toBe(422);
+    expect(h.prepare).not.toHaveBeenCalled();
+  });
+  it('rechecks session after any delayed preparation read and hides current input refs',async()=>{
+    const h=setup();h.prepare.mockImplementationOnce(async()=>{
+      h.revoke();return {items:[{experienceId:'SYN-EXP',inputRef:'SYN-INPUT',
+        operation:'HCX_007',asOf:now,expiresAt:'2026-11-06T00:00:00.000Z',
+        contentVersion:2,consentVersion:3}],unavailable:[]};
+    });
+    const r=await h.app.inject({method:'POST',url,headers,payload:{experienceIds:['SYN-EXP']}});
+    expect(r.statusCode).toBe(401);expect(r.body).not.toContain('SYN-INPUT');
   });
 });
