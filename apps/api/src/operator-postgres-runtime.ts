@@ -16,6 +16,8 @@ import {createPostgresProviderRuntime} from './modules/ai/provider-postgres.js';
 import type {PostgresProviderConfig} from './modules/ai/provider-postgres.js';
 import {PostgresProviderResults} from './modules/ai/provider-results-postgres.js';
 import {PostgresExperienceSkillCandidateReader} from './modules/ai/experience-skill-candidates-postgres.js';
+import {PostgresExperienceSkillInputRegistrar} from './modules/ai/experience-skill-registration-postgres.js';
+import type {IndependentExperienceInputReview} from './modules/ai/experience-skill-registration-postgres.js';
 
 /** Current operator assembly. Project authorization is owner-confirmed; each
  * actual SQL role, identity adapter and listener is still configured explicitly.
@@ -28,7 +30,8 @@ export type OperatorSqlSettings=Readonly<Record<OperatorSqlRole,DataPoolSettings
 export type OperatorSqlPools=Readonly<Record<OperatorSqlRole,ManagedDataPool>>;
 export const EXTRA_SQL_ROLES=[
   'reviewerInvitations','reviewerSandbox','mailChallenges','mailProofUpdates',
-  'demoProfile','demoProfileQuota','adminUsage','aiAuthority','aiBudget','aiResults',...MANAGED_PLATFORM_EXTENSIONS,
+  'demoProfile','demoProfileQuota','adminUsage','aiAuthority','aiBudget','aiResults',
+  'aiInputOperator',...MANAGED_PLATFORM_EXTENSIONS,
 ] as const;
 type ExtraSqlRole=typeof EXTRA_SQL_ROLES[number];
 export type OperatorManagedAi=Omit<PostgresProviderConfig,'pools'|'operation'>&{
@@ -50,6 +53,8 @@ export interface OperatorPostgresInputs {
   /** @deprecated Raw prebuilt provider runtimes are refused: no trusted SQL role proof. */
   ai?:PostgresApplicationConfig['ai'];
   managedAi?:OperatorManagedAi;
+  /** Operator-private SQL writer, never installed as a public API route. */
+  aiInputRegistration?:{settings:DataPoolSettings;reviewer:IndependentExperienceInputReview};
   reviewer?:{invitations:DataPoolSettings;sandbox:DataPoolSettings;demo:ReviewerDemoRepository};
   schoolMail?:{challenges:DataPoolSettings;proofUpdates:DataPoolSettings;digestKey:Buffer;sender:SchoolMailSender};
   demo?:{profile:DataPoolSettings;quota:DataPoolSettings;digestKey:Buffer};
@@ -63,6 +68,10 @@ export interface PreparedOperatorPostgres {
   readonly managedAiBinding?:{
     readonly ai:NonNullable<PostgresApplicationConfig['ai']>;
     readonly pools:Readonly<Record<'authority'|'budget'|'results',ManagedDataPool>>;
+  };
+  readonly operatorRegistration?:{
+    readonly pool:ManagedDataPool;
+    readonly service:PostgresExperienceSkillInputRegistrar;
   };
 }
 const LOOPBACK=new Set(['127.0.0.1','::1']);
@@ -100,6 +109,10 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       ||(value.liveApproved!==undefined&&typeof value.liveApproved!=='function'))
       throw new Error('Managed AI requires input authority, budget, results and trusted provider controls');
   }
+  if(input.aiInputRegistration&&(!input.managedAi
+    ||typeof input.aiInputRegistration.reviewer?.verify!=='function'
+    ||!input.aiInputRegistration.settings))
+    throw new Error('AI input registration requires a reviewed provider and independent operator role');
   if(input.platform&&RAW_PLATFORM_PORTS.some(key=>own(input.platform!,key)))
     throw new Error('Operator platform SQL pools must use verified role settings');
   const managed=extensionSettings(input.extensions);
@@ -111,6 +124,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     ...(input.adminUsage?{adminUsage:input.adminUsage.settings}:{}),
     ...(input.managedAi?{aiAuthority:input.managedAi.roles.authority,
       aiBudget:input.managedAi.roles.budget,aiResults:input.managedAi.roles.results}:{}),
+    ...(input.aiInputRegistration?{aiInputOperator:input.aiInputRegistration.settings}:{}),
   };
   const expectedRoles=new Set<string>(),endpoints=new Set<string>();
   for(const settings of [...REQUIRED_SQL_ROLES.map(role=>input.roles[role]),...Object.values(extraSettings)]){
@@ -137,6 +151,11 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
         experienceCandidates:new PostgresExperienceSkillCandidateReader(aiPools!.authority,
           new PostgresProviderResults(aiPools!.results),provider.executor,
           input.managedAi?.now??(()=>new Date().toISOString()),provider.approvedInputs)}:undefined;
+    const operatorRegistration=input.aiInputRegistration&&input.managedAi
+      ?{pool:extraPools.aiInputOperator!,
+        service:new PostgresExperienceSkillInputRegistrar(extraPools.aiInputOperator!,
+          input.aiInputRegistration.reviewer,input.managedAi.inputPolicyVersion,
+          input.managedAi.now??(()=>new Date().toISOString()))}:undefined;
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(ai?{ai}:{}),
@@ -157,7 +176,8 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       })}:{}),
     };
     return {application,pools:roles,...(Object.keys(extraPools).length?{extraPools}:{}),
-      ...(ai&&aiPools?{managedAiBinding:{ai,pools:aiPools}}:{})};
+      ...(ai&&aiPools?{managedAiBinding:{ai,pools:aiPools}}:{}),
+      ...(operatorRegistration?{operatorRegistration}:{})};
   }catch{
     void Promise.allSettled([...Object.values(roles),...Object.values(extraPools)].map(pool=>pool.close()));
     throw new Error('Operator SQL pool configuration refused');
@@ -198,7 +218,14 @@ export async function startOperatorPostgres(input:{
       ||prepared.managedAiBinding.pools.budget!==extra.aiBudget
       ||prepared.managedAiBinding.pools.results!==extra.aiResults))
     throw new Error('AI provider must use managed SQL authority, budget and results roles');
+  if(Boolean(prepared.operatorRegistration)!==Boolean(extra.aiInputOperator)
+    ||prepared.operatorRegistration&&(
+      prepared.operatorRegistration.pool!==extra.aiInputOperator
+      ||!(prepared.operatorRegistration.service instanceof PostgresExperienceSkillInputRegistrar)
+      ||!prepared.managedAiBinding))
+    throw new Error('Operator AI registration requires an exact restricted SQL role');
   const requiredExtra:ExtraSqlRole[]=[...extensions,
+    ...(prepared.operatorRegistration?['aiInputOperator'] as const:[]),
     ...(prepared.application.ai?['aiAuthority','aiBudget','aiResults'] as const:[]),
     ...(prepared.application.reviewer?['reviewerInvitations','reviewerSandbox'] as const:[]),
     ...(prepared.application.schoolMailProof?['mailChallenges','mailProofUpdates'] as const:[]),
@@ -232,6 +259,12 @@ export async function startOperatorPostgres(input:{
       try{
         const result=await connection.query('SELECT 1 AS ready');
         if(result.rows.length!==1||Number(result.rows[0]?.ready)!==1)throw new Error('Database readiness check refused');
+        if(pool===extra.aiInputOperator){
+          const member=await connection.query(
+            "SELECT pg_has_role(current_user,'hufs_ai_input_operator','member') AS granted");
+          if(member.rows.length!==1||member.rows[0]?.granted!==true)
+            throw new Error('Operator AI registration SQL membership unavailable');
+        }
       }finally{connection.release();}
     }
     const address=await app.listen({host,port});

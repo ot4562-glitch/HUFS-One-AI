@@ -246,6 +246,39 @@ describe('real-role PostgreSQL API operator composition',()=>{
     expect(h.connected).toEqual([]);
   });
 
+
+  it('makes independently reviewed experience registration operator-only on its own SQL role',async()=>{
+    const config=makeConfig() as any;
+    const settings=(name:string)=>({connectionString:'postgresql://hufs_'+name+':synthetic@private-db.example.test/hufs_'+name,
+      expectedRole:'hufs_'+name,environment:'production',
+      trustedCaPem:'-----BEGIN CERTIFICATE-----\\nSYNTHETIC-CA\\n-----END CERTIFICATE-----'});
+    const verify=vi.fn(async()=>true),secret=vi.fn(async()=>{throw Error('Offline');});
+    config.managedAi={operation:'HCX_007',roles:{
+      authority:settings('authority'),budget:settings('budget'),results:settings('results')},
+      phaseId:'SYN-PHASE',inputPolicyVersion:'SYN-POLICY',
+      sessionIsCurrent:vi.fn(async()=>true),enabled:()=>false,secret,transport:{post:vi.fn()},
+      policy:{version:'SYN-POLICY',approvedBy:'SYN-REVIEWER',
+        approvedAt:'2026-11-01T00:00:00.000Z',expiresAt:'2026-12-01T00:00:00.000Z',
+        inputUnitsPerToken:1,outputUnitsPerToken:1,tokenizerUnits:1,
+        ocrImageUnits:1,maxInputTokens:1000,maxOutputTokens:500,framingTokens:0}};
+    config.aiInputRegistration={settings:settings('registration'),reviewer:{verify}};
+    const p=prepareOperatorPostgres(config);
+    expect(p.operatorRegistration?.pool).toBe(p.extraPools?.aiInputOperator);
+    expect(typeof p.operatorRegistration?.service.register).toBe('function');
+    expect(secret).not.toHaveBeenCalled();expect(verify).not.toHaveBeenCalled();
+    expect(Object.keys(p.extraPools??{}).sort()).toEqual([
+      'aiAuthority','aiBudget','aiInputOperator','aiResults',
+    ]);
+    await Promise.all([...Object.values(p.pools),...Object.values(p.extraPools??{})].map(x=>x.close()));
+    config.aiInputRegistration.settings=config.managedAi.roles.budget;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independently restricted/);
+    config.aiInputRegistration.settings=settings('registration');
+    config.aiInputRegistration.reviewer={};
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator role/);
+    config.aiInputRegistration.reviewer={verify};delete config.managedAi;
+    expect(()=>prepareOperatorPostgres(config)).toThrow(/independent operator role/);
+  });
+
   it('starts only loopback AFTER all seven checks and closes app/pools',async()=>{
     const fixture=fakePrepared();
     vi.stubEnv('NODE_ENV','test');
