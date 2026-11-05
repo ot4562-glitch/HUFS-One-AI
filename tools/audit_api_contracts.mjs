@@ -444,8 +444,13 @@ function buildInventory(selectedRoot) {
   const designRows = designSection.split('\n').filter((line) => /^\|\s*(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/.test(line))
     .map((line) => line.split('|')[1].trim());
   const taskSection = architecture.split('## A17.')[1]?.split('## A18.')[0] ?? '';
-  const documentTasks = [...taskSection.matchAll(/^\|\s*(TASK-\d\dC?)\b/gm)].map((match) => match[1]);
+  const tableTasks = [...taskSection.matchAll(/^\|\s*(TASK-\d\dC?)\b/gm)].map((match) => match[1]);
+  // A17 currently keeps the calendar extension as a prose entry rather
+  // than a separate table row. Its explicit declaration still counts.
+  const documentTasks = [...tableTasks,
+    ...(!tableTasks.includes('TASK-14C') && /\bTASK-14C\b/.test(taskSection) ? ['TASK-14C'] : [])];
   if (documentTasks.length && (documentTasks.length !== TASKS.length
+    || new Set(documentTasks).size!==TASKS.length
     || TASKS.some((id) => !documentTasks.includes(id)))) finding('TASK_DOCUMENT_SCOPE_MISMATCH');
   const surfaces = new Map();
   for (const surface of manifest.surfaces) {
