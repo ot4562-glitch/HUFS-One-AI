@@ -1,6 +1,6 @@
 # HUFS One AI — 팀원용 제안 및 서비스 설명
 
-> **현재 제출/개발 제안서.** 독립 학생 팀의 구현 가능한 합성 서비스와 승인 전의 실제 서비스 조건을 분리합니다. 기술 세부 규격은 [Architecture](Architecture.md), 진척과 출시 가능성은 [STATUS](STATUS.md), 미완료는 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) 및 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)를 기준으로 합니다. **RELEASE_BLOCKED**.
+> **현재 제출/개발 제안서.** 독립 학생 팀의 합성 구현과 소유자가 이미 승인한 실제 서비스의 미구성·미검증 조건을 구분합니다. 기술 세부 규격은 [Architecture](Architecture.md), 진척과 출시 가능성은 [STATUS](STATUS.md), 미완료는 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253) 및 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252)를 기준으로 합니다. **RELEASE_BLOCKED**.
 
 ## 1. 제안 배경
 
@@ -36,7 +36,7 @@ HUFSAbility를 운영하거나 고치는 사업이 아니라 독립 시연 프�
 | AI·출처 | 네 AI 작업/이미지·PDF·Temporal RAG의 합성·오프라인 계약 | 실제 출처별 이용·전송 권리/독립 Gold/HCX/OCR 비용 |
 | NCP | IaC plan/network mock·SSH 전용 합성 preview·롤백 코드 | 승인된 리전/SKU/비용·TLS/방화벽/복구·D03 |
 
-**현재 공개 서비스가 바로 가능한 상태는 아닙니다.** NCP 비용·크레딧·학교 API/계정 이용권의 실제 허가와 별도 운영 책임자가 있어야 하며, 기술적 가능성과 사업·기관 승인은 별개입니다.
+**현재 공개 서비스가 바로 가능한 상태는 아닙니다.** 소유자 승인 완료와 무관하게 실제 NCP 비용·크레딧/한도·학교 API/계정·기관 원본 권리의 운영 설정 및 검증, 운영 책임자와 출시 실측 결과가 필요합니다.
 
 ## 6. 개인정보·학교자료 안전
 
@@ -44,7 +44,7 @@ HUFSAbility를 운영하거나 고치는 사업이 아니라 독립 시연 프�
 
 ## 7. 검증과 기대효과
 
-실행 가능한 합성 코드·Chrome·일회용 PostgreSQL과 실제 기관/사람/운영 수락은 서로 다른 증거입니다. 독립 사람 Gold **추천 0/200, 포스터/시점 0/32**, 실제 RulePack/4인 원본·실 NCP/인증은 미수락입니다. 공개 가능한 최종 결과는 [#252 인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)의 모든 적용 필수 게이트와 승인권자 D03 결정 이후에만 판단합니다.
+실행 가능한 합성 코드·Chrome·일회용 PostgreSQL과 실제 기관/사람/운영 수락은 서로 다른 증거입니다. 독립 사람 Gold **추천 0/200, 포스터/시점 0/32**, 실제 RulePack/4인 원본·실 NCP/인증은 미수락입니다. 공개 가능한 최종 결과는 [#252 인수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252)의 모든 적용 필수 게이트와 승인권자 D03 결정 이후에만 판단합니다.
 
 기대효과는 **검색·판단 시간 절약, 자격/마감 오독 감소, 근거 있는 학업 의사결정, 설명 가능한 AI/바이브코딩 개발·안전한 서비스 확장**입니다. 실제 개선율이나 품질 목표는 독립 측정 전에는 성과로 주장하지 않습니다.
 

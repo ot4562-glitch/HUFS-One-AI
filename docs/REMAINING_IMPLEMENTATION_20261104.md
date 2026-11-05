@@ -15,7 +15,7 @@
 
 ## 미완료 범위 — 코드/설정/실행 결과를 구분
 
-- 실제 운영 OIDC/메일·CA TLS/role GRANT·NCP host/ingress, DB migration/backup/rollback 및 AI provider·가격·토큰을 구성한 종단 시험은 `CONFIGURATION_REQUIRED` 또는 `NOT_RUN`입니다.
+- 운영 API `production-main.js`는 loopback 기본 실행과 별도 승인 사설 컨테이너 IPv4 바인딩 코드를 갖춥니다. 하지만 실제 operator factory·NCP host·network/ingress·Google/학교메일·CA TLS/role GRANT·DB migration/backup/rollback 및 AI provider·가격·토큰을 구성한 종단 시험은 `CONFIGURATION_REQUIRED` 또는 `NOT_RUN`입니다.
 - SourceRevision/Temporal RAG·문서/이미지/PDF·native worker와 비용 정산의 전체 운영 소비와 취소/오류/동시성 회귀, native/NOTICE/SBOM·패키징·비밀 유출 검증은 #253에서 계속 확인해야 합니다.
 - 경험 후보→학생 승인→추천 projection을 UI #258·추천 #259의 실제 사용자 경로에서 검사하고, 학업 자료는 #260과 독립 교차 리뷰가 필요합니다.
 - 합성 자동 CI와 운영/사람 인수를 혼동하지 않습니다. 최신 코드 SHA의 TypeScript·PostgreSQL·Chrome·NCP 오프라인 결과를 별도로 조회합니다.

@@ -2,7 +2,7 @@
 
 ## 목적과 운영 상태
 
-시점별 바뀌는 공고·학칙·포스터·PDF에서 **누가 어떤 원문·권리·판본·근거를 언제 확인했는가**를 재현하고, AI가 허가되지 않은 자료로 적격·마감/졸업을 확정하지 못하게 한다. SourceRevision/수집 job·HTML/IMAGE/PDF·검수/검색/인용/권리·Temporal API/SQL 경계 코드는 존재하나 **실기관 이용권·운영 DB/실 OCR/HCX·사람 정답 판정은 미수락**. `RELEASE_BLOCKED`.
+시점별 바뀌는 공고·학칙·포스터·PDF에서 **누가 어떤 원문·권리·판본·근거를 언제 확인했는가**를 재현하고, AI가 허가되지 않은 자료로 적격·마감/졸업을 확정하지 못하게 한다. SourceRevision/수집 job·HTML/IMAGE/PDF·검수/검색/인용/권리·Temporal API/SQL 경계 코드는 존재하나 **프로젝트 승인은 소유자 완료 확인**했지만 실제 기관 자료 이용권의 적용 범위·운영 DB/실 OCR/HCX·사람 정답 판정은 미검증입니다. `RELEASE_BLOCKED`.
 
 ## 수집→검수→검색 상태
 
@@ -17,13 +17,13 @@
 
 구조화 HCX·OCR·Vision은 필요한 경우만(규칙/단순 HTML 우선), `SafeLlmPacket`에 actor/권리/원문 SHA/문단·bbox/asOf·policy/schema/model/prompt 버전과 허용된 사실만 싣는다. LLM의 문장을 사실로 채택하기 전 정확한 인용/숫자/조건/보안 필드 재검증, 거짓 확정 자격·마감 0을 목표로 검증한다. 네 제품 AI 작업 외 임의 외부전송/자동 크롤링 금지. 예산 예약/전송/정산은 원자 ledger와 timeout/UNKNOWN_BILLING 보호.
 
-Laya는 선택 보조 worker/기본 OFF, CPUQuota/RSS/OOM/네트워크·시간 제한/kill-switch·코드 fallback, API 사용자 응답 경로 우선. 실 모델 다운로드/ON/유료 호출은 별도 이용권·비용·자원 증거 전 금지.
+Laya는 선택 보조 worker/기본 OFF, CPUQuota/RSS/OOM/네트워크·시간 제한/kill-switch·코드 fallback, API 사용자 응답 경로 우선. 프로젝트 승인 여부와 별개로 실 모델 다운로드/ON/유료 호출은 구체적인 현재 이용권·비용 상한·자원 제한·복구 증거를 검증한 구성에서만 실행합니다.
 
 ## 자동·독립 검증
 
 - 합성 normal/denial: 304/동일판·정정·취소·global lease·source 권리 축소, 비허가 media/탈취·늦은 AI 응답·미검수 미래 시점 인용/캐시 누출.
 - disposable PG: source head/revision·RLS·current rights·page/bbox·writer/reviewer/reader 분리와 rollback/동시성.
 - 실제 독립 사람: 추천 Gold 200·포스터 PNG/HTML 20·시간 정정12 사례의 원문/인용/bbox/시점 판정. 현재 **0/200·0/32**, 합성 시험과 구분.
-- 실제 Provider/NCP/원본 권리: 승인 전 NOT_RUN/RELEASE_BLOCKED. 실제 tokenizer·receipt·token/KRW·호스트 CPU/RSS·p95/회복성 별도 검증.
+- 실제 Provider/NCP/원본 권리: 프로젝트 승인 `OWNER_CONFIRMED_APPROVED`; 실제 구성·호출·원본/권한 대조는 `NOT_RUN/RELEASE_BLOCKED`. 실제 tokenizer·receipt·token/KRW·호스트 CPU/RSS·p95/회복성 별도 검증.
 
-**정본:** [Architecture A04/A06/A13](../Architecture.md) · [PDF runtime](../infra/ai/PDF_RUNTIME.md) · [데이터 권리](DATA_GOVERNANCE.md) · [인적 Gold](INDEPENDENT_EVALUATION.md) · [#253 코드](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [#252 실인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+**정본:** [Architecture A04/A06/A13](../Architecture.md) · [PDF runtime](../infra/ai/PDF_RUNTIME.md) · [데이터 권리](DATA_GOVERNANCE.md) · [인적 Gold](INDEPENDENT_EVALUATION.md) · [#253 코드](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253) · [#252 실인수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).

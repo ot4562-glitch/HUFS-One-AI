@@ -1,6 +1,6 @@
 # HUFS One AI — Architecture
 
-**규범:** 이 문서는 현재 제품의 목표·권한·API·검증 계약이다. 사실로 확인한 코드는 [STATUS](STATUS.md)와 GitHub `main`, 등록된 실제 API는 [inventory](tools/api_contract_inventory.json), 추가 구현은 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253), 운영/사람 인수는 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)로 판단한다. 계획·스키마의 존재가 **실 운영/공식 학교 승인**을 뜻하지 않는다. `RELEASE_BLOCKED`.
+**규범:** 이 문서는 현재 제품의 목표·권한·API·검증 계약이다. 사실로 확인한 코드는 [STATUS](STATUS.md)와 GitHub `main`, 등록된 실제 API는 [inventory](tools/api_contract_inventory.json), 추가 구현은 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253), 운영/사람 인수는 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252)로 판단한다. 계획·스키마의 존재가 **실 운영/공식 학교 승인**을 뜻하지 않는다. `RELEASE_BLOCKED`.
 
 ## A00. 정본·용어·판정
 
@@ -68,7 +68,7 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 
 `model/prompt/schema/policy` 버전·source SHA/asOf·input digest, PII 최소화/allowlist, JSON strict, exact quote/paragraph/claim/비식별·token/usage/finishReason 제한을 적용한다. 권리 철회/늦은 응답/프롬프트 주입·인용 없는 숫자/마감/지원 자격·자기모순은 검토 필요 또는 `AI_SKIPPED_PRIVACY`. 429/5xx 제한 재시도, RESERVED/DISPATCHED/SETTLED/UNKNOWN_BILLING 원자 budget ledger; 청구 불확실을 무료 재시도로 가정하지 않는다.
 
-**Laya:** 옵션 분류 보조, 기본 OFF, 독립 프로세스·kill switch·CPUQuota/RSS/OOM·API 응답 우선. 새 모델/실행/다운로드/유료 호출은 별도 원본 권리·비용·운영 승인 전 금지. 학칙 초안 작성 도구는 내부 검수 전용이며 제품 다섯 번째 AI 작업이 아니다.
+**Laya:** 옵션 분류 보조, 기본 OFF, 독립 프로세스·kill switch·CPUQuota/RSS/OOM·API 응답 우선. 프로젝트의 모델·비용·운영 승인은 완료 확인됐습니다. 실제 활성화에는 현재 원본 이용권·개인 동의/철회·host CPU/RSS 상한·공급자 구성·비용/복구 검증이 필요합니다. 학칙 초안 작성 도구는 내부 검수 전용이며 제품 다섯 번째 AI 작업이 아니다.
 
 ## A07. 학과 공지·마감·달력
 
@@ -108,7 +108,7 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 **DB 핵심 집합:** actor/session/role/consent/SharingGrant; private owner mapping/intake receipt(민감 영역), profile/academic transcript/RulePack/plan/major-What-if/forecast, experience/tag approval/bookmark/action, SourceRevision·media/PDF/OCR·verified claims·rights/reviewer·temporal index, recommendation/notice/context/overlay, AI job·budget usage·receipt.
 
 - 원본과 공유 projection은 다르고, owner/actor+context+scope+version·current right/asOf를 SQL/FORCE RLS/서버 양쪽에서 확인한다. 역할 최소화, 주입된 미검증 pool/권한 포트 거절, 읽기 전용/서명된 사용량 집계. `ai_budget_admin_usage()`/adminUsage role은 코드만 구현됐으며 운영 GRANT·migration은 미수락.
-- GitHub 계약 inventory **현재 등록 90개 route**, 설계 39개 contract, TASK 19개. **설계상 직접 미매핑 경로 9개**는 공개 endpoint 신설로 간주하지 않고 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에서 `RETIRED/PRIVATE_OPERATOR/EQUIVALENT/TO_IMPLEMENT`을 명확히 판정한다. `POST /api/auth/login`의 비밀번호 로그인은 retired; 실학생 파일 import는 private operator 전용.
+- GitHub 계약 inventory **현재 등록 90개 route**, 설계 39개 contract, TASK 19개. **설계상 직접 미매핑 경로 9개**는 공개 endpoint 신설로 간주하지 않고 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)에서 `RETIRED/PRIVATE_OPERATOR/EQUIVALENT/TO_IMPLEMENT`을 명확히 판정한다. `POST /api/auth/login`의 비밀번호 로그인은 retired; 실학생 파일 import는 private operator 전용.
 - 현재 `GET /api/admin/usage`는 ADMIN 독립 authority·비공개 PG read-only·정확한 집계/금액 문자열, 미수집 token/error=`NOT_COLLECTED`. 실제 프로덕션 계측 또는 활성화 허가 없음.
 - 상태변경 요청은 CSRF/Origin·expectedVersion·actor/role, 쿠키는 HttpOnly/Secure/SameSite/host-only. HTTP `401` 인증 · `403` 권한 · `409` version · `422` 입력/근거 · `429` 한도 · `503` 공급자/미설정. 서버 내부 오류/SQL 원문·키·학생 다른 사람 메타데이터 비노출.
 - Google OAuth Authorization Code+PKCE/OIDC는 서버가 iss/aud/exp/signature/JWKS/nonce/state/`sub`·hd를 검증. Google 계정 `email_verified`만으로 현재 학교 이메일 소유권을 인정하지 않고 외대 메일 OTP·계정 allowlist를 결속한다. 실 계정 검증은 #252.
@@ -141,7 +141,7 @@ Claude/GPT 기반 바이브코딩은 초안 코드·문서·테스트/재현을 
 
 ## A17. TASK 실행·검증 매핑
 
-여기 표는 현재 모듈·검증 책임의 **작업 종류**를 정의하며 완료/미완료 건수는 [STATUS](STATUS.md)·[#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)·각 트랙 이슈로 판단한다. P2/선택 확장은 P0 릴리스 조건과 구분.
+여기 표는 현재 모듈·검증 책임의 **작업 종류**를 정의하며 완료/미완료 건수는 [STATUS](STATUS.md)·[#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)·각 트랙 이슈로 판단한다. P2/선택 확장은 P0 릴리스 조건과 구분.
 
 | 작업 | 담당 우선·읽을 절 | 완료 증거·독립 검토 |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # HUFS One AI — NCP 비공개 합성 프리뷰 준비
 
-**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 티켓 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), 코드 준비 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).
+**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 티켓 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252), 코드 준비 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253).
 
 ## 0. 안전한 PLAN (신규 리소스 0)
 
@@ -33,6 +33,6 @@ node --test tests/security/ncp-network-iac.test.mjs
 
 ## 3. 운영 staging/공개는 별도
 
-`production composition`·Google OIDC/외대 메일·최소 PG RLS/TLS·Nginx/Edge/실 두 사용자 client IP/직접IP·IPv6·CDN 차단·실기관 자료 권리·비작성자 Gold/기기·D03 승인 확인 전 `RELEASE_BLOCKED/NO_GO`.
+`production composition`·Google OIDC/외대메일·최소 PG RLS/TLS·Nginx/Edge·서로 다른 두 사용자 client IP/직접 IP·IPv6·CDN 보호·현재 원본 권리·독립 Gold/기기·D03의 **실제 설정/실행/인수 증거**가 없으므로 `RELEASE_BLOCKED/NO_GO`. 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`입니다.
 
 [상세 NCP 가이드](README.md) · [Terraform network](terraform/network/README.md) · [host](terraform/host/README.md) · [운영 인계](OPERATIONS_HANDOFF_TEMPLATE.md).
