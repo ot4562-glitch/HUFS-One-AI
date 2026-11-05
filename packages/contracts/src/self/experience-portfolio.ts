@@ -12,11 +12,15 @@ export const ExperiencePortfolioSchema=z.strictObject({
   items:z.array(OwnerWorkspaceRecordSchema).max(20),nextCursor:Id.nullable(),
   portfolio:z.strictObject({
     asOf:z.iso.datetime({offset:true}),consentVersion:Version,
+    /** Topic inventory covers only this cursor page, not the entire account. */
+    coverage:z.literal('PAGE'),complete:z.boolean(),
     evidence:z.array(z.strictObject({experienceId:Id,contentVersion:Version,
       approval:ExperienceTagApprovalSchema})).max(20),
     topics:z.array(z.strictObject({topicCode:TopicCodeSchema,experienceIds:z.array(Id).min(1).max(20)})).max(24),
   }),
 }).superRefine((value,ctx)=>{
+  if(value.portfolio.complete!==(value.nextCursor===null))
+    ctx.addIssue({code:'custom',message:'Page completion must match current cursor'});
   const ids=new Set(value.items.map(item=>item.itemId));
   if(ids.size!==value.items.length||value.items.some(item=>item.value.kind!=='EXPERIENCE')
     ||value.portfolio.evidence.length!==value.items.length)
@@ -31,7 +35,9 @@ export const ExperiencePortfolioSchema=z.strictObject({
         ||item.approval.consentVersion!==value.portfolio.consentVersion
         ||Date.parse(item.approval.approvedAt)>Date.parse(value.portfolio.asOf))
         ctx.addIssue({code:'custom',message:'Portfolio approval is not current'});
-      for(const topic of item.approval.topics){
+      // Synthetic experience may be displayed for practice, but is not a
+      // real owner-consented skill signal for personalized recommendations.
+      if(record?.value.dataMode==='OWNER_CONSENTED')for(const topic of item.approval.topics){
         const rows=expected.get(topic)??new Set<string>();rows.add(item.experienceId);expected.set(topic,rows);
       }
     }
