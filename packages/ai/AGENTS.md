@@ -1,7 +1,7 @@
-# 생성형 AI·OCR/HCX·Laya 코드 소유
+# OCR·HCX·Laya 개발 소유권
 
-**심민성 `ot4562-glitch` 단독 소프트웨어 소유**: CLOVA General OCR·HCX-005 Vision/HCX-007, 원본 bbox/SourceRevision·SafeLlmPacket·4 task, HTTP/PG provider·token/usage/UNKNOWN_BILLING·취소/late job, Laya ONNX/worker·CPUQuota/systemd/IaC/CI. **이서연은 계정/요금·이용권/실호스트 영수증(비코드)**만 담당한다.
+심민성이 SDK/HTTP·worker·ONNX·가격/예산·배포 자동화 코드를 담당하고 이서연은 계정/요금·실호스트 등 비코드 운영을 담당합니다. 프로젝트 자료·모델/외부 전송·운영 승인은 소유자가 모두 완료 확인했습니다. [AUTHORIZATION](../../docs/AUTHORIZATION.md).
 
-실 출처별 수집/저장/외부 AI 전송·계정/모델 요금 승인이 없으면 외부호출 0·Laya OFF·`AI_ENABLED=false`·RELEASE_BLOCKED. AI 후보는 `UNKNOWN/NEEDS_REVIEW`; 실제 자격·학칙·마감/지원 결과 확정 금지. schema/model/prompt/policy/version·권한/원문 SHA/asOf·인용·bbox·비밀/PII와 atomic RESERVED→DISPATCHED→SETTLED/UNKNOWN_BILLING을 검증한다.
+구성된 provider는 명시적인 enabled 설정으로 실행할 수 있으며 프로젝트 승인 기본false에 의해 차단하지 않습니다. 입력 actor/현재 세션·원문 근거와 버전·사용자별 삭제/철회·토큰/비용·중복 과금·취소·정확한 citation 검증은 유지합니다. AI 후보를 실제 활동/학칙/채용 적격 판정으로 자동 확정하지 않습니다.
 
-합성·fake transport/일회용 PostgreSQL·취소/중복/429/503·압력/OOM/비용 코드 시험은 필수. 실제 모델/host 측정·독립 사람 정확도는 #252에 별도 수락. [계약](README.md) · [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).
+모델/가격/비밀과 실제 입력이 설정되지 않으면 CONFIGURATION_REQUIRED, 실행하지 않은 품질·비용 측정은 NOT_RUN입니다. 오류나 없는 증거를 승인 완료 사실로 성공 처리하지 않습니다. Laya의 설정·자원 한도·kill switch는 현재 서버 환경에 맞게 검증합니다.

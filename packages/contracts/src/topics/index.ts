@@ -21,10 +21,15 @@ export const SourceClassSchema = z.enum([
   'SYNTHETIC', 'LICENSED_EXTERNAL', 'PERSONAL_CONSENTED', 'RESEARCH_REFERENCE_ONLY',
 ]);
 export type SourceClass = z.infer<typeof SourceClassSchema>;
+/** Personal information remains honestly classified, not relabelled as public
+ * or anonymous. Runtime use still requires the current owner's bound consent. */
 export const ProviderInputClassSchema = z.enum([
-  'PUBLIC_CLEARED', 'SYNTHETIC_CLEARED', 'NON_IDENTIFYING_REVIEWED', 'BLOCKED',
+  'PUBLIC_CLEARED', 'SYNTHETIC_CLEARED', 'NON_IDENTIFYING_REVIEWED',
+  'PERSONAL_CONSENTED_CLEARED', 'BLOCKED',
 ]);
 export type ProviderInputClass = z.infer<typeof ProviderInputClassSchema>;
+/** BLOCKED is a report state and can never be sent as a provider packet. */
+export const ClearedProviderInputClassSchema=ProviderInputClassSchema.exclude(['BLOCKED']);
 export const VerificationStateSchema = z.enum(['CANDIDATE','VERIFIED','NEEDS_REVIEW','REJECTED']);
 export const EligibilitySchema = z.enum(['ELIGIBLE','INELIGIBLE','UNKNOWN']);
 export const LifecycleSchema = z.enum(['UPCOMING','OPEN','CLOSED','UNKNOWN']);
