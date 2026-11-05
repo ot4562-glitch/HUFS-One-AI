@@ -56,7 +56,7 @@ describe.skipIf(!RUN)('REAL disposable PostgreSQL: current owner AI experience o
   afterAll(async()=>{
     await writer?.end();await db?.end();
     if(admin){
-      if(created)await admin.query('DROP DATABASE '+database+' WITH (FORCE)');
+      if(created)await admin.query('DROP DATABASE '+database);
       if(loginCreated)await admin.query('DROP ROLE '+login);
       if(groupCreated)await admin.query('DROP ROLE hufs_ai_input_operator');
       await admin.end();
