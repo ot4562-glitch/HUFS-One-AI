@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {OwnerReceipts} from '../../apps/api/src/modules/auth/owner-receipts.js';
+import {OwnerReceipts,ReceiptAdmissionError} from '../../apps/api/src/modules/auth/owner-receipts.js';
 type Proof={actorId:string;expires:number};
 const proof=(actorId:string,expires=100):Proof=>({actorId,expires});
 const make=()=>new OwnerReceipts<Proof>(p=>p.actorId,2,4);
@@ -9,6 +9,7 @@ describe('bounded non-evicting owner receipts (#227)',()=>{
     const receipts=make();
     receipts.set('B1',proof('SYN-B')).set('A1',proof('SYN-A')).set('A2',proof('SYN-A'));
     expect(()=>receipts.set('A3',proof('SYN-A'))).toThrow('Receipt admission unavailable');
+    expect(()=>receipts.set('A3',proof('SYN-A'))).toThrow(ReceiptAdmissionError);
     expect(receipts.get('B1')).toEqual(proof('SYN-B'));
     expect(receipts.size).toBe(3);
     receipts.set('B2',proof('SYN-B'));
