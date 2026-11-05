@@ -219,7 +219,7 @@ jobs:
           HUFS_PG_MIGRATIONS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_migration_test
           HUFS_PG_PROVIDER_INTEGRATION_LIVE: '1'
           HUFS_PG_PROVIDER_INTEGRATION_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:5432/hufs_one_provider_integration_test
-        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts tests/api/pg-owner-academics-live-opt-in.test.ts tests/api/pg-migrations-live-opt-in.test.ts tests/api/pg-provider-integration-live-opt-in.test.ts tests/api/provider-personal-class-live-opt-in.test.ts --reporter=verbose
+        run: npx vitest run tests/api/pg-live-opt-in.test.ts tests/api/pg-full-live-opt-in.test.ts tests/api/pg-calendar-live-opt-in.test.ts tests/api/pg-owner-academics-live-opt-in.test.ts tests/api/pg-migrations-live-opt-in.test.ts tests/api/pg-provider-integration-live-opt-in.test.ts tests/api/provider-personal-class-live-opt-in.test.ts tests/api/pg-ai-experience-operator-live-opt-in.test.ts --reporter=verbose
 
   # Real PostgreSQL evidence for #119/#164, not merely an opt-in SKIP.
   # Separate runner: owner SQL on 15439 and other PG tests cannot collide.
