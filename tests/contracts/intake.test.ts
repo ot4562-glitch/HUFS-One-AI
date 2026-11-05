@@ -69,6 +69,22 @@ describe('A03 UTF-8 26/6 CSV and 4-person intake',()=>{
     expect(r.ok).toBe(true);
     expect(r.participants[0]?.subjectKey).toBe('SYNA');
   });
+  it('accepts exact YES/NO exported Forms choices without turning refusal into permission',()=>{
+    const yes=validateFormsCsv(Papa.unparse([Array.from(FORMS_HEADERS),...names.map(n=>row(n,'YES'))]),options);
+    expect(yes.ok).toBe(true);
+    expect(yes.participants.every(x=>Object.values(x.consent).every(v=>v==='GRANTED'))).toBe(true);
+    const denied=row(names[0]!,'YES');denied[3]='NO';
+    const mixed=validateFormsCsv(Papa.unparse([Array.from(FORMS_HEADERS),denied,
+      ...names.slice(1).map(n=>row(n,'YES'))]),options);
+    expect(mixed.ok).toBe(true);expect(mixed.participants[0]?.consent.externalAi).toBe('DENIED');
+    expect(mixed.participants[0]?.consent.ncpStorage).toBe('GRANTED');
+    const unrecognized=row(names[0]!,'YES');unrecognized[3]='OWNER APPROVED';
+    const blocked=validateFormsCsv(Papa.unparse([Array.from(FORMS_HEADERS),unrecognized,
+      ...names.slice(1).map(n=>row(n,'YES'))]),options);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.issues.some(x=>x.code==='CONSENT_UNKNOWN')).toBe(true);
+    expect(JSON.stringify(blocked.issues)).not.toContain('OWNER APPROVED');
+  });
   it('blocks ambiguous consent and preserves a refusal as non-authorization',()=>{
     const unknown=Papa.unparse([Array.from(FORMS_HEADERS),row(names[0]!,'미확인'),...names.slice(1).map(n=>row(n))]);
     expect(validateFormsCsv(unknown,options).issues.some(x=>x.code==='CONSENT_UNKNOWN')).toBe(true);
