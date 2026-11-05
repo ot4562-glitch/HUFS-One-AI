@@ -1,3 +1,5 @@
+import {networkInterfaces} from 'node:os';
+import {isIP} from 'node:net';
 import {createPostgresDataPool} from './db/pg-pool.js';
 import type {DataPoolSettings,ManagedDataPool} from './db/pg-pool.js';
 import {createPostgresApplication} from './application-postgres.js';
@@ -9,238 +11,293 @@ import type {SchoolMailSender} from './modules/auth/school-mail-proof.js';
 import {createOperatorSchoolMailProof} from './operator-mail-proof.js';
 import {createTrustedProxyPolicy} from './modules/auth/trusted-proxy.js';
 import type {ApiOptions} from './types.js';
+import type {RuntimeMode} from './runtime-policy.js';
+import {MANAGED_PLATFORM_EXTENSIONS,extensionSettings,bindManagedExtensions,assertManagedExtensions} from './operator-extensions.js';
+import type {OperatorExtensions} from './operator-extensions.js';
+import {createPostgresProviderRuntime} from './modules/ai/provider-postgres.js';
+import type {PostgresProviderConfig} from './modules/ai/provider-postgres.js';
+import {PostgresProviderResults} from './modules/ai/provider-results-postgres.js';
+import {PostgresExperienceSkillCandidateReader} from './modules/ai/experience-skill-candidates-postgres.js';
+import {PostgresExperienceSkillInputRegistrar} from './modules/ai/experience-skill-registration-postgres.js';
+import type {IndependentExperienceInputReview} from './modules/ai/experience-skill-registration-postgres.js';
 
-/**
- * Operator-only, real PostgreSQL composition and INTERNAL HTTP listener.
- *
- * This is the executable service wiring missing from #183, not a production
- * release approval. It never migrates a database or fetches credentials.
- * Caller passes seven independently approved SQL LOGIN roles and an authentic
- * OIDC code-exchange adapter from a private, trusted runtime.
- *
- * The existing createIntegratedApi production gate is deliberately retained:
- * #46/#61/#89 human acceptance must be completed before a separate reviewed
- * public release entrypoint may lift that gate. No environment variable bypass.
- */
+/** Current operator assembly. Project authorization is owner-confirmed; each
+ * actual SQL role, identity adapter and listener is still configured explicitly.
+ * Construction has no socket, migration, provider call or filesystem side effect. */
 export const REQUIRED_SQL_ROLES=[
   'sessions','admission','attempts','projections','calendar','personal','evidence',
 ] as const;
 export type OperatorSqlRole=typeof REQUIRED_SQL_ROLES[number];
 export type OperatorSqlSettings=Readonly<Record<OperatorSqlRole,DataPoolSettings>>;
 export type OperatorSqlPools=Readonly<Record<OperatorSqlRole,ManagedDataPool>>;
-export const EXTRA_SQL_ROLES=['reviewerInvitations','reviewerSandbox','mailChallenges','mailProofUpdates','demoProfile','demoProfileQuota','adminUsage'] as const;
+export const EXTRA_SQL_ROLES=[
+  'reviewerInvitations','reviewerSandbox','mailChallenges','mailProofUpdates',
+  'demoProfile','demoProfileQuota','adminUsage','aiAuthority','aiBudget','aiResults',
+  'aiInputOperator',...MANAGED_PLATFORM_EXTENSIONS,
+] as const;
 type ExtraSqlRole=typeof EXTRA_SQL_ROLES[number];
+export type OperatorManagedAi=Omit<PostgresProviderConfig,'pools'|'operation'>&{
+  operation:'HCX_005'|'HCX_007';
+  roles:Readonly<Record<'authority'|'budget'|'results',DataPoolSettings>>;
+};
 type ExtraSqlPools=Partial<Record<ExtraSqlRole,ManagedDataPool>>;
 
 export interface OperatorPostgresInputs {
-  /** Exact immediate reverse-proxy IPs from the reviewed private operator adapter.
-   * Omitted by default: no browser forwarding headers trusted. */
+  runtime?:RuntimeMode;
   trustedProxyAddresses?:readonly string[];
   roles:OperatorSqlSettings;
   google:PostgresGoogleAuthConfig['google'];
   attemptDigestKey:Buffer;
   evidenceRights:PostgresPlatformConfig['evidenceRights'];
-  /** Additional approved ports are deliberately NOT inferred from URL/flags. */
+  /** Non-SQL options only. Pool-bearing services use extensions below. */
   platform?:Omit<PostgresPlatformConfig,'pools'|'evidenceRights'|'reviewerSandbox'|'adminUsage'>;
-  /** Optional trusted REVIEWER-only BETA mail enrollment with isolated roles. */
+  extensions?:OperatorExtensions;
+  /** @deprecated Raw prebuilt provider runtimes are refused: no trusted SQL role proof. */
+  ai?:PostgresApplicationConfig['ai'];
+  managedAi?:OperatorManagedAi;
+  /** Operator-private SQL writer, never installed as a public API route. */
+  aiInputRegistration?:{settings:DataPoolSettings;reviewer:IndependentExperienceInputReview};
   reviewer?:{invitations:DataPoolSettings;sandbox:DataPoolSettings;demo:ReviewerDemoRepository};
-  schoolMail?:{challenges:DataPoolSettings;proofUpdates:DataPoolSettings;
-    digestKey:Buffer;sender:SchoolMailSender};
-  /** Optional, independent demo roles. Raw platform SQL pools are never accepted. */
+  schoolMail?:{challenges:DataPoolSettings;proofUpdates:DataPoolSettings;digestKey:Buffer;sender:SchoolMailSender};
   demo?:{profile:DataPoolSettings;quota:DataPoolSettings;digestKey:Buffer};
-  /** Independently restricted accounting SQL role + operator policy. Off by default. */
   adminUsage?:{settings:DataPoolSettings;authority:NonNullable<ApiOptions['adminAuthority']>};
 }
 export interface PreparedOperatorPostgres {
   readonly application:PostgresApplicationConfig;
   readonly pools:OperatorSqlPools;
   readonly extraPools?:ExtraSqlPools;
+  /** Exact runtime and SQL pool identity bound before any network/listener work. */
+  readonly managedAiBinding?:{
+    readonly ai:NonNullable<PostgresApplicationConfig['ai']>;
+    readonly pools:Readonly<Record<'authority'|'budget'|'results',ManagedDataPool>>;
+  };
+  readonly operatorRegistration?:{
+    readonly pool:ManagedDataPool;
+    readonly service:PostgresExperienceSkillInputRegistrar;
+  };
 }
-
 const LOOPBACK=new Set(['127.0.0.1','::1']);
-/** Optional SQL ports cannot bypass the production role/TLS/startup/shutdown checks. */
-const UNVERIFIED_PLATFORM_PORTS=[
-  'sourceIngestion','restrictedIntake','selfAccount','ownerWorkspace','experienceApproval',
-  'demoOverlay','sourceReview','ownerCatalog','ownerRecommendations','studyPlanCheck',
-  'ownerStudyPlan','doubleMajor','majorWhatIf','revisionComparison',
-] as const;
-const hasUnverifiedPlatformPort=(platform:PostgresPlatformConfig|undefined):boolean=>
-  !!platform&&UNVERIFIED_PLATFORM_PORTS.some(field=>Object.prototype.hasOwnProperty.call(platform,field));
+const RAW_PLATFORM_PORTS=[...MANAGED_PLATFORM_EXTENSIONS,'majorWhatIf','majorWhatIfPostgres','pools','reviewerSandbox','demoProfile','demoProfileQuota','adminUsage'] as const;
+const own=(value:object,key:string)=>Object.prototype.hasOwnProperty.call(value,key);
 
-/** No connection, DNS call, migration or HTTP listener is started here. */
 export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOperatorPostgres{
   if(!input||!input.roles||typeof input.google?.exchangeCode!=='function'
     ||typeof input.evidenceRights?.resolveFor!=='function'
     ||!Buffer.isBuffer(input.attemptDigestKey)||input.attemptDigestKey.length<32)
     throw new Error('Explicit Google, evidence rights and server-owned digest key required');
-  // Reject broad/unreviewed proxy rules before constructing any SQL pool.
-  if(input.trustedProxyAddresses!==undefined)
-    createTrustedProxyPolicy(input.trustedProxyAddresses);
-  if(input.schoolMail&&!input.reviewer)
-    throw new Error('School-mail proof requires a separate REVIEWER sandbox');
+  if(input.runtime!==undefined&&input.runtime!=='production')throw new Error('Unknown runtime configuration');
+  if(input.runtime==='production'&&!input.schoolMail)
+    throw new Error('Production requires a configured school-mail verifier');
+  if(input.trustedProxyAddresses!==undefined)createTrustedProxyPolicy(input.trustedProxyAddresses);
+  if(input.schoolMail&&!input.reviewer)throw new Error('School-mail proof requires a separate REVIEWER sandbox');
   if(input.schoolMail&&(!Buffer.isBuffer(input.schoolMail.digestKey)
-    ||input.schoolMail.digestKey.length<32
-    ||input.schoolMail.digestKey.equals(input.attemptDigestKey)
+    ||input.schoolMail.digestKey.length<32||input.schoolMail.digestKey.equals(input.attemptDigestKey)
     ||typeof input.schoolMail.sender?.send!=='function'))
     throw new Error('School-mail proof requires independent approved runtime settings');
-  if(input.reviewer&&(typeof input.reviewer.demo?.listProfiles!=='function'
-    ||typeof input.reviewer.demo?.readSnapshot!=='function'))
+  if(input.reviewer&&(typeof input.reviewer.demo?.listProfiles!=='function'||typeof input.reviewer.demo?.readSnapshot!=='function'))
     throw new Error('An explicit synthetic-only reviewer repository is required');
-  if(input.adminUsage&&(typeof input.adminUsage.authority?.isApproved!=='function'
-    ||!input.adminUsage.settings))
+  if(input.adminUsage&&(typeof input.adminUsage.authority?.isApproved!=='function'||!input.adminUsage.settings))
     throw new Error('Admin usage requires independent operator policy and SQL role');
-  if(input.demo&&(!Buffer.isBuffer(input.demo.digestKey)
-    ||input.demo.digestKey.length<32
+  if(input.demo&&(!Buffer.isBuffer(input.demo.digestKey)||input.demo.digestKey.length<32
     ||input.demo.digestKey.equals(input.attemptDigestKey)))
     throw new Error('Demo profile quota needs an independent digest key');
-  if((input.platform as PostgresPlatformConfig|undefined)?.reviewerSandbox
-    ||(input.platform as PostgresPlatformConfig|undefined)?.pools
-    ||(input.platform as PostgresPlatformConfig|undefined)?.demoProfile
-    ||(input.platform as PostgresPlatformConfig|undefined)?.demoProfileQuota
-    ||(input.platform&&Object.prototype.hasOwnProperty.call(input.platform,'adminUsage'))
-    ||hasUnverifiedPlatformPort(input.platform as PostgresPlatformConfig|undefined))
+  if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
+  if(input.managedAi){
+    const value=input.managedAi;
+    if(!['HCX_005','HCX_007'].includes(value.operation)||!value.roles
+      ||Object.keys(value.roles).sort().join(',')!=='authority,budget,results'
+      ||typeof value.sessionIsCurrent!=='function'||typeof value.secret!=='function'
+      ||(value.enabled!==undefined&&typeof value.enabled!=='function')
+      ||(value.liveApproved!==undefined&&typeof value.liveApproved!=='function'))
+      throw new Error('Managed AI requires input authority, budget, results and trusted provider controls');
+  }
+  if(input.aiInputRegistration&&(!input.managedAi
+    ||typeof input.aiInputRegistration.reviewer?.verify!=='function'
+    ||!input.aiInputRegistration.settings))
+    throw new Error('AI input registration requires a reviewed provider and independent operator role');
+  if(input.platform&&RAW_PLATFORM_PORTS.some(key=>own(input.platform!,key)))
     throw new Error('Operator platform SQL pools must use verified role settings');
-  const expectedRoles=new Set<string>(),endpoints=new Set<string>();
-  const roles={} as Record<OperatorSqlRole,ManagedDataPool>;
+  const managed=extensionSettings(input.extensions);
   const extraSettings:Partial<Record<ExtraSqlRole,DataPoolSettings>>={
-    ...(input.reviewer?{reviewerInvitations:input.reviewer.invitations,
-      reviewerSandbox:input.reviewer.sandbox}:{}),
-    ...(input.schoolMail?{mailChallenges:input.schoolMail.challenges,
-      mailProofUpdates:input.schoolMail.proofUpdates}:{}),
+    ...managed,
+    ...(input.reviewer?{reviewerInvitations:input.reviewer.invitations,reviewerSandbox:input.reviewer.sandbox}:{}),
+    ...(input.schoolMail?{mailChallenges:input.schoolMail.challenges,mailProofUpdates:input.schoolMail.proofUpdates}:{}),
     ...(input.demo?{demoProfile:input.demo.profile,demoProfileQuota:input.demo.quota}:{}),
-    ...(input.adminUsage?{adminUsage:input.adminUsage.settings}:{})
+    ...(input.adminUsage?{adminUsage:input.adminUsage.settings}:{}),
+    ...(input.managedAi?{aiAuthority:input.managedAi.roles.authority,
+      aiBudget:input.managedAi.roles.budget,aiResults:input.managedAi.roles.results}:{}),
+    ...(input.aiInputRegistration?{aiInputOperator:input.aiInputRegistration.settings}:{}),
   };
-  const allSettings:DataPoolSettings[]=[
-    ...REQUIRED_SQL_ROLES.map(role=>input.roles[role]),...Object.values(extraSettings),
-  ];
-  for(const settings of allSettings){
-    if(!settings||expectedRoles.has(settings.expectedRole)
-      ||endpoints.has(settings.connectionString)
+  const expectedRoles=new Set<string>(),endpoints=new Set<string>();
+  for(const settings of [...REQUIRED_SQL_ROLES.map(role=>input.roles[role]),...Object.values(extraSettings)]){
+    if(!settings||expectedRoles.has(settings.expectedRole)||endpoints.has(settings.connectionString)
       ||settings.environment!=='production')
       throw new Error('Seven independently restricted production SQL LOGIN roles and isolated extensions required');
-    expectedRoles.add(settings.expectedRole);
-    endpoints.add(settings.connectionString);
+    expectedRoles.add(settings.expectedRole);endpoints.add(settings.connectionString);
   }
-  // All role/TLS settings are verified before the first socket opens.
-  const extraPools:ExtraSqlPools={};
+  const roles={} as Record<OperatorSqlRole,ManagedDataPool>,extraPools:ExtraSqlPools={};
   try{
     for(const role of REQUIRED_SQL_ROLES)roles[role]=createPostgresDataPool(input.roles[role]);
     for(const role of EXTRA_SQL_ROLES){
-      const settings=extraSettings[role];
-      if(settings)extraPools[role]=createPostgresDataPool(settings);
+      const settings=extraSettings[role];if(settings)extraPools[role]=createPostgresDataPool(settings);
     }
+    const {sessions,admission,attempts,projections,calendar,personal,evidence}=roles;
+    const aiPools=input.managedAi?{
+      authority:extraPools.aiAuthority!,budget:extraPools.aiBudget!,results:extraPools.aiResults!,
+    }:undefined;
+    const provider=input.managedAi&&aiPools
+      ?createPostgresProviderRuntime({...input.managedAi,pools:aiPools}):undefined;
+    const ai:PostgresApplicationConfig['ai']=provider
+      ?{runtime:{phaseId:provider.phaseId,operation:provider.operation,executor:provider.executor},
+        inputs:provider.approvedInputs,
+        experienceCandidates:new PostgresExperienceSkillCandidateReader(aiPools!.authority,
+          new PostgresProviderResults(aiPools!.results),provider.executor,
+          input.managedAi?.now??(()=>new Date().toISOString()),provider.approvedInputs)}:undefined;
+    const operatorRegistration=input.aiInputRegistration&&input.managedAi
+      ?{pool:extraPools.aiInputOperator!,
+        service:new PostgresExperienceSkillInputRegistrar(extraPools.aiInputOperator!,
+          input.aiInputRegistration.reviewer,input.managedAi.inputPolicyVersion,
+          input.managedAi.now??(()=>new Date().toISOString()))}:undefined;
+    const application:PostgresApplicationConfig={
+      ...(input.runtime?{runtime:input.runtime}:{}),
+      ...(ai?{ai}:{}),
+      ...(input.trustedProxyAddresses!==undefined?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),
+      auth:{pools:{sessions,admission,attempts},attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},
+      platform:{...input.platform,...bindManagedExtensions(input.extensions,extraPools),
+        pools:{projections,calendar,personal,evidence},evidenceRights:input.evidenceRights,
+        ...(extraPools.reviewerSandbox?{reviewerSandbox:extraPools.reviewerSandbox}:{}),
+        ...(input.demo?{demoProfile:{pool:extraPools.demoProfile!},
+          demoProfileQuota:{pool:extraPools.demoProfileQuota!,digestKey:Buffer.from(input.demo.digestKey)}}:{}),
+        ...(input.adminUsage?{adminUsage:{pool:extraPools.adminUsage!,authority:input.adminUsage.authority}}:{}),
+      },
+      ...(input.reviewer?{reviewer:{invitations:extraPools.reviewerInvitations!,demo:input.reviewer.demo}}:{}),
+      ...(input.schoolMail?{schoolMailProof:createOperatorSchoolMailProof({
+        pools:{challenges:extraPools.mailChallenges!,proofUpdates:extraPools.mailProofUpdates!,attempts},
+        challengeDigestKey:input.schoolMail.digestKey,attemptDigestKey:input.attemptDigestKey,
+        sender:input.schoolMail.sender,...(input.google.now?{now:input.google.now}:{}),
+      })}:{}),
+    };
+    return {application,pools:roles,...(Object.keys(extraPools).length?{extraPools}:{}),
+      ...(ai&&aiPools?{managedAiBinding:{ai,pools:aiPools}}:{}),
+      ...(operatorRegistration?{operatorRegistration}:{})};
   }catch{
-    void Promise.allSettled([...Object.values(roles),...Object.values(extraPools)]
-      .map(pool=>pool.close()));
+    void Promise.allSettled([...Object.values(roles),...Object.values(extraPools)].map(pool=>pool.close()));
     throw new Error('Operator SQL pool configuration refused');
   }
-  const {sessions,admission,attempts,projections,calendar,personal,evidence}=roles;
-  const application:PostgresApplicationConfig={
-    ...(input.trustedProxyAddresses!==undefined
-      ?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),
-    auth:{pools:{sessions,admission,attempts},
-      attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},
-    platform:{...input.platform,pools:{projections,calendar,personal,evidence},
-      evidenceRights:input.evidenceRights,
-      ...(extraPools.reviewerSandbox?{reviewerSandbox:extraPools.reviewerSandbox}:{}),
-      ...(input.demo?{demoProfile:{pool:extraPools.demoProfile!},
-        demoProfileQuota:{pool:extraPools.demoProfileQuota!,digestKey:Buffer.from(input.demo.digestKey)}}:{}),
-      ...(input.adminUsage?{adminUsage:{pool:extraPools.adminUsage!,
-        authority:input.adminUsage.authority}}:{})},
-    ...(input.reviewer?{reviewer:{
-      invitations:extraPools.reviewerInvitations!,demo:input.reviewer.demo}}:{}),
-    ...(input.schoolMail?{schoolMailProof:createOperatorSchoolMailProof({
-      pools:{challenges:extraPools.mailChallenges!,proofUpdates:extraPools.mailProofUpdates!,
-        attempts},challengeDigestKey:input.schoolMail.digestKey,
-      attemptDigestKey:input.attemptDigestKey,sender:input.schoolMail.sender,
-      ...(input.google.now?{now:input.google.now}:{})
-    })}:{})
-  };
-  return {application,pools:roles,...(Object.keys(extraPools).length?{extraPools}:{})};
 }
 
-export interface OperatorServer {
-  readonly address:string;
-  close():Promise<void>;
+export interface OperatorServer {readonly address:string;close():Promise<void>}
+export interface ApprovedPrivateBridge {
+  mode:'CONTAINER_PRIVATE_IPV4';
+  approvedHost:string;
 }
 
-/**
- * Real sockets, real SQL-role checks, then loopback HTTP ONLY. A failed
- * dependency closes every pool and never starts a partially authenticated API.
- * Ingress, DNS, public TLS, provider/AI and NCP remain separate approvals.
- */
+/** A root-controlled operator factory must approve the exact bound IP. The
+ * address must be private and actually assigned in this network namespace.
+ * External ingress/isolation evidence is still a separate release gate. */
+export function allowedPrivateBridgeHost(host:string,bridge:ApprovedPrivateBridge|undefined,
+  assignedAddresses:readonly string[]):boolean{
+  if(!bridge||bridge.mode!=='CONTAINER_PRIVATE_IPV4'||bridge.approvedHost!==host
+    ||isIP(host)!==4||host.endsWith('.0')||host.endsWith('.255'))return false;
+  const [first=0,second=0]=host.split('.').map(Number);
+  return (first===10||(first===172&&second>=16&&second<=31)||(first===192&&second===168))
+    &&assignedAddresses.includes(host);
+}
+
+/** Verify all managed roles before listening. Public TLS belongs at the ingress;
+ * direct database/API ports remain local. Authorization never disables RLS. */
 export async function startOperatorPostgres(input:{
-  prepared:PreparedOperatorPostgres; host:'127.0.0.1'|'::1'; port:number;
+  prepared:PreparedOperatorPostgres;host:string;port:number;privateBridge?:ApprovedPrivateBridge;
 }):Promise<OperatorServer>{
-  const {prepared,host,port}=input;
-  if(!LOOPBACK.has(host)||!Number.isSafeInteger(port)
-    ||(port!==0 && (port<1024||port>65535))
+  const {prepared,host,port,privateBridge}=input;
+  const assigned=Object.values(networkInterfaces()).flatMap(entries=>
+    (entries??[]).filter(item=>item.family==='IPv4'&&!item.internal).map(item=>item.address));
+  const listenerApproved=LOOPBACK.has(host)?privateBridge===undefined
+    :allowedPrivateBridgeHost(host,privateBridge,assigned);
+  if(!listenerApproved||!Number.isSafeInteger(port)||(port!==0&&(port<1024||port>65535))
     ||(port===0&&process.env.NODE_ENV!=='test'))
-    throw new Error('Operator API can only bind an approved loopback port');
+    throw new Error('Operator API can only bind an approved loopback or private container address');
   if(!prepared?.application||!prepared.pools
-    ||!REQUIRED_SQL_ROLES.every(key=>typeof prepared.pools[key]?.connect==='function'
-      &&typeof prepared.pools[key]?.close==='function'))
+    ||!REQUIRED_SQL_ROLES.every(key=>typeof prepared.pools[key]?.connect==='function'&&typeof prepared.pools[key]?.close==='function'))
     throw new Error('Seven managed PostgreSQL pools required');
-  const extra=prepared.extraPools??{};
-  const platform=prepared.application.platform;
-  if(hasUnverifiedPlatformPort(platform)||Boolean(platform.demoProfile)!==Boolean(platform.demoProfileQuota)
-    ||(platform.adminUsage&&(platform.adminUsage.pool!==extra.adminUsage
-      ||typeof platform.adminUsage.authority?.isApproved!=='function')))
+  const extra=prepared.extraPools??{},platform=prepared.application.platform;
+  if(!platform||!prepared.application.auth?.pools)
     throw new Error('Operator platform SQL pools must use verified role settings');
-  const requiredExtra:ExtraSqlRole[]=[
+  const extensions=assertManagedExtensions(platform,extra);
+  if(Boolean(platform.demoProfile)!==Boolean(platform.demoProfileQuota)
+    ||(platform.adminUsage&&(platform.adminUsage.pool!==extra.adminUsage||typeof platform.adminUsage.authority?.isApproved!=='function')))
+    throw new Error('Operator platform SQL pools must use verified role settings');
+  for(const role of ['sessions','admission','attempts'] as const)
+    if(prepared.application.auth.pools[role]!==prepared.pools[role])
+      throw new Error('Operator platform SQL pools must use verified role settings');
+  for(const role of ['projections','calendar','personal','evidence'] as const)
+    if(platform.pools?.[role]!==prepared.pools[role])
+      throw new Error('Operator platform SQL pools must use verified role settings');
+  if(Boolean(prepared.application.ai)!==Boolean(prepared.managedAiBinding)
+    ||prepared.managedAiBinding&&(
+      prepared.application.ai!==prepared.managedAiBinding.ai
+      ||prepared.managedAiBinding.pools.authority!==extra.aiAuthority
+      ||prepared.managedAiBinding.pools.budget!==extra.aiBudget
+      ||prepared.managedAiBinding.pools.results!==extra.aiResults))
+    throw new Error('AI provider must use managed SQL authority, budget and results roles');
+  if(Boolean(prepared.operatorRegistration)!==Boolean(extra.aiInputOperator)
+    ||prepared.operatorRegistration&&(
+      prepared.operatorRegistration.pool!==extra.aiInputOperator
+      ||!(prepared.operatorRegistration.service instanceof PostgresExperienceSkillInputRegistrar)
+      ||!prepared.managedAiBinding))
+    throw new Error('Operator AI registration requires an exact restricted SQL role');
+  const requiredExtra:ExtraSqlRole[]=[...extensions,
+    ...(prepared.operatorRegistration?['aiInputOperator'] as const:[]),
+    ...(prepared.application.ai?['aiAuthority','aiBudget','aiResults'] as const:[]),
     ...(prepared.application.reviewer?['reviewerInvitations','reviewerSandbox'] as const:[]),
     ...(prepared.application.schoolMailProof?['mailChallenges','mailProofUpdates'] as const:[]),
     ...(platform.demoProfile?['demoProfile','demoProfileQuota'] as const:[]),
     ...(platform.adminUsage?['adminUsage'] as const:[]),
   ];
-  if(Object.keys(extra).length!==requiredExtra.length
-    ||requiredExtra.some(key=>!extra[key])
+  if(Object.keys(extra).length!==requiredExtra.length||requiredExtra.some(key=>!extra[key])
     ||Object.keys(extra).some(key=>!EXTRA_SQL_ROLES.includes(key as ExtraSqlRole))
+    ||(prepared.application.reviewer&&(prepared.application.reviewer.invitations!==extra.reviewerInvitations
+      ||platform.reviewerSandbox!==extra.reviewerSandbox))
+    ||(platform.reviewerSandbox&&!prepared.application.reviewer)
     ||(platform.demoProfile&&platform.demoProfile.pool!==extra.demoProfile)
     ||(platform.demoProfileQuota&&platform.demoProfileQuota.pool!==extra.demoProfileQuota)
     ||(platform.adminUsage&&platform.adminUsage.pool!==extra.adminUsage))
     throw new Error('Operator extension pool roles are incomplete');
-  const pools=[
-    ...REQUIRED_SQL_ROLES.map(key=>prepared.pools[key]),
-    ...EXTRA_SQL_ROLES.flatMap(key=>extra[key]?[extra[key]!]:[]),
-  ];
-  if(pools.some(pool=>typeof pool?.connect!=='function'||typeof pool.close!=='function')
-    ||new Set(pools).size!==pools.length)
+  const pools=[...REQUIRED_SQL_ROLES.map(key=>prepared.pools[key]),
+    ...EXTRA_SQL_ROLES.flatMap(key=>extra[key]?[extra[key]!]:[])];
+  if(pools.some(pool=>typeof pool?.connect!=='function'||typeof pool.close!=='function')||new Set(pools).size!==pools.length)
     throw new Error('Operator SQL pools must be independent and managed');
-  let app:ReturnType<typeof createPostgresApplication>|undefined;
-  let closed=false;
+  let app:ReturnType<typeof createPostgresApplication>|undefined,closed=false;
   const closePools=async()=>{
     const finished=await Promise.allSettled([...pools].reverse().map(pool=>pool.close()));
-    if(finished.some(x=>x.status==='rejected'))
-      throw new Error('Operator SQL pool shutdown incomplete');
+    if(finished.some(x=>x.status==='rejected'))throw new Error('Operator SQL pool shutdown incomplete');
   };
   try{
-    // Each managed pool verifies current_user and non-superuser/non-BYPASSRLS
-    // before returning a connection. Do NOT use an administrator DSN here.
+    // Build the authenticated app before connecting so invalid runtime options
+    // cannot cause network side effects. Listening still follows every SQL check.
+    app=createPostgresApplication(prepared.application);
     for(const pool of pools){
       const connection=await pool.connect();
       try{
         const result=await connection.query('SELECT 1 AS ready');
-        if(result.rows.length!==1||Number(result.rows[0]?.ready)!==1)
-          throw new Error('Database readiness check refused');
+        if(result.rows.length!==1||Number(result.rows[0]?.ready)!==1)throw new Error('Database readiness check refused');
+        if(pool===extra.aiInputOperator){
+          const member=await connection.query(
+            "SELECT pg_has_role(current_user,'hufs_ai_input_operator','member') AS granted");
+          if(member.rows.length!==1||member.rows[0]?.granted!==true)
+            throw new Error('Operator AI registration SQL membership unavailable');
+        }
       }finally{connection.release();}
     }
-    app=createPostgresApplication(prepared.application);
     const address=await app.listen({host,port});
-    return {
-      address,
-      async close(){
-        if(closed)return;
-        closed=true;
-        let appFailed=false;
-        try{await app!.close();}catch{appFailed=true;}
-        await closePools();
-        if(appFailed)throw new Error('Operator API shutdown incomplete');
-      },
-    };
+    return {address,async close(){
+      if(closed)return;closed=true;
+      let appFailed=false;try{await app!.close();}catch{appFailed=true;}
+      await closePools();if(appFailed)throw new Error('Operator API shutdown incomplete');
+    }};
   }catch{
-    if(app)try{await app.close();}catch{/* preserve generic startup error */}
-    try{await closePools();}catch{/* no credentials in error */}
+    if(app)try{await app.close();}catch{/* generic diagnostics only */}
+    try{await closePools();}catch{/* never expose credentials */}
     throw new Error('Operator PostgreSQL/API startup refused');
   }
 }
