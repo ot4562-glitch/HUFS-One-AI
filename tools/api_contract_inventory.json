@@ -2038,6 +2038,27 @@
       ]
     },
     {
+      "id": "get-api-admin-usage",
+      "surface": "core",
+      "method": "GET",
+      "path": "/api/admin/usage",
+      "primaryIssue": 89,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "apps/api/src/modules/admin/usage.ts",
+            "symbol": "AdminUsageReportSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/admin-usage-http.test.ts",
+        "tests/api/ai-usage-postgres.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
       "id": "post-api-admin-demo-preflight",
       "surface": "core",
       "method": "POST",
@@ -2984,8 +3005,10 @@
     {
       "design": "GET /api/admin/usage",
       "primaryIssue": 89,
-      "actualRouteIds": [],
-      "notes": "No admin usage HTTP registration. Offline budget/release evidence is not an equivalent endpoint."
+      "actualRouteIds": [
+        "get-api-admin-usage"
+      ],
+      "notes": "Optional ADMIN-only, separately approved read-only budget summary. Synthetic API/SQL tests do not prove real database role grants, live billing telemetry, human approval or production release."
     },
     {
       "design": "POST /api/admin/corpus/approve",
