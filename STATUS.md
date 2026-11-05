@@ -2,12 +2,19 @@
 
 > 현황 정본. 정확한 코드 검증 SHA와 PR/CI 근거는 아래 표를 따른다. 이후 문서 전용 커밋은 코드 검증 대상과 구분한다. [PR](https://github.com/minseong-hufs/HUFS-One-AI/pulls) · [정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues) · [인적 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md) · [고정 게이트](docs/TEAM_PROGRESS.md).
 
+## 2026-11-05 구현분 종결·실인수 승계 (최신 상태)
+
+- **정본 GitHub 이슈 13건 OPEN** 확인: 기존 #61/#123/#132/#133은 사용자의 범위 분리 요청에 따라 **PR #220의 코드·합성 검증 납품분만 CLOSED/COMPLETED** 처리했다. 이 종료는 해당 이슈의 원래 인적·원본·기기·실운영 수락 체크박스 달성을 의미하지 않는다.
+- **후속 OPEN [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221):** 추천 독립 사람 gold **0/200**·미디어/시간 **0/32**, 동아리/EMPTY 비작성자 기기·스크린리더, 실제 4인 권리·계정 대조/공식 RulePack·#46 연계. **후속 OPEN [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222):** 승인된 실 NCP 스테이징, 실제 Google/PG/TLS·OCR/HCX·기능별 UI→API→DB·복구/요금과 #12/#89 운영 수락. 중복 체크 대신 현장 영수증을 연결한다.
+- [제품 기능 활성화 런북](docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md)은 **로컬 합성 → NCP 계획 → 승인 후 비공개 프리뷰 → 추가 운영 코드/검증 → D03 출시 승인**을 구분한다. 현 main 운영 모드 보호로 **한 번의 명령만으로 전 기능 운영 서비스가 기동되지는 않는다.** 실 원본/유료 API/NCP apply·도메인·공개는 실행/승인한 적 없음. **RELEASE_BLOCKED 유지**.
+- #220 병합 후 동일 보존 로컬 worktree에서 별도 AI 재실행: 평가 **38**, #123/#132/#133 API·클라이언트 **57**, 40×5 코퍼스 **21**, 합계 **116 PASS / 0 FAIL**. 원본/fixture byte 20+12 확인. 이 후속 QA의 Node 22.22.1은 package floor 22.22.2 미만으로 **공식 출시 CI 통과를 대신하지 않음**. [검증 기록](https://github.com/minseong-hufs/HUFS-One-AI/pull/220#issuecomment-6646455317); 실제 인적 서명 0은 불변.
+
 ## 1. GitHub와 CI
 
 | 항목 | 확인한 결과와 근거 |
 | --- | --- |
 | main 코드 통합 기준 | [`d4d6874c6d59929cdabb6a0e74adccb9eeb1ef69`](https://github.com/minseong-hufs/HUFS-One-AI/commit/d4d6874c6d59929cdabb6a0e74adccb9eeb1ef69), #220 merge. 검증 HEAD `8eb7730a100bafe5514d1dddedd88144ed60b3e2`와 최종 파일 diff **0개**. 이후 문서 전용 커밋과 구분 |
-| 열린 PR / 일반 이슈 | **PR 0건 / 일반 이슈 15건 OPEN**. 이전 중복 이슈 통합 종료 이력은 §5 유지 |
+| 열린 PR / 일반 이슈 | **기존 PR 정리 후 일반 이슈 13건 OPEN** (2026-11-05 직접 검색). #61/#123/#132/#133 CLOSED=코드 납품 완료·인수 #221/#222로 승계; 이후 새로운 PR 개수는 GitHub 현재 검색으로 확인 |
 | #217 / #218 | [What-if #217](https://github.com/minseong-hufs/HUFS-One-AI/pull/217) merge `6445fc4`, [동일교과 QA #218](https://github.com/minseong-hufs/HUFS-One-AI/pull/218) merge `8e0efb5` 선행 통합 확인. 각 수정 HEAD의 3종 CI 성공 |
 | #219 | [PR](https://github.com/minseong-hufs/HUFS-One-AI/pull/219), HEAD `1bcf820823ffe10829c3c64457c8e06e9f9b7787` → merge `1181d0f77fb1a05d5ffd787f4e900a4e7480f269`. [최종 자동 COMMENT](https://github.com/minseong-hufs/HUFS-One-AI/pull/219#pullrequestreview-5777800975). 병합 전 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41937263215)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41937263210)·[NCP](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41937263224) **3/3 SUCCESS** |
 | #219 병합 후 | merge SHA의 [TASK-00](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41938792380)·[Chrome](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41938792289)·[NCP](https://github.com/minseong-hufs/HUFS-One-AI/actions/runs/41938792240) **3/3 SUCCESS** |
@@ -38,18 +45,20 @@
 | 우선 | 미수락 조건 | 정본 이슈 |
 | --- | --- | --- |
 | P0 | 실제 Google/학교메일·운영 PG CA/TLS·최소권한/영속 철회·복원, proxy client-IP/신뢰 헤더·다중 인스턴스와 공개 ingress 전용 진입점 | #27 #89 |
-| P0 | 실제 출처별 사용/전송/표시 권리, 공식 RulePack·문서별 SHA·4인 owner binding/손계산·실제 API/UI | #19 #11 #133 #20 |
+| P0 | 실제 출처별 사용/전송/표시 권리, 공식 RulePack·문서별 SHA·4인 owner binding/손계산·실제 API/UI | #19 #11 #221(구 #133) #20 |
 | P0 | full private checkout 개인정보 검사·과거 Git history/clone/backup 접근·최초 게시 권리. 현재 보호 0과 조회 가능한 과거 6경로를 구분 | #46 |
-| P0 | 독립 사람 gold **0/200**·미디어/시간 **0/32**, 공식 공고·실 OCR/외부 provider·공정한 정책 비교/실성능 | #61 #10 |
-| P0 | 실제 NCP 계정/SKU/크레딧·비용승인·네트워크/TLS/직접IP·호스트/복구/청구·출시 서명 | #12 #89 |
-| P1 | 메뉴/역할별 상태·실스크린리더·학업/정정/빈 시연 전체 인수·발표 리허설, 동아리/AI 포스터·가상 ADMIN 게시/철회 흐름의 독립 인수 | #9 #119 #132 #123 |
+| P0 | 독립 사람 gold **0/200**·미디어/시간 **0/32**, 공식 공고·실 OCR/외부 provider·공정한 정책 비교/실성능 | #221(구 #61) #10 #222(OCR/실환경) |
+| P0 | 실제 NCP 계정/SKU/크레딧·비용승인·네트워크/TLS/직접IP·호스트/복구/청구·출시 서명 | #12 #89 #222 |
+| P1 | 메뉴/역할별 상태·실스크린리더·학업/정정/빈 시연 전체 인수·발표 리허설, 동아리/AI 포스터·가상 ADMIN 게시/철회 흐름의 독립 인수 | #9 #119 #221(구 #132/#123) #222 |
 | P1 | API/설계의 UNKNOWN mapping, 실제 worker/rootfs·CPU/RSS/OOM/p95·provider quota/billing 및 전체 의존성/자산 라이선스 | #8 #20 #89 |
 
 #133의 과정/track별 RulePack·문서별 SHA·AREA_SPREAD/GROUP_CHOICE는 #220에서 계약/코어/소비자와 합성 반례 회귀를 확장했다. 실제 문서의 언어 속성·예외·적용범위와 공식 학칙 승인·4인 손계산 검수는 남아 있다.
 
 고정 복합 게이트는 심민성 **7/12**, 이의상 **9/12**, 김채윤 **7/12**, 박준영 **8/12**, 이서연 **1/5**를 유지한다. 코드 진척으로 사람/운영 인수의 분자를 올리지 않는다. [남은 구현](docs/REMAINING_IMPLEMENTATION_20261104.md)과 [작업 책임](docs/WORKSTREAMS.md)을 함께 확인한다.
 
-## 4. 정리 결정
+## 4. 정리 결정 (기존 15 OPEN 기록은 #220 직후 시점의 영수증)
+
+**아래 문단은 #220 직후 원래 15개 OPEN 시점의 작업 기록이다.** 이후 2026-11-05에 네 이슈를 코드 납품분으로 종결하고 #221/#222를 열어 현재 13개 OPEN으로 전환했다. 변경된 인적/운영 수락 조건은 상단 신설 절을 따른다.
 
 15개 정본 이슈의 본문을 실제 코드/동일 SHA 검사와 대조해 갱신했다. 기존 #11의 완료 표시 **2개**를 유지하고 검증된 코드 하위 항목 **37개**를 추가해 **완료 39개**로 정리했다. 미수락 복합 조건 **127개**와 담당자/라벨을 유지한다. 상위 이슈는 실제 인적·운영·권리 조건이 남아 **15개 OPEN**, 이번에 전체 완료로 새로 닫은 이슈는 **0개**다.
 
@@ -59,11 +68,11 @@ README·Architecture·Proposal·STATUS·PR 운영/역할/진척/인적 인수·�
 - 역사적인 PR 숫자·CI·미병합 상태를 각 문서의 현재 설명에서 정리했다. 과거 근거는 Git 이력과 원래 PR/Actions에 보존한다.
 - 실제 원본·비밀키·유료 자원·운영 배포를 변경하지 않았으며 AI 유료 실행/Laya 기본 OFF와 RELEASE_BLOCKED를 유지한다.
 
-## 5. 2026-11-04 이슈 구조 재정리 (기존 OPEN 40 → 현재 OPEN 15)
+## 5. 2026-11-04 이슈 구조 재정리 (당시 OPEN 40 → 15; 최신 13은 상단 참조)
 
 **확인:** 일반 이슈 47개 중 원래 CLOSED 7건은 변경하지 않고, 기존 OPEN 40건에서 **25건을 중복 통합 종료**, **15건 유지**했다. 15건 모두 본문에 완료 코드와 미완료 체크리스트를 분리하고 `enhancement`(해당하는 경우) 및 `duplicate`(통합 종료) 라벨을 적용했다. **주담당 한 명 11건**, 실제 공동 작업이 불가피한 **공동 배정 4건(#61/#123/#132/#133)**.
 
-| 현재 OPEN 정본 | 주담당 | 이관한 이전 OPEN 이슈(현재 CLOSED) |
+| 2026-11-04 당시 OPEN 정본 (해당 4건은 현재 CLOSED) | 주담당 | 이관한 이전 OPEN 이슈(당시 CLOSED) |
 | --- | --- | --- |
 | [#8 계약·CI](https://github.com/minseong-hufs/HUFS-One-AI/issues/8) | 심민성 | #18, #52, #199 |
 | [#9 UI·메뉴·접근성](https://github.com/minseong-hufs/HUFS-One-AI/issues/9) | 이의상 | #51, #85, #124, #141, #200 |
@@ -83,7 +92,9 @@ README·Architecture·Proposal·STATUS·PR 운영/역할/진척/인적 인수·�
 
 **단일 주관 집계:** 심민성 9건, 이의상 3건, 김채윤 1건, 박준영 1건, 이서연 1건. 공동 담당은 중복으로 세지 않음. 기존 PR/이슈 댓글·편집 이력은 그대로 남고, **코드 CI 통과를 사람 승인이나 RELEASE_BLOCKED 해제로 계산하지 않는다**.
 
-## 6. 설계/문서 요구사항 → 15개 정본 이슈 추적 (2026-11-04)
+## 6. 설계/문서 요구사항 → 2026-11-04 당시 15개 정본 이슈 추적
+
+> **현재 진행중 인수/배포 대상은 #221/#222로 변경됨.** 아래 원래 이슈 번호는 2026-11-04 구조설계 이력이며 #61/#123/#132/#133은 2026-11-05 구현분만 CLOSED다. 실기능/권리의 완료를 뜻하지 않는다.
 
 2026-11-04 [Architecture](Architecture.md) A00–A19, [Proposal](Proposal.md), [설계형 RAG/AI 운영 계약](docs/TRUSTED_RAG_MEDIA_VERSIONING.md), [데이터 권리](docs/DATA_GOVERNANCE.md), [REVIEWER 접근](docs/REVIEWER_ACCESS.md), [HUFSAbility 화면 아틀라스](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md), [NCP 운영](docs/NCP_OPERATIONS_2026.md), [인적·운영 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)를 현행 이슈와 대조했다. 이전 15개 이슈의 소제목만으로 누락되던 **A09 개설 전망, A10 경험·보관함, A02 선택기, A03 26/6열 ingest, A06 제품 AI 4종, A12 제작 자산, A15 정확도·성능, A16 팀 인계, A19 라이선스**의 구체적인 미수락 항목을 담당 정본 이슈에 체크리스트로 추가했다. 추가 이슈 생성 없이 **15건 OPEN** 유지.
 
@@ -109,5 +120,5 @@ README·Architecture·Proposal·STATUS·PR 운영/역할/진척/인적 인수·�
 | A18 일정·최종 발표·승인 | #89, #132, #61 | 실제 결재·공모전 제출은 사람이 실행 |
 | A19 OSS 라이선스·부속/원본 권리 | #89, #8, #46 | release artifact/SBOM/NOTICE/비밀 노출 검사 |
 
-**이슈만으로 가능한 것과 불가능한 것:** 15개 이슈는 **작업 큐·담당자·미완료 수락 기준의 단일 진입점**이다. 하지만 구현 시 [AGENTS](AGENTS.md)·담당 [Architecture](Architecture.md) 조항과 **현재 코드·테스트**를 읽어야 한다. 이슈를 체크했다고 계약/CI/권리·실환경 증거가 자동 충족되지 않는다. P2 확장(전교생·학교 DB/공식 SSO·앱스토어/푸시·완전 오프라인·고급 시간표 최적화)과 선택형 `.ics`·RulePack 작성 보조는 **명시 승인 전 현재 필수 구현으로 간주하지 않는다**. 단위 코드 완료·운영 배포·개인정보/출처·독립 인적 수락을 혼동하지 않고 #46/#61/#89 `RELEASE_BLOCKED`를 유지한다.
+**이슈만으로 가능한 것과 불가능한 것:** 아래 15개는 **2026-11-04 당시** 작업 큐·담당자·수락 기준이며, 현재 미완료 인수는 **#221/#222와 여전히 OPEN인 11개 정본 이슈**에서 관리한다. 하지만 구현 시 [AGENTS](AGENTS.md)·담당 [Architecture](Architecture.md) 조항과 **현재 코드·테스트**를 읽어야 한다. 이슈를 체크했다고 계약/CI/권리·실환경 증거가 자동 충족되지 않는다. P2 확장(전교생·학교 DB/공식 SSO·앱스토어/푸시·완전 오프라인·고급 시간표 최적화)과 선택형 `.ics`·RulePack 작성 보조는 **명시 승인 전 현재 필수 구현으로 간주하지 않는다**. 단위 코드 완료·운영 배포·개인정보/출처·독립 인적 수락을 혼동하지 않고 #46/#221/#222/#89 `RELEASE_BLOCKED`를 유지한다.
 
