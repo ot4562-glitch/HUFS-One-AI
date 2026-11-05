@@ -1,4 +1,6 @@
-# EMPTY_DEMO 실행 가이드 — #132
+# EMPTY_DEMO 실행 가이드 — #132(코드 납품 완료)
+
+> **2026-11-05 분리:** #132의 코드/합성 테스트 납품은 CLOSED. 실제 비작성자 360px/스크린리더·실계정/영속 DB 인수는 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)과 [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222)에서 OPEN으로 추적한다. 모든 단계의 진입점은 [제품 활성화 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md), 현 상태는 [STATUS](../STATUS.md).
 
 ## 범위와 시작
 
