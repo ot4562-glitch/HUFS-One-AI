@@ -17,6 +17,8 @@ WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/task00-contr
 PINNED_CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 PINNED_SETUP_NODE = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 SAFE_SPARSE_PATHS = frozenset({
+    "/tools/evaluation/", "/docs/INDEPENDENT_EVALUATION.md",
+    "/tests/fixtures/academic-133.ts",
     "/package.json", "/package-lock.json", "/tsconfig.json", "/vitest.config.ts",
     "/packages/contracts/", "/packages/ai/src/", "/packages/fixtures/synthetic/",
     "/packages/fixtures/negative/", "/packages/core/", "/apps/api/",
@@ -60,6 +62,12 @@ REVISION_CLAIMS_PG_PROOF = (
     "HUFS_PG_REVISION_CLAIMS_LIVE: '1'",
     "HUFS_PG_REVISION_CLAIMS_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_revision_claims_test",
     "tests/api/pg-revision-claims-live-opt-in.test.ts",
+)
+SYNTHETIC_CLUB_PG_PROOF = (
+    "createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_synthetic_club_test",
+    "HUFS_PG_SYNTHETIC_CLUB_LIVE: '1'",
+    "HUFS_PG_SYNTHETIC_CLUB_URL: postgres://hufs_local_admin:synthetic-ci-only@127.0.0.1:15439/hufs_one_synthetic_club_test",
+    "tests/api/synthetic-club-live-opt-in.test.ts",
 )
 DEMO_PROFILE_PG_PROOF = (
     "createdb -h 127.0.0.1 -p 15439 -U hufs_local_admin hufs_one_demo_profile_test",
@@ -166,6 +174,8 @@ def audit_ci_boundary(text: str) -> list[str]:
     if len(sparse) != 3:
         issues.append("both jobs need sparse checkout")
     else:
+        if any("/tests/fixtures/academic-133.ts" not in paths for paths in sparse):
+            issues.append("academic scope regression fixture must be present in every test job")
         for index, paths in enumerate(sparse):
             if not paths or len(paths) != len(set(paths)):
                 issues.append(f"checkout {index} has empty/duplicate entries")
@@ -212,6 +222,11 @@ def audit_ci_boundary(text: str) -> list[str]:
     for command in ("npm run test:dependency-evidence", "npm run test:api-contracts"):
         if command not in text:
             issues.append("offline evidence regression tests must execute in CI")
+    if not sparse or not {"/tools/evaluation/", "/docs/INDEPENDENT_EVALUATION.md"}.issubset(sparse[0]):
+        issues.append("independent evaluation CLI source and export instructions must be checked out")
+    for command in ("npm run build:evaluation", "npm run test:evaluation:cli", "npm run eval:review -- fixtures --action check"):
+        if command not in text:
+            issues.append("independent evaluation compile, CLI and fixture checks must execute")
     if "node tools/release_entrypoint_gate.mjs" not in text:
         issues.append("actual offline anonymous HTTP probe must execute in CI")
     if "npm run build:web" not in text:
@@ -231,6 +246,8 @@ def audit_ci_boundary(text: str) -> list[str]:
         issues.append("the PostgreSQL job must compile API before both live compiled consumers")
     if any(proof not in text for proof in REVISION_CLAIMS_PG_PROOF):
         issues.append("revision-claims SQL proof must execute on a distinct loopback PostgreSQL 18 server")
+    if any(proof not in text for proof in SYNTHETIC_CLUB_PG_PROOF):
+        issues.append("club publication SQL proof must execute against its isolated real PostgreSQL 18 database")
     if any(proof not in text for proof in DEMO_PROFILE_PG_PROOF):
         issues.append("EMPTY_DEMO SQL proof must execute against the isolated real PostgreSQL 18 server")
     if any(proof not in text for proof in RECOVERY_PG_PROOF):
@@ -364,6 +381,26 @@ class WorkflowBoundaryTests(unittest.TestCase):
             with self.subTest(proof=proof):
                 self.assertIn(proof, self.policy)
                 self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_synthetic_club_sql_proof_cannot_silently_skip(self) -> None:
+        for proof in SYNTHETIC_CLUB_PG_PROOF:
+            with self.subTest(proof=proof):
+                self.assertIn(proof, self.policy)
+                self.assertTrue(audit_ci_boundary(self.policy.replace(proof, "", 1)))
+
+    def test_evaluation_commands_and_sources_cannot_be_omitted(self) -> None:
+        for token in ("npm run build:evaluation", "npm run test:evaluation:cli", "npm run eval:review -- fixtures --action check", "            /tools/evaluation/\n", "            /docs/INDEPENDENT_EVALUATION.md\n"):
+            with self.subTest(token=token):
+                self.assertIn(token, self.policy)
+                self.assertTrue(audit_ci_boundary(self.policy.replace(token, "", 1)))
+
+    def test_academic_scope_fixture_is_in_every_test_checkout(self) -> None:
+        fixture_path = "            /tests/fixtures/academic-133.ts\n"
+        self.assertEqual(self.policy.count(fixture_path), 3)
+        for job_index in range(3):
+            chunks = self.policy.split(fixture_path)
+            changed = fixture_path.join(chunks[:job_index + 1]) + fixture_path.join(chunks[job_index + 1:])
+            self.assertTrue(audit_ci_boundary(changed))
 
     def test_real_empty_demo_browser_source_cannot_be_excluded(self) -> None:
         self.assertIn("/apps/web/", sparse_checkout_lists(self.policy)[-1])

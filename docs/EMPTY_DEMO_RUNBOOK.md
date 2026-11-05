@@ -67,3 +67,30 @@ npm run test:e2e:empty-demo
 실제 PostgreSQL은 `tests/api/demo-profile-live-opt-in.test.ts`의 명시적 격리 DB 환경에서 `20261103_demo_profile.sql` 다음 `20261105_demo_profile_workspace.sql`을 적용한다. 재접속 영속성, 다른 actor, RLS, CAS/RESET 경합, 지연 쓰기 거부, 단조 증가 버전을 검증한다. CI의 선택형 PostgreSQL job이 실행한 결과만 실제 PG 증거로 인정한다. DB 환경이 없어서 건너뛴 로컬 검사를 PASS로 세지 않는다.
 
 독립 OCR 이미지 20건·시간/정정 12건과 200 추천 평가 패키지는 [INDEPENDENT_EVALUATION](INDEPENDENT_EVALUATION.md)에 연결한다. 실제 독립 사람의 라벨·스크린리더 인수·60초/발표 실측·운영 인증/DB/NCP는 별도 PENDING/NOT_RUN이며 코드 시험이 이를 대체하지 않는다.
+
+## #123 합성 관리자 → 게시 → 소유자 시연
+
+위의 동일한 API와 `--mode empty-demo` 웹 서버를 저장소 루트에서 실행한다. 별도 서버·실제 로그인·외부 AI 호출은 필요 없다. 이 절의 ADMIN은 이 로컬 합성 factory가 발급한 `SYN-EMPTY-DEMO-ADMIN` 세션에만 허용되며, 운영 ADMIN 승인이나 실제 학교의 게시 허가를 뜻하지 않는다. 서버의 `--synthetic`·127.0.0.1 제한과 production 거부는 유지된다.
+
+| 순서 | 열 주소 또는 조작 | 확인할 결과 |
+| --- | --- | --- |
+| 1 | `http://127.0.0.1:5173/api/dev/synthetic-clubs/bootstrap` 열기 | 명시적 합성 ADMIN 쿠키를 발급하고 `/clubs/admin`으로 이동한다. S01 선택 UI가 필요 없다. |
+| 2 | ID `SYN-CLUB-090`, 이름 `가상동아리 AI 탐험대`, 소개 `합성 로봇 프로젝트 시연` 입력. 분야·캠퍼스·관심·활동·모집 시각과 `AI 생성 합성 협업 그림 (090)`을 확인하고 `검토 대기 글 만들기` 누르기 | 새 글은 검토 대기다. 초기 데이터에는 이 글이 없으며 생성만으로 게시되지 않는다. |
+| 3 | 해당 글의 `승인` 누르기 | 현재 버전의 가상 승인 상태가 된다. 실제 기관 승인이나 사람이 원문을 검수했다는 증명이 아니다. |
+| 4 | `http://127.0.0.1:5173/api/dev/empty-demo/bootstrap`을 연 뒤 `http://127.0.0.1:5173/clubs`로 이동 | BETA A가 승인된 글을 읽는다. 이 세션에는 관리자 생성·수정·승인 권한이 없다. |
+| 5 | `가상동아리 AI 탐험대` 상세 열기 | 인증된 poster API가 반환한 실제 PNG와 AI 생성 합성 출처를 표시한다. 실제 지원 기능은 없다. |
+| 6 | 관리자 bootstrap을 다시 열고 해당 글의 `모집 내용 수정` → `수정 후 재검토` | 새 버전은 다시 검토 대기다. BETA로 재입장하면 글과 포스터가 숨겨진다. 다시 승인한 뒤 `승인 취소`를 눌러도 숨겨진다. |
+| 7 | `.../api/dev/empty-demo/bootstrap?slot=B`을 열고 `/clubs` 확인 | BETA B의 별도 합성 관심 fixture로 계산한다. ADMIN 권한은 부여되지 않는다. |
+
+관리자와 BETA는 같은 쿠키 이름을 쓴다. 같은 브라우저에서 bootstrap을 열면 역할이 바뀌고 전체 페이지를 다시 읽는다. 두 역할을 나란히 보려면 별도 브라우저 프로필/시크릿 창을 사용한다. 기존 탭은 복귀 시 세션을 재확인하며 이전 역할의 내용과 입력 초안을 숨긴다. 세션은 1시간이고 두 역할을 합쳐 최대 32개다. 만료 후 해당 bootstrap으로 재입장할 수 있으며, 로그아웃한 세션은 재사용할 수 없다. 새 ADMIN 경로는 role/actor query를 받지 않는다.
+
+이 절의 **동아리 추천만** 서버가 A→S01, B→S02의 기존 합성 관심 fixture를 선택한다. 원래 S01–S05 자료를 사용자의 EMPTY_DEMO 원장으로 복사하거나 연결하지 않으며, `/demo-profile`의 네 설정 변경이 이 고정 동아리 fixture를 수정하지도 않는다. 학교 실제 자료 4인이나 REVIEWER 초대·권한과는 별개다. 추천의 `asOf`는 기존 합성 동아리 corpus의 고정 시각이고, 로그인·만료의 서버 시각과 구별한다.
+
+포스터는 `packages/fixtures/synthetic/clubs/generated/manifest.json`의 등록된 asset이며, `ai-club-poster-v1.png`의 SHA-256은 `93446df5cc9a2859585e4801df7a74b7f602d71ae8084a4a51f5b563855af842`다. 공개 정적 디렉터리로 노출하지 않고 현재 승인된 글과 BETA 권한을 확인하는 API로만 제공한다. 이미지의 생성 출처는 manifest에 기록하며, 이번 시연 중 모델이 이미지를 생성하거나 유료 OCR을 실행했다고 설명하지 않는다.
+
+이 로컬 실행은 `MemorySyntheticClubDemoStore`를 사용하므로 재시작하면 추가·수정·승인이 사라진다. 영속 PostgreSQL 경로와 실제 운영 권한은 별도로 검증한다. 관리자 게시와 소유자 읽기를 조립한 회귀는 다음과 같이 실행한다.
+
+```sh
+npm test -- tests/api/synthetic-club-dev-fixture.test.ts tests/api/empty-demo-fixture.test.ts --maxWorkers=1
+```
+

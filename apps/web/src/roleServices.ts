@@ -2,6 +2,7 @@ import type {HufsApiClient} from './integrations/index.js';
 import type {AppServices} from './App.js';
 import type {SandboxPort} from './features/sandbox/useSandbox.js';
 import {OwnerSessionController} from './app/owner-session-controller.js';
+import {createOwnerClubPort,createClubModerationPort} from './features/clubs/ownerClubPort.js';
 
 type RoleApi = Pick<HufsApiClient,
   'getSession' | 'loadReviewerCapabilities' | 'readReviewerActions' | 'saveReviewerAction'
@@ -11,6 +12,7 @@ type RoleApi = Pick<HufsApiClient,
 export type SessionRole =
   | {readonly role: 'REVIEWER'; readonly sandbox: SandboxPort | null}
   | {readonly role: 'BETA'}
+  | {readonly role: 'ADMIN'}
   | {readonly role: 'UNKNOWN'};
 
 export async function resolveSessionRole(api: RoleApi): Promise<SessionRole> {
@@ -21,6 +23,7 @@ export async function resolveSessionRole(api: RoleApi): Promise<SessionRole> {
     return {role: 'UNKNOWN'};
   }
   if (role === 'BETA') return {role: 'BETA'};
+  if (role === 'ADMIN') return {role: 'ADMIN'};
   if (role !== 'REVIEWER') return {role: 'UNKNOWN'};
   try {
     const caps = await api.loadReviewerCapabilities();
@@ -42,11 +45,13 @@ export async function resolveSessionRole(api: RoleApi): Promise<SessionRole> {
  */
 export function roleServices(api: RoleApi, session: SessionRole): Partial<AppServices> {
   if (session.role === 'REVIEWER') return session.sandbox ? {sandbox: session.sandbox} : {};
+  if (session.role === 'ADMIN') return {clubModeration:createClubModerationPort(api)};
   if (session.role !== 'BETA') return {};
   // Create only for a verified BETA. This owner scope is independent from
   // the public DemoController; it rechecks actor/session before and after reads/writes.
   const ownerSession = new OwnerSessionController(api);
   return {
+    ownerClubs:createOwnerClubPort(api.owner,ownerSession),
     overlay: {
       get: (ctx, signal) => api.getDemoOverlay(ctx, signal),
       set: (ctx, change, signal) => api.setDemoOverlay(ctx, change, signal),
