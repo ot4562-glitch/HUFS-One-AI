@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "basis": {
-    "repository": "minseong-hufs/HUFS-One-AI",
+    "repository": "ot4562-glitch/HUFS-One-AI",
     "baseCommit": "bb0b98c895f370fde6a95517a9a640dab936ab26",
     "upstreamCommit": "ff9327791bf046512d6e61c5b6862eb098fa5b34",
     "designSection": "Architecture.md A13.2",
@@ -2793,6 +2793,122 @@
       ],
       "consumerRefs": [],
       "notes": "Private owner selection of existing independently reviewed provider inputs. No automatic model call, gold or skill approval."
+    },
+    {
+      "id": "get-api-synthetic-clubs-id-poster",
+      "surface": "synthetic-clubs",
+      "method": "GET",
+      "path": "/api/synthetic/clubs/:id/poster",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubPosterDescriptorSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-read.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-admin-synthetic-clubs",
+      "surface": "synthetic-clubs",
+      "method": "GET",
+      "path": "/api/admin/synthetic/clubs",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubAdminListResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-admin.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "post-api-admin-synthetic-clubs",
+      "surface": "synthetic-clubs",
+      "method": "POST",
+      "path": "/api/admin/synthetic/clubs",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubCreateSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubWriteResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-admin.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "patch-api-admin-synthetic-clubs-id",
+      "surface": "synthetic-clubs",
+      "method": "PATCH",
+      "path": "/api/admin/synthetic/clubs/:id",
+      "primaryIssue": 123,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubEditSchema"
+          },
+          {
+            "path": "packages/contracts/src/self/synthetic-clubs.ts",
+            "symbol": "SyntheticClubWriteResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/synthetic-clubs-admin.test.ts"
+      ],
+      "consumerRefs": []
+    },
+    {
+      "id": "put-api-demo-profile-workspace",
+      "surface": "demo-profile",
+      "method": "PUT",
+      "path": "/api/demo-profile/workspace",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileWorkspaceSaveSchema"
+          },
+          {
+            "path": "packages/contracts/src/local-accounts/demo-profile.ts",
+            "symbol": "DemoProfileResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/demo-profile-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
     }
   ],
   "designContracts": [

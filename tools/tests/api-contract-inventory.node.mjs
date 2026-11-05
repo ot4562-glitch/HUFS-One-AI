@@ -377,3 +377,14 @@ test('tracked but absent test and consumer references cannot count as present ev
   const report=audit(root,1);
   assert.ok(codes(report).includes('REFERENCE_FILE_UNAVAILABLE'));
 });
+
+test('current-state-only documentation can omit historical issue and A13.2 tables without weakening contract mappings',t=>{
+  const {root}=fixture(t);
+  write(root,'STATUS.md','# Current implementation\n\nActive owners: #253 and #257.\n');
+  write(root,'Architecture.md','## A13. Current runtime contracts\n\n## A17. Current task provenance\n');
+  const report=audit(root);
+  assert.equal(report.validationStatus,'PASS');
+  assert.equal(report.routes[0].status,'INTEGRATED');
+  assert.equal(report.tasks.length,19);
+  assert.equal(report.runtimeEvidence,'NOT_RUN');
+});
