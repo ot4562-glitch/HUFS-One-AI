@@ -1,5 +1,5 @@
 import type {MouseEvent, ReactNode} from 'react';
-import {TABS, activeTab} from './router.js';
+import {TABS, activeTab, inAppHref} from './router.js';
 import {MenuTree} from './MenuTree.js';
 
 interface Props {
@@ -20,7 +20,7 @@ export function InAppLink({to, navigate, children, className, current}: {
     e.preventDefault();
     navigate(to);
   };
-  return <a href={to} className={className} aria-current={current ? 'page' : undefined} onClick={onClick}>{children}</a>;
+  return <a href={inAppHref(to)} className={className} aria-current={current ? 'page' : undefined} onClick={onClick}>{children}</a>;
 }
 
 export function AppShell({path, navigate, transportLabel, selector, status, children}: Props) {

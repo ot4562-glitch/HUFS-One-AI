@@ -1,4 +1,5 @@
 import {
+  AcademicDegreePathVNextSchema, type AcademicDegreePathVNext,
   isConsistentMajorWhatIfDelta, OwnerMajorWhatIfScenarioSchema,
   type MajorWhatIfDeltaRow, type MajorWhatIfRequirementProgress, type OwnerMajorWhatIfRequest,
 } from '@hufs-one/contracts';
@@ -27,10 +28,20 @@ import {assertId, type LedgerRequirement} from './ledger.js';
  * Pure: the caller supplies asOf. No clock, network, or storage.
  */
 
-export const MAJOR_WHAT_IF_CORE_VERSION = 'hufs-major-what-if-1';
+export const MAJOR_WHAT_IF_CORE_VERSION = 'hufs-major-what-if-2';
 
 export type WhatIfScenario = OwnerMajorWhatIfRequest['scenario'];
-export type DegreePath = 'DOUBLE_MAJOR'|'MAJOR_DEEPENING'|'MAJOR_DEEPENING_MINOR';
+export type DegreePath = AcademicDegreePathVNext;
+/** Input compatibility only; never emitted into the current shared contract. */
+type LegacyDegreePath = 'MAJOR_DEEPENING'|'MAJOR_DEEPENING_MINOR';
+function canonicalDegreePath(value:unknown,programId:string):DegreePath {
+  // Exact, finite aliases: unknown values cannot silently become a degree path.
+  if(value==='MAJOR_DEEPENING')return 'ADVANCED_SINGLE';
+  if(value==='MAJOR_DEEPENING_MINOR')return 'ADVANCED_PLUS_MINOR';
+  const parsed=AcademicDegreePathVNextSchema.safeParse(value);
+  if(!parsed.success)throw new TypeError(`Primary pack ${programId} needs a supported degree path`);
+  return parsed.data;
+}
 export type SecondaryRole = 'DOUBLE_MAJOR'|'MINOR';
 
 /** The programs a student is enrolled in. At most one second program: a double major or a minor. */
@@ -41,7 +52,7 @@ export interface ProgramEnrollment {
 
 /** One approved (or not yet approved) pack in the caller's catalog for this student's cohort. */
 export type ProgramOffer =
-  | {role:'PRIMARY_MAJOR'; programId:string; degreePath:DegreePath; pack:MajorRulePack}
+  | {role:'PRIMARY_MAJOR'; programId:string; degreePath:DegreePath|LegacyDegreePath; pack:MajorRulePack}
   | {role:SecondaryRole; programId:string; pack:MajorRulePack & {overlapRule?:OverlapRule}};
 
 export interface MajorWhatIfRequest {
@@ -82,7 +93,7 @@ const MAX_REQUIREMENTS = 200;
 const MAX_DELTA_EVIDENCE = 20;
 
 const pathOf = (enrollment:ProgramEnrollment):DegreePath =>
-  !enrollment.secondary ? 'MAJOR_DEEPENING' : enrollment.secondary.role === 'DOUBLE_MAJOR' ? 'DOUBLE_MAJOR' : 'MAJOR_DEEPENING_MINOR';
+  !enrollment.secondary ? 'ADVANCED_SINGLE' : enrollment.secondary.role === 'DOUBLE_MAJOR' ? 'DOUBLE_MAJOR' : 'ADVANCED_PLUS_MINOR';
 
 function checkEnrollment(enrollment:ProgramEnrollment, label:string):void {
   assertId(enrollment.primaryProgramId, `${label} primaryProgramId`);
@@ -132,7 +143,7 @@ interface Resolved {
 function resolve(enrollment:ProgramEnrollment, programs:readonly ProgramOffer[]):Resolved {
   const path = pathOf(enrollment);
   const primaries = programs.filter((offer):offer is Extract<ProgramOffer, {role:'PRIMARY_MAJOR'}> =>
-    offer.role === 'PRIMARY_MAJOR' && offer.programId === enrollment.primaryProgramId && offer.degreePath === path);
+    offer.role === 'PRIMARY_MAJOR' && offer.programId === enrollment.primaryProgramId && canonicalDegreePath(offer.degreePath,offer.programId) === path);
   const second = enrollment.secondary;
   const secondaries = second ? programs.filter((offer):offer is Extract<ProgramOffer, {role:SecondaryRole}> =>
     offer.role === second.role && offer.programId === second.programId) : [];
@@ -155,10 +166,9 @@ function checkCatalog(programs:readonly ProgramOffer[]):void {
       throw new TypeError('program role must be PRIMARY_MAJOR, DOUBLE_MAJOR or MINOR');
     }
     assertId(offer.programId, 'programId');
-    if (offer.role === 'PRIMARY_MAJOR' && !['DOUBLE_MAJOR', 'MAJOR_DEEPENING', 'MAJOR_DEEPENING_MINOR'].includes(offer.degreePath)) {
-      throw new TypeError(`${offer.programId} primary pack needs a degree path`);
-    }
-    const key = JSON.stringify([offer.role, offer.programId, offer.role === 'PRIMARY_MAJOR' ? offer.degreePath : null]);
+    const degreePath=offer.role==='PRIMARY_MAJOR'?canonicalDegreePath(offer.degreePath,offer.programId):null;
+    // Canonical and legacy spellings of the same offer must not create two candidates.
+    const key = JSON.stringify([offer.role, offer.programId, degreePath]);
     if (keys.has(key)) throw new TypeError(`the catalog lists ${offer.role} ${offer.programId} more than once`);
     keys.add(key);
     assertId(offer.pack.rulePackVersion, `${offer.programId} rulePackVersion`);

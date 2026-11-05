@@ -5,7 +5,10 @@ import {BlockList,isIP} from 'node:net';
 const globalV6=new BlockList(),specialV6=new BlockList();
 globalV6.addSubnet('2000::',3,'ipv6');
 for(const [network,prefix] of [
-  ['2001::',32],      // Teredo
+  // IANA IPv6 Special-Purpose Address Registry: IETF Protocol Assignments.
+  // Deny 2001::/23 as a whole (including PCP/TURN anycast and ORCHID),
+  // rather than attempting to enumerate only a few well-known subranges.
+  ['2001::',23],      // IETF protocol assignments (fail closed)
   ['2001:2::',48],    // Benchmarking (RFC 5180)
   ['2001:db8::',32],  // Documentation (RFC 3849)
   ['2002::',16],      // 6to4 tunnel

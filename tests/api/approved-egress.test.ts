@@ -105,11 +105,14 @@ describe('TASK-19 synthetic SSRF / HTTPS egress policy (NO real network)',()=>{
     for(const ip of [
       '2001:0db8::1','2001:0DB8:0:0:0:0:0:1','2001:db8::192.0.2.1',
       '2001::1','2001:00::1','2001:000::1','2001:0000:0:0:0:0:0:1',
+      '2001:1::1','2001:1::2', // PCP / TURN anycast
+      '2001:10::1','2001:1f::ffff','2001:20::1', // ORCHID / ORCHIDv2
+      '2001:1ff:ffff:ffff:ffff:ffff:ffff:ffff', // /23 upper boundary
       '2001:2::1','2001:0002:0000:ffff:ffff:ffff:ffff:ffff',
       '2002:0000::1','3fff::1','3fff:0fff:ffff:ffff:ffff:ffff:ffff:ffff',
       '2001:4860::8888%eth0',
     ])expect(isPublicIngestionIp(ip),ip).toBe(false);
-    for(const ip of ['2001:4860:4860::8888','2001:4860:4860:0:0:0:0:8888','3fff:1000::1'])
+    for(const ip of ['2001:200::1','2001:4860:4860::8888','2001:4860:4860:0:0:0:0:8888','3fff:1000::1'])
       expect(isPublicIngestionIp(ip),ip).toBe(true);
   });
   it('does not reject entire public IPv4 /16 blocks around special-use /24 ranges',()=>{
@@ -119,7 +122,7 @@ describe('TASK-19 synthetic SSRF / HTTPS egress policy (NO real network)',()=>{
       expect(isPublicIngestionIp(ip),ip).toBe(false);
   });
   it('never connects when any DNS answer disguises a denied IPv6 prefix',async()=>{
-    for(const ip of ['2001:0db8::1','2001:00::1','2001:0002::1','3fff::1']){
+    for(const ip of ['2001:0db8::1','2001:00::1','2001:0002::1','2001:1::1','2001:1::2','2001:10::1','2001:20::1','3fff::1']){
       const x=transport([[GOOD,ip],[GOOD,ip]]);
       await expect(x.request(new URL(SOURCE_URL),REQUEST)).rejects.toThrow(/policy denied/);
       expect(x.calls).toHaveLength(0);
