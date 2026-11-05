@@ -1,7 +1,8 @@
 import type {Opportunity} from '@hufs-one/contracts';
 import {byCodeUnit} from '../normalization/dedupe.js';
 import type {RecommendationProfile} from './evaluate.js';
-import {composeFeed, type ComposeFeedOptions} from './feed.js';
+import {composeFeed, featureGroupKey, type ComposeFeedOptions} from './feed.js';
+import type {RankedOpportunity} from './rank.js';
 
 /**
  * A15.1 evaluation helpers. Pure and deterministic: they measure a ranking against human labels,
@@ -83,7 +84,15 @@ export function eligibilityAgreement(
 }
 
 export interface EvalProfile {profileId:string; profile:RecommendationProfile; labels:LabelSet}
-export interface RankerScore {p3:PrecisionAtK; ndcg3:number; top3:string[]}
+/**
+ * Label-free quality of one arm's top 3 (#10: 다양성·UNKNOWN). `distinctGroups` counts kind+organizer groups
+ * (the same key the feed caps), `distinctTopics` counts topic codes, `unknownEligibility` counts slots whose
+ * code eligibility is UNKNOWN. These never use human labels, so they are comparable even before gold exists.
+ */
+export interface Top3Quality {slots:number; distinctGroups:number; distinctTopics:number; unknownEligibility:number}
+export interface RankerScore {p3:PrecisionAtK; ndcg3:number; top3:string[]; top3Quality:Top3Quality}
+/** Pooled over profiles as exact fractions of top-3 slots, so profiles with < 3 candidates are not over-weighted. */
+export interface Top3QualitySummary {groupDiversity:Fraction; unknownEligibilityShare:Fraction; meanDistinctTopics:number}
 export interface ProfileComparison {profileId:string; latestFirst:RankerScore; recommended:RankerScore}
 /** Both averages are reported because they differ when a profile has fewer than k candidates. */
 export interface MeanP3 {
@@ -96,6 +105,7 @@ export interface RankerComparison {
   profiles:ProfileComparison[];
   meanP3:{latestFirst:MeanP3; recommended:MeanP3};
   meanNdcg3:{latestFirst:number; recommended:number};
+  top3Quality:{latestFirst:Top3QualitySummary; recommended:Top3QualitySummary};
   /** recommended − latestFirst in percentage points of the **macro** mean P@3 (A15.1 goal: +20%p). */
   deltaP3Points:number;
   /** Same difference on the micro (pooled) mean, for transparency. */
@@ -116,14 +126,25 @@ export function compareRankers(
     const t = raw === undefined ? NaN : Date.parse(raw);
     return Number.isFinite(t) && t <= Date.parse(options.asOf) ? t : Number.NEGATIVE_INFINITY;
   };
-  const score = (ids:string[], labels:LabelSet):RankerScore => ({p3:precisionAtK(ids, labels, 3), ndcg3:ndcgAtK(ids, labels, 3), top3:ids.slice(0, 3)});
+  const score = (items:readonly RankedOpportunity[], labels:LabelSet):RankerScore => {
+    const ids = items.map(r => r.opportunity.id);
+    const top = items.slice(0, 3);
+    return {
+      p3:precisionAtK(ids, labels, 3), ndcg3:ndcgAtK(ids, labels, 3), top3:ids.slice(0, 3),
+      top3Quality:{
+        slots:top.length,
+        distinctGroups:new Set(top.map(r => featureGroupKey(r.opportunity))).size,
+        distinctTopics:new Set(top.flatMap(r => r.opportunity.topicCodes)).size,
+        unknownEligibility:top.filter(r => r.evaluation.eligibility === 'UNKNOWN').length,
+      },
+    };
+  };
   let version = '';
   const rows = [...profiles].sort((a, b) => byCodeUnit(a.profileId, b.profileId)).map(({profileId, profile, labels}) => {
     const feed = composeFeed(profile, opportunities, options);
     version = feed.rankConfigVersion;
-    const visible = feed.all.map(r => r.opportunity);
-    const latest = [...visible].sort((a, b) => (at(b) - at(a)) || byCodeUnit(a.id, b.id)).map(o => o.id);
-    return {profileId, latestFirst:score(latest, labels), recommended:score(visible.map(o => o.id), labels)};
+    const latest = [...feed.all].sort((a, b) => (at(b.opportunity) - at(a.opportunity)) || byCodeUnit(a.opportunity.id, b.opportunity.id));
+    return {profileId, latestFirst:score(latest, labels), recommended:score(feed.all, labels)};
   });
   const avg = (xs:number[]) => xs.length === 0 ? 0 : Math.round(xs.reduce((s, x) => s + x, 0) / xs.length * 1e6) / 1e6;
   const mean = (pick:(r:ProfileComparison) => PrecisionAtK):MeanP3 => ({
@@ -132,10 +153,19 @@ export function compareRankers(
   });
   const points = (a:number, b:number) => Math.round((b - a) * 1e4) / 100;
   const meanP3 = {latestFirst:mean(r => r.latestFirst.p3), recommended:mean(r => r.recommended.p3)};
+  const quality = (pick:(r:ProfileComparison) => Top3Quality):Top3QualitySummary => {
+    const q = rows.map(pick), slots = q.reduce((s, x) => s + x.slots, 0);
+    return {
+      groupDiversity:frac(q.reduce((s, x) => s + x.distinctGroups, 0), slots),
+      unknownEligibilityShare:frac(q.reduce((s, x) => s + x.unknownEligibility, 0), slots),
+      meanDistinctTopics:avg(q.map(x => x.distinctTopics)),
+    };
+  };
   return {
     profiles:rows,
     meanP3,
     meanNdcg3:{latestFirst:avg(rows.map(r => r.latestFirst.ndcg3)), recommended:avg(rows.map(r => r.recommended.ndcg3))},
+    top3Quality:{latestFirst:quality(r => r.latestFirst.top3Quality), recommended:quality(r => r.recommended.top3Quality)},
     deltaP3Points:points(meanP3.latestFirst.macro, meanP3.recommended.macro),
     deltaP3PointsMicro:points(meanP3.latestFirst.micro.value, meanP3.recommended.micro.value),
     rankConfigVersion:version,

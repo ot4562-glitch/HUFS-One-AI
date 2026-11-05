@@ -112,3 +112,36 @@ describe('A15.1 A (latest first) vs B (recommended) on the same visible candidat
     }
   });
 });
+
+describe('#10 top-3 diversity and UNKNOWN per arm (label-free, hand-calculated)', () => {
+  // Three newest items share one organizer group; two are CONFLICT sources (code eligibility UNKNOWN).
+  const same = (id:string, quality:Opportunity['dataQuality']) => OpportunitySchema.parse({...opp(id, ['MEDIA_CONTENT']), organization:'시연가상기관 SAME', dataQuality:quality});
+  const opportunities = [same('N1', 'CONFLICT'), same('N2', 'COMPLETE'), same('N3', 'CONFLICT'),
+    opp('D1', ['DATA_ANALYTICS']), opp('D2', ['AI_ML']), opp('D3', ['DATA_ANALYTICS', 'SOFTWARE_DEV'])];
+  const published = {'SNAP-N1':'2026-11-19T00:00:00.000Z', 'SNAP-N2':'2026-11-18T00:00:00.000Z', 'SNAP-N3':'2026-11-17T00:00:00.000Z',
+    'SNAP-D1':'2026-11-01T00:00:00.000Z', 'SNAP-D2':'2026-10-30T00:00:00.000Z', 'SNAP-D3':'2026-10-29T00:00:00.000Z'};
+  const profiles = [{profileId:'SYN-Q1', profile:profile({desiredJobTopics:['DATA_ANALYTICS'], interestTopics:['AI_ML', 'SOFTWARE_DEV']}), labels:{}}];
+  const r = compareRankers(profiles, opportunities, {asOf:ASOF, publishedAtBySnapshotId:published});
+
+  it('latest-first top 3 = one group, one topic, two UNKNOWN slots', () => {
+    expect(r.profiles[0]?.latestFirst.top3).toEqual(['N1', 'N2', 'N3']);
+    expect(r.profiles[0]?.latestFirst.top3Quality).toEqual({slots:3, distinctGroups:1, distinctTopics:1, unknownEligibility:2});
+    expect(r.top3Quality.latestFirst).toEqual({
+      groupDiversity:{num:1, den:3, value:0.333333}, unknownEligibilityShare:{num:2, den:3, value:0.666667}, meanDistinctTopics:1,
+    });
+  });
+
+  it('recommended top 3 = three groups, three topics, no UNKNOWN slot', () => {
+    expect([...r.profiles[0]!.recommended.top3].sort()).toEqual(['D1', 'D2', 'D3']);
+    expect(r.profiles[0]?.recommended.top3Quality).toEqual({slots:3, distinctGroups:3, distinctTopics:3, unknownEligibility:0});
+    expect(r.top3Quality.recommended.groupDiversity).toEqual({num:3, den:3, value:1});
+    expect(r.top3Quality.recommended.unknownEligibilityShare).toEqual({num:0, den:3, value:0});
+  });
+
+  it('pools slots, so a profile with fewer than 3 candidates is not over-weighted', () => {
+    const two = compareRankers([{profileId:'SYN-Q2', profile:profile({}), labels:{}}], [opp('A', ['HR_ORG']), same('B', 'CONFLICT')], {asOf:ASOF});
+    expect(two.profiles[0]?.recommended.top3Quality.slots).toBe(2);
+    expect(two.top3Quality.recommended.unknownEligibilityShare).toEqual({num:1, den:2, value:0.5});
+    expect(compareRankers([], opportunities, {asOf:ASOF}).top3Quality.recommended.groupDiversity).toEqual({num:0, den:0, value:0});
+  });
+});
