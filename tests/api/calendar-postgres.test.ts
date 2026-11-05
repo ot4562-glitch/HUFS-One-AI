@@ -5,6 +5,7 @@ import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-pos
 import type {CalendarReadRequest} from '../../apps/api/src/modules/calendar.js';
 import {computeAuthorizedCalendar,computeAuthorizedSections} from '../../apps/api/src/modules/calendar.js';
 import snapshotFixture from '../../packages/fixtures/synthetic/demo-snapshot.json';
+import {syntheticAcademicPack} from '../fixtures/academic-133.js';
 
 const now='2026-11-01T00:00:00.000Z';
 const request:CalendarReadRequest={actorId:'SYN-ACTOR',now,context:DemoContextSchema.parse({
@@ -55,7 +56,70 @@ function fakeDatabase(){
   return {grant,projection,snapshotRow,revisions,heads,rights,conflicts,paragraphs,log,pool,get releases(){return releases;},fail:()=>{fail=true;}};
 }
 
+function academicBinding(db:ReturnType<typeof fakeDatabase>){
+  const pack=syntheticAcademicPack();
+  const binding={pack,inventory:{sourceDocumentSha256:pack.sourceDocumentSha256,
+    clauses:pack.clauseInventory.map(({clauseId,kind,sourceSpanRef})=>({clauseId,kind,sourceSpanRef}))},
+    sourceRevisions:[{documentId:'PRIMARY',revisionId:'REV1'}]};
+  db.grant.allowed_sections=['FEED','NOTICES','ACADEMICS'];
+  db.revisions[0]!.original_sha256=pack.sourceDocumentSha256;
+  const input=db.projection.input_json as Record<string,unknown>;
+  input.academicNoticeRules=binding;
+  input.noticeStudent={openRequirementIds:['SYN-TOTAL'],courseIds:[],interestTopics:[]};
+  input.notices=[{id:'SYN-NOTICE',sourceSnapshotId:'REV1',title:'Synthetic requirement notice',
+    issuer:'Synthetic department',category:'ACADEMIC',verificationState:'VERIFIED',
+    requirementRefs:['SYN-TOTAL'],evidenceRefs:['SYN-EVIDENCE']}];
+  const snapshot=db.snapshotRow.snapshot_json as Record<string,unknown>;
+  snapshot.academics={state:'READY',rulePackVersion:pack.version,asOf:now,
+    earnedCreditUnits:0,inProgressCreditUnits:0,plannedCreditUnits:0,
+    deficits:[{requirementId:'SYN-TOTAL',state:'NEEDS_REVIEW',evidenceRefs:[]}],caveats:[]};
+  return {binding,input,snapshot};
+}
+
 describe('PostgresCalendarInputSource: server-reviewed raw inputs and current grants/rights',()=>{
+  it('binds a valid academic notice to the current approved pack without returning private approval material (#225)',async()=>{
+    const db=fakeDatabase();academicBinding(db);
+    const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(bundle).not.toBeNull();
+    expect(bundle!.notices[0]!.verificationState).toBe('VERIFIED');
+    expect(computeAuthorizedSections(bundle!,request).notices.pinnedIds).toEqual(['SYN-NOTICE']);
+    expect(bundle).not.toHaveProperty('academicNoticeRules');
+  });
+  it.each([
+    'unknown-id','duplicate-id','wrong-pack-version','draft','future-approval','expired-pack',
+    'wrong-original-hash','incomplete-inventory','duplicate-document','future-source',
+    'retracted-source','changed-head','revoked-rights','unshared','self-approved',
+  ])('holds academic notice on %s instead of inventing RulePack approval (#225)',async failure=>{
+    const db=fakeDatabase(),h=academicBinding(db);
+    if(failure==='unknown-id')(h.input.notices as Array<{requirementRefs:string[]}>)[0]!.requirementRefs=['REQ-EXAMM'];
+    if(failure==='duplicate-id')(h.input.notices as Array<{requirementRefs:string[]}>)[0]!.requirementRefs=['SYN-TOTAL','SYN-TOTAL'];
+    if(failure==='wrong-pack-version')h.binding.pack.version='SYN-WRONG-PACK';
+    if(failure==='draft')h.binding.pack.state='DRAFT';
+    if(failure==='future-approval')h.binding.pack.approvedAt='2026-11-02T00:00:00.000Z';
+    if(failure==='expired-pack')h.binding.pack.effectiveUntil=now;
+    if(failure==='wrong-original-hash')db.revisions[0]!.original_sha256='b'.repeat(64);
+    if(failure==='incomplete-inventory')h.binding.inventory.clauses=[];
+    if(failure==='duplicate-document')h.binding.sourceRevisions.push({...h.binding.sourceRevisions[0]!});
+    if(failure==='future-source')db.revisions[0]!.last_verified_at='2026-11-02T00:00:00.000Z';
+    if(failure==='retracted-source')db.revisions[0]!.status='RETRACTED';
+    if(failure==='changed-head'){
+      db.revisions.push({...db.revisions[0]!,revision_id:'SYN-CORRECTED-HEAD',supersedes:'REV1'});
+      db.heads[0]!.revision_id='SYN-CORRECTED-HEAD';
+    }
+    if(failure==='revoked-rights')db.rights[0]!.revoked_at=now;
+    if(failure==='unshared')db.grant.allowed_sections=['FEED','NOTICES'];
+    if(failure==='self-approved')h.binding.pack.approvedBy='SYN-ACTOR';
+    const bundle=await new PostgresCalendarInputSource(db.pool).readAuthorizedInputs(request);
+    expect(bundle).not.toBeNull();
+    expect(bundle!.notices[0]!.verificationState).toBe('NEEDS_REVIEW');
+  });
+  it('invalidates an already-read authorization receipt after academic rule approval changes (#225)',async()=>{
+    const db=fakeDatabase(),h=academicBinding(db),reader=new PostgresCalendarInputSource(db.pool);
+    const first=await reader.readAuthorizedInputs(request);expect(first).not.toBeNull();
+    expect(await reader.revalidateAuthorization(request,first!,now)).toBe(true);
+    h.binding.pack.version='SYN-CHANGED-PACK';
+    expect(await reader.revalidateAuthorization(request,first!,now)).toBe(false);
+  });
   it.each(['SYN-REQ','REQ-EXAMM'])('holds requirement-linked notice %s without a current approved RulePack (#225)',async ref=>{
     const db=fakeDatabase(),input=db.projection.input_json as Record<string,unknown>;
     input.notices=[{id:'SYN-NOTICE',sourceSnapshotId:'REV1',title:'Synthetic requirement notice',
