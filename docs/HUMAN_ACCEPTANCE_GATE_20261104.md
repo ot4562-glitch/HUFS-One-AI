@@ -1,73 +1,48 @@
-# HUFS One AI | 사람 승인·현장 검증 인수서
+# HUFS One AI — 실제 환경·사람·권리 수락 체크리스트
 
-**기준:** 2026-11-05 KST, 공모전 프로젝트. **상태: RELEASE_BLOCKED**.  
-**성격:** 코드/합성 CI 결과와 사람이 실제 확인해야 할 승인·운영 증빙을 분리하는 **검수 원장**.
+**현재 정본:** [#252 — 실환경·자료권리·인적 독립 검증·D03](https://github.com/minseong-hufs/HUFS-One-AI/issues/252). 필요한 코드 수정은 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에서 진행합니다. 아래 모든 체크박스는 **미수락**이며 GitHub PR/CI 통과나 이슈 종료만으로 자동 체크하지 않습니다. `RELEASE_BLOCKED/NO_GO`.
 
-**2026-11-05 최신 통합:** 본 문서의 A01–D03 미검증 수락 기준은 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)에서 단일 추적한다. 실무상 필요한 추가 코드는 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에 별도 기록한다. 이전 #221/#222 및 #8/#19/#20/#27/#46/#89/#234~#238은 **중복 이관으로 CLOSED**, 본문 아래 이슈 번호는 과거 증거·담당 범위의 역사적 참조다. **어느 항목도 인적·실환경 PASS로 변경되지 않았으며** `RELEASE_BLOCKED/NO_GO` 유지. [단계별 실행 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md).
+## A — 개발·보안 독립 리뷰
 
-## 0. 최신 코드 통합 결과 및 사람 검증 경계
+- [ ] **A01:** 최신 통합 SHA의 API/OIDC/OTP/SQL RLS·권한·캐시/원본 비노출·철회·재기동을 비작성자 실제 리뷰어가 검증.
+- [ ] **A02:** NCP 리전/SKU·VPC/ACG/NACL·IAM·비용·무단 적용 방지/계획 SHA를 운영자가 검수.
+- [ ] **A03:** 승인된 Windows/Ubuntu/SSH fingerprint·systemd/UFW·실배포/배포 실패/last-good rollback을 별도 실환경에서 독립 검토.
+- [ ] **A04:** 정확한 패키지 SHA·소스맵/원본·키/학교 자산 차단, native/Python/font/model/생성형 이미지 라이선스·NOTICE/SBOM, 리뷰/CI와 운영 보안을 대조. `hero.webp`의 생성 도구/이용 조건도 확인.
 
-최신 병합 SHA, PR 리뷰와 CI는 [STATUS](../STATUS.md#1-github와-ci)에서 확인한다. #216의 기존 통합 이후 #217 What-if 코어와 #218 동일교과 속성 회귀가 main에 반영되었다. #219/#220 후속 작업의 실제 병합·검증 결과도 같은 정본을 따른다.
+## B — 인증·DB·원본/개인정보
 
-사용자의 직접 통합 요청에 따른 병합과 독립 사람 승인을 구분한다. 자동 COMMENT를 GitHub 비작성자 APPROVED로 기록하지 않는다. 아래 A01–A04는 이미 통합된 코드를 다시 병합하라는 항목이 아니라 **사람의 독립 검토·실제 런타임 인수**다. 이번 코드 유지관리는 실서버 생성·유료 API·공개 배포를 승인하지 않는다.
+- [ ] **B01:** Google OIDC/JWKS/PKCE/현재 외대 메일 소유·OTP·BETA/ADMIN/REVIEWER·초대 서명/만료·철회/다중탭/401·403·409·429·503을 실제 승인된 브라우저/계정으로 시험. 학교 SSO로 과장 금지.
+- [ ] **B02:** 기본 7+활성 확장 PostgreSQL role, CA TLS/FORCE RLS/세션·영수증/다중인스턴스 quota/SQL 직접 접근/백업·재시작/복구·rollback. `GET /api/admin/usage` 전용 role/function GRANT는 실제 적용·최소 권한 증거 후만 인정.
+- [ ] **B03:** 참가 5명 동의와 실제 원본 4명 구별; Forms 26열/4응답·CSV 6열/4파일의 owner/alias·중복·학점·재수강·원본 SHA/현재 동의·보관/철회/공개·외부 모델/NCP 전송 권리를 private 원장으로 확인. 실제 4인 졸업/What-if/추천·공식 RulePack 문서 판본/조항을 사람 손계산으로 대조.
+- [ ] **B04:** 제한된 full private checkout privacy 검사와 보호 원본 Git 도달/비도달 이력·clone/fork/backup, 최초 게시/외부 접근·삭제/철회 권리 독립 감사. 현재 트리 금지 경로 0과 과거 조회 가능 6경로/기존 2 FAIL은 별개이며 원문/SID를 공개하지 않는다.
 
-| 구현 범위 | 확인 가능한 코드/시험 | 별도로 필요한 실제 증거 |
-| --- | --- | --- |
-| API/인증/DB | 7개 기본 역할, 확장 역할 관리, OIDC/메일·권한/세션·일회용 PG 시험 | 실 Google/학교메일, 운영 CA/TLS/RLS, proxy client-IP·철회/복원 |
-| Source·AI·자료 반입 | 권리 영수증/불변 revision, 이미지/PDF와 결과 계약, private intake의 합성 시험 | 실제 원본별 권리/전송·worker 배포 환경·4인 결과 검수 |
-| NCP/IaC/배포 | #216으로 통합된 plan·오프라인 mock·SSH preview·rollback 코드 | 실제 SKU/요금·VPC/SSH·Ubuntu 설치·복구·청구 |
-| 개인 원본 Git 경계 | #212 이후 현재 보호 경로 제거와 후속 메타데이터 검사 | full private checkout·과거 history/clone/backup·접근/권리 검토 |
+## C — NCP·실서비스 보안(별도 사용자 지출/배포 승인 후만)
 
-## 1. 개발 독립 승인 (담당: 코드 리뷰어 / 심민성)
+- [ ] **C01:** NCP 비코드 담당자 및 최종 사용자 서면 지출 승인, 계정/IAM·리전/SKU/Ubuntu 이미지·크레딧/요금/VAT·hard stop·반납/결제 종료.
+- [ ] **C02:** 실제 VPC/ACG/NACL/UFW, 관리자 공인 IPv4/32 SSH만 허용, 공개 preview/API/PG·직접IP/IPv6/다른 host/Geo 우회 거부.
+- [ ] **C03:** SSH host key/관리키 안전 검증, 별도 키 로그인 후 root/password 차단·Ubuntu systemd/보안 patch/secret·재부팅 인수.
+- [ ] **C04:** 정확한 합성 ZIP SHA만 127.0.0.1:5173 SSH 터널로 미리보기. 실학교/학생·Google·유료 모델·공개 포트 OFF; 실제 기동·CPU/RSS/요금/재시작 기록.
+- [ ] **C05:** 잘못된 SHA/partial deploy/timeout·DB backup/restore/철회 보존·last-good rollback/키 회전·운영 종료/반납 드릴.
+- [ ] **C06:** 승인된 staging에서 실제 TLS/SNI/Edge/LB/WAF, pre-login HTML/JS/API/media/CDN 접근 거절·직접 원본 IP/IPv6/preview·한국 지역 접근 정책/host 검증. LB 앞단의 **서로 다른 두 사용자 IP가 API request.ip에 구분**되고 비신뢰 XFF 위조가 실패해야 함.
 
-- [ ] **A01 — 실서비스 API/PG/Google 인적 사후검토:** #183/#213 코드의 main 통합은 완료. 독립적으로 실제 역할 최소권한·OIDC/OTP·세션 철회·운영 재기동 및 바이트별 데이터 경계 시험 결과 검토(공개 배포 미승인).
-- [ ] **A02 — NCP 네트워크·서버 IaC 인적 사후검토:** #207/#208/#211/#214 코드 통합 및 오프라인 모의 검증 완료. 실제 NCP provider 계정/SKU·요금·ACG/NACL/host/미승인 apply 안전장치와 Terraform 계획서를 승인된 운영자가 별도 검토.
-- [ ] **A03 — Ubuntu SSH 배포·복구 인적 사후검토:** #197/#209/#215 통합/합성 CI 완료. PowerShell/Ubuntu 실제 환경에서 SHA/SSH 지문·저장/실패시 복구·직접 IP 차단·정상 이전 릴리스 복귀를 별도 증거로 검수.
-- [ ] **A04 — main 릴리스 통합 종단 검토:** 최신 통합 코드의 동일 SHA CI는 STATUS에서 확인. 실 운영 이전에 비밀/민감 자료 미포함, 운영 API/PG·proxy/HTTPS/TLS/학교 자료권리, 빌드/패키징/복구·회귀 근거 검증 및 출시 승인 필요.
+## D — 독립 품질·기기·출시
 
-## 2. 실제 인증·DB·자료 권한 (담당: 심민성 + 승인된 검수자)
+- [ ] **D01:** 추천 40공고×5가상 슬롯 **200/200** 및 포스터 **20/20**·시점/정정 **12/12**를 실제 비작성자가 판정·서명, 개별 근거/false ELIGIBLE·P@3/nDCG@3/조건 precision/recall과 연결. 현재 Gold **0/200·0/32**.
+- [ ] **D02:** 360px 실기기·키보드/스크린리더/alt·카드/요약/메뉴·REVIEWER/EMPTY_DEMO·가상 ADMIN 게시→재승인→철회, 권한·네트워크/캐시·다중탭·401/403/409/503, 60초 시연/10분 발표·5분 Q&A를 비작성자가 직접 인수.
+- [ ] **D03:** 모든 적용 필수 A01–D02 증거·데이터 권리·서비스 비용/복구·기관/사용자 책임자가 실제 `GO` 서면 승인할 때만 출시 차단 해제. **미실행/미허가/미완료는 NO_GO.**
 
-- [ ] **B01 — 운영 Google OIDC/JWKS/PKCE/콜백 + 실제 외대 이메일 소유·OTP + REVIEWER 초대**를 독립 실계정으로 검증. 세션·CSRF·BETA/REVIEWER 격리·권한 철회·브라우저 재접근 차단 확인. 실패 로그에 토큰·이메일·OTP 없음.
-- [ ] **B02 — 실제 PostgreSQL 최소 권한 기본 7역할 및 활성 확장 역할/CA TLS/RLS/보안 migration**을 승인된 비공개 데이터베이스에서 검증. ROLE을 바꿔 타인 원장 조회·직접 SQL 우회 시도 실패, 전체 서버 중단/재기동 시 세션 철회 영속, 제한된 백업 복구 시험. DSN·비밀번호·실학생 값은 문서에 쓰지 않음.
-- [ ] **B03 — 데이터·권리 확인.** 사용자 확인: 공모전 참여 5명 전원 동의, HUFSAbility 자료 수집 허가 확보. 실제 학업/Forms 원본 제출 4명과 혼동하지 않음. 공식 강의시간표 공개 교수명·강의명은 용도 한정 이용(이름 일괄 마스킹을 자동 의무로 놓지 않음). **허가의 실제 필드/목적/외부 전송·게시 범위**, 철회/보관/삭제만 제한된 원장에서 확인.
-- [ ] **B04 — #46 Git privacy 수정 후 최종 감사.** #212는 이미 main 병합·현재 HEAD 금지 경로 0 확인. 과거 private checkout의 2 FAIL 보고와 현재 합성 CI PASS를 구분하고, 승인된 전체 private checkout에서 재검증한다. 원본 바이트를 PR/로그에 노출하지 않는다. 과거 Git commit/clone/backup의 접근·이력/유출 범위는 별도 점검, 승인 없는 force push/이력 재작성 금지.
-
-## 3. NCP 운영·배포·복구 (실증 실행 #222, 담당: 운영 이서연, 자동화 심민성, 최종 승인 사용자)
-
-- [ ] **C01 — 운영 계정·지출 승인 (#12):** NCP subaccount/IAM 최소 권한, 한국 리전, 실제 Ubuntu amd64 SKU/이미지 ID, 공개 IP·SSD·예상 KRW/h·VAT·크레딧·quota·이용권·상한과 중지/반납 책임. **사용자 서명/날짜/견적 근거** 확인 뒤에만 `apply` 가능.
-- [ ] **C02 — 실제 네트워크 (#89):** VPC/subnet/라우팅/IGW·독립 ACG·stateless NACL·DNS 반환 포트, SSH **관리자 공인 IPv4/32만 허용**, 5173·3000·5432·6379/9229·80/443 외부 기본 차단, 공개 origin IP/IPv6 우회 테스트. 사용자 명시 공개 승인 전에는 웹 포트 개방 금지.
-- [ ] **C03 — Ubuntu 초기 설치/접속:** 관리자 키(공개키만 서버), PuTTY/WinSCP 고정 host key 지문, 두 번째 독립 SSH 키 로그인 성공 뒤 root/password SSH 차단. bootstrap/Node24/systemd/UFW, 비밀/SSH 키 보호, 실호스트 영수증 기록.
-- [ ] **C04 — 합성 미리보기 배포 검증:** 승인된 Git 커밋/ZIP SHA와 SFTP/SSH만 사용해 127.0.0.1:5173에서 시연, HTTPS/public 포트 없음. 실 API/Google/OCR/HCX/Laya/실학생 데이터 ON 금지. 부팅·재시작·헬스·불완전 패키지/실패 작업 거부 확인.
-- [ ] **C05 — 배포 실패·복구 현장 드릴:** last-good SHA 유지, 동일 release 잠금, 다른 작업 동시성/잘못된 SHA/헬스 타임아웃, 이전 정상 릴리스의 재시작·헬스, 실패 시 명시적 수동 복구와 사고·비용 기록. 실제 승인 없이 실행하지 않음.
-- [ ] **C06 — 공개 운영 별도 게이트 (#89):** Nginx/LB/WAF/CDN/TLS/인증서·직접 IP/Geo bypass·사전 로그인 HTML/JS 노출·백업/운영 비용/관측·종료/반납. #166은 당시 Draft였던 private ingress 템플릿이 #216을 통해 main에 포함됐으나, 기본 RELEASE_BLOCKED로 실 운영 공개는 아직 차단.
-
-## 4. 독립 품질/출시 판정
-
-- [ ] **D01 — #221(구 #61) 독립 gold 200/200:** 김채윤의 합성 40공고×5가상 슬롯 자체 작성 라벨을 사람의 독립 gold로 계산하지 않음. 이의상 등 **작성자와 분리된 검토자**가 사례별 판정/근거/수정 이유·재현 SHA를 기록. 현재 확인 기준 0/200. #220의 독립 서명/원장·오프라인 검토 도구와 별도 PNG/HTML20쌍·시간12건은 준비된 코드이며, 해당 미디어/시간 사람 판정도 0/32다. [실행 패키지](INDEPENDENT_EVALUATION.md)는 실제 검토·서명과 D01 인수를 대신하지 않는다.
-- [ ] **D02 — 실제 검수기기·접근성:** 모바일/데스크톱 실제 로그인/세션·빈/UNKNOWN/권리철회·스크린리더·성능/회복성 E2E. 가상/합성 시나리오의 성공을 실제 이용 검증으로 오인하지 않음.
-- [ ] **D03 — 최종 출시 승인 (#89):** 모든 위 게이트의 **실제 증거** 확인, 추가 privacy/학교 권리·안전 책임자 검토, 사전 승인된 NCP 비용/범위·공개 경로 및 사고 대응/롤백을 별도 서면 승인. 승인 전 `RELEASE_BLOCKED` 유지.
-
-## 5. 빠른 피드백 템플릿 (GitHub PR/이슈에 복사)
-
-아래 **한 블록만** 복사하여 담당 이슈 또는 관련 PR에 댓글로 전달. **비밀, 토큰, 주민번호/학번, 실제 학생 원본, .pem/.ppk, NCP 개인키, 클라우드 결제 정보를 붙여넣지 말 것.**
+## 결과 기록
 
 ```text
-[HUFS One AI 사람 검수]
-항목 ID: A01 / A02 / A03 / A04 / B01 / B02 / B03 / B04 / C01 / C02 / C03 / C04 / C05 / C06 / D01 / D02 / D03
-결정: 승인 / 수정 요청 / 보류 / 미실행
-검토자(역할): 
-검토 일시(KST): 
-정확한 대상 PR HEAD SHA / 대상 환경(비밀 제외):
-증거 URL 또는 비공개 증거 ID(민감 정보 비노출):
-실제로 실행한 항목 / 환경 / 결과:
-발견한 문제(재현 조건/기대/실제):
-요청할 수정 / 차단 해제에 필요한 증거:
-재검수 담당·기준:
+수락 ID / 정확한 main·RulePack·fixture·model SHA:
+실제 환경·기기/OS/브라우저·계정 유형:
+검토자(비작성자 여부) / 실제 검토시각(KST):
+운영 비용·자료/학교 원본 허가 ID(비밀/실명 제외):
+실행/부정시험/기대/실제·로그/스크린샷(민감정보 삭제):
+PASS | FAIL | HOLD | NOT_RUN:
+정확도/성능/요금(측정된 값만):
+수정 PR(#253) / 재검수·rollback:
+D03 GO(서면 증거 필요) | NO_GO(기본):
 ```
 
-- **승인:** 해당 ID의 증거가 충족됐다는 검토 의견. PR 병합은 GitHub **비작성자 APPROVED**가 별도로 필요.
-- **수정 요청:** 증상·재현·범위·요청 수정이 있으면 작성. **보류:** 외부 계정/견적/허가 등 아직 근거 없음. **미실행:** 실행하지 않은 검증, PASS 처리 금지.
-- **검증 근거 연결:** 담당 이슈/PR 댓글 URL·Actions run ID·로그의 **민감 정보를 제거한** 해시·실제 운영자 검수 번호만 기록.
-- 이 문서의 상태는 작성일 스냅샷이고, 현황 정본은 [STATUS](../STATUS.md), [PR_WORKFLOW](PR_WORKFLOW.md), [NCP 운영](NCP_OPERATIONS_2026.md), [개인정보 정본](DATA_GOVERNANCE.md), [#89](https://github.com/minseong-hufs/HUFS-One-AI/issues/89).
-
-**주관 확인:** 심민성(API/DB/IaC/배포 코드), 이서연(실 NCP 비코드 운영), 이의상(독립 UI/gold 검토), 김채윤(추천 코어 작성/자체 평가; 독립 gold 불가), 박준영(공식 학업/RulePack 근거). **인적 승인/실행 기록이 아직 없다면 모든 체크박스는 [ ] 그대로 둔다.**
+**실행 기준:** [제품 활성화 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md) · [자료 보호](DATA_GOVERNANCE.md) · [독립 Gold](INDEPENDENT_EVALUATION.md) · [운영 #12](https://github.com/minseong-hufs/HUFS-One-AI/issues/12).

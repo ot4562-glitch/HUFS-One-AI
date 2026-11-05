@@ -1,11 +1,9 @@
-# UI/모바일
+# React UI·모바일·시연 접근성
 
-- 주 소유자: **이의상(UI)**. Architecture.md A02,A05,A10~11와 docs/WORKSTREAMS.md 참조.
-- 5명 전환 아코디언, 모바일 피드, 접근성·로딩·오류. 공용 타입/API/DB는 변경하지 않는다.
-- 다른 담당 경로는 읽기·교차 리뷰를 우선하며 공통 계약과 루트 설정의 수정은 통합 담당과 조율한다.
+**담당 이의상 `uisang2004-maker`**. UI/시연/접근성 소유, 공용 Zod/API·학업/추천 결정론과 실학사 권한은 각 담당자와 협업. [제품 UI 현재 구조](README.md) · [디자인 A11](../../Architecture.md) · [#9](https://github.com/minseong-hufs/HUFS-One-AI/issues/9)/[#119](https://github.com/minseong-hufs/HUFS-One-AI/issues/119).
 
-## 공용 REVIEWER 웹 화면 작업 (#9 / #28)
-
-이의상 UI 담당 소유는 유지. 심사자 전용 `/reviewer/invite` (Google OIDC → fragment 코드 메모리 추출 및 URL 즉시 제거 → CSRF 등록)부터 기존 모든 학생 화면(TODAY/OPPORTUNITIES/NOTICES/EXPERIENCE/GRADUATION/COURSE_PLANNER/OUTLOOK/SAVED/APPLICATIONS/SETTINGS)과 synthetic account-scoped 설정·즐겨찾기·체크리스트·가상신청까지 실제 라우터/접근성/모바일을 연결해야 한다. API의 `GET /api/reviewer/capabilities` 및 합성 actions가 요구 계약이다. 401/403/409·invite 만료·철회 시 cache/화면 즉시 삭제, 타 tab/actor 응답 섞임 0, 실학생 data/API provider calls 0을 브라우저 E2E로 입증하기 전 공개 금지. PR #28의 상태관리·합성 테스트는 `main`에 병합됐다. React 라우터·브라우저 E2E는 UI #9 후속 작업이다.
-
-[리뷰어 계약](../../docs/REVIEWER_ACCESS.md) · [NCP 운영 정본](../../docs/NCP_OPERATIONS_2026.md).
+- 넓은 화면 상단 주요 메뉴 8개·휴대폰 하단 5탭, 단일 HUFSAbility 원래 메뉴 disclosure/미지원 24개, 페이지별 배너·h1/breadcrumb, 홈 3요약 카드의 검증된 숫자만 표시.
+- 합성 S01–S05/EMPTY·ADMIN/REVIEWER와 실학생 원본 4명을 혼합하지 않으며 데이터/권한·학교 서비스 화면을 모방하거나 실제 지원/졸업을 확정하지 않음.
+- 401/403/409/429/503·브라우저 뒤로가기/다중탭/권한 철회·늦은 응답에서 비공유/이전 학생 캐시/이미지·초대 토큰/화면 잔상을 비움.
+- keyboard/Disclosure Escape·포커스/heading·320–1440px/스크린리더/alt/읽기 순서를 시험한다. Chrome 합성 E2E와 실제 별도 보조기기 사람 인수(#252)를 구분.
+- 원본 학생 자료·외부 유료 AI/실 NCP는 사전 승인 전 OFF. 코드 변경은 관련 소비자/계약 리뷰와 정확한 HEAD CI로 검증.

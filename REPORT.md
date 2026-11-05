@@ -1,27 +1,30 @@
-# HUFS One AI | 시연·에이전트 검증 기준
+# HUFS One AI — 현재 검증 결과 보고 기준
 
-> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
+제품을 평가할 때 **단위·통합 코드 → 합성 Chrome → 일회용 PostgreSQL → 독립 사람 검증 → 허가된 실제 운영환경**을 별도 증거로 기록합니다.
 
-## 5개 데모 슬롯 주시연과 합성 회귀시험
+## 확인 가능한 구현
 
-본선의 **첫 시연은 동일한 HUFSAbility 취업·비교과 공고 묶음을 관심 분야가 다른 두 학생에게 보여주어 상위 큰 카드·일반 작은 목록과 추천 근거가 어떻게 달라지는지 검증**하는 것이다. 이어 개인정보 제공 승인된 최대 4명의 최소 이수기록에 각자의 검수된 한국외대 규칙을 적용한 **추가 졸업지원**을 시연한다. S01~S05 다섯 전환 슬롯 중 미수령·미동의·미검수 대상은 PENDING 또는 명시적 SYNTHETIC이다.
+React/Vite의 상단 주요 메뉴(8개)·모바일 5탭·홈 요약/배너, 5개 합성 대상·40공고/10공지·EMPTY_DEMO/ADMIN 가상 동아리, API/PG/권한·AI 안전 계약/Temporal RAG·학업/계획 UI의 **합성 테스트**가 존재합니다. [UI PR #248](https://github.com/minseong-hufs/HUFS-One-AI/pull/248)의 동일 HEAD GitHub Actions 4개 workflow는 SUCCESS입니다. 진척 정본은 [STATUS](STATUS.md).
 
-Google Forms 응답에서 관심·희망 직무를 읽고, 학생이 승인한 경험·공고 조건을 기반으로 **학생별 관련성 정렬과 `FEATURED_LARGE`/`COMPACT_LIST` 노출등급**을 검증한다. AI 행동 브리프의 근거 ID·자격·신청기한을 독립 대조한다. 추가 졸업지원은 본인 캡처에서 검수한 CSV로 실제 취득·수강 중·계획·미이수·시험/인증을 공식 규칙에 맞춰 평가한다. 실제/합성 자료와 허용 범위는 분리한다.
+## 실제 아직 완료되지 않은 인수
 
-**외부 웹 개통 전 보안 시연:** `https://외대.온라인.한국`은 예정 주소다. Google 토큰 위조/만료, Workspace `hd` 힌트 우회, 개인 Gmail 단독, 외대 메일 OTP 누락·만료·재사용·다른 Google 계정 결속, 미초대 계정이 제품 HTML/API·파일에 들어오지 못하게 한다. 적법한 외대 이메일 소유자라도 다른 학생 원장/미승인 projection은 403이다. 직접 IP·CDN/스토리지·preview·로그아웃 캐시 우회도 시험한다. **학교 공식 SSO 허가 없이 독립 인증**으로 설계하지만 Google OAuth·메일 OTP·DNS/TLS·실제 E2E 미완료는 PENDING/BLOCKED다(Architecture A14.1a·A15).
+- 독립 비작성자 Gold: 추천 **0/200**, 포스터 **0/20**, 시점 **0/12**.
+- 실제 학교/학생 자료 4인·공식 RulePack/출처별 권리, 사람 스크린리더·브라우저 인수: 미완료.
+- 실 Google/외대 메일/REVIEWER·운영 PostgreSQL/TLS/SQL role/복구·NCP·유료 OCR/HCX·Laya ON: 승인·실행 전.
+- 실제 서비스 품질/비용·시간 절감/정확도/회복성·수상/선정: 미측정 또는 근거 없음.
 
-## 수행과 체크의 주체
+## 시험·보고 서식
 
-TASK-00~TASK-12의 체크박스는 담당 구현 에이전트가 실행·증거를 기록하고, 독립 검토 에이전트가 대조하며 통합 에이전트가 완료를 확인한다. 실행·검토 담당자는 항목마다 검증 근거를 남긴다. 각 카드의 수행자·검토자·읽을 절을 따른다.
+```text
+기능 / 사용자 여정 / 기능 소유자:
+Git commit SHA / 테스트 명령 / GitHub Actions run:
+환경: SYNTHETIC_LOCAL | DISPOSABLE_POSTGRES | CHROME | NCP_STAGING | PRODUCTION
+자료: SYNTHETIC | APPROVED_PRIVATE | NOT_RUN
+관측: PASS | FAIL | HOLD | NOT_RUN | SKIP
+오류·재현/기대결과, 401/403/409/429/503/철회/캐시/동시성:
+정확도·p95/CPU·RSS/비용(실측한 경우에만):
+별도 승인 ID·비작성자 검토자/일시(있을 때만):
+관련 구현 #253 / 실환경 수락 #252:
+```
 
-목표·동의·자료 범위·기관권한·비용·공개는 **사람이 에이전트와 함께** 판단한다. 당사자의 동의나 실제 권한자의 승인을 에이전트가 만들어내지 않는다. 5명 시간·클릭 실험은 별도 필수과제가 아니다.
-
-## 결과 보고
-
-실제 학생별 적용 근거·독립 기대값·현재/계획 불변성·미확인 상태·원본 보호·동의철회·온라인/오프라인·live/캐시/replay 표시를 기록한다. 공개 결과물에는 개인 원장·증빙·개인 replay·학교 원본을 넣지 않는다. 실제 입력자 최대 4명의 검수 완료와 5개 데모 슬롯의 합성 시험 완료를 서로 대체하지 않는다.
-
-현재 main에 합성 검증된 UI 셸·개인화 코어·서버/PG/권한 코드가 있으나, 실제 기관 원장/룰팩·공개 도메인·Google/외대 메일/NCP·심사자/학생 실브라우저 운영 검증은 미완료다. 실제 배포 시연 성능을 측정했다고 주장하지 않는다.
-
-## 신뢰성·시의성·이미지 증거 수락 기준
-
-자동 합성 회귀와 실제 OCR/모델·독립 사람 평가를 구분합니다. 실제 실행 결과는 STATUS와 #61/#20의 증거를 따릅니다. 기존 추천 40건×5프로필 평가와 **별도로** 합성 PNG/HTML 20쌍·시간/정정 12건의 fixture와 오프라인 독립 서명·판정 도구를 [평가 패키지](docs/INDEPENDENT_EVALUATION.md)에 구현했다. 추천 사람 gold **0/200**, 미디어·시간 사람 판정 **0/32**이며, 라틴 bitmap 합성 fixture의 자동 결과를 한국어 실공고 OCR 정확도로 일반화하지 않는다. (1) HTML-only vs OCR vs OCR+HCX-005 이미지 필드·날짜·좌표 정확도, (2) core-only vs temporal RAG+HCX-007 evidence groundedness/환각·허위 자격, (3) Laya on/off Korean 문서 라우팅 F1·High Memory-g3 CPU/RSS/p95·비용을 독립 평가한다. 중요한 오판·미래 `asOf` 누출·권한 위반·취소 후 구본 활성화 **0건 목표**이며 실제 테스트 전에 실적이라고 쓰지 않는다. OCR/LLM 비용뿐 아니라 서버·gateway·storage·VAT·크레딧 적용을 구분하고 예산 초과 시 서비스 내 안전한 폴백을 검증한다. 수행 조건·실패 사례: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md` §8.
+상태를 올리려면 원본/역할·환경·정확한 SHA·반례·실제 검토자의 독립 근거가 필요합니다. **CI와 AI 자기 평가를 인적 승인으로 표시하지 않습니다.** [평가 방법](docs/INDEPENDENT_EVALUATION.md) · [인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).

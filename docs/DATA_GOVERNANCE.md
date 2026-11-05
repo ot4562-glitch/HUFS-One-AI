@@ -1,92 +1,39 @@
-# HUFS One AI | 공모전 동의·공식 자료 수집·Git 보존 경계
+# HUFS One AI — 현재 개인정보·공식 자료권리·배포 경계
 
-> **현재 구현·검증 상태:** [STATUS](../STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. 소프트웨어 구현과 실제 인증·NCP·자료 권리·독립 사람 검수를 구분하며 **RELEASE_BLOCKED**를 유지합니다.
+**상태:** 공모전 참가자 **5명 동의** 및 HUFSAbility 자료 **수집 허가**는 사용자 확인 사실. 실제 CSV/Forms 원본 제공자는 **4명**. 이것이 최초 Git 게시·team clone/backup·NCP·외부 AI/모델·발표·제3자 재배포의 **자동 허가가 아니다**. 실제 목적·현재 철회/보관·기관별 권리 독립 인수는 [#252 B03/B04](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)에서 확인한다. RELEASE_BLOCKED.
 
+## 자료의 분리
 
+| 자료 | 현재 사용 가능 범위 | 추가 확인·금지 |
+| --- | --- | --- |
+| 합성 S01–S05 / EMPTY / 가상 동아리 / REVIEWER | 합성 개발·CI/시연 | 실학생 신원·학교 공식 게시/지원으로 가장 금지 |
+| 개인 수강 CSV 4개(6열)·Forms 26열/4응답 | 명시적으로 허가된 제한된 지역에서 목적별 검토/비공개 preview 계획 | Git/CI/공개 웹/모델·클라우드·팀 공유/최초 게시/보관/철회 개별 허가 필요 |
+| 공식 공지/학칙/WIS/강의명·교수명 | 출처·목적·현재 판본/권리·출처 제한에 따른 안내/검증 | 다운로드/수집 가능과 재배포·외부 AI 전송·공식 RulePack 승인 동일시 금지 |
+| 기관/기업 공고·포스터/모델 후보 | source class, collect/store/display/AI transmit 권리별 허가 후 | 비공개 API/학교 로그인 우회, 사이트/원문 재배포 무단 사용 금지 |
+| 인증 키·토큰·개인 정보 대응표 | 승인된 보안 vault/환경에서 최소권한 접근 | Git/PR/CI/로그/스크린샷·LLM 요청·public artifact 반입 금지 |
 
-## 현재 개인정보 경계 — 2026-11-05 점검
+## Git·로그·출판
 
-- [x] [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212) 보호 대상 6개 Git-tracked 경로 HEAD untrack 코드 **main 병합**; 2026-11-04 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216) 당시 **보호 경로 0 / 811 tracked path**를 확인했다. 전체 tracked 수는 그 당시의 수치이고 현재 총 파일 수가 아니다. 보호 경로 0과 과거 원본 경로 이력 검토를 구분하며, 이 증거는 원문 내용이나 모든 clone의 정리를 증명하지 않는다.
-- [ ] **실제로 남은 개인정보 승인/검사:** 별도 원본 보존·현재 사용/철회/게시 권한, 과거 Git commit·협업자 clone/backup의 원본 접근 검토 및 승인된 full private checkout 개인정보 검사. 과거 검사 2 FAIL을 현재 Git tree 0만으로 180/180 PASS로 선언하지 않는다.
-- [x] 공모전 5명 전원 동의·HUFSAbility 자료 수집 허가는 사용자 확인. 공식 시간표의 공개 교수명·강의명은 최소 범위로 사용하며 이름 일괄 마스킹을 강제하지 않는다. 개인정보 적법한 이용·저장·외부 전송 범위는 별도 관리.
-- 인가된 실제 Google/운영 NCP/TLS·PG/사람 gold 미검증으로 **RELEASE_BLOCKED** 유지. 현재 [STATUS](../STATUS.md) 참고.
+- 현재 커밋 트리의 보호 원본 추적 경로는 0으로 보고되어 있으나, 조회 가능한 과거 이력 보호 경로 6개와 full private checkout 검사에서 남은 2개 실패/미해소 검토는 **서로 다른 범위**다. 모든 clone/fork/backup/unreachable object·최초 게시 권리를 자동 확인한 것은 아니다.
+- 승인 없는 Git history rewrite/force-push·개인 파일명/SID 매핑 공개·원문 열람을 금지한다. 과거 이력 메타데이터 조사는 최소 정보로 제한, 보호 파일명·개인 원문은 이슈/CI로 출력하지 않는다.
+- 새 UI/운영 자산·PDF/ZIP/JS/source-map·로그·Pages/정적 빌드·재배포 파일에 비밀/원본/개인 preview·실 활성 초대 URL이 포함되지 않아야 한다. 승인된 release artifact/NOTICE·문서/폰트/AI 자산 이용권을 검증한다.
 
-## 2026-11-04 사용자 확인 · 당시 기록
+## SourceRevision·AI·권한
 
-- **공모전 참여자 5명:** 사용자 확인으로 전원 프로젝트 참여 및 해당 공모전 자료 처리에 동의한 상태다. 이 확인은 사용자 진술이며 실제 동의 문서의 원문/개별 사용 목적 및 철회 기록을 이 GitHub 편집에서 별도로 열람·재검증하지 않았다. **실제 학업 원본 수강/Forms 제출자는 4명**이며, 남은 1명을 가상 5번째 학업 데이터 제공자로 취급하지 않는다.
-- **HUFSAbility 정보 수집:** 사용자에게서 **수집 허가 확보**를 확인했다. 따라서 과거의 'HUFSAbility 수집 허가 없음/전혀 미확인'은 현재 사실로 반복하지 않는다. 다만 허가의 대상 서비스, 수집 필드, 사용 범위, 기간, 재배포·외부 AI 전송 허용 여부를 원본 증빙과 대조하는 운영 기록은 별도 보관한다. 학교 공식 HUFSAbility 개편·SSO/계정 접근 허가라는 의미는 아니다.
-- **교수 정보:** 현재 수집 대상은 **공식 강의시간표에 공개된 교수명과 강의명 등 직무상 수업정보**로 한정한다. 위 사용자가 확인한 수집 허가 범위에 해당하는 수업 안내라면 교수 이름의 **일괄 마스킹을 필수 미완료 기능으로 세지 않는다.** 비공개 연락처·평가/평판·사생활 자료는 별개이며, 수집·저장·노출 최소화와 법적 처리 근거는 유지한다. 불필요한 이름은 저장 전 제거할 수 있지만 후행 화면 마스킹만으로 수집·원본 이력을 삭제했다고 주장하지 않는다.
-- **Git 보호 원본 문제는 동의와 독립:** 2026-11-04 main의 보호된 Git 추적 경로 **6개** 때문에 전체 로컬 검사에서 과거 2항목 FAIL. [#212](https://github.com/minseong-hufs/HUFS-One-AI/pull/212)가 내용을 읽지 않고 현재 Git 트리의 6경로 추적 제거, `.gitignore` 예외 제거, 전체 commit-tree metadata CI 검사를 제안함. **#212 main 병합 완료**, 2026-11-04 현 main tracked path 811개 중 금지 경로 **0개 확인(경로 메타데이터만)**. full private checkout privacy 전체 검사 PASS, 과거 Git 이력/clone/backup 처리 완료는 **아직 확인되지 않음**.
-- 과거 원본을 코드/PR/CI/프롬프트에 붙여넣거나 무승인 Git history 재작성·force push 하지 않는다. 프로젝트는 데이터 권한과 별개로 실제 OAuth·TLS·DB·NCP·독립 품질 검증을 통과하기 전 `RELEASE_BLOCKED` 상태다. #46·#89는 증거가 충족될 때까지 OPEN.
+- 각 원문에 collect/store/display/AI transmit 독립 권리와 수집·공표·검토·관찰 `asOf`를 보존한다. SourceRevision 원본/문단·media/PDF/OCR bbox·변경/정정/철회·영속 영수증의 범위가 불확실하면 `BLOCKED_RIGHTS/UNKNOWN/NEEDS_REVIEW`.
+- 개인 원본은 Owner/SharingGrant/Consent→검증된 최소 projection 이후만 소비한다. 선택한 5슬롯의 overlay/REVIEWER sandbox는 원본 승인/공유 권한이 아니다. 철회/삭제/만료 시 API·PG/RAG·AI cache/이미지 URL·모든 탭의 잔상 차단.
+- 외부 HCX/OCR/NCP에 원문/학생자료를 보내기 전에 명시 목적·법적/기관 동의·이용권/요금·보관/삭제·민감필드 비식별을 검토한다. Laya·유료 AI 기본 OFF.
+- 공식 졸업 규칙/원장·학과/교수의 공개 수업명은 **허용된 수업 안내 목적**과 학교 규정 범위에서 이용하되 맥락 없는 실명/학번 추론·마스킹 면제가 아니다.
 
-## 과거 개인정보 원본/동의 관련 결정과 감사 이력 (2026-11-02 이전)
+## 독립 감사 입력
 
-## 2026-11-02 #133 당시 확인된 실제 자료 제공자 4/4 목적별 동의
+```text
+원본/기관별 제한 receipt ID, 데이터 종류·목적·현재 허용범위·보관/철회:
+승인자/일시/근거 위치(공개 원문·개인 이름/계정번호 제외):
+현재 Git tree + 전체 private checkout + history/clone/backup 조사 범위:
+비인가 재배포·외부 AI/공개·실서비스 반입 차단 결과:
+PASS | FAIL | HOLD | NOT_RUN:
+필요 코드 보완 #253 / 실제 수락 #252:
+```
 
-사용자 확인 및 Private Forms 26열·4행 검증으로 **선택한 경험/일부 정보의 CLOVA 처리, 정제 개인정보의 비공개 NCP 저장, 가명화·검수한 본인 사례의 발표·녹화는 각각 4/4 동의 확인** 상태다. 아래 과거 기록의 포괄적인 ‘동의 미확인’은 이 세 목적에 적용하지 않는다. 안내문 열람 확인은 포괄적 사용권과 구분한다.
-
-현재 사용자는 `csv/`의 이름별 수강·수강중 CSV를 각자의 제출 자료로 지정했다. 로컬 등록은 해당 확인과 Forms의 정확한 이름 일치 또는 기존에 확인된 별칭 근거를 기록하며, 행 순서로 대응하지 않는다. 제한된 로컬 등록부만 원본 해시·버전·대응 근거를 보관한다. 확인되지 않은 외부 로그인 바인딩, 최신 철회 상태, 과거 Git 원본 게시/clone 이력, 학교 출처의 수집·재사용 권리는 별도 검증한다. 이러한 미완료 항목 때문에 이미 확인된 동의를 미동의로 되돌리지 않는다.
-
-빈 시연 계정은 SYNTHETIC 전용이다. 실제 4인 원장이나 Forms를 브라우저 fixture·CI·공용 계정 선택기·외부 모델로 자동 주입하지 않는다. #46 이력 검토와 #89 RELEASE_BLOCKED는 유지한다.
-
-## 2026-11-02 동아리 코어의 승인/시점 보안 후속 정정
-
-- [x] [#125](https://github.com/minseong-hufs/HUFS-One-AI/pull/125) HEAD `8e88a4b`의 미래 수정/승인 후 콘텐츠 변경 노출 방지 및 타인 APPROVED/Actions 2/2 SUCCESS를 검증해 **main `8f76c388` 실제 병합**. 제공물은 **SYNTHETIC 클럽 메타/결정론 추천 함수**이며 posterAssetId는 실제 이미지가 아닌 자리표시자.
-- [ ] 순수 코어 `APPROVED` 값과 시각 검사만으로 **학교 또는 임의 사용자의 관리자 자격/게시 승인 권한을 증명하지 않음**. #123의 서버 ADMIN decision API와 합성 화면은 구현되어 있으며, 신뢰된 영속 moderation·불변 revision·철회/접근 통제·AI 포스터·전체 인수는 별도. 에브리타임/실동아리 게시글·개인 연락처 재사용 금지.
-- [ ] #124 HUFSAbility 전체 IA/🚫는 공개 이름을 참조하는 시연 UX로 제한, 학교 계정/원본 API·디자인의 무단 이식 아님. #46 Private Privacy 2 FAIL·#89 RELEASE_BLOCKED 유지. 이 아래 #125의 과거 CHANGES_REQUESTED는 최신 HEAD 수정 전의 사실 기록.
-
-## 2026-11-02 새 HUFSAbility 메뉴·동아리 데모 데이터/게시 경계
-
-- [#124](https://github.com/minseong-hufs/HUFS-One-AI/issues/124) HUFSAbility 메뉴 정보구조 채택은 **공개 이름·대분류의 참조 및 시연 UX 설계**만 허용한다는 제안이다. 공식 학교 시스템의 로그인·SSO·사유지 API·성적/상담·교내 포스터 원본·원본 디자인 규정의 복제나 비공개 자료 수집 권한은 발생하지 않는다. 미이식 메뉴는 🚫 미지원과 확인된 공식 외부 링크를 분리한다.
-- [#123](https://github.com/minseong-hufs/HUFS-One-AI/issues/123) 동아리 게시판은 **AI 창작 가상 이름/가상 모집내용/가상 포스터/합성 프로필만** 사용한다. 실제 동아리명·연락처, 에브리타임 작성자/게시물·포스터를 스크래핑/재사용하지 않는다. 가상 관리자 `APPROVED` 상태는 학교 승인·실운영 게시권한이 아니며, 브라우저가 승인 필드를 임의 설정해도 신뢰하지 않는다.
-- [#125](https://github.com/minseong-hufs/HUFS-One-AI/pull/125) 코어의 `updatedAt > asOf` 미래 수정 내용 노출은 **CHANGES_REQUESTED**, 과거 시점/최신 권한 확인 후에만 화면·추천·직접 상세 노출할 수 있다. 포스터 asset id는 지금 합성 이미지 생성완료를 뜻하지 않는다.
-- #46의 당시 원본 Git 보호 6경로/153·155·2 FAIL 보고(현재 추적은 #212 이후 0경로; 과거 이력 검수는 별도); #89 `RELEASE_BLOCKED`. 합성 CI 성공·신규 Issue 생성/문서화만으로 실제 원본 권리, 개인정보 동의, 외부 AI/NCP 업로드/출시를 승인하지 않는다.
-
-## 2026-11-01 개인정보 코드 게이트 (과거 감사 기록)
-
-- **main 코드 검증:** 개인 동의 철회/원장 원자 삭제 [#102](https://github.com/minseong-hufs/HUFS-One-AI/pull/102), 삭제한 owner workspace의 값 비움·옛 tombstone 정리 [#112](https://github.com/minseong-hufs/HUFS-One-AI/pull/112), Git index의 `csv/private` 등 보호 경로를 **읽지 않고** 개수만 감지·보고값 해시 처리 [#104](https://github.com/minseong-hufs/HUFS-One-AI/pull/104), Docker ignore/서버 source map 우회 차단 [#108](https://github.com/minseong-hufs/HUFS-One-AI/pull/108) 및 공개 합성 아티팩트 검사는 main 병합. 합성/일회용 PG CI PASS는 실제 4인 개인정보의 새로운 동의·기관 권리 부여가 아니다.
-- **전체 로컬 Private checkout 검사:** 2026-11-01 `npm run check:privacy` **155개 중 153개 PASS, 2개 FAIL**, `no_protected_tracked_files`/`no_protected_publication_candidates`와 보호된 추적 경로 **6개**가 확인됐다. 원본 바이트·실제 파일명은 열거나 출력하지 않았다. 이 결과는 합성/희소 체크아웃 CI의 PASS와 다르며 #46 실자료 이력·동의 차단을 직접 뒷받침한다.
-- **[#46](https://github.com/minseong-hufs/HUFS-One-AI/issues/46) 계속 OPEN:** 과거 Private Git 커밋/협업자 clone에 존재하는 원본의 당사자별 목적·기간·접근 승인과 반환/보존/이력 처리 검증은 미완료. 스캔 우회/파일 무시만으로 Git history 게시·외부 AI/NCP/웹 공개 승인 또는 완전 삭제를 뜻하지 않는다.
-- 릴리스는 실동의·자료권리·실 계정/도메인/브라우저 확인 전 `RELEASE_BLOCKED`이며, 실제 CSV/Forms 파일 내용을 CI·PR·로그·AI 또는 문서에 다시 인용하지 않는다.
-
-
-
-**역사적 승인 범위:** PR #1의 2개 수강 CSV(48·39행)와 PR #5의 추가 수강 CSV(28행)는 이전의 사용자 지시에 따라 Private에 포함됐다. 그 지시만으로 추가 개인 파일·Google Forms 원본 게시, 팀 전체 열람, 외부 AI/NCP 처리 동의가 자동 부여되지는 않는다. 원본 값·행을 여기나 PR/CI에 재출력하지 않는다.
-
-**주의:** 파일명 자체에 표시이름이 포함된다. 비공개 브랜치라도 초대된 협업자가 열람/복제할 수 있다. 다른 학생의 저장·팀 공유 동의 여부는 업로드 지시와 별개로 확인할 필요가 있다.
-
-- **현재와 과거 승인 구별:** 2026-10-31 `main`에는 수강 CSV 4개와 26열·4행 Forms 통합 CSV 1개가 **추적되어 있음**을 확인했다. 마지막 두 파일의 게시·보유·협업자 접근 및 목적별 동의 근거는 별도 확인 대상이며, 파일 존재만으로 승인이라고 결론 내리지 않는다. 추가 Git/외부 전송은 검토 전 중단한다.
-- 이번 파일 한 건의 승인으로 다른 CSV 업로드, 전체 팀원의 원장 공유권한, CLOVA 전송, NCP 저장·발표 공개까지 허용되는 것은 아니다.
-- `.gitignore`/`.dockerignore`의 현재 내용뿐 아니라 **이미 추적한 파일과 Git 이력, 브랜치·포크·협업자의 접근 가능성**을 함께 검사한다. `.dockerignore`에서 CSV를 제외하더라도 Git에 이미 올라간 원본의 개인정보 공유·게시 동의가 생기는 것은 아니다.
-- 브라우저 정적 파일, public 폴더, 합성 fixture, CI 출력, 이슈/PR 본문, AI 프롬프트·로그에 실제 과목 데이터를 넣지 않는다.
-- 공유 가능한 개인별 요약은 Architecture.md A02 SharingGrant와 별도 동의를 거쳐 생성한다.
-- 향후 저장소를 공개하려면 파일 삭제만으로 과거 커밋·clone의 개인정보가 지워지지 않으므로 이력 처리·당사자 동의를 검토해야 한다.
-
-**형식 검사 결과(2026-10-31):** 수강 CSV 4개는 모두 BOM 없는 UTF-8·동일 6열, 데이터 행 61/39/48/28, CSV 인용·열수 일치. 통합 Forms 파일은 26열·응답 4행, BOM 없는 UTF-8·열수 일치. **문자열/형식 검사만 통과**했으며 동의/인물 매칭/수강원장/공식 학점·학칙 판단과 별개다. 개인정보 원문은 이 보고에 넣지 않는다.
-
-## 외대 계정 로그인 웹 배포에 대한 추가 제한
-
-사용자 확보 신고 도메인 `외대.온라인.한국`에 **학교 SSO 없이 Google 로그인 + 외대 메일 현재 소유 확인(Workspace `hd` 또는 메일 OTP)**을 도입하더라도, 이메일 소유/초대 승인 자체는 실학생 CSV·Forms 원본을 NCP·정적 프런트·공용 DB에 전송하는 동의가 아니다. 확인된 Google `sub`/메일 소유/초대 actor, 개인별 SharingGrant, 클라우드 저장·AI 처리 동의는 별개다. 원본 신원대응은 제한 보관하고 공개 HTML/JS·assets·preview·CI·클라우드 로그로 복사하지 않는다. Gmail-only·OTP 재사용·미초대·철회 등은 기본 차단하며 외부 자료 처리 동의가 없다면 합성 검증만 수행한다. [Architecture.md](../Architecture.md) A14.1a 및 [CLOUD.md](../CLOUD.md) 참조.
-
-## 4인 제출·동의 검증 게이트 (2026-10-30 확정)
-
-- **개발자 5명 ≠ 개인자료 제공자 5명.** 이번 입력 목표는 김채윤·이의상·심민성·이서연 4명의 수강 CSV와 4인 Forms 통합 CSV이며 박준영은 제출 대상이 아니다. `main`에 파일 5개(과목 4/Forms 1)가 보이나 Forms 각 행의 소유자·중복 여부·목적별 동의와 4명 매칭 검증은 **미완료**다. 이전 문서의 '통합 Forms 미수령/이서연 수강 파일 미확인'은 현재 Git 파일 존재와 구분해야 한다.
-- **이전 본인 확인과 신규 파일 검토 분리:** 사용자 진술로 기존 `까마르` 파일과 해당 제출자 관계는 확인되었고, 이서연 명의 수강 CSV도 현재 Private `main`에서 관찰됐다. **신규 파일의 최초 게시 승인·진위·팀 열람 동의는 아직 이 검토에서 확인하지 못했다.** 실명↔내부 S번호 대응을 코드/합성 fixture/공개 로그에 하드코딩하지 않는다.
-- **실제 파일/폼 검증은 제한된 로컬 경로에서만**: Forms 헤더 26개(중복·변경·별칭 충돌), 명단 4명/중복 응답/표시이름 대응, 6열 과목 헤더·UTF-8(BOM 허용)·CSV 인용·학점·상태, EARNED/IN_PROGRESS 분리, 자기보고 총학점과 원장의 불일치, 학점 중복/재수강·학번별 규칙·근거, 원본 hash와 import 버전을 확인한다. 누락/불명확하면 `PENDING` 또는 `NEEDS_REVIEW`와 비식별 이슈 코드만 남긴다.
-- **동의는 목적별**: 팀 정제 검토, 실제 shared DemoProjection/SharingGrant의 섹션·만료·철회, 비공개 NCP 저장, 외부 CLOVA 전달, 발표·녹화·표시이름은 각각 다르다. Forms의 팀 검토 동의만으로 원본 전체를 모든 팀원에게 공개하지 않는다. GitHub Private이라는 사실도 개인별 열람 동의가 아니다.
-- 5개 `S01`~`S05` 시연 슬롯을 유지하되, 실제 정보가 담긴 추적 파일의 존재만으로 학생 데이터 연결을 활성화하지 않는다. 개인별 SharingGrant가 확인되지 않은 슬롯은 `PENDING`/명시적 `SYNTHETIC`으로 제한한다. 제품 fixture, CI, 웹 자산, 모델 입력 및 로그에 실제 학업행·Forms 응답이나 실명↔내부 ID 매핑을 복제하지 않는다.
-- **신규 게시·활용은 별도 명시 승인 필요.** 이번 확인으로 이미 추적된 네 번째 학생 파일·통합 Forms의 당시 게시 권한이 자동 입증되지 않는다. 필요하면 개별 승인·보존기한·접근 제한·기존 Git 이력까지 자료 소유자와 검토한 뒤 정정·격리·삭제 방식을 별도 결정한다.
-
-**검증 보고 형식:** 사람 이름/원문 대신 파일 수, 26/6열 여부, 행수, 익명 이슈 수, 각 consent 목적별 `VERIFIED|PENDING|DENIED|REVOKED`, 해시·버전, 수기 대조/독립 검토 여부만 남긴다. 동의가 없거나 데이터가 부족한 학생을 완성 상태로 표시하지 않는다.
-
-## 2026-10-31 외부 포스터·RAG·OCR/HCX·Laya의 권리와 정보 보호
-
-공개 게시물이라는 이유만으로 **이미지 다운로드·재배포·OCR 결과 보관·NCP 전송·CLOVA 입력**이 자동 허용되는 것은 아니다. 출처별 허용된 **수집/보존/변환/외부 AI 제공/전시** 범위를 확인하고, `RESEARCH_REFERENCE_ONLY`나 비승인 학생 원본을 제품 RAG 색인·HCX-005/007·OCR·Laya 입력·CI fixture에 사용하지 않는다. 학생 가명만 제거한다고 비식별화됐다고 단정하지 않는다. `SourceSpan IMAGE`는 원본 구역 좌표를 보관하되 이미지 원본은 비공개 권한 별도 검증으로 열람한다. 정정·취소된 자료의 hash/revision 기록도 보존기간·권리 검토에 따른다. 로그에 개인정보·이미지 원문·OCR 전문·모델 safe packet을 찍지 않는다. [세부 수집·권한 규칙](TRUSTED_RAG_MEDIA_VERSIONING.md).
-
-## 심사자 REVIEWER 합성자료 전용 접근 (정본 #27, 이전 #25)
-
-심사자가 담당자라는 이유로 Forms/과목 CSV/학번·성적/비동의 원본의 열람·외부 AI 제출 권한이 생기지 않는다. 심사자는 전용 합성 리플레이만 접근하며, `dataMode=SYNTHETIC` 검증은 API와 UI 양쪽에서 하고 실제/혼합 자료가 섞이면 전부 차단한다. 시연 슬롯 S01~S05는 사람 계정이 아니며 5번째 미준비 슬롯을 허위 실제 자료로 채우지 않는다. PDF 개인별 초대 코드·심사자 이메일·Google sub·IP는 공개 GitHub/CI/analytics/log에 남기지 않는다. 평가 종료 `endsAt`(UTC exclusive)에 모든 API 열람을 차단하고 브라우저/SW/cache에 남은 민감 내용을 정리한다. 개발·테스트는 합성만 사용. 정확한 접근정책: [REVIEWER_ACCESS.md](REVIEWER_ACCESS.md).
-
-## 2026-10-31 REVIEWER 전체 합성 모드 접근 정책
-
-학생 원장/Forms CSV·학교 권리 없는 공고 원본은 reviewer에게 공개하지 않는다. 심사자는 Google 검증 계정+각자 가입·공용 코드 만료/철회 검사를 통과해 합성 5슬롯과 모든 학생용 메뉴의 synthetic sandbox 기능만 체험한다. `SET_INTERESTS`, `SET_DESIRED_JOBS`, `PLAN_COURSE`, `SET_SEARCH`, `SET_NOTIFICATIONS`, `RESET_SANDBOX`, `SIMULATE_APPLICATION` 등은 실제 외부 제출·유료 NCP/AI 호출·실학생 프로필 수정이 아니다. 실제 웹·OIDC·PostgreSQL 연결은 출시 차단 게이트. 일반 API/인증·권한 심민성 #27, NCP/유료 provider 모든 구현/운영 이서연 #12, 브라우저 UI 이의상 #9. [개정된 운영 표](NCP_OPERATIONS_2026.md).
+실제 개인 원본 읽기/삭제/전송/클라우드 반입은 별도 권한자의 명시적 실행 승인 전 수행하지 않는다. [TEAM_SURVEY](../TEAM_SURVEY.md) · [데이터 수락](HUMAN_ACCEPTANCE_GATE_20261104.md).
