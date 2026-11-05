@@ -11,26 +11,31 @@ export const HUFS_COLORS = {
 } as const;
 
 export const PRODUCT_COLORS = {
-  bg: '#F7F8F6',
+  bg: '#F5F7FA',
   surface: '#FFFFFF',
   ink: '#1F2933',
-  muted: '#52606D',
-  chip: '#EEF4F3',
+  muted: '#3E4C59',
+  chip: '#EAF3FC',
+  /** v5 (#9): product navy / academic blue, close to but not the official HUFS colours. */
+  navy: '#082F52',
+  blue: '#28699F',
+  border: '#DDE3EA',
+  decoration: '#5B7FA3',
 } as const;
 
-/** Semantic roles used by components. Primary action = green, headings = navy, gold only as decoration. */
+/** Semantic roles used by components. Primary action = academic blue, headings = product navy. */
 export const COLOR_ROLES = {
   pageBg: PRODUCT_COLORS.bg,
   surface: PRODUCT_COLORS.surface,
   text: PRODUCT_COLORS.ink,
   textMuted: PRODUCT_COLORS.muted,
-  heading: HUFS_COLORS.navy,
-  primary: HUFS_COLORS.green,
+  heading: PRODUCT_COLORS.navy,
+  primary: PRODUCT_COLORS.blue,
   onPrimary: PRODUCT_COLORS.surface,
   chipBg: PRODUCT_COLORS.chip,
-  border: HUFS_COLORS.gray,
-  decoration: HUFS_COLORS.gold,
-  focusRing: HUFS_COLORS.navy,
+  border: PRODUCT_COLORS.border,
+  decoration: PRODUCT_COLORS.decoration,
+  focusRing: PRODUCT_COLORS.navy,
 } as const;
 
 export const SPACING_PX = [4, 8, 12, 16, 24, 32] as const;

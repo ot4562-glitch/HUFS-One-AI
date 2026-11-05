@@ -55,6 +55,11 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab'); // logo
   await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
   await page.keyboard.press('Tab'); // 설정
+  // #9 v5: the one 주요 메뉴 sits in the header (bottom bar on phones): its five tabs come next.
+  for (const name of ['오늘', '맞춤 기회', '나의 경험', '졸업지원', '보관함']) {
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name})).toBeFocused();
+  }
   await page.keyboard.press('Tab'); // selector summary
   await expect(page.locator('.selector__summary')).toBeFocused();
   await page.keyboard.press('Enter');
@@ -120,22 +125,34 @@ test('#80 application board: keyboard-only advance, self-record badge, no overfl
   expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
 });
 
-test('#124 sidebar at 1440px: whole HUFSAbility menu visible, 🚫 items never take keyboard focus', async ({page}) => {
+test('#9 v5 top menu at 1440px: our screens across the top, HUFSAbility originals only in one keyboard disclosure', async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900});
   await page.goto('/');
-  const nav = page.getByRole('navigation', {name: '전체 메뉴'});
+  const nav = page.getByRole('navigation', {name: '주요 메뉴'});
   await expect(nav).toBeVisible();
-  await expect(nav.locator('.menu__item.is-off')).toHaveCount(24);
-  await expect(nav.locator('a.menu__item')).toHaveCount(12); // 8 확장 + 4 공개 영역 공식 홈 링크
-  // Tab through the sidebar: focus only ever lands on real links.
-  await page.keyboard.press('Tab'); // skip link
-  for (let i = 0; i < 12; i++) {
+  await expect(nav.getByRole('link')).toHaveCount(8);
+  await expect(nav.getByRole('link', {name: '맞춤 기회'})).toBeVisible();
+  await expect(page.getByText('외대친화기업(HUFFi)')).toHaveCount(0);
+  const button = page.getByRole('button', {name: /HUFSAbility 메뉴/});
+  await button.focus();
+  await page.keyboard.press('Enter');
+  const panel = page.getByRole('region', {name: 'HUFSAbility 원래 메뉴'});
+  await expect(panel).toContainText('원래 메뉴는 이름과 순서만 보여 드려요');
+  await expect(panel.getByText('미지원', {exact: true})).toHaveCount(24);
+  // Tab through the panel: focus only ever lands on real links (4 official-home links + 전체 메뉴).
+  const focused: string[] = [];
+  for (let i = 0; i < 5; i++) {
     await page.keyboard.press('Tab');
-    const tag = await page.evaluate(() => document.activeElement?.tagName);
-    expect(['A', 'BUTTON', 'SUMMARY', 'INPUT']).toContain(tag);
+    focused.push(await page.evaluate(() => document.activeElement?.tagName ?? ''));
   }
+  expect(focused).toEqual(['A', 'A', 'A', 'A', 'A']);
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(button).toBeFocused();
   await nav.getByRole('link', {name: '지원 현황'}).click();
   await expect(page.getByRole('heading', {level: 1})).toHaveText('지원 현황');
+  const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
+  expect(o.scroll).toBeLessThanOrEqual(o.width);
 });
 
 test('#123 club board at 360px: recommendations, filter, detail; unapproved post never opens', async ({page}) => {

@@ -16,6 +16,7 @@ import type {OwnerAcademicsPort} from './features/owner-academics/OwnerAcademics
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
+import {PageBanner} from './shell/PageBanner.js';
 import {DemoSelector} from './shell/DemoSelector.js';
 import {StatusBanner} from './shell/StatusBanner.js';
 import {useDemo} from './shell/useDemo.js';
@@ -126,7 +127,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       status={independent || path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
-      <h1 ref={heading} tabIndex={-1} className="page__title">{page.title}</h1>
+      <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} />
       {page.body}
     </AppShell>
   );

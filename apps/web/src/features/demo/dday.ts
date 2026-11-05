@@ -8,6 +8,8 @@ export interface DDayView {
   readonly text: string;
   /** Screen-reader form: "4일 남음" or "오늘 마감". */
   readonly spoken: string;
+  /** Whole Seoul calendar days left (0 = today), for counting "마감 임박" without re-parsing text. */
+  readonly days: number;
 }
 
 const DAY_MS = 86_400_000;
@@ -23,6 +25,6 @@ export function ddayOf(deadlineIso: string, asOfIso: string): DDayView | null {
   const asOf = Date.parse(asOfIso);
   if (!Number.isFinite(at) || !Number.isFinite(asOf) || at <= asOf) return null;
   const days = seoulDayNumber(at) - seoulDayNumber(asOf);
-  if (days === 0) return {text: '오늘 마감', spoken: '오늘 마감'};
-  return {text: `D-${days}`, spoken: `${days}일 남음`};
+  if (days === 0) return {text: '오늘 마감', spoken: '오늘 마감', days};
+  return {text: `D-${days}`, spoken: `${days}일 남음`, days};
 }

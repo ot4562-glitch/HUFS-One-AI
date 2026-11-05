@@ -36,8 +36,8 @@ describe('A11.2 tokens', () => {
 
   it('exports CSS variables for the future Vite entry', () => {
     const css = cssVariables();
-    expect(css).toContain('--color-primary: #146E7A;');
-    expect(css).toContain('--color-text-muted: #52606D;');
+    expect(css).toContain('--color-primary: #28699F;');
+    expect(css).toContain('--color-text-muted: #3E4C59;');
     expect(css).toContain(`--touch-target: ${TOUCH_TARGET_PX}px;`);
   });
 });

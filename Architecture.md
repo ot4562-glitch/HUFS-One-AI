@@ -762,7 +762,7 @@ PC 1440에서는 최대폭 1392px·좌우 24px, 주영역과 보조영역은 약
 
 공식 근거를 확인한 색상은 `HUFS_GREEN #146E7A`, `HUFS_GRAY #DADAD3`, `HUFS_NAVY #002D56`, `HUFS_GOLD #8D7150`, `HUFS_SILVER #9D9FA2`다.[R30]
 
-제품 자체 토큰은 bg `#F7F8F6`, surface `#FFFFFF`, ink `#1F2933`, muted `#52606D`, chip `#EEF4F3`, radius 14~16px, spacing 4/8/12/16/24/32다. 주버튼 청록·제목 남색·금색 장식 제한을 유지하고 이전 보라 강조는 사용하지 않는다. 공식 학교 색상과 제품이 정한 간격·모서리 치수는 구분한다. 학교 로고·전용 폰트 파일은 자동 배포하지 않는다.
+제품 자체 토큰(#9 v5)은 bg `#F5F7FA`, surface `#FFFFFF`, ink `#1F2933`, muted `#3E4C59`, chip `#EAF3FC`, navy `#082F52`, blue `#28699F`, border `#DDE3EA`, radius 14~16px, spacing 4/8/12/16/24/32다. 주버튼·링크는 blue, 제목·상단 바는 navy를 쓰며 공식 학교 색상을 그대로 쓰지 않는다. 보라 강조는 사용하지 않는다. 공식 학교 색상과 제품이 정한 간격·모서리 치수는 구분한다. 학교 로고·전용 폰트 파일은 자동 배포하지 않는다.
 
 본문 16px/24px, 제목 24~28px, 히어로 PC32/mobile26, 보조14/20을 기본으로 한다. 터치 48×48px는 제품 목표다. 색만으로 지원가능·오류를 구분하지 않는다. 320 CSS px reflow와 360/390/768/1440 viewport, 200% 확대, keyboard focus, reduced motion을 시험한다.[R16]
 
