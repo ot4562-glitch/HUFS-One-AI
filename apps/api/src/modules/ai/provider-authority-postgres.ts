@@ -5,6 +5,7 @@ import type {AiTask,SafeLlmPacket} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
 import type {VerifiedActor} from '../../types.js';
 import {authorizeSession} from '../auth/gates.js';
+import {buildExperienceSkillPacket} from './experience-skill-packet.js';
 /** Current-actor input authority. No provider HTTP, original discovery or writes. */
 export type ProviderOperation='OCR_GENERAL'|'HCX_005'|'HCX_007';
 export interface ProviderRequest {
@@ -173,6 +174,37 @@ export class PostgresProviderAuthority {
       }
     }
     if(p.input_class==='PERSONAL_CONSENTED_CLEARED')requireThat(hasConsentedPersonalSource);
+    if(p.safe_packet?.task==='experience_skills'){
+      // A reviewed source packet cannot survive its owner experience being
+      // edited/deleted, switched, or withdrawn. Enforce this in BOTH fresh
+      // authority transactions, including readJob/cache disclosures.
+      requireThat(req.operation==='HCX_007'&&p.source_refs.length===1);
+      const bound=await c.query(`SELECT b.projection_id,b.actor_id,b.experience_id,
+        b.content_version,b.consent_version,b.input_ref,b.operation,
+        b.source_id,b.source_revision_id,b.approved_by,b.approved_at,
+        r.item_id,r.version AS record_version,r.value_json,r.updated_at,r.deleted_at
+        FROM api_ai_experience_bindings b
+        JOIN api_self_workspace_records r ON r.actor_id=b.actor_id
+          AND r.kind='EXPERIENCE' AND r.item_id=b.experience_id
+        WHERE b.projection_id=$1 AND b.actor_id=$2 LIMIT 2`,
+      [p.projection_id,req.actor.actorId]);
+      requireThat(bound.rows.length===1);
+      const binding=bound.rows[0]!;
+      const contentVersion=version(binding.content_version),consentVersion=version(binding.consent_version);
+      const recordVersion=version(binding.record_version);
+      requireThat(binding.actor_id===req.actor.actorId&&binding.projection_id===p.projection_id
+        &&binding.input_ref===p.input_ref&&binding.operation===req.operation
+        &&binding.deleted_at===null&&contentVersion===recordVersion
+        &&consentVersion===consent.version&&binding.approved_by===p.approved_by
+        &&Date.parse(Time.parse(binding.approved_at))<=asOf
+        &&Date.parse(Time.parse(binding.updated_at))<=asOf
+        &&p.source_refs[0]?.sourceId===binding.source_id
+        &&p.source_refs[0]?.revisionId===binding.source_revision_id);
+      const experience={itemId:binding.experience_id,version:recordVersion,
+        updatedAt:Time.parse(binding.updated_at),value:binding.value_json};
+      const expected=buildExperienceSkillPacket({packetId:p.safe_packet.packetId,experience});
+      requireThat(JSON.stringify(expected)===JSON.stringify(p.safe_packet));
+    }
     requireThat((req.operation==='OCR_GENERAL')===(p.safe_packet===null));
     if(p.safe_packet){requireThat(p.safe_packet.providerInputClass===p.input_class
       &&Buffer.byteLength(JSON.stringify(p.safe_packet))<=24000);}
