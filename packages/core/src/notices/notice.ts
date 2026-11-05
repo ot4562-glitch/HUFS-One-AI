@@ -5,7 +5,7 @@ import {onlyKnownTopics} from '../normalization/topics.js';
 type Priority = NoticeResult['items'][number]['priority'];
 type AppliesTo = 'YES'|'NO'|'UNKNOWN';
 type VerificationState = 'CANDIDATE'|'VERIFIED'|'NEEDS_REVIEW'|'REJECTED';
-export type MajorRole = 'PRIMARY'|'DOUBLE'|'MINOR';
+export type MajorRole = 'PRIMARY'|'DOUBLE'|'MINOR'|'PRIMARY_MAJOR'|'DOUBLE_MAJOR';
 
 /**
  * A07.1 notice input. Core-local until promoted into @hufs-one/contracts by the integration owner.
@@ -93,13 +93,19 @@ export interface NoticeEvaluation {
 
 /** DUPLICATE_ID: the same notice id arrived more than once (e.g. two revisions slipped past the gate).
  * Every copy is excluded — the core never guesses which one is current (#52). */
-export type NoticeExclusionReason = 'REJECTED'|'EXPIRED'|'FUTURE_PUBLICATION'|'INVALID_DATETIME'|'INVALID_COHORT'|'DUPLICATE_ID';
+export type NoticeExclusionReason = 'REJECTED'|'EXPIRED'|'FUTURE_PUBLICATION'|'INVALID_DATETIME'|'INVALID_COHORT'|'INVALID_TERM'|'INVALID_MAJOR_ROLE'|'DUPLICATE_ID';
 export interface NoticeExclusion {noticeId:string; reason:NoticeExclusionReason}
 
 export const CRITICAL_DUE_DAYS = 7;
 export const PINNED_MAX = 2;
 const DAY_MS = 86_400_000;
 const isCohort = (n:unknown):n is number => Number.isInteger(n) && (n as number) >= 1900 && (n as number) <= 2100;
+const isGraduationTerm = (n:unknown):n is string => typeof n === 'string' && /^\d{4}-(1|2)$/.test(n);
+const normalizedMajorRole = (role:unknown):'PRIMARY'|'DOUBLE'|'MINOR'|undefined => {
+  if (role === 'PRIMARY' || role === 'PRIMARY_MAJOR') return 'PRIMARY';
+  if (role === 'DOUBLE' || role === 'DOUBLE_MAJOR') return 'DOUBLE';
+  return role === 'MINOR' ? 'MINOR' : undefined;
+};
 
 function time(iso:string|undefined):number|undefined {
   if (iso === undefined) return undefined;
@@ -130,6 +136,8 @@ export function validateNotice(notice:Notice):NoticeExclusionReason|undefined {
   }
   const r = notice.cohortRange;
   if (r && ((r.min !== undefined && !isCohort(r.min)) || (r.max !== undefined && !isCohort(r.max)))) return 'INVALID_COHORT';
+  if (notice.graduationTermScope?.some(term => !isGraduationTerm(term))) return 'INVALID_TERM';
+  if (notice.majorRoles?.some(role => normalizedMajorRole(role) === undefined)) return 'INVALID_MAJOR_ROLE';
   return undefined;
 }
 
@@ -151,7 +159,18 @@ export function noticeAppliesTo(student:NoticeStudent, notice:Notice):{appliesTo
   const roles = notice.majorRoles ?? [];
   if (majors.length > 0 || roles.length > 0) {
     if (!student.majors || student.majors.length === 0) unknown.push('majors');
-    else if (!student.majors.some(m => (majors.length === 0 || majors.includes(m.major)) && (roles.length === 0 || roles.includes(m.role)))) mismatch = true;
+    else {
+      const scoped = student.majors.filter(m => majors.length === 0 || majors.includes(m.major));
+      if (scoped.length === 0) mismatch = true;
+      else if (roles.length > 0) {
+        const required = roles.map(normalizedMajorRole);
+        if (required.some(role => role === undefined)) unknown.push('majors');
+        else if (!scoped.some(m => required.includes(normalizedMajorRole(m.role)))) {
+          if (scoped.some(m => normalizedMajorRole(m.role) === undefined)) unknown.push('majors');
+          else mismatch = true;
+        }
+      }
+    }
   }
 
   const range = notice.cohortRange;
@@ -162,7 +181,7 @@ export function noticeAppliesTo(student:NoticeStudent, notice:Notice):{appliesTo
 
   const terms = notice.graduationTermScope ?? [];
   if (terms.length > 0) {
-    if (student.targetGraduationTerm === undefined) unknown.push('graduationTerm');
+    if (!isGraduationTerm(student.targetGraduationTerm) || terms.some(term => !isGraduationTerm(term))) unknown.push('graduationTerm');
     else if (!terms.includes(student.targetGraduationTerm)) mismatch = true;
     // A07.1: a self-reported target term alone never confirms graduation-candidate status.
     else if (student.graduationTermVerified !== true) unknown.push('graduationTerm');
