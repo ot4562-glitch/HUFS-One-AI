@@ -60,10 +60,15 @@ function checkHeaders(actual:readonly string[],expected:readonly string[]):Intak
   return issues;
 }
 function parseConsent(text:string|undefined):ConsentValue{
-  const x=canonical(text||'');
+  const x=canonical(text||''),english=x.toUpperCase();
+  // The actual owner-confirmed Forms export contains exact YES/NO values.
+  // These are per-question answers; they never substitute owner identity mapping,
+  // independent evidence rights, a live SharingGrant or an unrevoked session.
+  if(english==='YES')return 'GRANTED';
+  if(english==='NO')return 'DENIED';
   if(['예','네','동의','동의합니다','동의함','확인했습니다'].includes(x))return 'GRANTED';
   if(['아니요','아니오','비동의','동의하지 않습니다','동의하지 않음'].includes(x))return 'DENIED';
-  return 'UNKNOWN'; // The actual form choices may differ; fail closed until explicitly mapped.
+  return 'UNKNOWN'; // Any unlisted or future answer stays fail-closed.
 }
 
 export function validateCourseCsv(csv:string):CourseCsvValidation{
