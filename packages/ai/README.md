@@ -1,51 +1,22 @@
-# CLOVA protocol adapters
+# HUFS One AI — 생성형 AI·OCR/HCX 계약
 
-> 2026-11-04 모듈 경계: 이 패키지의 clova-wire.ts는 오프라인 프로토콜 계약이다. 하지만 앱의 별도 apps/api Provider HTTP/PG/권한·예산·취소 및 Laya supervisor 구현은 통합 [#216](https://github.com/minseong-hufs/HUFS-One-AI/pull/216)을 통해 main에 존재한다. 이 패키지 설명의 'HTTP transport 없음'은 **이 패키지 자체**에 한정한다. 실제 NCP/CLOVA/HCX 계정·요금·자료전송 권한/실호출은 NOT_RUN, 기본 OFF/RELEASE_BLOCKED. [STATUS](../../STATUS.md).
+**현재 상태:** `packages/ai`에는 CLOVA request/response와 검증·4제품 task의 안전한 계약이 있으며 Fastify의 provider/budget/SQL/권리·worker/CPU 경계는 `apps/api`와 `infra/ai`가 통합한다. **실 OCR/HCX/유료 공급자 계정/모델·학생 원본 외부 전송은 승인 전 비활성**. `AI_ENABLED=false`, Laya OFF, RELEASE_BLOCKED.
 
-`src/clova-wire.ts` implements **offline serialization/validation**, first part of #20. There is no HTTP transport, key lookup, provider registration, environment activation or model download. Existing API behavior is unchanged; `AI_ENABLED=false` remains the operating policy.
+## 승인된 4개 제품 task
 
-- `buildOcrRequest` / `parseOcrResponse`: V2 single PNG/JPEG, bytes/SHA check, opaque request-local context, response request/name/version binding, one page, bounded fields, finite convex in-bounds quadrilateral. Output preserves field text/order/lineBreak, pixel vertices and enclosing normalized box, source revision/asset/hash/transform. It is OCR **field** evidence, not reconstructed lines/table semantics. Direct PDF/TIFF/conversion inputs, checkbox/multibox, empty or malformed responses fail closed at this wire boundary. The separately approved PDF extractor first renders and verifies each page as PNG.
-- `buildHcxRequest` / `parseHcxResponse`: existing SafeLlmPacket, HCX-007 fixed JSON schema or HCX-005 one raster image; no remote image URL, tools, caller schema or image in HCX-007. Enforces output token ceiling, usage consistency, task, exact source/paragraph quotes, allowed topic/object tokens. Outputs only NEEDS_REVIEW candidates. A matching quote does not establish its semantic interpretation or official truth.
-- Raster dimensions/format must come from a **trusted decoder** before these functions. Bytes hash binding does not prove that caller-supplied dimensions or privacy/rights assertions are true. The wire functions do not decode or transform images. Separate `raster.ts` / `raster-worker.ts` and `pdf-renderer.ts` boundaries perform bounded decoding/full-page rendering; neither establishes privacy or permission approval. See [the private PDF runtime contract](../../infra/ai/PDF_RUNTIME.md).
-- Contexts are private WeakMap bindings, not authorization receipts. They do not cross process boundaries and do not validate a network response's actor or rights by themselves. HCX v3 JSON does not echo a request ID; the future transport must retain the response/context pair for each HTTP operation. Do not mix them in queues/caches.
+| task | 제한된 생성 후보 | 코드가 최종 판단 |
+| --- | --- | --- |
+| `experience_skills` | 경험에서 추출된 Topic/Skill 후보 | 실제 활동·승인 태그/허용 경험 |
+| `opportunity_terms` | 공고 지원 자격/마감·우대조건 근거 후보 | ELIGIBLE/INELIGIBLE/UNKNOWN·공식 source |
+| `personal_action_brief` | 근거가 있는 준비 행동 요약 | 실제 신청/행동/저장 상태 |
+| `graduation_explanation` | 정해진 RulePack/학점 코드 결과 설명 | 공식 학칙/졸업 확정·불명확 요건 |
 
-Before any live activation, implement and review the server-side transport: current actor/grant/consent/source revision/asOf and original hash verification before reservation/transmission and after response; tokenizer and provider policy; global+actor atomic worst-case billing/idempotency; timeout UNKNOWN_BILLING; cancellation/retry/late result discard; endpoint/header/secret policy and bounded streaming response; #88 offline chaos. #143 isolated Laya worker and actual NCP operation remain separate. No raw provider payloads or image bytes belong in logs.
+각 입력은 검증된 actor/SharingGrant/Consent/SourceRevision/asOf/원본 SHA·출처별 AI 전송 권리·허용된 문장/paragraph·policy/model/schema/prompt 버전을 포함해야 한다. JSON/Zod strict enum·원문 exact citation/숫자·마감·조건 검증 실패시 NEEDS_REVIEW/AI_SKIPPED_PRIVACY로 폴백. LLM이 임의 학교 규칙·지원 적격을 만들거나 실계정/원본 PII를 echo해서는 안 된다.
 
-Synthetic response tests are not an OCR accuracy benchmark or the required independent 20-poster evaluation.
+## 자원·청구/취소
 
-Official references checked 2026-11-03: [General OCR](https://api.ncloud-docs.com/docs/en/ai-application-service-ocr-ocr), [HCX-005 text/image](https://api.ncloud-docs.com/docs/en/clovastudio-chatcompletionsv3), [HCX-007 structured output](https://api.ncloud-docs.com/docs/en/clovastudio-chatcompletionsv3-so). These documents specify the provider wire shape; model/entitlement/cost and actual responses still require independent operational verification before use.
+승인 전/후 권한 확인·입력 최소화, OCR 필요 여부→필요시 Vision→RAG→HCX, atomic RESERVE/DISPATCH/SETTLE·UNKNOWN_BILLING 보수적 처리, 429/503/timeout/late response/재시도·0 외부호출 fallback을 구현/시험한다. 실제 tokenizer/structured outputs/usage·finishReason/실 요금, provider 권리/제한과 CPU/RSS/AI 품질은 **실환경 수락**에 남는다.
 
-Reproduce: `npm test -- tests/api/clova-wire.test.ts tests/api/ai-task-results.test.ts --maxWorkers=2` and `npm run typecheck`. All inputs are synthetic; no live provider is used.
+Laya 보조 worker/ONNX는 서버 주 경로 밖/CPUQuota·OOM/kill switch/노드 격리, 현재 기본 OFF. 외부 모델 다운로드·유료 호출/배포 금지.
 
-## Versioned results for the four product tasks
-
-A server-reviewed packet with `schemaVersion: "ai-task-result-v1"` requests a strict
-`result` in addition to the existing citation envelope. Legacy packet versions and
-their stored citation-only results remain readable; a new result cannot be silently
-accepted under a legacy or unknown task-result version.
-
-| Task | Candidate result |
-| --- | --- |
-| `experience_skills` | Up to six allowed topic/skill/role suggestions with citation indexes |
-| `opportunity_terms` | One to five allowed topics; separate eligibility, priority and completion conditions, date kinds and role steps |
-| `personal_action_brief` | An evidence-backed headline and explanations in the exact supplied action order (at most three) |
-| `graduation_explanation` | Explanations for supplied requirement tokens and references to their approved fact keys (at most three per packet) |
-
-This first result version is extractive: every displayed phrase must occur verbatim
-in each referenced quote. Ambiguous source/paragraph IDs, duplicate fact keys,
-invented objects, changed action order and ungrounded phrases are rejected. Graduation
-explanations reject Unicode numeric characters; actual numeric facts/tables remain
-code-owned. This is not a semantic classifier for all spelled-out numbers, conditions
-or quote-to-requirement associations. All accepted output remains `NEEDS_REVIEW`;
-the user must still approve experience tags and an independent reviewer must verify
-official conditions/evidence.
-
-The API executor revalidates the result against a fresh authorized packet on cache
-reads. The owner panel renders the four result shapes, keeps action order, and erases
-them when its current session becomes invalid. The feature neither creates approved
-inputs nor activates a provider. `tests/api/ai-task-results.test.ts` exercises the
-wire, stored DTO, synthetic validator and authenticated API/executor with fake
-transport; the owner-panel tests cover display, revocation and 100 input switches
-without additional provider submissions. These are offline contract tests, not
-real PostgreSQL/NCP or independent media-quality acceptance.
-
+**관련:** [Architecture A06](../../Architecture.md) · [RAG](../../docs/TRUSTED_RAG_MEDIA_VERSIONING.md) · [CPU 가드](../../docs/LAYA_CPU_SPIKE_PROTECTION.md) · [코드 #253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [실인수 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
