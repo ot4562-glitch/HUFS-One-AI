@@ -1,3 +1,5 @@
+import {networkInterfaces} from 'node:os';
+import {isIP} from 'node:net';
 import {createPostgresDataPool} from './db/pg-pool.js';
 import type {DataPoolSettings,ManagedDataPool} from './db/pg-pool.js';
 import {createPostgresApplication} from './application-postgres.js';
@@ -185,16 +187,36 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
 }
 
 export interface OperatorServer {readonly address:string;close():Promise<void>}
+export interface ApprovedPrivateBridge {
+  mode:'CONTAINER_PRIVATE_IPV4';
+  approvedHost:string;
+}
+
+/** A root-controlled operator factory must approve the exact bound IP. The
+ * address must be private and actually assigned in this network namespace.
+ * External ingress/isolation evidence is still a separate release gate. */
+export function allowedPrivateBridgeHost(host:string,bridge:ApprovedPrivateBridge|undefined,
+  assignedAddresses:readonly string[]):boolean{
+  if(!bridge||bridge.mode!=='CONTAINER_PRIVATE_IPV4'||bridge.approvedHost!==host
+    ||isIP(host)!==4||host.endsWith('.0')||host.endsWith('.255'))return false;
+  const [first=0,second=0]=host.split('.').map(Number);
+  return (first===10||(first===172&&second>=16&&second<=31)||(first===192&&second===168))
+    &&assignedAddresses.includes(host);
+}
 
 /** Verify all managed roles before listening. Public TLS belongs at the ingress;
  * direct database/API ports remain local. Authorization never disables RLS. */
 export async function startOperatorPostgres(input:{
-  prepared:PreparedOperatorPostgres;host:'127.0.0.1'|'::1';port:number;
+  prepared:PreparedOperatorPostgres;host:string;port:number;privateBridge?:ApprovedPrivateBridge;
 }):Promise<OperatorServer>{
-  const {prepared,host,port}=input;
-  if(!LOOPBACK.has(host)||!Number.isSafeInteger(port)||(port!==0&&(port<1024||port>65535))
+  const {prepared,host,port,privateBridge}=input;
+  const assigned=Object.values(networkInterfaces()).flatMap(entries=>
+    (entries??[]).filter(item=>item.family==='IPv4'&&!item.internal).map(item=>item.address));
+  const listenerApproved=LOOPBACK.has(host)?privateBridge===undefined
+    :allowedPrivateBridgeHost(host,privateBridge,assigned);
+  if(!listenerApproved||!Number.isSafeInteger(port)||(port!==0&&(port<1024||port>65535))
     ||(port===0&&process.env.NODE_ENV!=='test'))
-    throw new Error('Operator API can only bind an approved loopback port');
+    throw new Error('Operator API can only bind an approved loopback or private container address');
   if(!prepared?.application||!prepared.pools
     ||!REQUIRED_SQL_ROLES.every(key=>typeof prepared.pools[key]?.connect==='function'&&typeof prepared.pools[key]?.close==='function'))
     throw new Error('Seven managed PostgreSQL pools required');

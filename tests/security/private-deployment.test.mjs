@@ -91,6 +91,8 @@ test('containers use actual compiled outputs and default to an explicitly disabl
   assert.match(dockerfile, /install -d -o root -g node -m 0750 \/etc\/hufs-one\/private/);
   assert.match(compose, /HUFS_PRODUCTION_CONFIG: \/etc\/hufs-one\/private\/production.mjs/);
   assert.match(compose, /HUFS_API_INTERNAL_PORT: "3000"/);
+  assert.match(compose, /HUFS_API_BIND_HOST: \$\{HUFS_API_BACKEND_IPV4:\?/);
+  assert.match(compose, /ipv4_address: \$\{HUFS_API_BACKEND_IPV4:\?/);
   assert.match(compose, /source: \$\{HUFS_OPERATOR_ROOT\}\/production.mjs[\s\S]*target: \/etc\/hufs-one\/private\/production.mjs[\s\S]*read_only: true/);
   assert.match(compose, /approved-egress:[\s\S]*external: true[\s\S]*HUFS_APPROVED_EGRESS_NETWORK/);
   assert.ok(OPERATOR_FILES.includes('production.mjs'));

@@ -7,6 +7,7 @@ services:
       APP_ENV: production
       NODE_ENV: production
       HUFS_API_INTERNAL_PORT: "3000"
+      HUFS_API_BIND_HOST: ${HUFS_API_BACKEND_IPV4:?operator-reviewed private API IPv4 required}
       HUFS_PRODUCTION_CONFIG: /etc/hufs-one/private/production.mjs
       AI_PROVIDER_ENABLED: "false"
       LAYA_ENABLED: "false"
@@ -30,7 +31,10 @@ services:
         bind: {create_host_path: false}
     # External OIDC/SMTP/approved model and database traffic is allowed only
     # through an operator-provisioned, independently filtered egress network.
-    networks: [backend, approved-egress]
+    networks:
+      backend:
+        ipv4_address: ${HUFS_API_BACKEND_IPV4:?operator-reviewed private API IPv4 required}
+      approved-egress: {}
     read_only: true
     tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
     cap_drop: [ALL]

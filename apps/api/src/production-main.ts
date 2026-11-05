@@ -2,7 +2,7 @@ import {lstat,realpath} from 'node:fs/promises';
 import {dirname,isAbsolute,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {prepareOperatorPostgres,startOperatorPostgres} from './operator-postgres-runtime.js';
-import type {OperatorPostgresInputs,OperatorServer} from './operator-postgres-runtime.js';
+import type {OperatorPostgresInputs,OperatorServer,ApprovedPrivateBridge} from './operator-postgres-runtime.js';
 import {PROJECT_AUTHORIZATION} from './runtime-policy.js';
 
 const ROOT='/etc/hufs-one/private';
@@ -53,14 +53,25 @@ export async function runProductionMain(args:readonly string[],environment:NodeJ
   const module=await import(pathToFileURL(path).href) as {
     createOperatorConfig?:()=>OperatorPostgresInputs|Promise<OperatorPostgresInputs>;
     close?:()=>void|Promise<void>;
+    approvePrivateBridge?:()=>ApprovedPrivateBridge|Promise<ApprovedPrivateBridge>;
   };
   if(typeof module.createOperatorConfig!=='function'||(module.close!==undefined&&typeof module.close!=='function'))
     throw new Error('CONFIGURATION_REQUIRED: createOperatorConfig factory');
   let managed:OperatorServer|undefined;
   try{
+    const host=environment.HUFS_API_BIND_HOST??'127.0.0.1';
+    let privateBridge:ApprovedPrivateBridge|undefined;
+    if(host!=='127.0.0.1'){
+      if(typeof module.approvePrivateBridge!=='function')
+        throw new Error('CONFIGURATION_REQUIRED: private container listener approval');
+      privateBridge=await module.approvePrivateBridge();
+      if(privateBridge?.mode!=='CONTAINER_PRIVATE_IPV4'||privateBridge.approvedHost!==host)
+        throw new Error('CONFIGURATION_REQUIRED: private listener mismatch');
+    }else if(module.approvePrivateBridge!==undefined)
+      throw new Error('CONFIGURATION_REQUIRED: private container listener unused');
     const config=await module.createOperatorConfig();
     const prepared=prepareOperatorPostgres({...config,runtime:'production'});
-    managed=await startOperatorPostgres({prepared,host:'127.0.0.1',port});
+    managed=await startOperatorPostgres({prepared,host,port,...(privateBridge?{privateBridge}:{})});
   }catch{
     if(module.close)try{await module.close();}catch{/* no configuration or secret output */}
     throw new Error('CONFIGURATION_OR_RUNTIME_FAILURE: production startup');
