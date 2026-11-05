@@ -151,11 +151,13 @@ try{
  assert.ok([403,404].includes(deniedPoster.status()));
  assert.notEqual(deniedPoster.headers()['content-type'],'image/png');
  await studentPage.bringToFront();
+ // Request a fresh permission read through the visible BETA control.
+ await studentPage.getByRole('button',{name:'모집 상태 새로고침',exact:true}).click();
  await studentPage.getByRole('alert').waitFor();
  assert.equal(await studentPage.getByRole('heading',{name:clubName,exact:true}).count(),0);
  assert.deepEqual(errors,[]);
  await adminContext.close();await studentContext.close();
- pass('ADMIN approval exposes the actual generated PNG to BETA at 360px; revocation removes direct and visible access');
+ pass('ADMIN approval exposes the exact PNG at 360px; revocation blocks its URL and BETA refresh clears the detail');
  process.stdout.write(JSON.stringify({status:'PASS',checks:checks.length,browser:browser.version(),viewport:'360x900',
    transport:'REAL_HTTP',authentication:'SYNTHETIC',storage:'MEMORY',realLogin:'NOT_RUN',postgres:'SEPARATE_LIVE_SUITE',
    screenReaderHuman:'PENDING',NCP:'NOT_RUN',screenshot:shot})+'\n');
