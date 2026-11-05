@@ -14,6 +14,8 @@ import {MANAGED_PLATFORM_EXTENSIONS,extensionSettings,bindManagedExtensions,asse
 import type {OperatorExtensions} from './operator-extensions.js';
 import {createPostgresProviderRuntime} from './modules/ai/provider-postgres.js';
 import type {PostgresProviderConfig} from './modules/ai/provider-postgres.js';
+import {PostgresProviderResults} from './modules/ai/provider-results-postgres.js';
+import {PostgresExperienceSkillCandidateReader} from './modules/ai/experience-skill-candidates-postgres.js';
 
 /** Current operator assembly. Project authorization is owner-confirmed; each
  * actual SQL role, identity adapter and listener is still configured explicitly.
@@ -131,7 +133,10 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       ?createPostgresProviderRuntime({...input.managedAi,pools:aiPools}):undefined;
     const ai:PostgresApplicationConfig['ai']=provider
       ?{runtime:{phaseId:provider.phaseId,operation:provider.operation,executor:provider.executor},
-        inputs:provider.approvedInputs}:undefined;
+        inputs:provider.approvedInputs,
+        experienceCandidates:new PostgresExperienceSkillCandidateReader(aiPools!.authority,
+          new PostgresProviderResults(aiPools!.results),provider.executor,
+          input.managedAi?.now??(()=>new Date().toISOString()))}:undefined;
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(ai?{ai}:{}),

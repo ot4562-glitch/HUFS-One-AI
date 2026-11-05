@@ -20,6 +20,8 @@ import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.j
 import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
 import {registerExperienceApprovalRoutes} from './modules/profiles/experience-approval-http.js';
+import {registerExperienceSkillCandidateRoute} from './modules/profiles/experience-skill-candidate-http.js';
+import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import type {ExperienceApprovalPort} from './modules/profiles/experience-approval-postgres.js';
 import type {TrustedCatalogPort} from './modules/opportunities/owner-catalog-http.js';
 import type {SelfAccountPort} from './modules/profiles/self-account-postgres.js';
@@ -53,6 +55,7 @@ interface SharedDependencies {
   revisionComparison?:Omit<Parameters<typeof registerOpportunityRevisionComparisonRoutes>[0],'app'|'session'>;
   syntheticClubs?:Omit<Parameters<typeof registerSyntheticClubRoutes>[0],'app'|'session'|'adminAuthority'>;
   experienceApproval?:ExperienceApprovalPort;
+  experienceCandidates?:ExperienceSkillCandidatePort;
   demoOverlay?:ApiOptions['demoOverlay'];adminAuthority?:ApiOptions['adminAuthority'];
   adminUsage?:ApiOptions['adminUsage'];demoPreflight?:ApiOptions['demoPreflight'];
   allowedOrigin:string;trustedProxyAddresses?:ApiOptions['trustedProxyAddresses'];repository:ApiRepository;
@@ -118,6 +121,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
   registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});
   if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,ownerSession);
+  if(deps.experienceCandidates)registerExperienceSkillCandidateRoute(app,deps.experienceCandidates,ownerSession);
   if(deps.sourceHistory)registerSourceRevisionHistoryRoute(app,deps.sourceHistory,auth.verifySession,ownerSession.now);
   if(deps.selfAccount)registerSelfAccountRoutes(app,deps.selfAccount,ownerSession);
   if(deps.ownerCatalog)registerOwnerCatalogRoutes(app,deps.ownerCatalog,ownerSession);
