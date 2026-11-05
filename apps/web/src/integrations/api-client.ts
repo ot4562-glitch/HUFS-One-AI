@@ -58,8 +58,8 @@ const TeamSessionSchema = z.strictObject({
   schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),
 });
 /** ADMIN identity may be read by administrator UI, but never grants BETA owner rights.
- * TeamSessionSchema is deliberately BETA-only; roleServices/OwnerSessionController
- * reject ADMIN regardless of beta-shaped flags from the server. */
+ * TeamSessionSchema is deliberately BETA-only; OwnerSessionController rejects ADMIN.
+ * roleServices installs only the separate ADMIN club moderation port, never owner or REVIEWER ports. */
 const AdminSessionSchema = z.strictObject({
   actorId:z.string().min(1),role:z.literal('ADMIN'),
   schoolMailProofValid:z.literal(true),betaAllowed:z.literal(true),

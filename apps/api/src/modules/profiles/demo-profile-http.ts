@@ -73,7 +73,7 @@ export function registerDemoProfileRoutes(app:FastifyInstance,port:DemoProfilePo
     Empty.parse(request.query);const actor=await betaActor(request,verifier);
     const input=DemoProfileWorkspaceSaveSchema.parse(request.body);
     if(!port?.saveWorkspace)throw new ApiFailure('PROVIDER_UNAVAILABLE');
-    admit(actor.actorId,true);
+    await admit(actor.actorId,true);
     const response=await run(()=>port.saveWorkspace!(actor.actorId,input));
     if(response.profile.version!==input.expectedVersion+1
       ||JSON.stringify(response.profile.workspace)!==JSON.stringify(input.workspace))
