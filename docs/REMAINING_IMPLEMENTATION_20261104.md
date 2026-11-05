@@ -1,17 +1,21 @@
-# HUFS One AI — 현재 남은 구현과 실인수
+# 현재 남은 코드와 실제 구성·검증
 
-최신 코드는 [STATUS](../STATUS.md), **실제 구현/CI 누락은 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)**, **권리·사람·실계정/NCP/출시 검증은 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)** 에서 관리합니다. 이 문서는 진행 지도를 제공하며 완료가 아닌 작업을 다시 완료로 선언하지 않습니다.
+**승인:** OWNER_CONFIRMED_APPROVED. 이 목록은 승인 대기가 아니라 실제 구현/구성/실행의 작업 목록입니다. 사용자 소유 #253/#257, 실제 결과 #252, 협업 조정 #255.
 
-| 구분 | 현재 준비된 것 | 잔여 검증/구현 |
-| --- | --- | --- |
-| 웹/UX | 독립 상단 8개 주요 메뉴·모바일 5탭, 배너·홈 요약, 미지원 학교 메뉴, 합성/REVIEWER/EMPTY/가상 동아리 | 새 화면의 실제 스크린리더·기기 인수, 역할·캐시/철회/다중탭 실인증; 공고 카드 확장형 데이터 계약은 UI 담당과 조율 |
-| API/OIDC/DB | Fastify·Zod, 권한/행동·7개 SQL 기본 역할과 확장 pool, OWNER/REVIEWER·CAS/영수증·admin usage 코드 | 완전한 production 조립, 운영 Google/학교메일/OTP, trusted proxy, 실제 독립 DB role/CA TLS/GRANT·다중 인스턴스/복구 |
-| Source/RAG | 권리·불변 Revision·판본/asOf, 승인 egress, 이미지/PDF 근거·시점 검색·격리 PG | 실제 허가 출처·필드/재배포/AI 전송 권리 및 실 PG→React·독립 bbox/시점 판정 |
-| AI/Laya | 4개 AI task/인용·취소/영수증·예산·OCR/HCX wire, native worker/시스템 정책, Laya 기본 OFF | 허가된 provider tokenizer/usage/비용·OOM/CPU/RSS/실호스트 인수, 원본/청구 불명 재정산 |
-| 학업/실원본 | 학점·전공 What-if·RulePack 보류 코어·private intake plan/preview/apply | 실제 CSV 4개/Forms 26열·공식 학칙/4인 손계산·자료별 동의/철회 |
-| 보안/운영 | 현재 Git 보호 경로 차단·publication/SBOM/API inventory, NCP plan/SSH 합성 preview/rollback 코드 | full private checkout/이력·clone/backup, native/폰트/모델 이미지 LICENSE, 실 NCP/TLS/비용·D03 |
-| 계약/품질 | 현재 90 route/39 설계 계약/19 TASK 정적 원장·Chrome/PG CI | 설계 직접 미매핑 9개 분류, 동적 소비/타인 트랙 확인; Gold 0/200·0/32와 실제 스크린리더 미수락 |
+## PR #264에 구현된 범위
 
-**실현 순서:** P0 코드의 최소 운영 보안 경계·API/role/출처/AI·회귀 PR → 별도 승인된 실계정/실원본·비공개 NCP 운영 → 독립 사람 정확도·접근성/복구 → 최종 D03 GO. 실제 개인 원본·유료 API·서버 개통을 개발 편의로 실행하지 않음.
+- 명시적 production 구성의 무조건 거부를 제거하고 OIDC/메일·HTTPS origin·실제 서버 포트를 검사.
+- 기본 7개 SQL 역할 + 기존 owner/경험/추천/학업/Source 서비스 13종의 별도 managed pool 구성·중복/원시 pool 거부·시작/실패/종료 정리.
+- 서버 비공개 factory 기반 `production-main` plan/apply와 systemd unit.
+- 기존 경험 목록에 선택형 `view=portfolio`를 추가, 현재 승인 태그/내용/동의 버전·변경/철회 재검사·정확한 근거 ID 집계.
+- 구성된 AI provider의 별도 승인 기본false 제거, 명시적 중지·현재 입력/세션/예산 검증 유지.
+- 승인 상태와 실제 실행 결과를 구분한 문서 및 release evidence 보고.
 
-현재 공개 상태는 **`RELEASE_BLOCKED`**, 선택 Laya OFF, `AI_ENABLED=false`입니다. 실행 방법 [제품 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md).
+## 아직 완료로 표시하지 않은 범위
+
+- 경험 선택→provider input 등록→AI 태그 후보/원문 근거→학생 확인을 묶는 전체 어댑터와 UI/추천 소비자 종단 연결.
+- loader-only `majorWhatIf` 관리형 운영 연결과 설계 API 9경로의 현재 대체/미구현/의도적 제외 판단 정리.
+- 실제 운영 host/DB migration·계정/메일·가격/AI 입력·TLS/Proxy/복구 구성을 사용한 시험과 비용/품질 측정.
+- 광범위한 #253의 source/native worker·전체 문서/API inventory·공급망/현장 인수 전 항목의 정확한 완료 근거.
+
+UI·추천 순수 코어·학업 알고리즘은 다른 협업자 소유입니다. 본 PR의 코드/합성 테스트만으로 전체 서비스 또는 민성 담당 모든 이슈가 완료됐다고 계산하지 않습니다. 현재 PR HEAD의 결과를 [Actions](https://github.com/minseong-hufs/HUFS-One-AI/actions)에서 확인합니다.

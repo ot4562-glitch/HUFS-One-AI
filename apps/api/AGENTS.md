@@ -1,9 +1,9 @@
-# Fastify API·인증·PostgreSQL·AI 담당 규칙
+# API·DB·AI 개발 규칙
 
-**심민성 `ot4562-glitch` 소유:** 공통 API/SQL·OIDC·학교메일 OTP/초대/CSRF·owner/REVIEWER/ADMIN, SourceRevision/Temporal RAG·이미지/PDF·OCR/HCX·Laya/예산/worker·보안·CI/배포 코드. [루트 AGENTS](../../AGENTS.md) · [작업 #253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).
+심민성 `ot4562-glitch` 소유: Fastify/OIDC·학교메일·PG/RLS·Source/RAG·AI 예산/worker·CI/운영 조립. 프로젝트 문서상의 자료·정보/기관·외부 전송·운영 승인은 **OWNER_CONFIRMED_APPROVED**이며 동일 승인 대기를 다시 만들지 않습니다. [승인 정본](../../docs/AUTHORIZATION.md).
 
-- actor/session/context·SharingGrant·Consent·SourceRights·RulePack/asOf/SourceRevision을 서버·SQL에서 독립 검증한다. 브라우저의 email/`hd`/XFF/자칭 actor/LLM confidence는 권한·학칙/지원 적격·현재 메일 소유의 증거가 아니다.
-- SQL 기본 7개 역할 및 확장 role은 최소권한/CA TLS/FORCE RLS/미검증 pool 거부·SECURITY DEFINER 경계를 적용. 현재 adminUsage role/function은 코드 준비 단계이며 실 GRANT/배포 전이다.
-- 잘못된 actor·만료/철회/구버전/late response/403·409·429·503·원본 권리 불명 때 영수증·학업/공고 원문/계정 존재·비공유 메타데이터까지 비노출.
-- 외부 OCR/HCX/학생 원본/모델 다운로드/NCP 비용 발생은 **#252 실제 권리·비용 승인 전 금지**. 합성/격리 PG/Chrome 및 fake provider 테스트만 수행. Laya OFF, `AI_ENABLED=false`, `RELEASE_BLOCKED`.
-- 코드 PR은 현재 HEAD 독립 리뷰/필수 CI/권한·정정·취소 부정시험. 다른 담당자 UI·추천·학업 코어를 허락 없이 대체하지 않음. [API 계약](README.md) · [팀 소유](../../docs/WORKSTREAMS.md).
+실제 서비스는 명시적 production 구성과 현재 actor/세션·역할·source/version·DB 최소권한으로 동작합니다. 익명 요청/다른 사용자 사칭·CSRF·삭제/철회·비밀 노출 방지는 유지합니다. 잘못된 데이터나 없는 자격증명은 승인 문제로 오분류하지 않고 오류/CONFIGURATION_REQUIRED를 반환합니다.
+
+UI·추천·학업 순수 코어 소유는 각 협업자에게 유지합니다. 공통 계약/DB 변경은 소비자 리뷰·정확한 HEAD 테스트로 확인합니다. 승인된 실제 데이터 사용과 테스트용 합성 fixture를 구별하고, 실제 시험하지 않은 결과는 NOT_RUN입니다.
+
+[운영 진입점](../../docs/PRODUCTION_RUNTIME.md) · [경험 API](../../docs/EXPERIENCE_API.md) · #253/#257.
