@@ -405,25 +405,65 @@ function evaluateRequirement(
     assertPositiveUnits(requirement.minAreas, 'minimum areas');
     assertPositiveUnits(requirement.requiredCreditUnits, 'spread credit units');
     if (requirement.minAreas > allowed.size) throw new TypeError('minimum areas exceeds available areas');
+    // Uncompleted multi-area courses never affect earned status. An earned
+    // course can contribute credits, but never two distinct areas at once.
     const earnedAreas = new Set<string>();
-    let earnedUnits = 0, projectedUnits = 0, ambiguous = false;
+    const ambiguousEarned:string[][] = [];
+    let earnedUnits = 0, projectedUnits = 0;
     for (const course of winners.values()) {
       if (course.creditUnits === 0) continue;
       const eligible = course.areaIds.filter(id => allowed.has(id));
-      // Multiple applicable areas require an independently approved allocation.
-      if (eligible.length > 1) { ambiguous = true; continue; }
       if (eligible.length === 0) continue;
       projectedUnits = addUnits(projectedUnits, course.creditUnits);
       if (course.ledger !== 'EARNED') continue;
       earnedUnits = addUnits(earnedUnits, course.creditUnits);
-      earnedAreas.add(eligible[0]!);
+      if (eligible.length === 1) earnedAreas.add(eligible[0]!);
+      else ambiguousEarned.push(eligible);
     }
+    // Maximum possible area spread is a bipartite matching, not the union
+    // of area tags: each earned course must be assigned to only one area.
+    const matched = new Map<string,number>();
+    const augment = (index:number, visited:Set<string>):boolean => {
+      for (const area of ambiguousEarned[index] ?? []) {
+        if (earnedAreas.has(area) || visited.has(area)) continue;
+        visited.add(area);
+        const previous = matched.get(area);
+        if (previous === undefined || augment(previous, visited)) {
+          matched.set(area, index);
+          return true;
+        }
+      }
+      return false;
+    };
+    for (let i = 0; i < ambiguousEarned.length; i++) augment(i, new Set());
+    const maxPossibleAreas = earnedAreas.size + matched.size;
+
+    // A small set-cover search proves whether some legal allocation could
+    // stay below minAreas. If the search budget is reached, hold for review.
+    const uncovered = ambiguousEarned.filter(xs => !xs.some(a => earnedAreas.has(a)));
+    let searches = 0;
+    const canStayBelow = (groups:readonly string[][], slots:number):boolean => {
+      if (groups.length === 0) return true;
+      if (slots <= 0) return false;
+      if (++searches > 50000) return true;
+      const fewest = groups.reduce((best, next) => next.length < best.length ? next : best);
+      return fewest.some(a => canStayBelow(groups.filter(xs => !xs.includes(a)), slots - 1));
+    };
+    let state:ProgressState;
+    if (earnedUnits < requirement.requiredCreditUnits || maxPossibleAreas < requirement.minAreas)
+      state = 'UNSATISFIED';
+    else if (earnedAreas.size >= requirement.minAreas
+      || !canStayBelow(uncovered, requirement.minAreas - earnedAreas.size - 1))
+      state = 'SATISFIED';
+    else state = 'NEEDS_REVIEW';
     return {requirementId:requirement.id,
-      state:ambiguous ? 'NEEDS_REVIEW' : earnedUnits >= requirement.requiredCreditUnits
-        && earnedAreas.size >= requirement.minAreas ? 'SATISFIED' : 'UNSATISFIED',
+      state,
       requiredCreditUnits:requirement.requiredCreditUnits, earnedCreditUnits:earnedUnits,
       remainingCreditUnits:Math.max(0, requirement.requiredCreditUnits - earnedUnits),
-      projectedCreditUnits:projectedUnits, matchedAreasCount:earnedAreas.size,
+      // A definite SAT guarantees minAreas, even with unapproved allocations.
+      // Never count a single course as two simultaneous areas.
+      projectedCreditUnits:projectedUnits,
+      matchedAreasCount:state==='SATISFIED'?Math.max(earnedAreas.size,requirement.minAreas):earnedAreas.size,
       requiredAreasCount:requirement.minAreas, evidenceRefs};
   }
   if (requirement.kind === 'GROUP_CHOICE') {
