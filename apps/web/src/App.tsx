@@ -13,6 +13,7 @@ import type {PlanCheckPort} from './features/plan-check/PlanCheckPanel.js';
 import type {DoubleMajorPort} from './features/double-major/DoubleMajorPanel.js';
 import type {OwnerDemoProfilePort} from './features/owner-demo/OwnerDemoProfile.js';
 import type {OwnerAcademicsPort} from './features/owner-academics/OwnerAcademicsPanel.js';
+import type {OwnerPrivateIntakePort} from './features/owner-intake/OwnerPrivateIntakePanel.js';
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
@@ -62,6 +63,8 @@ export interface AppServices {
   readonly ownerDemoProfile?: OwnerDemoProfilePort;
   /** Current BETA owner's double-major/plan/What-if checks; no public demo subject context. */
   readonly ownerAcademics?: OwnerAcademicsPort;
+  /** Verified BETA actor's own attested CSV profile/course review, never public S01–S05. */
+  readonly ownerIntake?: OwnerPrivateIntakePort;
   /** Operator-provisioned, metadata-only BETA Provider vertical slice. Default absent. */
   readonly ownerProvider?: OwnerProviderPort;
 }
@@ -95,7 +98,8 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const state = useDemo(controller);
   const [path, navigate] = useRoute(historyPort);
   const sandbox = useSandbox(controller, state, services.sandbox);
-  const independent = path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics'
+  const independent = (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
+    || path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics'
     || path === '/clubs/admin' || (!!services.ownerClubs && (path === '/clubs' || path.startsWith('/clubs/')));
   const ctx: PageContext = {path, state, controller, navigate, services, sandbox};
   const page = (path === '/local-demo' && LocalWorkbench

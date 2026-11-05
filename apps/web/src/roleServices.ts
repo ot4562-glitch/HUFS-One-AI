@@ -70,6 +70,10 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
         api.owner.submitApprovedProvider(entry,taskPath,idempotencyKey,signal),
       read: (jobId,taskPath,signal) => api.owner.readApprovedProviderJob(jobId,taskPath,signal),
     },
+    ownerIntake: {
+      session: ownerSession,
+      read: signal => api.owner.getPrivateIntake(signal),
+    },
     ownerDemoProfile: {
       session: ownerSession,
       read: signal => api.owner.readDemoProfile(signal),

@@ -14,7 +14,7 @@ import {
   HufsAbilityMenuManifestSchema,SyntheticClubBoardResponseSchema,
   DemoProfileSaveSchema,DemoProfileResetSchema,DemoProfileResponseSchema,blankDemoProfileValue,
   DemoProfileWorkspaceSaveSchema,blankDemoProfileWorkspace,
-  OwnerDoubleMajorAuditSchema,
+  OwnerDoubleMajorAuditSchema,PrivateOwnerIntakeResponseSchema,
   ApprovedProviderInputsSchema,ApprovedProviderInputSchema,ProviderRunRequestSchema,
   ProviderAcceptedSchema,ProviderStoredJobSchema,AI_TASK_PATHS,AiTaskPathSchema,
   SyntheticClubDetailResponseSchema,SyntheticClubAdminListResponseSchema,SyntheticClubCreateSchema,
@@ -136,6 +136,8 @@ export class HufsOwnerApiClient {
     requireMatchingReceipt(result.id===id&&result.version===input.expectedVersion+1&&result.state===state);return result;
   }
   getProfile(signal?:AbortSignal){return this.request('/api/profile',ProfileRead,{signal});}
+  /** Authenticated BETA's own attested CSV, never a selected S01–S05 demo identity. */
+  getPrivateIntake(signal?:AbortSignal){return this.request('/api/private-intake/self',PrivateOwnerIntakeResponseSchema,{signal});}
   async updateProfile(change:z.infer<typeof SelfProfilePatchSchema>,signal?:AbortSignal){
     const input=clientInput(SelfProfilePatchSchema,change);
     const result=await this.mutate('/api/profile',ProfileWrite,'PATCH',input,signal);
