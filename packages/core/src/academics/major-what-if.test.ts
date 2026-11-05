@@ -420,3 +420,97 @@ describe('buildMajorWhatIf (#11, #82)', () => {
       blockers:blocked.blockers, caveat:'HYPOTHETICAL_NOT_OFFICIAL'}).success).toBe(true);
   });
 });
+
+describe('second-program packs approved for one primary major (#249 review W1)', () => {
+  // C as a double major has one pack per primary major. Hand figures: C1 (area C) is the only C
+  // course earned (6 units). For A the C pack needs 6 of area C; for D it needs 12, so 6 are missing.
+  const cForA = (state:MajorRulePack['rulePackState'] = 'APPROVED') => packC('SYN-C-DM-FOR-A', 'SYN-CA', state);
+  const cForD = (state:MajorRulePack['rulePackState'] = 'APPROVED'):MajorRulePack => ({
+    rulePackVersion:'SYN-C-DM-FOR-D', rulePackState:state, courseAreas:{'SYN-C1':['SYN-AREA-C']},
+    requirements:[{id:'SYN-CD-MAJOR', kind:'CATEGORY_MINIMUM', areaId:'SYN-AREA-C', requiredCreditUnits:12, evidenceRefs:['EV-SYN-C']}],
+  });
+  const scoped = (forA = cForA(), forD = cForD()):ProgramOffer[] => [
+    ...CATALOG.filter(offer => !(offer.role === 'DOUBLE_MAJOR' && offer.programId === 'SYN-MAJ-C')),
+    {role:'DOUBLE_MAJOR', programId:'SYN-MAJ-C', primaryProgramId:'SYN-MAJ-A', pack:forA},
+    {role:'DOUBLE_MAJOR', programId:'SYN-MAJ-C', primaryProgramId:'SYN-MAJ-D', pack:forD},
+  ];
+  const A_WITH_C:ProgramEnrollment = {primaryProgramId:'SYN-MAJ-A', secondary:{role:'DOUBLE_MAJOR', programId:'SYN-MAJ-C'}};
+  const toD:WhatIfScenario = {action:'CHANGE_PRIMARY_MAJOR', targetMajorId:'SYN-MAJ-D'};
+
+  it('a primary change switches the double-major pack to the one approved for the new primary', () => {
+    const result = ready(run(toD, {current:A_WITH_C, programs:scoped()}));
+    expect(result.current.rulePackVersions).toEqual(['SYN-A-DM-1', 'SYN-C-DM-FOR-A']);
+    expect(result.hypothetical.rulePackVersions).toEqual(['SYN-D-DM-1', 'SYN-C-DM-FOR-D']);
+    // Now: A's area row has A1 + A2 + S1 = 18 of 18 (C does not share S1); C for A has C1 = 6 of 6.
+    expect(result.current.requirements).toEqual([
+      {requirementId:'SYN-A-TOTAL', state:'MISSING', missingCreditUnits:224},
+      {requirementId:'SYN-A-MAJOR-DM', state:'SATISFIED'},
+      {requirementId:'SYN-A-REQ', state:'SATISFIED'},
+      {requirementId:'SYN-CA-MAJOR', state:'SATISFIED'},
+      {requirementId:'SYN-CA-REQ', state:'MISSING'},
+    ]);
+    // With D: no course is in area D (6 missing); C for D needs 12 of area C and has 6.
+    expect(result.hypothetical.requirements).toEqual([
+      {requirementId:'SYN-D-TOTAL', state:'MISSING', missingCreditUnits:224},
+      {requirementId:'SYN-D-MAJOR', state:'MISSING', missingCreditUnits:6},
+      {requirementId:'SYN-CD-MAJOR', state:'MISSING', missingCreditUnits:6},
+    ]);
+    expect([result.current.reviewRequirementIds, result.hypothetical.reviewRequirementIds]).toEqual([[], []]);
+    expect(result.delta).toEqual([
+      {requirementId:'SYN-A-TOTAL', change:'REMOVED_REQUIREMENT', evidenceRefs:['EV-SYN-TOTAL']},
+      {requirementId:'SYN-A-MAJOR-DM', change:'REMOVED_REQUIREMENT', evidenceRefs:['EV-SYN-A']},
+      {requirementId:'SYN-A-REQ', change:'REMOVED_REQUIREMENT', evidenceRefs:['EV-SYN-A']},
+      {requirementId:'SYN-CA-MAJOR', change:'REMOVED_REQUIREMENT', evidenceRefs:['EV-SYN-C']},
+      {requirementId:'SYN-CA-REQ', change:'REMOVED_REQUIREMENT', evidenceRefs:['EV-SYN-C']},
+      {requirementId:'SYN-D-TOTAL', change:'NEW_REQUIREMENT', evidenceRefs:['EV-SYN-TOTAL']},
+      {requirementId:'SYN-D-MAJOR', change:'NEW_REQUIREMENT', evidenceRefs:['EV-SYN-D']},
+      {requirementId:'SYN-CD-MAJOR', change:'NEW_REQUIREMENT', evidenceRefs:['EV-SYN-C']},
+    ]);
+  });
+
+  it('a minor approved per primary major switches the same way', () => {
+    const programs:ProgramOffer[] = [
+      ...CATALOG.filter(offer => !(offer.role === 'MINOR' && offer.programId === 'SYN-MAJ-C')),
+      {role:'PRIMARY_MAJOR', programId:'SYN-MAJ-D', degreePath:'ADVANCED_PLUS_MINOR', pack:{...primaryD, rulePackVersion:'SYN-D-MM-1'}},
+      {role:'MINOR', programId:'SYN-MAJ-C', primaryProgramId:'SYN-MAJ-A', pack:packC('SYN-C-MI-FOR-A', 'SYN-CMA')},
+      {role:'MINOR', programId:'SYN-MAJ-C', primaryProgramId:'SYN-MAJ-D', pack:packC('SYN-C-MI-FOR-D', 'SYN-CMD')},
+    ];
+    const result = ready(run(toD, {current:{primaryProgramId:'SYN-MAJ-A', secondary:{role:'MINOR', programId:'SYN-MAJ-C'}}, programs}));
+    expect(result.current.rulePackVersions).toEqual(['SYN-A-MM-1', 'SYN-C-MI-FOR-A']);
+    expect(result.hypothetical.rulePackVersions).toEqual(['SYN-D-MM-1', 'SYN-C-MI-FOR-D']);
+  });
+
+  it('adding the double major picks the pack approved for the current primary only', () => {
+    const result = ready(run({action:'ADD_DOUBLE_MAJOR', targetMajorId:'SYN-MAJ-C'}, {current:A_ONLY, programs:scoped()}));
+    expect(result.hypothetical.rulePackVersions).toEqual(['SYN-A-DM-1', 'SYN-C-DM-FOR-A']);
+  });
+
+  it('no pack approved for the new primary is TARGET_PROGRAM_UNAVAILABLE, not an error', () => {
+    const onlyForA = scoped().filter(offer => offer.pack.rulePackVersion !== 'SYN-C-DM-FOR-D');
+    expect(run(toD, {current:A_WITH_C, programs:onlyForA}))
+      .toMatchObject({state:'BLOCKED_DEPENDENCY', blockers:['TARGET_PROGRAM_UNAVAILABLE']});
+  });
+
+  it('an unapproved pack is reported on the side that uses it', () => {
+    expect(run(toD, {current:A_WITH_C, programs:scoped(cForA(), cForD('DRAFT'))}))
+      .toMatchObject({state:'BLOCKED_DEPENDENCY', blockers:['RULEPACK_NOT_APPROVED']});
+    expect(run(toD, {current:A_WITH_C, programs:scoped(cForA('NEEDS_REVIEW'), cForD())}))
+      .toMatchObject({state:'BLOCKED_DEPENDENCY', blockers:['CURRENT_RULEPACK_NOT_APPROVED']});
+  });
+
+  it('the catalog refuses ambiguous or malformed scoping', () => {
+    const add = (offer:ProgramOffer) => () => run(toD, {current:A_WITH_C, programs:[...scoped(), offer]});
+    // A program-wide pack next to per-primary packs would leave the choice to list order.
+    expect(add({role:'DOUBLE_MAJOR', programId:'SYN-MAJ-C', pack:packC('SYN-C-DM-ANY', 'SYN-CX')})).toThrow(/mixes/);
+    expect(add({role:'DOUBLE_MAJOR', programId:'SYN-MAJ-C', primaryProgramId:'SYN-MAJ-A', pack:packC('SYN-C-DM-FOR-A-2', 'SYN-CY')}))
+      .toThrow(/more than once/);
+    expect(add({role:'DOUBLE_MAJOR', programId:'SYN-MAJ-E', primaryProgramId:'SYN-MAJ-E', pack:packC('SYN-E-DM-1', 'SYN-E')}))
+      .toThrow(/itself/);
+    expect(add({role:'DOUBLE_MAJOR', programId:'SYN-MAJ-E', primaryProgramId:'bad id', pack:packC('SYN-E-DM-1', 'SYN-E')}))
+      .toThrow(TypeError);
+    expect(add({role:'PRIMARY_MAJOR', programId:'SYN-MAJ-E', degreePath:'DOUBLE_MAJOR', primaryProgramId:'SYN-MAJ-A',
+      pack:{...primaryD, rulePackVersion:'SYN-E-PM-1'}} as unknown as ProgramOffer)).toThrow(/cannot name a primaryProgramId/);
+    // The same program as a minor is a different offer and may keep one program-wide pack.
+    expect(add({role:'MINOR', programId:'SYN-MAJ-E', pack:packC('SYN-E-MI-1', 'SYN-EM')})).not.toThrow();
+  });
+});
