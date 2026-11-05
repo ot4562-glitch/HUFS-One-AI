@@ -108,7 +108,7 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 **DB 핵심 집합:** actor/session/role/consent/SharingGrant; private owner mapping/intake receipt(민감 영역), profile/academic transcript/RulePack/plan/major-What-if/forecast, experience/tag approval/bookmark/action, SourceRevision·media/PDF/OCR·verified claims·rights/reviewer·temporal index, recommendation/notice/context/overlay, AI job·budget usage·receipt.
 
 - 원본과 공유 projection은 다르고, owner/actor+context+scope+version·current right/asOf를 SQL/FORCE RLS/서버 양쪽에서 확인한다. 역할 최소화, 주입된 미검증 pool/권한 포트 거절, 읽기 전용/서명된 사용량 집계. `ai_budget_admin_usage()`/adminUsage role은 코드만 구현됐으며 운영 GRANT·migration은 미수락.
-- GitHub 계약 inventory **현재 등록 90개 route**, 설계 39개 contract, TASK 19개. **설계상 직접 미매핑 경로 9개**는 공개 endpoint 신설로 간주하지 않고 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)에서 `RETIRED/PRIVATE_OPERATOR/EQUIVALENT/TO_IMPLEMENT`을 명확히 판정한다. `POST /api/auth/login`의 비밀번호 로그인은 retired; 실학생 파일 import는 private operator 전용.
+- GitHub 계약 inventory **현재 등록 97개 route**, 설계 39개 contract, TASK 19개. **설계상 직접 미매핑 경로 9개**는 공개 endpoint 신설로 간주하지 않는다. [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)과 `tools/api_contract_inventory.json`에서 비밀번호 로그인 폐기1·설계 별도 구현 필요2·scope가 다른 대안 API3·operator-private3으로 분류하고 자동 감사한다. 대안 API는 설계 URL의 별칭이 아니다. `POST /api/auth/login`의 비밀번호 로그인은 retired; 실학생 파일 import는 private operator 전용.
 - 현재 `GET /api/admin/usage`는 ADMIN 독립 authority·비공개 PG read-only·정확한 집계/금액 문자열, 미수집 token/error=`NOT_COLLECTED`. 실제 프로덕션 계측 또는 활성화 허가 없음.
 - 상태변경 요청은 CSRF/Origin·expectedVersion·actor/role, 쿠키는 HttpOnly/Secure/SameSite/host-only. HTTP `401` 인증 · `403` 권한 · `409` version · `422` 입력/근거 · `429` 한도 · `503` 공급자/미설정. 서버 내부 오류/SQL 원문·키·학생 다른 사람 메타데이터 비노출.
 - Google OAuth Authorization Code+PKCE/OIDC는 서버가 iss/aud/exp/signature/JWKS/nonce/state/`sub`·hd를 검증. Google 계정 `email_verified`만으로 현재 학교 이메일 소유권을 인정하지 않고 외대 메일 OTP·계정 allowlist를 결속한다. 실 계정 검증은 #252.
@@ -116,7 +116,7 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 
 ## A14. NCP·서비스 운영·공개 접근제어
 
-NCP 실제 계정/비용/IAM/리전·SKU·스토리지/요금 hard stop은 운영자와 사용자 별도 서면 승인 뒤 적용. 현재 IaC/SSH preview는 루프백 **합성 경로**이며 product production은 fail-closed. 운영 배포에서 production entrypoint/실 SQL/TLS·Google·메일·권리/실원본·secret·backup/rollback·관측·WAF/Edge·Nginx/LB를 각각 인증해야 한다.
+프로젝트 자료·클라우드/모델·운영/출시 승인은 소유자가 완료 확인해 `OWNER_CONFIRMED_APPROVED`다. 실제 NCP 계정/비용/IAM/리전·SKU·스토리지/요금 hard stop과 외부기관 자료·개인별 현재 동의는 실제 운영자 구성 및 증거로 대조한다. IaC/SSH preview는 루프백 **합성 경로**이며 실제 운영 서비스 공개는 ingress·인증·DB·복구·독립 인수 검증 전까지 차단한다. 운영 배포에서 production entrypoint/실 SQL/TLS·Google·메일·권리/실원본·secret·backup/rollback·관측·WAF/Edge·Nginx/LB를 각각 인증해야 한다.
 
 직접 public origin IP/IPv6/다른 host/preview URL·익명 로그인 전 asset/CDN/SW cache의 bypass를 부정시험한다. 신뢰된 프록시만 `real_ip`를 설정하고 실제 두 사용자 원 IP와 forged XFF를 독립 확인한다. 의도하지 않은 OS/systemd·NCP apply·유료 모델·외부 네트워크 호출은 개발 검증에서 금지한다.
 
