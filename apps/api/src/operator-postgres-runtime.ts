@@ -7,6 +7,7 @@ import type {PostgresPlatformConfig} from './platform-postgres.js';
 import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {SchoolMailSender} from './modules/auth/school-mail-proof.js';
 import {createOperatorSchoolMailProof} from './operator-mail-proof.js';
+import {createTrustedProxyPolicy} from './modules/auth/trusted-proxy.js';
 
 /**
  * Operator-only, real PostgreSQL composition and INTERNAL HTTP listener.
@@ -31,6 +32,9 @@ type ExtraSqlRole=typeof EXTRA_SQL_ROLES[number];
 type ExtraSqlPools=Partial<Record<ExtraSqlRole,ManagedDataPool>>;
 
 export interface OperatorPostgresInputs {
+  /** Exact immediate reverse-proxy IPs from the reviewed private operator adapter.
+   * Omitted by default: no browser forwarding headers trusted. */
+  trustedProxyAddresses?:readonly string[];
   roles:OperatorSqlSettings;
   google:PostgresGoogleAuthConfig['google'];
   attemptDigestKey:Buffer;
@@ -66,6 +70,9 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     ||typeof input.evidenceRights?.resolveFor!=='function'
     ||!Buffer.isBuffer(input.attemptDigestKey)||input.attemptDigestKey.length<32)
     throw new Error('Explicit Google, evidence rights and server-owned digest key required');
+  // Reject broad/unreviewed proxy rules before constructing any SQL pool.
+  if(input.trustedProxyAddresses!==undefined)
+    createTrustedProxyPolicy(input.trustedProxyAddresses);
   if(input.schoolMail&&!input.reviewer)
     throw new Error('School-mail proof requires a separate REVIEWER sandbox');
   if(input.schoolMail&&(!Buffer.isBuffer(input.schoolMail.digestKey)
@@ -121,6 +128,8 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
   }
   const {sessions,admission,attempts,projections,calendar,personal,evidence}=roles;
   const application:PostgresApplicationConfig={
+    ...(input.trustedProxyAddresses!==undefined
+      ?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),
     auth:{pools:{sessions,admission,attempts},
       attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},
     platform:{...input.platform,pools:{projections,calendar,personal,evidence},
