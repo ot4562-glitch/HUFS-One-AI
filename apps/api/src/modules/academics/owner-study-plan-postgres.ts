@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {OwnerReceipts} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {OwnerPlanCheckApprovalReceiptSchema,OwnerWorkspaceValueSchema} from '@hufs-one/contracts';
 import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
@@ -52,7 +53,7 @@ const instant=(value:unknown)=>Time.parse(value instanceof Date?value.toISOStrin
  * still mandatory. No import, seed, role, source approval or live DB is created. */
 export class PostgresOwnerStudyPlanSnapshotLoader implements TrustedOwnerStudyPlanSnapshotLoader {
   private readonly reader:PostgresApprovedOwnerReader;
-  private readonly tickets=new Map<string,Ticket>();
+  private readonly tickets=new OwnerReceipts<Ticket>(value=>value.input.actorId);
   constructor(pool:ReviewerSqlPool,authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){
     this.reader=new PostgresApprovedOwnerReader(pool,authority,clock);
@@ -99,7 +100,6 @@ export class PostgresOwnerStudyPlanSnapshotLoader implements TrustedOwnerStudyPl
     const expires=Math.min(now+30_000,Date.parse(result.validUntil));
     if(now>=expires)return null;
     for(const [key,ticket] of this.tickets)if(ticket.expires<=now)this.tickets.delete(key);
-    while(this.tickets.size>=128)this.tickets.delete(this.tickets.keys().next().value!);
     const receipt=randomBytes(32).toString('hex');
     this.tickets.set(receipt,{input:{...input},fingerprint:result.fingerprint,issued:now,expires});
     return structuredClone({...result.snapshot,receipt});

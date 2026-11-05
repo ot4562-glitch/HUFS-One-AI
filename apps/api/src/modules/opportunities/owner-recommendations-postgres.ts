@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {OwnerReceipts} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {OpportunityCatalogDetailSchema,OwnerFeedResponseSchema,SelfProfileSchema,TopicCodeSchema} from '@hufs-one/contracts';
 import type {OpportunityExplanationResponse} from '@hufs-one/contracts';
@@ -49,8 +50,8 @@ function detail(projection:ApprovedOwnerProjection){
  * precomputed ranking. Every disclosure re-reads the same fingerprint. */
 class PostgresOwnerRecommendations {
   private readonly reader:PostgresApprovedOwnerReader;
-  private readonly tickets=new Map<string,Ticket>();
-  private readonly rightsTickets=new Map<string,Right>();
+  private readonly tickets=new OwnerReceipts<Ticket>(value=>value.actorId);
+  private readonly rightsTickets=new OwnerReceipts<Right>(value=>value.actorId);
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly gate:ApprovedOwnerRecommendationGate,private readonly ownerAuthority:OwnerRecommendationAuthority,
     private readonly clock:()=>string){
@@ -61,8 +62,6 @@ class PostgresOwnerRecommendations {
   private cleanup(now:number){
     for(const [key,value] of this.tickets)if(value.expires<=now)this.tickets.delete(key);
     for(const [key,value] of this.rightsTickets)if(value.expires<=now)this.rightsTickets.delete(key);
-    while(this.tickets.size>=128)this.tickets.delete(this.tickets.keys().next().value!);
-    while(this.rightsTickets.size>=128)this.rightsTickets.delete(this.rightsTickets.keys().next().value!);
   }
   private async mayRead(input:FeedInput):Promise<boolean>{
     try{

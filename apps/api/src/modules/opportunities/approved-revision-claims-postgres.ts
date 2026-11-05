@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {OwnerReceipts} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {OpportunityRevisionComparisonClaimSchema,OpportunityRevisionComparisonContextResponseSchema,SourceSpanVNextSchema,matchesTextSpan,
   matchesImageSpan,matchesEvidenceScope} from '@hufs-one/contracts';
@@ -69,8 +70,8 @@ export class PostgresApprovedRevisionClaims {
   readonly source:TrustedOpportunityRevisionComparisonSource;
   readonly rights:TrustedOpportunityRevisionComparisonRights;
   readonly context:{find(input:z.infer<typeof Context>):Promise<z.infer<typeof OpportunityRevisionComparisonContextResponseSchema>|null>};
-  private readonly sources=new Map<string,Ticket>();
-  private readonly disclosures=new Map<string,Ticket>();
+  private readonly sources=new OwnerReceipts<Ticket>(value=>value.scope.actorId);
+  private readonly disclosures=new OwnerReceipts<Ticket>(value=>value.scope.actorId);
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){
     this.context={find:input=>this.discover(input)};
@@ -142,16 +143,15 @@ export class PostgresApprovedRevisionClaims {
     return {actorId:input.actorId,opportunityId:input.opportunityId,beforeRevisionId:input.beforeRevisionId,
       afterRevisionId:input.afterRevisionId,asOf:input.asOf};
   }
-  private ticket(store:Map<string,Ticket>,scope:Scope,read:Read,sourceReceipt?:string):string{
+  private ticket(store:OwnerReceipts<Ticket>,scope:Scope,read:Read,sourceReceipt?:string):string{
     const current=at(this.clock());for(const [key,t] of store)if(t.expires<=current)store.delete(key);
-    while(store.size>=2048)store.delete(store.keys().next().value!);
     const key=randomBytes(32).toString('hex');store.set(key,{scope,fingerprint:read.fingerprint,
       expires:Math.min(current+60_000,read.validUntil),...(sourceReceipt?{sourceReceipt}:{})});return key;
   }
   private bound(ticket:Ticket|undefined,scope:Scope):boolean{
     return !!ticket&&ticket.expires>at(this.clock())&&canonicalProjectionHash(ticket.scope)===canonicalProjectionHash(scope);
   }
-  private async revalidate(store:Map<string,Ticket>,input:Scope&{now:string},token:string,sourceReceipt?:string):Promise<boolean>{
+  private async revalidate(store:OwnerReceipts<Ticket>,input:Scope&{now:string},token:string,sourceReceipt?:string):Promise<boolean>{
     const ticket=store.get(token);store.delete(token);
     try{const scope=Scope.parse(this.pick(input));
       if(!this.bound(ticket,scope)||ticket?.sourceReceipt!==sourceReceipt)return false;

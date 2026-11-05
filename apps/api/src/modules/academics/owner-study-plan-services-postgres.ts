@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {OwnerReceipts} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {OwnerStudyPlanCheckResponseSchema} from '@hufs-one/contracts';
 import type {OwnerStudyPlanCheckResponse} from '@hufs-one/contracts';
@@ -34,13 +35,11 @@ export function createPostgresOwnerStudyPlanServices(options:{pool:ReviewerSqlPo
   const snapshots=new PostgresOwnerStudyPlanSnapshotLoader(options.pool,options.authority,clock);
   const core=createTrustedOwnerStudyPlanSource({snapshots:{load:input=>snapshots.load(input),
     revalidate:input=>snapshots.revalidateCurrent(input)}});
-  const tickets=new Map<string,Ticket>();
-  const rightsTickets=new Map<string,{actorId:string;sourceReceipt:string;expires:number}>();
+  const tickets=new OwnerReceipts<Ticket>(value=>value.actorId);
+  const rightsTickets=new OwnerReceipts<{actorId:string;sourceReceipt:string;expires:number}>(value=>value.actorId);
   const cleanup=(now:number)=>{
     for(const [key,value] of tickets)if(value.expires<=now)tickets.delete(key);
     for(const [key,value] of rightsTickets)if(value.expires<=now)rightsTickets.delete(key);
-    while(tickets.size>=128)tickets.delete(tickets.keys().next().value!);
-    while(rightsTickets.size>=128)rightsTickets.delete(rightsTickets.keys().next().value!);
   };
   const preflight=async(input:Input)=>{
     try{

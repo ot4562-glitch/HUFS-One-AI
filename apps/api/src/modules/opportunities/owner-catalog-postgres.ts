@@ -1,4 +1,5 @@
 import {createHash,randomBytes} from 'node:crypto';
+import {OwnerReceipts} from '../auth/owner-receipts.js';
 import {z} from 'zod';
 import {
   OwnerTranscriptSchema,CatalogCourseSchema,CourseOfferingSchema,OpportunityCatalogDetailSchema,
@@ -169,7 +170,7 @@ type Receipt={query:ReadQuery;fingerprint:string;expires:number};
 /** SELECT-only implementation of the existing owner HTTP catalog. */
 export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
   readonly reader:PostgresApprovedOwnerReader;
-  private readonly receipts=new Map<string,Receipt>();
+  private readonly receipts=new OwnerReceipts<Receipt>(value=>value.query.actorId);
   constructor(pool:ReviewerSqlPool,authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){
     this.reader=new PostgresApprovedOwnerReader(pool,authority,clock);
@@ -178,13 +179,7 @@ export class PostgresTrustedOwnerCatalog implements TrustedCatalogPort {
     const now=Date.parse(this.clock());
     if(!Number.isFinite(now))throw new Error('Owner receipt clock unavailable');
     for(const [key,value] of this.receipts)if(value.expires<=now)this.receipts.delete(key);
-    // Browsers can retry reads, including aborted requests. An unconsumed
-    // receipt must never exhaust the shared provider for unrelated students.
-    while(this.receipts.size>=2048){
-      const oldest=this.receipts.keys().next().value;
-      if(oldest===undefined)break;
-      this.receipts.delete(oldest);
-    }
+    // Per-owner admission preserves other actors' live in-flight receipts.
     const token=randomBytes(32).toString('hex');
     const expires=Math.min(now+60_000,Date.parse(validUntil));
     if(expires<=now)throw new Error('Approved catalog authorization expired');
