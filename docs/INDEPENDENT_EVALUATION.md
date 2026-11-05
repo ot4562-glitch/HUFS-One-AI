@@ -1,6 +1,6 @@
-# 독립 평가·인적 검토 실행 패키지 (#61 / #132 코드 납품, 인수 #221)
+# 독립 평가·인적 검토 실행 패키지 (기존 #61/#132 코드, 현 인수 #252)
 
-> **2026-11-05 이슈 분리:** 기존 #61/#132의 평가 UI/서명·코어·코퍼스/합성 회귀는 PR #220의 코드 납품으로 CLOSED. **200 추천·20 PNG·12 temporal의 비작성자 사람 판정은 현재 0/200·0/32로 계속 OPEN인 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)에서 검수**, 실제 OCR/HCX/운영 성능은 [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) 및 #20에서 검증한다. 이 패키지에 테스트 서명을 입력해도 인적 수락은 증가하지 않는다. 실행 순서: [PRODUCT_ACTIVATION_RUNBOOK](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). RELEASE_BLOCKED.
+> **2026-11-05 최종 인수 정본:** 기존 #61/#132 코드 납품에 이어 #221로 분리됐던 **200 추천·20 PNG·12 시점 비작성자 검수(현재 0/200·0/32)**는 이제 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) D01에서 OPEN, 평가 도구·AI/출처/CI 수정은 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에서 추적한다. #221/#222/#20 이슈 링크는 종료된 원본 이력이며 실제 모델·기관/권리·운영/실호스트 수락으로 승격하지 않는다. [실행 순서](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). **RELEASE_BLOCKED**.
 
 
 ## 현재 상태와 정본

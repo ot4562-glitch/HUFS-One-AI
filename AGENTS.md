@@ -2,6 +2,8 @@
 
 이 문서는 **지속되는 작업·보안 규칙**만 정의합니다. 현재 PR/이슈/테스트의 수치는 [STATUS.md](STATUS.md)와 GitHub 최신 HEAD를 확인하고, 과거 회차의 커밋/리뷰는 Git 이력에서 참조합니다. 상위 `C:\AIProjects\AGENTS.md`의 보호 경계, 사용자의 최신 지시, 현재 프로젝트의 이 규칙을 함께 적용합니다.
 
+**담당 이슈의 현재 위치:** 기존 #8/#19/#20/#27/#46/#89/#221/#222/#234~#238은 추적 통합으로 종료되었고, 실행 검증은 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), 구현·CI는 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)로 승계했다. 본문 아래의 이전 이슈 번호는 코드 소유권과 보안 경계를 설명하는 **역사적 링크**이며 승인/차단 정책은 변경되지 않는다. 최신 상태는 [STATUS](STATUS.md).
+
 ## 작업 전에 읽기
 
 1. 상위 `AGENTS.md` → 이 파일 → [README](README.md) → [Architecture.md](Architecture.md) A0~A3(제품/API/시각·인가 계약) → 담당 이슈·관련 코드/테스트·[STATUS](STATUS.md).

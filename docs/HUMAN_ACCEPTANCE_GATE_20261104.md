@@ -3,7 +3,7 @@
 **기준:** 2026-11-05 KST, 공모전 프로젝트. **상태: RELEASE_BLOCKED**.  
 **성격:** 코드/합성 CI 결과와 사람이 실제 확인해야 할 승인·운영 증빙을 분리하는 **검수 원장**.
 
-**2026-11-05 인수 승계:** 코드 납품분으로 종결한 #61/#123/#132/#133의 **원래 미수락 요구사항**은 현재 OPEN인 [#221 독립 인적 검수·실원본·접근성](https://github.com/minseong-hufs/HUFS-One-AI/issues/221) 및 [#222 NCP 실스테이징·전체 구현 범위 활성화](https://github.com/minseong-hufs/HUFS-One-AI/issues/222)에서 추적한다. [단계별 실행 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). GitHub CLOSED를 인적/권리/운영 PASS로 세지 않으며 A01–D03 [ ]를 그대로 유지한다. 이 문서·PDF에 체크하는 행위 자체가 GitHub CODEOWNER 승인, 실서버 생성, 외부 공개, 개인정보/기관 허가 확대를 뜻하지 않는다.
+**2026-11-05 최신 통합:** 본 문서의 A01–D03 미검증 수락 기준은 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)에서 단일 추적한다. 실무상 필요한 추가 코드는 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에 별도 기록한다. 이전 #221/#222 및 #8/#19/#20/#27/#46/#89/#234~#238은 **중복 이관으로 CLOSED**, 본문 아래 이슈 번호는 과거 증거·담당 범위의 역사적 참조다. **어느 항목도 인적·실환경 PASS로 변경되지 않았으며** `RELEASE_BLOCKED/NO_GO` 유지. [단계별 실행 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md).
 
 ## 0. 최신 코드 통합 결과 및 사람 검증 경계
 

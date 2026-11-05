@@ -1,5 +1,7 @@
 # HUFS One AI — 5인 담당 범위 진척·증거 원장
 
+> **2026-11-05 이슈 통합 안내:** 심민성 잔여 수락 게이트는 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), 구현/CI 추적은 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)로 승계했다. 이전 이슈 13건은 CLOSED/DUPLICATE(미수락 조건 PASS 아님). 각 팀원의 기존 **고정 인수 분모/분자·사람 검수 여부는 이슈 수 감소로 바꾸지 않는다**.
+>
 > **2026-11-05 정리.** 최신 병합·CI·이슈는 [STATUS](../STATUS.md), 역할은 [WORKSTREAMS](WORKSTREAMS.md), 실환경·사람 검증은 [인수서](HUMAN_ACCEPTANCE_GATE_20261104.md)를 따른다. 이 문서는 고정 복합 게이트의 분모와 수락 증거를 보존한다.
 
 ## 산정 기준과 현재 결과

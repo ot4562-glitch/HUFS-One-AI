@@ -1,10 +1,14 @@
 # HUFS One AI | 현재 상태 (2026-11-05 검증)
 
+> **2026-11-05 최신 담당 이슈 정본:** 심민성(`ot4562-glitch`)에게 배정됐던 기존 **13개(#8, #19, #20, #27, #46, #89, #221, #222, #234~#238)는 모두 CLOSED · duplicate(통합 이관)**. 현재 담당 OPEN은 **2개**, [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)(실계정·자료 권리·독립 사람·NCP·D03)와 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)(실제 미구현·운영 조립·API 계약·CI/보안·문서)뿐이다. 원본의 미수락 체크는 완료가 아니며 **RELEASE_BLOCKED / NO_GO** 유지. 아래 13건 OPEN/원 #221·#222 OPEN 문장은 **이관 전 기록**이다.
+>
+> **코드 검증 기준선:** [`68aa34123c5f072c053e5fb6d1b3fe26be7d88ad`](https://github.com/minseong-hufs/HUFS-One-AI/commit/68aa34123c5f072c053e5fb6d1b3fe26be7d88ad)에서 TASK-00(격리 PG 포함)·Chrome·NCP offline·private synthetic preview **4 workflow SUCCESS**. 해당 SHA 이후 문서 전용 커밋은 코드 재검증 성적을 자동 승계하지 않는다. 문서 84개 검토 및 A13 API 원장(등록 route 90·설계 39·TASK 19)의 설계상 직접 route 미연결 9건은 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)에 분류했다.
+
 > 현황 정본. 정확한 코드 검증 SHA와 PR/CI 근거는 아래 표를 따른다. 이후 문서 전용 커밋은 코드 검증 대상과 구분한다. [PR](https://github.com/minseong-hufs/HUFS-One-AI/pulls) · [정본 이슈](https://github.com/minseong-hufs/HUFS-One-AI/issues) · [인적 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md) · [고정 게이트](docs/TEAM_PROGRESS.md).
 
-## 2026-11-05 구현분 종결·실인수 승계 (최신 상태)
+## 2026-11-05 #220 직후 구현·인수 분할 기록 (이후 #252/#253 통합으로 대체)
 
-- **정본 GitHub 이슈 13건 OPEN** 확인: 기존 #61/#123/#132/#133은 사용자의 범위 분리 요청에 따라 **PR #220의 코드·합성 검증 납품분만 CLOSED/COMPLETED** 처리했다. 이 종료는 해당 이슈의 원래 인적·원본·기기·실운영 수락 체크박스 달성을 의미하지 않는다.
+- **당시 정본 GitHub 이슈 13건 OPEN** 확인(현재는 모두 중복 통합 종료): 기존 #61/#123/#132/#133은 사용자의 범위 분리 요청에 따라 **PR #220의 코드·합성 검증 납품분만 CLOSED/COMPLETED** 처리했다. 이 종료는 해당 이슈의 원래 인적·원본·기기·실운영 수락 체크박스 달성을 의미하지 않는다.
 - **후속 OPEN [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221):** 추천 독립 사람 gold **0/200**·미디어/시간 **0/32**, 동아리/EMPTY 비작성자 기기·스크린리더, 실제 4인 권리·계정 대조/공식 RulePack·#46 연계. **후속 OPEN [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222):** 승인된 실 NCP 스테이징, 실제 Google/PG/TLS·OCR/HCX·기능별 UI→API→DB·복구/요금과 #12/#89 운영 수락. 중복 체크 대신 현장 영수증을 연결한다.
 - [제품 기능 활성화 런북](docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md)은 **로컬 합성 → NCP 계획 → 승인 후 비공개 프리뷰 → 추가 운영 코드/검증 → D03 출시 승인**을 구분한다. 현 main 운영 모드 보호로 **한 번의 명령만으로 전 기능 운영 서비스가 기동되지는 않는다.** 실 원본/유료 API/NCP apply·도메인·공개는 실행/승인한 적 없음. **RELEASE_BLOCKED 유지**.
 - #220 병합 후 동일 보존 로컬 worktree에서 별도 AI 재실행: 평가 **38**, #123/#132/#133 API·클라이언트 **57**, 40×5 코퍼스 **21**, 합계 **116 PASS / 0 FAIL**. 원본/fixture byte 20+12 확인. 이 후속 QA의 Node 22.22.1은 package floor 22.22.2 미만으로 **공식 출시 CI 통과를 대신하지 않음**. [검증 기록](https://github.com/minseong-hufs/HUFS-One-AI/pull/220#issuecomment-6646455317); 실제 인적 서명 0은 불변.

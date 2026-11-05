@@ -1,7 +1,7 @@
 # HUFS One AI — 기능 시연 → NCP 스테이징 → 실서비스 활성화 실행 런북
 > 기준: 2026-11-05 KST. **자동으로 전체 제품을 활성화하는 명령서는 아니다.** 현재 검증된 기능을 로컬에서 그대로 재현하고, 승인된 실제 NCP 환경에서 부족한 구현/보안/인적 인수를 단계별로 채우는 현장 체크리스트다. 최종 출시 상태는 **RELEASE_BLOCKED**, 유료 AI/Laya 기본 OFF. 실제 허가, 결제, 서버 접근과 비작성자 승인 기록을 이 문서가 대신하지 않는다.
 >
-> 실행 티켓: [#222 NCP/제품 활성화](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) · [#221 인적·원본·접근성 인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/221) · [#89 릴리스/보안](https://github.com/minseong-hufs/HUFS-One-AI/issues/89) · [#12 NCP 운영](https://github.com/minseong-hufs/HUFS-One-AI/issues/12) · [#46 개인정보](https://github.com/minseong-hufs/HUFS-One-AI/issues/46). 위 상대 이슈 링크 대신 실제 GitHub 정본은 파일 하단의 절대 링크 참고.
+> **현재 이슈 정본:** [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) (실 NCP·Google/PG·출처/실원본·사람 Gold·접근성·출시) · [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) (운영 조립/보안·계약/CI 코드) · [#12 NCP 비코드 운영](https://github.com/minseong-hufs/HUFS-One-AI/issues/12) (이서연). 본문에 남은 #221/#222/#89/#27/#46 링크는 **기존 통합 이전 원본**으로 모두 CLOSED/DUPLICATE다. 각 단계의 증거는 #252로 승계하며 지출/실자료/실서비스 실행 허가는 아니다. **RELEASE_BLOCKED**.
 
 ## 0. 용어·범위 — 무엇이 바로 되고, 무엇은 아직 안 되는가
 

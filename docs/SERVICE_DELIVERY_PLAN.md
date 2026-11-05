@@ -1,6 +1,6 @@
 # HUFS One AI | 서비스 완성 → NCP 운영 → 유지보수 로드맵
 
-> **2026-11-05 작업 분리:** #61/#123/#132/#133 CLOSED는 합성/코드 구현 납품의 종결이며, 원래 인적·원본·접근성 수락은 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221) OPEN, NCP 실환경/운영 전 기능 검증은 [#222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) OPEN. 단계별 실행법: [PRODUCT_ACTIVATION_RUNBOOK](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). **RELEASE_BLOCKED**.
+> **2026-11-05 현재 추적 정본:** 심민성 담당 원 13개 이슈는 이관용 CLOSED/DUPLICATE, [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)와 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) 두 건만 OPEN. 이전 #221/#222는 실인수 증거를 #252로 통합한 **과거 이력**이다. 구현/합성 CI 완료는 자료권리·실 Google/NCP·독립 사람/출시 PASS가 아니다. 단계별 실행은 [PRODUCT_ACTIVATION_RUNBOOK](PRODUCT_ACTIVATION_RUNBOOK_20261105.md), **RELEASE_BLOCKED** 유지.
 
 > **2026-11-05 정리.** 현황과 정확한 PR/CI는 [STATUS](../STATUS.md), 기능별 미완료는 [남은 구현](REMAINING_IMPLEMENTATION_20261104.md), 인적 인수는 [검수 원장](HUMAN_ACCEPTANCE_GATE_20261104.md)을 따른다. 현재 **RELEASE_BLOCKED**다. 과거 PR 충돌·실패와 추정 일정은 Git 이력에 보존한다.
 

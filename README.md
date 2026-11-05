@@ -1,6 +1,6 @@
 # HUFS One AI
 
-> **현재 구현·검증 상태:** [STATUS](STATUS.md)에서 최신 main, PR별 HEAD·CI, 이슈 완료 조건을 확인합니다. **#61/#123/#132/#133은 구현 납품분만 CLOSED, 실인수는 [#221](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)·[NCP #222](https://github.com/minseong-hufs/HUFS-One-AI/issues/222) OPEN**입니다. 합성 코드·일회용 PostgreSQL·브라우저 검사와 실제 Google/학교메일·NCP·자료 권리·독립 사람 검수는 별도 증거입니다. **RELEASE_BLOCKED**.
+> **현재 추적 정본(2026-11-05):** 심민성 담당 이슈는 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)와 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) **2건 OPEN**으로 통합되었다. 원 #8/#19/#20/#27/#46/#89/#221/#222/#234~#238은 이관을 위해 CLOSED/DUPLICATE이며 **요구사항 수락 완료가 아니다**. 최신 코드·CI·출시 판단은 [STATUS](STATUS.md). 합성 코드·격리 PostgreSQL·Chrome CI는 실계정·NCP·자료 권리·독립 사람 인수를 대신하지 않는다. **RELEASE_BLOCKED**.
 
 **한국외대 학생의 정보 탐색·개인화를 돕는 독립 팀 프로젝트**입니다. 기존 HUFSAbility의 익숙한 기능과 메뉴를 보존하는 사용자 경험을 목표로 하지만, **학교 공식 HUFSAbility 개편·운영 서비스가 아닙니다**. 원본 UI/학교 저작물·학생 데이터·공식 로그인·자료 이용권을 허가 없이 복제·연동하지 않습니다.
 

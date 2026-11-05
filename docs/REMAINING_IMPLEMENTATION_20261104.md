@@ -2,7 +2,7 @@
 
 > **2026-11-05 갱신.** 파일명은 기존 링크 호환을 위해 유지한다. 최신 main/PR·CI/리뷰·이슈 상태는 [STATUS](../STATUS.md)가 정본이다. 과거 f23b86bb·OPEN PR 0·#216 당시 CI를 현재 HEAD 검증으로 재사용하지 않는다. **RELEASE_BLOCKED**.
 
-**2026-11-05 이슈 분할:** 원래 #61/#123/#132/#133은 **PR #220의 구현·합성 검증 납품 분만 CLOSED**. 아래 표의 이전 번호는 구현 추적을 위해 남기며, 그 **미수락 조건은 [#221 사람·실원본·기기 인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/221)와 [#222 NCP 실환경/기능 활성화](https://github.com/minseong-hufs/HUFS-One-AI/issues/222)에 OPEN으로 승계**했다. [실행 런북](PRODUCT_ACTIVATION_RUNBOOK_20261105.md). 인적 gold 0/200·0/32 및 실제 4인 원본 미반입은 불변. RELEASE_BLOCKED.
+**2026-11-05 최종 재통합:** 이전 #61/#123/#132/#133은 구현 납품 분만 종료됐고 #221/#222로 실인수를 처음 승계했으나, 이후 심민성 담당 원 #8/#19/#20/#27/#46/#89/#221/#222/#234~#238 **13건이 전부 CLOSED/DUPLICATE** 됐다. **최신 두 정본은 [**#252 실환경·인적·권리 인수**](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)와 [**#253 잔여 코드·계약·CI 구현**](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)** 이다. 아래 표의 원 이슈 번호는 2026-11-05 이전 구현/책임 이력으로만 읽는다. 인적 gold 0/200·0/32, 실제 4인 원본 미반입, NCP/운영 미검증 및 **RELEASE_BLOCKED**는 불변이다.
 
 ## 1. 코드 반영과 인수의 구분
 
