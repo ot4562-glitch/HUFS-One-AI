@@ -345,6 +345,21 @@ describe('buildMajorWhatIf (#11, #82)', () => {
       .toThrow(/cannot be the primary/);
   });
 
+  it('names a bad program ID instead of silently mapping unknown degree paths (#231 follow-up)', () => {
+    const malformed:ProgramOffer[] = CATALOG.map(offer => offer.role === 'PRIMARY_MAJOR'
+      && offer.programId === 'SYN-MAJ-D'
+      ? {...offer, degreePath:'UNKNOWN' as never} : offer);
+    expect(() => run({action:'CHANGE_PRIMARY_MAJOR',targetMajorId:'SYN-MAJ-D'}, {programs:malformed}))
+      .toThrow('Primary pack SYN-MAJ-D needs a supported degree path');
+    // A legitimate, canonical contract path must not be downgraded to UNKNOWN.
+    const canonical=CATALOG.map(offer => offer.role === 'PRIMARY_MAJOR'
+      && offer.programId === 'SYN-MAJ-A'
+      && offer.degreePath === 'MAJOR_DEEPENING'
+      ? {...offer,degreePath:'ADVANCED_SINGLE' as const} : offer);
+    const expected=run({action:'REMOVE_DOUBLE_MAJOR'});
+    expect(run({action:'REMOVE_DOUBLE_MAJOR'},{programs:canonical})).toEqual(expected);
+  });
+
   it('undoing a change swaps the two sides, on seeded random transcripts', () => {
     // Metamorphic check that does not re-derive the answer: "drop B" seen from A+B must equal
     // "add B" seen from A alone with the sides swapped, and the same for B→C vs C→B and minors.
