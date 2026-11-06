@@ -15,8 +15,10 @@ describe('#133 revision comparisons preserve new rule meanings',()=>{
       const previous=AcademicRulePackVNextSchema.parse({...base,requirements:[{...refs,...first}]});
       const next=AcademicRulePackVNextSchema.parse({...base,version:'SYN-PACK-2',supersedesVersion:base.version,
         requirements:[{...refs,...last}]});
-      const result=compareRulePackRevisions({asOf:SYNTHETIC_AS_OF,previous,next,attempts:[{
-        attemptToken:'G1',canonicalCourseId:'G1',creditUnits:6,areaIds:['A'],ledger:'EARNED',recognition:'RECOGNIZED',term:'2025-2'}]});
+      const rows=[{attemptToken:'G1',canonicalCourseId:'G1',creditUnits:6,areaIds:['A'],ledger:'EARNED' as const,
+        recognition:'RECOGNIZED' as const,term:'2025-2'}];
+      // Same rows for both versions: area membership is stated as unchanged.
+      const result=compareRulePackRevisions({asOf:SYNTHETIC_AS_OF,previous,next,attempts:rows,nextAttempts:rows});
       expect(result).toMatchObject({state:'READY',requirements:[{definition:'CHANGED',stateChange:'LOST'}]});
       expect(result.requirements[0]?.changedFields).toContain(field);
     }
