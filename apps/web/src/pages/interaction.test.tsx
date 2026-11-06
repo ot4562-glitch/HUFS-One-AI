@@ -47,7 +47,7 @@ describe('interactive discovery', () => {
     const region = screen.getByRole('region', {name: '공고 탐색'});
     const input = within(region).getByRole('searchbox', {name: '공고 검색'});
     // Only top-level opportunity rows count: nested topic chips are <li> too.
-    const cardTitles = () => [...region.querySelectorAll('.opps > .opp .opp__title')].map(item => item.textContent);
+    const cardTitles = () => Array.from(region.querySelectorAll('.opps > .opp .opp__title')).map(item => item.textContent);
     const initial = cardTitles();
     expect(initial.length).toBeGreaterThan(0);
     fireEvent.change(input, {target: {value: '가상 핀테크 데이터 분석가 신입'}});
