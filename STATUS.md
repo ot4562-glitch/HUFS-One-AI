@@ -29,9 +29,9 @@
 | [#286](https://github.com/ot4562-glitch/HUFS-One-AI/pull/286) | 합성 정정 5-chain overlay/격리 순서 결정성, #201 합성 벤치 | `COMMENT` 코드 리뷰, MERGED `102a076`; 기본 보고서 r1·clean HEAD 재벤치 필요 #10 |
 | [#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288) | 0/n·NOTICE_ONLY·사건·20/200과목 구별 회귀 | `COMMENT` 코드 리뷰, MERGED `9680def`; 공식 개설 자료 #282 NOT_RUN |
 | [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287) | RulePack 영역 재분류 `nextAttempts`, `UNKNOWN` fail-closed | `COMMENT` 코드 리뷰, MERGED `664cdf4`; 실학칙/소비자 #11/#282 OPEN |
-| [#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289) | 원장 속성 10개+커버리지 지도 | `COMMENT` 코드 리뷰, #287과 AGENTS 문구 충돌을 **양쪽 보존 병합 커밋**으로 해소; 머지/CI 최신 상태는 PR 링크 확인 |
+| [#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289) | 원장 속성 10개+커버리지 지도 | `COMMENT` 코드 리뷰, #287과 AGENTS 안내문을 모두 보존한 충돌 해결 commit `82eb760`; 해당 HEAD 4/4 Actions SUCCESS 후 **MERGED** [`8bc27d5`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/8bc27d54c833ac2d4c9c3633e887063eeda5cca8) |
 
-**검증 경계:** #285–#289 원래 PR HEAD에서는 각 4종 Actions가 SUCCESS였습니다. #289 충돌 해결 후 HEAD `82eb760`과 최종 `main`/문서 HEAD는 **각각 별도 CI 확인**이 필요합니다. AI 보조 `COMMENT` 리뷰는 작성자 아닌 독립 **사람** `APPROVED`가 아닙니다. 이번 병합은 사용자의 열린 PR 일괄 리뷰·병합 요청에 따른 코드 통합으로, 실학생·기관·NCP 현장·Gold 인수가 아니며 `RELEASE_BLOCKED` 유지. 원본 `csv/` 다섯 개는 변경하지 않았습니다.
+**검증 경계:** #285–#289 각각의 원래 PR HEAD에서 Actions 4/4 SUCCESS, #289 충돌 해결 HEAD `82eb760`에서도 4/4 SUCCESS를 확인했습니다. 마지막 코드 병합 `main` [`8bc27d5`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/8bc27d54c833ac2d4c9c3633e887063eeda5cca8)과 문서가 반영된 최종 HEAD의 Actions는 **별도 확인**해야 합니다. AI 보조 `COMMENT` 리뷰는 작성자 아닌 독립 **사람** `APPROVED`가 아닙니다. 이번 병합은 사용자의 열린 PR 일괄 리뷰·병합 요청에 따른 코드 통합으로, 실학생·기관·NCP 현장·Gold 인수가 아니며 `RELEASE_BLOCKED` 유지. 원본 `csv/` 다섯 개는 변경하지 않았습니다.
 
 ## 협업 이슈 전/후 분리 (2026-11-06)
 
