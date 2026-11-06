@@ -2,6 +2,15 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
+## 2026-11-06 최신 열린 PR 전수 리뷰 및 병합
+
+- 병합 전 열린 PR은 #292/#293/#295/#304의 **4건**, 각 PR의 **정확한 HEAD Actions 4/4 SUCCESS** 확인 후 squash merge 완료. 현재 코드 병합 마지막 SHA [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d).
+- [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292) HEAD `4208c33` → `e0a5b73` (추가 COMMENT 리뷰): 학업 참조모형/한계.
+- [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293) HEAD `f85eb3c` → `02e7d91` (기존 COMMENT 리뷰 확인): 합성 공지 최신 판본·mock claim 및 clean HEAD 벤치.
+- [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295) HEAD `251fe5b` → `81a9f53` (COMMENT 리뷰): 교과코드 미확인 원장/전망 코어, 실제 API 연결은 남음.
+- [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304) HEAD `d9617f9` → `5c17255` (작성자 본인 PR COMMENT 리뷰): 공개 Pages 자동 재배포 유지, UI 합성 개선, 실인증은 미구현.
+- **예외 사유:** 이번에는 사용자가 저장소의 열린 PR 전수 병합을 직접 지시했습니다. 일반 비작성자 `APPROVED` 권장 게이트의 예외로 처리했으며 자동 COMMENT를 독립 사람 APPROVE로 기록하지 않습니다. 실제 프로덕션 출시 게이트는 해제하지 않습니다. `main`의 각 병합 SHA와 문서 후속 SHA의 Actions는 각각 따로 판단합니다.
+
 ## 코드·계약·보안 PR의 기본 검토
 
 1. PR은 담당 소유권/변경 대상 계약·실제 결함/반례와 인가·자료/AI·migration·lockfile·출시 영향 범위를 명시합니다.

@@ -2,6 +2,14 @@
 
 > **`OWNER_CONFIRMED_APPROVED`는 프로젝트 승인**이지 실 NCP/학생 자료/공식 학칙/유료 AI 실행 성공이 아닙니다. 정확한 통합 코드 증거는 [STATUS](../STATUS.md), 실제 운영 통합과 검수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 확인합니다. 파일명의 20261104는 기존 링크 호환을 위해 유지합니다. 현재 `RELEASE_BLOCKED`.
 
+## 최신 2026-11-06 통합·잔여 게이트
+
+- [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지).
+- 네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.**
+- 합성 코어 완료: #292 학점 AREA_SPREAD/GROUP_CHOICE 모델·탐색 예산; #293 학사공지 SourceRevision/mock claim 및 clean HEAD 벤치; #295 `forecast-offering-v3`/미확인 학수번호 NEEDS_REVIEW. **학업 API 연결 `NOT_CONNECTED`**, #301 박준영 자료 실제 소비와 #282 실원장 검증 남음.
+- 합성 UI 일부 완료: #304 통일 헤더/폼·지원보드·S04 Pages 기본 오류 격리, 공개 합성 Pages 자동 재배포 유지. **학교/팀원 본인 인증 #297/#299, 전체 디자인 #298, 실제 2탭/철회 #303, 포트폴리오 #300은 OPEN**.
+- 개발/운영 잔여: 경험 Owner API #284, Windows SSH host-key/경로 보안 #294, 다양한 포스터 #296, 실호출/캐시 증거 #302, NCP/PG/Google/권리·원본/실학칙 #276·#280–#283. 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
+
 ## 코드 구현 완료(운영 완료와 구별)
 
 - 오너 분할 병합 PR **#267·#268·#269·#270·#272·#273·#274·#275**, BETA 본인 CSV UI/API [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277) 모두 `main` 반영. 구 대형 #264는 **미병합 종료**. 합성 계약/권한·관리형 PostgreSQL/Source/AI 비용, 경험/포트폴리오→AI 후보→학생 명시 승인·철회, 운영 런타임 plan/apply 코드가 있습니다.

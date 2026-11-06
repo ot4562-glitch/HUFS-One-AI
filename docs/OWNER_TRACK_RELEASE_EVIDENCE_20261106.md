@@ -11,8 +11,12 @@
 | 전망/rolling-origin 8학기·NOTICE_ONLY | [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) MERGED (`5a36a38`) | `forecast-offering-v2`, 합성 경계·정합성 테스트, PR HEAD 4/4 CI | 학교 8학기 정식 목록·과목 동등성·실사용자 공식 판단 |
 | 추천 코퍼스·경험 승인 신호 | [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) MERGED (`48134da`) | 40+10 합성 분포, 키워드/인용·동의/버전·철회·결정론 테스트, PR HEAD 4/4 CI | 실문장 품질·revision chain 0건, UI #258·실원본 권리·독립 Gold |
 | 비전공자 설치/제품 안내 | [문서 commit `a0043c5`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/a0043c569dd0518919b9f3ed243c9d8836a66403) | 새 가이드 3개와 README 하단 중요 문서 연결 | 실제 NCP/제품/에이전트 설치 **NOT_RUN** |
+| 학점 독립 참조모형/예산 경계 | [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292) MERGED (`e0a5b73`) | AREA_SPREAD/GROUP_CHOICE 작은 입력 참조모형, 5만회 탐색 예산 초과 보류·1000과목 단일영역 회귀; PR HEAD CI 4/4 | 공식 학칙/학생 원장, 큰 다중영역 전수 대조 |
+| 학사공지 검증 판본·clean 벤치 | [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293) MERGED (`02e7d91`) | 합성 5 revision 시나리오, VERIFIED mock claim·학생/행정 마감 분리, 2회 clean HEAD 정규화 벤치; PR HEAD CI 4/4 | 실제 권리/원본, 추천 보고서 별도 시나리오·운영 p95 |
+| 미확인 과목 동등성·전망 | [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295) MERGED (`81a9f53`) | `forecast-offering-v3`, 원장/전망의 불확정 입력 보수 판정·합성 검증; PR HEAD CI 4/4 | `COURSE_IDENTITY_API_CONNECTION=NOT_CONNECTED`; 실데이터 132행·공식 RulePack/actor mapping |
+| 합성 UI/Pages S04 분리 | [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304) MERGED (`5c17255`) | 공통 헤더/폼·지원보드/보관함, S04 public Pages 기본 revoke 제거, 정적 Pages 자동 재배포 보존; PR HEAD CI 4/4 | 학교 로그인/4명 독립 권한/실 UX·캐시·AI 호출 |
 
-기존 대형 PR **#264는 분할 대체로 미병합 종료**. #252/#253/#257 완료/종료 후 잔여 운영 업무는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에 이관. 코드 통합 기준 [`48134da`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/48134dae3b16157ebcc294f744c320fdd64a115c)의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752742) · [Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752741) · [NCP offline](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752743) · [Pages synthetic](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752761)은 **4/4 SUCCESS**. 이 기록은 정확히 **해당 SHA에 한정**되며 문서 커밋 이후의 HEAD CI는 다시 확인한다.
+기존 대형 PR **#264는 분할 대체로 미병합 종료**. #252/#253/#257 완료/종료 후 잔여 운영 업무는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에 이관. 과거 코드 통합 기준 [`48134da`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/48134dae3b16157ebcc294f744c320fdd64a115c)의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752742) · [Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752741) · [NCP offline](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752743) · [Pages synthetic](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752761)은 **4/4 SUCCESS**. 이 기록은 정확히 **해당 SHA에 한정**되며 문서 커밋 이후의 HEAD CI는 다시 확인한다.
 
 ## `csv/` 다섯 원본의 현재 상태(공개 자료 내용 재인용 금지)
 
@@ -21,12 +25,16 @@
 - 파일은 Git에 있다고 자동으로 로그인 사용자와 연결되지 않음. **실제 Forms row↔CSV 파일↔본인 BETA actor↔동의·rights·해시**의 비공개 attest/DB source·회수 검증이 필요. 과목코드 공란 때문에 공식 course identity/RulePack·학점 사정 확정은 `UNKNOWN/NEEDS_REVIEW`.
 - PR #277은 BETA UI/route 연결 **코드**이고 운영용 `OperatorPostgresInputs`·실비밀 factory·loader·4명 identity attestation은 **현장 구성/추가 조립 검증 필요**. 실 NCP/PG로 import/readback을 수행한 증거 없음.
 
+## 이번 최신 통합의 운영 경계
+
+네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.** 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다. 본선 전/후 담당자 책임과 개인 수락률은 합성 코드가 늘었다고 자동 상향하지 않습니다.
+
 ## 실환경 인수 현황
 
 | 항목 | 상태 | 인수에 필요한 실근거 |
 | --- | --- | --- |
 | 프로젝트 범위 승인 | `OWNER_CONFIRMED_APPROVED` | 사용자 기준 승인. 현재 각 원본 제공자·학교권리 별도 |
-| TypeScript/합성 HTTP/Chrome·격리 PG/NCP IaC | `TESTED_SYNTHETIC`/일회용 PG | 코드 통합 SHA `48134da` Actions 4/4 성공. 실 NCP와 다름 |
+| TypeScript/합성 HTTP/Chrome·격리 PG/NCP IaC | `TESTED_SYNTHETIC`/일회용 PG | 과거 통합 `48134da` Actions 4/4·새 PR #292/#293/#295/#304 각각 HEAD 4/4 성공. 마지막 코드 SHA `5c17255` 및 문서 후속 SHA는 별도 push Actions 확인 필요. 실 NCP와 다름 |
 | Google OIDC/학교메일/BETA·REVIEWER 세션 | `CONFIGURATION_REQUIRED` | 실제 ID/메일·만료/철회·다른 사용자 부정시험 |
 | 관리형 운영 PG·CA TLS·role/RLS·실 backup | `CONFIGURATION_REQUIRED` | 실제 migration/roles/RLS·복원 영수증 |
 | 실제 학생 4명 매핑·인입/조회 | `NOT_RUN` | 현재 소유권·원본 SHA·동의·actor 연결·DB 적용/읽기/정정/철회 |

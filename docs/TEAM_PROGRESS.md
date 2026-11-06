@@ -10,6 +10,12 @@
 | 박준영 `taewangim-alt` | **8/12 (66.7%)** | 학교 공식 RulePack·4인 학사 결과 독립 대조·owner/React 종단 |
 | 이서연 `lhh42001` | **1/5 (20.0%)** | 승인된 NCP 계정/리전/SKU/실비용·실서버/서비스 이용권·CPU/RSS/백업·중단/반납 운영 영수증 |
 
+## 2026-11-06 최신 코드 병합·이슈 부분 완료 (인적 수락 점수 불변)
+
+- [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.**
+- 김채윤 #10: 학사공지 합성 revision/mock claim과 clean HEAD 성능 벤치 체크 완료(#293). 박준영 #11: 독립 영역/그룹 오라클(#292), 코드 미확인 입력의 보수적 순수 코어(#295) 체크 완료. 이의상 #9/#298/#303: 합성 UI/S04 Pages 기본 오류 분리 일부 완료(#304). **팀 담당 전체 이슈와 실제 계정 인수는 모두 OPEN**.
+- 기존 **7/12·9/12·7/12·8/12·1/5**의 수락 게이트 수치는 새로운 독립 사람·실서비스 영수증이 없으므로 **변경 없음**. 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
+
 ## 2026-11-06 병합·교차 검토(위 수락 비율과 분리)
 
 - [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278): 박준영 `forecast-offering-v2` 과거 8학기·`NOTICE_ONLY` 합성 코어 리뷰/병합 완료. 학사 공식 근거·4인 원장/UI 수락은 #11/#260에 남음.

@@ -2,6 +2,12 @@
 
 > **현행 판정(2026-11-06):** 프로젝트 범위 승인 `OWNER_CONFIRMED_APPROVED`, 코드 병합·합성 CI는 검증됨. **실 NCP 서버/Google/학교메일/운영 PostgreSQL·학생 4명 DB 적재/실 CLOVA·비용/복원은 `NOT_RUN` 또는 `CONFIGURATION_REQUIRED`; 공개 서비스는 `RELEASE_BLOCKED`.** 과거 문서의 #252/#253/#257 이슈는 후속을 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에 이관하며 종료됨.
 
+## 최신 코드 통합 확인 (2026-11-06)
+
+- [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.**
+- 합성 브라우저 자동 Pages 배포는 막지 않습니다. **정적 공개 Pages와 인증된 운영 사이트는 별개**이며 본인 권한과 실 NCP/Google/PG/CLOVA·자료/비용/복원 영수증 없이 운영 GO로 승격하지 않습니다. 운영 학교 로그인 #297/#299, 수집 자료 진입 #301, 모델 캐시 증거 시연 #302는 아직 OPEN.
+- 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
+
 ## 1. 코드를 먼저 고정
 
 - 현재 `main` SHA와 변경 파일·담당 규칙([AGENTS](../AGENTS.md)) 확인. 동료 dirty worktree·CSV 원본 5개 변경 금지.

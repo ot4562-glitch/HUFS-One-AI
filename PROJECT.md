@@ -8,7 +8,7 @@ HUFS One AI는 한국외국어대학교 학생의 기회 탐색·학사 공지·
 
 ## 현재 제공하는 합성 여정
 
-- 상단 8개 주요 화면·모바일 5탭, HUFSAbility 원 메뉴 24개는 **미지원**이라고 표시.
+- 데스크톱 참고 대분류 11개 GNB와 실제 화면 LNB, 모바일 하단 5탭, HUFSAbility 원 메뉴 24개는 **미지원**이라고 표시. 상단 합성 계정 선택기는 실제 학교 로그인 아님(#297/#299).
 - 가상 프로필 5개와 독립 빈 계정에서 40 공고/10 공지, 마감/정정·출처·중요 일정 개인화.
 - 학점 세 원장·전공/이중전공 What-if·계획·개설 전망을 **공식 아님/UNKNOWN**과 구분.
 - 경험 DRAFT/승인 태그·북마크/행동 계획, 가상 ADMIN 동아리 게시·수정/철회, REVIEWER 합성 시연.
@@ -21,4 +21,6 @@ HUFS One AI는 한국외국어대학교 학생의 기회 탐색·학사 공지·
 **현재 구현과 단계별 출시 게이트:** [STATUS](STATUS.md) · [#276 실운영·실자료 통합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [#255 팀 협업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255). 상세 설명은 [README](README.md), 기술 계약은 [Architecture](Architecture.md)에 있습니다.
 
 
-**2026-11-06 코드 진행:** 오너 분할 #267~#275 중 8개·BETA 원본 화면 #277, 학업 전망 #278, 추천 경험 코어 #279가 `main`에 병합됐습니다. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 CLOSED, #10/#11/#258/#260 및 실제 NCP·Google/PG·학생별 동의/권리·CLOVA·복구 #276은 OPEN. [처음 읽을 가이드 3종](README.md#7-중요-문서--처음-설치하는-분비전공자용). 실제 운영은 `RELEASE_BLOCKED`.
+**현재 반영:** [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
+
+**2026-11-06 이전 코드 진행:** 오너 분할 #267~#275 중 8개·BETA 원본 화면 #277, 학업 전망 #278, 추천 경험 코어 #279가 `main`에 병합됐습니다. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 CLOSED, #10/#11/#258/#260 및 실제 NCP·Google/PG·학생별 동의/권리·CLOVA·복구 #276은 OPEN. [처음 읽을 가이드 3종](README.md#7-중요-문서--처음-설치하는-분비전공자용). 실제 운영은 `RELEASE_BLOCKED`.
