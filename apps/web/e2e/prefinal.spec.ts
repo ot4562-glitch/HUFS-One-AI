@@ -121,7 +121,7 @@ for (const width of [320, 360, 390, 768, 1440]) {
   });
 }
 
-test('#9 keyboard Escape restores selector focus; reduced-motion and 200% layout retain named controls', async ({page}) => {
+test('#9 keyboard Escape restores selector focus; reduced-motion and 200% layout retain named controls', async ({page}, testInfo) => {
   await page.setViewportSize({width: 768, height: 900});
   await page.emulateMedia({reducedMotion: 'reduce'});
   await open(page); await pick(page, 'S01');
@@ -132,12 +132,27 @@ test('#9 keyboard Escape restores selector focus; reduced-motion and 200% layout
   expect(await page.locator('details.selector').evaluate(e => (e as HTMLDetailsElement).open)).toBe(false);
   await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
   await expect(firstCard(page)).toBeVisible();
-  const check = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth,
-    width: document.documentElement.clientWidth, motion: getComputedStyle(document.querySelector('.exp-card')!).animationName,
-    missingLabels: Array.from(document.querySelectorAll('[aria-labelledby]')).flatMap(el =>
-      el.getAttribute('aria-labelledby')!.split(/\s+/).filter(id => !document.getElementById(id))),
-  }));
-  expect(check.scroll).toBeLessThanOrEqual(check.width);
+  const check = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    const bounds = Array.from(document.querySelectorAll<HTMLElement>('body *'))
+      .filter(el => !el.matches('.skip-link, .visually-hidden, .banner--ok'))
+      .map(el => {
+        const rect = el.getBoundingClientRect(), style = getComputedStyle(el);
+        return {tag: el.tagName, className: el.className, left: rect.left, right: rect.right, width: rect.width,
+          client: el.clientWidth, scroll: el.scrollWidth, display: style.display,
+          columns: style.gridTemplateColumns, minWidth: style.minWidth, whiteSpace: style.whiteSpace};
+      });
+    return {scroll: document.documentElement.scrollWidth, width,
+      motion: getComputedStyle(document.querySelector('.exp-card')!).animationName,
+      overflow: bounds.filter(el => el.width > 0 && (el.right > width + 1 || el.left < -1))
+        .sort((a, b) => b.right - a.right || a.width - b.width).slice(0, 20),
+      header: bounds.filter(el => /^(topbar__row|topbar__account|topbar__brand|app__brand-links)$/.test(el.className)),
+      missingLabels: Array.from(document.querySelectorAll('[aria-labelledby]')).flatMap(el =>
+        el.getAttribute('aria-labelledby')!.split(/\s+/).filter(id => !document.getElementById(id))),
+    };
+  });
+  await page.screenshot({path: testInfo.outputPath('experience-zoom-200.png'), fullPage: true});
+  expect(check.scroll, JSON.stringify({overflow: check.overflow, header: check.header})).toBeLessThanOrEqual(check.width);
   expect(check.motion).toBe('none');
   expect(check.missingLabels).toEqual([]);
 });
