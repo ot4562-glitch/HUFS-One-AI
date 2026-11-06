@@ -44,9 +44,9 @@ if sys.argv[1:] == ['--committed-tree-only']:
         sys.exit(1)
     objects={}
     malformed=0
-    for item in tree_result.stdout.split(b'\\0'):
+    for item in tree_result.stdout.split(b'\0'):
         if not item:continue
-        metadata,separator,path=item.partition(b'\\t')
+        metadata,separator,path=item.partition(b'\t')
         parts=metadata.split(b' ')
         if not separator or len(parts)!=3:
             malformed+=1
