@@ -46,15 +46,17 @@ describe('interactive discovery', () => {
     await open('/opportunities');
     const region = screen.getByRole('region', {name: '공고 탐색'});
     const input = within(region).getByRole('searchbox', {name: '공고 검색'});
-    const initial = within(region).getAllByRole('listitem').map(item => item.textContent);
+    // Only top-level opportunity rows count: nested topic chips are <li> too.
+    const cardTitles = () => [...region.querySelectorAll('.opps > .opp .opp__title')].map(item => item.textContent);
+    const initial = cardTitles();
     expect(initial.length).toBeGreaterThan(0);
     fireEvent.change(input, {target: {value: '가상 핀테크 데이터 분석가 신입'}});
-    expect(within(region).getAllByRole('listitem')).toHaveLength(1);
+    expect(cardTitles()).toEqual(['가상 핀테크 데이터 분석가 신입']);
     fireEvent.click(within(region).getByRole('button', {name: '자격 확인 필요'}));
-    expect(within(region).queryByRole('listitem')).toBeNull();
+    expect(cardTitles()).toHaveLength(0);
     fireEvent.click(within(region).getByRole('button', {name: '검색 조건 초기화'}));
     expect((input as HTMLInputElement).value).toBe('');
-    expect(within(region).getAllByRole('listitem').map(item => item.textContent)).toEqual(initial);
+    expect(cardTitles()).toEqual(initial);
   });
 
   it('never keeps a previous profile search when the demo subject changes', async () => {
