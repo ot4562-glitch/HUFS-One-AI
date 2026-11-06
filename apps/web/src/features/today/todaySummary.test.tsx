@@ -41,12 +41,12 @@ describe('#9 redesign home (P001) and banners', () => {
     expect(credits).not.toMatch(/\d+학점/);
   });
 
-  it('other pages: category block + breadcrumb above the h1', async () => {
+  it('other pages: banner reads menu › page, the menu is a link and comes before the h1', async () => {
     await open('/graduation/what-if', 0);
     const crumb = screen.getByRole('navigation', {name: '현재 위치'});
-    expect(crumb.textContent?.replace(/\s+/g, ' ').trim()).toBe('홈 › 교과/비교과 › 전공 가정 분석');
-    expect(within(crumb).getByRole('link', {name: '교과/비교과'}).getAttribute('href')).toBe('/area/curricular');
-    expect(within(screen.getByRole('navigation', {name: '교과/비교과 메뉴'})).getByRole('link', {name: '전공 가정 분석'}).getAttribute('aria-current')).toBe('page');
+    expect(crumb.textContent?.replace(/\s+/g, ' ').trim()).toBe('홈⌂ › 성적/졸업 ›');
+    expect(within(crumb).getByRole('link', {name: '성적/졸업'}).getAttribute('href')).toBe('/area/grades');
+    expect(within(screen.getByRole('navigation', {name: '성적/졸업 메뉴'})).getByRole('link', {name: '전공·학업 What-if'}).getAttribute('aria-current')).toBe('page');
     expect(crumb.compareDocumentPosition(screen.getByRole('heading', {level: 1})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -4,7 +4,8 @@ import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
-import {DeadlineRow, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
+import {DeadlineRow, HomeNoticeRow, HomeOppRow, Module, upcomingDeadlines} from './homeParts.js';
+import {OppFeed} from './OppFeed.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../features/graduation/graduationView.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
 import {DDayText} from '../features/demo/DDayText.js';
@@ -97,28 +98,15 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
   const view = screenViewOf(state);
   if (!view) return {title: '기회', body: <NoSnapshot state={state} />};
   if (view.feed.kind !== 'SHOW') return {title: '기회', body: <p className="muted">{NOT_SHARED_TEXT}</p>};
-  const all = [...view.feed.data.featured, ...view.feed.data.compact];
+  const notices = view.notices.kind === 'SHOW' ? buildNoticeList(view.notices.data) : [];
   return {
     title: '기회',
     body: (
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
-        <p className="notice-box" role="note">추천은 시연 대상의 전공·학년·관심 분야와 공고 원문 근거로 정리했습니다. 신청 직전에는 공식 공고에서 자격과 마감을 다시 확인해 주세요.</p>
-        <dl className="ostats" aria-label="공고 요약">
-          <div><dt>표시한 공고</dt><dd>{all.length}건</dd></div>
-          <div><dt>나에게 맞춘 공고</dt><dd>{view.feed.data.featured.length}건</dd></div>
-          <div><dt>확정 7일 내 마감</dt><dd>{all.filter(c => c.dday && c.dday.days <= 7).length}건</dd></div>
-          <div><dt>지원 조건 확인 필요</dt><dd>{all.filter(c => c.eligibility === 'UNKNOWN').length}건</dd></div>
-        </dl>
-        <h2 className="list__title">공고 목록 <span className="muted">(총 {all.length}건)</span></h2>
-        {all.length ? <ul className="opps">{all.map(c => <OppCard key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
-          : <p className="muted">표시할 공고가 없어요.</p>}
+        <OppFeed featured={view.feed.data.featured} compact={view.feed.data.compact} ineligible={view.feed.data.ineligible ?? []}
+          notices={notices} navigate={navigate} />
         {view.feed.data.hasMore && <p className="muted">더 많은 공고는 검색·필터 기능과 함께 제공될 예정입니다.</p>}
-        {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
-          <p className="muted">현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개를 표시합니다.</p>
-          <ul className="opps">{view.feed.data.ineligible!.map(c=>
-            <OppCard key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
-        </Section>}
       </>
     ),
   };

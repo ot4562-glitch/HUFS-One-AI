@@ -24,17 +24,17 @@ export function InAppLink({to, navigate, children, className, current}: {
 }
 
 /**
- * #9 redesign shell (UIUX 96 master spec §3.4, §4 C01/C02/C18):
+ * #9 redesign shell (HUFS One AI Essential mockups; UIUX 96 master spec C01/C02/C18):
  * - 48px top bar: wordmark + "독립 학생 프로젝트 · 학교 공식 서비스 아님", 전체 메뉴/설정, and the five A11.1
  *   tabs as small "ONE AI" shortcuts (they become the bottom bar on phones; one nav, one name).
- * - Wide screens: the 11 observed HUFSAbility areas as the GNB, the current one underlined in gold.
- *   Each area opens its own page; original functions inside it are never links.
+ * - Wide screens: the mockups' top menu (홈 + 10 menus, shell/areas.ts), the current one underlined in gold.
+ *   Each menu opens its own page; entries the demo does not provide are never links.
  */
 export function AppShell({path, navigate, transportLabel, selector, status, children}: Props) {
   const tab = activeTab(path);
   const area = areaOf(path);
   return (
-    <div className={`app${path === '/' ? ' app--home' : ''}`}>
+    <div className="app">
       <a className="skip-link" href="#main">본문으로 건너뛰기</a>
       <header className="topbar">
         <div className="topbar__row">
@@ -44,6 +44,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
           </span>
           <span className="app__brand-links">
             <InAppLink to="/menu" navigate={navigate} className="app__settings app__menu-link" current={path === '/menu'}>전체 메뉴</InAppLink>
+            <InAppLink to="/area/service" navigate={navigate} className="app__settings app__help">도움말</InAppLink>
             <InAppLink to="/settings" navigate={navigate} className="app__settings" current={path === '/settings'}>설정</InAppLink>
           </span>
           <nav className="app__tabs" aria-label="주요 메뉴">
@@ -59,6 +60,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
         </div>
         <nav className="gnb" aria-label="전체 메뉴">
           <ul className="gnb__items">
+            <li><InAppLink to="/" navigate={navigate} className="gnb__item" current={path === '/'}>홈</InAppLink></li>
             {AREAS.map(a => (
               <li key={a.id}>
                 <InAppLink to={areaPath(a.id)} navigate={navigate} className="gnb__item" current={area?.id === a.id}>{a.label}</InAppLink>
@@ -76,8 +78,9 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
       <footer className="app__foot">
         <div className="app__foot-in">
           <strong>HUFS One AI</strong>
-          <span>HUFS One AI는 학교 공식 서비스가 아닌 독립 학생 프로젝트입니다 · 합성 데이터 시연</span>
+          <span>독립 학생 프로젝트 · 학교 공식 서비스 아님</span>
           <span className="app__foot-links">
+            <span>이 화면은 가상의 예시이며, 일부 기능은 아직 연동되지 않았습니다.</span>
             <InAppLink to="/menu" navigate={navigate}>메뉴 전체 보기</InAppLink>
           </span>
         </div>

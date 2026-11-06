@@ -1,11 +1,10 @@
 /**
- * #9 redesign (HUFS_One_AI_UIUX_96_Master_Spec §2.1, §4.1): the 11 top-level areas observed in the
- * HUFSAbility student menus (docs/HUFSABILITY_UI_COMPONENT_ATLAS.md §3), used as the desktop GNB.
+ * #9 redesign: the top menu of the HUFS One AI design mockups (HUFS_One_AI_Essential, 전체 메뉴 시안):
+ * 홈 · 학사정보 · 수업/수강 · 성적/졸업 · 비교과·역량 · 경험관리 · 진로·취업 · AI 추천 · 커뮤니티 · 지원/신청 · 서비스 안내.
  *
- * `ours` are HUFS One AI's own working screens placed in the area the spec assigns them to. `observed`
- * are the original menu names only: none of them is implemented here, they never link anywhere and
- * are always shown as 미지원. The 5 public categories / 24 functions stay in the central manifest
- * (menuCatalog / /menu); this list is the observed information architecture, not a capability claim.
+ * `ours` are HUFS One AI's working screens, placed where the mockups place them. `planned` are the other
+ * entries the mockups draw in each menu: none is implemented, they never link anywhere and are always
+ * shown as 미지원. Nothing here claims a school function; school-only services stay 미지원.
  */
 export interface AreaLink {
   readonly route: string;
@@ -18,33 +17,40 @@ export interface Area {
   /** One line under the banner title. */
   readonly summary: string;
   readonly ours: readonly AreaLink[];
-  readonly observed: readonly string[];
+  readonly planned: readonly string[];
 }
 
 export const AREAS: readonly Area[] = [
-  {id: 'competency', label: '역량관리', summary: '나의 역량 현황과 진단 정보를 확인하는 영역입니다.',
-    ours: [], observed: ['HUFSAbility 역량점수', 'MY 비교과활동 Point', 'HUFSAbility 체계 안내', '핵심역량진단검사', 'MY 핵심역량진단 결과', '대학생활적응검사', 'MY 대학생활적응검사결과']},
-  {id: 'curricular', label: '교과/비교과', summary: '학업·졸업 요건과 비교과 활동을 함께 확인합니다.',
-    ours: [{route: '/graduation', label: '졸업지원'}, {route: '/graduation/what-if', label: '전공 가정 분석'}, {route: '/saved', label: '보관함'}, {route: '/clubs', label: '동아리 모집'}],
-    observed: ['수강교과목', '성적조회', '비교과프로그램', '비교과프로그램 신청 내역', '비교과 관심키워드', 'MY 비교과 장바구니', '외부비교과 활동', '학습공동체', '장학 신청']},
-  {id: 'jobs', label: '채용/고용24', summary: '나에게 맞는 공고와 나의 지원 기록을 확인합니다.',
-    ours: [{route: '/opportunities', label: '맞춤 기회'}, {route: '/applications', label: '지원 현황'}],
-    observed: ['추천신청이력', '아르바이트', '교내외채용행사', '대외활동', '채용정보(고용24)', '직업탐색', '청년인턴/강소기업', '외대친화기업(HUFFi)']},
-  {id: 'mentoring', label: '현직자멘토링', summary: '현직자 멘토링 소식을 확인하는 영역입니다.',
-    ours: [], observed: ['멘토링 후기', '멘토링 공지']},
-  {id: 'career', label: '전공·진로설계', summary: '나의 경험을 기록하고 진로 준비를 정리합니다.',
+  {id: 'academic', label: '학사정보', summary: '내 전공·학년·이수 현황을 반영한 학사공지와 주요 일정을 한눈에 확인하세요.',
+    ours: [{route: '/notices', label: '학사공지·일정'}],
+    planned: ['학적정보 조회', '학사일정(전체)', '등록·장학 안내', '학사 FAQ']},
+  {id: 'class', label: '수업/수강', summary: '다음 학기 수강계획이 졸업 요건에 맞는지 확인하세요.',
+    ours: [],
+    planned: ['수강신청', '수강계획 시뮬레이션', '수업 이력/계획', '강의 평가']},
+  {id: 'grades', label: '성적/졸업', summary: '나의 학점과 졸업요건, 수강계획 검사와 가정 분석을 함께 확인하세요.',
+    ours: [{route: '/graduation', label: 'AI 졸업지원'}, {route: '/graduation/what-if', label: '전공·학업 What-if'}],
+    planned: ['성적 조회', '학점 이수 현황', '졸업요건 확인', '성적 분석 리포트']},
+  {id: 'extracurricular', label: '비교과·역량', summary: '나의 전공·관심사·학습 이력을 바탕으로 맞춤 공고·대외활동·비교과를 추천해 드립니다.',
+    ours: [{route: '/opportunities', label: '추천 피드 (AI)'}],
+    planned: ['전체 공고 검색', '비교과 프로그램', '역량 진단·분석', '참여 이력']},
+  {id: 'experience', label: '경험관리', summary: '동아리, 아르바이트, 프로젝트 등 다양한 경험을 기록하고 관리하세요.',
     ours: [{route: '/experience', label: '나의 경험'}],
-    observed: ['나의진로정보', '진로 로드맵', '로드맵 성취도', '학과 전공·진로 로드맵', '자기소개서', 'MY커리어', '진로취업도서관리']},
-  {id: 'counseling', label: '통합상담', summary: '학업·진로·심리 상담 안내 영역입니다.',
-    ours: [], observed: ['상담신청', '상담참여이력', 'International Students', '国际学生咨询', '신입생세미나']},
-  {id: 'community', label: '커뮤니티', summary: '나와 관련된 학사 공지와 일정을 확인합니다.',
-    ours: [{route: '/notices', label: '학사 공지'}],
-    observed: ['시스템문의', '자료실', '설문참여', '사회봉사 활동 경험 사례공유']},
-  {id: 'survey', label: '취업조사', summary: '졸업생 취업 조사 영역입니다.', ours: [], observed: ['취업조사']},
-  {id: 'faculty', label: '교수지원(학생)', summary: '수업 컨설팅·교과목 개발 참여 영역입니다.', ours: [], observed: ['수업컨설팅', '혁신교과목개발']},
-  {id: 'badge', label: '오픈배지', summary: '오픈배지 안내 영역입니다.', ours: [], observed: ['오픈배지', 'My 오픈배지']},
-  {id: 'stats', label: '취업통계', summary: '졸업생 취업 통계 영역입니다.',
-    ours: [], observed: ['산업분류별 현황', '기업유형별 현황', '근무지역별 현황', '초임급여별 현황', '학과계열별 현황']},
+    planned: ['프로젝트 관리', '포트폴리오', '이력서 연동', '활동 증빙함']},
+  {id: 'career', label: '진로·취업', summary: '관심 기회부터 준비, 지원, 결과 대기까지 내 진행 상황을 기록하세요.',
+    ours: [{route: '/applications', label: '나의 지원 현황'}],
+    planned: ['진로 탐색·진단', '채용 공고', '이력서·자기소개서']},
+  {id: 'ai', label: 'AI 추천', summary: '저장한 공고와 관심 기회를 한곳에서 관리하세요.',
+    ours: [{route: '/saved', label: '통합 보관함'}],
+    planned: ['통합 추천(공고·비교과·진로)', 'AI 요약 리포트', '맞춤 학업·진로 로드맵']},
+  {id: 'community', label: '커뮤니티', summary: '승인된 동아리의 모집 공고를 확인하고 관심 동아리를 찾아보세요.',
+    ours: [{route: '/clubs', label: '동아리 모집'}],
+    planned: ['동아리 검색·탐색', '학생 커뮤니티(게시판)', '스터디/프로젝트 모집']},
+  {id: 'apply', label: '지원/신청', summary: '학교 신청 업무는 이번 시연에서 제공하지 않습니다. 학교 공식 서비스에서 확인하세요.',
+    ours: [],
+    planned: ['장학금 신청', '증명서 발급 연계', '각종 신청(휴학·복학·변경 등)', '문의·지원(1:1, FAQ)']},
+  {id: 'service', label: '서비스 안내', summary: 'HUFS One AI의 전체 메뉴와 내 설정을 확인하세요.',
+    ours: [{route: '/menu', label: '전체 메뉴'}, {route: '/settings', label: '내 설정·개인화'}],
+    planned: ['이용 안내', '도움말']},
 ];
 
 export const areaPath = (id: string) => `/area/${id}`;

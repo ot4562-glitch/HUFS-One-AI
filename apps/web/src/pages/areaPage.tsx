@@ -11,11 +11,13 @@ const OUR_TEXT: Readonly<Record<string, string>> = {
   '/applications': '관심 → 준비 → 지원 → 결과 대기를 내가 직접 기록합니다.',
   '/experience': '활동을 기록하고, AI 후보 태그는 내가 승인한 것만 추천에 씁니다.',
   '/notices': '나와 관련된 학사 공지와 확정 마감을 봅니다.',
+  '/menu': 'HUFS One AI의 모든 메뉴와 학교 HUFSAbility 원래 메뉴(미지원)를 한눈에 봅니다.',
+  '/settings': '관심 분야를 바꿔 보고 같은 기준 시각의 전후 결과를 비교합니다.',
 };
 
 /**
- * /area/:id (UIUX master spec TYPE_GUIDE): what HUFS One AI offers inside one of the 11 observed
- * HUFSAbility areas, and the area's original menu names, which this demo does not provide.
+ * /area/:id: what HUFS One AI offers inside one top menu of the design mockups, and the menu's other
+ * entries, which this demo does not provide (plain text, never links).
  */
 export const areaPage: PageRenderer = ({path, navigate}) => {
   const m = /^\/area\/([a-z-]+)$/.exec(path);
@@ -27,7 +29,7 @@ export const areaPage: PageRenderer = ({path, navigate}) => {
     body: (
       <>
         <p className="notice-box" role="note">
-          HUFSAbility에서 관찰한 메뉴 구조를 따라 정리한 화면입니다. HUFS One AI는 학교 공식 서비스가 아니며, 아래 원래 메뉴의 기능은 이번 시연에서 제공하지 않습니다.
+          HUFS One AI는 학교 공식 서비스가 아닌 독립 학생 프로젝트입니다. 아래 ‘미지원’ 메뉴는 이번 시연에서 제공하지 않으며, 학교 업무는 학교 공식 서비스에서 확인해 주세요.
         </p>
         <section className="section" aria-label="ONE AI에서 쓸 수 있는 화면">
           <div className="section__head"><h2>ONE AI에서 쓸 수 있는 화면</h2></div>
@@ -40,9 +42,9 @@ export const areaPage: PageRenderer = ({path, navigate}) => {
             ))}</ul>
             : <p className="muted">이 영역에는 이번 시연에서 HUFS One AI 화면이 없습니다.</p>}
         </section>
-        <section className="section" aria-label="원래 메뉴">
-          <div className="section__head"><h2>원래 메뉴 <span className="muted area__count">{area.observed.length}개 · 이번 시연 미지원</span></h2></div>
-          <ul className="area__observed">{area.observed.map(o => <li key={o}><span>{o}</span><span className="lnb__off">미지원</span></li>)}</ul>
+        <section className="section" aria-label="미지원 메뉴">
+          <div className="section__head"><h2>미지원 메뉴 <span className="muted area__count">{area.planned.length}개 · 이번 시연에서 제공하지 않음</span></h2></div>
+          <ul className="area__observed">{area.planned.map(o => <li key={o}><span>{o}</span><span className="lnb__off">미지원</span></li>)}</ul>
         </section>
       </>
     ),

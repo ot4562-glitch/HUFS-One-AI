@@ -109,24 +109,24 @@ describe('#124 menu rendering', () => {
     expect(link.textContent).toContain('학교 공식 사이트');
   });
 
-  it('the GNB is the 11 observed HUFSAbility areas; an area page lists our screens and the originals as 미지원 text', async () => {
+  it('the GNB is the mockup menu (홈 + 10); a menu page lists our screens and the rest as 미지원 text', async () => {
     await open('/');
     const gnb = screen.getByRole('navigation', {name: '전체 메뉴'});
-    expect(within(gnb).getAllByRole('link').map(a => a.textContent)).toEqual(AREAS.map(a => a.label));
-    expect(within(gnb).getAllByRole('link')).toHaveLength(11);
-    fireEvent.click(within(gnb).getByRole('link', {name: '채용/고용24'}));
+    expect(within(gnb).getAllByRole('link').map(a => a.textContent)).toEqual(['홈', ...AREAS.map(a => a.label)]);
+    expect(within(gnb).getByRole('link', {name: '홈'}).getAttribute('aria-current')).toBe('page');
+    fireEvent.click(within(gnb).getByRole('link', {name: '진로·취업'}));
     await flush();
-    expect(screen.getByRole('heading', {level: 1}).textContent).toBe('채용/고용24');
-    expect(within(gnb).getByRole('link', {name: '채용/고용24'}).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('heading', {level: 1}).textContent).toBe('진로·취업');
+    expect(within(gnb).getByRole('link', {name: '진로·취업'}).getAttribute('aria-current')).toBe('page');
     const ours = screen.getByRole('region', {name: 'ONE AI에서 쓸 수 있는 화면'});
-    expect(within(ours).getByRole('link', {name: '지원 현황'}).getAttribute('href')).toBe('/applications');
-    const originals = screen.getByRole('region', {name: '원래 메뉴'});
-    expect(within(originals).getByText('외대친화기업(HUFFi)').closest('a, button')).toBeNull();
-    expect(within(originals).queryAllByRole('link')).toHaveLength(0);
-    // The left menu repeats the same split: our screens are links, originals are text.
-    const lnb = screen.getByRole('navigation', {name: '채용/고용24 메뉴'});
-    expect(within(lnb).getAllByRole('link').map(a => a.textContent)).toEqual(['채용/고용24', '맞춤 기회', '지원 현황']);
-    expect(within(lnb).getAllByText('미지원')).toHaveLength(AREAS.find(a => a.id === 'jobs')!.observed.length);
+    expect(within(ours).getByRole('link', {name: '나의 지원 현황'}).getAttribute('href')).toBe('/applications');
+    const rest = screen.getByRole('region', {name: '미지원 메뉴'});
+    expect(within(rest).getByText('채용 공고').closest('a, button')).toBeNull();
+    expect(within(rest).queryAllByRole('link')).toHaveLength(0);
+    // The left menu repeats the same split: our screens are links, the rest is text.
+    const lnb = screen.getByRole('navigation', {name: '진로·취업 메뉴'});
+    expect(within(lnb).getAllByRole('link').map(a => a.textContent)).toEqual(['진로·취업', '나의 지원 현황']);
+    expect(within(lnb).getAllByText('미지원')).toHaveLength(AREAS.find(a => a.id === 'career')!.planned.length);
     cleanup();
     await open('/competency-test');
     expect(screen.getByRole('heading', {level: 1}).textContent).toBe('페이지를 찾을 수 없습니다');

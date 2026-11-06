@@ -125,21 +125,21 @@ test('#80 application board: keyboard-only advance, self-record badge, no overfl
   expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
 });
 
-test('#9 redesign at 1440px: 11-area GNB, area banner + left menu, originals never focusable', async ({page}) => {
+test('#9 redesign at 1440px: mockup GNB, menu banner + left menu, 미지원 entries never focusable', async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900});
   await page.goto('/');
   await pick(page, 0);
   const gnb = page.getByRole('navigation', {name: '전체 메뉴'});
-  await expect(gnb.getByRole('link')).toHaveCount(11);
+  await expect(gnb.getByRole('link')).toHaveCount(11); // 홈 + 10 menus
   await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회', exact: true})).toBeVisible();
-  await gnb.getByRole('link', {name: '교과/비교과'}).click();
-  await expect(page.getByRole('heading', {level: 1})).toHaveText('교과/비교과');
-  const lnb = page.getByRole('navigation', {name: '교과/비교과 메뉴'});
+  await gnb.getByRole('link', {name: '성적/졸업'}).click();
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('성적/졸업');
+  const lnb = page.getByRole('navigation', {name: '성적/졸업 메뉴'});
   await expect(lnb).toBeVisible();
-  await lnb.getByRole('link', {name: '졸업지원'}).click();
+  await lnb.getByRole('link', {name: 'AI 졸업지원'}).click();
   await expect(page.getByRole('heading', {level: 1})).toHaveText('졸업');
-  await expect(page.getByRole('navigation', {name: '현재 위치'})).toContainText('교과/비교과');
-  await expect(gnb.getByRole('link', {name: '교과/비교과'})).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', {name: '현재 위치'})).toContainText('성적/졸업');
+  await expect(gnb.getByRole('link', {name: '성적/졸업'})).toHaveAttribute('aria-current', 'page');
   // Tab through the left menu: focus only lands on links; the 미지원 originals are skipped.
   await lnb.getByRole('link').last().focus();
   await page.keyboard.press('Tab');

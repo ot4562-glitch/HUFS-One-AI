@@ -84,30 +84,37 @@ const CAL_ICON = (
   </svg>
 );
 
-/** 기회 list card: content in the middle, status column on the right; one call to action. */
-export function OppCard({card, navigate}: {card: FeedCardView; navigate: Nav}) {
+/**
+ * 기회 card (Essential mockup "AI 맞춤 기회"): 맞춤 추천 chip and D-day on top, title, deadline line,
+ * the first 추천 이유, topic chips; footer with the server eligibility (icon + words) and one action.
+ */
+export function OppCard({card, navigate, matched = false}: {card: FeedCardView; navigate: Nav; matched?: boolean}) {
   const mark = card.eligibility === 'ELIGIBLE' ? '✓' : card.eligibility === 'INELIGIBLE' ? '✕' : '?';
   const why = card.reasons[0];
   return (
     <li className="opp">
-      <article className="opp__main">
+      <article className="opp__card">
+        <div className="opp__top">
+          {matched && <span className="opp__match"><span aria-hidden="true">✦</span> 맞춤 추천</span>}
+          <span className="opp__state">{card.lifecycleText}</span>
+          {card.dday && <Chip tone={ddayTone(card.dday)}><DDayText dday={card.dday} /></Chip>}
+        </div>
         <h3 className="opp__title"><InAppLink to={oppPath(card.opportunityId)} navigate={navigate}>{card.title}</InAppLink></h3>
-        {card.topicTexts.length > 0 && <ul className="opp__chips" aria-label="분야">{card.topicTexts.map(t => <li key={t}>{t}</li>)}</ul>}
+        {(card.deadlineText || card.badges.length > 0) && (
+          <p className="opp__meta">{CAL_ICON}{[card.deadlineText, ...card.badges].filter(Boolean).join(' · ')}</p>
+        )}
         {why && <p className="opp__why"><strong>추천 이유</strong> {why}</p>}
         {card.relevance && (
           <p className="card__relevance opp__rel">{card.relevance.text}<span className="card__disclaimer">{card.relevance.disclaimer}</span></p>
         )}
-        {(card.deadlineText || card.badges.length > 0) && (
-          <p className="opp__meta">{CAL_ICON}{[card.deadlineText, ...card.badges].filter(Boolean).join(' · ')}</p>
-        )}
+        <div className="opp__foot">
+          {card.topicTexts.length > 0 && <ul className="opp__chips" aria-label="분야">{card.topicTexts.map(t => <li key={t}>{t}</li>)}</ul>}
+          <p className={`opp__elig opp__elig--${card.eligibility.toLowerCase()}`}><span aria-hidden="true">{mark}</span> {card.eligibilityText}</p>
+          <InAppLink to={oppPath(card.opportunityId)} navigate={navigate} className="opp__cta">
+            자세히 보기<span className="visually-hidden"> ({card.title})</span> <span aria-hidden="true">›</span>
+          </InAppLink>
+        </div>
       </article>
-      <div className="opp__side">
-        <Chip tone={ddayTone(card.dday)}>{card.lifecycleText}{card.dday && <> · <DDayText dday={card.dday} /></>}</Chip>
-        <p className={`opp__elig opp__elig--${card.eligibility.toLowerCase()}`}><span aria-hidden="true">{mark}</span> {card.eligibilityText}</p>
-        <InAppLink to={oppPath(card.opportunityId)} navigate={navigate} className="button opp__cta">
-          자세히 보기<span className="visually-hidden"> ({card.title})</span>
-        </InAppLink>
-      </div>
     </li>
   );
 }
