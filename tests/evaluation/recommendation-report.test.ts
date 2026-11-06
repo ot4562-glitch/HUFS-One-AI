@@ -7,6 +7,7 @@ import {DEMO_AS_OF,DEMO_OPPORTUNITIES,DEMO_PUBLISHED_AT,DEMO_SPLIT} from '../../
 import {DEMO_LABELS,DEMO_STUDENTS} from '../../packages/core/src/opportunities/demo-profiles.js';
 import {RANK_CONFIG_V1} from '../../packages/core/src/opportunities/rank.js';
 import {hashCanonical} from '../../packages/core/src/evaluation/canonical.js';
+import {DEMO_REVISION_PUBLISHED_AT,gatedDemoCorpus} from '../../packages/core/src/opportunities/demo-revisions.js';
 const packet=()=>buildReviewPackage({targetCommit:'f'.repeat(40)}),now='2026-11-21T12:00:00.000Z';
 describe('fixed split and fair recommendation comparisons',()=>{
   it('reports absent independent gold as NOT_RUN with null quality, not zero accuracy or 200 self labels',()=>{
@@ -78,6 +79,34 @@ describe('fixed split and fair recommendation comparisons',()=>{
       expect(split.codePlusLlm.top3Quality).toEqual(compareTop3Quality(plain,splitOpportunities(split.partition),opts));
       expect(split.codePlusLlm.measurement?.evidence).toBe('IMPORTED_OBSERVATION_NOT_PROVIDER_OR_HUMAN_ACCEPTANCE');
     }
+  });
+  it('#10: revisionScenario is opt-in; without it the report has no such key and the r1 baseline splits are identical', () => {
+    const p=packet(),base=recommendationReport(p,emptyReviewLedger(p),{now}),opted=recommendationReport(p,emptyReviewLedger(p),{now,revisionScenario:true});
+    expect('revisionScenario' in base).toBe(false);
+    expect(JSON.stringify(opted.splits)).toBe(JSON.stringify(base.splits));
+    const self=recommendationReport(p,emptyReviewLedger(p),{now,reference:'TRACK_OWNER_SELF'});
+    expect(JSON.stringify(recommendationReport(p,emptyReviewLedger(p),{now,reference:'TRACK_OWNER_SELF',revisionScenario:true}).splits)).toBe(JSON.stringify(self.splits));
+  });
+  it('#10: with 0 independent gold the revision scenario reports gate results and label-free quality, accuracy NOT_RUN', () => {
+    const p=packet(),r=recommendationReport(p,emptyReviewLedger(p),{now,revisionScenario:true}),s=r.revisionScenario!;
+    const g=gatedDemoCorpus(DEMO_AS_OF),scenarioOpts={asOf:DEMO_AS_OF,publishedAtBySnapshotId:DEMO_REVISION_PUBLISHED_AT,config:RANK_CONFIG_V1};
+    expect([s.scenarioVersion,s.asOf,s.baselineUnchanged,s.qualityState,s.comparison]).toEqual(['syn-corpus-v1+revisions-v1',DEMO_AS_OF,true,'NOT_RUN',null]);
+    expect(s.cases.map((c:any)=>c.scenario)).toEqual(['EXTENDED','CANCELLED','UNREVIEWED_CORRECTION','SHORTENED','CORRECTION_AFTER_AS_OF']);
+    expect(s.usableOpportunityIds).toHaveLength(37);
+    expect(s.usableSnapshotIds).toContain('SYN-SRC-002-r2');expect(s.usableSnapshotIds).not.toContain('SYN-SRC-002-r1');
+    expect(s.quarantined).toEqual(g.quarantined);
+    expect(s.top3Quality).toEqual(compareTop3Quality(plain,g.usable,scenarioOpts));
+    expect(s.labelCoverage).toMatchObject({num:0,den:5*37});
+    expect(s.predictedUnknown).toBeGreaterThan(0);
+  });
+  it('#10: in owner-draft reference mode the scenario compares rankers on the gated corpus with the same labels', () => {
+    const p=packet(),r=recommendationReport(p,emptyReviewLedger(p),{now,reference:'TRACK_OWNER_SELF',revisionScenario:true}),s=r.revisionScenario!;
+    const g=gatedDemoCorpus(DEMO_AS_OF);
+    const profiles=DEMO_STUDENTS.map(x=>({profileId:x.subject,profile:x.profile,labels:DEMO_LABELS[x.subject]}));
+    expect(s.qualityState).toBe('TRACK_OWNER_SELF_REFERENCE_ONLY');
+    expect(s.comparison).toEqual(compareRankers(profiles,g.usable,{asOf:DEMO_AS_OF,publishedAtBySnapshotId:DEMO_REVISION_PUBLISHED_AT,config:RANK_CONFIG_V1}));
+    // Cancelled / unreviewed postings are absent from every arm's ranking.
+    for(const row of s.comparison!.profiles)for(const arm of [row.latestFirst,row.recommended])for(const id of ['SYN-OPP-007','SYN-OPP-014'])expect(arm.top3).not.toContain(id);
   });
   it('counts definite false eligibility and unsupported ELIGIBLE separately from UNKNOWN and missing coverage',()=>{
     const r=eligibilityMetrics({a:'ELIGIBLE',b:'ELIGIBLE',c:'UNKNOWN',d:'INELIGIBLE'},
