@@ -2,6 +2,10 @@
 
 기준일 **2026-11-06**. 본선 전 이슈의 정리와 실제 사람/운영 인수를 분리한다. 코드 정본은 [STATUS](../STATUS.md), 실제 운영 증거는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이다.
 
+## 최신 PR/이슈 반영 (2026-11-06)
+
+본선 전 제목의 **11개 이슈는 모두 CLOSED**(#9/#10/#11/#12/#119/#258/#260/#261/#284/#294/#296; 10 completed, #260 사람 리뷰 미완료 이관으로 not_planned)이며 이는 **상단에 정한 코드/합성·계획 종결**만 뜻합니다. [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) 합성 홈/공고 인터랙션(8파일, PR HEAD Actions 4/4 PASS)이 [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c)에 병합됐고, [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 병합된 기능의 0-diff 중복 PR로 종료됐습니다. **이의상 등 지정 팀원 사람 교차 검토·독립 인수는 새로 수행한 것이 아닙니다.** 아래 실제 인수 수치는 바꾸지 않습니다. 남은 새 UI 요구 #298/#300/#303 및 본선 이후 #276/#280–#283은 열린 상태입니다.
+
 ## 본선 전 작업 정리
 
 | 담당 영역 | 정리한 이슈와 코드·계획 | 실제 후속 |

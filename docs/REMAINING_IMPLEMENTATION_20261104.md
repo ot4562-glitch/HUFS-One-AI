@@ -1,43 +1,32 @@
-# HUFS One AI — 남은 구현·운영 설정·검증 (2026-11-06 현행)
+# HUFS One AI — 현재 남은 구현·운영 인수 (2026-11-06 기준)
 
-> **`OWNER_CONFIRMED_APPROVED`는 프로젝트 승인**이지 실 NCP/학생 자료/공식 학칙/유료 AI 실행 성공이 아닙니다. 정확한 통합 코드 증거는 [STATUS](../STATUS.md), 실제 운영 통합과 검수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 확인합니다. 파일명의 20261104는 기존 링크 호환을 위해 유지합니다. 현재 `RELEASE_BLOCKED`.
+이 경로는 과거 링크 호환을 위해 파일명 `20261104`를 유지합니다. **정본: [STATUS](../STATUS.md), 실제 증거: [REPORT](../REPORT.md), 역할/사람 인수: [TEAM_PROGRESS](TEAM_PROGRESS.md)**. 프로젝트 승인 `OWNER_CONFIRMED_APPROVED`는 실계정/실원본/공식 학칙/NCP·유료 공급자 설정 성공을 뜻하지 않습니다. 실제 서비스 `RELEASE_BLOCKED`.
 
-## 최신 2026-11-06 통합·잔여 게이트
+## 코드/합성 사전작업 완료와 PR 처리
 
-- [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지).
-- 네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.**
-- 합성 코어 완료: #292 학점 AREA_SPREAD/GROUP_CHOICE 모델·탐색 예산; #293 학사공지 SourceRevision/mock claim 및 clean HEAD 벤치; #295 `forecast-offering-v3`/미확인 학수번호 NEEDS_REVIEW. **학업 API 연결 `NOT_CONNECTED`**, #301 박준영 자료 실제 소비와 #282 실원장 검증 남음.
-- 합성 UI 일부 완료: #304 통일 헤더/폼·지원보드·S04 Pages 기본 오류 격리, 공개 합성 Pages 자동 재배포 유지. **학교/팀원 본인 인증 #297/#299, 전체 디자인 #298, 실제 2탭/철회 #303, 포트폴리오 #300은 OPEN**.
-- 개발/운영 잔여: 경험 Owner API #284, Windows SSH host-key/경로 보안 #294, 다양한 포스터 #296, 실호출/캐시 증거 #302, NCP/PG/Google/권리·원본/실학칙 #276·#280–#283. 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
+- 본선 진출 이전 11개 제목 이슈(#9/#10/#11/#12/#119/#258/#260/#261/#284/#294/#296)는 [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)의 통합 근거에 따라 모두 종결: 10개 `completed`, #260은 **지정 팀원의 실제 교차 리뷰를 미완료로 인정·이관**하며 `not_planned`. 이슈 종료와 실제 출시/권리·사람 인수는 별개.
+- [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 #306 통합 뒤 `main`과 비교해 **변경 파일 0개**인 중복. [코드 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305#pullrequestreview-5797569357) 후 병합하지 않고 CLOSED.
+- [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) 현재 합성 화면으로 **홈 3단계 액션·공고 검색/7일 내 확정 마감/자격 상태 필터·마감 정렬·키보드/reduced-motion**을 구현. 변경 8파일의 [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875), PR HEAD `ba7bf2a` Actions [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963) **4/4 SUCCESS**, 병합 커밋 [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c). 병합 이후 정확한 `main d8e2144`의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797571)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797686)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797648)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797515) **4/4 SUCCESS** 확인. 이후 문서 PR의 CI는 별도.
+- 앞서 병합된 #267–#295(각 해당 PR/이슈 인용)에는 합성 개인화·학업/RulePack·SourceRevision·학생 명시 승인/철회·API/RLS/AI/NCP preview 코드가 있습니다. 공개 Pages는 **실자료 없는 합성 화면**, `main` push 시 자동 재배포합니다. 합성 자동검증과 현장 검증을 혼동하지 않습니다.
 
-## 코드 구현 완료(운영 완료와 구별)
+## 아직 OPEN — 실구현·인수/근거가 필요한 일
 
-- 오너 분할 병합 PR **#267·#268·#269·#270·#272·#273·#274·#275**, BETA 본인 CSV UI/API [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277) 모두 `main` 반영. 구 대형 #264는 **미병합 종료**. 합성 계약/권한·관리형 PostgreSQL/Source/AI 비용, 경험/포트폴리오→AI 후보→학생 명시 승인·철회, 운영 런타임 plan/apply 코드가 있습니다.
-- 학업 [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278): **정규 과거 8학기·동일 계절 최대 4·NOTICE_ONLY/UNKNOWN 보수 판정·`forecast-offering-v2`**, 합성 회귀, MERGED.
-- 추천 [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279): **합성 40공고+10학사공지 커버리지 감사**, 경험 인용/키워드 후보(항상 `NEEDS_REVIEW`)·현재 학생 승인 신호/철회·버전/선택형 보완 주제, MERGED. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어 이슈 완료, 실 UI/실학생은 별개.
-- 비전공자 [NCP 서버](BEGINNER_NCP_SERVER_SETUP.md)·[제품/개발 AI CLI](BEGINNER_NCP_PRODUCT_AND_AGENTS.md)·[구조](BEGINNER_PRODUCT_ARCHITECTURE.md) 가이드가 README 하단에 연결. 문서 작성은 서버 생성·실설치 성공과 다름.
-- 코드 통합 기준 [`48134da`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/48134dae3b16157ebcc294f744c320fdd64a115c) 4종 합성/격리 PG·Chrome·NCP IaC·Pages Actions **4/4 SUCCESS**. 새 commit의 CI는 별도 확인.
+| 이슈 | 남은 실작업 / 올바른 현재 경계 |
+| --- | --- |
+| [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) | NCP 실호스트·PG/CA TLS·Google/학교메일·관리형 권한·실원본 인입·유료 모델·운영 장애/비용/복구: **CONFIGURATION_REQUIRED/NOT_RUN** |
+| [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) | 실제 사용자별 UI, 모바일/키보드/스크린리더·다중탭/철회/권한·정정·경험 추천 **사람 종단 인수** |
+| [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281) | 허가된 실제 추천/공지 source revision·성능·독립 Gold/정정 및 사람 리뷰 |
+| [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) | 공식 학칙/RulePack·학수번호/4인 실제 원장·과거 8학기 개설 및 학업 소비자 교차 리뷰 |
+| [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) | NCP 실제 계정·최종 SKU/요금/청구·권리/동의·인수/복구·비코드 운영 검토 |
+| [#297](https://github.com/ot4562-glitch/HUFS-One-AI/issues/297) · [#299](https://github.com/ot4562-glitch/HUFS-One-AI/issues/299) | 정적 Pages 자동배포 유지와 별개로 실제 4명 **본인 인증·권리·동의/철회·소유자별 private intake** 확인. 공개 합성 선택기는 학교 로그인 아님 |
+| [#298](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298) · [#303](https://github.com/ot4562-glitch/HUFS-One-AI/issues/303) | 홈/기회 인터랙션 및 Pages S04 기본 오류 수정은 완료 체크. 남은 전체 화면·접근성/실기기·계정 권한 회복·`asOf`/D-day 안내는 **미완료** |
+| [#300](https://github.com/ot4562-glitch/HUFS-One-AI/issues/300) | 나의 경험 LinkedIn형 구조화 프로필·편집/기간/링크/역량 후보/동의 중심 전면 재설계 미완료 |
+| [#301](https://github.com/ot4562-glitch/HUFS-One-AI/issues/301) | 박준영 수집 자료의 실제 출처·권리/학업 API/공식 식별자·화면 소비 증거와 상태표 미확인 |
+| [#302](https://github.com/ot4562-glitch/HUFS-One-AI/issues/302) | 실 CLOVA/Laya API 호출 영수증·캐시 재생 증거/UI; 합성 Pages 결과를 실제 provider 호출로 소개하지 않음 |
+| [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255) | 경험→커리어 제안 상위 기획; 신규 제품 기능·실인수 전체의 체크리스트를 대체하지 않음 |
 
-## 2026-11-06 합성 코드의 후속 통합
+## 변하지 않는 보안·검증 조건
 
-- [#285](https://github.com/ot4562-glitch/HUFS-One-AI/pull/285): 경험 원문/AI 후보/사용자 승인을 분리한 합성 UI 컴포넌트·테스트만 반영. **운영/실라우트에는 아직 미연결**이고 #284 API 메서드·jobId·#258 추천 소비자 연결 및 실제 Chrome 상호작용 검증이 남음.
-- [#286](https://github.com/ot4562-glitch/HUFS-One-AI/pull/286): 40건 원본 코퍼스를 바꾸지 않는 **5개 revision-chain 별도 overlay**, quarantine `(id, revisionId)` 결정성 수정·검사. 기존 `recommendationReport`의 r1 코퍼스는 유지. #201 합성 벤치는 dirty 작업트리에서 측정되어 clean HEAD/운영 p95가 아님.
-- [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287)/[#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288)/[#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289): `nextAttempts`로 영역 재분류를 알 수 없으면 `UNKNOWN/NEEDS_REVIEW`, rolling-origin NOTICE_ONLY·0/n·사건/20과목 반례, 학점 원장 속성 및 [PROPERTY_COVERAGE](../packages/core/src/academics/PROPERTY_COVERAGE.md). **공식 학칙·실학생 4인 대조는 #282 NOT_RUN**.
-- AI 보조 PR 코드 `COMMENT`와 합성 Actions 통과는 독립 사람 승인/실환경 수락이 아닙니다. `csv/` 원본 5개는 수정·삭제·재인코딩하지 않았고, 현행 출시 게이트는 `RELEASE_BLOCKED`.
-
-### UI 리디자인 [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290) 추가 통합
-
-A11 공통 디자인 계약과 11개 대분류 GNB·네이비 배너/왼쪽 LNB·합성 홈 P001·공고 상태 행을 `main`에 통합했습니다. 관찰된 원래 HUFSAbility 기능은 **미지원 텍스트**, 학교 자격 증명/기관 시스템 직접 연동 없음. HEAD 4/4 Actions SUCCESS는 합성 CI만 의미하며 전체 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)의 접근성/권한 회귀 및 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) 실기기·계정 현장 인수는 NOT_RUN/미완료. 실서비스 `RELEASE_BLOCKED`는 유지됩니다.
-
-## 아직 미완료인 실서비스와 일부 소비자 연계
-
-1. **실 NCP:** 계정/IAM·SKU/비용 한도·VPC/ACG/NACL·SSH·TLS/Host/SNI·프록시 원 IP/IPv6·롤백/복구·요금·반납 영수증 `CONFIGURATION_REQUIRED/NOT_RUN`. [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) 비코드, [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 운영 통합.
-2. **Google/학교메일/DB:** 실제 OIDC·학교메일·역할·RLS/CSRF, PostgreSQL 7개 기본+확장 SQL roles/CA TLS/migration/backup·복구, 비공개 operator factory/현재 자료 권리/실 DB readback `NOT_RUN`.
-3. **학생 자료:** `csv/`에 **Forms 1개+수강 CSV 4개, 총 5개 복구**, 176행 중 학수번호 공란 132행. 실제 4명의 Forms↔수강 파일 해시↔BETA actor↔목적별 현재 consent/rights를 **검증된 private registry/loader**로 연결·인입·조회·철회/삭제·복구할 것. PR #277은 read port/UI 코드이며 배포 완료가 아님. 원본을 무단 수정·삭제하지 않고 공개 deploy·CI·AI 프롬프트에 원본을 담지 않는다.
-4. **실 CLOVA/OCR/RAG:** 운영 키/허용 egress/가격·청구·중복/취소·source 권리, Vision/PDF native worker/NOTICE/SBOM·실성능/비용, 운영 경로 검증. 개발 Codex/Claude Code CLI 설치와 제품 AI 연동은 별개.
-5. **UI/학업/권리:** [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) 경험 합성 컴포넌트 이후 실제 라우트/#284 API·로드맵 화면, [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 교과/비교과 연계·정식 근거, [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)/[#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) UI, [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 추천 실원본/benchmark/골드, [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) 공식 RulePack/8학기 소스·독립 검산; [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 비코드 기획·권리·비용.
-6. **실효성/사람 인수:** 사용자 요청으로 독립 Gold 평가는 현재 작업에서 제외되었으나 **NOT_RUN/NOT_MEASURED**, 공식 학교 판정·실서비스 품질 PASS로 주장하지 않음.
-
-## 종료된 이슈와 유지 이슈
-
-과거 **#252(실환경 후속 이관)·#253(코드)·#257(경험 API)**는 CLOSED, 운영/실소스 남은 항목은 #276에 집약. #259 순수 코어 CLOSED. **#10·#11·#255·#258·#260·#261·#276 및 #9·#12·#119는 OPEN**이며 다른 담당자 업무를 임의 종료하지 않습니다. 요청받은 `csv/` 원본 5개 불변 보존은 [AGENTS](../AGENTS.md)/[DATA_GOVERNANCE](DATA_GOVERNANCE.md)를 따르며, 법적 삭제/철회 의무는 별개입니다.
+- `csv/`의 **Forms 1개+수강 CSV 4개=5개 원본**은 사용자 지시대로 경로·내용·인코딩·Git blob 상태를 무단 변경·삭제하지 않는다. 공개 Git에 있다는 사실과 실제 학생 4인의 현재 개인별 동의/검증된 actor 연결을 혼동하지 않는다. 새로운 원본·실명 대응표/비밀을 PR·웹·모델·CI에 넣지 않는다.
+- 합성 `S01–S05`, EMPTY_DEMO, REVIEWER와 실제 네 명을 구별한다. `D-day`와 7일 필터는 **해당 snapshot의 `asOf`** 기준이고 현재 로드된 허가 목록만 검색한다. 전체 실시간 공고 검색/학교 졸업 인정이 아니다.
+- 정확한 PR HEAD에서 얻은 테스트 성공을 다른 `main` SHA의 성공으로 옮기지 않는다. 현재 UI의 실제 사람 NVDA/실기기, 팀 교차 리뷰, 독립 사람 Gold, 실제 NCP/PG/HCX 비용·성능은 근거 전 `NOT_RUN/NOT_MEASURED`이고 `RELEASE_BLOCKED` 유지.
