@@ -15,7 +15,14 @@
 - [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) forecast PR HEAD `76523ce`에서 Actions **4/4 SUCCESS**, formal GitHub **APPROVE**, merge [`5a36a38`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5a36a38494d03e36c7d7f4b1b4cf274963d49004).
 - [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) opportunities PR HEAD `2442ca0`에서 Actions **4/4 SUCCESS**, formal GitHub **APPROVE**, merge [`48134da`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/48134dae3b16157ebcc294f744c320fdd64a115c). 별도의 UI 소비자 리뷰는 #258에서 계속.
 - 병합 코드 기준 `main` SHA `48134da`에서 TASK-00/Chrome/NCP offline/합성 Pages Actions **4/4 SUCCESS**. 리뷰를 통해 코드를 확인했지만 **실제 독립 사람 Gold/운영·기관 인수/실학생 권리는 완료하지 않음**.
-- 두 PR 병합 직후 열린 PR은 **0건**. 이후 생성된 PR이 있는지는 새로 조회해야 하며, 이번 문서가 미래의 0건을 보장하지 않음.
+- #278/#279 병합 직후(중간 시점) 열린 PR은 **0건**이었지만, 같은 날 새로운 #285–#289가 열렸고 후속 검토·통합을 진행했습니다. 현재 열린 PR은 GitHub의 [열린 PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)으로 확인합니다.
+
+## 2026-11-06 #285–#289 개별 코드 리뷰와 충돌 해결
+
+- 오너의 이번 **열린 PR 일괄 리뷰·병합 요청**을 #285–#289에 한정하여 처리합니다. PR HEAD의 4종 Actions 성공, 변경 파일·범위·잔여 위험을 확인하고 각각 **GitHub `COMMENT` 리뷰**를 등록했습니다. **실제 비작성자 사람 `APPROVED`로 오인하지 않습니다**. 이전/다음 PR의 병합 승인으로 일반화하지 않습니다.
+- [#285](https://github.com/ot4562-glitch/HUFS-One-AI/pull/285): 합성 UI만 포함, `/experience` 라우트와 실 API/`jobId` #284 미완료. [#286](https://github.com/ot4562-glitch/HUFS-One-AI/pull/286): `id` + `revisionId` 결정성 수정, 기본 평가 보고서는 r1 그대로이며 벤치 숫자는 작업트리 dirty에서 측정. [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287): 판본별 영역 분류가 없으면 UNKNOWN/NEEDS_REVIEW. [#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288): 20과목은 학생 전망 제한, rolling-origin 평가 한도는 200. [#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289): 테스트/속성 커버리지 범위와 독립 오라클 미측정을 구분.
+- #287과 #289의 `packages/core/src/academics/AGENTS.md` 동시 끝줄 추가가 **실제 405 충돌**로 나타났습니다. #289의 통합 브랜치에 두 문구를 보존하고 `main`을 부모로 합친 merge commit [`82eb760`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/82eb760ce213c83bb173ea9af0d28c1c075c0cc1)을 만들었습니다. 새 HEAD 4종 검증을 확인하고 병합합니다. **CSV/원격 인프라 설정은 건드리지 않습니다.**
+- PR의 합성 CI `PASS`와 실제 사람·학생·학교·NCP/PG/유료 AI의 `NOT_RUN`을 구분합니다. #10/#11/#258의 세부 체크만 완료 범위에 맞게 고치고 #284/#260/#276/#280–#283은 실제 증거 전까지 열린 상태 유지.
 
 ## 안전한 변경과 기록
 
