@@ -180,10 +180,22 @@ class NativeStub {
             self.assertFalse(self.log.exists())
 
     def test_relative_private_key_uses_powershell_location_once(self):
+        # Windows TEMP can use RUNNER~1 while Resolve-Path expands runneradmin.
+        # Compare file identity, and ensure the different .NET cwd's same-name
+        # decoy cannot be selected through GetFullPath's old resolution bug.
+        decoy = self.tools / self.key.name
+        decoy.write_text("foreign synthetic key placeholder\n")
         prefix = f"Set-Location {literal(self.key.parent)}\n[Environment]::CurrentDirectory = {literal(self.tools)}\n"
-        run = self.run_ps(prefix + self.invocation(entry="Verify", key=self.key.name))
-        self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertIn(str(self.key), self.argv.read_text().splitlines())
+        try:
+            run = self.run_ps(prefix + self.invocation(entry="Verify", key=self.key.name))
+            self.assertEqual(run.returncode, 0, run.stderr)
+            argv = self.argv.read_text().splitlines()
+            actual = Path(argv[argv.index("-i") + 1])
+            self.assertTrue(actual.is_absolute())
+            self.assertTrue(actual.samefile(self.key))
+            self.assertFalse(actual.samefile(decoy))
+        finally:
+            decoy.unlink()
 
     def test_public_ipv4_policy_and_rollback_argument_rejection(self):
         script = f". {literal(self.scripts / 'NcpPreview.Common.ps1')}\n"
