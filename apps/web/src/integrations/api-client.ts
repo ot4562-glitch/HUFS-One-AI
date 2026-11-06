@@ -8,8 +8,7 @@ import {
   AiTaskPathSchema, AiTaskSchema, TopicCodeSchema, ApiErrorSchema, CalendarResultSchema,
   DemoContextSchema, DemoProfilesResponseSchema, DemoSnapshotSchema, SubjectAliasSchema, httpStatusForError,
   RetrievalEnvelopeVNextSchema, DemoOverlayPutSchema, DemoOverlayResetSchema,
-  DemoOverlayResultSchema, ExperienceTagApprovalSchema, ExperienceTagApprovalPutSchema,
-  ExperienceTagApprovalDeleteSchema,
+  DemoOverlayResultSchema,
 } from '@hufs-one/contracts';
 import type {
   ApiErrorCode, AiTaskPath, CalendarResult, DemoContext, DemoProfileOption, DemoSnapshot, SubjectAlias,
@@ -22,8 +21,6 @@ import {HufsOwnerApiClient} from './owner-api-client.js';
 import type {BrowserRequestOptions} from './owner-api-client.js';
 export {HufsApiError} from './api-error.js';
 
-const ExperienceTagResultSchema=z.strictObject({approval:ExperienceTagApprovalSchema});
-const OwnerItemIdSchema=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
 
 /** Browser fetch only. No actor/role headers, localStorage, third-party URLs or provider keys. */
 export type ApiFetch = (url: string, init: RequestInit) => Promise<Response>;
@@ -205,16 +202,17 @@ export class HufsApiClient {
     } catch (error) {
       assertNotAborted(options.signal);
       if(isAbort(error))throw new DOMException('Request cancelled','AbortError');
-      // Do not echo a malformed response or its body into the UI.
-      throw new HufsApiError(response.status===401?'UNAUTHENTICATED':'PROVIDER_UNAVAILABLE',
-        response.status===401?401:503);
+      // Preserve terminal auth denials even if a proxy returned HTML or malformed JSON.
+      // Never echo that response body or convert a 403 into a locally recoverable outage.
+      throw new HufsApiError(response.status===401?'UNAUTHENTICATED':response.status===403?'FORBIDDEN':'PROVIDER_UNAVAILABLE',
+        response.status===401||response.status===403?response.status:503);
     }
     if(!response.ok) {
       const err=ApiErrorSchema.safeParse(payload);
       if(err.success && httpStatusForError(err.data)===response.status)
         throw new HufsApiError(err.data.code,response.status);
-      throw new HufsApiError(response.status===401?'UNAUTHENTICATED':'PROVIDER_UNAVAILABLE',
-        response.status===401?401:503);
+      throw new HufsApiError(response.status===401?'UNAUTHENTICATED':response.status===403?'FORBIDDEN':'PROVIDER_UNAVAILABLE',
+        response.status===401||response.status===403?response.status:503);
     }
     const parsed=schema.safeParse(payload);
     if(!parsed.success)throw new HufsApiError('PROVIDER_UNAVAILABLE',503);
@@ -335,35 +333,15 @@ export class HufsApiClient {
     return result;
   }
 
-  async getExperienceTagApproval(experienceId:string,signal?:AbortSignal) {
-    const id=clientInput(OwnerItemIdSchema,experienceId);
-    return this.request('/api/experience/cards/'+id+'/tag-approval',ExperienceTagResultSchema,{signal});
+  /** Compatibility delegates; owner-only contracts live in HufsOwnerApiClient. */
+  getExperienceTagApproval(experienceId:string,signal?:AbortSignal) {
+    return this.owner.getExperienceTagApproval(experienceId,signal);
   }
-
-  /** Local user approval is not an AI-generated credential or a sharing grant. */
-  async approveExperienceTags(experienceId:string,change:ExperienceTagApprovalPut,signal?:AbortSignal) {
-    const id=clientInput(OwnerItemIdSchema,experienceId),input=clientInput(ExperienceTagApprovalPutSchema,change);
-    const {csrfToken}=await this.getCsrfProof(signal);
-    const result=await this.request('/api/experience/cards/'+id+'/tag-approval',ExperienceTagResultSchema,
-      {method:'PUT',body:input,csrf:csrfToken,signal});
-    const a=result.approval;
-    if(a.state!=='ACTIVE'||a.version!==input.expectedApprovalVersion+1
-      ||a.contentVersion!==input.expectedContentVersion||a.consentVersion!==input.expectedConsentVersion
-      ||JSON.stringify(a.topics)!==JSON.stringify(input.topics))
-      throw new HufsApiError('VERSION_CONFLICT',409);
-    return result;
+  approveExperienceTags(experienceId:string,change:ExperienceTagApprovalPut,signal?:AbortSignal) {
+    return this.owner.approveExperienceTags(experienceId,change,signal);
   }
-
-  async revokeExperienceTags(experienceId:string,change:ExperienceTagApprovalDelete,signal?:AbortSignal) {
-    const id=clientInput(OwnerItemIdSchema,experienceId),input=clientInput(ExperienceTagApprovalDeleteSchema,change);
-    const {csrfToken}=await this.getCsrfProof(signal);
-    const result=await this.request('/api/experience/cards/'+id+'/tag-approval',ExperienceTagResultSchema,
-      {method:'DELETE',body:input,csrf:csrfToken,signal});
-    const a=result.approval;
-    if(a.state!=='INACTIVE'||!(a.version===input.expectedApprovalVersion+1&&a.reason==='REVOKED'
-      ||input.expectedApprovalVersion===0&&a.version===0&&a.reason==='NOT_APPROVED'))
-      throw new HufsApiError('VERSION_CONFLICT',409);
-    return result;
+  revokeExperienceTags(experienceId:string,change:ExperienceTagApprovalDelete,signal?:AbortSignal) {
+    return this.owner.revokeExperienceTags(experienceId,change,signal);
   }
 
   loadReviewerCapabilities(signal?:AbortSignal) {

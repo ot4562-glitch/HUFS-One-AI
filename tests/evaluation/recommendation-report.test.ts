@@ -99,12 +99,18 @@ describe('fixed split and fair recommendation comparisons',()=>{
     expect(s.labelCoverage).toMatchObject({num:0,den:5*37});
     expect(s.predictedUnknown).toBeGreaterThan(0);
   });
-  it('#10: in owner-draft reference mode the scenario compares rankers on the gated corpus with the same labels', () => {
+  it('#10: revision analysis never transfers r1 relevance labels to corrected r2 source snapshots', () => {
     const p=packet(),r=recommendationReport(p,emptyReviewLedger(p),{now,reference:'TRACK_OWNER_SELF',revisionScenario:true}),s=r.revisionScenario!;
     const g=gatedDemoCorpus(DEMO_AS_OF);
-    const profiles=DEMO_STUDENTS.map(x=>({profileId:x.subject,profile:x.profile,labels:DEMO_LABELS[x.subject]}));
+    const profiles=DEMO_STUDENTS.map(x=>({profileId:x.subject,profile:x.profile,
+      labels:Object.fromEntries(Object.entries(DEMO_LABELS[x.subject]).filter(([id])=>!['SYN-OPP-002','SYN-OPP-021'].includes(id)))}));
     expect(s.qualityState).toBe('TRACK_OWNER_SELF_REFERENCE_ONLY');
+    expect(s.labelPolicy).toBe('EXACT_SOURCE_REVISION');
+    expect(s.unreviewedRevisionIds).toEqual(['SYN-SRC-002-r2','SYN-SRC-021-r2']);
+    expect(s.labelCoverage).toMatchObject({num:175,den:185});
     expect(s.comparison).toEqual(compareRankers(profiles,g.usable,{asOf:DEMO_AS_OF,publishedAtBySnapshotId:DEMO_REVISION_PUBLISHED_AT,config:RANK_CONFIG_V1}));
+    // The r1 baseline still has all 200 draft labels. Changed scenario deadlines must be reviewed again.
+    expect(r.splits.find(split=>split.partition==='ALL')!.labelCoverage).toMatchObject({num:200,den:200});
     // Cancelled / unreviewed postings are absent from every arm's ranking.
     for(const row of s.comparison!.profiles)for(const arm of [row.latestFirst,row.recommended])for(const id of ['SYN-OPP-007','SYN-OPP-014'])expect(arm.top3).not.toContain(id);
   });

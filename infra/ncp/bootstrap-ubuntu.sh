@@ -29,7 +29,24 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 [[ "$ACK" == yes && -f "$PUBLIC_KEY" && -r "$PUBLIC_KEY" ]] || usage
-[[ ! -L "$PUBLIC_KEY" ]] || { echo "Refusing symlink public key." >&2; exit 2; }
+# The direct bootstrap entrypoint enforces the same key boundary as the installer.
+python3 - "$PUBLIC_KEY" <<'PUBLIC_KEY_PATH'
+import pathlib, stat, sys
+expected_uid = 0
+key_root = pathlib.Path('/root')
+try:
+    key = pathlib.Path(sys.argv[1])
+    parent = key_root.lstat()
+    info = key.lstat()
+    if (not stat.S_ISDIR(parent.st_mode) or key_root.resolve(strict=True) != key_root
+            or parent.st_uid != expected_uid or parent.st_mode & 0o022
+            or key.parent != key_root or str(key.resolve(strict=True)) != sys.argv[1]
+            or not stat.S_ISREG(info.st_mode) or info.st_uid != expected_uid
+            or stat.S_IMODE(info.st_mode) not in (0o600, 0o644)):
+        sys.exit('PUBLIC key must be a canonical regular root-owned 0600/0644 file directly under /root, without symlinks.')
+except (OSError, ValueError):
+    sys.exit('Missing or inaccessible canonical PUBLIC key file.')
+PUBLIC_KEY_PATH
 [[ $(wc -l < "$PUBLIC_KEY") -eq 1 ]] || { echo "Exactly one public key required." >&2; exit 2; }
 grep -Eq '^(ssh-ed25519|ecdsa-sha2-nistp256|ssh-rsa) [A-Za-z0-9+/=]+( |$)' "$PUBLIC_KEY" || {
   echo "Supply OpenSSH PUBLIC key, never NCP .pem or PuTTY private .ppk." >&2; exit 2;
@@ -38,7 +55,9 @@ python3 - "$ADMIN_IP" <<'PY'
 import ipaddress, sys
 try:
     network=ipaddress.ip_network(sys.argv[1], strict=True)
-    assert network.version==4 and network.prefixlen==32 and network.is_global
+    ip=network.network_address
+    assert network.version==4 and network.prefixlen==32 and network.is_global and not ip.is_multicast and not ip.is_reserved
+    assert ip not in ipaddress.ip_network('192.0.0.0/24') or str(ip) in ('192.0.0.9','192.0.0.10')
 except Exception:
     sys.exit("SSH admin CIDR must be a single PUBLIC IPv4 /32, not an open range.")
 PY

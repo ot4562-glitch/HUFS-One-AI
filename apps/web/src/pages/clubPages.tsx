@@ -8,6 +8,7 @@ import {useClubBoard} from '../features/clubs/useClubBoard.js';
 import {DDayText} from '../features/demo/DDayText.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {NoSnapshot} from './parts.js';
+import {SyntheticExampleGallery} from '../features/illustrations/SyntheticExampleGallery.js';
 
 const NOT_CONNECTED = '동아리 모집 데모는 합성 시연 모드에서 제공돼요. 현재 계정의 승인된 서버 연결을 확인해 주세요.';
 
@@ -83,6 +84,7 @@ function ClubBoardBody({board, ctx}: {board: ReturnType<typeof useClubBoard>; ct
           ? <ul className="club__grid">{shown.map(c => <ClubCard key={c.id} club={c} navigate={ctx.navigate} />)}</ul>
           : <p className="muted">조건에 맞는 모집 글이 없어요.</p>}
       </section>
+      <SyntheticExampleGallery kind="clubs" />
     </>
   );
 }

@@ -20,6 +20,9 @@ import {
   SyntheticClubDetailResponseSchema,SyntheticClubAdminListResponseSchema,SyntheticClubCreateSchema,
   SyntheticClubEditSchema,SyntheticClubWriteResponseSchema,SyntheticClubDecisionRequestSchema,
   SyntheticClubDecisionResponseSchema,
+  ExperiencePortfolioSchema,ExperiencePortfolioQuerySchema,
+  ExperienceTagApprovalSchema,ExperienceTagApprovalPutSchema,ExperienceTagApprovalDeleteSchema,
+  ExperienceSkillPrepareRequestSchema,ExperienceSkillPrepareResponseSchema,ExperienceSkillCandidateResponseSchema,
 } from '@hufs-one/contracts';
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import type {ApprovedProviderInput,AiTaskPath} from '@hufs-one/contracts';
@@ -51,6 +54,8 @@ const ItemWrite=z.strictObject({item:OwnerWorkspaceRecordSchema});
 const WorkspacePage=z.strictObject({items:z.array(OwnerWorkspaceRecordSchema).max(50),nextCursor:Id.nullable()});
 const DeleteReceipt=z.strictObject({version:z.number().int().min(1)});
 const FromOpportunity=z.strictObject({itemId:Id,opportunityId:Id});
+const ExperienceTagResult=z.strictObject({approval:ExperienceTagApprovalSchema});
+const PortfolioQuery=ExperiencePortfolioQuerySchema.omit({view:true});
 const BookmarkAdvance=z.strictObject({stage:BookmarkStageSchema,outcome:BookmarkOutcomeSchema.optional()});
 const Paths:Record<WorkspaceKind,string>={EXPERIENCE:'/api/experience/cards',
   STUDY_PLAN:'/api/study-plans',BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'};
@@ -162,6 +167,52 @@ export class HufsOwnerApiClient {
     const id=clientInput(Id,itemId);
     const result=await this.request(Paths.EXPERIENCE+'/'+id,ItemRead,{signal});
     if(result.item)matchItem(result.item,id,'EXPERIENCE');
+    return result;
+  }
+  /** This cursor page is never a complete account-wide recommendation signal. */
+  async getExperiencePortfolio(query:z.input<typeof PortfolioQuery>={},signal?:AbortSignal){
+    const q=clientInput(PortfolioQuery,query);
+    const page=await this.request(queryPath(Paths.EXPERIENCE,{...q,view:'portfolio'}),ExperiencePortfolioSchema,{signal});
+    assertPage(page,{...q,limit:q.limit??20},item=>item.itemId);
+    return page;
+  }
+  async getExperienceTagApproval(experienceId:string,signal?:AbortSignal){
+    const id=clientInput(Id,experienceId);
+    return this.request(Paths.EXPERIENCE+'/'+id+'/tag-approval',ExperienceTagResult,{signal});
+  }
+  /** Explicit owner selection, not an AI credential or a sharing grant. */
+  async approveExperienceTags(experienceId:string,change:z.infer<typeof ExperienceTagApprovalPutSchema>,signal?:AbortSignal){
+    const id=clientInput(Id,experienceId),input=clientInput(ExperienceTagApprovalPutSchema,change);
+    const result=await this.mutate(Paths.EXPERIENCE+'/'+id+'/tag-approval',ExperienceTagResult,'PUT',input,signal);
+    const a=result.approval;
+    requireMatchingReceipt(a.state==='ACTIVE'&&a.version===input.expectedApprovalVersion+1
+      &&a.contentVersion===input.expectedContentVersion&&a.consentVersion===input.expectedConsentVersion
+      &&same(a.topics,input.topics));
+    return result;
+  }
+  async revokeExperienceTags(experienceId:string,change:z.infer<typeof ExperienceTagApprovalDeleteSchema>,signal?:AbortSignal){
+    const id=clientInput(Id,experienceId),input=clientInput(ExperienceTagApprovalDeleteSchema,change);
+    const result=await this.mutate(Paths.EXPERIENCE+'/'+id+'/tag-approval',ExperienceTagResult,'DELETE',input,signal);
+    const a=result.approval;
+    requireMatchingReceipt(a.state==='INACTIVE'&&(a.version===input.expectedApprovalVersion+1&&a.reason==='REVOKED'
+      ||input.expectedApprovalVersion===0&&a.version===0&&a.reason==='NOT_APPROVED'));
+    return result;
+  }
+  /** Only discovers operator-approved inputs. It does not run a provider or approve tags. */
+  async prepareExperienceSkills(change:z.infer<typeof ExperienceSkillPrepareRequestSchema>,signal?:AbortSignal){
+    const input=clientInput(ExperienceSkillPrepareRequestSchema,change);
+    const result=await this.mutate('/api/experience/ai-skills/prepare',ExperienceSkillPrepareResponseSchema,'POST',input,signal);
+    const received=[...result.items.map(i=>i.experienceId),...result.unavailable];
+    requireMatchingReceipt(received.length===input.experienceIds.length
+      &&received.every(id=>input.experienceIds.includes(id))
+      &&result.items.every(i=>Date.parse(i.asOf)<Date.parse(i.expiresAt)));
+    return result;
+  }
+  /** jobId must come from this session's explicit submit response; never guess a latest job. */
+  async getExperienceSkillCandidate(experienceId:string,jobId:string,signal?:AbortSignal){
+    const id=clientInput(Id,experienceId),job=clientInput(z.uuid(),jobId);
+    const result=await this.request(Paths.EXPERIENCE+'/'+id+'/ai-skills/'+job,ExperienceSkillCandidateResponseSchema,{signal});
+    requireMatchingReceipt(result.experienceId===id&&result.jobId===job&&result.candidate.task==='experience_skills');
     return result;
   }
   async createWorkspace(change:z.infer<typeof OwnerWorkspaceCreateSchema>,signal?:AbortSignal){

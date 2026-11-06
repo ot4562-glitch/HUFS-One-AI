@@ -1,6 +1,6 @@
 # HUFS One AI — 현재 NCP 배치·운영 비용 확인 기준
 
-**현재:** NCP 인프라 계획/SSH 비공개 합성 preview·Terraform IaC/worker 통합 코드가 존재하지만 실제 서버·NCP 크레딧/과금 계약·OCR/HCX 유료 운영·공개 HTTPS/TLS/Google/PG는 미승인·미실행. **RELEASE_BLOCKED/NO_GO**.
+**현재:** NCP 인프라 계획/SSH 비공개 합성 preview·Terraform IaC/worker 통합 코드가 존재한다. 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`이며 실제 서버·크레딧/과금·OCR/HCX·HTTPS/TLS/Google/PG 구성과 실행은 `CONFIGURATION_REQUIRED/NOT_RUN`이다. **RELEASE_BLOCKED/NO_GO**. [본선 전 사전 계획·공식 가격 출처·견적과 검수표](../../docs/PREFINAL_OPERATIONS_PLAN.md)를 기준으로 계정별 견적을 확정한다.
 
 **개발 책임:** 심민성 모든 API/SDK/AI/OCR/HCX/Laya·IAC/OS/배포 코드, **운영 책임:** 이서연 계정/IAM·리전/SKU/할당량·크레딧/요금·실호스트/비코드 증거, **최종 승인:** 사용자/자료·학교 권리자.
 
@@ -8,7 +8,7 @@
 
 ```text
 승인된 사용자(인증/목적별 권리 확인)
-    ↓ Nginx/LB/Edge/HTTPS·직접 IP/IPv6/Cache 거부(운영 승인 후)
+    ↓ Nginx/LB/Edge/HTTPS·직접 IP/IPv6/Cache 거부(운영 구성·검증 후)
 React / Fastify API (권한·SourceRevision·rule/AI)
     ├─ 최소 권한 PostgreSQL TLS/FORCE RLS·백업
     ├─ 허가 원문/미디어 비공개 저장 및 독립 검수
@@ -16,7 +16,7 @@ React / Fastify API (권한·SourceRevision·rule/AI)
         └─ Laya 보조 격리 worker(기본 OFF)
 ```
 
-**지금 가능한 단계:** 사용자 승인 없이 서버를 만들지 않는 `--plan`/offline mock과 로컬 합성 UI. 실제 서버의 SSH-only `127.0.0.1:5173` preview도 운영자/사용자 비용 승인이 필요. `APP_ENV=production` 거부·`AI_ENABLED=false` 및 Laya OFF를 강제로 변경하지 않는다.
+**지금 가능한 단계:** `--plan`/offline mock과 로컬 합성 UI. 실제 서버의 SSH-only `127.0.0.1:5173` preview에는 대상 호스트·키·현재 계정 견적/예산·복구 구성이 필요하다. 승인 완료를 재요구하지 않으며, 합성 preview의 `APP_ENV=production` 거부·`AI_ENABLED=false` 및 Laya OFF 경계는 유지한다.
 
 ## 비용·요금 계산에 포함할 실값
 
@@ -32,8 +32,8 @@ React / Fastify API (권한·SourceRevision·rule/AI)
 
 - [NCP 공식 상품 목록](https://www.ncloud.com/product)
 - [NCP 공식 요금](https://www.ncloud.com/charge/price/ko)
-- [NCP Server/스토리지 안내](https://www.ncloud.com/api-cms/service-product/static/blockStorage)
+- [NCP Server/스토리지 요금](https://www.ncloud.com/charge/price/ko)
 - [CLOVA Studio 모델 안내](https://guide.ncloud-docs.com/docs/clovastudio-model)
-- [CLOVA OCR 안내](https://www.ncloud.com/api-cms/service-product/static/ocr)
+- [CLOVA OCR 안내](https://www.ncloud.com/product/aiService/ocr)
 
-**제품 인수:** 실 Google·메일/PG/TLS/보안·권리/사람 Gold/비용·D03은 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) 및 [#12 운영](https://github.com/minseong-hufs/HUFS-One-AI/issues/12). 상세 [NCP 운영 정본](../../docs/NCP_OPERATIONS_2026.md).
+**제품 인수:** 실 Google·메일/PG/TLS/보안·비용·복구는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 실제 계정·견적/청구·권리·반납은 [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283). 사전 계획은 [운영 계획](../../docs/PREFINAL_OPERATIONS_PLAN.md), 상세 설정은 [NCP 운영 정본](../../docs/NCP_OPERATIONS_2026.md).

@@ -35,6 +35,26 @@ test('exports two blank review packages, actual assets and default NOT_RUN repor
   assert.deepEqual(await readFile(join(root,'packages/fixtures/synthetic/demo-snapshot.json')),legacy);
  }finally{await rm(temp,{recursive:true,force:true});}
 });
+test('revision scenario is explicit, revision-bound and leaves the default report unchanged',async()=>{
+ const temp=await mkdtemp(join(tmpdir(),'eval10-revisions-')),out=join(temp,'review');
+ try{
+  const exported=run(['export','--head','c'.repeat(40),'--out',out]);assert.equal(exported.status,0,exported.stderr);
+  const args=['report','--package',join(out,'recommendation/package.json'),'--ledger',join(out,'recommendation/ledger.json')];
+  const normal=run(args),off=run([...args,'--revision-scenario','false']),on=run([...args,'--revision-scenario','true']);
+  for(const r of [normal,off,on])assert.equal(r.status,0,r.stderr);
+  const baseline=JSON.parse(normal.stdout),scenario=JSON.parse(on.stdout);
+  assert.deepEqual(JSON.parse(off.stdout),baseline);assert.equal('revisionScenario' in baseline,false);
+  assert.deepEqual(scenario.splits,baseline.splits);
+  assert.equal(scenario.revisionScenario.labelPolicy,'EXACT_SOURCE_REVISION');
+  assert.deepEqual(scenario.revisionScenario.unreviewedRevisionIds,['SYN-SRC-002-r2','SYN-SRC-021-r2']);
+  assert.equal(scenario.revisionScenario.qualityState,'NOT_RUN');assert.equal(scenario.revisionScenario.comparison,null);
+  assert.equal(scenario.revisionScenario.usableOpportunityIds.length,37);
+  assert.equal(scenario.independentHumanLabelled,0);
+  for(const invalid of ['1','TRUE','yes',''])assert.notEqual(run([...args,'--revision-scenario',invalid]).status,0);
+  assert.notEqual(run([...args,'--revision-scenario']).status,0);
+  assert.notEqual(run(['ledger-report',...args.slice(1),'--revision-scenario','true']).status,0);
+ }finally{await rm(temp,{recursive:true,force:true});}
+});
 test('rejects unsigned import, stale manifests and private-identity/notes leakage to stdout',async()=>{
  const temp=await mkdtemp(join(tmpdir(),'eval61-cli-')),out=join(temp,'review');
  try{

@@ -38,6 +38,7 @@ jobs:
             /tools/check_local_account_browser.mjs
             /tools/check_empty_demo_browser.mjs
             /tools/generate_demo_assets.mjs
+            /tools/check_synthetic_artwork.mjs
             /tools/strip_build_sourcemaps.mjs
             /.github/workflows/ui-browser-e2e.yml
       - name: Assert no private student or raw data directories were checked out
@@ -59,11 +60,24 @@ jobs:
           cache: npm
       - name: Install from lockfile without any postinstall browser download
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install Korean fonts for Chrome layout and screenshots
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends fonts-noto-cjk
+          fc-match -f '%{family}\n' 'Noto Sans CJK KR:lang=ko' | grep -F 'Noto Sans CJK KR'
       - name: Run legacy shell and reviewer Playwright Chrome E2E (10 scenarios)
         run: npm run test:e2e:web -- --reporter=list
+      - name: Preserve synthetic viewport screenshots for visual review
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 pinned
+        with:
+          name: synthetic-viewport-screenshots
+          path: dist/playwright-results/**/*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Run isolated synthetic account HTTP and Chrome E2E (9 scenarios)
         run: npm run test:e2e:accounts
-      - name: Validate ten original code-native demo assets and hashes
+      - name: Validate original SVG fallbacks and eight responsive synthetic artworks with hashes
         run: npm run assets:check
       - name: Run EMPTY_DEMO owner UI, real HTTP, cross-tab RESET and Chrome
         run: npm run test:e2e:empty-demo

@@ -1,0 +1,315 @@
+{
+  "schemaVersion": "synthetic-artwork-v1",
+  "generatedTool": "OpenAI built-in image_gen; model ID not returned",
+  "promptPrefix": "Use case: illustration-story. Asset type: original raster artwork for a synthetic Korean student opportunity portal, landscape 16:9. ",
+  "promptSuffix": " The output is the artwork only, full bleed, no UI frame. Beautiful professional art, rich composition distinct from a generic icon. No text whatsoever, no typography, no letters, no digits, no logos, no trademarks, no QR codes, no real school, company or club, no identifiable people or faces. No contact information. This is fictional demonstration art and does not advertise actual recruitment. The website will add a visible synthetic-example label in HTML. Keep important objects within the central 80% for responsive cropping.",
+  "maxSingleBytes": 163840,
+  "maxTotalBytes": 1536000,
+  "assets": [
+    {
+      "id": "technology",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-05",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "Existing project artwork reused without editing the original; see docs/GENERATED_CLUB_POSTER_20261105.md",
+      "sourceSha256": "93446df5cc9a2859585e4801df7a74b7f602d71ae8084a4a51f5b563855af842",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "가상의 학생들이 노트북과 작은 로봇으로 아이디어를 나누는 합성 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "technology-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 21392,
+          "sha256": "9883813354b83a95233c5c2d567197bcb663513f93d4bc58d42ba21cfa7229a3",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "technology-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 47498,
+          "sha256": "e50fc051d8d549cefc476ee46e9912b223cfd7e18d8fc9df1df868a51ad978b8",
+          "encodingQuality": 82
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional student film club: dramatic close-up of a vintage film camera, a blank clapperboard and curling film reel on a plum velvet desk, magenta and amber theater lighting, tactile editorial collage, diagonal composition.",
+      "sourceSha256": "3f97d6ec967b37309cf4ba49a5926d356994157a3a75b8592581ab77ddd835f1",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "영화 카메라와 필름, 빈 슬레이트를 배치한 합성 영상 창작 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "media-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 30684,
+          "sha256": "c23132483c04cc3f04c9008215c24c0e80d2bf7c48374079734d64f70eed8d3c",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "media-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 91748,
+          "sha256": "79270444a572782708b285220cbab3826d43ba93c540e10176f29cab2a20c7b4",
+          "encodingQuality": 82
+        }
+      ]
+    },
+    {
+      "id": "language",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional translation and literature club: an open book with completely blank pages unfolding into colorful speech-bubble-shaped paper forms, fountain pen and folded bookmarks, warm parchment and cobalt blue, overhead paper-cut editorial illustration, airy asymmetrical composition.",
+      "sourceSha256": "61a7f4312c8e6383c04bf308d66bd9dd20f78d1c1f0919f2d4f0465791006901",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "빈 책과 종이 말풍선, 만년필을 배치한 합성 번역·언어 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "language-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 30812,
+          "sha256": "1d834e16608ed1e0175d1e07dcd546242ea118651b8e0f661eb2c0bce6e2eb7b",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "language-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 98980,
+          "sha256": "a33e81ca40713210b622628c8f03d9f4055e16269488680e512cce92eae090d1",
+          "encodingQuality": 82
+        }
+      ]
+    },
+    {
+      "id": "international",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional international exchange club: a colorful miniature globe surrounded by folded paper airplanes and abstract arches, turquoise, coral and sunny yellow, playful refined 3D clay illustration, circular composition against cream, no maps or flags of actual countries.",
+      "sourceSha256": "919a6522557a0a208638b07400dc199ad0ea8a46bbcb3a6df2f2dba04240f880",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "작은 지구본과 종이비행기로 표현한 합성 국제교류 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "international-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 19710,
+          "sha256": "984d69630176aaf830a0ddb1aa7e5838f6ded673166e55110e88c93e251351b9",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "international-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 52212,
+          "sha256": "abb35b26281da0d2ae4716fb904c4084d642e3354afc695f3c1080ee69b13b62",
+          "encodingQuality": 82
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional public policy and economics discussion club: layered cut-paper city blocks, civic roundtable seen from above, geometric chart shapes without numbers or letters, forest green and burnt orange, sophisticated risograph texture, architectural composition.",
+      "sourceSha256": "ab464d1b4c97c6c8df4da8d8676cbf5837cad26a83ae336cd44be9bfbd776b29",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "종이 도시와 원탁, 도형으로 표현한 합성 정책 토론 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "policy-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 42950,
+          "sha256": "ab8833371de6f8112316a4a5e1a789224ffa9df98f3436708ffeb7aacb0ab715",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "policy-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 141528,
+          "sha256": "87c2a160c073a436323133f344a3a877292cc2c7db9177861367d8886625fa65",
+          "encodingQuality": 78
+        }
+      ]
+    },
+    {
+      "id": "volunteer",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional student volunteering club: gardening gloves, a watering can and young seedlings in reused pots arranged in a sunlit community garden, leaf green and terracotta, hand painted gouache with visible paper grain, intimate low angle still life.",
+      "sourceSha256": "e4fa27791f3637e65864ddf710725db5bc6a3c769808a73cd242050ee2271b0c",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "물뿌리개와 장갑, 어린 식물을 그린 합성 환경 봉사 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "volunteer-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 47018,
+          "sha256": "50fdb3192efc2c7289d1be3e7d1c4a8fc90a2ffef195c6ecdbd9632b7e3934cd",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "volunteer-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 153164,
+          "sha256": "ab369e9f5e953ab03ae9eeb35a50ca32a4691f7c3dfcc21388c55e366758b920",
+          "encodingQuality": 82
+        }
+      ]
+    },
+    {
+      "id": "music",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional music and performance club: an empty intimate stage with a saxophone, keyboard, microphone and soft draped curtains, electric purple and deep navy with golden spotlights, bold screenprint poster art, dramatic vertical forms within wide frame.",
+      "sourceSha256": "adc9b5b1e87467dd5c549e4d1b85763ed2e52fc08598806a40b01bc76bfd5cec",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "악기와 조명이 있는 빈 무대를 그린 합성 공연 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "music-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 37656,
+          "sha256": "079c860b1783bc2cb7f370cb8586cca3e5bd6154bea579846fc611a9e4375ce9",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "music-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 131154,
+          "sha256": "1390897ec4b3feecf89dfd06672c36ab31aa4a8a2167fc626e06f4484b1d7414",
+          "encodingQuality": 82
+        }
+      ]
+    },
+    {
+      "id": "career",
+      "origin": "OPENAI_BUILTIN_IMAGEGEN",
+      "model": "NOT_EXPOSED_BY_TOOL",
+      "generatedDate": "2026-11-06",
+      "promptVersion": "synthetic-art-v1",
+      "promptScene": "A fictional internship and student career workshop: an uncluttered studio desk with a closed blank portfolio, abstract project model blocks, pencil and blank sticky notes, soft blue and warm peach, elegant contemporary editorial 3D still life, orderly perspective composition.",
+      "sourceSha256": "73e688e1e3a55e685a49d37438734c4130ae858cd74d5343f6e665060111896d",
+      "sourceDimensions": [
+        1672,
+        941
+      ],
+      "alt": "포트폴리오와 프로젝트 모형을 놓은 합성 진로 준비 그림",
+      "permission": "Project synthetic UI and tests only; not an official school, employer or club advertisement; provider terms apply",
+      "dataMode": "SYNTHETIC",
+      "visualReview": "AI_VISUAL_REVIEW",
+      "independentHumanAcceptance": "NOT_RUN",
+      "variants": [
+        {
+          "fileName": "career-480.webp",
+          "mimeType": "image/webp",
+          "width": 480,
+          "height": 270,
+          "bytes": 20744,
+          "sha256": "bf0d0640d736e4af1fef83dac994356bc9bdcfdca96867366965a043d9c7f800",
+          "encodingQuality": 82
+        },
+        {
+          "fileName": "career-960.webp",
+          "mimeType": "image/webp",
+          "width": 960,
+          "height": 540,
+          "bytes": 51406,
+          "sha256": "e55988dec9e6065455e6e7887e4824379eeda650ba14dd33406093f45c1a4d38",
+          "encodingQuality": 82
+        }
+      ]
+    }
+  ],
+  "totalBytes": 1018656
+}

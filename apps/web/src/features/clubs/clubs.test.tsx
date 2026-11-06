@@ -61,8 +61,8 @@ describe('#123 동아리 모집 page (synthetic)', () => {
     expect(within(rec).getAllByText(/관심 분야|희망 활동|승인한 경험/).length).toBeGreaterThan(0);
     expect(within(rec).getAllByText('가상 관리자 승인(시연)').length).toBe(recCards.length);
     const poster = within(rec).getAllByRole('img')[0]!;
-    expect(poster.getAttribute('aria-label')).toMatch(/가상 포스터 \(데모\)$/);
-    expect(poster.textContent).toContain('가상 동아리 · 데모');
+    expect(poster.getAttribute('alt')).toContain('합성');
+    expect(poster.closest('figure')?.querySelector('figcaption')?.textContent).toBe('합성 예시 · 실제 모집 아님');
   });
 
   it('never lists or opens a post that is not (or no longer) approved at asOf, even by direct URL', async () => {

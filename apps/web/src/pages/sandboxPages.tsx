@@ -2,7 +2,9 @@ import type {PageRenderer} from '../App.js';
 import {ExperienceEditor, NOT_REVIEWER_TEXT, SandboxNote, SandboxSettings} from '../features/sandbox/SandboxControls.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {OverlaySettings} from '../features/settings/OverlaySettings.js';
-import {NoSnapshot, Section, screenViewOf} from './parts.js';
+import {NoSnapshot, NOT_SHARED_TEXT, Section, screenViewOf} from './parts.js';
+import {ExperienceSkillReview} from '../features/experience/ExperienceSkillReview.js';
+import {OwnerExperiencePanel} from '../features/experience/OwnerExperiencePanel.js';
 
 /** 보관함: bookmarked cards, practice applications and drafts for the current subject. */
 export const savedPage: PageRenderer = ({path, state, sandbox, navigate, services}) => {
@@ -47,8 +49,19 @@ export const savedPage: PageRenderer = ({path, state, sandbox, navigate, service
   };
 };
 
-export const experiencePage: PageRenderer = ({path, state, sandbox}) => {
+export const experiencePage: PageRenderer = ({path, state, sandbox, services, controller, navigate}) => {
   if (path !== '/experience') return null;
+  if (services.ownerExperience) return {title: '경험', body: <OwnerExperiencePanel port={services.ownerExperience} />};
+  if (state.status === 'READY' && !state.profiles.find(p => p.demoSubjectId === state.selected)?.allowedSections.includes('EXPERIENCE'))
+    return {title: '경험', body: <p className="muted">{NOT_SHARED_TEXT}</p>};
+  if (services.experienceForSubject) {
+    if (state.status !== 'READY' || !state.selected) return {title: '경험', body: <NoSnapshot state={state} />};
+    return {title: '경험', body: <>
+      <p role="note">선택한 가상 학생의 합성 경험입니다. 실제 학생 기록·외부 AI 호출·학교 이수 인증이 아닙니다.</p>
+      <ExperienceSkillReview state={state} controller={controller} port={services.experienceForSubject(state.selected)} navigate={navigate} />
+      <p><InAppLink to="/opportunities" navigate={navigate}>내 관심에 맞는 기회 살펴보기</InAppLink></p>
+    </>};
+  }
   if (!sandbox) return {title: '경험', body: <p className="muted">{NOT_REVIEWER_TEXT}</p>};
   if (state.status !== 'READY') return {title: '경험', body: <NoSnapshot state={state} />};
   return {title: '경험', body: <ExperienceEditor sandbox={sandbox} />};

@@ -104,7 +104,7 @@ async function main(){
  const allowed={
   export:['--head','--out'],fixtures:['--action'],prepare:['--package','--input','--out'],
   assemble:['--payload','--signature-file','--key-id','--out'],import:['--package','--ledger','--submission','--authority','--authority-sha256'],
-  report:['--package','--ledger','--authority','--authority-sha256','--reference','--enrichment','--out'],
+  report:['--package','--ledger','--authority','--authority-sha256','--reference','--enrichment','--revision-scenario','--out'],
   'ledger-report':['--package','--ledger','--authority','--authority-sha256'],
   'media-report':['--fixtures','--ocr-observation','--hcx-observation','--out','--review-package','--ledger','--reference','--authority','--authority-sha256'],benchmark:['--samples','--out'],
   'authority-digest':['--authority'],
@@ -135,7 +135,10 @@ async function main(){
     pendingHumanCases:r.pendingHumanCases,independentGoldReview:r.independentGoldReview,humanAcceptance:r.humanAcceptance};
   }else{
    if(packet.datasetKind!=='RECOMMENDATION'||(options['--reference']&&!['INDEPENDENT','TRACK_OWNER_SELF'].includes(options['--reference'])))throw Error();
+   const revisionScenario=options['--revision-scenario'];
+   if(revisionScenario!==undefined&&!['true','false'].includes(revisionScenario))throw Error();
    result=recommendationReport(packet,ledger,{...context,...(options['--reference']?{reference:options['--reference']}:{}),
+    ...(revisionScenario===undefined?{}:{revisionScenario:revisionScenario==='true'}),
     ...(options['--enrichment']?{enrichment:await json(options['--enrichment'])}:{})});
   }
  }else if(command==='media-report'){

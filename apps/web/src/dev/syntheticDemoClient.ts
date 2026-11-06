@@ -58,6 +58,7 @@ export class SyntheticDemoClient implements DemoClientPort {
 
   /**
    * Slots/readiness from the shared fixture (S05 stays PENDING); labels from each subject's own data.
+   * Ready synthetic subjects explicitly share the local EXPERIENCE fixture; this does not change API grants.
    * S01/S02 also share ACADEMICS+FORECAST so the 졸업 screen shows data (S01), pending (S02) and
    * out-of-scope (S03/S04) cases.
    */
@@ -68,7 +69,8 @@ export class SyntheticDemoClient implements DemoClientPort {
       profiles: profiles.map(p => ({
         ...p,
         displayLabel: this.subjects.get(p.demoSubjectId)?.label ?? p.displayLabel,
-        allowedSections: ACADEMIC_SHARERS.has(p.demoSubjectId) ? [...p.allowedSections, 'ACADEMICS', 'FORECAST'] : p.allowedSections,
+        allowedSections: ACADEMIC_SHARERS.has(p.demoSubjectId) ? [...p.allowedSections, 'EXPERIENCE', 'ACADEMICS', 'FORECAST']
+          : p.allowedSections.length ? [...p.allowedSections, 'EXPERIENCE'] : p.allowedSections,
       })),
     }).profiles;
   }

@@ -70,6 +70,11 @@ jobs:
           cache: npm
       - name: Install lockfile without post-install scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install Korean fonts for Chrome layout and screenshots
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends fonts-noto-cjk
+          fc-match -f '%{family}\n' 'Noto Sans CJK KR:lang=ko' | grep -F 'Noto Sans CJK KR'
       - name: Run UI tests
         run: npm run test:web
       - name: Read actual Pages site base path (private unique subdomain supported)

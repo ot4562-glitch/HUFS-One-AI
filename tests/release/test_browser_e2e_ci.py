@@ -10,12 +10,14 @@ from pathlib import Path
 WORKFLOW=Path(__file__).resolve().parents[2]/".github/workflows/ui-browser-e2e.yml"
 CHECKOUT="actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 SETUP="actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
+UPLOAD="actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
 ALLOWED={
     "/package.json","/package-lock.json","/tsconfig.json",
     "/packages/contracts/","/packages/ai/src/","/packages/fixtures/synthetic/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
     "/.github/workflows/ui-browser-e2e.yml",
     "/tools/check_local_account_browser.mjs","/tools/strip_build_sourcemaps.mjs",
     "/tools/check_empty_demo_browser.mjs","/tools/generate_demo_assets.mjs",
+    "/tools/check_synthetic_artwork.mjs",
 }
 PROTECTED=("csv","local_only","templates/real5-intake","reference/hufsability/raw",
     "reference/hufsability")
@@ -40,8 +42,37 @@ def audit(text: str)->list[str]:
     if "runs-on: ubuntu-24.04" not in text or "ubuntu-latest" in text:
         issues.append("fixed 24.04 host (latest is transitioning to 26.04)")
     uses=re.findall(r"(?m)^\s*(?:-\s*)?uses:\s*(\S+)",text)
-    if sorted(uses)!=sorted([CHECKOUT,SETUP]):
-        issues.append("only pinned checkout and setup-node actions")
+    if sorted(uses)!=sorted([CHECKOUT,SETUP,UPLOAD]):
+        issues.append("only pinned checkout, setup-node and synthetic screenshot upload actions")
+    # Approve one exact PNG-only artifact step. Do not allow broader directories,
+    # multiple paths, extra inputs, expressions or hidden-file uploads merely
+    # because a safe-looking path also occurs somewhere in the workflow.
+    upload_steps=[]
+    for i,line in enumerate(lines):
+        match=re.match(r"^\s*(?:-\s*)?uses:\s*(\S+)",line)
+        if not match or match.group(1)!=UPLOAD:continue
+        start=i
+        while start>0 and not lines[start].startswith("      - "):start-=1
+        end=i+1
+        while end<len(lines):
+            row=lines[end]
+            if row.strip() and not row.lstrip().startswith("#") and len(row)-len(row.lstrip())<=6:break
+            end+=1
+        if not lines[start].startswith("      - name: "):
+            issues.append("screenshot upload must be an explicit named step")
+        upload_steps.append([row.split(" #",1)[0].rstrip() for row in lines[start+1:end]
+                             if row.strip() and not row.lstrip().startswith("#")])
+    expected_upload=[
+        "        if: always()",
+        "        uses: "+UPLOAD,
+        "        with:",
+        "          name: synthetic-viewport-screenshots",
+        "          path: dist/playwright-results/**/*.png",
+        "          if-no-files-found: ignore",
+        "          retention-days: 7",
+    ]
+    if upload_steps!=[expected_upload]:
+        issues.append("only one fixed PNG screenshot artifact with seven-day retention is allowed")
     if "persist-credentials: false" not in text or "sparse-checkout-cone-mode: false" not in text:
         issues.append("checkout must be sparse and credential-free")
     sparse=[]
@@ -96,6 +127,34 @@ class BrowserE2EWorkflowTests(unittest.TestCase):
     def test_unreviewed_paths_fail(self):
         self.assertTrue(audit(self.workflow.replace("            /apps/web/\n",
             "            /apps/web/\n            /csv/\n",1)))
+
+    def test_artwork_validator_does_not_allow_the_whole_tools_directory(self):
+        self.assertIn("/tools/check_synthetic_artwork.mjs",ALLOWED)
+        self.assertNotIn("/tools/",ALLOWED)
+        self.assertTrue(audit(self.workflow.replace("            /tools/check_synthetic_artwork.mjs\n",
+            "            /tools/\n",1)))
+
+    def test_screenshot_upload_rejects_unsafe_paths_actions_and_inputs(self):
+        for original,replacement in (
+            (UPLOAD,"actions/upload-artifact@v4"),
+            (UPLOAD,"unreviewed/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"),
+            ("path: dist/playwright-results/**/*.png","path: ."),
+            ("path: dist/playwright-results/**/*.png","path: csv/**"),
+            ("path: dist/playwright-results/**/*.png","path: dist/**"),
+            ("path: dist/playwright-results/**/*.png","path: dist/playwright-results/**"),
+            ("path: dist/playwright-results/**/*.png","path: |\n            dist/playwright-results/**/*.png\n            csv/**"),
+            ("name: synthetic-viewport-screenshots","name: source-dump"),
+            ("retention-days: 7","retention-days: 90"),
+            ("retention-days: 7","retention-days: 7\n          include-hidden-files: true"),
+            ("retention-days: 7","retention-days: 7\n          github-token: ${{ secrets.GITHUB_TOKEN }}"),
+        ):
+            with self.subTest(replacement=replacement):
+                self.assertIn(original,self.workflow)
+                self.assertTrue(audit(self.workflow.replace(original,replacement,1)))
+
+    def test_second_upload_step_cannot_add_an_unreviewed_artifact(self):
+        unsafe=self.workflow+"\n      - name: Export files\n        uses: "+UPLOAD+"\n        with:\n          path: .\n"
+        self.assertTrue(audit(unsafe))
 
     def test_privileged_triggers_and_mutable_actions_fail(self):
         for change in (

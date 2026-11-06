@@ -123,7 +123,7 @@ export function recommendationReport(packet:ReviewPackage,ledger:unknown,context
       comparison,top3Quality,eligibility,predictedUnknown,eligibilityPopulation:'ALL_CANONICAL_CASES',
       codePlusLlm};
   });
-  const revisionScenario=context.revisionScenario===true?revisionScenarioSection(profiles,options,reference):undefined;
+  const revisionScenario=context.revisionScenario===true?revisionScenarioSection(p,profiles,options,reference):undefined;
   return {schemaVersion:'recommendation-evaluation-report-v1',packageSha256:p.packageSha256,
     targetCommit:p.targetCommit,datasetId:p.datasetId,demoAsOf:p.demoAsOf,referenceKind:reference,
     independentHumanLabelled:review.independentHumanLabelled,independentGoldReview:review.independentGoldReview,
@@ -133,15 +133,30 @@ export function recommendationReport(packet:ReviewPackage,ledger:unknown,context
 }
 
 /**
- * #10 opt-in analysis section: the same profiles, labels, ranker and asOf on the corpus after the SourceRevision
+ * #10 opt-in analysis section: the same profiles, ranker and asOf on the corpus after the SourceRevision
  * gate (demo-revisions overlay). Reported next to, never instead of, the r1 baseline splits, so baseline
- * precision, coverage and sample counts cannot move silently. Accuracy follows the baseline label rules.
+ * precision, coverage and sample counts cannot move silently. A label (including an owner draft) belongs
+ * to the reviewed source revision, not just an opportunity id. Changed revisions remain unlabelled until
+ * a separate review package covers them; r1 signatures must never be presented as r2 gold.
  */
-function revisionScenarioSection(profiles:{profileId:string;profile:RecommendationProfileLike;labels:LabelSet}[],
+function revisionScenarioSection(packet:ReviewPackage,profiles:{profileId:string;profile:RecommendationProfileLike;labels:LabelSet}[],
   baseOptions:{asOf:string;config:typeof RANK_CONFIG_V1},reference:'INDEPENDENT'|'TRACK_OWNER_SELF'){
   const gated=gatedDemoCorpus(baseOptions.asOf),options={...baseOptions,publishedAtBySnapshotId:DEMO_REVISION_PUBLISHED_AT};
   const ids=new Set(gated.usable.map(o=>o.id));
-  const labelCount=profiles.reduce((n,s)=>n+Object.keys(s.labels).filter(id=>ids.has(id)).length,0);
+  const reviewedRevisions=new Map(packet.cases.map(c=>[c.profileId+':'+c.opportunityId,c.sourceRevisionId]));
+  const unreviewedRevisionIds=new Set<string>();
+  const revisionBoundProfiles=profiles.map(student=>{
+    const labels:Record<string,RelevanceLabel>={};
+    for(const opportunity of gated.usable){
+      if(reviewedRevisions.get(student.profileId+':'+opportunity.id)!==opportunity.sourceSnapshotId){
+        unreviewedRevisionIds.add(opportunity.sourceSnapshotId);continue;
+      }
+      const label=student.labels[opportunity.id];
+      if(label!==undefined)labels[opportunity.id]=label;
+    }
+    return {...student,labels};
+  });
+  const labelCount=revisionBoundProfiles.reduce((n,s)=>n+Object.keys(s.labels).length,0);
   let predictedUnknown=0;
   for(const s of profiles)for(const o of gated.usable)if(evaluateOpportunity(s.profile,o,baseOptions.asOf).eligibility==='UNKNOWN')predictedUnknown++;
   return {scenarioVersion:'syn-corpus-v1+revisions-v1',asOf:baseOptions.asOf,baselineUnchanged:true as const,
@@ -149,10 +164,11 @@ function revisionScenarioSection(profiles:{profileId:string;profile:Recommendati
     usableOpportunityIds:gated.usable.map(o=>o.id).sort(),
     usableSnapshotIds:gated.usable.map(o=>o.sourceSnapshotId).sort(),
     quarantined:gated.quarantined.map(q=>({...q})),
+    labelPolicy:'EXACT_SOURCE_REVISION' as const,unreviewedRevisionIds:[...unreviewedRevisionIds].sort(),
     labelCoverage:ratio(labelCount,profiles.length*ids.size),
     qualityState:reference==='TRACK_OWNER_SELF'?'TRACK_OWNER_SELF_REFERENCE_ONLY':labelCount===0?'NOT_RUN':
       labelCount===profiles.length*ids.size?'SIGNED_REFERENCE':'PARTIAL_SIGNED_REFERENCE',
-    comparison:labelCount===0?null:compareRankers(profiles,gated.usable,options),
+    comparison:labelCount===0?null:compareRankers(revisionBoundProfiles,gated.usable,options),
     top3Quality:compareTop3Quality(profiles,gated.usable,options),
     predictedUnknown};
 }

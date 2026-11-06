@@ -1,7 +1,7 @@
 import {afterEach,describe,expect,it} from 'vitest';
 import {DemoProfileOptionSchema,DemoSnapshotSchema,SharingGrantSchema,SafeLlmPacketSchema} from '@hufs-one/contracts';
 import type {ApiFetch} from '../../apps/web/src/integrations/api-client.js';
-import {HufsApiClient,HufsApiError} from '../../apps/web/src/integrations/api-client.js';
+import {HufsApiClient} from '../../apps/web/src/integrations/api-client.js';
 import {DemoController} from '../../apps/web/src/app/demo-controller.js';
 import {MemoryApiRepository} from '../../apps/api/src/repository.js';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
@@ -201,18 +201,18 @@ describe('integration: real Fastify inject with synthetic browser transport',()=
     });
   });
 
-  it('drops malformed error envelopes and rejects third-party URL inputs',async()=>{
+  it('keeps malformed HTTP 403 terminal, drops private error details and rejects third-party URL inputs',async()=>{
     const malformed:ApiFetch=async()=>new Response('{"studentRaw":"private"}',{
       status:403,headers:{'content-type':'application/json'},
     });
     const client=new HufsApiClient(malformed);
-    await expect(client.listProfiles()).rejects.toMatchObject({
-      code:'PROVIDER_UNAVAILABLE',status:503,
+    const err=await client.listProfiles().catch(error=>error);
+    expect(err).toMatchObject({
+      code:'FORBIDDEN',status:403,
     });
     await expect(client.getSnapshot('https://evil.invalid')).rejects.toMatchObject({
       code:'INVALID_INPUT',
     });
-    const err=new HufsApiError('SHARING_REVOKED',403);
     expect(JSON.stringify(err)).not.toContain('private');
   });
 });

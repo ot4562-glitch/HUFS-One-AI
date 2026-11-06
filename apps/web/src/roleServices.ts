@@ -3,6 +3,7 @@ import type {AppServices} from './App.js';
 import type {SandboxPort} from './features/sandbox/useSandbox.js';
 import {OwnerSessionController} from './app/owner-session-controller.js';
 import {createOwnerClubPort,createClubModerationPort} from './features/clubs/ownerClubPort.js';
+import {ownerExperienceSkillPort} from './features/experience/ownerExperiencePort.js';
 
 type RoleApi = Pick<HufsApiClient,
   'getSession' | 'loadReviewerCapabilities' | 'readReviewerActions' | 'saveReviewerAction'
@@ -51,6 +52,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
   // the public DemoController; it rechecks actor/session before and after reads/writes.
   const ownerSession = new OwnerSessionController(api);
   return {
+    ownerExperience: {session: ownerSession, skills: ownerExperienceSkillPort(api.owner)},
     ownerClubs:createOwnerClubPort(api.owner,ownerSession),
     overlay: {
       get: (ctx, signal) => api.getDemoOverlay(ctx, signal),

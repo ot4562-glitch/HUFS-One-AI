@@ -83,7 +83,8 @@ export function buildOutlookView(f: ForecastSummary): readonly OutlookItemView[]
     courseId: i.courseId,
     targetTerm: i.targetTerm,
     signalText: SIGNAL_TEXT[i.signal],
-    basisText: `${COVERAGE_TEXT[i.coverage]} · 같은 학기 ${i.sameSeasonObservedTerms}번 중 ${i.sameSeasonOfferedTerms}번 개설`,
+    basisText: i.sameSeasonObservedTerms === 0 ? `${COVERAGE_TEXT[i.coverage]} · 확인된 비교 학기가 없어 과거 빈도를 계산하지 않습니다`
+      : `${COVERAGE_TEXT[i.coverage]} · 같은 학기 ${i.sameSeasonObservedTerms}번 중 ${i.sameSeasonOfferedTerms}번 개설`,
     caveat: i.caveat,
   }));
 }
