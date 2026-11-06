@@ -1,6 +1,6 @@
 import type {OfferingOutlookVNext} from '@hufs-one/contracts';
 import {
-  FORECAST_OFFERING_MODEL_VERSION, forecastOffering, termWindow,
+  FORECAST_OFFERING_MODEL_VERSION, forecastOffering, sameCourseAt, termWindow,
   type OfferingObservation, type OfficialAcademicEvent,
 } from './offering.js';
 
@@ -9,7 +9,8 @@ import {
  *
  * An origin is a past instant plus a later target term. At each origin the outlook and every
  * baseline see only rows published and verified by that instant. The answer comes from the
- * complete term catalogs visible at `truthAsOf`. Every method is scored on the same items.
+ * complete term catalogs visible at `truthAsOf`, counting only rows confirmed to be the course by
+ * then (#11). Every method is scored on the same items.
  *
  * The report holds counts only: no probability, no rounded rate and no IoU. Overlap between
  * two terms' course lists is not forecast accuracy. To score a HISTORICAL_PATTERN outlook, the
@@ -148,7 +149,7 @@ function publishedBy(rows:readonly OfferingObservation[], term:string, originMs:
 function answerAt(rows:readonly OfferingObservation[], term:string, truthMs:number):Truth|'UNAVAILABLE'|'CONFLICTING' {
   const states = new Set(rows
     .filter(row => row.term === term && row.coverage === 'COMPLETE_TERM_CATALOG' && row.state !== 'UNKNOWN'
-      && Date.parse(row.publishedAt) <= truthMs && Date.parse(row.verifiedAt) <= truthMs)
+      && Date.parse(row.publishedAt) <= truthMs && Date.parse(row.verifiedAt) <= truthMs && sameCourseAt(row, truthMs))
     .map(row => row.state));
   if (states.size === 0) return 'UNAVAILABLE';
   if (states.size > 1) return 'CONFLICTING';

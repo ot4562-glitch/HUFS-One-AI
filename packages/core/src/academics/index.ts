@@ -7,6 +7,15 @@ export type {
   LedgerSlot,
   RulePackGate,
 } from './ledger.js';
+export {buildLedgerWithCourseIdentity, COURSE_IDENTITY_API_CONNECTION} from './course-identity.js';
+export type {
+  IdentifiedLedgerAttempt,
+  IdentifiedLedgerRequest,
+  IdentifiedLedgerResult,
+  ResolvedLedgerAttempt,
+  UnresolvedCourseSummary,
+  UnresolvedLedgerAttempt,
+} from './course-identity.js';
 export {compareRulePackRevisions} from './rule-diff.js';
 export type {
   RequirementRevision,
