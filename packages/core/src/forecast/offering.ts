@@ -6,11 +6,14 @@ import {OfferingOutlookVNextSchema, type OfferingOutlookVNext} from '@hufs-one/c
  * Same-season history is a past count. It is not a probability and not a guarantee.
  * History looks back at most 8 regular semesters before the target term (#11 TASK-17),
  * so at most 4 same-season terms count. Older rows are left out, not counted as closed.
+ * A row whose course code or equivalence is not confirmed (#11) is not counted anywhere: not as
+ * offered, not as closed, not in n. A target course that is itself unconfirmed gives UNKNOWN.
  * Decision order follows Architecture.md A09.2.
  */
-export const FORECAST_OFFERING_MODEL_VERSION = 'forecast-offering-v2';
+export const FORECAST_OFFERING_MODEL_VERSION = 'forecast-offering-v3';
 
 const TERM = /^(19|20|21)\d{2}-[12]$/;
+const REF = /^[A-Za-z0-9_.:-]{1,128}$/;
 const OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/;
 /** Regular semesters before the target term that history may use. */
 const HISTORY_LOOKBACK_TERMS = 8;
@@ -27,7 +30,24 @@ export interface OfferingObservation {
   sourceRef:string;
   publishedAt:string;
   verifiedAt:string;
+  /**
+   * Whether this row is known to be the same course as courseId (#11). Absent keeps the existing
+   * meaning: the caller already matched the row to this course. Rows are checked one by one,
+   * since an older term may have used another code.
+   */
+  courseIdentity?:ObservationCourseIdentity;
 }
+
+/**
+ * RESOLVED names the mapping revision that matched the row and when it was checked. A row checked
+ * after asOf is treated as unverified at that asOf. Not an official equivalence decision.
+ */
+export type ObservationCourseIdentity =
+  | {state:'RESOLVED'; revisionRef:string; checkedAt:string}
+  | {state:'EQUIVALENCE_UNVERIFIED'};
+
+/** Absent keeps the existing meaning: courseId is a confirmed code. */
+export type TargetCourseIdentity = 'RESOLVED'|'EQUIVALENCE_UNVERIFIED';
 
 export interface OfficialAcademicEvent {
   eventId:string;
@@ -57,6 +77,7 @@ export interface ForecastOfferingInput {
   courseId:string;
   targetTerm:string;
   asOf:string;
+  courseIdentity?:TargetCourseIdentity;
   observations?:readonly OfferingObservation[];
   officialEvents?:readonly OfficialAcademicEvent[];
   alternatives?:readonly OfferingAlternative[];
@@ -65,6 +86,7 @@ export interface ForecastOfferingInput {
 export interface ForecastCourseInput {
   courseId:string;
   targetTerm:string;
+  courseIdentity?:TargetCourseIdentity;
   observations?:readonly OfferingObservation[];
   officialEvents?:readonly OfficialAcademicEvent[];
   alternatives?:readonly OfferingAlternative[];
@@ -97,15 +119,24 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
   if (!TERM.test(input.targetTerm)) throw new RangeError('targetTerm must be YYYY-1 or YYYY-2');
   const asOfMs = readInstant('asOf', input.asOf);
   if (input.courseId.trim() === '') throw new RangeError('courseId is required');
+  const targetIdentity = input.courseIdentity ?? 'RESOLVED';
+  if (targetIdentity !== 'RESOLVED' && targetIdentity !== 'EQUIVALENCE_UNVERIFIED') {
+    throw new RangeError('courseIdentity must be RESOLVED or EQUIVALENCE_UNVERIFIED');
+  }
 
   const season = input.targetTerm.slice(-1);
-  const usable = (input.observations ?? []).filter(row => observationVisible(row, asOfMs));
-  const targetRows = usable.filter(row => row.term === input.targetTerm).map(cloneObservation);
-  const prior = usable.filter(row =>
+  const visible = (input.observations ?? []).filter(row => observationVisible(row, asOfMs));
+  // Every row's identity is checked, even rows this outlook does not read.
+  for (const row of input.observations ?? []) sameCourseAt(row, asOfMs);
+  const relevant = visible.filter(row => row.term === input.targetTerm || (
     row.term < input.targetTerm
     && row.term.endsWith(`-${season}`)
     && termsBefore(row.term, input.targetTerm) <= HISTORY_LOOKBACK_TERMS
-    && termWindow(row.term).end <= asOfMs);
+    && termWindow(row.term).end <= asOfMs));
+  const usable = relevant.filter(row => sameCourseAt(row, asOfMs));
+  const unverified = relevant.filter(row => !sameCourseAt(row, asOfMs));
+  const targetRows = usable.filter(row => row.term === input.targetTerm).map(cloneObservation);
+  const prior = usable.filter(row => row.term !== input.targetTerm);
   const history = capHistory(dedupe(prior), season);
   const applicable = (input.officialEvents ?? [])
     .filter(event => event.affectedCourseIds.includes(input.courseId))
@@ -116,7 +147,18 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
   if (events.length > MAX_EVENTS) throw new RangeError('more than 30 official events apply to this course');
 
   const {n, k} = counts(history, season);
-  const decision = decide({n, k, targetRows, history, events, season});
+  const alternatives = officialAlternatives(input.courseId, input.alternatives, applicable);
+  if (targetIdentity === 'EQUIVALENCE_UNVERIFIED') {
+    return OfferingOutlookVNextSchema.parse({
+      courseId:input.courseId, targetTerm:input.targetTerm, asOf:input.asOf, modelVersion:FORECAST_OFFERING_MODEL_VERSION,
+      signal:'UNKNOWN', evidenceRefs:[], observations:[], officialEvents:[], sameSeasonObservedTerms:0, sameSeasonOfferedTerms:0,
+      alternatives:[],
+      caveat:'대상 과목의 코드나 동등성이 확인되지 않아 개설 여부를 판단하지 않습니다. 과거 기록과 공식 사건도 이 과목 것으로 보지 않습니다.',
+    });
+  }
+  const unverifiedTarget = unverified.filter(row => row.term === input.targetTerm && row.state !== 'UNKNOWN');
+  const decision = decide({n, k, targetRows, history, events, season, unverifiedTarget});
+  const note = unverified.length > 0 ? ` 과목 코드나 동등성이 확인되지 않은 관측 ${unverified.length}건은 세지 않았습니다.` : '';
   const value = {
     courseId:input.courseId,
     targetTerm:input.targetTerm,
@@ -128,11 +170,26 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
     officialEvents:events,
     sameSeasonObservedTerms:n,
     sameSeasonOfferedTerms:k,
-    alternatives:officialAlternatives(input.courseId, input.alternatives, applicable),
-    caveat:decision.caveat,
+    alternatives,
+    caveat:decision.caveat + note,
     ...(decision.sourcePublishedAt === undefined ? {} : {sourcePublishedAt:decision.sourcePublishedAt}),
   };
   return OfferingOutlookVNextSchema.parse(value);
+}
+
+/**
+ * The row may be counted for this course at asOf. Absent identity keeps the caller's match.
+ * Exported for the rolling-origin evaluator, so answers follow the same rule.
+ */
+export function sameCourseAt(row:OfferingObservation, asOfMs:number):boolean {
+  const identity = row.courseIdentity;
+  if (identity === undefined) return true;
+  if (identity.state === 'EQUIVALENCE_UNVERIFIED') return false;
+  if (identity.state !== 'RESOLVED') throw new RangeError('observation courseIdentity must be RESOLVED or EQUIVALENCE_UNVERIFIED');
+  if (typeof identity.revisionRef !== 'string' || !REF.test(identity.revisionRef)) {
+    throw new RangeError('a RESOLVED observation needs a revisionRef');
+  }
+  return readInstant('observation.courseIdentity.checkedAt', identity.checkedAt) <= asOfMs;
 }
 
 /**
@@ -145,6 +202,7 @@ export function forecastOfferings(input:{asOf:string; courses:readonly ForecastC
     courseId:course.courseId,
     targetTerm:course.targetTerm,
     asOf:input.asOf,
+    ...(course.courseIdentity === undefined ? {} : {courseIdentity:course.courseIdentity}),
     ...(course.observations === undefined ? {} : {observations:course.observations}),
     ...(course.officialEvents === undefined ? {} : {officialEvents:course.officialEvents}),
     ...(course.alternatives === undefined ? {} : {alternatives:course.alternatives}),
@@ -158,6 +216,8 @@ function decide(args:{
   targetRows:readonly OfferingObservation[];
   history:readonly OfferingObservation[];
   events:OfferingOutlookVNext['officialEvents'];
+  /** Target-term rows with a stated status that are not confirmed to be this course. */
+  unverifiedTarget:readonly OfferingObservation[];
 }):Decision {
   const confirming = args.targetRows.filter(supportsConfirmation);
   const states = new Set(confirming.map(row => row.state));
@@ -182,6 +242,13 @@ function decide(args:{
   }
   const assignmentReview = args.events.filter(event =>
     event.impact === 'POTENTIAL_ASSIGNMENT_CHANGE' && ASSIGNMENT_REVIEW_KINDS.has(event.kind));
+  if (confirming.length === 0 && cancels.length === 0 && args.unverifiedTarget.length > 0) {
+    return {
+      signal:'INSUFFICIENT_DATA',
+      caveat:'목표 학기 자료가 있으나 이 과목과 같은 과목인지 확인되지 않아 개설·미개설로 정하지 않고 과거 횟수로 대신하지 않습니다.',
+      evidenceRefs:evidence(args.unverifiedTarget.map(row => row.sourceRef)),
+    };
+  }
   if (closedByCatalog && cancels.length === 0 && assignmentReview.length > 0) {
     return {
       signal:'INSUFFICIENT_DATA',
