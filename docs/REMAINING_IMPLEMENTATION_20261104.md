@@ -17,6 +17,10 @@
 - [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287)/[#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288)/[#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289): `nextAttempts`로 영역 재분류를 알 수 없으면 `UNKNOWN/NEEDS_REVIEW`, rolling-origin NOTICE_ONLY·0/n·사건/20과목 반례, 학점 원장 속성 및 [PROPERTY_COVERAGE](../packages/core/src/academics/PROPERTY_COVERAGE.md). **공식 학칙·실학생 4인 대조는 #282 NOT_RUN**.
 - AI 보조 PR 코드 `COMMENT`와 합성 Actions 통과는 독립 사람 승인/실환경 수락이 아닙니다. `csv/` 원본 5개는 수정·삭제·재인코딩하지 않았고, 현행 출시 게이트는 `RELEASE_BLOCKED`.
 
+### UI 리디자인 [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290) 추가 통합
+
+A11 공통 디자인 계약과 11개 대분류 GNB·네이비 배너/왼쪽 LNB·합성 홈 P001·공고 상태 행을 `main`에 통합했습니다. 관찰된 원래 HUFSAbility 기능은 **미지원 텍스트**, 학교 자격 증명/기관 시스템 직접 연동 없음. HEAD 4/4 Actions SUCCESS는 합성 CI만 의미하며 전체 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)의 접근성/권한 회귀 및 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) 실기기·계정 현장 인수는 NOT_RUN/미완료. 실서비스 `RELEASE_BLOCKED`는 유지됩니다.
+
 ## 아직 미완료인 실서비스와 일부 소비자 연계
 
 1. **실 NCP:** 계정/IAM·SKU/비용 한도·VPC/ACG/NACL·SSH·TLS/Host/SNI·프록시 원 IP/IPv6·롤백/복구·요금·반납 영수증 `CONFIGURATION_REQUIRED/NOT_RUN`. [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) 비코드, [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 운영 통합.
