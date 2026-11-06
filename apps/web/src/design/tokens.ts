@@ -16,26 +16,32 @@ export const PRODUCT_COLORS = {
   ink: '#1F2933',
   muted: '#3E4C59',
   chip: '#EAF3FC',
-  /** v5 (#9): product navy / academic blue, close to but not the official HUFS colours. */
-  navy: '#082F52',
-  blue: '#28699F',
+  link: '#28699F',
   border: '#DDE3EA',
-  decoration: '#5B7FA3',
+  goldBg: '#F6F1E8',
 } as const;
 
-/** Semantic roles used by components. Primary action = academic blue, headings = product navy. */
+/**
+ * Semantic roles (#9 redesign, UIUX master spec §3.1–3.2): HUFS navy for the header, banners and
+ * primary buttons; HUFS gold only for active markers (GNB underline, LNB bar) and decoration; HUFS
+ * green for confirmed/positive states; links in academic blue with an underline.
+ */
 export const COLOR_ROLES = {
   pageBg: PRODUCT_COLORS.bg,
   surface: PRODUCT_COLORS.surface,
   text: PRODUCT_COLORS.ink,
   textMuted: PRODUCT_COLORS.muted,
-  heading: PRODUCT_COLORS.navy,
-  primary: PRODUCT_COLORS.blue,
+  heading: HUFS_COLORS.navy,
+  primary: HUFS_COLORS.navy,
   onPrimary: PRODUCT_COLORS.surface,
+  link: PRODUCT_COLORS.link,
   chipBg: PRODUCT_COLORS.chip,
   border: PRODUCT_COLORS.border,
-  decoration: PRODUCT_COLORS.decoration,
-  focusRing: PRODUCT_COLORS.navy,
+  decoration: HUFS_COLORS.gold,
+  accent: HUFS_COLORS.gold,
+  accentBg: PRODUCT_COLORS.goldBg,
+  success: HUFS_COLORS.green,
+  focusRing: HUFS_COLORS.navy,
 } as const;
 
 export const SPACING_PX = [4, 8, 12, 16, 24, 32] as const;

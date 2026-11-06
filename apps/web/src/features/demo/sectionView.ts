@@ -17,6 +17,8 @@ export interface FeedCardView {
   readonly title: string;
   /** Server verdict shown verbatim; the client never recomputes eligibility. */
   readonly eligibilityText: string;
+  /** The same server verdict as a value, for icons; never recomputed. */
+  readonly eligibility: FeedCard['eligibility'];
   readonly lifecycleText: string;
   readonly badges: readonly string[];
   readonly evidenceRefs: readonly string[];
@@ -73,6 +75,7 @@ function cardView(card: FeedCard, asOf: string): FeedCardView {
     opportunityId: card.opportunityId,
     title: card.title,
     eligibilityText: ELIGIBILITY_TEXT[card.eligibility],
+    eligibility: card.eligibility,
     lifecycleText: LIFECYCLE_TEXT[card.lifecycle],
     badges: card.dataMode === 'SYNTHETIC' ? ['합성 공고'] : [],
     evidenceRefs: card.evidenceRefs,

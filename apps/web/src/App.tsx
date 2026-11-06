@@ -17,7 +17,8 @@ import type {OwnerPrivateIntakePort} from './features/owner-intake/OwnerPrivateI
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
-import {PageBanner} from './shell/PageBanner.js';
+import {AreaNav, PageBanner} from './shell/PageBanner.js';
+import {areaOf} from './shell/areas.js';
 import {DemoSelector} from './shell/DemoSelector.js';
 import {StatusBanner} from './shell/StatusBanner.js';
 import {useDemo} from './shell/useDemo.js';
@@ -107,6 +108,10 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
     : null) ?? [...pages, basePages].reduce<ReturnType<PageRenderer>>((found, render) => found ?? render(ctx), null)
     ?? {title: '페이지를 찾을 수 없습니다', body: <p className="muted">주소를 확인하거나 아래 메뉴를 이용해 주세요.</p>};
 
+  const area = path === '/' ? null : areaOf(path);
+  const subject = state.status === 'READY' ? state.profiles.find(p => p.demoSubjectId === state.selected)?.displayLabel : undefined;
+  const greeting = path === '/' && subject ? <>{subject.split(' · ')[0]}님, 오늘의 정보를 확인하세요 <span className="hero__chip">합성 데이터</span></> : undefined;
+
   // Move focus to the new page heading after in-app navigation (not on first load).
   const heading = useRef<HTMLHeadingElement>(null);
   // Compare with the last path, not a "first run" flag: StrictMode re-runs effects on mount.
@@ -131,8 +136,8 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       status={independent || path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
-      <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} />
-      {page.body}
+      <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} greeting={greeting} />
+      {area ? <div className="layout"><AreaNav area={area} path={path} navigate={navigate} /><div className="layout__body">{page.body}</div></div> : page.body}
     </AppShell>
   );
 }

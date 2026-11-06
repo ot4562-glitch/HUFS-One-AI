@@ -20,7 +20,10 @@ describe('A11.2 tokens', () => {
     ['text on chipBg', COLOR_ROLES.text, COLOR_ROLES.chipBg],
     ['heading on surface', COLOR_ROLES.heading, COLOR_ROLES.surface],
     ['onPrimary on primary button', COLOR_ROLES.onPrimary, COLOR_ROLES.primary],
-    ['primary link on surface', COLOR_ROLES.primary, COLOR_ROLES.surface],
+    ['primary on surface', COLOR_ROLES.primary, COLOR_ROLES.surface],
+    ['link on surface', COLOR_ROLES.link, COLOR_ROLES.surface],
+    ['link on pageBg', COLOR_ROLES.link, COLOR_ROLES.pageBg],
+    ['success on surface', COLOR_ROLES.success, COLOR_ROLES.surface],
   ])('%s meets 4.5:1 body-text contrast', (_name, fg, bg) => {
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
   });
@@ -36,7 +39,7 @@ describe('A11.2 tokens', () => {
 
   it('exports CSS variables for the future Vite entry', () => {
     const css = cssVariables();
-    expect(css).toContain('--color-primary: #28699F;');
+    expect(css).toContain('--color-primary: #002D56;');
     expect(css).toContain('--color-text-muted: #3E4C59;');
     expect(css).toContain(`--touch-target: ${TOUCH_TARGET_PX}px;`);
   });

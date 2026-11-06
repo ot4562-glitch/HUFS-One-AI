@@ -3,6 +3,7 @@ import {noticeDetailPage, noticesPage, opportunitiesPage, opportunityDetailPage,
 import {reviewerInvitePage} from './reviewerPages.js';
 import {graduationPage} from './graduationPage.js';
 import {whatIfPage} from './whatIfPage.js';
+import {areaPage} from './areaPage.js';
 import {experiencePage, savedPage, settingsPage} from './sandboxPages.js';
 import {applicationsPage} from './applicationsPage.js';
 import {menuPage} from './menuPage.js';
@@ -14,7 +15,7 @@ import {ownerProviderPage} from './ownerProviderPage.js';
 
 /** Feature pages, checked in order before the shell's placeholders. */
 export const appPages: readonly PageRenderer[] = [
-  ownerIntakePage, todayPage, opportunitiesPage, opportunityDetailPage, noticesPage, noticeDetailPage, reviewerInvitePage, graduationPage, whatIfPage,
+  ownerIntakePage, todayPage, opportunitiesPage, opportunityDetailPage, noticesPage, noticeDetailPage, reviewerInvitePage, graduationPage, whatIfPage, areaPage,
   savedPage, experiencePage, settingsPage, applicationsPage, menuPage, clubsPage, clubDetailPage,
   ownerDemoProfilePage,ownerAcademicsPage,ownerProviderPage,
 ];

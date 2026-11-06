@@ -20,16 +20,16 @@ async function open(path: string, i: number) {
   fireEvent.click(within(screen.getByRole('group', {name: /시연 대상 선택/})).getAllByRole('radio')[i]!);
   await flush();
 }
-const cards = () => within(screen.getByRole('region', {name: '오늘의 요약'})).getAllByRole('heading', {level: 2}).map(h => h.closest('.summary__card')!.textContent);
+const cards = () => within(screen.getByRole('region', {name: '오늘의 요약'})).getAllByRole('link').map(a => a.textContent);
 
-describe('#9 v5 home', () => {
+describe('#9 redesign home (P001) and banners', () => {
   it('S01: three summary cards counted from the screen itself; matched = the cards listed below', async () => {
     await open('/', 0);
     expect(screen.getByRole('heading', {level: 1}).textContent).toBe('오늘');
     const [matched, due, credits] = cards();
-    const listed = within(screen.getByRole('region', {name: '나에게 맞춘 공고'})).getAllByRole('article').length;
+    const listed = within(screen.getByRole('region', {name: '나에게 맞춘 공고'})).getAllByRole('heading', {level: 3}).length;
     expect(matched).toContain(`${listed}건`);
-    expect(due).toMatch(/\d+건7일 안에 확정 마감/);
+    expect(due).toMatch(/^확정 7일 내 일정\d+건확정 마감 \d+개/);
     expect(credits).toContain('95학점');
     expect(credits).toContain('공식 판정 아님');
   });
@@ -44,8 +44,9 @@ describe('#9 v5 home', () => {
   it('other pages: category block + breadcrumb above the h1', async () => {
     await open('/graduation/what-if', 0);
     const crumb = screen.getByRole('navigation', {name: '현재 위치'});
-    expect(crumb.textContent?.replace(/\s+/g, ' ').trim()).toBe('홈 › 졸업지원 › 전공 가정 분석');
-    expect(within(crumb).getByRole('link', {name: '졸업지원'}).getAttribute('href')).toBe('/graduation');
+    expect(crumb.textContent?.replace(/\s+/g, ' ').trim()).toBe('홈 › 교과/비교과 › 전공 가정 분석');
+    expect(within(crumb).getByRole('link', {name: '교과/비교과'}).getAttribute('href')).toBe('/area/curricular');
+    expect(within(screen.getByRole('navigation', {name: '교과/비교과 메뉴'})).getByRole('link', {name: '전공 가정 분석'}).getAttribute('aria-current')).toBe('page');
     expect(crumb.compareDocumentPosition(screen.getByRole('heading', {level: 1})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -55,10 +55,10 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab'); // logo
   await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
   await page.keyboard.press('Tab'); // 설정
-  // #9 v5: the one 주요 메뉴 sits in the header (bottom bar on phones): its five tabs come next.
-  for (const name of ['오늘', '맞춤 기회', '나의 경험', '졸업지원', '보관함']) {
+  // #9: the 주요 메뉴 (ONE AI tabs) sits in the header, a bottom bar on phones: its five tabs come next.
+  for (const name of ['오늘', '기회', '경험', '졸업', '보관함']) {
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name})).toBeFocused();
+    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name, exact: true})).toBeFocused();
   }
   await page.keyboard.press('Tab'); // selector summary
   await expect(page.locator('.selector__summary')).toBeFocused();
@@ -125,32 +125,25 @@ test('#80 application board: keyboard-only advance, self-record badge, no overfl
   expect(o.scroll, JSON.stringify(o.offenders)).toBeLessThanOrEqual(o.width);
 });
 
-test('#9 v5 top menu at 1440px: our screens across the top, HUFSAbility originals only in one keyboard disclosure', async ({page}) => {
+test('#9 redesign at 1440px: 11-area GNB, area banner + left menu, originals never focusable', async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900});
   await page.goto('/');
-  const nav = page.getByRole('navigation', {name: '주요 메뉴'});
-  await expect(nav).toBeVisible();
-  await expect(nav.getByRole('link')).toHaveCount(8);
-  await expect(nav.getByRole('link', {name: '맞춤 기회'})).toBeVisible();
-  await expect(page.getByText('외대친화기업(HUFFi)')).toHaveCount(0);
-  const button = page.getByRole('button', {name: /HUFSAbility 메뉴/});
-  await button.focus();
-  await page.keyboard.press('Enter');
-  const panel = page.getByRole('region', {name: 'HUFSAbility 원래 메뉴'});
-  await expect(panel).toContainText('원래 메뉴는 이름과 순서만 보여 드려요');
-  await expect(panel.getByText('미지원', {exact: true})).toHaveCount(24);
-  // Tab through the panel: focus only ever lands on real links (4 official-home links + 전체 메뉴).
-  const focused: string[] = [];
-  for (let i = 0; i < 5; i++) {
-    await page.keyboard.press('Tab');
-    focused.push(await page.evaluate(() => document.activeElement?.tagName ?? ''));
-  }
-  expect(focused).toEqual(['A', 'A', 'A', 'A', 'A']);
-  await page.keyboard.press('Escape');
-  await expect(panel).toHaveCount(0);
-  await expect(button).toBeFocused();
-  await nav.getByRole('link', {name: '지원 현황'}).click();
-  await expect(page.getByRole('heading', {level: 1})).toHaveText('지원 현황');
+  await pick(page, 0);
+  const gnb = page.getByRole('navigation', {name: '전체 메뉴'});
+  await expect(gnb.getByRole('link')).toHaveCount(11);
+  await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회', exact: true})).toBeVisible();
+  await gnb.getByRole('link', {name: '교과/비교과'}).click();
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('교과/비교과');
+  const lnb = page.getByRole('navigation', {name: '교과/비교과 메뉴'});
+  await expect(lnb).toBeVisible();
+  await lnb.getByRole('link', {name: '졸업지원'}).click();
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('졸업');
+  await expect(page.getByRole('navigation', {name: '현재 위치'})).toContainText('교과/비교과');
+  await expect(gnb.getByRole('link', {name: '교과/비교과'})).toHaveAttribute('aria-current', 'page');
+  // Tab through the left menu: focus only lands on links; the 미지원 originals are skipped.
+  await lnb.getByRole('link').last().focus();
+  await page.keyboard.press('Tab');
+  expect(await page.evaluate(() => !!document.activeElement?.closest('.lnb__observed'))).toBe(false);
   const o = await page.evaluate(() => ({scroll: document.documentElement.scrollWidth, width: innerWidth}));
   expect(o.scroll).toBeLessThanOrEqual(o.width);
 });
@@ -191,7 +184,7 @@ test('#85 settings: change interests, see same-asOf before/after, undo — no ov
 test('sandbox: save from a card, find it in 보관함, never for another subject', async ({page}) => {
   await page.goto('/');
   await pick(page, 0);
-  const first = page.getByRole('region', {name: '나에게 맞춘 공고'}).getByRole('link').first();
+  const first = page.getByRole('region', {name: '나에게 맞춘 공고'}).getByRole('heading', {level: 3}).first().getByRole('link');
   const title = await first.textContent();
   await first.click();
   await page.getByRole('button', {name: '보관함에 저장'}).click();
