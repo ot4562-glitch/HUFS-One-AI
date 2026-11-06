@@ -55,7 +55,7 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab'); // logo
   await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
   await page.keyboard.press('Tab'); // 설정
-  // #9: the 주요 메뉴 (ONE AI tabs) sits in the header, a bottom bar on phones: its five tabs come next.
+  // Mobile keeps five visible shortcuts in the bottom bar; keyboard order is still defined in the header.
   for (const name of ['오늘', '기회', '경험', '졸업', '보관함']) {
     await page.keyboard.press('Tab');
     await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name, exact: true})).toBeFocused();
@@ -131,7 +131,7 @@ test('#9 redesign at 1440px: 11-area GNB, area banner + left menu, originals nev
   await pick(page, 0);
   const gnb = page.getByRole('navigation', {name: '전체 메뉴'});
   await expect(gnb.getByRole('link')).toHaveCount(11);
-  await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회', exact: true})).toBeVisible();
+  await expect(gnb.getByRole('link', {name: '채용/고용24'})).toBeVisible();
   await gnb.getByRole('link', {name: '교과/비교과'}).click();
   await expect(page.getByRole('heading', {level: 1})).toHaveText('교과/비교과');
   const lnb = page.getByRole('navigation', {name: '교과/비교과 메뉴'});
@@ -189,7 +189,8 @@ test('sandbox: save from a card, find it in 보관함, never for another subject
   await first.click();
   await page.getByRole('button', {name: '보관함에 저장'}).click();
   await expect(page.getByRole('button', {name: '보관함에서 빼기'})).toBeVisible();
-  await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '보관함'}).click();
+  await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '교과/비교과'}).click();
+  await page.getByRole('navigation', {name: '교과/비교과 메뉴'}).getByRole('link', {name: '보관함'}).click();
   await expect(page.getByRole('region', {name: '저장한 공고'}).getByRole('link', {name: title!})).toBeVisible();
   await pick(page, 1);
   await expect(page.getByRole('region', {name: '저장한 공고'}).getByRole('link')).toHaveCount(0);
