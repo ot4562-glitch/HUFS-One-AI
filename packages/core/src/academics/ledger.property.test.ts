@@ -454,3 +454,209 @@ describe('buildAcademicLedger properties (#202)', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// #11 (본선 전) gaps. What these add is listed in PROPERTY_COVERAGE.md next to this file.
+
+/** Which supersede-link shapes one case contains. */
+function linkShapes(c:Case) {
+  const byToken = new Map(c.attempts.map(a => [a.attemptToken, a]));
+  const claims = new Map<string, number>();
+  for (const a of c.attempts) {
+    if (a.supersedesAttemptToken) claims.set(a.supersedesAttemptToken, (claims.get(a.supersedesAttemptToken) ?? 0) + 1);
+  }
+  let cycle = false, chain = false;
+  for (const a of c.attempts) {
+    const walked:string[] = [];
+    let at:LedgerAttempt|undefined = a;
+    while (at?.supersedesAttemptToken && !walked.includes(at.attemptToken)) {
+      walked.push(at.attemptToken);
+      at = byToken.get(at.supersedesAttemptToken);
+    }
+    if (at !== undefined && walked.includes(at.attemptToken)) cycle = true;
+    else if (walked.length >= 2) chain = true;
+  }
+  return {
+    fork:[...claims.values()].some(n => n > 1),
+    selfLink:c.attempts.some(a => a.supersedesAttemptToken === a.attemptToken),
+    cycle, chain,
+  };
+}
+
+/** Adds an AREA_SPREAD and a GROUP_CHOICE row, which genCase and referenceLedger do not model. */
+function withComposite(c:Case, rng:Rng):Case {
+  const requirements = [...c.requirements];
+  if (chance(rng, 0.7)) {
+    requirements.push({id:'SYN-R-SPREAD', kind:'AREA_SPREAD', areaIds:[...AREAS], minAreas:1 + Math.floor(rng() * AREAS.length),
+      requiredCreditUnits:pick(rng, [1, 6, 12]), evidenceRefs:['SYN-EV-SPREAD']});
+  }
+  if (chance(rng, 0.7)) {
+    requirements.push({id:'SYN-R-GROUP', kind:'GROUP_CHOICE', groups:[['SYN-C1'], ['SYN-C2', 'SYN-C3'], ['SYN-C4']],
+      k:1 + Math.floor(rng() * 3), evidenceRefs:['SYN-EV-GROUP']});
+  }
+  return {...c, requirements};
+}
+
+const BASE_REQUEST = {asOf:'2026-12-20T12:00:00+09:00', rulePackVersion:'SYN-P', rulePackState:'APPROVED' as const};
+const earned = (token:string, course:string, units:number, over:Partial<LedgerAttempt> = {}):LedgerAttempt => ({
+  attemptToken:token, canonicalCourseId:course, creditUnits:units, ledger:'EARNED', areaIds:[], recognition:'RECOGNIZED',
+  term:'2024-1', ...over,
+});
+
+describe('buildAcademicLedger gaps (#11 본선 전)', () => {
+  it('the generator makes forks, cycles, self-links and chains, not only plain retakes', () => {
+    // The reference-model test runs on these same seeds and size, so these shapes are compared there.
+    const tally = {fork:0, selfLink:0, cycle:0, chain:0};
+    for (const seed of SEEDS.slice(0, 400)) {
+      const found = linkShapes(genCase(mulberry32(seed), 6));
+      for (const key of Object.keys(tally) as (keyof typeof tally)[]) if (found[key]) tally[key] += 1;
+    }
+    const atLeast = Math.max(1, Math.floor(Math.min(SEEDS.length, 400) / 40));
+    for (const [kind, count] of Object.entries(tally)) {
+      if (SEEDS.length >= 400) expect(count, kind).toBeGreaterThanOrEqual(atLeast);
+    }
+  });
+
+  it('an approved retake chain keeps only the last attempt', () => {
+    const c:Case = {...BASE_REQUEST, requirements:[{id:'SYN-R-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:6, evidenceRefs:['SYN-EV']}],
+      attempts:[
+        earned('SYN-A', 'SYN-C1', 6, {term:'2023-1'}),
+        earned('SYN-B', 'SYN-C1', 6, {term:'2024-1', supersedesAttemptToken:'SYN-A', retakeApprovalRef:'SYN-RETAKE-B'}),
+        earned('SYN-C', 'SYN-C1', 6, {term:'2025-1', supersedesAttemptToken:'SYN-B', retakeApprovalRef:'SYN-RETAKE-C'}),
+      ]};
+    const out = buildAcademicLedger(c);
+    expect(out.excludedAttempts).toEqual([
+      {attemptToken:'SYN-A', reason:'RETAKE_SUPERSEDED'}, {attemptToken:'SYN-B', reason:'RETAKE_SUPERSEDED'}]);
+    expect(out.earnedCreditUnits).toBe(6);
+    expect(explain(referenceLedger(c), project(c))).toBeNull();
+  });
+
+  it('a chain with an unapproved middle link never counts the course twice', () => {
+    const c:Case = {...BASE_REQUEST, requirements:[{id:'SYN-R-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:6, evidenceRefs:['SYN-EV']}],
+      attempts:[
+        earned('SYN-A', 'SYN-C1', 6, {term:'2023-1'}),
+        earned('SYN-B', 'SYN-C1', 6, {term:'2024-1', supersedesAttemptToken:'SYN-A'}),
+        earned('SYN-C', 'SYN-C1', 6, {term:'2025-1', supersedesAttemptToken:'SYN-B', retakeApprovalRef:'SYN-RETAKE-C'}),
+      ]};
+    const out = buildAcademicLedger(c);
+    expect(out.earnedCreditUnits).toBeLessThanOrEqual(6);
+    expect(out.state).toBe('NEEDS_REVIEW');
+    expect(explain(referenceLedger(c), project(c))).toBeNull();
+  });
+
+  it('refuses credit units outside non-negative safe integers, and sums that leave them', () => {
+    const run = (attempts:LedgerAttempt[]) => buildAcademicLedger({...BASE_REQUEST, attempts, requirements:[]});
+    for (const bad of [-1, -6, Number.NaN, Number.POSITIVE_INFINITY, 0.5, 2 ** 53, '6' as unknown as number]) {
+      expect(() => run([earned('SYN-T', 'SYN-C1', bad)]), String(bad)).toThrow(/integer credit unit/);
+    }
+    expect(run([earned('SYN-T', 'SYN-C1', Number.MAX_SAFE_INTEGER)]).earnedCreditUnits).toBe(Number.MAX_SAFE_INTEGER);
+    expect(() => run([earned('SYN-T1', 'SYN-C1', Number.MAX_SAFE_INTEGER), earned('SYN-T2', 'SYN-C2', 1)]))
+      .toThrow(/credit unit sum/);
+  });
+
+  it('counts half-credit units exactly (1 unit = 0.5학점)', () => {
+    const attempts = [earned('SYN-T1', 'SYN-C1', 1), earned('SYN-T2', 'SYN-C2', 1)];
+    const row = (units:number) => buildAcademicLedger({...BASE_REQUEST, attempts,
+      requirements:[{id:'SYN-R', kind:'CREDIT_TOTAL', requiredCreditUnits:units, evidenceRefs:['SYN-EV']}]}).requirements[0]!;
+    expect(row(2)).toMatchObject({state:'SATISFIED', earnedCreditUnits:2});
+    expect(row(3)).toMatchObject({state:'UNSATISFIED', earnedCreditUnits:2, remainingCreditUnits:1});
+  });
+
+  // Precondition: none. Every comparison is earned >= required, so doubling all units changes no state.
+  it('doubling every credit unit doubles every unit figure and changes no state', () => {
+    forAll('unit scale', 12, (c0, rng) => {
+      const c = withComposite(c0, rng);
+      const doubled:Case = {...c,
+        attempts:c.attempts.map(a => ({...a, creditUnits:a.creditUnits * 2})),
+        requirements:c.requirements.map(r => ('requiredCreditUnits' in r ? {...r, requiredCreditUnits:r.requiredCreditUnits * 2} : r)) as LedgerRequirement[]};
+      const problems:string[] = [];
+      const walk = (a:unknown, b:unknown, path:string):void => {
+        if (typeof a === 'number' && /CreditUnits$/.test(path)) {
+          if (b !== a * 2) problems.push(`${path}: ${String(a)} -> ${String(b)}`);
+        } else if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+          a.forEach((item, i) => walk(item, b[i], path));
+        } else if (a && typeof a === 'object' && b && typeof b === 'object') {
+          const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+          for (const key of keys) walk((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key], key);
+        } else if (!same(a, b)) problems.push(`${path}: ${JSON.stringify(a)} -> ${JSON.stringify(b)}`);
+      };
+      walk(buildAcademicLedger(c), buildAcademicLedger(doubled), 'ledger');
+      return problems.length ? problems.slice(0, 5).join('; ') : null;
+    });
+  });
+
+  // Precondition: the added course is new, cleanly earned and named by no requirement except through its areas.
+  it('one more cleanly earned course never takes credit or a satisfied row away', () => {
+    forAll('one more earned course', 12, (c0, rng) => {
+      const c = withComposite(c0, rng);
+      const units = pick(rng, [1, 2, 6]);
+      const areaIds = AREAS.filter(() => chance(rng, 0.5));
+      const extra = earned('SYN-T-NEW', 'SYN-NEW', units, {areaIds, term:'2023-1'});
+      const before = buildAcademicLedger(c), after = buildAcademicLedger({...c, attempts:[...c.attempts, extra]});
+      if (after.earnedCreditUnits !== before.earnedCreditUnits + units) return `earned ${before.earnedCreditUnits} -> ${after.earnedCreditUnits}, added ${units}`;
+      const area = (out:typeof before, id:string) => out.areaProgress.find(a => a.areaId === id)?.earnedCreditUnits ?? 0;
+      for (const id of AREAS) {
+        const want = area(before, id) + (areaIds.includes(id) ? units : 0);
+        if (area(after, id) !== want) return `area ${id}: ${area(before, id)} -> ${area(after, id)}, want ${want}`;
+      }
+      if (!same(before.excludedAttempts, after.excludedAttempts)) return 'other attempts changed their exclusion';
+      // Two ledger rules may send a row to review instead of SATISFIED: a row with no evidence, and a spread
+      // with an earned course in two or more of its areas, whose official allocation decides the spread
+      // (the new credit can lift the unit gate while that course is still ambiguous).
+      const unevidenced = new Set(c.requirements.filter(r => !(r.evidenceRefs?.length)).map(r => r.id));
+      let toReview = false;
+      for (const row of before.requirements) {
+        const next = after.requirements.find(r => r.requirementId === row.requirementId);
+        if (row.state === 'SATISFIED' && next?.state !== 'SATISFIED') return `${row.requirementId} lost SATISFIED`;
+        if (row.state === 'UNSATISFIED' && next?.state === 'NEEDS_REVIEW') {
+          const ambiguousSpread = row.requirementId === 'SYN-R-SPREAD' && [...c.attempts, extra].some(a =>
+            a.ledger === 'EARNED' && a.areaIds.filter(id => (AREAS as readonly string[]).includes(id)).length >= 2);
+          if (!unevidenced.has(row.requirementId) && !ambiguousSpread) return `${row.requirementId} went to review`;
+          toReview = true;
+        }
+      }
+      if (before.state === 'READY' && after.state !== 'READY' && !toReview) return `state ${before.state} -> ${after.state}`;
+      return null;
+    });
+  });
+
+  it('gives the same result for any attempt order, with spread and group rows too', () => {
+    forAll('order independence with composite rows', 12, (c0, rng) => {
+      const c = withComposite(c0, rng);
+      const shuffled = [...c.attempts].map(a => [rng(), a] as const).sort((x, y) => x[0] - y[0]).map(([, a]) => a);
+      const rows = (x:Case) => buildAcademicLedger(x).requirements;
+      return same(rows(c), rows({...c, attempts:shuffled})) ? null : 'a row depends on attempt order';
+    });
+  });
+
+  // Precondition: none. The ledger reads its request; it never writes to it.
+  it('never modifies its inputs', () => {
+    const freeze = (value:unknown):void => {
+      if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
+    };
+    forAll('inputs unchanged', 12, (c0, rng) => {
+      const c = withComposite(c0, rng), before = JSON.stringify(c), frozen = structuredClone(c);
+      freeze(frozen);
+      // A write to the frozen copy throws in strict mode; the plain copy shows any silent change.
+      const out = buildAcademicLedger(frozen), plain = buildAcademicLedger(c);
+      if (JSON.stringify(c) !== before) return 'the request changed';
+      return same(out, plain) ? null : 'a frozen request gives a different result';
+    });
+  });
+
+  it('the spread and group rows reach both SATISFIED and UNSATISFIED', () => {
+    const seen = new Set<string>();
+    for (const seed of SEEDS.slice(0, 400)) {
+      const rng = mulberry32(seed);
+      const c = withComposite({...genCase(rng, 12), rulePackState:'APPROVED'}, rng);
+      for (const r of buildAcademicLedger(c).requirements) {
+        if (r.requirementId === 'SYN-R-SPREAD' || r.requirementId === 'SYN-R-GROUP') seen.add(`${r.requirementId}:${r.state}`);
+      }
+    }
+    if (SEEDS.length >= 400) {
+      for (const kind of ['SYN-R-SPREAD:SATISFIED', 'SYN-R-SPREAD:UNSATISFIED', 'SYN-R-GROUP:SATISFIED', 'SYN-R-GROUP:UNSATISFIED']) {
+        expect(seen.has(kind), kind).toBe(true);
+      }
+    }
+  });
+});
