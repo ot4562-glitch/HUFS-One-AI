@@ -116,3 +116,14 @@ describe('#119 correction regressions: the current reviewed revision only, never
     expect(show([r1, r2({changeKind:'CANCELLED', status:'RETRACTED'})])).toEqual([]);
   });
 });
+
+describe('#10 gateBySourceRevision quarantine order is byte-stable for one id with several revisions', () => {
+  it('sorts by id, then revisionId, regardless of input order', () => {
+    const cancelled = rev('SYN-REV-2', {supersedes:'SYN-REV-1', changeKind:'CANCELLED', fetchedAt:D(-2), lastVerifiedAt:D(-1)});
+    const items = [OLD, NEW];
+    const a = gateBySourceRevision(items, selectCurrentRevisions([r1, cancelled], ASOF));
+    const b = gateBySourceRevision([...items].reverse(), selectCurrentRevisions([cancelled, r1], ASOF));
+    expect(a.quarantined.map(q => q.revisionId)).toEqual(['SYN-REV-1', 'SYN-REV-2']);
+    expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+  });
+});
