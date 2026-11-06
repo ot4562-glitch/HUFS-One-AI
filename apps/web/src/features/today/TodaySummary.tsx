@@ -28,13 +28,13 @@ export function buildTodaySummary(view: DemoScreenView): readonly SummaryCardVie
     s.kind === 'HIDDEN' ? '시연 공유 범위 밖' : s.kind === 'PLACEHOLDER' ? s.text : '';
   const a = view.academics;
   return [
-    {id: 'matched', label: '맞춤 공고', to: '/opportunities', linkText: '전체',
+    {id: 'matched', label: '맞춤 기회', to: '/opportunities', linkText: '맞춤 기회 보기',
       value: feed ? {number: String(feed.featured.length), unit: '건'} : null,
-      note: feed ? '관심과 맞아 아래에 먼저 보여 준 공고' : stateNote(view.feed), urgent: false},
-    {id: 'due', label: '마감 임박', to: '/opportunities', linkText: '공고',
+      note: feed ? `나에게 관련된 기회 ${feed.featured.length}개` : stateNote(view.feed), urgent: false},
+    {id: 'due', label: `확정 ${DUE_SOON_DAYS}일 내 일정`, to: '/opportunities', linkText: '공고 보기',
       value: feed ? {number: String(due), unit: '건'} : null,
-      note: feed ? `${DUE_SOON_DAYS}일 안에 확정 마감` : stateNote(view.feed), urgent: due > 0},
-    {id: 'credits', label: '취득 학점', to: '/graduation', linkText: '졸업지원',
+      note: feed ? `확정 마감 ${due}개` : stateNote(view.feed), urgent: due > 0},
+    {id: 'credits', label: '취득 학점', to: '/graduation', linkText: '졸업지원 보기',
       value: a.kind === 'SHOW' ? {number: creditsText(a.data.earnedCreditUnits).replace('학점', ''), unit: '학점'} : null,
       note: a.kind === 'SHOW'
         ? `수강 중 ${creditsText(a.data.inProgressCreditUnits)} · 공식 판정 아님`
@@ -43,20 +43,29 @@ export function buildTodaySummary(view: DemoScreenView): readonly SummaryCardVie
   ];
 }
 
+const ICON: Record<SummaryCardView['id'], string> = {
+  matched: 'M12 3a9 9 0 1 0 9 9M12 7a5 5 0 1 0 5 5M12 11a1 1 0 1 0 1 1M13 11l7-7M17 4h3v3',
+  due: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h3',
+  credits: 'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5',
+};
+
+/** P001 summary: three horizontal cards; the whole card is one link. Numbers are the screen's own. */
 export function TodaySummary({view, navigate}: {view: DemoScreenView; navigate: (p: string) => void}) {
   return (
     <section className="summary" aria-label="오늘의 요약">
       {buildTodaySummary(view).map(c => (
-        <div key={c.id} className="summary__card">
-          <div className="summary__head">
-            <h2 className="summary__label">{c.label}</h2>
-            <InAppLink to={c.to} navigate={navigate} className="summary__link">{c.linkText} <span aria-hidden="true">›</span><span className="visually-hidden"> ({c.label})</span></InAppLink>
-          </div>
-          {c.value
-            ? <p className={`summary__value${c.urgent ? ' is-urgent' : ''}`}>{c.value.number}<small>{c.value.unit}</small></p>
-            : <p className="summary__value summary__value--none">—<span className="visually-hidden"> 표시하지 않음</span></p>}
-          <p className="summary__note">{c.note}</p>
-        </div>
+        <InAppLink key={c.id} to={c.to} navigate={navigate} className={`summary__card summary__card--${c.id}`}>
+          <svg className="summary__icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={ICON[c.id]} /></svg>
+          <span className="summary__text">
+            <span className="summary__label">{c.label}</span>
+            {c.value
+              ? <span className={`summary__value${c.urgent ? ' is-urgent' : ''}`}>{c.value.number}<small>{c.value.unit}</small></span>
+              : <span className="summary__value summary__value--none">—<span className="visually-hidden"> 표시하지 않음</span></span>}
+            <span className="summary__note">{c.note}</span>
+          </span>
+          <span className="summary__go" aria-hidden="true">›</span>
+          <span className="visually-hidden"> — {c.linkText}</span>
+        </InAppLink>
       ))}
     </section>
   );

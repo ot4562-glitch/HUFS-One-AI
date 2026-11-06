@@ -11,6 +11,7 @@ import {appPages} from '../pages/index.js';
 import type {HistoryPort} from './router.js';
 import {getHufsAbilityManifest} from '@hufs-one/contracts';
 import {MENU_GROUPS, OFFICIAL_HUFSABILITY_URL} from './menuCatalog.js';
+import {AREAS} from './areas.js';
 
 afterEach(cleanup);
 const flush = () => act(async () => { for (let i = 0; i < 10; i++) await new Promise(r => setTimeout(r, 0)); });
@@ -108,27 +109,24 @@ describe('#124 menu rendering', () => {
     expect(link.textContent).toContain('학교 공식 사이트');
   });
 
-  it('the top menu lists our screens; HUFSAbility originals sit in one disclosure that says why, with no direct URL', async () => {
+  it('the GNB is the 11 observed HUFSAbility areas; an area page lists our screens and the originals as 미지원 text', async () => {
     await open('/');
-    const nav = screen.getByRole('navigation', {name: '주요 메뉴'});
-    expect(within(nav).getByRole('link', {name: '지원 현황'}).getAttribute('href')).toBe('/applications');
-    expect(within(nav).getAllByRole('link')).toHaveLength(8);
-    expect(screen.queryByText('외대친화기업(HUFFi)')).toBeNull();
-    const button = screen.getByRole('button', {name: /HUFSAbility 메뉴/});
-    expect(button.getAttribute('aria-expanded')).toBe('false');
-    fireEvent.click(button);
-    expect(button.getAttribute('aria-expanded')).toBe('true');
-    const panel = screen.getByRole('region', {name: 'HUFSAbility 원래 메뉴'});
-    expect(panel.textContent).toContain('원래 메뉴는 이름과 순서만 보여 드려요');
-    expect(within(panel).getByText('외대친화기업(HUFFi)').closest('a, button')).toBeNull();
-    expect(within(panel).getAllByText('미지원')).toHaveLength(24);
-    for (const link of within(panel).getAllByRole('link').filter(a => a.getAttribute('target') === '_blank')) {
-      expect(link.getAttribute('href')).toBe(OFFICIAL_HUFSABILITY_URL);
-      expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    }
-    fireEvent.keyDown(document, {key: 'Escape'});
-    expect(button.getAttribute('aria-expanded')).toBe('false');
-    expect(document.activeElement).toBe(button);
+    const gnb = screen.getByRole('navigation', {name: '전체 메뉴'});
+    expect(within(gnb).getAllByRole('link').map(a => a.textContent)).toEqual(AREAS.map(a => a.label));
+    expect(within(gnb).getAllByRole('link')).toHaveLength(11);
+    fireEvent.click(within(gnb).getByRole('link', {name: '채용/고용24'}));
+    await flush();
+    expect(screen.getByRole('heading', {level: 1}).textContent).toBe('채용/고용24');
+    expect(within(gnb).getByRole('link', {name: '채용/고용24'}).getAttribute('aria-current')).toBe('page');
+    const ours = screen.getByRole('region', {name: 'ONE AI에서 쓸 수 있는 화면'});
+    expect(within(ours).getByRole('link', {name: '지원 현황'}).getAttribute('href')).toBe('/applications');
+    const originals = screen.getByRole('region', {name: '원래 메뉴'});
+    expect(within(originals).getByText('외대친화기업(HUFFi)').closest('a, button')).toBeNull();
+    expect(within(originals).queryAllByRole('link')).toHaveLength(0);
+    // The left menu repeats the same split: our screens are links, originals are text.
+    const lnb = screen.getByRole('navigation', {name: '채용/고용24 메뉴'});
+    expect(within(lnb).getAllByRole('link').map(a => a.textContent)).toEqual(['채용/고용24', '맞춤 기회', '지원 현황']);
+    expect(within(lnb).getAllByText('미지원')).toHaveLength(AREAS.find(a => a.id === 'jobs')!.observed.length);
     cleanup();
     await open('/competency-test');
     expect(screen.getByRole('heading', {level: 1}).textContent).toBe('페이지를 찾을 수 없습니다');

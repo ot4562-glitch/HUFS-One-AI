@@ -146,14 +146,11 @@ describe('App shell', () => {
   it('bottom tabs navigate in-app, mark the current tab, and move focus to the heading', async () => {
     const {history} = await setup();
     const nav = screen.getByRole('navigation', {name: '주요 메뉴'});
-    // Phones show the five A11.1 tabs (short labels); wide screens add the rest of HUFS One AI's own screens.
-    const links = within(nav).getAllByRole('link');
-    expect(links.filter(a => !a.closest('.gnb__wide')).map(a => a.querySelector('.tab__short')?.textContent)).toEqual(['오늘', '기회', '경험', '졸업', '보관함']);
-    expect(links.map(a => a.querySelector('.tab__long')?.textContent)).toEqual(['오늘', '맞춤 기회', '나의 경험', '졸업지원', '보관함', '학사 공지', '지원 현황', '동아리 모집']);
-    fireEvent.click(within(nav).getByRole('link', {name: '졸업지원'}));
+    expect(within(nav).getAllByRole('link').map(a => a.textContent)).toEqual(['오늘', '기회', '경험', '졸업', '보관함']);
+    fireEvent.click(within(nav).getByRole('link', {name: '졸업'}));
     await flush();
     expect(history.paths.at(-1)).toBe('/graduation');
-    expect(within(nav).getByRole('link', {name: '졸업지원'}).getAttribute('aria-current')).toBe('page');
+    expect(within(nav).getByRole('link', {name: '졸업'}).getAttribute('aria-current')).toBe('page');
     const h1 = screen.getByRole('heading', {level: 1});
     expect(h1.textContent).toBe('졸업');
     expect(document.activeElement).toBe(h1);

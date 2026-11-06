@@ -4,50 +4,89 @@ import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
+import {DeadlineRow, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
+import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../features/graduation/graduationView.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
 import {DDayText} from '../features/demo/DDayText.js';
 import {Badges, CompactRow, FeaturedCard, NOT_SHARED_TEXT, NoSnapshot, NoticeRow, Section, screenViewOf} from './parts.js';
 
-/** 오늘: large matched cards (≤3), compact general list (≤6), pinned notices (A11.1). */
+/**
+ * 오늘 (#9 redesign, UIUX master spec P001): three summary cards, then dashboard modules — schedule,
+ * notices, upcoming confirmed deadlines, recommendations, study summary, shortcuts — and the full lists
+ * below. Every value is the screen's own snapshot view; nothing is estimated.
+ */
 export const todayPage: PageRenderer = ({path, state, navigate, controller, services}) => {
   if (path !== '/') return null;
   const view = screenViewOf(state);
   if (!view) return {title: '오늘', body: <NoSnapshot state={state} />};
-  const notices = view.notices.kind === 'SHOW' ? buildNoticeList(view.notices.data).filter(n => n.pinned) : [];
+  const allNotices = view.notices.kind === 'SHOW' ? buildNoticeList(view.notices.data) : [];
+  const notices = [...allNotices.filter(n => n.pinned), ...allNotices.filter(n => !n.pinned)].slice(0, 4);
+  const feed = view.feed.kind === 'SHOW' ? view.feed.data : null;
+  const deadlines = upcomingDeadlines(feed ? [...feed.featured, ...feed.compact] : [], allNotices);
+  const a = view.academics;
   return {
     title: '오늘',
     body: (
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
         <TodaySummary view={view} navigate={navigate} />
-        {view.feed.kind === 'SHOW' ? (
-          <>
-            <Section title="나에게 맞춘 공고">
-              {view.feed.data.featured.length
-                ? <div className="cards">{view.feed.data.featured.map(c => <FeaturedCard key={c.opportunityId} card={c} navigate={navigate} />)}</div>
+        <div className="modules">
+          <div className="module module--cal">
+            <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />
+          </div>
+          <Module title="공지사항" action={<InAppLink to="/notices" navigate={navigate}>전체보기</InAppLink>}>
+            {view.notices.kind === 'SHOW'
+              ? notices.length ? <ul className="mlist">{notices.map(n => <HomeNoticeRow key={n.noticeId} item={n} navigate={navigate} />)}</ul>
+                : <p className="muted">표시할 공지가 없어요.</p>
+              : <p className="muted">{view.notices.kind === 'HIDDEN' ? NOT_SHARED_TEXT : view.notices.text}</p>}
+          </Module>
+          <Module title="다가오는 확정 마감">
+            {deadlines.length ? <ul className="mlist">{deadlines.map(d => <DeadlineRow key={d.key} item={d} navigate={navigate} />)}</ul>
+              : <p className="muted">확정된 마감이 없어요.</p>}
+          </Module>
+          {feed ? (
+            <Module title="나에게 맞춘 공고" wide action={<InAppLink to="/opportunities" navigate={navigate}>더보기</InAppLink>}>
+              {feed.featured.length ? <ul className="mlist">{feed.featured.map(c => <HomeOppRow key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
                 : <p className="muted">지금 관심과 맞는 공고가 없어요.</p>}
-            </Section>
+            </Module>
+          ) : <Module title="공고" wide><p className="muted">{NOT_SHARED_TEXT}</p></Module>}
+          <Module title="학업 요약" action={<InAppLink to="/graduation" navigate={navigate}>졸업지원</InAppLink>}>
+            {a.kind === 'SHOW' ? (
+              <>
+                <dl className="mstats">
+                  <div><dt>취득</dt><dd>{creditsText(a.data.earnedCreditUnits)}</dd></div>
+                  <div><dt>수강 중</dt><dd>{creditsText(a.data.inProgressCreditUnits)}</dd></div>
+                  <div><dt>계획</dt><dd>{creditsText(a.data.plannedCreditUnits)}</dd></div>
+                </dl>
+                <p className="muted mnote">{NOT_OFFICIAL_GRADUATION_TEXT}</p>
+              </>
+            ) : <p className="muted">{a.kind === 'HIDDEN' ? NOT_SHARED_TEXT : a.text}</p>}
+          </Module>
+          <Module title="바로가기" wide>
+            <ul className="quick">
+              {[['/opportunities', '맞춤 기회'], ['/graduation', '졸업지원'], ['/experience', '나의 경험'], ['/applications', '지원 현황']].map(([to, label]) => (
+                <li key={to}><InAppLink to={to!} navigate={navigate}>{label}</InAppLink></li>
+              ))}
+            </ul>
+          </Module>
+        </div>
+        {feed && (
+          <>
             <Section
               title="다른 공고"
-              action={view.feed.data.hasMore ? <InAppLink to="/opportunities" navigate={navigate}>전체 보기</InAppLink> : undefined}
+              action={feed.hasMore ? <InAppLink to="/opportunities" navigate={navigate}>전체 보기</InAppLink> : undefined}
             >
-              {view.feed.data.compact.length
-                ? <ul className="rows">{view.feed.data.compact.map(c => <CompactRow key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
+              {feed.compact.length
+                ? <ul className="rows">{feed.compact.map(c => <CompactRow key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
                 : <p className="muted">다른 공고가 없어요.</p>}
             </Section>
-            {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
+            {(feed.ineligible??[]).length>0&&<Section title="조건 미충족">
               <p className="muted">현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개를 표시합니다.</p>
-              <ul className="rows">{view.feed.data.ineligible!.map(c=>
+              <ul className="rows">{feed.ineligible!.map(c=>
                 <CompactRow key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
             </Section>}
           </>
-        ) : <Section title="공고"><p className="muted">{NOT_SHARED_TEXT}</p></Section>}
-        {view.notices.kind === 'SHOW' && notices.length > 0 && (
-          <Section title="고정 알림" action={<InAppLink to="/notices" navigate={navigate}>공지 전체</InAppLink>}>
-            <ul className="rows">{notices.map(n => <NoticeRow key={n.noticeId} item={n} navigate={navigate} />)}</ul>
-          </Section>
         )}
-        <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />
       </>
     ),
   };
@@ -64,13 +103,21 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
     body: (
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
-        {all.length ? <ul className="rows">{all.map(c => <CompactRow key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
+        <p className="notice-box" role="note">추천은 시연 대상의 전공·학년·관심 분야와 공고 원문 근거로 정리했습니다. 신청 직전에는 공식 공고에서 자격과 마감을 다시 확인해 주세요.</p>
+        <dl className="ostats" aria-label="공고 요약">
+          <div><dt>표시한 공고</dt><dd>{all.length}건</dd></div>
+          <div><dt>나에게 맞춘 공고</dt><dd>{view.feed.data.featured.length}건</dd></div>
+          <div><dt>확정 7일 내 마감</dt><dd>{all.filter(c => c.dday && c.dday.days <= 7).length}건</dd></div>
+          <div><dt>지원 조건 확인 필요</dt><dd>{all.filter(c => c.eligibility === 'UNKNOWN').length}건</dd></div>
+        </dl>
+        <h2 className="list__title">공고 목록 <span className="muted">(총 {all.length}건)</span></h2>
+        {all.length ? <ul className="opps">{all.map(c => <OppCard key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
           : <p className="muted">표시할 공고가 없어요.</p>}
         {view.feed.data.hasMore && <p className="muted">더 많은 공고는 검색·필터 기능과 함께 제공될 예정입니다.</p>}
         {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
           <p className="muted">현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개를 표시합니다.</p>
-          <ul className="rows">{view.feed.data.ineligible!.map(c=>
-            <CompactRow key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
+          <ul className="opps">{view.feed.data.ineligible!.map(c=>
+            <OppCard key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
         </Section>}
       </>
     ),

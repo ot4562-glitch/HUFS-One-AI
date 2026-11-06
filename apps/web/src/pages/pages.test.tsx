@@ -48,7 +48,7 @@ describe('오늘 page', () => {
     expect(screen.getByRole('link', {name: '전체 보기'})).toBeTruthy();
     expect(within(screen.getByRole('list', {name: '이 화면의 자료'})).getAllByRole('listitem').map(li => li.textContent))
       .toEqual(['합성 자료']);
-    const pinned = screen.getByRole('region', {name: '고정 알림'});
+    const pinned = screen.getByRole('region', {name: '공지사항'});
     expect(within(pinned).getByText(/가상 수강정정 기간 안내/)).toBeTruthy();
     expect(within(pinned).getByText(/가상 졸업인증 서류 제출 안내/)).toBeTruthy();
   });
@@ -86,7 +86,7 @@ describe('오늘 page', () => {
       }
     }
     await open('/', new NoFeedClient({delayMs: 0}));
-    expect(screen.getByText('이 항목은 시연 공유 범위 밖입니다.')).toBeTruthy();
+    expect(screen.getAllByText('이 항목은 시연 공유 범위 밖입니다.').length).toBeGreaterThan(0);
     expect(screen.queryByText(S01_FEATURED[0]!)).toBeNull();
   });
 });
