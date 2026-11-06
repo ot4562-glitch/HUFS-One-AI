@@ -523,3 +523,71 @@ a { color: var(--color-link); }
 .exp-pick__opt { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; }
 .exp-pick__opt input { width: 20px; height: 20px; }
 .exp-pick__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* 2026-11-06 screenshot QA (#298): one site header, account in header, no separate desktop ONE AI bar. */
+.topbar, .app--home .topbar { background: var(--color-heading); border-bottom-color: #12466e; }
+.topbar__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand links" "account account"; gap: 8px; min-height: 56px; padding-top: 8px; padding-bottom: 8px; }
+.topbar__brand { grid-area: brand; }
+.topbar__account { grid-area: account; min-width: 0; position: relative; z-index: 20; }
+.topbar__account .selector { color: var(--color-text); width: 100%; min-width: 0; }
+.topbar__account .selector__summary { min-width: 0; }
+.topbar__account .selector__current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app__brand-links { grid-area: links; align-self: start; }
+.topbar .app__logo, .topbar .app__settings, .app--home .topbar .app__logo, .app--home .topbar .app__settings { color: #FFFFFF; }
+.topbar .topbar__tagline, .app--home .topbar__tagline { color: #DCE6F0; }
+.topbar .app__settings[aria-current="page"] { color: #F6DAB2; }
+.app__tabs-label { display: none !important; }
+@media (min-width: 768px) {
+  .topbar__row { grid-template-columns: minmax(0, 1fr) minmax(240px, 390px) auto; grid-template-areas: "brand account links" "tabs tabs tabs"; align-items: center; }
+  .topbar__brand { flex-wrap: wrap; }
+  .app__tabs { grid-area: tabs; justify-self: stretch; width: 100%; }
+  .topbar__account .selector[open] .selector__list { position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 30; background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 12px 28px rgba(0, 45, 86, .18); }
+}
+@media (min-width: 1024px) {
+  .topbar__row { grid-template-columns: minmax(0, 1fr) minmax(270px, 420px) auto; grid-template-areas: "brand account links"; }
+  .app__tabs { display: none; }
+  .gnb, .app--home .gnb { background: #0B3F6E; border-bottom-color: #0B3F6E; }
+  .gnb__item, .app--home .gnb__item { color: #E3EAF2; }
+  .gnb__item:hover, .app--home .gnb__item:hover { color: #FFFFFF; box-shadow: inset 0 -3px 0 rgba(255,255,255,.35); }
+  .gnb__item[aria-current="page"], .app--home .gnb__item[aria-current="page"] { color: #FFFFFF; box-shadow: inset 0 -3px 0 var(--color-accent); }
+}
+
+/* Overflow-safe application cards: never squeeze five independent action columns into desktop width. */
+.board__columns, .board__col, .board__cards, .board__card { min-width: 0; }
+.board__card { overflow-wrap: anywhere; }
+.board__task-form { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: stretch; gap: 6px; min-width: 0; width: 100%; }
+.board__task-form input { min-width: 0; width: 100%; max-width: 100%; }
+.board__task-form .button { min-width: 0; white-space: nowrap; padding-left: 10px; padding-right: 10px; }
+.board__form select, .board__form input, .board__next { min-width: 0; max-width: 100%; width: 100%; }
+.board__card .button { overflow-wrap: normal; }
+@media (min-width: 1200px) { .board__columns { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Academic tools: same card, label, control and result system across graduation and what-if. */
+.grad-pair > .section, .plan, .whatif { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-4); min-width: 0; box-shadow: 0 2px 10px rgba(0,45,86,.05); }
+.whatif__form { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+.whatif__form p { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-2); margin: 0; min-width: 0; }
+.whatif__form label, .plan__term label { color: var(--color-heading); font-weight: 700; }
+.whatif__form select, .plan__term select { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: var(--touch-target); padding: 0 var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-control); background: #FFFFFF; font: inherit; color: var(--color-text); }
+.whatif__form button, .plan button { min-height: var(--touch-target); padding: 0 var(--space-4); border: 0; border-radius: var(--radius-control); background: var(--color-primary); color: #FFFFFF; font: inherit; font-weight: 700; cursor: pointer; }
+.whatif__form button:disabled { opacity: .6; cursor: not-allowed; }
+.whatif__result { border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
+.whatif__table thead th { background: var(--color-chip-bg); color: var(--color-heading); }
+.plan__term { display: grid; gap: var(--space-2); margin: 0 0 var(--space-4); }
+.plan__issues { border: 1px solid var(--color-border); border-radius: var(--radius-control); overflow: hidden; }
+.plan__issue { padding: var(--space-3); }
+.plan__issue:nth-child(even) { background: #F8FAFD; }
+.plan__badge { color: var(--color-heading); }
+@media (min-width: 768px) {
+  .whatif__form { grid-template-columns: repeat(2,minmax(0,1fr)); align-items: end; }
+  .whatif__form p:last-child { grid-column: 1 / -1; justify-self: end; min-width: min(100%,220px); }
+  .plan__term { grid-template-columns: auto minmax(0,240px); align-items: center; }
+}
+@media (max-width: 390px) { .credits { grid-template-columns: minmax(0,1fr); } }
+
+/* Saved content: explicit empty state and next-step navigation rather than loose paragraphs. */
+.saved__grid { display: grid; gap: var(--space-3); margin: 0 0 var(--space-4); }
+.saved__grid > .section { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-4); min-width: 0; }
+.saved__empty { display: grid; gap: var(--space-2); justify-items: start; padding: var(--space-4); border-radius: var(--radius-control); background: var(--color-page-bg); color: var(--color-text-muted); }
+.saved__empty p { margin: 0; }
+.saved__empty a { font-weight: 700; }
+@media (min-width: 1024px) { .saved__grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
