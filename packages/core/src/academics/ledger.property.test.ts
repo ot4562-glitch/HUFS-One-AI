@@ -122,7 +122,8 @@ function endsAt(term:string):number {
 export interface ModelResult {
   state:string; earned:number; inProgress:number; planned:number; pending:number;
   areas:Record<string, [number, number]>; excluded:Record<string, string>;
-  rows:Record<string, {state:string; earned?:number; remaining?:number; matched?:number}>;
+  rows:Record<string, {state:string; earned?:number; remaining?:number; matched?:number;
+    projected?:number; areasMatched?:number; groupsMatched?:number}>;
 }
 
 export function referenceLedger(c:Case):ModelResult {
@@ -208,9 +209,13 @@ export function referenceLedger(c:Case):ModelResult {
       const e = areas[r.areaId]?.[0] ?? 0;
       row = {state:e >= r.requiredCreditUnits ? 'SATISFIED' : 'UNSATISFIED', earned:e, remaining:Math.max(0, r.requiredCreditUnits - e)};
     } else if (r.kind === 'REQUIRED_COURSE') row = {state:winners.get(r.canonicalCourseId)?.ledger === 'EARNED' ? 'SATISFIED' : 'UNSATISFIED'};
-    else {
-      // This generator/reference model covers the five original kinds; new kinds have separate counterexamples.
-      if (r.kind !== 'K_OF_N') throw new TypeError('Unsupported requirement in legacy reference model');
+    else if (r.kind === 'AREA_SPREAD') row = spreadModel(r, winners);
+    else if (r.kind === 'GROUP_CHOICE') {
+      // A group counts only when every course in it has an EARNED winner.
+      const done = r.groups.filter(group => group.every(id => winners.get(id)?.ledger === 'EARNED')).length;
+      row = {state:done >= r.k ? 'SATISFIED' : 'UNSATISFIED', groupsMatched:done};
+    } else {
+      if (r.kind !== 'K_OF_N') throw new TypeError('Unsupported requirement in the reference model');
       const hit = r.courseIds.map(id => winners.get(id)).filter(w => w?.ledger === 'EARNED');
       row = {state:hit.length >= r.k ? 'SATISFIED' : 'UNSATISFIED', earned:hit.reduce((s, w) => s + w!.creditUnits, 0), matched:hit.length};
     }
@@ -221,6 +226,42 @@ export function referenceLedger(c:Case):ModelResult {
   const review = Object.values(rows).some(r => r.state === 'NEEDS_REVIEW' || r.state === 'NOT_CHECKED');
   const state = c.rulePackState === 'MISSING' ? 'INSUFFICIENT_DATA' : !approved || anyHold || review ? 'NEEDS_REVIEW' : 'READY';
   return {state, earned, inProgress, planned, pending, areas, excluded, rows};
+}
+
+/**
+ * AREA_SPREAD by brute force: every earned course that lists two or more of the spread's areas is
+ * tried in each of them, and the fewest and most distinct areas over all allocations decide the row.
+ * It shares no code with the ledger's matching or set-cover search. Only for small cases.
+ */
+function spreadModel(r:Extract<LedgerRequirement, {kind:'AREA_SPREAD'}>, winners:ReadonlyMap<string, LedgerAttempt>):ModelResult['rows'][string] {
+  const allowed = new Set(r.areaIds);
+  let earned = 0, projected = 0;
+  const choices:string[][] = [];
+  for (const w of winners.values()) {
+    if (w.creditUnits === 0) continue; // a zero-credit course spreads nothing
+    const eligible = w.areaIds.filter(area => allowed.has(area));
+    if (eligible.length === 0) continue;
+    projected += w.creditUnits;
+    if (w.ledger !== 'EARNED') continue;
+    earned += w.creditUnits;
+    choices.push(eligible);
+  }
+  let fewest = Number.POSITIVE_INFINITY, most = 0;
+  const walk = (i:number, picked:readonly string[]):void => {
+    if (i === choices.length) {
+      const distinct = new Set(picked).size;
+      fewest = Math.min(fewest, distinct);
+      most = Math.max(most, distinct);
+      return;
+    }
+    for (const area of choices[i]!) walk(i + 1, [...picked, area]);
+  };
+  walk(0, []);
+  const definite = new Set(choices.filter(list => list.length === 1).map(list => list[0]!)).size;
+  const state = earned < r.requiredCreditUnits || most < r.minAreas ? 'UNSATISFIED'
+    : fewest >= r.minAreas ? 'SATISFIED' : 'NEEDS_REVIEW';
+  return {state, earned, remaining:Math.max(0, r.requiredCreditUnits - earned), projected,
+    areasMatched:state === 'SATISFIED' ? Math.max(definite, r.minAreas) : definite};
 }
 
 function project(c:Case):ModelResult {
@@ -235,6 +276,9 @@ function project(c:Case):ModelResult {
       ...(r.earnedCreditUnits !== undefined ? {earned:r.earnedCreditUnits} : {}),
       ...(r.remainingCreditUnits !== undefined ? {remaining:r.remainingCreditUnits} : {}),
       ...(r.matchedCoursesCount !== undefined ? {matched:r.matchedCoursesCount} : {}),
+      ...(r.matchedAreasCount !== undefined && r.projectedCreditUnits !== undefined ? {projected:r.projectedCreditUnits} : {}),
+      ...(r.matchedAreasCount !== undefined ? {areasMatched:r.matchedAreasCount} : {}),
+      ...(r.matchedGroupsCount !== undefined ? {groupsMatched:r.matchedGroupsCount} : {}),
     }])),
   };
 }
@@ -658,5 +702,138 @@ describe('buildAcademicLedger gaps (#11 본선 전)', () => {
         expect(seen.has(kind), kind).toBe(true);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// #11 (본선 전): AREA_SPREAD / GROUP_CHOICE against the brute-force reference model, the search
+// budget, and large inputs. Synthetic SYN-* only.
+
+const SPREAD_AREAS = ['SYN-S1', 'SYN-S2', 'SYN-S3', 'SYN-S4', 'SYN-S5', 'SYN-S6'] as const;
+
+/** Distinct, recognized, link-free courses with many multi-area tags, so the spread rule is busy. */
+function genSpreadCase(rng:Rng):Case {
+  const attempts:LedgerAttempt[] = [];
+  const count = 1 + Math.floor(rng() * 8);
+  for (let i = 0; i < count; i++) {
+    const tags = [...SPREAD_AREAS, 'SYN-OUT'].filter(() => chance(rng, 0.3)).slice(0, 3);
+    attempts.push({attemptToken:`SYN-S-T${i}`, canonicalCourseId:`SYN-S-C${i}`, creditUnits:pick(rng, [0, 1, 2, 6, 6]),
+      ledger:pick(rng, ['EARNED', 'EARNED', 'EARNED', 'IN_PROGRESS', 'PLANNED'] as const), areaIds:tags,
+      recognition:'RECOGNIZED', term:'2023-1'});
+  }
+  const areaIds = SPREAD_AREAS.filter(() => chance(rng, 0.6));
+  const spreadAreas = areaIds.length >= 2 ? areaIds : [...SPREAD_AREAS.slice(0, 3)];
+  return {asOf:'2026-12-20T12:00:00+09:00', rulePackVersion:'SYN-PACK-SPREAD', rulePackState:'APPROVED', attempts,
+    requirements:[{id:'SYN-R-SPREAD', kind:'AREA_SPREAD', areaIds:spreadAreas, minAreas:1 + Math.floor(rng() * spreadAreas.length),
+      requiredCreditUnits:pick(rng, [1, 6, 12, 18]), evidenceRefs:['SYN-EV-SPREAD']}]};
+}
+
+/** Ten triangles of areas; each course sits on one edge (two areas). Any allocation covers at least 20 areas. */
+function triangles(count:number, minAreas:number):Case {
+  const attempts:LedgerAttempt[] = [];
+  const areaIds:string[] = [];
+  for (let t = 0; t < count; t++) {
+    const [a, b, c] = ['A', 'B', 'C'].map(v => `SYN-TRI${t}-${v}`) as [string, string, string];
+    areaIds.push(a, b, c);
+    for (const [x, y] of [[a, b], [b, c], [c, a]] as const) {
+      const n = attempts.length;
+      attempts.push({attemptToken:`SYN-TRI-T${n}`, canonicalCourseId:`SYN-TRI-C${n}`, creditUnits:1, ledger:'EARNED',
+        areaIds:[x, y], recognition:'RECOGNIZED', term:'2023-1'});
+    }
+  }
+  return {asOf:'2026-12-20T12:00:00+09:00', rulePackVersion:'SYN-PACK-TRI', rulePackState:'APPROVED', attempts,
+    requirements:[{id:'SYN-R-TRI', kind:'AREA_SPREAD', areaIds, minAreas, requiredCreditUnits:1, evidenceRefs:['SYN-EV-TRI']}]};
+}
+
+describe('AREA_SPREAD and GROUP_CHOICE against the reference model (#11 본선 전)', () => {
+  it('the brute-force spread model agrees with hand-checked cases', () => {
+    const base = {asOf:'2026-12-20T12:00:00+09:00', rulePackVersion:'SYN-P', rulePackState:'APPROVED' as const};
+    const course = (n:number, areaIds:string[], units = 6):LedgerAttempt => ({attemptToken:`SYN-H${n}`, canonicalCourseId:`SYN-HC${n}`,
+      creditUnits:units, ledger:'EARNED', areaIds, recognition:'RECOGNIZED', term:'2023-1'});
+    const spread = (minAreas:number, requiredCreditUnits = 6):LedgerRequirement => ({id:'SYN-R', kind:'AREA_SPREAD',
+      areaIds:['SYN-X', 'SYN-Y', 'SYN-Z'], minAreas, requiredCreditUnits, evidenceRefs:['SYN-EV']});
+    const state = (attempts:LedgerAttempt[], req:LedgerRequirement) => referenceLedger({...base, attempts, requirements:[req]}).rows['SYN-R']!.state;
+    // One course in X or Y can give only one area.
+    expect(state([course(1, ['SYN-X', 'SYN-Y'])], spread(2))).toBe('UNSATISFIED');
+    // X alone plus a course in X or Y: one allocation gives 1 area, another gives 2.
+    expect(state([course(1, ['SYN-X']), course(2, ['SYN-X', 'SYN-Y'])], spread(2))).toBe('NEEDS_REVIEW');
+    // X alone plus a course in Y or Z: every allocation gives 2.
+    expect(state([course(1, ['SYN-X']), course(2, ['SYN-Y', 'SYN-Z'])], spread(2))).toBe('SATISFIED');
+    // Enough areas but too few units.
+    expect(state([course(1, ['SYN-X'], 1), course(2, ['SYN-Y'], 1)], spread(2, 6))).toBe('UNSATISFIED');
+  });
+
+  it('more multi-area courses than their areas cannot give more areas', () => {
+    // Three courses, each in X or Y: at most 2 areas, so 3 is unreachable.
+    const three:Case = {asOf:'2026-12-20T12:00:00+09:00', rulePackVersion:'SYN-P', rulePackState:'APPROVED',
+      attempts:[1, 2, 3].map(n => ({attemptToken:`SYN-M${n}`, canonicalCourseId:`SYN-MC${n}`, creditUnits:6, ledger:'EARNED' as const,
+        areaIds:['SYN-X', 'SYN-Y'], recognition:'RECOGNIZED' as const, term:'2023-1'})),
+      requirements:[{id:'SYN-R', kind:'AREA_SPREAD', areaIds:['SYN-X', 'SYN-Y', 'SYN-Z'], minAreas:3, requiredCreditUnits:6,
+        evidenceRefs:['SYN-EV']}]};
+    expect(project(three).rows['SYN-R']!.state).toBe('UNSATISFIED');
+    expect(explain(referenceLedger(three), project(three))).toBeNull();
+  });
+
+  it('matches the reference model on the general generator with spread and group rows', () => {
+    forAll('reference model with composite rows', 6, (c0, rng) => {
+      const c = withComposite(c0, rng);
+      return explain(referenceLedger(c), project(c));
+    });
+  });
+
+  it('matches the brute-force spread model on spread-heavy cases', () => {
+    const seen = new Set<string>();
+    for (const seed of SEEDS) {
+      const c = genSpreadCase(mulberry32(seed));
+      const problem = explain(referenceLedger(c), project(c));
+      if (problem !== null) {
+        const small = shrink(c, x => explain(referenceLedger(x), project(x)) !== null);
+        throw new Error(failureReport('spread model', explain(referenceLedger(small), project(small)) ?? problem, seed, c, small));
+      }
+      seen.add(project(c).rows['SYN-R-SPREAD']!.state);
+    }
+    if (SEEDS.length >= 400) expect([...seen].sort()).toEqual(['NEEDS_REVIEW', 'SATISFIED', 'UNSATISFIED']);
+  });
+
+  it('a spread the search can finish is decided exactly', () => {
+    // 3 triangles, 9 areas: every allocation covers at least 6 and at most 9 areas.
+    for (const [minAreas, want] of [[6, 'SATISFIED'], [7, 'NEEDS_REVIEW'], [9, 'NEEDS_REVIEW']] as const) {
+      const c = triangles(3, minAreas);
+      expect(project(c).rows['SYN-R-TRI']!.state, `min ${minAreas}`).toBe(want);
+      expect(explain(referenceLedger(c), project(c))).toBeNull();
+    }
+  });
+
+  it('past the search budget the ledger holds for review instead of guessing', () => {
+    // 10 triangles, 30 areas: every allocation covers at least 20 (two per triangle), so 20 is
+    // truly met. Proving that needs more than the ledger's 50000 search steps, and the documented
+    // rule then holds the row for review. It must never say UNSATISFIED here.
+    const met = buildAcademicLedger(triangles(10, 20)).requirements[0]!;
+    expect(met.state).toBe('NEEDS_REVIEW');
+    // 21 is truly undecided (some allocations give 20, some 30): review, budget or not.
+    expect(buildAcademicLedger(triangles(10, 21)).requirements[0]!.state).toBe('NEEDS_REVIEW');
+    // Too few units is still UNSATISFIED without any search.
+    const short = triangles(10, 20);
+    short.requirements = [{...short.requirements[0]!, requiredCreditUnits:31} as LedgerRequirement];
+    expect(buildAcademicLedger(short).requirements[0]!.state).toBe('UNSATISFIED');
+  });
+
+  it('a large transcript of single-area courses matches the reference model', () => {
+    const areas = Array.from({length:30}, (_, i) => `SYN-L${i}`);
+    const attempts:LedgerAttempt[] = Array.from({length:1000}, (_, i) => ({attemptToken:`SYN-L-T${i}`,
+      canonicalCourseId:`SYN-L-C${i}`, creditUnits:1 + (i % 6), ledger:i % 7 === 6 ? 'PLANNED' : 'EARNED',
+      areaIds:[areas[i % 30]!], recognition:'RECOGNIZED', term:'2023-1'}));
+    const groups = Array.from({length:10}, (_, g) => Array.from({length:10}, (_, j) => `SYN-L-C${g * 10 + j}`));
+    const c:Case = {asOf:'2026-12-20T12:00:00+09:00', rulePackVersion:'SYN-PACK-LARGE', rulePackState:'APPROVED', attempts,
+      requirements:[
+        {id:'SYN-R-TOTAL', kind:'CREDIT_TOTAL', requiredCreditUnits:2000, evidenceRefs:['SYN-EV-T']},
+        {id:'SYN-R-SPREAD', kind:'AREA_SPREAD', areaIds:areas, minAreas:30, requiredCreditUnits:2000, evidenceRefs:['SYN-EV-S']},
+        // Every seventh course is only planned, so each group of ten misses at least one course.
+        {id:'SYN-R-GROUP', kind:'GROUP_CHOICE', groups, k:1, evidenceRefs:['SYN-EV-G']},
+      ]};
+    expect(explain(referenceLedger(c), project(c))).toBeNull();
+    const rows = project(c).rows;
+    expect([rows['SYN-R-TOTAL']!.state, rows['SYN-R-SPREAD']!.state, rows['SYN-R-GROUP']!.state])
+      .toEqual(['SATISFIED', 'SATISFIED', 'UNSATISFIED']);
   });
 });
