@@ -167,9 +167,11 @@ describe('history counts', () => {
     ]);
     const total = evaluate().total.historyCounts;
     expect(total.reduce((sum, item) => sum + item.shown, 0)).toBe(14);
-    // The same 3/5 was shown twice and was right once.
-    expect(total.find(item => item.offeredTerms === 3 && item.observedTerms === 5)).toEqual(
-      {offeredTerms:3, observedTerms:5, shown:2, thenOffered:1});
+    // History looks back 8 semesters, so no count covers more than 4 spring terms.
+    expect(total.every(item => item.observedTerms <= 4)).toBe(true);
+    // 2/4 was shown three times (TIE in 2025, FLIP and TIE in 2026) and was followed by an offering twice.
+    expect(total.find(item => item.offeredTerms === 2 && item.observedTerms === 4)).toEqual(
+      {offeredTerms:2, observedTerms:4, shown:3, thenOffered:2});
   });
 
   it('holds integers only and has no rate, probability, accuracy or IoU field', () => {

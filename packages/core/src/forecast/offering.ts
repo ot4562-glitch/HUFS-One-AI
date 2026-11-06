@@ -4,12 +4,16 @@ import {OfferingOutlookVNextSchema, type OfferingOutlookVNext} from '@hufs-one/c
  * Offering outlook for one courseId + targetTerm.
  * Pure: the caller supplies asOf. No clock, network, or randomness.
  * Same-season history is a past count. It is not a probability and not a guarantee.
+ * History looks back at most 8 regular semesters before the target term (#11 TASK-17),
+ * so at most 4 same-season terms count. Older rows are left out, not counted as closed.
  * Decision order follows Architecture.md A09.2.
  */
-export const FORECAST_OFFERING_MODEL_VERSION = 'forecast-offering-v1';
+export const FORECAST_OFFERING_MODEL_VERSION = 'forecast-offering-v2';
 
 const TERM = /^(19|20|21)\d{2}-[12]$/;
 const OFFSET = /(?:Z|[+-]\d{2}:\d{2})$/;
+/** Regular semesters before the target term that history may use. */
+const HISTORY_LOOKBACK_TERMS = 8;
 const MAX_OBSERVATIONS = 20;
 const MAX_EVENTS = 30;
 const MAX_COURSES = 20;
@@ -100,6 +104,7 @@ export function forecastOffering(input:ForecastOfferingInput):OfferingOutlookVNe
   const prior = usable.filter(row =>
     row.term < input.targetTerm
     && row.term.endsWith(`-${season}`)
+    && termsBefore(row.term, input.targetTerm) <= HISTORY_LOOKBACK_TERMS
     && termWindow(row.term).end <= asOfMs);
   const history = capHistory(dedupe(prior), season);
   const applicable = (input.officialEvents ?? [])
@@ -326,6 +331,12 @@ export function termWindow(term:string):{start:number; end:number} {
     start:Date.parse(`${year}-09-01T00:00:00.000+09:00`),
     end:Date.parse(`${year + 1}-01-01T00:00:00.000+09:00`),
   };
+}
+
+/** How many regular semesters `term` is before `target` (2025-2 → 2026-1 is 1). */
+function termsBefore(term:string, target:string):number {
+  const index = (value:string) => Number(value.slice(0, 4)) * 2 + Number(value.slice(-1)) - 1;
+  return index(target) - index(term);
 }
 
 function dedupe(rows:readonly OfferingObservation[]):OfferingObservation[] {
