@@ -21,19 +21,21 @@
 - **2026-11-06 코드 통합 기준 commit `48134da`**에서 GitHub Actions **4/4 SUCCESS**: [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752742), [Chrome 합성 E2E](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752741), [NCP IaC offline](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752743), [Pages 합성 preview](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752761). **현재 문서 커밋 후에는 새 HEAD의 CI 결과를 다시 확인할 것.**
 - 리뷰 승인과 합성 CI는 **실제 학교·학생·서버·유료 공급자 실행도, 독립 사람 Gold도 아님**. 메모·테스트를 섞어 PASS로 표시하지 않는다.
 
-## 이슈 판정(2026-11-06)
+## 협업 이슈 전/후 분리 (2026-11-06)
 
-| 이슈 | 상태 | 이유 |
+| 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
 | --- | --- | --- |
-| [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 추천 경험 신호 순수 코어 | **CLOSED completed** | PR #279의 한정된 순수 코어 완료. 실제 UI·실자료는 #258/#276 |
-| [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 추천 P0 | **OPEN / 부분 완료** | 40+10 합성 감사 완료, 독립 Gold·정정/성능·실근거 남음 |
-| [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) 학업 P0 | **OPEN / 부분 완료** | 8학기/NOTICE_ONLY 코어 완료, 실원본·RulePack·UI 남음 |
-| [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119), [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) | **OPEN** | UI/접근성·커리어 화면 인수는 동료 담당 |
-| [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 학업 경험 연계 | **OPEN** | 공식 증빙·공유 경계/교차 검토 별도 |
-| [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) | **OPEN** | 비코드 NCP 계정·비용·권리/운영 근거 별도 |
-| [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255) 제안 | **OPEN** | 여러 팀 트랙의 총괄 |
-| [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 운영 통합 | **OPEN / 본선진출 이후** | 실제 NCP/Google/DB/학생 4인/모델/복구·사용자 인수 미실행 |
-| #252·#253·#257 | **CLOSED** | 과거 작업/후속 이관. 운영 완료가 아님 |
+| 이의상 UI/접근성 | [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119), [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) | [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) 실 BETA UI·모바일/스크린리더/학업·경험 종단 |
+| 김채윤 추천/공지 | [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 합성 코퍼스·정정/성능(순수 코어 [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 완료) | [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281) 실제 허가 출처·추천 정확성 주장 방지/운영 실측 |
+| 박준영 학업 | [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 합성/교차 검토; #260 PR #262 정책/테스트 완료, 소비자 리뷰는 미완료 | [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) 공식 RulePack·4인 학업 원장·8학기 개설 실증 |
+| 이서연 비코드/운영 | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 계정·비용·권리 사전검토/문서 | [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) 실 NCP 계정·청구/복구/반납·실원본 이용권 검수 |
+
+**공통 원칙:** 본선 전 이슈의 합성 개발·사전 검토는 **OPEN**, 본선 이후 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
+
+- 기존 이슈 [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)·[#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10)·[#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11)·[#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12)·[#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119)·[#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258)·[#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260)·[#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261)는 제목을 **`[본선진출 전]`로 수정**, 실행 가능한 합성/사전 계획 체크리스트를 남김. 이관 전 내용은 접힌 기록으로 보존.
+- 협업자 4명에게 **[#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280)·[#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281)·[#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282)·[#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283)**를 **`[본선진출 이후]`** 이슈로 생성하고 원담당자에게 각각 배정. 모두 **OPEN**; 실제 인수 `NOT_RUN`.
+- [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)는 기획 상위 제안 **OPEN**, [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)은 기술 오너의 **본선 이후 실환경 운영 통합 OPEN**. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)은 PR #279 순수 코어만 `CLOSED completed`, 나머지 소비자/운영 검증은 #280/#281/#276. 과거 #252·#253·#257은 이관/종료.
+
 
 ## 상태 용어
 

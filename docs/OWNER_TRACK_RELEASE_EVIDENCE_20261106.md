@@ -36,6 +36,19 @@
 | 추천·미디어 독립 Gold | `EXCLUDED_BY_REQUEST / NOT_MEASURED` | 이번 작업에서 제외, 합성 평가를 실제 Gold로 주장 금지 |
 | 프로덕션 공개 | **`RELEASE_BLOCKED`** | [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)의 실환경·권리·복구 조건 후만 |
 
+## 팀원 실환경 인수의 전/후 이슈 분리(2026-11-06)
+
+| 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
+| --- | --- | --- |
+| 이의상 UI/접근성 | [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119), [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) | [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) 실 BETA UI·모바일/스크린리더/학업·경험 종단 |
+| 김채윤 추천/공지 | [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 합성 코퍼스·정정/성능(순수 코어 [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 완료) | [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281) 실제 허가 출처·추천 정확성 주장 방지/운영 실측 |
+| 박준영 학업 | [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 합성/교차 검토; #260 PR #262 정책/테스트 완료, 소비자 리뷰는 미완료 | [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) 공식 RulePack·4인 학업 원장·8학기 개설 실증 |
+| 이서연 비코드/운영 | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 계정·비용·권리 사전검토/문서 | [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) 실 NCP 계정·청구/복구/반납·실원본 이용권 검수 |
+
+**공통 원칙:** 본선 전 이슈의 합성 개발·사전 검토는 **OPEN**, 본선 이후 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
+
+팀원 후속 이슈 #280~#283은 **추적용 OPEN/NOT_RUN**이고, 실제 권리·계정·비용·인증·원본 서버 반입이 완료됐다는 증거가 아닙니다. 합성/비코드 현행 이슈 #9·#10·#11·#12·#119·#258·#260·#261도 OPEN 유지. 기존 자료·키의 새로운 공개 업로드는 하지 않습니다.
+
 ## 인계와 운영 원칙
 
 1. 코드·문서 SHA와 CI는 공개 URL로 추적. 서버/IP/키/원본 대응표·학생별 동의 파일·실비용 영수증은 별도 최소권한 저장소에 기록.

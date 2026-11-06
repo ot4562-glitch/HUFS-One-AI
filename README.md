@@ -41,6 +41,8 @@ npm run build:web
 
 **현재 작업:** [#276 본선진출 이후 운영 통합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) — 실 NCP/Google·DB·학생 4인 권리/동의·CLOVA·복구 검증은 **OPEN**. 협업 [#258 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258), [#260 학업 연계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260), [#261 운영·기획](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261), [#10 추천 P0](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10), [#11 학업 P0](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11)은 미완료. [#259 추천 순수 코어](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 완료로 닫았으며 #252/#253/#257은 잔여 운영 범위를 #276으로 이관한 과거 이슈입니다.
 
+**협업 이슈도 시점별로 분리했습니다.** 이의상 [본선 전 UI #9·#119·#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) → [본선 이후 실 UI #280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280); 김채윤 [본선 전 추천 #10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) → [이후 #281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281); 박준영 [본선 전 학업 #11·#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) → [이후 #282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282); 이서연 [본선 전 비코드 #12·#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) → [이후 #283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283). **본선 전 이슈는 합성 코드/계획, 본선 이후는 실데이터·계정·NCP·사람/운영 인수**만 추적합니다. 담당자를 변경하거나 이슈를 자동 완료 처리하지 않았습니다. [전체 이슈 지도](STATUS.md#협업-이슈-전후-분리-2026-11-06).
+
 ## 6. 전체 문서 목록
 
 문서별 기술 범위와 구현을 구분합니다. 현재 프로젝트 승인 상태는 [AUTHORIZATION](docs/AUTHORIZATION.md), 실제 코드·실행 상태는 [STATUS](STATUS.md)를 기준으로 합니다.

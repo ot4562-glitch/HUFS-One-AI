@@ -17,6 +17,19 @@
 - 코드 통합 기준 `48134da` GitHub Actions 4/4 SUCCESS. **위 7/12·9/12·7/12·8/12·1/5 수락 비율은 새로운 독립 수락 증거가 없으므로 올리지 않음**.
 - `csv/` 5개 원본(Forms 1·이수 CSV 4) 복구 보존은 완료, 학생별 현재 actor/rights/동의·실 NCP/PG 연결은 #276에서 미완료.
 
+## 본선 진출 전/후 업무와 운영 수락(별도)
+
+| 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
+| --- | --- | --- |
+| 이의상 UI/접근성 | [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119), [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) | [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) 실 BETA UI·모바일/스크린리더/학업·경험 종단 |
+| 김채윤 추천/공지 | [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 합성 코퍼스·정정/성능(순수 코어 [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 완료) | [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281) 실제 허가 출처·추천 정확성 주장 방지/운영 실측 |
+| 박준영 학업 | [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 합성/교차 검토; #260 PR #262 정책/테스트 완료, 소비자 리뷰는 미완료 | [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) 공식 RulePack·4인 학업 원장·8학기 개설 실증 |
+| 이서연 비코드/운영 | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 계정·비용·권리 사전검토/문서 | [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) 실 NCP 계정·청구/복구/반납·실원본 이용권 검수 |
+
+**공통 원칙:** 본선 전 이슈의 합성 개발·사전 검토는 **OPEN**, 본선 이후 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
+
+**현재 수락 비율은 변경하지 않습니다.** 이슈를 분리/배정한 사실은 실 계정/학생·자료권리·실 기기·비용·학칙/기관 인수의 PASS가 아닙니다.
+
 ## 수락 기준
 
 - **코드/합성:** UI/코어·API/RLS/비동기·일회용 PostgreSQL·Chrome·IaC mock·NCP 비공개 합성 preview 자동화가 존재한다. 해당 SHA에서 테스트 범위 확인 후만 인정한다.
