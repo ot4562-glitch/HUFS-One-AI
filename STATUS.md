@@ -19,11 +19,19 @@
 
 [PR #305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)의 정정 보고서·재생 테스트를 검토해 통합하되, r1 라벨을 r2에 재사용하는 결함을 수정했다. 기존 `splits`는 그대로이며 `--revision-scenario true`에서만 추가 분석이 나온다. 현재 r2 두 판본은 미검토로 제외하고, owner 초안의 별도 분석 라벨은 175/185, r1은 200/200이다. 이는 독립 Gold가 아니다.
 
+## 2026-11-06 최신 PR·이슈 점검 (정확한 근거)
+
+- **[PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)** 통합 커밋 [`462f6d3`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/462f6d39641d4129addda0f5ad6ab700eebdf5cb)에서 본선 이전 11개 이슈 모두 종료(10 `completed`, #260 `not_planned`/미완 사람 리뷰 후속 이관). 그 커밋의 Actions 4종 성공은 이슈 종결 댓글에 연결.
+- **[PR #305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)** HEAD `f7fa7f3` → `main` 비교 시 변경 파일 0개, 기존 #306에 통합된 내용의 중복. [코드 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305#pullrequestreview-5797569357) 등록 후 **미병합 CLOSED**(빈 merge 만들지 않음).
+- **[PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)** HEAD `ba7bf2a` 8개 파일 홈/공고 인터랙션 및 Chrome 360px·reduced-motion/필터 회귀. [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875) 후 `main`에 [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c)로 **MERGED**. 정확한 PR HEAD의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963) **4/4 SUCCESS**. 이후 `main`은 [Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)에서 **해당 커밋별로 별도 검증**한다.
+- 본선 이후 후속 **#276/#280–#283**, 실제 인증·데이터·UI/커리어·학업·AI 추가 이슈 **#297–#303**, 상위 제안 **#255**는 아직 OPEN. **#298**에는 #307의 합성 구현·테스트만 체크했고 사람 스크린샷/실기기/실로그인·철회 인수를 완료로 바꾸지 않았다. 실제 팀원의 GitHub `APPROVED`나 운영 배포를 에이전트의 `COMMENT` 리뷰로 대체하지 않는다.
+- **7일 내 마감/정렬**은 이미 허용된 현재 화면의 snapshot `asOf` 및 D-day에 대한 클라이언트 탐색이다. 실제 오늘의 실시간 원본 전체 검색이 아니고, `hasMore`이면 화면 밖 공고는 제외된다. D-day 기준 날짜를 학생에게 설명하는 UX는 #298에서 계속 개선한다.
+
 ## 현재 제품 경계
 
 | 영역 | 코드에 있는 것 | 실제 구성/인수 |
 | --- | --- | --- |
-| 웹·인증 | React/Vite의 데스크톱 참고 11영역 GNB/LNB·모바일 5탭, 합성 Pages, owner OIDC/메일/CSRF 경로와 경험 UI 연결 | 학교 로그인·4명 개인별 데이터 #297/#299, 실제 접근성 #280 |
+| 웹·인증 | React/Vite의 데스크톱 참고 11영역 GNB/LNB·모바일 5탭, 합성 Pages, 홈 액션 패널·현재 공고만 검색/필터/정렬, owner OIDC/메일/CSRF 경로와 경험 UI 연결 | 학교 로그인·4명 개인별 데이터 #297/#299, 실제 접근성 #280 |
 | DB·권한 | SQL role/RLS·CAS·동의/철회·운영 factory | 관리형 PG/CA TLS·migration/백업·복구 #276 |
 | 원본 CSV | Forms 1개 + 수강 4개 = 5개 불변 보존, private intake/BETA UI 코드 | Forms↔파일↔actor/현재 권리/DB readback #276/#299; Git 보관과 실제 연결은 별개 |
 | 학업 | RulePack/What-if·독립 참조모형·미확인 과목 보수 처리, `forecast-offering-v3` | `COURSE_IDENTITY_API_CONNECTION=NOT_CONNECTED`; 공식 학칙/4인 #282/#301 |

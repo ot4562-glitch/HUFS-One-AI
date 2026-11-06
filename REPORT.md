@@ -2,6 +2,12 @@
 
 기준일 **2026-11-06**. 단위·통합 코드, 합성 브라우저, 일회용 PostgreSQL, 플랫폼 도구/모의 네트워크, 실제 사람/운영 결과를 따로 기록한다. 대상 11개 본선 전 이슈와 변경 범위는 [STATUS](STATUS.md)를 따른다.
 
+## 추가 PR 코드 리뷰/CI 증거 (2026-11-06)
+
+- [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305): `main` 대비 변경 파일 0개로 검증, [COMMENT 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305#pullrequestreview-5797569357) 후 **중복 종료**. 별도 신규 기능/테스트 PASS로 계산하지 않음.
+- [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307): 최신 PR HEAD `ba7bf2a77da97629f5efc993a1526bdafc1980bd`에서 **4종 Actions SUCCESS**: [TASK-00·PG](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945), [Chrome E2E](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929), [NCP IaC offline](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098), [Pages synthetic build/smoke](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963). 8개 파일·검색/필터·시연 사용자 변경시 입력 초기화·모션 축소를 코드 리뷰 후 병합([main commit `d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c)). **PR HEAD PASS를 main merge commit PASS로 전용하지 않음.** 각 main 실행은 [GitHub Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)에서 확인.
+- 이번의 GitHub COMMENT는 사람 독립 승인/실기기·스크린리더 사람이 수락한 증거가 아니다. 합성 7일 마감은 해당 snapshot의 날짜에 의존한다. 실제 학업/학생 4명·유료 AI·NCP 서버는 `NOT_RUN / CONFIGURATION_REQUIRED`이고 `RELEASE_BLOCKED`.
+
 ## 이번 검증에서 확인할 항목
 
 | 범위 | 실행/근거 | 해석 |

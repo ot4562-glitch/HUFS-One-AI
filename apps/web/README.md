@@ -28,12 +28,14 @@ npm run test:e2e:web
 
 Chrome/Playwright·jsdom/단위·360/390/768/1440 viewport/키보드 검사와 **실제 별도 스크린리더/실기기 사람 검증**은 구분한다. UI의 미확인 기능을 자동으로 활성화하지 않는다.
 
-**현재 상태** [STATUS](../../STATUS.md) · **화면 정보구조** [UI_MENU_COVERAGE](../../docs/UI_MENU_COVERAGE.md) · **실기기 인수** [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) · **웹 담당** [#9](https://github.com/minseong-hufs/HUFS-One-AI/issues/9)/[#119](https://github.com/minseong-hufs/HUFS-One-AI/issues/119).
+**현재 상태** [STATUS](../../STATUS.md) · **화면 정보구조** [UI_MENU_COVERAGE](../../docs/UI_MENU_COVERAGE.md) · **실기기 인수** [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252) · **웹 담당** [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)/[#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119).
 
 
-## 인터랙티브 디자인 (2026-11-06 제안 PR)
+## 인터랙티브 디자인 ([병합 PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307), 2026-11-06)
 
 - 홈에는 **현재 공개된 화면 정보만** 요약하는 3단계 액션 선택 패널을 배치했습니다. 버튼으로 활동을 전환해 다음 화면으로 이동할 수 있습니다. 미공유 값은 숫자 0으로 표시하지 않습니다.
 - 공고 목록에는 **검색·확정 7일 내 마감/조건 충족/자격 확인 필터·마감 순 정렬·조건 초기화**를 추가했습니다. 서버가 내려준 현재 사용자/시연 대상의 허용된 목록만 탐색하며, 자격/관련도/마감을 재판정하지 않습니다.
 - 버튼·카드·홈 배너에는 절제된 hover/진입/스크롤 전환을 사용합니다. reduced-motion 설정에서는 움직임을 억제하며, 버튼은 키보드로 조작할 수 있습니다. 외부 스크립트·이미지·유료 템플릿은 추가하지 않았습니다.
 - 참고 관찰: [Motion 예제](https://motion.dev/examples)(전환/호버), [Motion 접근성](https://motion.dev/docs/react-accessibility)(움직임 축소), [Oversight Sections](https://supply.madebyoversight.com/sections)(구획의 시각적 위계). 코드는 새로 작성했으며 템플릿 소스를 복사하지 않았습니다. 실기기·스크린리더 인수는 별도입니다.
+
+**범위 주의:** 이 검색은 이미 서버/합성 클라이언트에서 승인해 현재 페이지에 표시한 공고에만 적용합니다. `hasMore`인 전체 데이터는 검색하지 않습니다. `7일 내 마감`은 현재 시스템 날짜 실시간 조회가 아니라 **snapshot `asOf` 기준**입니다. 날짜 기준 안내/전체 화면 사람 검수는 [#298](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), 실제 로그인/실기기 인수는 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280)에서 계속합니다. 정확한 PR HEAD `ba7bf2a` Actions 4/4 SUCCESS, merge `d8e2144`; 이는 독립 사람 승인이나 출시 허가가 아닙니다.

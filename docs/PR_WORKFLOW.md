@@ -2,6 +2,15 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
+## 최신 리뷰·병합 결과 (2026-11-06)
+
+| PR | 실제 변경과 확인 | 리뷰 / 처리 |
+| --- | --- | --- |
+| [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305) | HEAD `f7fa7f3` vs `main 462f6d3`에서 3 commits ahead이지만 **changed files 0**, #306 통합으로 중복 | [COMMENT 코드 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305#pullrequestreview-5797569357) → **CLOSED, NOT MERGED** (의미 없는 빈 merge 방지) |
+| [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) | 합성 홈 3단계·공고 현재 목록 검색/조건/마감 필터·정렬, 키보드·360px/reduced-motion E2E. HEAD `ba7bf2a`의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963) **4/4 SUCCESS** | [COMMENT 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875) → **MERGED** [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c) |
+
+#307은 #306 합성 통합 이전 분기에서 시작했으나 GitHub가 충돌 없이 병합했습니다. **병합 전 PR HEAD 4/4와 병합 후 main SHA의 4종 실행은 서로 다른 검증**입니다. 리뷰 제출 계정이 #307 작성 계정과 동일하므로 `COMMENT`를 외부/독립 팀원 `APPROVED`로 주장하지 않습니다. 자동 탐색 기능은 허용된 projection에 한정되고 사람·실인증·실배포 인수는 #280/#297/#299 및 #276에 남겨 둡니다. #298의 날짜 `asOf`와 실제 기기 수락 항목도 OPEN입니다.
+
 ## 2026-11-06 이전 열린 PR 전수 리뷰 및 병합 기록
 
 이 절부터 아래 날짜별 기록은 본선 전 11개 이슈 통합 이전의 이력입니다. 현재 구현·이슈 범위는 [STATUS](../STATUS.md), 최신 HEAD·CI·종결 사유는 각 PR/이슈의 최신 기록을 따릅니다. 아래 과거 시점의 OPEN/미연결 문구를 현재 상태로 사용하지 않습니다.
