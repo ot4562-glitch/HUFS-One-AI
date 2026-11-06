@@ -53,20 +53,22 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', {name: '본문으로 건너뛰기'})).toBeFocused();
   await page.keyboard.press('Tab'); // logo
-  await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
-  await page.keyboard.press('Tab'); // 설정
-  // Mobile keeps five visible shortcuts in the bottom bar; keyboard order is still defined in the header.
-  for (const name of ['오늘', '기회', '경험', '졸업', '보관함']) {
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name, exact: true})).toBeFocused();
-  }
-  await page.keyboard.press('Tab'); // selector summary
+  await page.keyboard.press('Tab'); // header account
   await expect(page.locator('.selector__summary')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio').first()).toBeVisible();
   await page.keyboard.press('Tab');
   await page.keyboard.press('Space');
   await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
+  await page.keyboard.press('Tab'); // 전체 메뉴
+  await expect(page.getByRole('link', {name: '전체 메뉴', exact: true})).toBeFocused();
+  await page.keyboard.press('Tab'); // 설정
+  await expect(page.getByRole('link', {name: '설정', exact: true})).toBeFocused();
+  // The five mobile shortcuts stay after account and settings in keyboard order.
+  for (const name of ['오늘', '기회', '경험', '졸업', '보관함']) {
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name, exact: true})).toBeFocused();
+  }
   const focusRing = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
   expect(focusRing).not.toBe('none');
 });
