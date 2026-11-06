@@ -1,7 +1,8 @@
 name: Private synthetic UI preview (GitHub Pages)
 
-# Only the static, all-fictitious React UI is published. This does not deploy
-# the NCP service or call Google, database or AI providers.
+# Static all-fictitious React UI is built and smoke-tested ONLY. Public deployment
+# is disabled under #297 until real server-side school authentication is ready.
+# This workflow cannot unpublish an already-live Pages site; a repo admin must.
 on:
   pull_request:
     paths:
@@ -28,12 +29,11 @@ concurrency:
 
 jobs:
   build:
-    name: Verify & build synthetic Pages artifact
+    name: Verify synthetic Pages build (no deployment)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
-      pages: read
     steps:
       - name: Checkout allowlisted code-only sources and synthetic fixtures
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 pinned
@@ -72,16 +72,11 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run UI tests
         run: npm run test:web
-      - name: Read actual Pages site base path (private unique subdomain supported)
-        id: pages
-        if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6 pinned
       - name: Build explicitly synthetic static React bundle
         env:
           VITE_STATIC_PAGES_PREVIEW: 'true'
-          # Public project Pages always use /<repo>/; the old private-site
-          # root can remain cached after switching repository visibility.
-          PAGES_BASE_PATH: ${{ github.event.repository.private == false && format('/{0}', github.event.repository.name) || steps.pages.outputs.base_path }}
+          # Local-only synthetic smoke uses the public project-style base path.
+          PAGES_BASE_PATH: ${{ format('/{0}', github.event.repository.name) }}
         run: npm run build:web -- --mode pages-preview
       - name: Require CSP and correct public Pages asset path
         env:
@@ -97,30 +92,6 @@ jobs:
       - name: Chrome desktop/mobile smoke with no API requests
         env:
           VITE_STATIC_PAGES_PREVIEW: 'true'
-          # Public project Pages always use /<repo>/; the old private-site
-          # root can remain cached after switching repository visibility.
-          PAGES_BASE_PATH: ${{ github.event.repository.private == false && format('/{0}', github.event.repository.name) || steps.pages.outputs.base_path }}
+          # Local-only synthetic smoke uses the public project-style base path.
+          PAGES_BASE_PATH: ${{ format('/{0}', github.event.repository.name) }}
         run: node tools/check_pages_preview.mjs
-      - name: Upload Pages artifact (only on default branch)
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5 pinned
-        with:
-          path: dist/web
-
-  deploy:
-    name: Publish private Pages site
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy only built synthetic artifact
-        id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5 pinned
