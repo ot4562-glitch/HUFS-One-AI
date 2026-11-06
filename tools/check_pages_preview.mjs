@@ -65,6 +65,22 @@ try {
     const heading = await page.locator('.page__title').innerText();
     if (/페이지를 찾을 수 없습니다/.test(heading)) throw new Error('Lost static deep link');
     await page.getByRole('link', {name: 'HUFS One AI', exact: true}).first().click();
+    const selector = page.locator('.selector__summary');
+    await selector.click();
+    const subjects = page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio');
+    await subjects.first().check();
+    await page.getByRole('status').filter({hasText: '시연 대상: 가상 학생 1'}).waitFor({timeout: 15000});
+    await selector.click();
+    if (viewport.width >= 1024) {
+      await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '교과/비교과'}).click();
+      await page.getByRole('navigation', {name: '교과/비교과 메뉴'}).getByRole('link', {name: '졸업지원'}).click();
+    } else {
+      await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '졸업'}).click();
+    }
+    const studentCopy = await page.locator('main').innerText();
+    if (/\bSYN-[A-Z0-9_-]+\b/.test(studentCopy)) throw new Error('Raw synthetic key leaked into student-facing text');
+    const width = await page.evaluate(() => ({viewport: innerWidth, document: document.documentElement.scrollWidth}));
+    if (width.document > width.viewport + 1) throw new Error('Horizontal overflow at ' + viewport.width);
     if (requests.length) throw new Error('Static UI attempted API/fetch: ' + requests.join(', '));
     if (errors.length) throw new Error('UI runtime exception: ' + errors.join('; '));
     console.log(`PASS static Pages ${viewport.width}px: synthetic, navigation, reload, no API`);
