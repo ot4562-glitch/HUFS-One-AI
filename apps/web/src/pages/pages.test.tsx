@@ -53,6 +53,15 @@ describe('오늘 page', () => {
     expect(within(pinned).getByText(/가상 졸업인증 서류 제출 안내/)).toBeTruthy();
   });
 
+  it('#298: states the synthetic date D-day counts from, next to the deadlines and on 기회', async () => {
+    await open();
+    const due = screen.getByRole('region', {name: '다가오는 확정 마감'});
+    expect(within(due).getByText(/^D-day는 시연 자료의 기준일 \d{4}년 \d{1,2}월 \d{1,2}일부터 셉니다\. 실제 오늘 날짜가 아니에요\.$/)).toBeTruthy();
+    cleanup();
+    await open('/opportunities');
+    expect(screen.getByText(/^D-day는 시연 자료의 기준일 .+ 실제 오늘 날짜가 아니에요\.$/)).toBeTruthy();
+  });
+
   it("switching to S02 shows S02's own cards and none of S01's", async () => {
     await open();
     fireEvent.click(within(screen.getByRole('group', {name: /시연 대상 선택/})).getAllByRole('radio')[1]!);

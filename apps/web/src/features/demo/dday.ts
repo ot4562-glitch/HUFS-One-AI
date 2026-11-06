@@ -28,3 +28,18 @@ export function ddayOf(deadlineIso: string, asOfIso: string): DDayView | null {
   if (days === 0) return {text: '오늘 마감', spoken: '오늘 마감', days};
   return {text: `D-${days}`, spoken: `${days}일 남음`, days};
 }
+
+const basisFmt = new Intl.DateTimeFormat('ko-KR', {timeZone: 'Asia/Seoul', year: 'numeric', month: 'long', day: 'numeric'});
+
+/**
+ * #298: one line saying which date D-day counts from, so a fixed synthetic asOf is never read as
+ * today. Synthetic or mixed data says plainly that the date is not today; real data only says it may differ.
+ */
+export function ddayBasisText(asOfIso: string, synthetic: boolean): string | null {
+  const at = Date.parse(asOfIso);
+  if (!Number.isFinite(at)) return null;
+  const date = basisFmt.format(at);
+  return synthetic
+    ? `D-day는 시연 자료의 기준일 ${date}부터 셉니다. 실제 오늘 날짜가 아니에요.`
+    : `D-day는 자료 기준일 ${date}부터 셉니다. 오늘 날짜와 다를 수 있어요.`;
+}

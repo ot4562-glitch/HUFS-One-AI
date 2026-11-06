@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import type {FeedCardView} from '../features/demo/sectionView.js';
+import type {DemoScreenView, FeedCardView} from '../features/demo/sectionView.js';
 import type {NoticeItemView} from '../features/notices/noticeView.js';
 import type {DDayView} from '../features/demo/dday.js';
 import {DUE_SOON_DAYS} from '../features/today/TodaySummary.js';
@@ -66,6 +66,16 @@ export function upcomingDeadlines(cards: readonly FeedCardView[], notices: reado
     ...cards.flatMap(c => c.dday ? [{key: 'o' + c.opportunityId, kind: '공고', title: c.title, path: oppPath(c.opportunityId), dday: c.dday}] : []),
     ...notices.flatMap(n => n.dday ? [{key: 'n' + n.noticeId, kind: '공지', title: n.title, path: n.path, dday: n.dday}] : []),
   ].sort((a, b) => a.dday.days - b.dday.days).slice(0, max);
+}
+
+/**
+ * #298: the one date the listed D-days count from. Omitted when the list is empty or when its
+ * opportunity and notice items count from different dates, so a single line is never wrong.
+ */
+export function deadlineBasisText(items: ReturnType<typeof upcomingDeadlines>, basis: DemoScreenView['ddayBasis']): string | null {
+  const texts = new Set(items.map(i => i.kind === '공고' ? basis.feed : basis.notices));
+  const [only] = texts;
+  return texts.size === 1 && only ? only : null;
 }
 
 export function DeadlineRow({item, navigate}: {item: ReturnType<typeof upcomingDeadlines>[number]; navigate: Nav}) {

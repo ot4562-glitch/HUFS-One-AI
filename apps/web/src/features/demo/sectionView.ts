@@ -1,6 +1,6 @@
 import type {AcademicSummary, DemoProfileOption, DemoSnapshot, FeedResult, ForecastSummary} from '@hufs-one/contracts';
 import {TOPIC_TEXT} from './topicText.js';
-import {ddayOf, type DDayView} from './dday.js';
+import {ddayBasisText, ddayOf, type DDayView} from './dday.js';
 
 type SharedSection = DemoProfileOption['allowedSections'][number];
 type FeedCard = FeedResult['featured'][number];
@@ -44,6 +44,11 @@ export interface DemoScreenView {
   readonly notices: SectionView<DemoSnapshot['notices']>;
   readonly academics: SectionView<AcademicSummary>;
   readonly forecast: SectionView<ForecastSummary>;
+  /**
+   * #298: the date D-day counts from, per source (feed and notices each carry their own asOf).
+   * Null when that section is not shown or its asOf is unreadable.
+   */
+  readonly ddayBasis: {readonly feed: string | null; readonly notices: string | null};
 }
 
 const ELIGIBILITY_TEXT: Record<FeedCard['eligibility'], string> = {
@@ -107,6 +112,7 @@ export function buildDemoScreenView(snapshot: DemoSnapshot, allowedSections: rea
     ...(snapshot.datasetMode === 'SYNTHETIC' ? ['합성 자료'] : snapshot.datasetMode === 'MIXED' ? ['실제+합성 혼합'] : []),
     ...(PROVENANCE_BADGE[snapshot.aiProvenance] ? [PROVENANCE_BADGE[snapshot.aiProvenance] as string] : []),
   ];
+  const synthetic = snapshot.datasetMode !== 'REAL_CONSENTED';
   return {
     snapshotBadges,
     feed: allow.has('FEED')
@@ -115,5 +121,9 @@ export function buildDemoScreenView(snapshot: DemoSnapshot, allowedSections: rea
     notices: allow.has('NOTICES') ? {kind: 'SHOW', data: snapshot.notices} : {kind: 'HIDDEN'},
     academics: gated<AcademicSummary>(allow.has('ACADEMICS'), snapshot.academics),
     forecast: gated<ForecastSummary>(allow.has('FORECAST'), snapshot.forecast),
+    ddayBasis: {
+      feed: allow.has('FEED') ? ddayBasisText(snapshot.feed.asOf, synthetic) : null,
+      notices: allow.has('NOTICES') ? ddayBasisText(snapshot.notices.asOf, synthetic) : null,
+    },
   };
 }

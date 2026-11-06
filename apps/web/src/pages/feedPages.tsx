@@ -9,7 +9,7 @@ import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
 import {HomeJourney} from './HomeJourney.js';
 import {OpportunityExplorer} from './OpportunityExplorer.js';
-import {DeadlineRow, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
+import {DeadlineRow, deadlineBasisText, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../features/graduation/graduationView.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
 import {DDayText} from '../features/demo/DDayText.js';
@@ -28,6 +28,7 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
   const notices = [...allNotices.filter(n => n.pinned), ...allNotices.filter(n => !n.pinned)].slice(0, 4);
   const feed = view.feed.kind === 'SHOW' ? view.feed.data : null;
   const deadlines = upcomingDeadlines(feed ? [...feed.featured, ...feed.compact] : [], allNotices);
+  const basis = deadlineBasisText(deadlines, view.ddayBasis);
   const a = view.academics;
   return {
     title: '오늘',
@@ -49,6 +50,7 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
           <Module title="다가오는 확정 마감">
             {deadlines.length ? <ul className="mlist">{deadlines.map(d => <DeadlineRow key={d.key} item={d} navigate={navigate} />)}</ul>
               : <p className="muted">확정된 마감이 없어요.</p>}
+            {basis && <p className="muted mnote">{basis}</p>}
           </Module>
           {feed ? (
             <Module title="나에게 맞춘 공고" wide action={<InAppLink to="/opportunities" navigate={navigate}>더보기</InAppLink>}>
@@ -116,6 +118,7 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
           <div><dt>확정 7일 내 마감</dt><dd>{all.filter(c => c.dday && c.dday.days <= 7).length}건</dd></div>
           <div><dt>지원 조건 확인 필요</dt><dd>{all.filter(c => c.eligibility === 'UNKNOWN').length}건</dd></div>
         </dl>
+        {view.ddayBasis.feed && <p className="muted mnote">{view.ddayBasis.feed}</p>}
         <h2 className="list__title">공고 목록 <span className="muted">(총 {all.length}건)</span></h2>
         <OpportunityExplorer key={state.selected ?? 'none'} cards={all} navigate={navigate} hasMore={view.feed.data.hasMore} />
         {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
