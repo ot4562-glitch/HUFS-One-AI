@@ -82,7 +82,8 @@ describe('#124 menu rendering', () => {
     expect(off.textContent).toContain('이번 시연 미지원');
     expect(off.querySelector('a, button, [tabindex]')).toBeNull();
     // Original menus with the same name as one of our screens are still not links to it.
-    for (const name of ['비교과 프로그램', '채용정보(교내)']) expect(within(page).getByText(name).closest('a')).toBeNull();
+    const originals = page.querySelector('.menu--page') as HTMLElement;
+    for (const name of ['비교과 프로그램', '채용정보(교내)']) expect(within(originals).getByText(name).closest('a')).toBeNull();
     const tree = page.querySelector('.menu--page') as HTMLElement;
     expect(within(tree).getAllByRole('link').filter(a => a.getAttribute('href')?.startsWith('/')).length).toBe(
       MENU_GROUPS.flatMap(g => g.items).filter(i => i.route).length);

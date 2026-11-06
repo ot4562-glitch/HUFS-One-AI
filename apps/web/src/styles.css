@@ -554,3 +554,40 @@ a { color: var(--color-link); }
 .opp__elig--unknown { color: #8A4B0B; }
 .opp__elig--ineligible { color: #A33A32; }
 .opp__rel { margin: 6px 0 0; font-size: 13px; line-height: 19px; }
+
+/* Content title row (Essential mockups) */
+.phead { margin: 0 0 var(--space-4); }
+.phead__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.phead__icon { color: var(--color-accent); flex: none; }
+.phead__title { font-size: 24px; line-height: 32px; font-weight: 800; color: var(--color-heading); letter-spacing: -0.02em; }
+.phead__chip { font-size: 13px; font-weight: 700; color: #3B3270; background: #EEEDFE; border-radius: 999px; padding: 2px 10px; }
+.phead__line { margin: var(--space-1) 0 0; font-size: 14px; line-height: 21px; color: var(--color-text-muted); }
+
+/* Stat tiles (학사공지·일정, 통합 보관함) */
+.tiles { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--space-2); }
+.tile { display: grid; gap: 2px; padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; text-align: center; }
+.tile span { font-size: 14px; color: var(--color-text-muted); font-weight: 700; }
+.tile strong { font-size: 26px; line-height: 32px; color: var(--color-heading); }
+.tile--lead { background: var(--color-heading); border-color: var(--color-heading); }
+.tile--lead span, .tile--lead strong { color: #FFFFFF; }
+
+/* Two-column content with a right column (학사공지·일정) */
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.split .section:not(.section .section) { margin-bottom: var(--space-4); }
+.side-cal .cal { margin: 0; }
+.side-cal .cal__grid { border: 0; padding: 0; }
+@media (min-width: 1200px) { .split { grid-template-columns: minmax(0, 1fr) 340px; } }
+
+/* 전체 메뉴 cards */
+.mcards { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
+.mcard { border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; background: var(--color-surface); }
+.mcard__title { margin: 0; padding: var(--space-3) var(--space-4) 0; font-size: 17px; }
+.mcard__title a { color: var(--color-heading); text-decoration: none; }
+.mcard__sum { margin: 2px 0 0; padding: 0 var(--space-4) var(--space-2); font-size: 12px; line-height: 18px; color: var(--color-text-muted); border-bottom: 1px solid var(--color-border); background: linear-gradient(180deg, transparent, #F7F9FC); }
+.mcard__items { list-style: none; margin: 0; padding: var(--space-2) 0; }
+.mcard__items li { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding: 4px var(--space-4); font-size: 14px; }
+.mcard__items li a { color: var(--color-text); font-weight: 700; }
+.mcard__items li.is-off { color: var(--color-text-muted); font-size: 13px; }
+
+/* 지원 현황 board inside the narrower content column: wrap instead of squeezing five columns. */
+@media (min-width: 1024px) { .layout__body .board__columns { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--space-3); } }

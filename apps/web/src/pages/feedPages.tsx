@@ -143,16 +143,49 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
   };
 };
 
-export const noticesPage: PageRenderer = ({path, state, navigate}) => {
+/**
+ * 학사공지·일정 (Essential mockup): counts on top, the notice list on the left, confirmed deadlines and the
+ * mini calendar on the right. Counts are the list's own; nothing is inferred.
+ */
+export const noticesPage: PageRenderer = ({path, state, navigate, controller, services}) => {
   if (path !== '/notices') return null;
   const view = screenViewOf(state);
   if (!view) return {title: '공지', body: <NoSnapshot state={state} />};
   if (view.notices.kind !== 'SHOW') return {title: '공지', body: <p className="muted">{NOT_SHARED_TEXT}</p>};
   const items = buildNoticeList(view.notices.data);
+  const withDday = items.filter(n => n.dday);
+  const tiles: readonly [string, number][] = [
+    ['나에게 해당', items.filter(n => n.appliesText === '나에게 해당').length],
+    ['확정 마감', withDday.length],
+    ['D-7 이내', withDday.filter(n => n.dday!.days <= 7).length],
+    ['고정 공지', items.filter(n => n.pinned).length],
+    ['전체 공지', items.length],
+  ];
+  const deadlines = upcomingDeadlines([], items, 6);
   return {
     title: '공지',
-    body: items.length ? <ul className="rows">{items.map(n => <NoticeRow key={n.noticeId} item={n} navigate={navigate} />)}</ul>
-      : <p className="muted">표시할 공지가 없어요.</p>,
+    body: (
+      <>
+        <ul className="tiles" aria-label="공지 요약">
+          {tiles.map(([label, n], i) => <li key={label} className={i === 0 ? 'tile tile--lead' : 'tile'}><span>{label}</span><strong>{n}</strong></li>)}
+        </ul>
+        <div className="split">
+          <Section title="맞춤 학사공지">
+            {items.length ? <ul className="rows">{items.map(n => <NoticeRow key={n.noticeId} item={n} navigate={navigate} />)}</ul>
+              : <p className="muted">표시할 공지가 없어요.</p>}
+          </Section>
+          <div className="split__side">
+            <Section title="주요 마감">
+              {deadlines.length ? <ul className="mlist">{deadlines.map(d => <DeadlineRow key={d.key} item={d} navigate={navigate} />)}</ul>
+                : <p className="muted">확정된 마감이 없어요.</p>}
+            </Section>
+            <div className="section side-cal">
+              <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />
+            </div>
+          </div>
+        </div>
+      </>
+    ),
   };
 };
 

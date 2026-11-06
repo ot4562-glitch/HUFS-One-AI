@@ -19,6 +19,7 @@ import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
 import {areaOf} from './shell/areas.js';
+import {PageHead} from './shell/PageHead.js';
 import {DemoSelector} from './shell/DemoSelector.js';
 import {StatusBanner} from './shell/StatusBanner.js';
 import {useDemo} from './shell/useDemo.js';
@@ -137,7 +138,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} greeting={greeting} />
-      {area ? <div className="layout"><AreaNav area={area} path={path} navigate={navigate} /><div className="layout__body">{page.body}</div></div> : page.body}
+      {area ? <div className="layout"><AreaNav area={area} path={path} navigate={navigate} /><div className="layout__body"><PageHead path={path} title={page.title} />{page.body}</div></div> : page.body}
     </AppShell>
   );
 }

@@ -94,7 +94,8 @@ describe('오늘 page', () => {
 describe('공지 and detail routes', () => {
   it('lists notices with priority, applicability and verification state', async () => {
     await open('/notices');
-    const draft = screen.getByRole('link', {name: /가상 교과개편·대체과목 안내/});
+    const list = screen.getByRole('region', {name: '맞춤 학사공지'});
+    const draft = within(list).getByRole('link', {name: /가상 교과개편·대체과목 안내/});
     expect(draft.textContent).toContain('확인 전 초안');
     const first = screen.getAllByRole('link').find(a => a.getAttribute('href')?.startsWith('/notices/'))!;
     expect(first.textContent).toContain('고정');

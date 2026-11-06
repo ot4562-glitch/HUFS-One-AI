@@ -33,6 +33,10 @@ export const savedPage: PageRenderer = ({path, state, sandbox, navigate, service
     title: '보관함',
     body: (
       <>
+        <ul className="tiles" aria-label="보관함 요약">
+          {([['전체 저장', saved.length + applied.length + drafts.length], ['저장한 공고', saved.length], ['모의 지원', applied.length], ['지원서 초안', drafts.length]] as const)
+            .map(([label, n], i) => <li key={label} className={i === 0 ? 'tile tile--lead' : 'tile'}><span>{label}</span><strong>{n}</strong></li>)}
+        </ul>
         <SandboxNote />
         <Section title="저장한 공고">{saved.length ? list(saved) : <p className="muted">저장한 공고가 없어요. 공고 상세에서 저장할 수 있어요.</p>}</Section>
         <Section title="모의 지원">{applied.length ? list(applied) : <p className="muted">모의 지원한 공고가 없어요.</p>}</Section>
