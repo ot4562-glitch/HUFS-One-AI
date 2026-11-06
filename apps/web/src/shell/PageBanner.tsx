@@ -33,6 +33,10 @@ export function PageBanner({path, title, navigate, headingRef, greeting}: {
           <p className="hero__tag">오늘도 가능성을 넓혀보세요</p>
           <p className="hero__kicker">ONE AI 개인화 홈</p>
           {greeting && <p className="hero__sub">{greeting}</p>}
+          <div className="hero__actions" aria-label="시작하기">
+            <InAppLink to="/opportunities" navigate={navigate} className="hero__cta hero__cta--primary">맞춤 기회 살펴보기 <span aria-hidden="true">↗</span></InAppLink>
+            <InAppLink to="/graduation" navigate={navigate} className="hero__cta hero__cta--secondary">학업 계획 확인 <span aria-hidden="true">→</span></InAppLink>
+          </div>
         </div>
       </section>
     );
