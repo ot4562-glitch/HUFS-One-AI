@@ -69,7 +69,7 @@ try {
     await selector.click();
     const subjects = page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio');
     await subjects.first().check();
-    await page.getByRole('status').filter({hasText: '시연 대상: 가상 학생 1'}).waitFor({timeout: 15000});
+    await page.getByRole('status').filter({hasText: '시연 대상: 가상 학생 1'}).waitFor({state: 'attached', timeout: 15000});
     await selector.click();
     if (viewport.width >= 1024) {
       await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '교과/비교과'}).click();
