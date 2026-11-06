@@ -410,3 +410,20 @@ a { color: var(--color-primary); }
   .summary__value { font-size: 32px; line-height: 40px; }
   .summary__note { font-size: 13px; line-height: 20px; }
 }
+
+/* #258 경험 → AI 후보 → 내 승인: 세 단계를 색이 아니라 번호·제목·테두리로 구분 */
+.exp-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: var(--space-4); margin: 0 0 var(--space-4); }
+.exp-card h3 { color: var(--color-heading); font-size: 18px; line-height: 26px; margin: 0 0 var(--space-3); overflow-wrap: anywhere; }
+.exp-card__syn { margin-left: var(--space-2); }
+.exp-stage { border-left: 4px solid var(--color-border); padding: 0 0 0 var(--space-3); margin: 0 0 var(--space-3); }
+.exp-stage--candidate { border-left-style: dashed; }
+.exp-stage--approval { border-left-color: var(--color-heading); }
+.exp-stage h4 { font-size: 15px; line-height: 22px; margin: 0 0 var(--space-1); color: var(--color-heading); }
+.exp-stage__no { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid currentColor; margin-right: var(--space-1); font-size: 13px; }
+.exp-topics { list-style: none; margin: 0 0 var(--space-2); padding: 0; display: grid; gap: var(--space-2); }
+.exp-topics p { margin: var(--space-1) 0 0; }
+.exp-quote { margin: var(--space-1) 0 0; padding-left: var(--space-2); border-left: 2px solid var(--color-border); color: var(--color-text-muted); overflow-wrap: anywhere; }
+.exp-pick { border: 1px solid var(--color-border); border-radius: var(--radius-control); padding: var(--space-2) var(--space-3); margin: 0 0 var(--space-2); }
+.exp-pick__opt { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; }
+.exp-pick__opt input { width: 20px; height: 20px; }
+.exp-pick__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
