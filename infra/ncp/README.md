@@ -45,6 +45,15 @@ node --test tests/security/ncp-network-iac.test.mjs
 - 공개 80/443·API/PG·학교메일/Google/유료 CLOVA/실학생 데이터/외부 네트워크 배포는 **SSH 합성 preview에서 사용하지 않는다**.
 - 운영 배포를 위한 안전 코드 수정과 인적/운영 검증은 [제품 런북](../../docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md)을 따른다. production 거부 환경변수를 강제로 바꿔 공개하지 않음.
 
+### Windows 경로·호스트키 및 설치 공개키 계약
+
+- 두 Windows 진입점은 `NcpPreview.Common.ps1`의 동일 검증을 사용한다. `-PlinkExe`/`-WinSCPExe`를 명시할 때는 로컬 드라이브의 **절대 파일 경로**를 지정한다. 개인키의 상대 경로는 PowerShell의 현재 위치를 기준으로 한 번만 해석하고 그 결과를 검증·실행에 그대로 사용한다. UNC/드라이브 상대 경로·symlink 파일·따옴표/개행/`%NAME%` 확장은 거부한다.
+- 독립 확인한 `ssh-ed25519 255 SHA256:<43자>` 또는 OpenSSH의 `256` 표기를 입력한다. 같은 32바이트 digest를 plink에는 `SHA256:<43자>`, WinSCP에는 `ssh-ed25519 255 <43자>=`로 전달한다. RSA/P-256도 같은 digest 계약을 사용한다. [PuTTY 지문 규칙](https://www.chiark.greenend.org.uk/~sgtatham/putty/0.85/htmldoc/Chapter4.html#config-ssh-kex-manual-hostkeys) · [WinSCP 지문 형식](https://winscp.net/eng/docs/message_key_fingerprint_does_not_match).
+- WinSCP 명령은 UTF-8 임시 `/script` 파일로 전달해 PowerShell 5.1의 중첩 인용 문제를 피하고 성공/실패 모두 `finally`에서 삭제한다. 핀/전송 오류가 발생하면 원격 apply는 실행하지 않는다. 올바른 형식의 지문이 실제 서버와 일치하는지는 SSH 핸드셰이크에서 판단하므로, 서버 접촉 없이 실제 일치를 확인했다고 주장하지 않는다. [WinSCP 명령 인용 규칙](https://winscp.net/eng/docs/commandline).
+- 설치기 및 직접 bootstrap 모두 **정규 절대 경로로 `/root` 바로 아래에 둔 root 소유 0600/0644 공개키**만 허용한다. `../`, 파일/부모 symlink, 다른 소유자, group/other 쓰기와 실행·특수 권한을 실행 전 거부한다. `/root` 역시 root 소유이며 다른 사용자가 수정할 수 없어야 한다.
+- `Operator-NcpPreview.ps1`의 `Target`/`ExpectedCurrent`는 Rollback에만 전달한다. Deploy/Verify/Plan에서 혼합하면 실패한다. 두 Windows 진입점과 Ubuntu 설치기의 주소 정책은 `1.1.1.1`을 허용하고 사설·공유·예약·문서·벤치마크·멀티캐스트 주소를 거부한다.
+- `NCP IaC offline contracts`는 SHA256으로 고정한 공식 **WinSCP 6.7.0 NuGet DLL의 실제 `SessionOptions` 지문 파서**(변환 후 수락/기존 형식 거부, `Check` 정책 보존), Windows PowerShell 5.1의 네트워크 기능 없는 native stub 회귀, Ubuntu 22.04/24.04의 임시 root 소유 키/번들 검증, Terraform mock을 실행한다. **실제 WinSCP/plink 서버 교환 및 실제 NCP 인수는 #276의 별도 실행 증거**이며 로컬 파서/stub 성공으로 대체하지 않는다.
+
 ### 실제 도구·거부 포트와 안전 검증
 
 - Windows 운영 PC에서 **PuTTY**로 서버가 제공한 SSH host key 지문을 고정해 비교하고, **WinSCP** SFTP로 승인된 합성 ZIP/hash만 전송한다. 관리자 **비밀번호** 또는 root SSH 로그인을 일시적인 설치 편의로 남기지 않으며 새 키의 두 번째 독립 로그인 성공 후만 차단 정책 적용.

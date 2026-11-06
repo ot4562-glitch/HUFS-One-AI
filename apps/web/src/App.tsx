@@ -1,6 +1,8 @@
 import {useEffect, useRef, type ComponentType, type ReactNode} from 'react';
 import type {RevisionPort} from './features/revisions/RevisionComparison.js';
-import type {DemoContext} from '@hufs-one/contracts';
+import type {DemoContext, SubjectAlias} from '@hufs-one/contracts';
+import type {ExperienceSkillPort} from './features/experience/experienceSkillPort.js';
+import type {OwnerExperiencePort} from './features/experience/OwnerExperiencePanel.js';
 import type {InviteCodeHolder, InvitePort} from './features/reviewer/invite.js';
 import {useSandbox, type SandboxApi, type SandboxPort} from './features/sandbox/useSandbox.js';
 import type {BoardPort} from './features/applications/boardPort.js';
@@ -68,6 +70,10 @@ export interface AppServices {
   readonly ownerIntake?: OwnerPrivateIntakePort;
   /** Operator-provisioned, metadata-only BETA Provider vertical slice. Default absent. */
   readonly ownerProvider?: OwnerProviderPort;
+  /** Synthetic-only per-subject experience stores; never shared with BETA owner ports. */
+  readonly experienceForSubject?: (subject: SubjectAlias) => ExperienceSkillPort;
+  /** Current BETA owner's own portfolio, independent of the demo selector. */
+  readonly ownerExperience?: OwnerExperiencePort;
 }
 
 export type PageRenderer = (ctx: PageContext) => {title: string; body: ReactNode} | null;
@@ -100,6 +106,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const [path, navigate] = useRoute(historyPort);
   const sandbox = useSandbox(controller, state, services.sandbox);
   const independent = (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
+    || (!!services.ownerExperience && path === '/experience')
     || path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics'
     || path === '/clubs/admin' || (!!services.ownerClubs && (path === '/clubs' || path.startsWith('/clubs/')));
   const ctx: PageContext = {path, state, controller, navigate, services, sandbox};

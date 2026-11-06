@@ -1,0 +1,18 @@
+.synthetic-art { position: relative; margin: 0; overflow: hidden; border-radius: 12px; background: #edf2f5; aspect-ratio: 16 / 9; }
+.synthetic-art picture, .synthetic-art img { display: block; width: 100%; height: 100%; }
+.synthetic-art img { object-fit: cover; }
+.synthetic-art figcaption { position: absolute; bottom: 8px; left: 8px; max-width: calc(100% - 16px); padding: 4px 8px; border-radius: 5px; background: #142b3d; color: white; font-size: 11px; line-height: 1.5; }
+.synthetic-art--missing { display: grid; place-items: center; color: #344c5b; }
+.synthetic-art.poster--detail { width: 100%; max-width: 480px; }
+.synthetic-art.poster--card { border-radius: 0; }
+.opp__art { max-width: 240px; margin-bottom: 12px; }
+.opportunity-detail-art { width: 100%; max-width: 620px; margin: 16px 0; }
+.synthetic-gallery { margin: 24px 0; padding: 16px; border: 1px solid #bac9d4; border-radius: 12px; }
+.synthetic-gallery summary { cursor: pointer; font-weight: 700; min-height: 44px; align-content: center; }
+.synthetic-gallery__grid { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.synthetic-gallery__grid > li { overflow: hidden; border: 1px solid #d5dfe6; border-radius: 12px; }
+.synthetic-gallery__body { padding: 12px; }
+.synthetic-gallery__body h3 { margin: 0 0 8px; overflow-wrap: anywhere; }
+.synthetic-gallery__body p { margin: 4px 0; }
+@media (min-width: 768px) { .synthetic-gallery__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { .synthetic-gallery__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

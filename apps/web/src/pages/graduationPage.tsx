@@ -49,6 +49,8 @@ export const graduationPage: PageRenderer = ({path, state, services, controller,
         {/* #144: only once the academics section itself is shared, so consent never leaks through a second view. */}
         {a.kind === 'SHOW' && services.doubleMajor && <DoubleMajorPanel state={state} controller={controller} port={services.doubleMajor} />}
         <Section title="개설 전망">
+          <p className="muted">과거 개설 빈도는 확인한 같은 계절 학기 중 개설한 횟수입니다. 부분 자료의 누락은 미개설이 아니며,
+            연구학기는 폐강을 뜻하지 않습니다. 가정으로 바꾼 전망은 현재 전공·취득 학점·졸업 판단을 바꾸지 않습니다.</p>
           {f.kind === 'HIDDEN' && <p className="muted">{NOT_SHARED_TEXT}</p>}
           {f.kind === 'PLACEHOLDER' && <p className="muted">{f.text}</p>}
           {f.kind === 'SHOW' && (

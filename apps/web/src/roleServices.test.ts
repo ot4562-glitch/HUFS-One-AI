@@ -28,6 +28,7 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.ownerClubs).toBeUndefined();
     expect(services.clubModeration).toBeUndefined();
     expect(services.ownerIntake).toBeUndefined();
+    expect(services.ownerExperience).toBeUndefined();
     expect(services.sandbox).toBeUndefined();
     expect(api.getDemoOverlay).not.toHaveBeenCalled();
   });
@@ -71,6 +72,8 @@ describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
     expect(services.ownerAcademics).toBeDefined();
     expect(services.ownerAcademics?.session).toBe(services.ownerDemoProfile?.session);
     expect(services.ownerIntake).toBeDefined();
+    expect(services.ownerExperience).toBeDefined();
+    expect(services.ownerExperience?.session).toBe(services.ownerDemoProfile?.session);
     expect(services.ownerIntake?.session).toBe(services.ownerDemoProfile?.session);
     expect(services.ownerClubs?.session).toBe(services.ownerDemoProfile?.session);
     expect(services.clubModeration).toBeUndefined();

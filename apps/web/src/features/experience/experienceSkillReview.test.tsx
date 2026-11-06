@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import {afterEach, describe, expect, it} from 'vitest';
+import {useLayoutEffect} from 'react';
+import {afterEach, describe, expect, it, vi} from 'vitest';
 import {act, cleanup, fireEvent, render, screen, within} from '@testing-library/react';
-import {DemoController} from '../../app/index.js';
+import {DemoController, type DemoViewState} from '../../app/index.js';
 import {HufsApiError} from '../../integrations/api-error.js';
 import {SyntheticDemoClient} from '../../dev/syntheticDemoClient.js';
 import {syntheticExperienceSkillPort} from '../../dev/syntheticExperienceSkills.js';
@@ -15,6 +16,7 @@ const signal = () => new AbortController().signal;
 
 async function setup(port: ExperienceSkillPort) {
   const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'RUN');
+  await controller.loadProfiles();
   await controller.select('S01');
   const view = render(<ExperienceSkillReview state={controller.getState()} controller={controller} port={port} />);
   await flush();
@@ -57,6 +59,40 @@ describe('#258 experience review view model', () => {
 });
 
 describe('#258 experience review screen', () => {
+  it('hides the old page before effects when the same context receives a replacement snapshot', async () => {
+    const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'RUN');
+    await controller.loadProfiles();
+    await controller.select('S01');
+    const before = controller.getState(), base = syntheticExperienceSkillPort();
+    let calls = 0;
+    const port: ExperienceSkillPort = {...base, load: s => ++calls === 1 ? base.load(s) : new Promise(() => {})};
+    const observed: boolean[] = [];
+    function View({state}: {state: DemoViewState}) {
+      useLayoutEffect(() => { observed.push(Boolean(document.querySelector('.exp-card'))); }, [state]);
+      return <ExperienceSkillReview state={state} controller={controller} port={port} />;
+    }
+    const view = render(<View state={before} />);
+    await flush();
+    expect(screen.getAllByRole('article')).toHaveLength(3);
+    // Even equal versions/asOf cannot make a different snapshot object reuse old private display.
+    view.rerender(<View state={{...before, snapshot: {...before.snapshot!}}} />);
+    expect(observed.at(-1)).toBe(false);
+    expect(screen.queryByRole('article')).toBeNull();
+  });
+
+  it('does not read experience data when the selected subject has not shared EXPERIENCE', async () => {
+    const controller = new DemoController(new SyntheticDemoClient({delayMs: 0}), 'RUN');
+    await controller.loadProfiles();
+    await controller.select('S01');
+    const state = controller.getState(), port = syntheticExperienceSkillPort(), load = vi.spyOn(port, 'load');
+    const privateState = {...state, profiles: state.profiles.map(p => ({...p,
+      allowedSections: p.allowedSections.filter(section => section !== 'EXPERIENCE')}))};
+    render(<ExperienceSkillReview state={privateState} controller={controller} port={port} />);
+    await flush();
+    expect(load).not.toHaveBeenCalled();
+    expect(screen.queryByRole('article')).toBeNull();
+  });
+
   it('labels stages for assistive tech and says approval is not a credential or school record link', async () => {
     await setup(syntheticExperienceSkillPort());
     const a = card(/데이터 분석 동아리/);
@@ -64,7 +100,8 @@ describe('#258 experience review screen', () => {
     expect(within(a).getByText(/승인하기 전에는 추천에 쓰이지 않습니다/)).toBeTruthy();
     expect(within(a).getByText(/역량 증명·자격·채용 적격 판정이 아닙니다/)).toBeTruthy();
     expect(screen.getByText(/학교 시스템의 경험 기록과 연결된 화면이 아닙니다/)).toBeTruthy();
-    expect(within(card(/스타트업/)).queryByRole('group')).toBeNull();
+    expect(within(card(/스타트업/)).queryByRole('checkbox', {name: '창업'})).toBeNull();
+    expect(within(card(/스타트업/)).getByText(/경험 내용이나 동의가 바뀌기 전/)).toBeTruthy();
   });
 
   it('approves ticked topics, re-reads, then revokes; the button stays disabled with nothing ticked', async () => {
@@ -95,12 +132,12 @@ describe('#258 experience review screen', () => {
     expect(within(card(/데이터 분석 동아리/)).getByText('아직 승인한 주제가 없습니다.')).toBeTruthy();
   });
 
-  it('503 keeps the screen and says nothing changed', async () => {
+  it('503 keeps the screen and does not claim an uncertain write was never applied', async () => {
     const port: ExperienceSkillPort = {...syntheticExperienceSkillPort(), revoke: async () => { throw new HufsApiError('PROVIDER_UNAVAILABLE', 503); }};
     await setup(port);
     fireEvent.click(within(card(/통번역/)).getByRole('button', {name: '승인 취소'}));
     await flush();
-    expect(screen.getByRole('alert').textContent).toBe('지금은 저장할 수 없습니다. 바뀐 것은 없습니다.');
+    expect(screen.getByRole('alert').textContent).toContain('처리 결과를 확인할 수 없습니다');
   });
 
   it('a 403 on load is handed to the controller and the section is not shown', async () => {

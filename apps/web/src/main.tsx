@@ -46,6 +46,8 @@ async function start() {
     const planCheck = await import('./dev/syntheticPlanCheck.js');
     const revisions = await import('./dev/syntheticRevisions.js');
     const doubleMajor = await import('./dev/syntheticDoubleMajor.js');
+    const experience = await import('./dev/syntheticExperienceSkills.js');
+    const experiencePorts = new Map<import('@hufs-one/contracts').SubjectAlias, import('./features/experience/experienceSkillPort.js').ExperienceSkillPort>();
     client = synthetic;
     transportLabel = dev.SYNTHETIC_TRANSPORT_LABEL;
     services = {
@@ -59,6 +61,11 @@ async function start() {
       planCheck: planCheck.syntheticPlanCheckPort(),
       revisions: revisions.syntheticRevisionPort(),
       doubleMajor: doubleMajor.syntheticDoubleMajorPort(),
+      experienceForSubject: subject => {
+        let port = experiencePorts.get(subject);
+        if (!port) { port = experience.syntheticExperienceSkillPort({subject}); experiencePorts.set(subject, port); }
+        return port;
+      },
       overlay: {
         get: (ctx, signal) => synthetic.getDemoOverlay(ctx, signal),
         set: (ctx, change, signal) => synthetic.setDemoOverlay(ctx, change, signal),

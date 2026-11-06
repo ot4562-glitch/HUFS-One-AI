@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -16,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 INSTALL = ROOT / "infra/ncp/setup/02-install-host.sh"
 OPERATOR = ROOT / "infra/ncp/Operator-NcpPreview.ps1"
 DEPLOY = ROOT / "infra/ncp/Deploy-NcpPreview.ps1"
+BOOTSTRAP = ROOT / "infra/ncp/bootstrap-ubuntu.sh"
 ROLLBACK = ROOT / "infra/ncp/rollback-preview.sh"
 
 
@@ -40,7 +42,7 @@ class InstallerBundleTrustTests(unittest.TestCase):
             # named key location differ; no sudo/packages/host operation exists.
             source = source.replace("expected_uid = 0", "expected_uid = " + str(os.getuid()))
             source = source.replace("trusted_root = pathlib.Path('/')", "trusted_root = pathlib.Path(" + repr(str(root)) + ")")
-            source = source.replace('[[ "$key" == /root/*', '[[ "$key" == ' + str(root) + '/*')
+            source = source.replace("key_root = pathlib.Path('/root')", "key_root = pathlib.Path(" + repr(str(root)) + ")")
             script = bundle / "setup/02-install-host.sh"
             script.write_text(source)
             if unsafe == "companion-writable":
@@ -55,14 +57,21 @@ class InstallerBundleTrustTests(unittest.TestCase):
                 bootstrap.chmod(0o666)
             elif unsafe == "setup-writable":
                 (bundle / "setup").chmod(0o777)
+            elif unsafe == "key-writable":
+                key.chmod(0o666)
+            elif unsafe == "key-executable":
+                key.chmod(0o777)
+            elif unsafe == "key-link":
+                target = root / "real-admin.pub"
+                key.rename(target)
+                key.symlink_to(target)
+            elif unsafe == "key-traversal":
+                key = root / "reviewed" / ".." / "admin.pub"
             bin_dir = root / "bin"
             bin_dir.mkdir()
             shim = bin_dir / "id"
             shim.write_text("#!/bin/sh\nprintf '0\\n'\n")
             shim.chmod(0o755)
-            stat_shim = bin_dir / "stat"
-            stat_shim.write_text('#!/bin/sh\nif [ "$2" = "%u" ]; then printf "0\\n"; else /usr/bin/stat "$@"; fi\n')
-            stat_shim.chmod(0o755)
             result = subprocess.run(["bash", str(script), "--apply", "--ack-owner-approved", "--ack-acg-verified",
                 "--admin-public-key", str(key), "--admin-ip", "93.184.216.34/32", "--reviewed-bootstrap-sha256",
                 hashlib.sha256(bootstrap.read_bytes()).hexdigest()],
@@ -76,7 +85,8 @@ class InstallerBundleTrustTests(unittest.TestCase):
         self.assertTrue(called)
 
     def test_unsafe_bundle_is_rejected_before_bootstrap(self):
-        for unsafe in ["companion-writable", "parent-writable", "companion-link", "bootstrap-writable", "setup-writable"]:
+        for unsafe in ["companion-writable", "parent-writable", "companion-link", "bootstrap-writable", "setup-writable",
+                       "key-writable", "key-executable", "key-link", "key-traversal"]:
             with self.subTest(unsafe=unsafe):
                 result, called = self.run_bundle(unsafe)
                 self.assertNotEqual(result.returncode, 0, unsafe)
@@ -116,7 +126,7 @@ class NcpOperatorWorkflowTests(unittest.TestCase):
         self.assertIn("[string]$Operation = 'Plan'", text)
         self.assertIn("if ($Operation -eq 'Plan')", text)
         self.assertIn("if (-not $Apply -or -not $OwnerApproved)", text)
-        self.assertIn("-hostkey $HostKeyFingerprint", text)
+        self.assertIn("-hostkey $pins.Plink", text)
         self.assertIn("-batch -ssh -P 22", text)
         self.assertIn("/usr/local/sbin/hufs-preview-rollback", text)
         self.assertIn("--expected-current", text)
@@ -133,13 +143,79 @@ class NcpOperatorWorkflowTests(unittest.TestCase):
         rollback = ROLLBACK.read_text(encoding="utf-8")
         self.assertIn("if (-not $Apply)", deploy)
         self.assertIn("Prepare-NcpPreview.ps1", deploy)
-        self.assertIn("-hostkey $HostKeyFingerprint", deploy)
+        self.assertIn("-hostkey $pins.Plink", deploy)
         self.assertIn("flock -n", rollback)
         self.assertIn("--expected-current", rollback)
         self.assertIn("healthy()", rollback)
         self.assertIn("--ack-owner-approved", rollback)
         # Previous service and release must remain recoverable on failure.
         self.assertRegex(rollback, r'(?s)Requested restore failed.*restoring the original preview')
+
+
+@unittest.skipUnless(os.name == "posix", "POSIX key ownership/modes required")
+class PublicKeyPathTests(unittest.TestCase):
+    def test_installer_and_direct_bootstrap_enforce_identical_key_boundary(self):
+        validators = [source.read_text(encoding="utf-8").split("<<'PUBLIC_KEY_PATH'\n", 1)[1]
+                      .split("\nPUBLIC_KEY_PATH\n", 1)[0] for source in (INSTALL, BOOTSTRAP)]
+        self.assertEqual(validators[0], validators[1])
+        # CI also executes this as root on Ubuntu 22.04/24.04. Locally only the
+        # trusted root/UID are substituted; actual lstat/resolve/mode checks run.
+        with tempfile.TemporaryDirectory(prefix="hufs-key-boundary-") as temporary:
+            root = Path(temporary)
+            trusted = root / "root"
+            trusted.mkdir(mode=0o700)
+            validator = validators[0].replace("expected_uid = 0", f"expected_uid = {os.getuid()}")
+            validator = validator.replace("key_root = pathlib.Path('/root')", f"key_root = pathlib.Path({str(trusted)!r})")
+            key = trusted / "admin.pub"
+            key.write_text("synthetic public key\n")
+            def check(path, valid):
+                result = subprocess.run([sys.executable, "-c", validator, str(path)],
+                                        capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode == 0, valid, f"{path}: {result.stderr}")
+            for mode in (0o600, 0o644):
+                key.chmod(mode)
+                check(key, True)
+            for mode in (0o666, 0o777, 0o664, 0o602, 0o1644):
+                key.chmod(mode)
+                check(key, False)
+            key.chmod(0o600)
+            check(trusted / ".." / "root" / "admin.pub", False)
+            escaped = root / "outside.pub"
+            escaped.write_text("synthetic public key\n")
+            escaped.chmod(0o600)
+            check(trusted / ".." / "outside.pub", False)
+            link = trusted / "link.pub"
+            link.symlink_to(key)
+            check(link, False)
+            subdir = trusted / "nested"
+            subdir.mkdir()
+            nested = subdir / "admin.pub"
+            nested.write_text("synthetic public key\n")
+            nested.chmod(0o600)
+            check(nested, False)
+            parent_link = root / "linked-root"
+            parent_link.symlink_to(trusted, target_is_directory=True)
+            check(parent_link / "admin.pub", False)
+            trusted.chmod(0o777)
+            check(key, False)
+            trusted.chmod(0o700)
+            if os.getuid() == 0:
+                os.chown(key, 65534, -1)
+                check(key, False)
+
+    def test_ubuntu_admin_ip_policy_accepts_one_prefix_and_rejects_nonpublic_hosts(self):
+        sources = [INSTALL.read_text(encoding="utf-8"), BOOTSTRAP.read_text(encoding="utf-8")]
+        for source in sources:
+            marker = 'python3 - "$admin"' if 'python3 - "$admin"' in source else 'python3 - "$ADMIN_IP"'
+            validator = source.split(marker + " <<'PY'\n", 1)[1].split("\nPY\n", 1)[0]
+            for ip in ("1.1.1.1", "8.8.8.8", "93.184.216.34", "192.0.0.9", "192.0.0.10"):
+                run = subprocess.run([sys.executable, "-c", validator, ip + "/32"], capture_output=True)
+                self.assertEqual(run.returncode, 0, run.stderr)
+            for ip in ("0.1.1.1", "10.0.0.1", "127.0.0.1", "100.64.0.1", "169.254.1.1", "172.16.0.1",
+                       "192.168.1.1", "192.0.0.8", "192.0.0.170", "192.0.2.1", "198.18.0.1", "198.19.255.255",
+                       "198.51.100.1", "203.0.113.1", "224.0.0.1", "240.0.0.1", "255.255.255.255", "01.1.1.1"):
+                run = subprocess.run([sys.executable, "-c", validator, ip + "/32"], capture_output=True)
+                self.assertNotEqual(run.returncode, 0, ip)
 
 if __name__ == "__main__":
     unittest.main()

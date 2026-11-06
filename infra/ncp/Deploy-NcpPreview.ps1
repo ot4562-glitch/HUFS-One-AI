@@ -29,52 +29,25 @@ if (-not $Apply) {
   Write-Host 'Read infra/ncp/README.md and obtain separate operator approval before applying.'
   exit 0
 }
-# Do not pass arbitrary hostnames, SSH URI, command fragments or remote shell input.
-if ($ServerIPv4 -notmatch '^([0-9]{1,3}\.){3}[0-9]{1,3}$') {
-  throw 'ServerIPv4 must be the NCP host literal IPv4 address, not a hostname or command.'
-}
-$address = [System.Net.IPAddress]::Parse($ServerIPv4)
-if ($address.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork -or
-    [System.Net.IPAddress]::IsLoopback($address) -or
-    $address.Equals([System.Net.IPAddress]::Any)) {
-  throw 'Supply the approved NCP server IPv4 address.'
-}
-if ($HostKeyFingerprint -notmatch '^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp256) [0-9]{3,4} SHA256:[A-Za-z0-9+/=]{20,}$') {
-  throw 'Supply the independently verified SSH host-key fingerprint, e.g. ssh-ed25519 256 SHA256:...'
-}
+. (Join-Path $PSScriptRoot 'NcpPreview.Common.ps1')
+Assert-NcpPublicIPv4 $ServerIPv4
+$pins = Convert-NcpHostKeyPin $HostKeyFingerprint
 if ($Ref -notmatch '^(HEAD|[A-Za-z0-9_./-]+)$' -or $Ref.Contains('..')) {
   throw 'Unsafe git ref. Prepare-NcpPreview.ps1 also checks the commit.'
 }
-$key = [System.IO.Path]::GetFullPath($PrivateKeyPath)
-if (-not (Test-Path -LiteralPath $key -PathType Leaf) -or
-    -not $key.EndsWith('.ppk', [System.StringComparison]::OrdinalIgnoreCase)) {
-  throw 'Supply the LOCAL PuTTY SSH .ppk private-key FILE (never copy it onto NCP or GitHub).'
-}
+$key = Resolve-NcpLocalFile $PrivateKeyPath '.ppk'
 # A local private-key path is passed directly to WinSCP/plink; never print the key or passphrase.
-if ($key -match '["\r\n]') { throw 'Invalid key path.' }
-
-function Find-Exe([string]$Explicit, [string]$Name, [string[]]$Locations) {
-  if (-not [string]::IsNullOrWhiteSpace($Explicit)) {
-    if (-not (Test-Path -LiteralPath $Explicit -PathType Leaf)) { throw "Executable not found: $Name" }
-    return [System.IO.Path]::GetFullPath($Explicit)
-  }
-  $found = Get-Command -Name $Name -ErrorAction SilentlyContinue
-  if ($null -ne $found) { return $found.Source }
-  foreach ($location in $Locations) {
-    if ($location -and (Test-Path -LiteralPath $location -PathType Leaf)) { return $location }
-  }
-  throw "Install $Name or pass its -WinSCPExe/-PlinkExe absolute path."
-}
-$winscp = Find-Exe $WinSCPExe 'WinSCP.com' @(
+$winscp = Find-NcpExecutable $WinSCPExe 'WinSCP.com' @(
   (Join-Path $env:ProgramFiles 'WinSCP\WinSCP.com'),
   (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'WinSCP\WinSCP.com')
 )
-$plink = Find-Exe $PlinkExe 'plink.exe' @(
+$plink = Find-NcpExecutable $PlinkExe 'plink.exe' @(
   (Join-Path $env:ProgramFiles 'PuTTY\plink.exe'),
   (Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'PuTTY\plink.exe')
 )
 $repo = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $zip = Join-Path $repo 'local_only\ncp-preview.zip'
+if ($zip -match '["\r\n%]') { throw 'Repository path cannot contain WinSCP script expansion or quoting characters.' }
 Write-Host "Mode: SYNTHETIC-only SSH loopback preview (NOT production)"
 Write-Host "Destination server: $ServerIPv4 / user=hufs-admin / TCP 22"
 Write-Host "Ref: $Ref; verified host-key fingerprint required; no secrets stored."
@@ -89,14 +62,23 @@ if ($sha -notmatch '^[a-f0-9]{64}$') { throw 'Invalid ZIP digest.' }
 # Both host key pinning and SSH private key are explicit. No passwords on command line.
 # Pageant can hold the passphrase-protected .ppk key for both tools.
 $open = 'open sftp://hufs-admin@' + $ServerIPv4 + '/ -hostkey="' +
-  $HostKeyFingerprint + '" -privatekey="' + $key + '"'
+  $pins.WinSCP + '" -privatekey="' + $key + '"'
 $put = 'put "' + $zip + '" /home/hufs-admin/ncp-preview.zip'
 Write-Host 'Uploading one allowlisted ZIP via WinSCP SFTP (host key is pinned).'
-& $winscp /ini=nul /command $open $put 'exit'
-if ($LASTEXITCODE -ne 0) { throw 'WinSCP SFTP upload failed; remote deploy was not attempted.' }
+# /script avoids Windows PowerShell 5.1's native /command nested-quote loss.
+# The file contains paths and the public host pin, never a key or passphrase.
+$scriptFile = [IO.Path]::GetTempFileName()
+try {
+  [IO.File]::WriteAllLines($scriptFile, @('option batch abort', 'option confirm off', $open, $put, 'exit'), (New-Object Text.UTF8Encoding($true)))
+  & $winscp '/ini=nul' ('/script=' + $scriptFile)
+  if ($LASTEXITCODE -ne 0) { throw 'WinSCP SFTP upload failed; remote deploy was not attempted.' }
+}
+finally {
+  Remove-Item -LiteralPath $scriptFile -Force -ErrorAction Stop
+}
 
 Write-Host 'Invoking limited sudo hufs-preview-deploy through pinned-host-key SSH.'
-& $plink -batch -ssh -P 22 -l hufs-admin -i $key -hostkey $HostKeyFingerprint $ServerIPv4 "sudo /usr/local/sbin/hufs-preview-deploy $sha"
+& $plink -batch -ssh -P 22 -l hufs-admin -i $key -hostkey $pins.Plink $ServerIPv4 "sudo /usr/local/sbin/hufs-preview-deploy $sha"
 if ($LASTEXITCODE -ne 0) { throw 'Remote synthetic preview deployment failed. Check logs and rollback via hufs-admin.' }
 Write-Host 'Remote synthetic preview deploy command completed.'
 Write-Host 'Use PuTTY Local SSH tunnel Source=5174 Destination=127.0.0.1:5173, then http://127.0.0.1:5174'

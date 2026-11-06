@@ -160,8 +160,8 @@ class NcpPreviewSafetyTests(unittest.TestCase):
     def test_default_windows_plan_never_requires_host_keys_or_processes(self):
         source = self.windows_deploy
         plan = source.index("if (-not $Apply)")
-        self.assertLess(plan, source.index("$key = [System.IO.Path]::GetFullPath"))
-        self.assertLess(plan, source.index("Find-Exe $WinSCPExe"))
+        self.assertLess(plan, source.index("$key = Resolve-NcpLocalFile"))
+        self.assertLess(plan, source.index("Find-NcpExecutable $WinSCPExe"))
         self.assertLess(plan, source.index("Prepare-NcpPreview.ps1') -Ref $Ref"))
         self.assertIn("No resources, account, IP, SSH key, package, network", source)
 

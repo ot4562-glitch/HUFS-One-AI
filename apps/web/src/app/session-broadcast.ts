@@ -1,4 +1,8 @@
-import type {DemoController} from './demo-controller.js';
+export interface SessionClosureController {
+  subscribe(listener: () => void): () => void;
+  getState(): {readonly status: string};
+  invalidateLocalSession(): void;
+}
 
 /**
  * React UI owner may create BroadcastChannel(SESSION_CLOSE_CHANNEL) in a
@@ -28,7 +32,7 @@ function validCloseEvent(raw:unknown):boolean {
 }
 
 export function attachCrossTabSessionClosure(
-  controller:Pick<DemoController,'subscribe'|'getState'|'invalidateLocalSession'>,
+  controller:SessionClosureController,
   channel:SessionCloseChannel,
 ):()=>void {
   if(!controller||typeof controller.subscribe!=='function'

@@ -46,8 +46,8 @@ describe('#144 BETA owner academic strict browser client',()=>{
       await expect(browser.owner.getDoubleMajor()).rejects.toMatchObject({code,status});
     }
   });
-  it('fail-closes a fake success or malformed 403 envelope to sanitized 503',async()=>{
+  it('keeps a malformed 403 envelope terminal without exposing the response body',async()=>{
     const fake=new HufsApiClient(async()=>json({code:'FORBIDDEN'},403));
-    await expect(fake.owner.getDoubleMajor()).rejects.toMatchObject({code:'PROVIDER_UNAVAILABLE',status:503});
+    await expect(fake.owner.getDoubleMajor()).rejects.toMatchObject({code:'FORBIDDEN',status:403});
   });
 });

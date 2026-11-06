@@ -35,10 +35,24 @@ fi
 [[ "$expected" =~ ^[a-f0-9]{64}$ && ! "$expected" =~ ^0{64}$ ]] || {
   echo 'Exact reviewed bootstrap SHA256 required.' >&2;exit 2;
 }
-[[ "$key" == /root/* && ! -L "$key" && -f "$key" && -r "$key" ]] || {
-  echo 'Supply a single local root-owned PUBLIC SSH key path under /root/.' >&2;exit 2;
-}
-[[ $(stat -c '%u' "$key") == 0 && $(stat -c '%a' "$key") =~ ^[0-7]+$ ]] || exit 2
+# Validate the exact path later passed to bootstrap, before any host mutation.
+python3 - "$key" <<'PUBLIC_KEY_PATH'
+import pathlib, stat, sys
+expected_uid = 0
+key_root = pathlib.Path('/root')
+try:
+    key = pathlib.Path(sys.argv[1])
+    parent = key_root.lstat()
+    info = key.lstat()
+    if (not stat.S_ISDIR(parent.st_mode) or key_root.resolve(strict=True) != key_root
+            or parent.st_uid != expected_uid or parent.st_mode & 0o022
+            or key.parent != key_root or str(key.resolve(strict=True)) != sys.argv[1]
+            or not stat.S_ISREG(info.st_mode) or info.st_uid != expected_uid
+            or stat.S_IMODE(info.st_mode) not in (0o600, 0o644)):
+        sys.exit('PUBLIC key must be a canonical regular root-owned 0600/0644 file directly under /root, without symlinks.')
+except (OSError, ValueError):
+    sys.exit('Missing or inaccessible canonical PUBLIC key file.')
+PUBLIC_KEY_PATH
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 bootstrap="$script_dir/bootstrap-ubuntu.sh"
 # The bootstrap installs these companions as privileged sudo helpers. Its hash
@@ -79,7 +93,11 @@ python3 - "$admin" <<'PY'
 import ipaddress,sys
 try:
     addr=ipaddress.ip_network(sys.argv[1],strict=True)
-    assert addr.version==4 and addr.prefixlen==32 and addr.network_address.is_global
+    ip=addr.network_address
+    assert addr.version==4 and addr.prefixlen==32 and ip.is_global and not ip.is_multicast and not ip.is_reserved
+    # Keep the Windows and Ubuntu 22.04/24.04 policy identical despite Python
+    # versions differing on the 192.0.0.0/24 protocol-assignment registry.
+    assert ip not in ipaddress.ip_network('192.0.0.0/24') or str(ip) in ('192.0.0.9','192.0.0.10')
 except Exception:
     sys.exit('Admin SSH source must be a real public IPv4 /32.')
 PY

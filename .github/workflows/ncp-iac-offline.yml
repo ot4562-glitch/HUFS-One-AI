@@ -10,6 +10,65 @@ permissions:
   contents: read
 
 jobs:
+  windows-operator-offline:
+    runs-on: windows-2022
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /infra/ncp/
+            /tests/release/test_ncp_windows_boundary.py
+            /tests/release/check_ncp_winscp_parser.ps1
+      - name: Validate converted pins with checksum-pinned real WinSCP parser, without a server connection
+        shell: powershell
+        env:
+          WINSCP_VERSION: '6.7.0'
+          WINSCP_NUPKG_SHA256: '40f20147604ae24c3b164a38f867afcf12c30c317885dca38a851f434003c08c'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          $archive = Join-Path $env:RUNNER_TEMP 'winscp-parser.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'winscp-parser'
+          $url = 'https://api.nuget.org/v3-flatcontainer/winscp/' + $env:WINSCP_VERSION + '/winscp.' + $env:WINSCP_VERSION + '.nupkg'
+          Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $archive
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ine $env:WINSCP_NUPKG_SHA256) { throw 'WinSCP package digest mismatch.' }
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          & ./tests/release/check_ncp_winscp_parser.ps1 -AssemblyPath (Join-Path $destination 'lib/net40/WinSCPnet.dll')
+      - name: Prove Windows PowerShell 5.1 argv, host pins and fail-closed paths with native offline stubs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($PSVersionTable.PSVersion.Major -ne 5) { throw 'This gate must use Windows PowerShell 5.1.' }
+          if ((Test-Path csv) -or (Test-Path local_only)) { throw 'Personal source checkout forbidden.' }
+          python -m unittest discover -s tests/release -p test_ncp_windows_boundary.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  ubuntu-installer-offline:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /infra/ncp/
+            /tests/release/test_ncp_operator_workflow.py
+      - name: Validate root-owned temporary public-key fixtures without installing or contacting a host
+        run: |
+          test ! -d csv
+          test ! -d local_only
+          bash -n infra/ncp/setup/02-install-host.sh
+          bash -n infra/ncp/bootstrap-ubuntu.sh
+          sudo python3 -m unittest discover -s tests/release -p test_ncp_operator_workflow.py -v
+
   network-mock:
     runs-on: ubuntu-latest
     timeout-minutes: 8

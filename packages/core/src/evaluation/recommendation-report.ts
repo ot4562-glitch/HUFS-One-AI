@@ -6,6 +6,7 @@ import {compareRankers,compareTop3Quality,eligibilityAgreement,type GoldEligibil
 import {evaluateOpportunity} from '../opportunities/evaluate.js';
 import {composeFeed} from '../opportunities/feed.js';
 import {RANK_CONFIG_V1} from '../opportunities/rank.js';
+import {DEMO_REVISION_CASES,DEMO_REVISION_PUBLISHED_AT,gatedDemoCorpus} from '../opportunities/demo-revisions.js';
 import {onlyKnownTopics} from '../normalization/topics.js';
 import {canonicalJson,hashCanonical} from './canonical.js';
 import {validateReviewPackage,type ReviewPackage} from './review-package.js';
@@ -60,6 +61,8 @@ function enriched(packet:ReviewPackage,raw:unknown){
  * eligibility, claims or labels. The same ranker/config and filtering are used. */
 export function recommendationReport(packet:ReviewPackage,ledger:unknown,context:{
   now:string;authority?:ReviewerAuthority;reference?:'INDEPENDENT'|'TRACK_OWNER_SELF';enrichment?:unknown;
+  /** Opt-in (#10): add a separate correction/cancel/extension scenario. The r1 baseline splits never change. */
+  revisionScenario?:boolean;
 }){
   const p=validateReviewPackage(packet),review=inspectReviewLedger(ledger,p,context);
   const reference=context.reference??'INDEPENDENT',labels:Record<string,Record<string,RelevanceLabel>>={};
@@ -120,9 +123,53 @@ export function recommendationReport(packet:ReviewPackage,ledger:unknown,context
       comparison,top3Quality,eligibility,predictedUnknown,eligibilityPopulation:'ALL_CANONICAL_CASES',
       codePlusLlm};
   });
+  const revisionScenario=context.revisionScenario===true?revisionScenarioSection(p,profiles,options,reference):undefined;
   return {schemaVersion:'recommendation-evaluation-report-v1',packageSha256:p.packageSha256,
     targetCommit:p.targetCommit,datasetId:p.datasetId,demoAsOf:p.demoAsOf,referenceKind:reference,
     independentHumanLabelled:review.independentHumanLabelled,independentGoldReview:review.independentGoldReview,
     humanAcceptance:'NOT_ESTABLISHED',rankConfigVersion:RANK_CONFIG_V1.version,rankConfigSha256:hashCanonical(RANK_CONFIG_V1),
-    splits,warning:'Five synthetic profiles; macro P@3 changes in 1/15 steps. Draft, partial and test references do not establish real accuracy.'};
+    splits,...(revisionScenario?{revisionScenario}:{}),
+    warning:'Five synthetic profiles; macro P@3 changes in 1/15 steps. Draft, partial and test references do not establish real accuracy.'};
 }
+
+/**
+ * #10 opt-in analysis section: the same profiles, ranker and asOf on the corpus after the SourceRevision
+ * gate (demo-revisions overlay). Reported next to, never instead of, the r1 baseline splits, so baseline
+ * precision, coverage and sample counts cannot move silently. A label (including an owner draft) belongs
+ * to the reviewed source revision, not just an opportunity id. Changed revisions remain unlabelled until
+ * a separate review package covers them; r1 signatures must never be presented as r2 gold.
+ */
+function revisionScenarioSection(packet:ReviewPackage,profiles:{profileId:string;profile:RecommendationProfileLike;labels:LabelSet}[],
+  baseOptions:{asOf:string;config:typeof RANK_CONFIG_V1},reference:'INDEPENDENT'|'TRACK_OWNER_SELF'){
+  const gated=gatedDemoCorpus(baseOptions.asOf),options={...baseOptions,publishedAtBySnapshotId:DEMO_REVISION_PUBLISHED_AT};
+  const ids=new Set(gated.usable.map(o=>o.id));
+  const reviewedRevisions=new Map(packet.cases.map(c=>[c.profileId+':'+c.opportunityId,c.sourceRevisionId]));
+  const unreviewedRevisionIds=new Set<string>();
+  const revisionBoundProfiles=profiles.map(student=>{
+    const labels:Record<string,RelevanceLabel>={};
+    for(const opportunity of gated.usable){
+      if(reviewedRevisions.get(student.profileId+':'+opportunity.id)!==opportunity.sourceSnapshotId){
+        unreviewedRevisionIds.add(opportunity.sourceSnapshotId);continue;
+      }
+      const label=student.labels[opportunity.id];
+      if(label!==undefined)labels[opportunity.id]=label;
+    }
+    return {...student,labels};
+  });
+  const labelCount=revisionBoundProfiles.reduce((n,s)=>n+Object.keys(s.labels).length,0);
+  let predictedUnknown=0;
+  for(const s of profiles)for(const o of gated.usable)if(evaluateOpportunity(s.profile,o,baseOptions.asOf).eligibility==='UNKNOWN')predictedUnknown++;
+  return {scenarioVersion:'syn-corpus-v1+revisions-v1',asOf:baseOptions.asOf,baselineUnchanged:true as const,
+    cases:DEMO_REVISION_CASES.map(c=>({...c})),
+    usableOpportunityIds:gated.usable.map(o=>o.id).sort(),
+    usableSnapshotIds:gated.usable.map(o=>o.sourceSnapshotId).sort(),
+    quarantined:gated.quarantined.map(q=>({...q})),
+    labelPolicy:'EXACT_SOURCE_REVISION' as const,unreviewedRevisionIds:[...unreviewedRevisionIds].sort(),
+    labelCoverage:ratio(labelCount,profiles.length*ids.size),
+    qualityState:reference==='TRACK_OWNER_SELF'?'TRACK_OWNER_SELF_REFERENCE_ONLY':labelCount===0?'NOT_RUN':
+      labelCount===profiles.length*ids.size?'SIGNED_REFERENCE':'PARTIAL_SIGNED_REFERENCE',
+    comparison:labelCount===0?null:compareRankers(revisionBoundProfiles,gated.usable,options),
+    top3Quality:compareTop3Quality(profiles,gated.usable,options),
+    predictedUnknown};
+}
+type RecommendationProfileLike=Parameters<typeof evaluateOpportunity>[0];

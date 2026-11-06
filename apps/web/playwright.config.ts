@@ -18,7 +18,9 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
-    channel: process.env.PW_CHANNEL ?? 'msedge',
+    ...(process.env.PW_EXECUTABLE_PATH
+      ? {launchOptions: {executablePath: process.env.PW_EXECUTABLE_PATH}}
+      : {channel: process.env.PW_CHANNEL ?? 'msedge'}),
     trace: 'off',
     screenshot: 'off',
   },
