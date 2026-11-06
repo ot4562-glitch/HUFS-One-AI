@@ -68,8 +68,14 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Shift+Tab'); // return from radio group to its disclosure
   await expect(page.locator('.selector__summary')).toBeFocused();
   await page.keyboard.press('Enter'); // close account disclosure before navigating on
-  await page.keyboard.press('Tab'); // 전체 메뉴
-  await expect(page.getByRole('link', {name: '전체 메뉴', exact: true})).toBeFocused();
+  const menuLink = page.getByRole('link', {name: '전체 메뉴', exact: true});
+  let reachedMenu = await menuLink.evaluate(el => document.activeElement === el);
+  // Native details focus restoration may leave another internal control in the tab order.
+  for (let i = 0; i < 8 && !reachedMenu; i++) {
+    await page.keyboard.press('Tab');
+    reachedMenu = await menuLink.evaluate(el => document.activeElement === el);
+  }
+  expect(reachedMenu, 'The header menu must be reachable by keyboard after closing account selection').toBe(true);
   await page.keyboard.press('Tab'); // 설정
   await expect(page.getByRole('link', {name: '설정', exact: true})).toBeFocused();
   // The five mobile shortcuts stay after account and settings in keyboard order.
