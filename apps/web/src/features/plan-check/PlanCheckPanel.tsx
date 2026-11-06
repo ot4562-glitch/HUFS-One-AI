@@ -2,6 +2,7 @@ import {useEffect, useId, useState} from 'react';
 import type {DemoContext, DemoSnapshot} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from '../../app/index.js';
 import {HufsApiError} from '../../integrations/api-error.js';
+import {studentFacingText} from '../../shell/studentText.js';
 import {buildPlanCheckView, termText, type PlanCheckView} from './planCheckView.js';
 
 /**
@@ -78,7 +79,7 @@ export function PlanCheckPanel({state, controller, port}: {state: DemoViewState;
       {current?.kind === 'STALE' && (
         <p role="status">
           그 사이 계획이 바뀌었습니다.{' '}
-          <button type="button" onClick={() => setAttempt(n => n + 1)}>다시 검사</button>
+          <button type="button" className="button" onClick={() => setAttempt(n => n + 1)}>다시 검사</button>
         </p>
       )}
       {current?.kind === 'VIEW' && <Result view={current.view} />}
@@ -97,8 +98,8 @@ function Result({view}: {view: PlanCheckView}) {
           <ul className="plan__issues" aria-label="계획 검사 결과">
             {view.issues.map(i => (
               <li key={i.key} className="plan__issue">
-                <span className="plan__badge"><span aria-hidden="true">{i.badge.icon}</span> {i.badge.text}</span> {i.text}
-                <span className="muted"> · {i.courses}</span>
+                <span className="plan__badge"><span aria-hidden="true">{i.badge.icon}</span> {i.badge.text}</span> {studentFacingText(i.text)}
+                <span className="muted"> · {studentFacingText(i.courses)}</span>
               </li>
             ))}
           </ul>
@@ -107,11 +108,11 @@ function Result({view}: {view: PlanCheckView}) {
       {view.unchecked.length > 0 && (
         <>
           <h3 className="plan__sub">검사하지 못한 과목</h3>
-          <ul>{view.unchecked.map(u => <li key={u}>{u}</li>)}</ul>
+          <ul>{view.unchecked.map(u => <li key={u}>{studentFacingText(u)}</li>)}</ul>
         </>
       )}
-      <ul className="muted plan__caveats">{view.caveats.map(c => <li key={c}>{c}</li>)}</ul>
-      <p className="muted">{view.versionText}</p>
+      <ul className="muted plan__caveats">{view.caveats.map(c => <li key={c}>{studentFacingText(c)}</li>)}</ul>
+      <p className="muted">{studentFacingText(view.versionText)}</p>
     </>
   );
 }
