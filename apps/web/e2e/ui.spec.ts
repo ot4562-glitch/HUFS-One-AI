@@ -35,7 +35,12 @@ for (const width of [320, 360, 390, 768, 1440]) {
     await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
     await expect(page.getByRole('region', {name: '내 주요 일정'}).getByRole('button').first()).toBeVisible();
     for (const tab of ['졸업', '보관함']) {
-      await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: tab}).click();
+      if (width >= 1024) {
+        await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '교과/비교과'}).click();
+        await page.getByRole('navigation', {name: '교과/비교과 메뉴'}).getByRole('link', {name: tab === '졸업' ? '졸업지원' : '보관함'}).click();
+      } else {
+        await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: tab}).click();
+      }
       await expect(page.getByRole('heading', {level: 1})).toHaveText(tab);
       const o = await noHorizontalOverflow(page);
       expect(o.offenders, `${tab} @${width}`).toEqual([]);
@@ -60,6 +65,9 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab');
   await page.keyboard.press('Space');
   await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
+  await page.keyboard.press('Shift+Tab'); // return from radio group to its disclosure
+  await expect(page.locator('.selector__summary')).toBeFocused();
+  await page.keyboard.press('Enter'); // close account disclosure before navigating on
   await page.keyboard.press('Tab'); // 전체 메뉴
   await expect(page.getByRole('link', {name: '전체 메뉴', exact: true})).toBeFocused();
   await page.keyboard.press('Tab'); // 설정
