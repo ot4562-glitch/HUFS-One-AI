@@ -13,3 +13,4 @@ export * from './clubs.js';
 export * from './demo-clubs.js';
 export * from './corpus-coverage.js';
 export * from './experience-signals.js';
+export * from './demo-revisions.js';
