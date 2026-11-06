@@ -308,10 +308,12 @@ test('interactive discovery: home selector and live opportunity filters at 360px
   await expect(guide.getByRole('button', {name: /취득 학점/})).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회'}).click();
   const explorer = page.getByRole('region', {name: '공고 탐색'});
+  const initialCount = await explorer.locator('.opps > .opp').count();
+  expect(initialCount).toBeGreaterThan(0);
   await explorer.getByRole('searchbox', {name: '공고 검색'}).fill('존재하지않는공고ZZZ');
   await expect(explorer.getByText('선택한 검색어와 조건에 맞는 공고가 없어요.')).toBeVisible();
   await explorer.getByRole('button', {name: '검색 조건 초기화'}).click();
-  await expect(explorer.getByRole('listitem')).toHaveCount(9);
+  await expect(explorer.locator('.opps > .opp')).toHaveCount(initialCount);
   await explorer.getByRole('button', {name: '7일 내 마감'}).click();
   await expect(explorer.getByRole('button', {name: '7일 내 마감'})).toHaveAttribute('aria-pressed', 'true');
   const overflow = await noHorizontalOverflow(page);
