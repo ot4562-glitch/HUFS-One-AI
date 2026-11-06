@@ -15,11 +15,12 @@ export function DemoSelector({state, onSelect}: Props) {
   const result = state.profiles.length ? buildSelectorSlots({profiles: state.profiles}) : null;
   const slots = result?.ok ? result.slots : [];
   const current = slots.find(s => s.demoSubjectId === state.selected);
+  const displayName = current?.label.split(' · ')[0]?.trim();
   return (
     <details className="selector">
       <summary className="selector__summary">
-        <span className="selector__caption">시연 대상</span>
-        <span className="selector__current">{current ? current.label : '선택 안 됨'}</span>
+        <span className="selector__caption">계정</span>
+        <span className="selector__current">{displayName ? `${displayName}님, 안녕하세요` : '계정을 선택해 주세요'}</span>
       </summary>
       {result && !result.ok && <p role="alert">시연 대상 목록을 확인할 수 없습니다.</p>}
       {!result && (state.status === 'IDLE' || state.status === 'LOADING') && (

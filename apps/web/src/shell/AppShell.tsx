@@ -25,8 +25,8 @@ export function InAppLink({to, navigate, children, className, current}: {
 
 /**
  * #9 redesign shell (UIUX 96 master spec §3.4, §4 C01/C02/C18):
- * - 48px top bar: wordmark + "독립 학생 프로젝트 · 학교 공식 서비스 아님", 전체 메뉴/설정, and the five A11.1
- *   tabs as small "ONE AI" shortcuts (they become the bottom bar on phones; one nav, one name).
+ * - Shared top bar: wordmark, account disclosure and settings; no separate ONE AI badge.
+ * - The five mobile shortcuts remain at the bottom, while desktop navigation uses the existing area links.
  * - Wide screens: the 11 observed HUFSAbility areas as the GNB, the current one underlined in gold.
  *   Each area opens its own page; original functions inside it are never links.
  */
@@ -42,12 +42,12 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
             <InAppLink to="/" navigate={navigate} className="app__logo"><span className="app__logo-mark" aria-hidden="true" />HUFS One AI</InAppLink>
             <span className="topbar__tagline">독립 학생 프로젝트 · 학교 공식 서비스 아님</span>
           </span>
+          {selector && <div className="topbar__account">{selector}</div>}
           <span className="app__brand-links">
             <InAppLink to="/menu" navigate={navigate} className="app__settings app__menu-link" current={path === '/menu'}>전체 메뉴</InAppLink>
             <InAppLink to="/settings" navigate={navigate} className="app__settings" current={path === '/settings'}>설정</InAppLink>
           </span>
           <nav className="app__tabs" aria-label="주요 메뉴">
-            <span className="app__tabs-label" aria-hidden="true">ONE AI</span>
             <ul>
               {TABS.map(t => (
                 <li key={t.path}>
@@ -69,7 +69,6 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
       </header>
       <div className="app__header">
         {transportLabel && <p className="app__transport" role="note">{transportLabel}</p>}
-        {selector}
         {status}
       </div>
       <main id="main" className="app__main" tabIndex={-1}>{children}</main>

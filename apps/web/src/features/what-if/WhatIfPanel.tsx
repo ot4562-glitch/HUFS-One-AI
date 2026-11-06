@@ -2,6 +2,7 @@ import {useId, useState, type FormEvent} from 'react';
 import type {DemoContext, DemoSnapshot} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from '../../app/index.js';
 import {HufsApiError} from '../../integrations/api-error.js';
+import {studentFacingText} from '../../shell/studentText.js';
 import {ACTION_TEXT, HYPOTHETICAL_TEXT, buildWhatIfView, needsTarget, type Scenario, type ScenarioAction, type WhatIfView} from './whatIfView.js';
 
 /**
@@ -90,7 +91,7 @@ export function WhatIfPanel({state, controller, port}: {state: DemoViewState; co
             </select>
           </p>
         )}
-        <p><button type="submit" disabled={shown?.kind === 'LOADING'}>가정 분석하기</button></p>
+        <p><button type="submit" className="button" disabled={shown?.kind === 'LOADING'}>가정 분석하기</button></p>
       </form>
       <div aria-live="polite">
         {shown?.kind === 'LOADING' && <p className="muted">가정 분석하는 중</p>}
@@ -108,7 +109,7 @@ function Outcome({view, synthetic}: {view: WhatIfView; synthetic: boolean}) {
     return (
       <div className="whatif__result">
         <h3>{view.title}: 지금은 분석할 수 없습니다</h3>
-        <ul>{view.blockers.map(b => <li key={b}>{b}</li>)}</ul>
+        <ul>{view.blockers.map(b => <li key={b}>{studentFacingText(b)}</li>)}</ul>
         <p className="muted">결과를 추측해 보여 주지 않습니다.</p>
       </div>
     );
@@ -127,8 +128,8 @@ function Outcome({view, synthetic}: {view: WhatIfView; synthetic: boolean}) {
           <thead><tr><th scope="col">요건</th><th scope="col">바뀌는 점</th><th scope="col">지금</th><th scope="col">가정</th></tr></thead>
           <tbody>
             {view.rows.map(r => (
-              <tr key={r.id} aria-label={r.ariaLabel}>
-                <th scope="row">{r.id}</th>
+              <tr key={r.id} aria-label={studentFacingText(r.ariaLabel)}>
+                <th scope="row">{studentFacingText(r.id)}</th>
                 <td><span className="whatif__badge"><span aria-hidden="true">{r.badge.icon}</span> {r.badge.text}</span></td>
                 <td>{r.before}</td>
                 <td>{r.after}</td>
@@ -137,7 +138,7 @@ function Outcome({view, synthetic}: {view: WhatIfView; synthetic: boolean}) {
           </tbody>
         </table>
       </div>
-      <p className="muted">{view.rulePackText}</p>
+      <p className="muted">{studentFacingText(view.rulePackText)}</p>
     </div>
   );
 }

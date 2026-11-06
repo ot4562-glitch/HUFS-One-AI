@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import type {DemoContext} from '@hufs-one/contracts';
 import type {DemoController, DemoViewState} from '../../app/index.js';
 import {buildDoubleMajorView, type DoubleMajorView, type MajorColumnView} from './doubleMajorView.js';
+import {studentFacingText} from '../../shell/studentText.js';
 
 /**
  * #144 port: the current primary + chosen double major audit for this context at the screen's asOf, or
@@ -21,14 +22,14 @@ function Column({c}: {c: MajorColumnView}) {
   return (
     <div className="dm__col">
       <h4>{c.role}</h4>
-      <p><strong>{c.stateText}</strong> <span className="muted">· {c.rulePackText}</span></p>
+      <p><strong>{c.stateText}</strong> <span className="muted">· {studentFacingText(c.rulePackText)}</span></p>
       <ul className="dm__rows" aria-label={`${c.role} 요건`}>
         {c.rows.map(r => (
-          <li key={r.id} className={`dm__row${r.heldText ? ' dm__row--held' : ''}`} aria-label={r.ariaLabel}>
+          <li key={r.id} className={`dm__row${r.heldText ? ' dm__row--held' : ''}`} aria-label={studentFacingText(r.ariaLabel)}>
             <span className="dm__badge"><span aria-hidden="true">{r.badge.icon}</span> {r.badge.text}</span>
-            <span className="dm__id">{r.id}</span>
+            <span className="dm__id">{studentFacingText(r.id)}</span>
             {r.creditsText && <span className="muted">{r.creditsText}</span>}
-            {r.heldText && <span className="dm__held">{r.heldText}</span>}
+            {r.heldText && <span className="dm__held">{studentFacingText(r.heldText)}</span>}
           </li>
         ))}
       </ul>
@@ -74,7 +75,7 @@ export function DoubleMajorPanel({state, controller, port}: {state: DemoViewStat
       <dl className="credits">
         {view.uniqueCredits.map(c => <div key={c.label}><dt>{c.label}</dt><dd>{c.credits}</dd></div>)}
       </dl>
-      {view.overlapText && <p className="dm__overlap">{view.overlapText}</p>}
+      {view.overlapText && <p className="dm__overlap">{studentFacingText(view.overlapText)}</p>}
       <div className="dm__cols">
         <Column c={view.primary} />
         {view.doubleMajor ? <Column c={view.doubleMajor} /> : <p className="muted dm__note">{view.doubleMajorNote}</p>}

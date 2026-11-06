@@ -35,7 +35,12 @@ for (const width of [320, 360, 390, 768, 1440]) {
     await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
     await expect(page.getByRole('region', {name: '내 주요 일정'}).getByRole('button').first()).toBeVisible();
     for (const tab of ['졸업', '보관함']) {
-      await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: tab}).click();
+      if (width >= 1024) {
+        await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '교과/비교과'}).click();
+        await page.getByRole('navigation', {name: '교과/비교과 메뉴'}).getByRole('link', {name: tab === '졸업' ? '졸업지원' : '보관함'}).click();
+      } else {
+        await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: tab}).click();
+      }
       await expect(page.getByRole('heading', {level: 1})).toHaveText(tab);
       const o = await noHorizontalOverflow(page);
       expect(o.offenders, `${tab} @${width}`).toEqual([]);
@@ -53,20 +58,31 @@ test('keyboard only: skip link, open selector, choose a subject, reach the tabs'
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', {name: '본문으로 건너뛰기'})).toBeFocused();
   await page.keyboard.press('Tab'); // logo
-  await page.keyboard.press('Tab'); // 전체 메뉴 (#124)
-  await page.keyboard.press('Tab'); // 설정
-  // #9: the 주요 메뉴 (ONE AI tabs) sits in the header, a bottom bar on phones: its five tabs come next.
-  for (const name of ['오늘', '기회', '경험', '졸업', '보관함']) {
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name, exact: true})).toBeFocused();
-  }
-  await page.keyboard.press('Tab'); // selector summary
+  await page.keyboard.press('Tab'); // header account
   await expect(page.locator('.selector__summary')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('group', {name: /시연 대상 선택/}).getByRole('radio').first()).toBeVisible();
   await page.keyboard.press('Tab');
   await page.keyboard.press('Space');
   await expect(page.getByRole('status').first()).toContainText('시연 대상: 가상 학생 1');
+  await page.keyboard.press('Shift+Tab'); // return from radio group to its disclosure
+  await expect(page.locator('.selector__summary')).toBeFocused();
+  await page.keyboard.press('Enter'); // close account disclosure before navigating on
+  const menuLink = page.getByRole('link', {name: '전체 메뉴', exact: true});
+  let reachedMenu = await menuLink.evaluate(el => document.activeElement === el);
+  // Native details focus restoration may leave another internal control in the tab order.
+  for (let i = 0; i < 8 && !reachedMenu; i++) {
+    await page.keyboard.press('Tab');
+    reachedMenu = await menuLink.evaluate(el => document.activeElement === el);
+  }
+  expect(reachedMenu, 'The header menu must be reachable by keyboard after closing account selection').toBe(true);
+  await page.keyboard.press('Tab'); // 설정
+  await expect(page.getByRole('link', {name: '설정', exact: true})).toBeFocused();
+  // The five mobile shortcuts stay after account and settings in keyboard order.
+  for (const name of ['오늘', '기회', '경험', '졸업', '보관함']) {
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name, exact: true})).toBeFocused();
+  }
   const focusRing = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
   expect(focusRing).not.toBe('none');
 });
@@ -131,7 +147,7 @@ test('#9 redesign at 1440px: 11-area GNB, area banner + left menu, originals nev
   await pick(page, 0);
   const gnb = page.getByRole('navigation', {name: '전체 메뉴'});
   await expect(gnb.getByRole('link')).toHaveCount(11);
-  await expect(page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회', exact: true})).toBeVisible();
+  await expect(gnb.getByRole('link', {name: '채용/고용24'})).toBeVisible();
   await gnb.getByRole('link', {name: '교과/비교과'}).click();
   await expect(page.getByRole('heading', {level: 1})).toHaveText('교과/비교과');
   const lnb = page.getByRole('navigation', {name: '교과/비교과 메뉴'});
@@ -189,7 +205,8 @@ test('sandbox: save from a card, find it in 보관함, never for another subject
   await first.click();
   await page.getByRole('button', {name: '보관함에 저장'}).click();
   await expect(page.getByRole('button', {name: '보관함에서 빼기'})).toBeVisible();
-  await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '보관함'}).click();
+  await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '교과/비교과'}).click();
+  await page.getByRole('navigation', {name: '교과/비교과 메뉴'}).getByRole('link', {name: '보관함'}).click();
   await expect(page.getByRole('region', {name: '저장한 공고'}).getByRole('link', {name: title!})).toBeVisible();
   await pick(page, 1);
   await expect(page.getByRole('region', {name: '저장한 공고'}).getByRole('link')).toHaveCount(0);

@@ -102,7 +102,9 @@ describe('REVIEWER sandbox screens (synthetic)', () => {
     tab('보관함');
     pick(1);
     await flush();
-    expect(within(screen.getByRole('region', {name: '저장한 공고'})).queryAllByRole('link')).toHaveLength(0);
+    const saved = screen.getByRole('region', {name: '저장한 공고'});
+    expect(within(saved).queryByRole('link', {name: '가상 데이터 공공문제 공모전'})).toBeNull();
+    expect(within(saved).getByRole('link', {name: '맞춤 기회 둘러보기'})).toBeTruthy();
   });
 
   it('only server-allowed actions are offered', async () => {
