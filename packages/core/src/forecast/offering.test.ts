@@ -449,3 +449,93 @@ describe('forecast index', () => {
     expect('forecastOfferings' in forecastIndex).toBe(false);
   });
 });
+
+describe('history looks back at most 8 regular semesters (#11 TASK-17)', () => {
+  it('leaves out a same-season term more than 8 semesters before the target', () => {
+    const result = outlook({courseId:'SYN-LOOKBACK', targetTerm:'2026-1', asOf:ASOF, observations:[
+      catalog('2021-1', 'CONFIRMED_NOT_OFFERED'),
+      catalog('2022-1', 'OFFERED'), catalog('2023-1', 'OFFERED'),
+      catalog('2024-1', 'OFFERED'), catalog('2025-1', 'OFFERED'),
+    ]});
+    expect(result.signal).toBe('HISTORICAL_PATTERN');
+    expect([result.sameSeasonOfferedTerms, result.sameSeasonObservedTerms]).toEqual([4, 4]);
+    expect(result.observations.map(row => row.term)).toEqual(['2022-1', '2023-1', '2024-1', '2025-1']);
+    expect(result.evidenceRefs).not.toContain('SYN-SRC-2021-1');
+  });
+
+  it('keeps the term exactly 8 semesters back and drops the one 10 back', () => {
+    const result = outlook({courseId:'SYN-EDGE', targetTerm:'2026-2', asOf:'2026-08-01T00:00:00.000+09:00', observations:[
+      catalog('2021-2', 'OFFERED'), catalog('2022-2', 'OFFERED'),
+      catalog('2023-2', 'CONFIRMED_NOT_OFFERED'), catalog('2024-2', 'OFFERED'),
+    ]});
+    expect(result.observations.map(row => row.term)).toEqual(['2022-2', '2023-2', '2024-2']);
+    expect([result.sameSeasonOfferedTerms, result.sameSeasonObservedTerms]).toEqual([2, 3]);
+  });
+
+  it('does not turn rows older than the window into 0/n or a closure', () => {
+    const result = outlook({courseId:'SYN-OLD', targetTerm:'2026-1', asOf:ASOF, observations:[
+      catalog('2019-1', 'CONFIRMED_NOT_OFFERED'), catalog('2020-1', 'CONFIRMED_NOT_OFFERED'),
+      catalog('2021-1', 'CONFIRMED_NOT_OFFERED'),
+    ]});
+    expect(result.signal).toBe('UNKNOWN');
+    expect(result.observations).toEqual([]);
+    expect(result.sameSeasonObservedTerms).toBe(0);
+  });
+
+  it('never reports more than 4 same-season terms, whatever the caller sends', () => {
+    const many = Array.from({length:20}, (_, index) => catalog(`${2006 + index}-1`, 'OFFERED'));
+    const result = outlook({courseId:'SYN-MANY', targetTerm:'2026-1', asOf:ASOF, observations:many});
+    expect(result.sameSeasonObservedTerms).toBe(4);
+    expect(result.observations.map(row => row.term)).toEqual(['2022-1', '2023-1', '2024-1', '2025-1']);
+  });
+});
+
+describe('NOTICE_ONLY rows', () => {
+  it('confirm an offering in the target term', () => {
+    const result = outlook({courseId:'SYN-NOTICE', targetTerm:'2026-1', asOf:ASOF,
+      observations:[catalog('2026-1', 'OFFERED', 'NOTICE_ONLY')]});
+    expect(result.signal).toBe('CONFIRMED_OFFERED');
+    expect(result.evidenceRefs).toEqual(['SYN-SRC-2026-1']);
+  });
+
+  it('confirm a closure in the target term', () => {
+    const result = outlook({courseId:'SYN-NOTICE', targetTerm:'2026-1', asOf:ASOF,
+      observations:[catalog('2026-1', 'CONFIRMED_NOT_OFFERED', 'NOTICE_ONLY')]});
+    expect(result.signal).toBe('CONFIRMED_NOT_OFFERED');
+  });
+
+  it('that disagree with a full catalog for the target term are not confirmed either way', () => {
+    const result = outlook({courseId:'SYN-NOTICE', targetTerm:'2026-1', asOf:ASOF, observations:[
+      catalog('2026-1', 'OFFERED', 'NOTICE_ONLY'),
+      {...catalog('2026-1', 'CONFIRMED_NOT_OFFERED'), sourceRef:'SYN-SRC-2026-1-FULL'},
+    ]});
+    expect(result.signal).toBe('INSUFFICIENT_DATA');
+  });
+
+  it('are kept in history but not counted toward k/n', () => {
+    const result = outlook({courseId:'SYN-NOTICE', targetTerm:'2026-1', asOf:ASOF, observations:[
+      catalog('2023-1', 'OFFERED'), catalog('2024-1', 'OFFERED'),
+      catalog('2025-1', 'OFFERED', 'NOTICE_ONLY'),
+    ]});
+    expect(result.signal).toBe('INSUFFICIENT_DATA');
+    expect(result.sameSeasonObservedTerms).toBe(2);
+    expect(result.observations.map(row => [row.term, row.coverage])).toEqual([
+      ['2023-1', 'COMPLETE_TERM_CATALOG'], ['2024-1', 'COMPLETE_TERM_CATALOG'], ['2025-1', 'NOTICE_ONLY'],
+    ]);
+  });
+
+  it('give way to a full catalog for the same past term, and win over a partial list', () => {
+    const result = outlook({courseId:'SYN-NOTICE', targetTerm:'2026-1', asOf:ASOF, observations:[
+      catalog('2023-1', 'CONFIRMED_NOT_OFFERED', 'NOTICE_ONLY'),
+      {...catalog('2023-1', 'OFFERED'), sourceRef:'SYN-SRC-2023-1-FULL'},
+      // Published later, so a tie in rank would pick the partial list.
+      catalog('2024-1', 'OFFERED', 'PARTIAL', '2024-03-01T00:00:00.000Z'),
+      {...catalog('2024-1', 'OFFERED', 'NOTICE_ONLY'), sourceRef:'SYN-SRC-2024-1-NOTICE'},
+    ]});
+    expect(result.observations.map(row => [row.term, row.coverage, row.state])).toEqual([
+      ['2023-1', 'COMPLETE_TERM_CATALOG', 'OFFERED'],
+      ['2024-1', 'NOTICE_ONLY', 'OFFERED'],
+    ]);
+    expect(result.sameSeasonObservedTerms).toBe(1);
+  });
+});
