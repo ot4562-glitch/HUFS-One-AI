@@ -168,3 +168,33 @@ describe('#123 recommendations: up to 3, explained, different per profile, full 
     expect(ids(b.all)).toContain('SYN-CLUB-017');
   });
 });
+
+describe('#10 club replay: approve → revoke → edit → re-approve as successive server snapshots', () => {
+  const base = DEMO_CLUB_POSTS.find(p => p.id === 'SYN-CLUB-014')!;
+  const approved:ClubPost = {...base, state:'APPROVED', createdAt:at(-10), updatedAt:at(-6), approvedAt:at(-5)};
+  const revoked:ClubPost = {...approved, state:'REVOKED', updatedAt:at(-3)};
+  const reapproved:ClubPost = {...approved, summary:`${base.summary} (수정)`, updatedAt:at(-2), approvedAt:at(-1)};
+  const shown = (post:ClubPost, asOf:string) => composeClubBoard(profileOf('S01'), [post], {asOf}).all.map(r => r.post.id);
+
+  it('the first approval is visible only from its approval time', () => {
+    expect(clubHiddenReason(approved, at(-5.5))).toBe('APPROVAL_AFTER_ASOF');
+    expect(shown(approved, at(-4))).toEqual([approved.id]);
+  });
+
+  it('the revoked snapshot is hidden at every asOf', () => {
+    for (const d of [-4, -2, 0]) expect(shown(revoked, at(d))).toEqual([]);
+  });
+
+  it('the re-approved snapshot never revives the post between revocation and re-approval', () => {
+    // Between the edit and the new approval the earlier approval must not count.
+    expect(clubHiddenReason(reapproved, at(-1.5))).toBe('APPROVAL_AFTER_ASOF');
+    // Before the edit, replaying with the new snapshot is unknowable content.
+    expect(clubHiddenReason(reapproved, at(-2.5))).toBe('EDITED_AFTER_ASOF');
+    expect(shown(reapproved, at(-1.5))).toEqual([]);
+    expect(shown(reapproved, at(0))).toEqual([reapproved.id]);
+  });
+
+  it('an edit after the re-approval hides it again until a newer approval', () => {
+    expect(clubHiddenReason({...reapproved, updatedAt:at(-0.5)}, DEMO_AS_OF)).toBe('EDITED_AFTER_APPROVAL');
+  });
+});
