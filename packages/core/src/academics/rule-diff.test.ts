@@ -105,7 +105,8 @@ const ATTEMPTS:LedgerAttempt[] = [
 ];
 
 const request = (previous:unknown, next:unknown, over:Partial<RulePackRevisionRequest> = {}):RulePackRevisionRequest =>
-  ({asOf:AS_OF, previous, next, attempts:ATTEMPTS, ...over});
+  // The same rows for both versions: area membership is stated as unchanged (see nextAttempts).
+  ({asOf:AS_OF, previous, next, attempts:ATTEMPTS, nextAttempts:ATTEMPTS, ...over});
 const row = (diff:ReturnType<typeof compareRulePackRevisions>, id:string) => diff.requirements.find(r => r.requirementId === id);
 
 describe('compareRulePackRevisions: clean amendment', () => {

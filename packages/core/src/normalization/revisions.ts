@@ -120,6 +120,6 @@ export function gateBySourceRevision<T extends {id:string; sourceSnapshotId:stri
     if (usableIds.has(item.sourceSnapshotId)) usable.push(item);
     else quarantined.push({id:item.id, revisionId:item.sourceSnapshotId, reason:reasonById.get(item.sourceSnapshotId) ?? 'UNKNOWN_REVISION'});
   }
-  quarantined.sort((a, b) => byCodeUnit(a.id, b.id));
+  quarantined.sort((a, b) => byCodeUnit(a.id, b.id) || byCodeUnit(a.revisionId, b.revisionId));
   return {usable, quarantined};
 }
