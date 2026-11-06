@@ -39,7 +39,7 @@ async function start() {
     && import.meta.env.VITE_STATIC_PAGES_PREVIEW === 'true'
   )) {
     const dev = await import('./dev/syntheticDemoClient.js');
-    const synthetic = new dev.SyntheticDemoClient({snapshotErrors: {S04: 'SHARING_REVOKED'}});
+    const synthetic = new dev.SyntheticDemoClient({snapshotErrors: localSynthetic ? {S04: 'SHARING_REVOKED'} : {}});
     const owner = await import('./dev/syntheticOwnerServer.js');
     const clubs = await import('./dev/syntheticClubs.js');
     const whatIf = await import('./dev/syntheticWhatIf.js');
