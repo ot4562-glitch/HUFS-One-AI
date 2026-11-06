@@ -9,8 +9,11 @@ export const savedPage: PageRenderer = ({path, state, sandbox, navigate, service
   if (path !== '/saved') return null;
   if (!sandbox) return {title: '보관함', body: (
     <>
-      <p className="muted">{NOT_REVIEWER_TEXT}</p>
-      {services.applications && <p><InAppLink to="/applications" navigate={navigate} className="button button--quiet">내 지원 현황 보드</InAppLink></p>}
+      <div className="saved__empty">
+        <p>{NOT_REVIEWER_TEXT}</p>
+        <InAppLink to="/opportunities" navigate={navigate}>맞춤 기회 살펴보기</InAppLink>
+        {services.applications && <InAppLink to="/applications" navigate={navigate}>내 지원 현황 확인하기</InAppLink>}
+      </div>
     </>
   )};
   const view = screenViewOf(state);
@@ -18,7 +21,7 @@ export const savedPage: PageRenderer = ({path, state, sandbox, navigate, service
   if (!sandbox.ready) return {title: '보관함', body: <p className="muted" aria-busy="true">시연 기록을 불러오는 중</p>};
   const cards = view.feed.kind === 'SHOW' ? [...view.feed.data.featured, ...view.feed.data.compact] : [];
   // Titles only from the current subject's snapshot; an id outside it is listed without guessing a title.
-  const title = (id: string) => cards.find(c => c.opportunityId === id)?.title ?? `${id} (지금 화면 목록에 없음)`;
+  const title = (id: string) => cards.find(c => c.opportunityId === id)?.title ?? '공고 정보가 현재 목록에 없습니다';
   const list = (ids: readonly string[]) => (
     <ul className="rows">{ids.map(id => (
       <li key={id} className="row">
@@ -34,9 +37,11 @@ export const savedPage: PageRenderer = ({path, state, sandbox, navigate, service
     body: (
       <>
         <SandboxNote />
-        <Section title="저장한 공고">{saved.length ? list(saved) : <p className="muted">저장한 공고가 없어요. 공고 상세에서 저장할 수 있어요.</p>}</Section>
-        <Section title="모의 지원">{applied.length ? list(applied) : <p className="muted">모의 지원한 공고가 없어요.</p>}</Section>
-        <Section title="지원서 초안">{drafts.length ? list(drafts) : <p className="muted">작성한 초안이 없어요.</p>}</Section>
+        <div className="saved__grid">
+          <Section title="저장한 공고">{saved.length ? list(saved) : <div className="saved__empty"><p>아직 저장한 공고가 없어요.</p><InAppLink to="/opportunities" navigate={navigate}>맞춤 기회 둘러보기</InAppLink></div>}</Section>
+          <Section title="모의 지원">{applied.length ? list(applied) : <div className="saved__empty"><p>모의 지원한 공고가 없어요.</p><InAppLink to="/opportunities" navigate={navigate}>참여할 공고 찾기</InAppLink></div>}</Section>
+          <Section title="지원서 초안">{drafts.length ? list(drafts) : <div className="saved__empty"><p>작성한 초안이 없어요.</p><InAppLink to="/opportunities" navigate={navigate}>공고에서 초안 작성하기</InAppLink></div>}</Section>
+        </div>
       </>
     ),
   };
