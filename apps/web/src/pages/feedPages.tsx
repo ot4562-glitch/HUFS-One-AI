@@ -1,4 +1,7 @@
 import type {PageRenderer} from '../App.js';
+import {opportunityArtwork} from '../features/illustrations/artwork.js';
+import {SyntheticArtwork} from '../features/illustrations/SyntheticArtwork.js';
+import {SyntheticExampleGallery} from '../features/illustrations/SyntheticExampleGallery.js';
 import {RevisionComparison} from '../features/revisions/RevisionComparison.js';
 import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
@@ -119,6 +122,7 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
           <ul className="opps">{view.feed.data.ineligible!.map(c=>
             <OppCard key={c.opportunityId} card={c} navigate={navigate}/>)}</ul>
         </Section>}
+        {view.snapshotBadges.includes('합성 자료') && <SyntheticExampleGallery kind="opportunities" />}
       </>
     ),
   };
@@ -133,11 +137,13 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
   const card = view.feed.kind === 'SHOW' ? [...view.feed.data.featured, ...view.feed.data.compact, ...(view.feed.data.ineligible??[])].find(c => c.opportunityId === id) : undefined;
   // A card from a different subject/snapshot is never looked up elsewhere.
   if (!card) return {title: '공고를 찾을 수 없습니다', body: <p className="muted">지금 시연 대상의 화면에 없는 공고입니다.</p>};
+  const art = opportunityArtwork(card);
   return {
     title: card.title,
     body: (
       <>
         <Badges items={[...view.snapshotBadges, ...card.badges]} />
+        {art && <SyntheticArtwork key={art.id} art={art} className="opportunity-detail-art" />}
         <dl className="facts">
           <dt>모집 상태</dt><dd>{card.lifecycleText}</dd>
           <dt>지원 조건</dt><dd>{card.eligibilityText}</dd>

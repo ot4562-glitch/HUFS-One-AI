@@ -2,7 +2,9 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
-## 2026-11-06 최신 열린 PR 전수 리뷰 및 병합
+## 2026-11-06 이전 열린 PR 전수 리뷰 및 병합 기록
+
+이 절부터 아래 날짜별 기록은 본선 전 11개 이슈 통합 이전의 이력입니다. 현재 구현·이슈 범위는 [STATUS](../STATUS.md), 최신 HEAD·CI·종결 사유는 각 PR/이슈의 최신 기록을 따릅니다. 아래 과거 시점의 OPEN/미연결 문구를 현재 상태로 사용하지 않습니다.
 
 - 병합 전 열린 PR은 #292/#293/#295/#304의 **4건**, 각 PR의 **정확한 HEAD Actions 4/4 SUCCESS** 확인 후 squash merge 완료. 현재 코드 병합 마지막 SHA [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d).
 - [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292) HEAD `4208c33` → `e0a5b73` (추가 COMMENT 리뷰): 학업 참조모형/한계.
@@ -31,7 +33,7 @@
 - 오너의 이번 **열린 PR 일괄 리뷰·병합 요청**을 #285–#289에 한정하여 처리합니다. PR HEAD의 4종 Actions 성공, 변경 파일·범위·잔여 위험을 확인하고 각각 **GitHub `COMMENT` 리뷰**를 등록했습니다. **실제 비작성자 사람 `APPROVED`로 오인하지 않습니다**. 이전/다음 PR의 병합 승인으로 일반화하지 않습니다.
 - [#285](https://github.com/ot4562-glitch/HUFS-One-AI/pull/285): 합성 UI만 포함, `/experience` 라우트와 실 API/`jobId` #284 미완료. [#286](https://github.com/ot4562-glitch/HUFS-One-AI/pull/286): `id` + `revisionId` 결정성 수정, 기본 평가 보고서는 r1 그대로이며 벤치 숫자는 작업트리 dirty에서 측정. [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287): 판본별 영역 분류가 없으면 UNKNOWN/NEEDS_REVIEW. [#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288): 20과목은 학생 전망 제한, rolling-origin 평가 한도는 200. [#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289): 테스트/속성 커버리지 범위와 독립 오라클 미측정을 구분.
 - #287과 #289의 `packages/core/src/academics/AGENTS.md` 동시 끝줄 추가가 **실제 405 충돌**로 나타났습니다. #289의 통합 브랜치에 두 문구를 보존하고 `main`을 부모로 합친 merge commit [`82eb760`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/82eb760ce213c83bb173ea9af0d28c1c075c0cc1)을 만들었습니다. 새 HEAD 4종 검증을 확인하고 병합합니다. **CSV/원격 인프라 설정은 건드리지 않습니다.**
-- PR의 합성 CI `PASS`와 실제 사람·학생·학교·NCP/PG/유료 AI의 `NOT_RUN`을 구분합니다. #10/#11/#258의 세부 체크만 완료 범위에 맞게 고치고 #284/#260/#276/#280–#283은 실제 증거 전까지 열린 상태 유지.
+- 당시 PR의 합성 CI `PASS`와 실제 사람·학생·학교·NCP/PG/유료 AI의 `NOT_RUN`을 구분했고, #10/#11/#258의 세부 체크만 완료 범위에 맞게 고쳤습니다. 그 시점의 #284/#260/#276/#280–#283은 OPEN이었습니다. 현재 상태와 이관한 미실행 항목은 STATUS와 각 이슈를 확인합니다.
 
 ### 같은 날 추가 생성·병합된 UI [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290)
 

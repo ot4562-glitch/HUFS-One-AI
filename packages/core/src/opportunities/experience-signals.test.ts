@@ -129,3 +129,36 @@ describe('#259 only a current owner approval becomes a recommendation signal', (
     expect(revoked.optionalTopics).toEqual(['AI_ML', 'DATA_ANALYTICS']);
   });
 });
+
+describe('#10 replay: revoke → re-approve → content edit → consent refresh, signal follows only the current approval', () => {
+  const base:RecommendationProfile = {interestTopics:[], desiredJobTopics:[], approvedExperienceTopics:[],
+    approvedLanguageCodes:[], officialMajorTopics:[], facts:{enrollment:'ENROLLED'}};
+  const opts = {asOf:DEMO_AS_OF, publishedAtBySnapshotId:DEMO_PUBLISHED_AT};
+  const expMatched = (p:RecommendationProfile) => composeFeed(p, DEMO_OPPORTUNITIES, opts).all.filter(r => r.matched.experience.length > 0).length;
+  const approval = (version:number, contentVersion:number, consentVersion:number):TagApproval =>
+    ({state:'ACTIVE', version, contentVersion, consentVersion, topics:['DATA_ANALYTICS']});
+  const steps:{label:string; experience:ExperienceEvidence; approval:TagApproval; topics:string[]; blocked?:string}[] = [
+    {label:'approved', experience:workshop, approval:approval(1, 1, 1), topics:['DATA_ANALYTICS']},
+    {label:'revoked', experience:workshop, approval:{state:'INACTIVE', version:2, reason:'REVOKED'}, topics:[], blocked:'APPROVAL_INACTIVE'},
+    {label:'re-approved', experience:workshop, approval:approval(3, 1, 1), topics:['DATA_ANALYTICS']},
+    {label:'content edited, old approval kept', experience:{...workshop, contentVersion:2}, approval:approval(3, 1, 1), topics:[], blocked:'STALE_CONTENT'},
+    {label:'consent refreshed, approval on old consent', experience:{...workshop, contentVersion:2, consentVersion:2}, approval:approval(4, 2, 1), topics:[], blocked:'STALE_CONSENT'},
+    {label:'re-approved on current versions', experience:{...workshop, contentVersion:2, consentVersion:2}, approval:approval(5, 2, 2), topics:['DATA_ANALYTICS']},
+    {label:'consent withdrawn', experience:{...workshop, contentVersion:2, consentVersion:2, consent:'REVOKED'}, approval:approval(5, 2, 2), topics:[], blocked:'CONSENT_NOT_ACTIVE'},
+  ];
+  const withSignal = expMatched(withApprovedExperience(base, [approvedExperienceSignal(workshop, approval(1, 1, 1))]));
+
+  it('the approved state gives a non-zero experience contribution to compare against', () => {
+    expect(withSignal).toBeGreaterThan(0);
+  });
+
+  for (const [i, step] of steps.entries()) {
+    it(`step ${i + 1} ${step.label}: topics ${JSON.stringify(step.topics)}, experience matches ${step.topics.length ? 'restored' : '0'}`, () => {
+      const signal = approvedExperienceSignal(step.experience, step.approval);
+      expect(signal.topics).toEqual(step.topics);
+      expect(signal.blocked).toBe(step.blocked);
+      // Each step is computed from that step's inputs alone: no earlier ACTIVE state carries over.
+      expect(expMatched(withApprovedExperience(base, [signal]))).toBe(step.topics.length ? withSignal : 0);
+    });
+  }
+});

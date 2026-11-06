@@ -11,7 +11,7 @@ const Version = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER - 1);
 /**
  * #258 screen input: the owner's experience cards with their current approval and, when one was
  * requested, the AI candidate. The real path composes GET /api/experience/cards?view=portfolio,
- * …/tag-approval and …/ai-skills/:jobId through HufsOwnerApiClient (not yet in the client); the
+ * …/tag-approval and …/ai-skills/:jobId through HufsOwnerApiClient; the
  * whole page is checked so one malformed card hides the screen rather than mixing stages.
  */
 export const ExperienceReviewPageSchema = z.strictObject({
@@ -22,10 +22,12 @@ export const ExperienceReviewPageSchema = z.strictObject({
   items: z.array(z.strictObject({
     experienceId: Id,
     title: z.string().min(1).max(120),
+    summary: z.string().max(500).optional(),
     dataMode: z.enum(['SYNTHETIC', 'OWNER_CONSENTED']),
     contentVersion: Version,
     approval: ExperienceTagApprovalSchema,
     candidate: ExperienceSkillCandidateResponseSchema.nullable(),
+    candidateState: z.enum(['NOT_REQUESTED', 'PENDING']).optional(),
   })).max(20),
 }).refine(page => new Set(page.items.map(i => i.experienceId)).size === page.items.length);
 export type ExperienceReviewPage = z.infer<typeof ExperienceReviewPageSchema>;
@@ -46,12 +48,15 @@ export type ApprovalView =
 export interface ExperienceCardView {
   readonly experienceId: string;
   readonly title: string;
+  readonly summary: string;
   readonly synthetic: boolean;
   readonly versionText: string;
   readonly candidate: CandidateView;
   readonly approval: ApprovalView;
   /** Topics the owner may tick: current candidate topics plus already approved ones, in A04.1 order. */
   readonly options: readonly {code: TopicCode; label: string; approved: boolean}[];
+  readonly manualOptions: readonly {code: TopicCode; label: string; approved: boolean}[];
+  readonly canRequest: boolean;
   readonly expected: ExperienceTagApprovalDelete;
 }
 export interface ExperienceReviewView {
@@ -75,7 +80,8 @@ const order = (codes: Iterable<TopicCode>) => { const set = new Set(codes); retu
 
 function candidateView(item: ExperienceReviewPage['items'][number], consentVersion: number): CandidateView {
   const c = item.candidate;
-  if (!c) return {kind: 'NONE', text: 'AI 후보를 요청하지 않았습니다.'};
+  if (!c) return {kind: 'NONE', text: item.candidateState === 'PENDING'
+    ? 'AI 후보를 준비 중입니다. 같은 요청으로 수동 재확인할 수 있습니다.' : '이 화면에서 확인된 AI 후보가 없습니다. 필요하면 경험을 선택해 요청하세요.'};
   // A candidate read for an older wording or consent never shows as a suggestion for the current one.
   if (c.experienceId !== item.experienceId || c.contentVersion !== item.contentVersion || c.consentVersion !== consentVersion)
     return {kind: 'STALE', text: '경험 내용이나 동의가 바뀌기 전의 AI 후보라 표시하지 않았습니다.'};
@@ -120,10 +126,13 @@ export function buildExperienceReviewView(raw: unknown): {ok: true; view: Experi
       return {
         experienceId: item.experienceId,
         title: item.title,
+        summary: item.summary ?? '',
         synthetic: item.dataMode === 'SYNTHETIC',
         versionText: `내용 ${item.contentVersion}판 · 동의 ${page.consentVersion}판`,
         candidate, approval,
         options: canEdit ? order(offered).map(code => ({code, label: TOPIC_TEXT[code], approved: approved.has(code)})) : [],
+        manualOptions: canEdit ? TOPIC_CODES.filter(code => !offered.has(code)).map(code => ({code, label: TOPIC_TEXT[code], approved: false})) : [],
+        canRequest: canEdit,
         expected: {expectedApprovalVersion: item.approval.version, expectedContentVersion: item.contentVersion, expectedConsentVersion: page.consentVersion},
       };
     }),
@@ -131,8 +140,8 @@ export function buildExperienceReviewView(raw: unknown): {ok: true; view: Experi
 }
 
 /** PUT body for the owner's ticked topics, or null when the selection cannot be sent (0 or more than 5). */
-export function approvalInput(card: ExperienceCardView, picked: readonly TopicCode[]): ExperienceTagApprovalPut | null {
-  const allowed = new Set(card.options.map(o => o.code));
+export function approvalInput(card: ExperienceCardView, picked: readonly TopicCode[], includeManual = false): ExperienceTagApprovalPut | null {
+  const allowed = new Set([...card.options, ...(includeManual ? card.manualOptions : [])].map(o => o.code));
   const topics = order(picked.filter(c => allowed.has(c)));
   if (topics.length < 1 || topics.length > 5) return null;
   return {...card.expected, topics};

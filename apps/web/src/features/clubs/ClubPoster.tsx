@@ -1,4 +1,6 @@
 import type {ClubCardView} from './clubView.js';
+import {clubArtwork} from '../illustrations/artwork.js';
+import {SyntheticArtwork} from '../illustrations/SyntheticArtwork.js';
 
 /** Calm two-tone palettes from the HUFS tokens family; chosen by category, never meaning anything. */
 const PALETTE: readonly [string, string][] = [
@@ -15,7 +17,7 @@ function hash(s: string): number {
  * Synthetic poster drawn from the post's own fields (not an AI-generated image and not a real club poster).
  * Always carries the "가상 동아리 · 데모" mark, also inside the image itself.
  */
-export function ClubPoster({club, size = 'card'}: {club: ClubCardView; size?: 'card' | 'detail'}) {
+function FallbackPoster({club, size = 'card'}: {club: ClubCardView; size?: 'card' | 'detail'}) {
   const [bg, accent] = PALETTE[hash(club.posterSeed) % PALETTE.length]!;
   const h = hash(club.posterSeed + club.category);
   const title = club.name.replace(/^가상동아리\s*/, '');
@@ -31,4 +33,11 @@ export function ClubPoster({club, size = 'card'}: {club: ClubCardView; size?: 'c
       <text x="76" y="170" fill={bg} fontSize="12" fontWeight="700" textAnchor="middle">가상 동아리 · 데모</text>
     </svg>
   );
+}
+
+/** Approved synthetic IDs use local responsive art; unknown IDs and failed loads retain the SVG. */
+export function ClubPoster({club, size = 'card'}: {club: ClubCardView; size?: 'card' | 'detail'}) {
+  const art = clubArtwork(club);
+  const fallback = <FallbackPoster club={club} size={size} />;
+  return art ? <SyntheticArtwork key={`${club.id}:${art.id}`} art={art} className={`poster--${size}`} fallback={fallback} /> : fallback;
 }

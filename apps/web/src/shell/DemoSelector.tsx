@@ -1,4 +1,5 @@
 import type {SubjectAlias} from '@hufs-one/contracts';
+import {useRef} from 'react';
 import type {DemoViewState} from '../app/demo-controller.js';
 import {buildSelectorSlots} from '../features/demo/selectorSlots.js';
 
@@ -12,13 +13,16 @@ interface Props {
  * non-selectable slots (PENDING/REVOKED/no shared section) stay visible but disabled.
  */
 export function DemoSelector({state, onSelect}: Props) {
+  const summary = useRef<HTMLElement>(null);
   const result = state.profiles.length ? buildSelectorSlots({profiles: state.profiles}) : null;
   const slots = result?.ok ? result.slots : [];
   const current = slots.find(s => s.demoSubjectId === state.selected);
   const displayName = current?.label.split(' · ')[0]?.trim();
   return (
-    <details className="selector">
-      <summary className="selector__summary">
+    <details className="selector" onKeyDown={event => {
+      if (event.key === 'Escape') { event.preventDefault(); event.currentTarget.open = false; summary.current?.focus(); }
+    }}>
+      <summary className="selector__summary" ref={summary}>
         <span className="selector__caption">계정</span>
         <span className="selector__current">{displayName ? `${displayName}님, 안녕하세요` : '계정을 선택해 주세요'}</span>
       </summary>

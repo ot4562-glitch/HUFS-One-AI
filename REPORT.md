@@ -1,43 +1,37 @@
-# HUFS One AI — 현재 검증 결과 보고 기준
+# HUFS One AI — 검증 결과와 해석
 
-제품을 평가할 때 **단위·통합 코드 → 합성 Chrome → 일회용 PostgreSQL → 독립 사람 검증 → 허가된 실제 운영환경**을 별도 증거로 기록합니다.
+기준일 **2026-11-06**. 단위·통합 코드, 합성 브라우저, 일회용 PostgreSQL, 플랫폼 도구/모의 네트워크, 실제 사람/운영 결과를 따로 기록한다. 대상 11개 본선 전 이슈와 변경 범위는 [STATUS](STATUS.md)를 따른다.
 
-## 최신 코드 병합·검증 요약 (2026-11-06)
+## 이번 검증에서 확인할 항목
 
-- [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지).
-- 네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.**
-- 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
-- #292 합성 학업 독립 모델·영역 분산 탐색 예산; #293 합성 공지 최신 revision/verified claim과 clean HEAD 벤치; #295 미확인 학수번호의 **코어만** 보수 처리, 실제 owner API 미연결; #304 상단 계정·보관함/폼/지원보드 합성 UI. 자동 CI·자체 리뷰를 독립 학칙/학생/스크린리더 검증으로 계산하지 않습니다.
+| 범위 | 실행/근거 | 해석 |
+| --- | --- | --- |
+| 타입·전체 단위/합성 통합 | `npm run check` | 정확한 최종 HEAD의 결과를 종결 기록에 연결; DB가 없는 로컬의 PG SKIP과 CI 실행을 구별 |
+| 추천 평가 | `npm run build:evaluation`, `npm run test:evaluation:cli` | 정정 시나리오 opt-in·r1 출력 불변·r2에 이전 라벨 재사용 차단; 사람 Gold는 NOT_RUN |
+| UI/경험 | owner client/role·경험 등록·후보/승인/철회·세션/늦은 응답 회귀 | BETA 권한 어댑터·합성 fixture 검증이며 실제 학교 로그인/학생 인수 아님 |
+| 자산 | `npm run assets:check` | 기존 SVG 10개 및 그림 8종/16 WebP의 ID·형식·해시·용량 검증, 12개 별도 예시 |
+| 화면 | `npm run test:e2e:web`, accounts/empty-demo·Pages smoke | GitHub Chrome에서 전환/오류/두 탭·320–1440px 및 이미지 로드/fallback 확인; 실제 기기/NVDA 사람 인수 아님 |
+| NCP Windows | 실제 WinSCP 6.7.0 SessionOptions 파서, PS5.1 native argv stub | 같은 digest 변환과 인용·경로·실패 후 중단 검증; 실제 서버 SSH/SFTP 교환 아님 |
+| NCP Linux | `test_ncp_*.py`, Ubuntu 22.04/24.04 임시 키·bundle 회귀 | 경로·소유자·0600/0644 및 무단 인자 거부; 실제 host 설치 없음 |
+| 공개 경계 | `npm run check:privacy`, committed-tree 메타데이터, publication gate | CSV 5개 불변·실자료/비밀의 CI·웹 번들 제외 |
 
-## 확인 가능한 구현
+정확한 명령 결과·커밋 SHA·GitHub Actions 링크는 **통합 PR과 각 이슈 종결 댓글**에 남긴다. 문서의 이전 숫자나 다른 SHA의 PASS를 최신 결과로 사용하지 않는다.
 
-React/Vite의 데스크톱 참고 11개 대분류 GNB/LNB·모바일 5탭·공통 헤더/홈 요약·배너, 5개 합성 대상·40공고/10공지·EMPTY_DEMO/ADMIN 가상 동아리, API/PG/권한·AI 안전 계약/Temporal RAG·학업/계획 UI의 **합성 테스트**가 존재합니다. [UI PR #248](https://github.com/ot4562-glitch/HUFS-One-AI/pull/248)의 동일 HEAD GitHub Actions 4개 workflow는 SUCCESS입니다. 진척 정본은 [STATUS](STATUS.md).
+## 발견·수정한 회귀와 실패 기록
 
-## 실제 아직 완료되지 않은 인수
+- PR #305 원본의 정정 보고서는 r1 검토 라벨을 r2에 사용했다. 새 회귀가 원본에서 실패하는 것을 확인하고 exact source revision 결속으로 수정했다. r1 초안 200/200은 그대로, 정정 시나리오에서는 미검토 r2 두 판본을 제외한 175/185다.
+- WinSCP 실제 파서에서 PuTTY 형식 4개가 거부되고 변환 형식 4개가 수락됨을 확인했다. 도구별 표현은 달라도 32바이트 digest와 `Check` 정책은 보존한다.
+- 로컬 Chromium E2E 7건은 브라우저 시작 단계의 `socket() Operation not permitted`로 실행되지 못했다. 이를 제품 assertion 통과나 시각 검증 완료로 기록하지 않고, GitHub Chrome 실행으로 별도 확인한다.
+- 같은 owner의 focus/resume·경로 재진입에서 PENDING 요청의 idempotency key가 지워지는 문제를 재현·수정했다. 현재 actor의 세션 재확인에서는 요청 receipt만 유지하고 종료 시 삭제한다. raw 401/403의 HTML·잘못된 JSON도 terminal 인증/권한 오류로 전달한다.
+- 전체 로컬 테스트 최초 실행은 3,714 PASS / 91 SKIP / 8 FAIL이었다. 2건은 변경한 403·WebP 동작에 대한 이전 assertion으로 확인하여 수정 후 해당 13개 테스트가 통과했다. 나머지 6건은 `networkInterfaces`와 UNIX socket의 환경 `EPERM`이며 검사를 제거하거나 성공으로 바꾸지 않았다. 동일 코드의 GitHub Linux 실행 결과를 별도 연결한다.
+- 로컬 PDF 검사는 설치된 pypdf 6.10.0과 저장소의 6.21.4 버전 차이로 처음 실패했다. 해시가 고정된 6.21.4를 임시 경로에 설치한 뒤 실제 PDF 11개 검사가 통과했다. 전체 Python 출시 회귀는 158개 중 149 PASS / 9 SKIP(Windows·로컬 도구 부재)이다.
+- 새 API 클라이언트의 잘못된 ID 처리와 새 이미지의 기존 SVG 전용 테스트 등 발견한 회귀를 수정하고 관련 검사를 다시 실행했다. 실패/수정 이력은 PR에 보존한다.
 
-- 독립 비작성자 Gold: 추천 **0/200**, 포스터 **0/20**, 시점 **0/12**.
-- 실제 학교/학생 자료 4인·공식 RulePack/출처별 권리, 사람 스크린리더·브라우저 인수: 미완료.
-- 실 Google/외대 메일/REVIEWER·운영 PostgreSQL/TLS/SQL role/복구·NCP·유료 OCR/HCX·Laya ON: 승인 범위와 별개로 **실환경 CONFIGURATION_REQUIRED/NOT_RUN**.
-- 실제 서비스 품질/비용·시간 절감/정확도/회복성·수상/선정: 미측정 또는 근거 없음.
+## 미완료인 실제 인수
 
-## 시험·보고 서식
+- 지정 팀원들의 사람 교차 리뷰·모바일/스크린리더·포스터 수락: #280–#283, `NOT_RUN`.
+- 추천 독립 Gold 0/200, 포스터 0/20, 시점 0/12. 자동 결과·작성자 초안으로 대체하지 않는다.
+- 실제 Google/외대 메일·4인 Forms↔CSV↔actor·공식 학칙/학수번호·운영 PG/NCP/TLS·유료 모델·호스트 업로드/복구·비용: `CONFIGURATION_REQUIRED/NOT_RUN`, #276/#280–#283/#297/#299/#301/#302.
+- 실서비스 정확도·시간 절감·사용성·p95/CPU/RSS/청구는 해당 실측 전 `NOT_MEASURED`다. 실서비스는 `RELEASE_BLOCKED`다.
 
-```text
-기능 / 사용자 여정 / 기능 소유자:
-Git commit SHA / 테스트 명령 / GitHub Actions run:
-환경: SYNTHETIC_LOCAL | DISPOSABLE_POSTGRES | CHROME | NCP_STAGING | PRODUCTION
-자료: SYNTHETIC | APPROVED_PRIVATE | NOT_RUN
-관측: PASS | FAIL | HOLD | NOT_RUN | SKIP
-오류·재현/기대결과, 401/403/409/429/503/철회/캐시/동시성:
-정확도·p95/CPU·RSS/비용(실측한 경우에만):
-별도 승인 ID·비작성자 검토자/일시(있을 때만):
-관련 코드 구현 #267~#275(병합 8건)·#277 및 #278/#279 / 실환경 수락 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276):
-```
-
-상태를 올리려면 원본/역할·환경·정확한 SHA·반례·실제 검토자의 독립 근거가 필요합니다. **CI와 AI 자기 평가를 인적 승인으로 표시하지 않습니다.** [평가 방법](docs/INDEPENDENT_EVALUATION.md) · [인수서](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
-
-
-## 2026-11-06 추가 검증 메모
-
-- [PR #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) `forecast-offering-v2` 8학기·NOTICE_ONLY 합성 회귀 / [PR #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) 40+10 합성 커버리지·경험 승인 신호: 두 PR 모두 `main` 병합, PR HEAD Actions 4/4 SUCCESS. 최종 코드 통합 [`48134da`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/48134dae3b16157ebcc294f744c320fdd64a115c)도 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42138752742)·Chrome·NCP offline·Pages **4/4 SUCCESS**. 이 결과는 합성/일회용 PG·오프라인 등 각각의 테스트 범위 한정.
-- 실학교 자료·4명 현재 동의/본인 CSV 원장 연결·실 Google/PG/NCP/유료 AI/백업/요금·독립 Gold는 아직 PASS가 아니며 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) `RELEASE_BLOCKED`. 기존 수락 비율을 자동 상향하지 않음.
+[평가 방법](docs/INDEPENDENT_EVALUATION.md) · [사전 운영 계획](docs/PREFINAL_OPERATIONS_PLAN.md) · [사람 인수 기준](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)

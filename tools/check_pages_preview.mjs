@@ -37,7 +37,8 @@ async function ready() {
 let browser;
 try {
   await ready();
-  browser = await chromium.launch({channel: 'chrome', headless: true, args: ['--no-sandbox']});
+  browser = await chromium.launch({headless: true, args: ['--no-sandbox'], ...(process.env.PW_EXECUTABLE_PATH
+    ? {executablePath: process.env.PW_EXECUTABLE_PATH} : {channel: 'chrome'})});
   for (const viewport of [{width: 1440, height: 900}, {width: 390, height: 844}]) {
     const page = await browser.newPage({viewport});
     const requests = [];

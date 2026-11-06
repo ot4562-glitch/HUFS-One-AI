@@ -5,6 +5,8 @@ import type {DDayView} from '../features/demo/dday.js';
 import {DUE_SOON_DAYS} from '../features/today/TodaySummary.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {DDayText} from '../features/demo/DDayText.js';
+import {opportunityArtwork} from '../features/illustrations/artwork.js';
+import {SyntheticArtwork} from '../features/illustrations/SyntheticArtwork.js';
 
 /**
  * #9 v5 home modules and opportunity cards (v5 mock: same-width left chips, title, one sub line;
@@ -86,11 +88,13 @@ const CAL_ICON = (
 
 /** 기회 list card: content in the middle, status column on the right; one call to action. */
 export function OppCard({card, navigate}: {card: FeedCardView; navigate: Nav}) {
+  const art = opportunityArtwork(card);
   const mark = card.eligibility === 'ELIGIBLE' ? '✓' : card.eligibility === 'INELIGIBLE' ? '✕' : '?';
   const why = card.reasons[0];
   return (
     <li className="opp">
       <article className="opp__main">
+        {art && <SyntheticArtwork key={art.id} art={art} className="opp__art" />}
         <h3 className="opp__title"><InAppLink to={oppPath(card.opportunityId)} navigate={navigate}>{card.title}</InAppLink></h3>
         {card.topicTexts.length > 0 && <ul className="opp__chips" aria-label="분야">{card.topicTexts.map(t => <li key={t}>{t}</li>)}</ul>}
         {why && <p className="opp__why"><strong>추천 이유</strong> {why}</p>}

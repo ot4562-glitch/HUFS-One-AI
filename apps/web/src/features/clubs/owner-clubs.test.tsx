@@ -59,7 +59,8 @@ describe('#123 actual owner/admin browser integration',()=>{
     const owner=createOwnerClubPort(h.api.owner,new OwnerSessionController(h.api));
     const view=render(<OwnerClubBoard port={owner} navigate={()=>{}}/>);await flush();
     expect(within(screen.getByRole('region',{name:'나에게 맞는 동아리'})).getByText('가상동아리 AI 탐험대')).toBeTruthy();
-    expect(document.querySelector('img')).toBeNull(); // large PNG is detail-only
+    // Local responsive illustrations may appear on cards; the large server PNG stays detail-only.
+    expect(document.querySelector('img[src^="/api/synthetic/clubs/"]')).toBeNull();
     view.rerender(<OwnerClubBoard port={owner} id="SYN-CLUB-090" navigate={()=>{}}/>);await flush();
     const image=screen.getByRole('img',{name:/가상 학생 세 명/});
     expect(image.getAttribute('loading')).toBe('lazy');expect(image.getAttribute('width')).toBe('1672');
