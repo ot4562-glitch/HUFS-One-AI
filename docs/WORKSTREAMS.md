@@ -16,6 +16,17 @@
 - [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) **김채윤**: 40+10 합성 코퍼스 커버리지, 경험 AI 후보→학생 승인 추천 순수 코어, APPROVE 리뷰+MERGED `48134da`; #259 순수 코어 CLOSED, UI #258/추천 전체 QA #10은 OPEN.
 - 동일 SHA의 합성 CI는 코드 검증일 뿐 별도 독립 사람 Gold·실 NCP·실개인정보/기관 자료 승인 아님. 담당별 인적 수락 비율은 근거 없이 올리지 않음.
 
+## 후속 코드 통합 — 각 담당의 소유 범위 보존
+
+- **이의상 [#285](https://github.com/ot4562-glitch/HUFS-One-AI/pull/285)**: 경험 3단계 합성 UI 컴포넌트. 소유 범위 밖 HufsOwnerApiClient 변경은 하지 않았으며, [#284](https://github.com/ot4562-glitch/HUFS-One-AI/issues/284) 통합 담당 요청 및 #258 소비자 테스트가 남음.
+- **김채윤 [#286](https://github.com/ot4562-glitch/HUFS-One-AI/pull/286)**: revision 5-chain overlay·격리 정렬 결정성·합성 normalization bench. 실제 r1 보고서 입력 교체/실출처 인수는 하지 않음.
+- **박준영 [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287)/[#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288)/[#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289)**: RulePack 영역 이동 보수 비교, forecast 합성 반례, ledger 속성 범위. #287/#289 학업 AGENTS 양쪽 안내문 보존.
+- 각 PR에는 코드를 확인한 **AI 보조 `COMMENT` 리뷰**가 남아 있습니다. 독립 사람/팀 소비자 리뷰는 별개이며 #260 등의 교차 수락을 자동 완료시키지 않습니다. 현재 협업과 실 NCP/실계정/학교 원문 검증을 혼동하지 않습니다.
+
+### 추가 UI 담당 리디자인 [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290)
+
+@uisang2004-maker의 A11 디자인/UI 소비자 범위에서 11대분류 관찰 메뉴·미지원 안내·홈·공고 레이아웃을 통합했습니다. 공통 `Architecture.md` A11 수정은 오너가 별도 리뷰했으나, 이 사실은 실제 학교 UI 공식 인증이나 NVDA 사람 인수가 아닙니다. [본선 전 #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)의 미완료 회귀는 유지하고 현장 인수는 #280에서 진행합니다.
+
 ## 본선 진출 전/후 팀별 이슈 분리 (2026-11-06)
 
 | 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
