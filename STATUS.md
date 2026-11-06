@@ -33,6 +33,11 @@
 
 **검증 경계:** #285–#289 각각의 원래 PR HEAD에서 Actions 4/4 SUCCESS, #289 충돌 해결 HEAD `82eb760`에서도 4/4 SUCCESS를 확인했습니다. 마지막 코드 병합 `main` [`8bc27d5`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/8bc27d54c833ac2d4c9c3633e887063eeda5cca8)과 문서가 반영된 최종 HEAD의 Actions는 **별도 확인**해야 합니다. AI 보조 `COMMENT` 리뷰는 작성자 아닌 독립 **사람** `APPROVED`가 아닙니다. 이번 병합은 사용자의 열린 PR 일괄 리뷰·병합 요청에 따른 코드 통합으로, 실학생·기관·NCP 현장·Gold 인수가 아니며 `RELEASE_BLOCKED` 유지. 원본 `csv/` 다섯 개는 변경하지 않았습니다.
 
+### 추가 UI 리디자인 [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290) — `main` MERGED
+
+- 팀원 UI 변경 21파일: A11 디자인 계약·11개 대분류 GNB/142px 배너/230px LNB, 합성 홈 P001/공고 행/브라우저 회귀, 미지원 메뉴 비링크 안내. PR HEAD `1239a06` 4종 GitHub Actions SUCCESS, **병합 commit [`6863866`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/686386646654b2b64f8ba2333c0c285982976f9d)**. 실제 학교 기능 구현/실기기 NVDA/학생 권리 시험은 아닙니다. [본선 전 UI #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)에 합성 범위 완료, 전체 이슈 OPEN. 본선 후 현장 UI는 #280.
+- 최종 코드 통합 SHA `6863866` 및 새 문서 커밋의 Actions는 해당 SHA별로 확인해야 합니다. 이전 #285–#289의 4/4 PASS를 무분별하게 이식하지 않습니다.
+
 ## 협업 이슈 전/후 분리 (2026-11-06)
 
 | 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
