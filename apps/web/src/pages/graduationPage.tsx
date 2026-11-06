@@ -1,6 +1,7 @@
 import type {PageRenderer} from '../App.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, buildGraduationView, buildOutlookView} from '../features/graduation/graduationView.js';
 import {InAppLink} from '../shell/AppShell.js';
+import {studentFacingText} from '../shell/studentText.js';
 import {PlanCheckPanel} from '../features/plan-check/PlanCheckPanel.js';
 import {DoubleMajorPanel} from '../features/double-major/DoubleMajorPanel.js';
 import {Badges, NOT_SHARED_TEXT, NoSnapshot, Section, screenViewOf} from './parts.js';
@@ -27,17 +28,17 @@ export const graduationPage: PageRenderer = ({path, state, services, controller,
             const g = buildGraduationView(a.data);
             return (
               <>
-                <p><strong>{g.stateText}</strong> <span className="muted">· {g.rulePackText}</span></p>
+                <p><strong>{g.stateText}</strong> <span className="muted">· {studentFacingText(g.rulePackText)}</span></p>
                 <dl className="credits">
                   {g.credits.map(c => <div key={c.label}><dt>{c.label}</dt><dd>{c.credits}</dd></div>)}
                 </dl>
                 {g.deficits.length > 0 && (
                   <>
                     <h3>확인이 필요한 요건</h3>
-                    <ul>{g.deficits.map(d => <li key={d.id}>{d.text}</li>)}</ul>
+                    <ul>{g.deficits.map(d => <li key={d.id}>{studentFacingText(d.text)}</li>)}</ul>
                   </>
                 )}
-                {g.caveats.length > 0 && <ul className="muted">{g.caveats.map(c => <li key={c}>{c}</li>)}</ul>}
+                {g.caveats.length > 0 && <ul className="muted">{g.caveats.map(c => <li key={c}>{studentFacingText(c)}</li>)}</ul>}
                 {services.whatIf && <p><InAppLink to="/graduation/what-if" navigate={navigate}>전공을 바꾸면? 가정 분석해 보기</InAppLink></p>}
               </>
             );
@@ -55,9 +56,9 @@ export const graduationPage: PageRenderer = ({path, state, services, controller,
               ? <ul className="rows">{buildOutlookView(f.data).map(o => (
                 <li key={o.courseId + o.targetTerm} className="row">
                   <div className="row__link">
-                    <span className="row__title">{o.courseId} · {o.targetTerm}</span>
-                    <span className="row__meta">{o.signalText} · {o.basisText}</span>
-                    <span className="row__meta">{o.caveat}</span>
+                    <span className="row__title">{studentFacingText(o.courseId)} · {o.targetTerm}</span>
+                    <span className="row__meta">{studentFacingText(o.signalText)} · {studentFacingText(o.basisText)}</span>
+                    <span className="row__meta">{studentFacingText(o.caveat)}</span>
                   </div>
                 </li>
               ))}</ul>
