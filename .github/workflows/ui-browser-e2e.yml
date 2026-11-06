@@ -60,6 +60,11 @@ jobs:
           cache: npm
       - name: Install from lockfile without any postinstall browser download
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install Korean fonts for Chrome layout and screenshots
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends fonts-noto-cjk
+          fc-match -f '%{family}\n' 'Noto Sans CJK KR:lang=ko' | grep -F 'Noto Sans CJK KR'
       - name: Run legacy shell and reviewer Playwright Chrome E2E (10 scenarios)
         run: npm run test:e2e:web -- --reporter=list
       - name: Preserve synthetic viewport screenshots for visual review
