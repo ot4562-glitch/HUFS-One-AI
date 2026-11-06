@@ -235,3 +235,121 @@ describe('input checks and determinism', () => {
     expect(() => evaluate(Array.from({length:201}, (_, index) => course(`SYN-${index}`, [])))).toThrow(RangeError);
   });
 });
+
+import {forecastOfferings} from './offering.js';
+
+// ---- #11 (본선 전): rolling-origin gaps. Synthetic only; each case is one course, read by hand. ----
+
+/** Per-method outcome for one ad-hoc course at one origin. */
+const outcomesOf = (one:EvaluationCourse, targetTerm:string) => {
+  const methods = origin(evaluate([one]), targetTerm).methods;
+  return Object.fromEntries(EVALUATION_METHODS.map(method => {
+    const s = methods[method];
+    const label = s.truePositive ? 'TP' : s.falsePositive ? 'FP' : s.falseNegative ? 'FN' : s.trueNegative ? 'TN'
+      : s.abstained ? 'ABSTAIN' : 'NOT_SCORED';
+    return [method, label];
+  })) as Record<EvaluationMethod, string>;
+};
+/** The 2025-1 answer, published after the 2025 origin. */
+const TRUTH_2025_O = row('2025-1', 'OFFERED');
+const TRUTH_2025_N = row('2025-1', 'CONFIRMED_NOT_OFFERED');
+
+describe('NOTICE_ONLY rows in the evaluation', () => {
+  it('a notice alone is not an answer for the target term', () => {
+    const notice = course('SYN-NOTICE-TRUTH', [...springs('OOOO'), row('2025-1', 'OFFERED', {coverage:'NOTICE_ONLY'})]);
+    const at = origin(evaluate([notice]), '2025-1');
+    expect([at.truthUnavailable, at.scored]).toEqual([1, 0]);
+  });
+
+  it('a notice published before the origin takes the item out of every method', () => {
+    const early = course('SYN-NOTICE-EARLY', [...springs('OOOO'), TRUTH_2025_O,
+      row('2025-1', 'OFFERED', {coverage:'NOTICE_ONLY', sourceRef:'SYN-SRC-NOTICE',
+        publishedAt:'2024-12-20T00:00:00.000+09:00', verifiedAt:'2024-12-21T00:00:00.000+09:00'})]);
+    const at = origin(evaluate([early]), '2025-1');
+    expect([at.alreadyPublished, at.scored]).toEqual([1, 0]);
+  });
+
+  it('a past notice is neither counted in k/n nor read as the most recent season', () => {
+    // 2024-1 is only a notice saying closed. The last full catalog (2023-1) says offered.
+    const one = course('SYN-NOTICE-HIST', [...springs('OOO'),
+      row('2024-1', 'CONFIRMED_NOT_OFFERED', {coverage:'NOTICE_ONLY'}), TRUTH_2025_O]);
+    expect(outcomesOf(one, '2025-1')).toEqual({OUTLOOK:'TP', RECENT_SAME_SEASON:'TP', HISTORY_MAJORITY:'TP', ALWAYS_OFFERED:'TP'});
+    expect(origin(evaluate([one]), '2025-1').historyCounts).toEqual([{offeredTerms:3, observedTerms:3, shown:1, thenOffered:1}]);
+  });
+});
+
+describe('0/n is an answer; missing or partial history is not', () => {
+  it('a complete 0 of 4 is a NOT_OFFERED answer from every history method', () => {
+    const zero = course('SYN-ZERO', [...springs('NNNN'), TRUTH_2025_O]);
+    expect(outcomesOf(zero, '2025-1')).toEqual({OUTLOOK:'FN', RECENT_SAME_SEASON:'FN', HISTORY_MAJORITY:'FN', ALWAYS_OFFERED:'TP'});
+  });
+
+  it('no history at all: every history method abstains and the outlook is UNKNOWN', () => {
+    const none = course('SYN-NONE', [TRUTH_2025_O]);
+    expect(outcomesOf(none, '2025-1')).toEqual({OUTLOOK:'ABSTAIN', RECENT_SAME_SEASON:'ABSTAIN', HISTORY_MAJORITY:'ABSTAIN', ALWAYS_OFFERED:'TP'});
+    expect(origin(evaluate([none]), '2025-1').outlookSignals.UNKNOWN).toBe(1);
+  });
+
+  it('only partial lists: abstain, never 0 of n', () => {
+    const partial = course('SYN-PARTIAL-HIST', [
+      ...springs('NNNN').map(item => ({...item, coverage:'PARTIAL' as const})), TRUTH_2025_O]);
+    expect(outcomesOf(partial, '2025-1')).toEqual({OUTLOOK:'ABSTAIN', RECENT_SAME_SEASON:'ABSTAIN', HISTORY_MAJORITY:'ABSTAIN', ALWAYS_OFFERED:'TP'});
+    expect(origin(evaluate([partial]), '2025-1').outlookSignals.INSUFFICIENT_DATA).toBe(1);
+  });
+});
+
+describe('each official event kind at the origin', () => {
+  const NOTICE_AT = '2024-12-01T00:00:00.000+09:00';
+  const withEvent = (id:string, kind:OfficialAcademicEvent['kind'], impact:OfficialAcademicEvent['impact'], truth = TRUTH_2025_O) =>
+    course(id, [...springs('OOOO'), truth], [event(kind, impact, id, NOTICE_AT, 2025)]);
+
+  it.each([
+    ['RETIREMENT'], ['STAFF_CHANGE'], ['COURSE_CANCELLED'], ['RESEARCH_LEAVE'],
+  ] as const)('%s as a possible assignment change: the outlook asks for review, history baselines still answer', kind => {
+    const one = withEvent(`SYN-EV-${kind}`, kind, 'POTENTIAL_ASSIGNMENT_CHANGE');
+    expect(outcomesOf(one, '2025-1')).toEqual({OUTLOOK:'ABSTAIN', RECENT_SAME_SEASON:'TP', HISTORY_MAJORITY:'TP', ALWAYS_OFFERED:'TP'});
+    expect(origin(evaluate([one]), '2025-1').outlookSignals.EVENT_REVIEW).toBe(1);
+  });
+
+  it.each([['RETIREMENT'], ['STAFF_CHANGE'], ['RESEARCH_LEAVE']] as const)(
+    '%s stated for this course is not read as a closure', kind => {
+      const one = withEvent(`SYN-EX-${kind}`, kind, 'EXPLICIT_COURSE_STATUS');
+      expect(outcomesOf(one, '2025-1').OUTLOOK).toBe('ABSTAIN');
+      expect(origin(evaluate([one]), '2025-1').outlookSignals.INSUFFICIENT_DATA).toBe(1);
+    });
+
+  it('a curriculum change makes the outlook abstain instead of trusting old terms', () => {
+    const one = withEvent('SYN-CURRICULUM', 'CURRICULUM_CHANGE', 'POTENTIAL_ASSIGNMENT_CHANGE');
+    expect(outcomesOf(one, '2025-1').OUTLOOK).toBe('ABSTAIN');
+  });
+
+  it('only an official cancellation for this course gives NOT_OFFERED', () => {
+    const one = withEvent('SYN-CANCELLED', 'COURSE_CANCELLED', 'EXPLICIT_COURSE_STATUS', TRUTH_2025_N);
+    expect(outcomesOf(one, '2025-1')).toEqual({OUTLOOK:'TN', RECENT_SAME_SEASON:'FP', HISTORY_MAJORITY:'FP', ALWAYS_OFFERED:'FP'});
+    expect(origin(evaluate([one]), '2025-1').outlookSignals.CONFIRMED_NOT_OFFERED).toBe(1);
+  });
+});
+
+describe('a row published before the origin but verified after it', () => {
+  it('is not used at that origin', () => {
+    // 2024-1 is the only closed spring, verified only after the 2025 origin.
+    const late = course('SYN-LATE-VERIFIED', [...springs('OOO'),
+      row('2024-1', 'CONFIRMED_NOT_OFFERED', {verifiedAt:'2025-02-01T00:00:00.000+09:00'}), TRUTH_2025_O,
+      row('2026-1', 'OFFERED')]);
+    expect(origin(evaluate([late]), '2025-1').historyCounts).toEqual([{offeredTerms:3, observedTerms:3, shown:1, thenOffered:1}]);
+    expect(outcomesOf(late, '2025-1').RECENT_SAME_SEASON).toBe('TP');
+    // By the 2026 origin it is verified and counts: 2022-1..2025-1 is 3 of 4.
+    expect(origin(evaluate([late]), '2026-1').historyCounts).toEqual([{offeredTerms:3, observedTerms:4, shown:1, thenOffered:1}]);
+  });
+});
+
+describe('course limits', () => {
+  it('a student outlook stays at 20 courses; an evaluation run takes up to 200', () => {
+    const one = (index:number) => ({courseId:`SYN-${index}`, targetTerm:'2025-1'});
+    expect(() => forecastOfferings({asOf:ORIGIN_2025.asOf, courses:Array.from({length:21}, (_, i) => one(i))})).toThrow(RangeError);
+    expect(forecastOfferings({asOf:ORIGIN_2025.asOf, courses:Array.from({length:20}, (_, i) => one(i))}).items).toHaveLength(20);
+    const report = evaluate(Array.from({length:200}, (_, index) => course(`SYN-${index}`, [...springs('OOOO'), TRUTH_2025_O])));
+    expect(report.total.courses).toBe(400);
+    expect(report.total.scored).toBe(200);
+  });
+});
