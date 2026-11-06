@@ -24,6 +24,11 @@
 - #287과 #289의 `packages/core/src/academics/AGENTS.md` 동시 끝줄 추가가 **실제 405 충돌**로 나타났습니다. #289의 통합 브랜치에 두 문구를 보존하고 `main`을 부모로 합친 merge commit [`82eb760`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/82eb760ce213c83bb173ea9af0d28c1c075c0cc1)을 만들었습니다. 새 HEAD 4종 검증을 확인하고 병합합니다. **CSV/원격 인프라 설정은 건드리지 않습니다.**
 - PR의 합성 CI `PASS`와 실제 사람·학생·학교·NCP/PG/유료 AI의 `NOT_RUN`을 구분합니다. #10/#11/#258의 세부 체크만 완료 범위에 맞게 고치고 #284/#260/#276/#280–#283은 실제 증거 전까지 열린 상태 유지.
 
+### 같은 날 추가 생성·병합된 UI [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290)
+
+- 최초 열린 PR #285–#289을 리뷰/병합하는 도중 #290이 추가 등록되었습니다. 기존 일괄 승인으로 취급하지 않고, **21개 변경 파일·A11 계약 변경·새 shell/area 라우팅·미지원 원래 메뉴 비링크/권한/접근성 경계**를 별도로 리뷰하고 `COMMENT` 의견을 제출했습니다.
+- HEAD `1239a06`의 TASK-00/Chrome/NCP offline/Pages 4/4 SUCCESS 후 [`6863866`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/686386646654b2b64f8ba2333c0c285982976f9d)로 병합했습니다. 11분류는 **관찰 메뉴 구조**이며 원래 HUFSAbility 실제 기능·공식 학교 승인·NVDA 실기기 인수를 주장하지 않습니다. #9에 합성 구현만 완료 체크, 나머지 QA와 운영 #280은 OPEN.
+
 ## 안전한 변경과 기록
 
 - 수정 파일/코드 계약·버전, 정상·부정/경쟁 테스트, 테스트 명령·환경, SHA, PASS/FAIL/SKIP/NOT_RUN, reviewer 논의·관련 병합 PR/현행 #276 운영 인수 링크를 남깁니다.
