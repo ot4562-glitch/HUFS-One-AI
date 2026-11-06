@@ -2,6 +2,10 @@
 
 > **기준:** `OWNER_CONFIRMED_APPROVED`는 프로젝트 승인이다. 개인별 현재 동의·권리, 실 Google/학교메일·NCP/TLS·DB CA·모델·운영비·실학생·사람 인수 통과를 의미하지 않는다. 운영 잔여 단일 이슈 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276). 현행 구현 상태 [STATUS](../STATUS.md).
 
+## 최신 운영 증거 기준 (2026-11-06)
+
+**이 표의 이전 PR #267~#304는 개별 SHA의 당시 검증 기록입니다.** 현재 기준은 본선 이전 11개 이슈를 종결한 [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)(merge `462f6d3`) 및 합성 홈·공고 인터랙션 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)(merge [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c))입니다. #307 PR HEAD와 병합된 main SHA는 각각 TASK-00·Chrome·NCP·Pages 4/4 성공으로 별도 검증했으며, [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 `main` 대비 변경 파일 0개인 중복으로 리뷰 후 미병합 종료했습니다. **본선 이전 11개는 CLOSED(10 completed, #260 이관 not_planned)**이고, 사람·실 운영 인수 #276/#280–#283·신규 제품 #297–#303은 OPEN, 실제 운영 `RELEASE_BLOCKED`입니다. 추가 문서 SHA의 CI는 그 SHA에서 다시 확인합니다.
+
 ## 병합된 PR 근거
 
 | 코드/자료 | PR 또는 commit | 확정된 사실 | 여전히 미검증 |
@@ -9,7 +13,7 @@
 | 운영 API/계약/권한·AI budget/Source/경험 HTTP | [#267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267)~[#275](https://github.com/ot4562-glitch/HUFS-One-AI/pull/275) 중 실제 합병된 #267/268/269/270/272/273/274/275 | 단계별 코드·합성/일회용 PG·브라우저/오프라인 CI | 실제 운영자 키·Google·DB·CLOVA·학생 실동의 |
 | BETA 본인 CSV 학업 화면/운영 요청 포트 | [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277) MERGED | 5개 CSV SHA 보존, `/api/private-intake/self` 브라우저 계약, BETA 읽기 UI와 인증된 actor 요구 | 실제 operator private registry/loader와 4명 매핑·로그인/DB readback |
 | 전망/rolling-origin 8학기·NOTICE_ONLY | [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) MERGED (`5a36a38`) | `forecast-offering-v2`, 합성 경계·정합성 테스트, PR HEAD 4/4 CI | 학교 8학기 정식 목록·과목 동등성·실사용자 공식 판단 |
-| 추천 코퍼스·경험 승인 신호 | [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) MERGED (`48134da`) | 40+10 합성 분포, 키워드/인용·동의/버전·철회·결정론 테스트, PR HEAD 4/4 CI | 실문장 품질·revision chain 0건, UI #258·실원본 권리·독립 Gold |
+| 추천 코퍼스·경험 승인 신호 | [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) MERGED (`48134da`) | 40+10 합성 분포, 키워드/인용·동의/버전·철회·결정론 테스트, PR HEAD 4/4 CI | 실출처·독립 Gold·공식 실원본 권리·사람 검수; 뒤의 PR #286/#306에서 합성 revision chain·경험 UI 연결 추가 |
 | 비전공자 설치/제품 안내 | [문서 commit `a0043c5`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/a0043c569dd0518919b9f3ed243c9d8836a66403) | 새 가이드 3개와 README 하단 중요 문서 연결 | 실제 NCP/제품/에이전트 설치 **NOT_RUN** |
 | 학점 독립 참조모형/예산 경계 | [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292) MERGED (`e0a5b73`) | AREA_SPREAD/GROUP_CHOICE 작은 입력 참조모형, 5만회 탐색 예산 초과 보류·1000과목 단일영역 회귀; PR HEAD CI 4/4 | 공식 학칙/학생 원장, 큰 다중영역 전수 대조 |
 | 학사공지 검증 판본·clean 벤치 | [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293) MERGED (`02e7d91`) | 합성 5 revision 시나리오, VERIFIED mock claim·학생/행정 마감 분리, 2회 clean HEAD 정규화 벤치; PR HEAD CI 4/4 | 실제 권리/원본, 추천 보고서 별도 시나리오·운영 p95 |
@@ -25,43 +29,43 @@
 - 파일은 Git에 있다고 자동으로 로그인 사용자와 연결되지 않음. **실제 Forms row↔CSV 파일↔본인 BETA actor↔동의·rights·해시**의 비공개 attest/DB source·회수 검증이 필요. 과목코드 공란 때문에 공식 course identity/RulePack·학점 사정 확정은 `UNKNOWN/NEEDS_REVIEW`.
 - PR #277은 BETA UI/route 연결 **코드**이고 운영용 `OperatorPostgresInputs`·실비밀 factory·loader·4명 identity attestation은 **현장 구성/추가 조립 검증 필요**. 실 NCP/PG로 import/readback을 수행한 증거 없음.
 
-## 이번 최신 통합의 운영 경계
+## 당시 #292/#293/#295/#304 통합의 운영 경계 (과거 SHA에 한정)
 
-네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 병합된 마지막 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)입니다. **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.** 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다. 본선 전/후 담당자 책임과 개인 수락률은 합성 코드가 늘었다고 자동 상향하지 않습니다.
+네 PR의 각 **PR HEAD** GitHub Actions 4/4 SUCCESS를 확인하고, 사용자의 일괄 병합 지시에 따라 squash merge했습니다. GitHub 리뷰는 `COMMENT` 중심이며 독립 사람의 `APPROVED`가 아닙니다. 당시 최종 코드 `main` SHA는 [`5c17255`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/5c172552a8145cec61ac8f1729b60b1514fc965d)였습니다. **이후 #306/#307이 병합됐으며 현행 기준은 문서 상단과 STATUS를 따릅니다.** **이 뒤의 문서 커밋을 포함한 최신 SHA의 CI는 별도로 확인해야 하며 이전 PR HEAD 검사 결과를 전용하지 않습니다.** 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다. 본선 전/후 담당자 책임과 개인 수락률은 합성 코드가 늘었다고 자동 상향하지 않습니다.
 
 ## 실환경 인수 현황
 
 | 항목 | 상태 | 인수에 필요한 실근거 |
 | --- | --- | --- |
 | 프로젝트 범위 승인 | `OWNER_CONFIRMED_APPROVED` | 사용자 기준 승인. 현재 각 원본 제공자·학교권리 별도 |
-| TypeScript/합성 HTTP/Chrome·격리 PG/NCP IaC | `TESTED_SYNTHETIC`/일회용 PG | 과거 통합 `48134da` Actions 4/4·새 PR #292/#293/#295/#304 각각 HEAD 4/4 성공. 마지막 코드 SHA `5c17255` 및 문서 후속 SHA는 별도 push Actions 확인 필요. 실 NCP와 다름 |
+| TypeScript/합성 HTTP/Chrome·격리 PG/NCP IaC | `TESTED_SYNTHETIC`/일회용 PG | 과거 통합 `48134da` Actions 4/4·새 PR #292/#293/#295/#304 각각 HEAD 4/4 성공. 이는 과거 `48134da` 기준 실험이며 이후 `462f6d3`·`d8e2144`의 main 4/4 CI는 별도 PASS 확인. 향후 문서 PR HEAD/merge SHA는 각각 별도 검증. 실 NCP와 다름 |
 | Google OIDC/학교메일/BETA·REVIEWER 세션 | `CONFIGURATION_REQUIRED` | 실제 ID/메일·만료/철회·다른 사용자 부정시험 |
 | 관리형 운영 PG·CA TLS·role/RLS·실 backup | `CONFIGURATION_REQUIRED` | 실제 migration/roles/RLS·복원 영수증 |
 | 실제 학생 4명 매핑·인입/조회 | `NOT_RUN` | 현재 소유권·원본 SHA·동의·actor 연결·DB 적용/읽기/정정/철회 |
 | 실제 NCP host·domain/TLS/ingress·비용 | `CONFIGURATION_REQUIRED/NOT_RUN` | 계정/VM/VPC/실 IP·비용·CPU/RSS·종료/반납 |
 | CLOVA OCR/HCX Vision·실결제·native worker | `CONFIGURATION_REQUIRED/NOT_RUN` | 실제 공급자 비밀·호출/청구/timeout·취소·보호 |
-| UI #258/학업 #260/비코드 #261 | `OPEN` | 담당자 교차 검토·인수·사람 테스트 |
+| UI #258/학업 #260/비코드 #261 | `CLOSED` (본선 이전 이슈; #260은 `not_planned` 이관) | 남은 지정 담당자 교차 리뷰·실자료/사람 인수는 #280/#281/#282/#283 `NOT_RUN`, 원 이슈 완료와 별개 |
 | 추천·미디어 독립 Gold | `EXCLUDED_BY_REQUEST / NOT_MEASURED` | 이번 작업에서 제외, 합성 평가를 실제 Gold로 주장 금지 |
 | 프로덕션 공개 | **`RELEASE_BLOCKED`** | [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)의 실환경·권리·복구 조건 후만 |
 
 ## 팀원 실환경 인수의 전/후 이슈 분리(2026-11-06)
 
-| 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
+| 담당 | 본선 진출 전 — 정리 종결(CLOSED) | 본선 진출 이후 — 실제 운영/실자료 수락 |
 | --- | --- | --- |
 | 이의상 UI/접근성 | [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9), [#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119), [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) | [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) 실 BETA UI·모바일/스크린리더/학업·경험 종단 |
 | 김채윤 추천/공지 | [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 합성 코퍼스·정정/성능(순수 코어 [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 완료) | [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281) 실제 허가 출처·추천 정확성 주장 방지/운영 실측 |
 | 박준영 학업 | [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 합성/교차 검토; #260 PR #262 정책/테스트 완료, 소비자 리뷰는 미완료 | [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) 공식 RulePack·4인 학업 원장·8학기 개설 실증 |
 | 이서연 비코드/운영 | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 계정·비용·권리 사전검토/문서 | [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) 실 NCP 계정·청구/복구/반납·실원본 이용권 검수 |
 
-**공통 원칙:** 본선 전 이슈의 합성 개발·사전 검토는 **OPEN**, 본선 이후 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
+**공통 원칙:** 본선 전 지정 11개 이슈는 **CLOSED**(10 completed, #260 not_planned로 사람 리뷰 후속 이관), 본선 이후 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
 
-팀원 후속 이슈 #280~#283은 **추적용 OPEN/NOT_RUN**이고, 실제 권리·계정·비용·인증·원본 서버 반입이 완료됐다는 증거가 아닙니다. 합성/비코드 현행 이슈 #9·#10·#11·#12·#119·#258·#260·#261도 OPEN 유지. 기존 자료·키의 새로운 공개 업로드는 하지 않습니다.
+팀원 후속 이슈 #280~#283은 **추적용 OPEN/NOT_RUN**이고, 실제 권리·계정·비용·인증·원본 서버 반입이 완료됐다는 증거가 아닙니다. 기존 #9·#10·#11·#12·#119·#258·#260·#261은 CLOSED이고, **실제 인수/교차 검토는 후속 #276/#280–#283 OPEN 유지**. 기존 자료·키의 새로운 공개 업로드는 하지 않습니다.
 
 ## 인계와 운영 원칙
 
 1. 코드·문서 SHA와 CI는 공개 URL로 추적. 서버/IP/키/원본 대응표·학생별 동의 파일·실비용 영수증은 별도 최소권한 저장소에 기록.
 2. 본선 진출 후 승인된 실제 NCP 계정/IAM·SKU·도메인/HTTPS·원본 권리·Google/메일/관리형 PG·CLOVA와 예산·원격 복구를 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 일괄 인수한다.
-3. UI 담당 [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258), 추천 [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10), 학업 [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11)·[#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260), 비코드 [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261)과 정확한 계약 소비자 검증. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 완료 처리했으나 UI/실사용은 완료하지 않았음.
+3. UI 담당 후속 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280), 추천 [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281), 학업 [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282), 비코드 [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283)에서 정확한 계약 소비자·사람 검증. 구 본선 전 #258/#10/#11/#260/#261은 이미 종결. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 완료 처리했으나 UI/실사용은 완료하지 않았음.
 4. 실제 수락에는 테스트 HEAD·환경·권리/원문 판본·실행 명령·PASS/FAIL/HOLD/NOT_RUN/CONFIGURATION_REQUIRED·비용·rollback과 검증자 기록을 요구한다. 미실시 항목은 성공 처리하지 않는다.
 
 [운영 인수 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [코드 리뷰 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [코드 리뷰 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) · [팀 현황](TEAM_PROGRESS.md).

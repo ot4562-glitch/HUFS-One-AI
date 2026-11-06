@@ -19,4 +19,4 @@
 - [ ] 4명별 학점/계획/What-if를 공식 RulePack 원문과 수기로 대조. 확인할 수 없으면 DRAFT/UNKNOWN을 유지.
 - [ ] 민감한 실제 원문·실명↔SID·비밀키를 Git/PR/CI/공개 사이트/AI 프롬프트·로그에 노출하지 않음.
 
-**작업 정본:** [#252 B03/B04](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) · [개인정보 거버넌스](docs/DATA_GOVERNANCE.md) · [학업 구현 #11](https://github.com/minseong-hufs/HUFS-One-AI/issues/11). 실제 원본의 읽기/반입은 별도 승인 전 하지 않습니다.
+**작업 정본:** [운영/본인 원본 인입 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [4인 본인 연동 #299](https://github.com/ot4562-glitch/HUFS-One-AI/issues/299) · [공식 학업 검증 #282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) · [개인정보 거버넌스](docs/DATA_GOVERNANCE.md). 프로젝트 승인 `OWNER_CONFIRMED_APPROVED`는 확인됐지만, 개인별 현재 자료 권리/목적·actor·인입 경로/운영 구성이 실제로 검증되지 않은 상태에서 원본을 임의 열람·반입·재배포하지 않습니다. `csv/` 기존 5개 원본은 삭제/수정/이동하지 않습니다.
