@@ -133,3 +133,16 @@ npm run build:web
 - [PR 양식](.github/PULL_REQUEST_TEMPLATE.md) — 변경/검증·롤백.
 - [테스트 AGENTS](tests/AGENTS.md) — 자동검증과 실제 인수 구분.
 - [tools README](tools/README.md) — 계약·의존성·산출물 감사.
+
+## 7. 중요 문서 — 처음 설치하는 분·비전공자용
+
+**NCP 서버를 처음 만드는 팀원, 제품을 설치하려는 운영자, 소프트웨어 비전공자를 위한 상세 설명서입니다.** 아래 순서대로 읽으면 실제 NCP 비용 발생 단계와 합성 시연·제품 운영·GPT/Claude 개발 에이전트의 차이를 이해할 수 있습니다.
+
+| 중요 문서 | 읽는 사람 / 핵심 내용 |
+| --- | --- |
+| **[① NCP 서버 개설·초기 보안 가이드](docs/BEGINNER_NCP_SERVER_SETUP.md)** | 비전공 운영자용: NCP 계정·KR VPC·Subnet·서버 생성·공인 IP·ACG/Network ACL·SSH 키·Ubuntu/Node 설치·비용/반납 |
+| **[② NCP에 제품 및 GPT(Codex)·Claude Code 설치 가이드](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md)** | 서버/개발 담당자용: 안전한 합성 미리보기 배포·SSH 터널·롤백, 운영 API·DB·TLS 준비, Codex/Claude Code 개인용 개발 환경 설치와 제품 AI의 차이 |
+| **[③ 제품 구조와 동작 원리 — 비전공자 가이드](docs/BEGINNER_PRODUCT_ARCHITECTURE.md)** | 기획·심사·신규 팀원용: React↔API↔DB·추천/학업·RAG·AI 후보→학생 승인·개인정보·합성/실자료 구분·10분 발표 흐름 |
+
+**설치 전 반드시 확인:** 개발용 합성 미리보기, GitHub Pages 미리보기, GPT/Claude 개발 CLI 설치는 **실제 학생 서비스의 배포 성공이 아닙니다.** 현재 실서비스 환경·사용자별 권한·NCP/Google/PG/유료 공급자·인수 검증은 [본선진출 이후 운영 통합 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [현재 구현 상태](STATUS.md), [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md)에서 확인합니다. 복구된 `csv/` 원본 5개는 무단 수정·삭제하지 않으며 공개 배포·CI/AI 작업공간에 포함하지 않습니다.
+
