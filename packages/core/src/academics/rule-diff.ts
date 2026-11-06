@@ -9,6 +9,8 @@ import {AS_OF, buildAcademicLedger, byCodeUnit, type LedgerAttempt, type LedgerR
 /**
  * RulePack revision impact (#87). Applies two APPROVED versions of one rule pack to the same
  * credit ledger and reports, per stable requirement id, how the rule and its result changed.
+ * Area membership is not in the pack: it comes from the ledger rows, classified once per version
+ * (`attempts`, `nextAttempts`). Without the next classification, area results are UNKNOWN.
  * It never activates either pack and never decides graduation.
  * A pair that is not one clean revision is blocked: no row is returned, so a stale SATISFIED
  * result cannot be carried across an unverified change.
@@ -42,7 +44,9 @@ export type DefinitionChange = 'UNCHANGED'|'CHANGED'|'ADDED'|'REMOVED';
 export type StateChange = 'SAME'|'GAINED'|'LOST'|'UNKNOWN';
 export type ChangedField =
   | 'kind'|'requiredCreditUnits'|'areaId'|'areaIds'|'minAreas'|'groups'|'canonicalCourseId'|'courseIds'|'k'
-  | 'criterionId'|'verificationMode'|'sourceClauseIds'|'exceptionClauseIds'|'clauses';
+  | 'criterionId'|'verificationMode'|'sourceClauseIds'|'exceptionClauseIds'|'clauses'
+  /** A course counts in a different area under the next version (from `nextAttempts`, not the pack). */
+  | 'areaMembership';
 
 interface SideResult {
   state:ProgressState;
@@ -83,8 +87,47 @@ export interface RulePackRevisionRequest {
   asOf:string;
   previous:unknown;
   next:unknown;
-  /** The same ledger rows are applied to both versions. */
+  /** Ledger rows classified under the previous version. */
   attempts:readonly LedgerAttempt[];
+  /**
+   * The same rows classified under the next version. A rule pack has no course-to-area table, so a
+   * revision that moves a course to another area is visible only here. Only `areaIds` may differ.
+   * When omitted, area-based results (CATEGORY_MINIMUM, AREA_SPREAD) are UNKNOWN: the next version's
+   * area membership was not supplied. Pass the same rows to state that membership did not change.
+   */
+  nextAttempts?:readonly LedgerAttempt[];
+}
+
+/** Every field but areaIds must match row for row, so only area membership can differ. */
+function movedAreas(previous:readonly LedgerAttempt[], next:readonly LedgerAttempt[]):Set<string> {
+  if (!Array.isArray(next)) throw new TypeError('nextAttempts must be an array');
+  if (next.length !== previous.length) throw new TypeError('nextAttempts must list the same ledger rows');
+  const rest = (row:LedgerAttempt) => JSON.stringify([row.canonicalCourseId, row.creditUnits, row.ledger,
+    row.recognition, row.term ?? null, row.supersedesAttemptToken ?? null, row.retakeApprovalRef ?? null]);
+  const byToken = new Map<string, LedgerAttempt>();
+  for (const row of previous) {
+    if (byToken.has(row.attemptToken)) throw new TypeError(`attempts repeat ${row.attemptToken}`);
+    byToken.set(row.attemptToken, row);
+  }
+  const seen = new Set<string>(), moved = new Set<string>();
+  for (const row of next) {
+    const before = byToken.get(row.attemptToken);
+    if (!before || seen.has(row.attemptToken) || rest(before) !== rest(row)) {
+      throw new TypeError(`nextAttempts may change only areaIds (row ${String(row.attemptToken)})`);
+    }
+    seen.add(row.attemptToken);
+    const a = new Set<string>(before.areaIds), b = new Set<string>(row.areaIds);
+    for (const id of a) if (!b.has(id)) moved.add(id);
+    for (const id of b) if (!a.has(id)) moved.add(id);
+  }
+  return moved;
+}
+
+/** The areas a requirement reads from ledger rows. */
+function areasRead(requirement:Requirement):readonly string[] {
+  if (requirement.kind === 'CATEGORY_MINIMUM') return [requirement.areaId];
+  if (requirement.kind === 'AREA_SPREAD') return requirement.areaIds;
+  return [];
 }
 
 const UNVERIFIED:ReadonlySet<ProgressState> = new Set(['NEEDS_REVIEW', 'NOT_CHECKED', 'NOT_APPLICABLE']);
@@ -261,13 +304,17 @@ function blocked(asOf:string, blockers:RevisionBlocker[], inEffectAtAsOf:RulePac
 
 /**
  * Compare two APPROVED versions of one rule pack on the same ledger rows.
- * Each requirement row equals buildAcademicLedger's row for that version.
+ * Each requirement row equals buildAcademicLedger's row for that version, using `attempts` for the
+ * previous version and `nextAttempts` (or `attempts`) for the next one.
  */
 export function compareRulePackRevisions(input:RulePackRevisionRequest):RulePackRevisionDiff {
   if (!AS_OF.test(input.asOf) || !Number.isFinite(Date.parse(input.asOf))) {
     throw new TypeError('asOf must be an ISO-8601 datetime with a timezone offset');
   }
   const asOfMs = Date.parse(input.asOf);
+  if (input.nextAttempts !== undefined && !Array.isArray(input.attempts)) throw new TypeError('attempts must be an array');
+  /** Areas some course enters or leaves under the next version; undefined when not supplied. */
+  const moved = input.nextAttempts === undefined ? undefined : movedAreas(input.attempts, input.nextAttempts);
   const blockers:RevisionBlocker[] = [];
   const previous = approvedPack(input.previous, 'previous', asOfMs, blockers);
   const next = approvedPack(input.next, 'next', asOfMs, blockers);
@@ -280,14 +327,14 @@ export function compareRulePackRevisions(input:RulePackRevisionRequest):RulePack
   const revisionKind = checkRevision(previous, next, blockers);
   if (blockers.length > 0) return blocked(input.asOf, blockers, inEffectAtAsOf, previous, next);
 
-  const audit = (pack:Pack) => buildAcademicLedger({
+  const audit = (pack:Pack, attempts:readonly LedgerAttempt[]) => buildAcademicLedger({
     asOf:input.asOf,
     rulePackVersion:pack.version,
     rulePackState:'APPROVED',
-    attempts:input.attempts,
+    attempts,
     requirements:pack.requirements.map(toLedger),
   });
-  const before = audit(previous), after = audit(next);
+  const before = audit(previous, input.attempts), after = audit(next, input.nextAttempts ?? input.attempts);
   const rowsBefore = new Map(before.requirements.map(row => [row.requirementId, row]));
   const rowsAfter = new Map(after.requirements.map(row => [row.requirementId, row]));
   const reqBefore = new Map(previous.requirements.map(req => [req.id, req]));
@@ -298,12 +345,15 @@ export function compareRulePackRevisions(input:RulePackRevisionRequest):RulePack
     const a = reqBefore.get(id), b = reqAfter.get(id);
     if (a && b) {
       const fields = changedFields(previous, next, a, b);
+      const reads = [...areasRead(a), ...areasRead(b)];
+      if (moved && reads.some(areaId => moved.has(areaId))) fields.push('areaMembership');
       const prevSide = side(a, rowsBefore.get(id)!), nextSide = side(b, rowsAfter.get(id)!);
       return {
         requirementId:id, semanticKey:b.semanticKey,
         definition:fields.length > 0 ? 'CHANGED' : 'UNCHANGED',
         changedFields:fields,
-        stateChange:stateChange(prevSide.state, nextSide.state),
+        // Without the next classification an area result cannot be called SAME, GAINED or LOST.
+        stateChange:!moved && reads.length > 0 ? 'UNKNOWN' : stateChange(prevSide.state, nextSide.state),
         previous:prevSide, next:nextSide,
       };
     }
@@ -317,6 +367,11 @@ export function compareRulePackRevisions(input:RulePackRevisionRequest):RulePack
   if (requirements.some(row => row.stateChange === 'LOST')) {
     caveats.push('Some requirements satisfied under the previous version are not satisfied under the next one.');
   }
+  const readsAreas = [...previous.requirements, ...next.requirements].some(req => areasRead(req).length > 0);
+  if (!moved && readsAreas) {
+    caveats.push('Area membership under the next version was not supplied; area-based results are UNKNOWN.');
+  }
+  if (moved && moved.size > 0) caveats.push('Some courses count in different areas under the next version.');
   if (unverified) caveats.push('Some results are unverified on at least one side; their change is UNKNOWN.');
   return {
     state:unverified ? 'NEEDS_REVIEW' : 'READY',
