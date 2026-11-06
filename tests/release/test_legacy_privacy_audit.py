@@ -29,8 +29,13 @@ class LegacyAuditPrivacyTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix="synthetic-git-privacy-")
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        self.write("tools/verify_release_boundary.py",
-                   ORIGINAL.read_text(encoding="utf-8"))
+        source = ORIGINAL.read_text(encoding="utf-8")
+        # This synthetic fixture tests generic forbidden paths separately from
+        # the five immutable user-restored Git blobs pinned in the real repo.
+        first = source.index('APPROVED_CSV_BLOBS={')
+        last = source.index('\nchecks=[]', first)
+        source = source[:first] + 'APPROVED_CSV_BLOBS={}\n' + source[last + 1:]
+        self.write("tools/verify_release_boundary.py", source)
         for path in ACTIVE_DOCS:
             self.write(path, "synthetic document only\n")
         self.write(".dockerignore", "\n".join([
@@ -116,6 +121,42 @@ Path.read_text = safe_read
         accepted, clean = scan()
         self.assertEqual(accepted.returncode, 0, accepted.stderr)
         self.assertEqual(clean['protected_count'], 0)
+
+    def test_allowlisted_synthetic_blob_is_immutable_in_git_tree(self) -> None:
+        """Exercise approved hashes with a throwaway fabricated CSV, never real bytes."""
+        def run_git(*args: str) -> str:
+            return subprocess.run(['git', '-C', str(self.root), *args],
+                                  check=True, capture_output=True, text=True).stdout.strip()
+        run_git('config', 'user.name', 'Synthetic Reviewer')
+        run_git('config', 'user.email', 'synthetic@example.invalid')
+        run_git('rm', '--cached', '-q', '--', SENTINEL_PATH, 'private/synthetic-identity-map.json')
+        self.write('csv/synthetic-allowed.csv', 'fake,header\nfictional,record\n')
+        blob = run_git('hash-object', '--', 'csv/synthetic-allowed.csv')
+        script = self.root / 'tools/verify_release_boundary.py'
+        fixture = script.read_text(encoding='utf-8')
+        self.assertIn('APPROVED_CSV_BLOBS={}', fixture)
+        script.write_text(fixture.replace('APPROVED_CSV_BLOBS={}',
+                         "APPROVED_CSV_BLOBS={'csv/synthetic-allowed.csv':'" + blob + "'}"),
+                         encoding='utf-8')
+        run_git('add', '-f', '--', 'csv/synthetic-allowed.csv')
+        run_git('commit', '-qm', 'synthetic pinned CSV')
+        def scan() -> tuple[subprocess.CompletedProcess[str], dict]:
+            env = dict(os.environ, PYTHONPATH=str(self.root))
+            result = subprocess.run([sys.executable, str(script), '--committed-tree-only'],
+                                    cwd=self.root, env=env, capture_output=True,
+                                    text=True, check=False, timeout=20)
+            return result, json.loads(result.stdout)
+        okay, reported = scan()
+        self.assertEqual(okay.returncode, 0, okay.stderr)
+        self.assertEqual(reported['preserved_csv_count'], 1)
+        self.assertFalse(reported['csv_contents_read'])
+        self.write('csv/synthetic-allowed.csv', 'fake,header\nfictional,changed\n')
+        run_git('add', '-f', '--', 'csv/synthetic-allowed.csv')
+        run_git('commit', '-qm', 'synthetic unauthorized edit')
+        denied, broken = scan()
+        self.assertEqual(denied.returncode, 1)
+        self.assertEqual(broken['preserved_csv_mismatch_count'], 1)
+        self.assertNotIn('fictional', denied.stdout + denied.stderr)
 
     def test_publication_secret_signature_finding_is_hash_only(self) -> None:
         synthetic_not_real_key = "ghp_" + "A" * 40

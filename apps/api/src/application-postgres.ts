@@ -11,6 +11,7 @@ import {PostgresReviewerAccessStore} from './modules/auth/reviewer-postgres.js';
 import type {ReviewerSqlPool} from './modules/auth/reviewer-postgres.js';
 import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
+import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 
 export interface PostgresApplicationConfig {
   runtime?:RuntimeMode;
@@ -19,6 +20,8 @@ export interface PostgresApplicationConfig {
   auth:PostgresGoogleAuthConfig;
   schoolMailProof?:TrustedSchoolMailPort;
   platform:Omit<PostgresPlatformConfig,'now'>;
+  /** Explicit operator-supplied restricted 4-owner CSV/registry loaders; no auto import or demo fallback. */
+  ownerIntake?:Omit<Parameters<typeof createRestrictedOwnerDirectory>[0],'now'>;
   reviewer?:{invitations:ReviewerSqlPool;demo:ReviewerDemoRepository};
   /** The configured provider executor keeps token, billing and current-actor
    * checks. No synthetic adapter is accepted by this production composition. */
@@ -47,12 +50,16 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     ||typeof config.ai.runtime.executor.readJob!=='function'||typeof config.ai.inputs?.list!=='function'
     ||config.ai.experienceCandidates&&typeof config.ai.experienceCandidates.read!=='function'))
     throw new Error('Configured AI executor and actor-bound input directory required');
+  if(config.ownerIntake&&['loadRegistry','verifyStorage','loadSources'].some(
+    name=>typeof config.ownerIntake?.[name as keyof typeof config.ownerIntake]!=='function'))
+    throw new Error('Restricted owner intake requires all three verified operator loaders');
   const googleAuth=createPostgresGoogleAuth(config.auth);
   const clock=config.auth.google.now??(()=>new Date());
   const now=()=>clock().toISOString();
   const platform=createPostgresPlatformServices({...config.platform,now});
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
+    ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),
     ...(config.ai?{realAi:config.ai.runtime,approvedAiInputs:config.ai.inputs,
       ...(config.ai.experienceCandidates?{experienceCandidates:config.ai.experienceCandidates}:{})}:{}),
