@@ -295,3 +295,25 @@ test('#141 /menu at 360px: manifest menus, no horizontal overflow, Tab skips �
   expect(focused.filter(f => f.startsWith('OFF'))).toEqual([]);
   expect(focused.some(f => f.includes('맞춤 기회'))).toBe(true);
 });
+
+
+test('interactive discovery: home selector and live opportunity filters at 360px with reduced motion', async ({page}) => {
+  await page.emulateMedia({reducedMotion: 'reduce'});
+  await page.setViewportSize({width: 360, height: 820});
+  await page.goto('/');
+  await pick(page, 0);
+  const guide = page.getByRole('region', {name: '오늘의 액션 가이드'});
+  await guide.getByRole('button', {name: /취득 학점/}).click();
+  await expect(guide.getByRole('region', {name: '취득 학점 안내'})).toBeVisible();
+  await expect(guide.getByRole('button', {name: /취득 학점/})).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회'}).click();
+  const explorer = page.getByRole('region', {name: '공고 탐색'});
+  await explorer.getByRole('searchbox', {name: '공고 검색'}).fill('존재하지않는공고ZZZ');
+  await expect(explorer.getByText('선택한 검색어와 조건에 맞는 공고가 없어요.')).toBeVisible();
+  await explorer.getByRole('button', {name: '검색 조건 초기화'}).click();
+  await expect(explorer.getByRole('listitem')).toHaveCount(9);
+  await explorer.getByRole('button', {name: '7일 내 마감'}).click();
+  await expect(explorer.getByRole('button', {name: '7일 내 마감'})).toHaveAttribute('aria-pressed', 'true');
+  const overflow = await noHorizontalOverflow(page);
+  expect(overflow.scroll, JSON.stringify(overflow.offenders)).toBeLessThanOrEqual(overflow.width);
+});

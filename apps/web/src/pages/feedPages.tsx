@@ -4,6 +4,8 @@ import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
+import {HomeJourney} from './HomeJourney.js';
+import {OpportunityExplorer} from './OpportunityExplorer.js';
 import {DeadlineRow, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../features/graduation/graduationView.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
@@ -30,6 +32,7 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
         <TodaySummary view={view} navigate={navigate} />
+        <HomeJourney key={state.selected ?? 'none'} view={view} navigate={navigate} />
         <div className="modules">
           <div className="module module--cal">
             <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />
@@ -111,9 +114,7 @@ export const opportunitiesPage: PageRenderer = ({path, state, navigate}) => {
           <div><dt>지원 조건 확인 필요</dt><dd>{all.filter(c => c.eligibility === 'UNKNOWN').length}건</dd></div>
         </dl>
         <h2 className="list__title">공고 목록 <span className="muted">(총 {all.length}건)</span></h2>
-        {all.length ? <ul className="opps">{all.map(c => <OppCard key={c.opportunityId} card={c} navigate={navigate} />)}</ul>
-          : <p className="muted">표시할 공고가 없어요.</p>}
-        {view.feed.data.hasMore && <p className="muted">더 많은 공고는 검색·필터 기능과 함께 제공될 예정입니다.</p>}
+        <OpportunityExplorer key={state.selected ?? 'none'} cards={all} navigate={navigate} hasMore={view.feed.data.hasMore} />
         {(view.feed.data.ineligible??[]).length>0&&<Section title="조건 미충족">
           <p className="muted">현재 확인된 지원 조건에 맞지 않는 공고입니다. 최대 20개를 표시합니다.</p>
           <ul className="opps">{view.feed.data.ineligible!.map(c=>
