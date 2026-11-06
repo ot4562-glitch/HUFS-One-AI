@@ -54,10 +54,10 @@ a { color: var(--color-link); }
   padding: 0 var(--space-3); cursor: pointer;
 }
 .selector__summary::-webkit-details-marker { display: none; }
-.selector__summary::after { content: "펼치기 ▾"; margin-left: auto; font-size: 14px; color: var(--color-text-muted); }
+.selector__summary::after { content: "펼치기 ▾"; margin-left: auto; flex-shrink: 0; white-space: nowrap; font-size: 14px; color: var(--color-text-muted); }
 .selector[open] .selector__summary::after { content: "접기 ▴"; }
-.selector__caption { color: var(--color-text-muted); font-size: 14px; }
-.selector__current { font-weight: 700; color: var(--color-heading); }
+.selector__caption { flex-shrink: 0; white-space: nowrap; color: var(--color-text-muted); font-size: 14px; }
+.selector__current { min-width: 0; font-weight: 700; color: var(--color-heading); }
 .selector__list { border: 0; margin: 0; padding: 0 var(--space-2) var(--space-2); display: grid; gap: var(--space-1); }
 .selector__row {
   display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "radio label badge" "radio status status";
@@ -528,6 +528,7 @@ a { color: var(--color-link); }
 
 /* 2026-11-06 screenshot QA (#298): one site header, account in header, no separate desktop ONE AI bar. */
 .topbar, .app--home .topbar { background: var(--color-heading); border-bottom-color: #12466e; }
+.topbar { container: site-header / inline-size; }
 .topbar__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand links" "account account"; gap: 8px; min-height: 56px; padding-top: 8px; padding-bottom: 8px; }
 .topbar__brand { grid-area: brand; }
 .topbar__account { grid-area: account; min-width: 0; position: relative; z-index: 20; }
@@ -552,6 +553,13 @@ a { color: var(--color-link); }
   .gnb__item, .app--home .gnb__item { color: #E3EAF2; }
   .gnb__item:hover, .app--home .gnb__item:hover { color: #FFFFFF; box-shadow: inset 0 -3px 0 rgba(255,255,255,.35); }
   .gnb__item[aria-current="page"], .app--home .gnb__item[aria-current="page"] { color: #FFFFFF; box-shadow: inset 0 -3px 0 var(--color-accent); }
+}
+/* Root magnification can narrow this container while the viewport still matches
+   the tablet rule. Reflow the account instead of squeezing the brand to zero. */
+@media (min-width: 768px) {
+  @container site-header (max-width: 767px) {
+    .topbar__row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand links" "account account" "tabs tabs"; }
+  }
 }
 
 /* Overflow-safe application cards: never squeeze five independent action columns into desktop width. */

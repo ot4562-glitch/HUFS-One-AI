@@ -101,6 +101,10 @@ for (const width of [320, 360, 390, 768, 1440]) {
   test(`#258 experience creates, approves and revokes at ${width}px with names and no overflow`, async ({page}) => {
     await page.setViewportSize({width, height: 900});
     await open(page); await pick(page, 'S01'); await expectCurrent(page, 'S01');
+    const accountCaption = await page.locator('.selector__caption').evaluate(el => ({
+      height: el.getBoundingClientRect().height, lineHeight: Number.parseFloat(getComputedStyle(el).lineHeight),
+    }));
+    expect(accountCaption.height).toBeLessThanOrEqual(accountCaption.lineHeight + 1);
     await firstCard(page).getByRole('checkbox', {name: '데이터 분석', exact: true}).check();
     await firstCard(page).getByRole('button', {name: '선택한 주제 승인'}).focus();
     await page.keyboard.press('Enter');
@@ -153,6 +157,7 @@ test('#9 keyboard Escape restores selector focus; reduced-motion and 200% layout
   });
   await page.screenshot({path: testInfo.outputPath('experience-zoom-200.png'), fullPage: true});
   expect(check.scroll, JSON.stringify({overflow: check.overflow, header: check.header})).toBeLessThanOrEqual(check.width);
+  expect(check.header.find(el => el.className === 'topbar__brand')!.width).toBeGreaterThan(0);
   expect(check.motion).toBe('none');
   expect(check.missingLabels).toEqual([]);
 });

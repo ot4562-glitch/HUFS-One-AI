@@ -19,7 +19,23 @@ for (const width of [320, 360, 390, 768, 1440]) {
       await expect.poll(() => images.first().evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
       await page.locator('.synthetic-gallery summary').click();
       await expect(page.locator('.synthetic-gallery__grid > li')).toHaveCount(6);
+      await expect(page.locator('.synthetic-gallery__grid > li img')).toHaveCount(6);
       await expect(page.locator('.synthetic-gallery')).toContainText('실제 모집·지원 대상이 아니며 신청할 수 없어요');
+      // A full-page capture does not scroll each lazy image into the viewport.
+      // Freeze the count so a failed image disappearing into a fallback also fails this check.
+      const imageCount = await images.count();
+      for (let index = 0; index < imageCount; index++) {
+        const image = images.nth(index);
+        await image.scrollIntoViewIfNeeded();
+        await expect.poll(() => image.evaluate(el => {
+          const img = el as HTMLImageElement;
+          return img.complete && img.naturalWidth > 0;
+        })).toBe(true);
+        await image.evaluate(el => (el as HTMLImageElement).decode());
+      }
+      await expect(images).toHaveCount(imageCount);
+      await page.evaluate(() => window.scrollTo({top: 0, left: 0, behavior: 'instant'}));
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
       expect(overflow).toBe(false);
       await page.screenshot({path: info.outputPath(`${route}-${width}.png`), fullPage: true});
