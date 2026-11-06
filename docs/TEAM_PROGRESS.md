@@ -24,6 +24,10 @@
 - **박준영 학업 [#287](https://github.com/ot4562-glitch/HUFS-One-AI/pull/287)·[#288](https://github.com/ot4562-glitch/HUFS-One-AI/pull/288)·[#289](https://github.com/ot4562-glitch/HUFS-One-AI/pull/289):** 영역 이동 RulePack 비교 안전화, rolling-origin 반례, 학점 원장 속성 범위 문서화. 공식 학칙·실원장·수기 결과·교차 UI 리뷰는 #11/#260/#282 OPEN.
 - 5개 PR의 AI 보조 `COMMENT` 리뷰는 **독립 사람 APPROVE/Gold가 아님**. **기존 인적 수락 비율 7/12·9/12·7/12·8/12·1/5는 변동 없음**. 실서비스는 `RELEASE_BLOCKED`.
 
+### 이의상 UI 후속 [#290](https://github.com/ot4562-glitch/HUFS-One-AI/pull/290)
+
+11대분류 GNB/분류 배너·LNB, 홈 P001·공고 3단 행 합성 리디자인과 4종 HEAD CI SUCCESS 확인. 5개 핵심 탭 및 미지원 메뉴 경계 유지. 이 변경은 [본선 전 #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)의 코드 작업으로만 체크했으며 실제 모바일·NVDA·권한/공식자료 인수 및 고정 수락 비율 **9/12는 변경하지 않음**. 현장 수락은 #280.
+
 ## 본선 진출 전/후 업무와 운영 수락(별도)
 
 | 담당 | 본선 진출 전 — 계속 진행 | 본선 진출 이후 — 실제 운영/실자료 수락 |
