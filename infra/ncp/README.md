@@ -1,6 +1,6 @@
 # HUFS One AI — 현재 NCP 네트워크·호스트·배포 안전 가이드
 
-**현재 상태:** network/host Terraform·Windows→Ubuntu 계획/SSH 합성 프리뷰/롤백 **코드**가 존재하며 NCP 실제 리소스를 만들거나 운영·유료 모델을 실행한 것은 아닙니다. 자료·개인정보·기관·NCP/모델·운영/출시 승인은 소유자가 모두 완료 확인해 **`OWNER_CONFIRMED_APPROVED`**입니다. 실제 자격증명/호스트/요금·인그레스·복구 검증이 없어 **`CONFIGURATION_REQUIRED`** 및 **`RELEASE_BLOCKED`**로 관리합니다. 현재 구현 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253), 현장 인수 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252), 운영 책임 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
+**현재 상태:** network/host Terraform·Windows→Ubuntu 계획/SSH 합성 프리뷰/롤백 **코드**가 존재하며 NCP 실제 리소스를 만들거나 운영·유료 모델을 실행한 것은 아닙니다. 자료·개인정보·기관·NCP/모델·운영/출시 승인은 소유자가 모두 완료 확인해 **`OWNER_CONFIRMED_APPROVED`**입니다. 실제 자격증명/호스트/요금·인그레스·복구 검증이 없어 **`CONFIGURATION_REQUIRED`** 및 **`RELEASE_BLOCKED`**로 관리합니다. 구현 현황 [STATUS](../../STATUS.md), 실운영 인수 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 비코드 운영 책임 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
 
 ## 운영 책임과 승인
 
