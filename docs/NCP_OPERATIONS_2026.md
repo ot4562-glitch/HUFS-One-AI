@@ -14,4 +14,9 @@
 
 ## 결과
 
-#252에는 실제 실행 SHA/환경·명령·PASS/FAIL/NOT_RUN/CONFIGURATION_REQUIRED와 측정값을 기록합니다. 소유자의 승인 완료 확인은 인정하되 아직 실행하지 않은 서버 배포/유료 모델/DB 작업의 성공을 의미하지 않습니다.
+[#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에는 실제 실행 SHA/환경·명령·PASS/FAIL/NOT_RUN/CONFIGURATION_REQUIRED와 측정값을 기록합니다. 소유자의 승인 완료 확인은 인정하되 아직 실행하지 않은 서버 배포/유료 모델/DB 작업의 성공을 의미하지 않습니다.
+
+## 2026-11-06 업데이트
+
+- 오너의 NCP/운영 코드·IaC는 병합되어 있어도 **실 NCP 계정·서버 생성·SSH·HTTPS/OIDC/PG/CLOVA/실비용·롤백/반납은 미실행**. `RELEASE_BLOCKED`.
+- [초보자 서버 개설 가이드](BEGINNER_NCP_SERVER_SETUP.md) · [NCP 제품·Codex/Claude 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [운영 증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md). `csv/` 원본 5개는 무단 변경/삭제하지 않으며 공개 배포에 넣지 않음.

@@ -1,6 +1,6 @@
 # HUFS One AI — 승인된 운영 API 실행
 
-프로젝트 승인은 **OWNER_CONFIRMED_APPROVED**입니다. 운영 앱은 이미 완료된 승인 여부를 다시 묻는 대신 실제 설정·연결·사용자 권한을 검증합니다. 운영 구현은 [PR #267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267) → [#268](https://github.com/ot4562-glitch/HUFS-One-AI/pull/268) → [#269](https://github.com/ot4562-glitch/HUFS-One-AI/pull/269) 스택과 후속 계약/시연/검증 PR의 대상입니다. 종전 PR #264는 분할 대체로 미병합 종료되었습니다. 실제 적용 여부와 설정 누락은 [증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)으로 판정합니다.
+프로젝트 승인 상태는 **OWNER_CONFIRMED_APPROVED**입니다. 오너 분할 PR #267~#275 중 실제 8개 및 [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277), 학업 전망 [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278), 추천 코어 [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279)는 `main` **병합 완료**. 구 #264는 미병합 대체. **실 Google/학교메일·운영 DB/NCP·학생별 실제 자료/모델 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) OPEN / `RELEASE_BLOCKED`.** [운영 증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)에서 코드와 실제 환경을 구별합니다.
 
 ## 구성
 
@@ -14,6 +14,10 @@
 - 선택적 `aiInputRegistration`은 네 번째 독립 SQL 역할 `aiInputOperator`와 외부의 검증된 `reviewer.verify`를 요구합니다. **공개 API로 노출되지 않는** `operatorRegistration.service.register`가 현재 경험·동의·소스/검토 근거를 검증해 불변 provider input과 현재 HEAD를 같은 트랜잭션에 기록합니다. 이 서비스는 운영 설정 없이 자동 실행되지 않습니다.
 - 선행 schema와 역할은 `20261103_ai_provider_inputs.sql` → `20261105_ai_consented_personal_inputs.sql` → `20261105_ai_experience_bindings.sql` → `20261106_ai_experience_input_operator.sql` 순서로 준비합니다. 후속 migration은 같은 운영 DB와 operator 검증용 비공개 역할에서만 적용합니다. 직접 개인 데이터·역할·계정·유료 모델을 자동 생성하지 않습니다.
 - 경험 수정·삭제, 개별 모델 동의 철회, 버전·세션 변경은 기존 입력의 payload와 HEAD를 폐기/재검증합니다. 학생은 `POST /api/experience/ai-skills/prepare`에서 승인된 자신의 경험을 선택하고, 결과를 확인한 뒤 `tag-approval`에서 명시적으로 선택합니다. AI 후보는 숙련도 인증이 아닙니다.
+
+## 실제 CSV/BETA 연결 — API 코드와 운영 준비의 차이
+
+[#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277)의 `PostgresApplicationConfig.ownerIntake` 선택 loader와 `/api/private-intake/self` BETA 본인 화면/route 코드는 병합됐습니다. **그러나 `OperatorPostgresInputs`·`prepareOperatorPostgres`의 실운영 조립에는 owner registry/loader/4인 실제 `actorId` 매핑이 자동 주입되지 않습니다.** 각 학생의 검증된 Forms 행·수강 CSV 해시·현재 소유권/동의/철회·운영 DB readback·교차 actor 거부/실서버 테스트를 완료해야 실화면으로 인정합니다. 단순히 공개 Git `csv/` 파일을 복구하거나 DB에 적재한다고 로그인 계정/실제 화면이 자동 연결되지 않습니다. `csv/` 원본 5개를 임의 수정·삭제·이동/재인코딩하지 않으며 공개 컨테이너·CI/에이전트 작업 공간에서는 제외합니다. 남은 실운영 과제는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276).
 
 ## 비공개 서버 factory
 
@@ -46,7 +50,7 @@ node dist/apps/api/src/production-main.js --apply
 
 ## 검증
 
-OIDC·메일·운영 SQL migration/backup·NCP/TLS·실 client IP·실제 공급자와 요금은 #252에서 실제 실행 결과로 기록합니다. 구성 누락은 CONFIGURATION_REQUIRED, 미실행은 NOT_RUN입니다. 합성 launcher를 실제 사용자 인증으로 바꾸지 않습니다.
+OIDC·메일·운영 SQL migration/backup·NCP/TLS·실 client IP·실제 공급자와 요금은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 실제 실행 결과로 기록합니다. 구성 누락은 CONFIGURATION_REQUIRED, 미실행은 NOT_RUN입니다. 합성 launcher를 실제 사용자 인증으로 바꾸지 않습니다.
 
 [승인 정본](AUTHORIZATION.md) · [현재 상태](../STATUS.md).
 ## 비공개 컨테이너 구성 (설정형, 실행·배포 검증 별도)
@@ -58,4 +62,4 @@ OIDC·메일·운영 SQL migration/backup·NCP/TLS·실 client IP·실제 공급
 - API의 운영 DB·Google/메일·승인된 모델 egress는 미리 프로비저닝하고 방화벽으로 제한한 외부 Docker 네트워크 `HUFS_APPROVED_EGRESS_NETWORK`에만 연결합니다. 내부 `backend` 네트워크는 그대로 private이며, edge에 외부 egress를 주지 않습니다. 네트워크 이름의 존재 자체는 허가/차단 정책을 증명하지 않습니다.
 - 기존 `infra/deploy/private-deployment.mjs`는 메타데이터만 검사하고 `RELEASE_BLOCKED`를 유지합니다. `PRODUCTION_RUNTIME_NOT_APPLIED`는 **실제 적용·인수 미검증**이지 코드 진입점 미구현을 뜻하지 않습니다.
 
-실제 operator secrets/migrations, 신뢰 프록시·직접 origin·두 client IP, Docker-container loopback 연결 및 배포/복구는 `#252` 실행 증거와 `#253`의 추가 조립/부정시험을 거쳐야 합니다.
+실제 operator secrets/migrations, 신뢰 프록시·직접 origin·두 client IP, Docker-container loopback 연결 및 배포/복구는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)의 현재 운영자 구성·실실행·복구 근거와 추가 조립/보안 부정시험을 거쳐야 합니다.

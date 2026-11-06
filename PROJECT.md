@@ -18,4 +18,7 @@ HUFS One AI는 한국외국어대학교 학생의 기회 탐색·학사 공지·
 
 실제 공고 지원 제출, 학교 공식 SSO, 공식 졸업 판정, 푸시 발송, 학교 자료/로그인 무단 수집, 실학생 4인 원본 공개·외부 AI 전송을 제공했다고 표시하지 않습니다. 미지원 메뉴는 해당 상태를 명확히 보여 줍니다.
 
-**현재 구현과 단계별 출시 게이트:** [STATUS](STATUS.md) · [#253 코드](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [#252 실인수](https://github.com/minseong-hufs/HUFS-One-AI/issues/252). 상세 설명은 [README](README.md), 기술 계약은 [Architecture](Architecture.md)에 있습니다.
+**현재 구현과 단계별 출시 게이트:** [STATUS](STATUS.md) · [#276 실운영·실자료 통합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [#255 팀 협업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255). 상세 설명은 [README](README.md), 기술 계약은 [Architecture](Architecture.md)에 있습니다.
+
+
+**2026-11-06 코드 진행:** 오너 분할 #267~#275 중 8개·BETA 원본 화면 #277, 학업 전망 #278, 추천 경험 코어 #279가 `main`에 병합됐습니다. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 CLOSED, #10/#11/#258/#260 및 실제 NCP·Google/PG·학생별 동의/권리·CLOVA·복구 #276은 OPEN. [처음 읽을 가이드 3종](README.md#7-중요-문서--처음-설치하는-분비전공자용). 실제 운영은 `RELEASE_BLOCKED`.

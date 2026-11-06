@@ -10,7 +10,7 @@
 
 | 담당 | 소유 |
 | --- | --- |
-| 심민성 `ot4562-glitch` | 공통 Zod/API·OIDC/학교메일·PG/RLS·Source/RAG·AI/비용·NCP SDK/worker/IaC/systemd/배포/CI 모든 코드·통합; #253/#257 |
+| 심민성 `ot4562-glitch` | 공통 Zod/API·OIDC/학교메일·PG/RLS·Source/RAG·AI/비용·NCP SDK/worker/IaC/systemd/배포/CI 모든 코드·통합; #267~#275 중 병합 8건·#277 완료, 현장 #276 |
 | 이의상 `uisang2004-maker` | React UI·모바일/접근성·시연·UI E2E; #9/#119/#258 |
 | 김채윤 `qamarrchae` | 추천·공지·경험 역량 매핑 순수 코어; #10/#259 |
 | 박준영 `taewangim-alt` | 학업/RulePack·What-if·개설 전망·교과 근거; #11/#260 |
@@ -24,7 +24,7 @@
 
 정확한 HEAD의 타입·합성/부정·일회용 PG·Chrome·CI 결과와 실패/미실행을 기록합니다. AI 코드 리뷰는 실제 비작성자의 사람 인수와 구별하고, 명시적인 개별 PR 병합 지시는 해당 PR에만 적용합니다. 현재 문서는 현재 상태만 설명하며 지난 진행 일지를 누적하지 않습니다.
 
-[현재 구현](STATUS.md) · [실행 검증 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) · [작업 PR #264](https://github.com/minseong-hufs/HUFS-One-AI/pull/264).
+[현재 구현](STATUS.md) · [운영 통합 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [학업 코어 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [추천 코어 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279).
 ## 원본 CSV 5개 — 사용자 보존 지시 (2026-11-06)
 
 - 저장소에 현재 복구된 `csv/`의 **Google Forms 1개 + 학생별 수강 CSV 4개**는 **읽기 전용 원본**이다. 담당 에이전트·자동화·PR 정리 작업이 **임의로 삭제·변경·이동·파일명 변경·재인코딩·Git 추적 해제·원본 덮어쓰기·자동 정리해서는 안 된다**. 기존 원본 5개를 있는 그대로 유지한다.

@@ -48,4 +48,10 @@ D03 NO_GO | GO(별도 서면 승인):
 종료·반납·잔여 청구/비밀키 폐기 확인:
 ```
 
-비밀/로그·원본·학번/연락처·결제 수단을 GitHub/프롬프트/CI/공유 PDF에 붙이지 않는다. 실제 요금/호스트 작업 전에는 **NOT_RUN/HOLD**. 인계 절차 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) · 운영 책임 [#12](https://github.com/minseong-hufs/HUFS-One-AI/issues/12).
+비밀/로그·원본·학번/연락처·결제 수단을 GitHub/프롬프트/CI/공유 PDF에 붙이지 않는다. 실제 요금/호스트 작업 전에는 **NOT_RUN/HOLD**. 인계/실운영 증거 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · 운영 책임 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
+
+
+## 현재 인계 안내 (2026-11-06)
+
+- 비전공자 운영자는 [NCP 서버 개설 안내](../../docs/BEGINNER_NCP_SERVER_SETUP.md) 및 [제품·개발 CLI 설치](../../docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md)를 참고하되 **가이드 작성·PR 병합·CI 오프라인 성공을 실 서버 인계/요금 증거로 대체하지 않는다**.
+- `csv/` 원본 5개는 Git에서 보호·불변 확인하지만 **비공개 owner actor↔Forms/수강 자료 매핑/학생별 현재 동의/실제 백업·철회 증거**는 공개 템플릿에 적지 않고 제한된 보관소로 관리한다. 실제 설정/수락은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) OPEN.

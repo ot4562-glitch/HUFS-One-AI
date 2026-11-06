@@ -51,7 +51,7 @@ node --test tests/security/ncp-network-iac.test.mjs
 - 실제 **Network ACL**(stateless의 출발지/목적지·반환 포트), **ACG**(상태 추적), Ubuntu UFW를 서로 다른 정책/영수증으로 검수. 합성 preview는 **5173** 루프백 전용, 운영 API 포트 **3000** 및 PostgreSQL **5432**/worker/debug는 인터넷에서 직접 접근할 수 없어야 한다.
 - **한국 IP** 제한은 대한민국 리전 선택만으로 활성화되지 않는다. 별도 승인된 **Global Edge** 접근정책 **Whitelist > Geo**에서 Korea와 제외/우회 경계를 확인해야 하며, 직접 원본 IP·IPv6·다른 호스트/preview 경로 차단과 실제 정상/비정상 지역 테스트가 필요하다.
 - **실제 운영 서비스의 공개는 A01–D03의 기술·인적 검증 전까지 차단**하며 `RELEASE_BLOCKED`입니다. 소유자 프로젝트 승인은 완료됐지만 네트워크·서버·사용자 인수 미검증을 통과로 대체하지 않습니다. `APP_ENV=production` 보호 거부를 값만 바꿔 우회하지 않는다. 코드 합성 mock, preview/계획을 실제 운영 준비/지출 완료로 승격하지 않는다.
-- **현재 CI 보안 검사 식별자:** `#46`(개인 원본 위험), `#89`(출시/인그레스 보안)는 `tests/release/test_ncp_preview_safety.py`의 검증 기준에 아직 포함된 **정적 호환 표기**이다. 이 번호들은 현재 열린 작업이나 승인 상태가 아니며, 실제 소유 이슈는 **#252(실수락)/#253(코드)**이다.
+- **현재 CI 보안 검사 식별자:** `#46`(개인 원본 위험), `#89`(출시/인그레스 보안)는 `tests/release/test_ncp_preview_safety.py`의 검증 기준에 아직 포함된 **정적 호환 표기**이다. 이 번호들은 현재 열린 작업이나 승인 상태가 아니며, 현재 실운영 이슈는 **#276(본선진출 이후 통합)**이며 #252/#253은 이관·종료됐다.
 
 ## 운영 TLS·인증·관측/복구 조건
 
@@ -60,3 +60,8 @@ node --test tests/security/ncp-network-iac.test.mjs
 LB 앞단이라면 신뢰된 정확한 LB CIDR의 real_ip 또는 검토된 PROXY protocol과 **실제 서로 다른 두 client IP의 API `request.ip` 구분·임의 XFF 무효**를 증명한다. 키·로그/토큰/원본/AI prompt, p95/CPU/RSS/비용·크레딧/hard stop/모델 quota·중단/반납 영수증을 비공개 기록한다.
 
 **검증/인계:** [QUICKSTART](QUICKSTART.md) · [운영 기록 양식](OPERATIONS_HANDOFF_TEMPLATE.md) · [현재 인수](../../docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+
+
+## 2026-11-06 입문용 설치 문서 연결
+
+NCP 운영자가 실제 서버를 준비할 때는 [처음부터 NCP 서버 만들기](../../docs/BEGINNER_NCP_SERVER_SETUP.md) → [제품·Codex·Claude Code 설치](../../docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md) → [비전공 제품 구조](../../docs/BEGINNER_PRODUCT_ARCHITECTURE.md) 순으로 참조한다. 문서는 `main`에 반영됐으나 **실 NCP 계정/서버 SSH·도메인·PG·Google·CLOVA/요금·복구 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) OPEN**, 서비스 `RELEASE_BLOCKED`. `csv/` 원본 5개는 Git에 보존·SHA로 고정하며 공개 ZIP/이미지·에이전트 작업영역으로 반입하지 않는다.

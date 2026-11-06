@@ -6,7 +6,7 @@
 
 - 신뢰할 수 있는 공식 개발 도구 배포 및 설치 방법/서명·버전 검증 후 **관리 PC의 제한된 개발자 계정**에서만 실행. 운영 서버에 관리자 에이전트·개인 API 키/기밀 대화를 기본 설치하지 않음.
 - 운영자와 작업 목적·권한 최소화·소유 코드/ref/테스트 DB/포트·실제 비용 및 실패 후 책임자를 사전에 명확하게 구분. 프로젝트 사용 승인은 완료했으나, 명시적 현재 대상·실제 역할·비용/실동의·rollback 검증 없이 shell 관리자 명령·SSH 비밀/원본 파일 수집·모델 전송·결제 실행을 하지 않음.
-- 현재 `main`의 exact SHA와 필수 CI/리뷰, `AGENTS.md`·[#253 코드](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)·[#252 실인수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252)를 확인.
+- 현재 `main`의 exact SHA와 필수 CI/리뷰, `AGENTS.md`·[#276 실운영 통합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)·[STATUS](../../STATUS.md)를 확인.
 
 ## 적용 순서
 
@@ -19,3 +19,10 @@
 **현재 실 계정/SSH/클라우드 성공 증거 없음.** 코드의 오프라인 PASS가 운영 호스트 접속/배포/실제 비용 종료를 의미하지 않음.
 
 [NCP QUICKSTART](QUICKSTART.md) · [운영 인계](OPERATIONS_HANDOFF_TEMPLATE.md) · [인수 게이트](../../docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+
+
+## 2026-11-06 에이전트 설치와 제품 운영 구분
+
+- [입문 NCP 서버 개설](../../docs/BEGINNER_NCP_SERVER_SETUP.md) → [제품 및 GPT(Codex)·Claude Code 개발 CLI 설치](../../docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md). 두 AI CLI는 **개발 도구**이며 설치해도 제품 CLOVA/HCX 공급자가 GPT·Claude로 바뀌지 않는다.
+- 독립된 일반 개발자 계정/검수된 소스만 있는 workspace에서 최소권한으로 실행하고, 실제 서버 root·Docker socket·student CSV 원본 5개·`production.mjs`/개인 API/PG 키에 CLI 접근을 주지 않는다. AI 작성 리뷰는 실제 기관/학생/독립 사람 인수를 대신하지 않는다.
+- 실제 NCP·운영 사용자/요금·CLOVA 관련 실행은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) **본선진출 이후 후속**, 여전히 `RELEASE_BLOCKED`.

@@ -1,6 +1,6 @@
 # HUFS One AI — NCP 비공개 합성 프리뷰 준비
 
-**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 티켓 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252), 코드 준비 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253).
+**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 인수 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), #253 코드는 분할 PR 병합 후 이관.
 
 ## 0. 안전한 PLAN (신규 리소스 0)
 
@@ -36,3 +36,9 @@ node --test tests/security/ncp-network-iac.test.mjs
 `production composition`·Google OIDC/외대메일·최소 PG RLS/TLS·Nginx/Edge·서로 다른 두 사용자 client IP/직접 IP·IPv6·CDN 보호·현재 원본 권리·독립 Gold/기기·D03의 **실제 설정/실행/인수 증거**가 없으므로 `RELEASE_BLOCKED/NO_GO`. 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`입니다.
 
 [상세 NCP 가이드](README.md) · [Terraform network](terraform/network/README.md) · [host](terraform/host/README.md) · [운영 인계](OPERATIONS_HANDOFF_TEMPLATE.md).
+
+
+## 2026-11-06 팀원 입문 가이드
+
+- [NCP 서버 개설·SSH 보안](../../docs/BEGINNER_NCP_SERVER_SETUP.md), [NCP 제품+GPT(Codex)·Claude Code 설치](../../docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md), [제품 원리](../../docs/BEGINNER_PRODUCT_ARCHITECTURE.md).
+- 오너·추천·학업 코어의 GitHub 병합/합성 Actions 결과는 [현재 STATUS](../../STATUS.md) 참고. **실 서버 apply/SSH·실비용·Google·학생별 자료·실 모델이 작동했다는 뜻이 아님**. 운영 통합 #276 후속, `RELEASE_BLOCKED`.

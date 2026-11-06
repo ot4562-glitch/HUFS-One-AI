@@ -1,25 +1,24 @@
-# 현재 남은 코드와 실제 구성·검증
+# HUFS One AI — 남은 구현·운영 설정·검증 (2026-11-06 현행)
 
-**승인:** `OWNER_CONFIRMED_APPROVED`. 이 정본은 승인 대기를 뜻하지 않습니다. 실제 배포·계정·원본·비용 및 제3자 품질 인수는 검증 증거가 있을 때만 완료로 기록합니다. 코드 담당은 #253/#257, 실행·인적 검증은 #252, 협업 총괄은 #255입니다.
+> **`OWNER_CONFIRMED_APPROVED`는 프로젝트 승인**이지 실 NCP/학생 자료/공식 학칙/유료 AI 실행 성공이 아닙니다. 정확한 통합 코드 증거는 [STATUS](../STATUS.md), 실제 운영 통합과 검수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 확인합니다. 파일명의 20261104는 기존 링크 호환을 위해 유지합니다. 현재 `RELEASE_BLOCKED`.
 
-## 현재 분할 PR #267–#274에 있는 구현
+## 코드 구현 완료(운영 완료와 구별)
 
-- 명시적인 production 구성과 안전한 `--plan`/`--apply` 실행, 관리 SQL 역할·RLS·독립 AI 예산/입력/정산, 소유권·철회·권한의 현재 상태 검사를 구현했습니다.
-- 경험 CRUD/포트폴리오, 다중 경험 선택, 운영자 전용 input 등록, 현재 판본/동의 결속, `NEEDS_REVIEW` AI 후보 조회와 학생 승인 태그 API가 존재합니다. 화면 #258과 추천 순수 코어 #259의 실제 소비 완료는 별도입니다.
-- 학업 What-if의 PostgreSQL 읽기 어댑터와 관리형 연결을 구현했습니다. #265에서 병합된 주전공별 이중전공/부전공 RulePack 선택을 통합하고, 학업 경로가 지정되지 않은 주전공 팩을 거부하도록 강화했습니다. 공식 학칙·실학생 자료의 판정이 검증되었다는 뜻은 아닙니다.
-- API/설계 inventory의 직접 미매핑 7개 경로를 실행 가능한 정적 감사에서 다음과 같이 분류하고, 관련 API를 **정확한 대체 URL인 것처럼 주장하지 않도록** 했습니다.
-  - `POST /api/auth/login`: 의도적으로 폐기된 비밀번호 로그인.
-  - `POST /api/demo/contexts/:id/plans/simulate`, `POST /api/demo/contexts/:id/outlook/scenarios`: 시연 문맥에서 별도 가정 DTO·현행 grant/source/asOf·CSRF 검사를 수행하는 API를 별도 기능 PR에서 구현했습니다. 학생의 실제 학점/공식 개설 확정으로 바꾸지 않습니다. 사용자 UI 소비와 운영 실측은 미검증입니다.
-  - `GET /api/demo/contexts/:id/experiences`, `GET /api/demo/contexts/:id/saved-items`, `POST /api/demo/contexts/:id/actions`: 개인 상태/보관함/REVIEWER 관련 **별도 범위의 현행 API**가 있으나 설계 URL과 정확히 일치하지 않습니다.
-  - `POST /api/academics/import/preview`, `POST /api/academics/import/apply`, `POST /api/admin/corpus/approve`: 개인 원본·승인 관련 **운영자 전용 비공개 절차**로 유지; 무인증 공개 엔드포인트를 추가하지 않습니다.
+- 오너 분할 병합 PR **#267·#268·#269·#270·#272·#273·#274·#275**, BETA 본인 CSV UI/API [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277) 모두 `main` 반영. 구 대형 #264는 **미병합 종료**. 합성 계약/권한·관리형 PostgreSQL/Source/AI 비용, 경험/포트폴리오→AI 후보→학생 명시 승인·철회, 운영 런타임 plan/apply 코드가 있습니다.
+- 학업 [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278): **정규 과거 8학기·동일 계절 최대 4·NOTICE_ONLY/UNKNOWN 보수 판정·`forecast-offering-v2`**, 합성 회귀, MERGED.
+- 추천 [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279): **합성 40공고+10학사공지 커버리지 감사**, 경험 인용/키워드 후보(항상 `NEEDS_REVIEW`)·현재 학생 승인 신호/철회·버전/선택형 보완 주제, MERGED. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어 이슈 완료, 실 UI/실학생은 별개.
+- 비전공자 [NCP 서버](BEGINNER_NCP_SERVER_SETUP.md)·[제품/개발 AI CLI](BEGINNER_NCP_PRODUCT_AND_AGENTS.md)·[구조](BEGINNER_PRODUCT_ARCHITECTURE.md) 가이드가 README 하단에 연결. 문서 작성은 서버 생성·실설치 성공과 다름.
+- 코드 통합 기준 [`48134da`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/48134dae3b16157ebcc294f744c320fdd64a115c) 4종 합성/격리 PG·Chrome·NCP IaC·Pages Actions **4/4 SUCCESS**. 새 commit의 CI는 별도 확인.
 
-## 미완료 범위 — 코드/설정/실행 결과를 구분
+## 아직 미완료인 실서비스와 일부 소비자 연계
 
-- 운영 API `production-main.js`는 loopback 기본 실행과 별도 승인 사설 컨테이너 IPv4 바인딩 코드를 갖춥니다. 하지만 실제 operator factory·NCP host·network/ingress·Google/학교메일·CA TLS/role GRANT·DB migration/backup/rollback 및 AI provider·가격·토큰을 구성한 종단 시험은 `CONFIGURATION_REQUIRED` 또는 `NOT_RUN`입니다.
-- SourceRevision/Temporal RAG·문서/이미지/PDF·native worker와 비용 정산의 전체 운영 소비와 취소/오류/동시성 회귀, native/NOTICE/SBOM·패키징·비밀 유출 검증은 #253에서 계속 확인해야 합니다.
-- 경험 후보→학생 승인→추천 projection을 UI #258·추천 #259의 실제 사용자 경로에서 검사하고, 학업 자료는 #260과 독립 교차 리뷰가 필요합니다.
-- 제공된 실제 Forms 26열/4응답은 구조 확인, 실 CSV 3개/128행은 6열·수치·이수상태 구조 확인을 수행했습니다. 모든 128행의 학수번호가 비어 있고 네 번째 CSV와 명시적인 4인 파일–행–actor 결속은 부재합니다. 따라서 운영 private intake를 완료하거나 개인별 공식 이수 결과를 판정한 것이 아닙니다. 전부 비공개 검사하고 원본은 Git/CI에 첨부하지 않았습니다. [증거](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md).
-- 합성 자동 CI와 운영/사람 인수를 혼동하지 않습니다. 최신 코드 SHA의 TypeScript·PostgreSQL·Chrome·NCP 오프라인 결과를 별도로 조회합니다.
-- 실제 학생·기관·학칙 원본, NCP/AI 사용량·비용, 독립 사람 Gold·스크린리더·최종 출시 판정은 #252에서 사실적 증거로 검증합니다.
+1. **실 NCP:** 계정/IAM·SKU/비용 한도·VPC/ACG/NACL·SSH·TLS/Host/SNI·프록시 원 IP/IPv6·롤백/복구·요금·반납 영수증 `CONFIGURATION_REQUIRED/NOT_RUN`. [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12) 비코드, [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 운영 통합.
+2. **Google/학교메일/DB:** 실제 OIDC·학교메일·역할·RLS/CSRF, PostgreSQL 7개 기본+확장 SQL roles/CA TLS/migration/backup·복구, 비공개 operator factory/현재 자료 권리/실 DB readback `NOT_RUN`.
+3. **학생 자료:** `csv/`에 **Forms 1개+수강 CSV 4개, 총 5개 복구**, 176행 중 학수번호 공란 132행. 실제 4명의 Forms↔수강 파일 해시↔BETA actor↔목적별 현재 consent/rights를 **검증된 private registry/loader**로 연결·인입·조회·철회/삭제·복구할 것. PR #277은 read port/UI 코드이며 배포 완료가 아님. 원본을 무단 수정·삭제하지 않고 공개 deploy·CI·AI 프롬프트에 원본을 담지 않는다.
+4. **실 CLOVA/OCR/RAG:** 운영 키/허용 egress/가격·청구·중복/취소·source 권리, Vision/PDF native worker/NOTICE/SBOM·실성능/비용, 운영 경로 검증. 개발 Codex/Claude Code CLI 설치와 제품 AI 연동은 별개.
+5. **UI/학업/권리:** [#258](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258) 경험 후보→승인/로드맵 화면, [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 교과/비교과 연계·정식 근거, [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)/[#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) UI, [#10](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10) 추천 실원본/benchmark/골드, [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11) 공식 RulePack/8학기 소스·독립 검산; [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 비코드 기획·권리·비용.
+6. **실효성/사람 인수:** 사용자 요청으로 독립 Gold 평가는 현재 작업에서 제외되었으나 **NOT_RUN/NOT_MEASURED**, 공식 학교 판정·실서비스 품질 PASS로 주장하지 않음.
 
-개인별 현재 동의/철회·신원/역할, RLS, CSRF, 비밀키·토큰 보호는 프로젝트 전체 승인이 완료됐어도 유지합니다.
+## 종료된 이슈와 유지 이슈
+
+과거 **#252(실환경 후속 이관)·#253(코드)·#257(경험 API)**는 CLOSED, 운영/실소스 남은 항목은 #276에 집약. #259 순수 코어 CLOSED. **#10·#11·#255·#258·#260·#261·#276 및 #9·#12·#119는 OPEN**이며 다른 담당자 업무를 임의 종료하지 않습니다. 요청받은 `csv/` 원본 5개 불변 보존은 [AGENTS](../AGENTS.md)/[DATA_GOVERNANCE](DATA_GOVERNANCE.md)를 따르며, 법적 삭제/철회 의무는 별개입니다.

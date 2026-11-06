@@ -1,6 +1,6 @@
 # HUFS One AI — 현재 운영 구성
 
-**승인 상태: OWNER_CONFIRMED_APPROVED.** 문서에 기재된 NCP·모델/정보 전송·운영/출시 승인은 소유자가 완료 확인했습니다. 실제 배포와 성능/과금 결과는 #252에서 확인하며, 설정이 없으면 CONFIGURATION_REQUIRED로 분류합니다.
+**승인 상태: OWNER_CONFIRMED_APPROVED.** 문서에 기재된 NCP·모델/정보 전송·운영/출시 승인은 소유자가 완료 확인했습니다. 실제 배포와 성능/과금/개인별 데이터 검증은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 확인하며, 설정이 없으면 CONFIGURATION_REQUIRED로 분류합니다.
 
 ## 코드와 운영
 
@@ -12,4 +12,9 @@
 
 실계정 OIDC/JWKS/PKCE·메일, DB CA TLS/독립 역할/migration/backup·restore, NCP 네트워크·TLS/Host·프록시 원 IP/직접 IP·IPv6·캐시, AI token/usage/청구/timeout·CPU/RSS, 운영 종료·복구를 실제 환경에서 측정합니다. 아직 수행하지 않은 검사는 NOT_RUN, 미측정은 NOT_MEASURED입니다.
 
-[운영 실행](docs/PRODUCTION_RUNTIME.md) · [승인 정본](docs/AUTHORIZATION.md) · [실행 검증 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+[운영 실행](docs/PRODUCTION_RUNTIME.md) · [승인 정본](docs/AUTHORIZATION.md) · [운영 통합 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276).
+## 2026-11-06 현재 NCP 코드와 문서
+
+- NCP/SSH 합성 미리보기·Terraform·private runtime **코드 존재**와 **실계정/실서버 미실행**을 구별. 학생 계정/원본/PG/유료 CLOVA 및 요금은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) OPEN, `RELEASE_BLOCKED`.
+- [초보자용 NCP 서버 설치](docs/BEGINNER_NCP_SERVER_SETUP.md) · [제품·Codex·Claude CLI 설치](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [제품 구조](docs/BEGINNER_PRODUCT_ARCHITECTURE.md). 이 문서들의 설치 명령은 **실배포 성공 영수증이 아님**.
+- `csv/` 원본 5개는 무단 변경/삭제하지 않되 공개 빌드·컨테이너·CI·모델 입력으로 넣지 않는다. 현재 학생별 actor/동의/원본 연결 및 실제 DB readback은 미완료.

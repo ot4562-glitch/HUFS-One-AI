@@ -22,7 +22,7 @@
 
 ## 4. 구현 현황 및 실제 서비스 실현 가능성
 
-React/Vite, Fastify/Zod, 개인화·학업 순수 코어, SQL role/RLS·영수증/CAS, Source/RAG·AI 예산·NCP 자동화 기반이 존재합니다. 민성 담당 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)는 **운영 API·관리형 DB/AI 역할·What-if의 승인 자료 로더**, 경험/포트폴리오·복수 경험 선택, 외부 검토 기반 AI 입력 등록 및 학생의 AI 후보 검토 API를 연결합니다. 모델 후보는 학생이 명시적으로 선택하기 전에는 역량 인증이나 추천 입력으로 취급하지 않습니다. 실제 접속 주소·Google/메일·CA TLS DB 역할·공급자 자격증명은 서버에 구성되어야 합니다.
+React/Vite, Fastify/Zod, 개인화·학업 계산 코어, 7개 기본 SQL 역할/RLS·CAS, Source/RAG·AI 예산·NCP IaC/SSH 합성 미리보기 코드가 있습니다. 심민성 담당 분할 PR [#267](https://github.com/ot4562-glitch/HUFS-One-AI/pull/267)~[#275](https://github.com/ot4562-glitch/HUFS-One-AI/pull/275)의 실제 8건은 모두 병합되었고, [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277)에서 **BETA 본인 CSV 조회 UI/API 연결과 원본 5개 불변 보존**을 추가했습니다. 이전 대형 [PR #264](https://github.com/ot4562-glitch/HUFS-One-AI/pull/264)는 **분할 대체되어 미병합 종료**되었습니다. 박준영의 [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278)은 8학기 개설 전망을, 김채윤의 [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279)은 합성 코퍼스 및 경험 승인 추천 신호를 각각 코어에 병합했습니다. 실제 NCP·Google/메일·관리형 DB/권한·CLOVA 실호출은 여전히 별도 구성/검증이 필요합니다.
 
 승인은 완료 상태로 처리합니다. 실제 환경이 아직 설정되지 않았다면 `CONFIGURATION_REQUIRED`, 시험을 수행하지 않았다면 `NOT_RUN`으로 표시하며, 승인 완료만으로 배포 성공이나 정확도 성과를 만들지 않습니다. 소유권·세션/CSRF·비밀키 보호·삭제/철회는 운영 기능의 일부로 유지합니다.
 
@@ -39,7 +39,7 @@ npm run build:web
 
 관련 있는 공고·마감을 찾는 비용을 줄이고, 경험을 설명 가능한 기록으로 정리하며, 학업·진로 계획에서 확인해야 할 근거를 명확히 할 수 있습니다. 코드 기반 판단과 생성형 AI 후보를 분리하여 오판·비용·권한 문제를 관리하는 개발 사례를 제공합니다. 시간 절감·추천 정확도·학생 만족도 향상은 실제 측정 전에는 기대효과로만 표현합니다.
 
-**현재 작업:** [#253 구현](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253), [#257 경험 API](https://github.com/ot4562-glitch/HUFS-One-AI/issues/257), [#252 실행 검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).
+**현재 작업:** [#276 본선진출 이후 운영 통합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) — 실 NCP/Google·DB·학생 4인 권리/동의·CLOVA·복구 검증은 **OPEN**. 협업 [#258 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/258), [#260 학업 연계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260), [#261 운영·기획](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261), [#10 추천 P0](https://github.com/ot4562-glitch/HUFS-One-AI/issues/10), [#11 학업 P0](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11)은 미완료. [#259 추천 순수 코어](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 완료로 닫았으며 #252/#253/#257은 잔여 운영 범위를 #276으로 이관한 과거 이슈입니다.
 
 ## 6. 전체 문서 목록
 

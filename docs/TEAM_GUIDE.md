@@ -28,4 +28,13 @@
 9. NCP의 비용/CPU/RSS·보안·실재 원본 전송을 누가 승인하는가?
 10. 실제 서비스 공개를 위한 인적 Gold·접근성·D03 출시 조건은 무엇인가?
 
-**실제 팀원 재설명/60초 데모·10분 발표·5분 질의응답 인수는 미완료**이며 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)에 증거를 남깁니다. 기획 요약은 [README](../README.md), 실행은 [DEMO_MANUAL](DEMO_MANUAL.md).
+**실제 팀원 재설명/60초 데모·10분 발표·5분 질의응답 인수는 미완료**이며 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에 증거를 남깁니다. 기획 요약은 [README](../README.md), 실행은 [DEMO_MANUAL](DEMO_MANUAL.md).
+
+
+## 처음 참여하는 비전공자에게 보여 줄 중요 문서 (2026-11-06)
+
+1. [NCP 서버 개설·기본 보안](BEGINNER_NCP_SERVER_SETUP.md) — 콘솔/VPC/SSH/비용/반납.
+2. [NCP 제품·GPT(Codex)·Claude Code 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) — 합성 미리보기와 운영/개발 에이전트 차이.
+3. [제품 구조·추천·학업·AI 흐름](BEGINNER_PRODUCT_ARCHITECTURE.md) — 10분 발표/비전공 용어집.
+
+**코드 진행:** 학업 전망 #278·추천 경험 코어 #279 병합, #259 순수 코어 완료. **협업 UI #258·학업 #260·NCP/실학생·실 Google/PG/CLOVA 운영 #276은 아직 미완료**. 실제 서비스 `RELEASE_BLOCKED`.

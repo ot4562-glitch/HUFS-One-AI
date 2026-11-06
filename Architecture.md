@@ -1,6 +1,6 @@
 # HUFS One AI — Architecture
 
-**규범:** 이 문서는 현재 제품의 목표·권한·API·검증 계약이다. 사실로 확인한 코드는 [STATUS](STATUS.md)와 GitHub `main`, 등록된 실제 API는 [inventory](tools/api_contract_inventory.json), 추가 구현은 [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253), 운영/사람 인수는 [#252](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252)로 판단한다. 계획·스키마의 존재가 **실 운영/공식 학교 승인**을 뜻하지 않는다. `RELEASE_BLOCKED`.
+**규범:** 이 문서는 현재 목표·권한·API·검증 계약이다. 실제 코드 정본은 [STATUS](STATUS.md)·GitHub `main`·[inventory](tools/api_contract_inventory.json). 기존 #252/#253/#257은 후속을 이관하여 종료되었으며, 실서비스 운영·실사용자/원본/기관/요금·출시 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 검증한다. 계획/스키마·합성 CI는 실운영·공식 학교 증명이 아니고 현재 `RELEASE_BLOCKED`.
 
 ## A00. 정본·용어·판정
 
@@ -78,7 +78,7 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 
 - `earned / inProgress / planned` 학점 원장을 합산해 하나의 확정 취득 학점으로 만들지 않는다. 정수 `creditUnits`(1 unit=0.5학점), 동일과목/재수강·대체/중복인정·영역/그룹·AREA_SPREAD/GROUP_CHOICE·degreePath/track을 규칙에 따라 계산.
 - RulePack은 **공식 학교 문서 판본·적용 학년도·전공/cohort·조항 SHA·예외·언어 속성·승인**이 맞아야 ACTIVE. 알 수 없는 규칙/이수 상태·출처는 DRAFT/UNKNOWN_APPLICABILITY/NEEDS_REVIEW; 자동 공식 졸업 판정 금지.
-- Plan/What-if는 현재 원장 불변, 가정/공식 정보 분리, CAS/권한·시점/RulePack version과 학기·선수·시간 중복/학점 상한 검사. 독립 손계산/원본 4인 적용은 #252 인수.
+- Plan/What-if는 현재 원장 불변, 가정/공식 정보 분리, CAS/권한·시점/RulePack version과 학기·선수·시간 중복/학점 상한 검사. 독립 손계산/원본 4인 적용은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 인수.
 
 ## A09. 학기별 과목 개설 전망
 
@@ -101,17 +101,17 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 
 고정 합성 공고 40/공지 10/프로필 5·원본 SVG 10을 실제 개인 자료와 구별하며 byte/hash/manifest를 관리한다. 별도 평가용 **PNG/HTML 20쌍·Temporal 12건**은 사람 Gold와 구분, bbox/문단·source/asOf 근거를 부착한다. 가상 동아리 PNG는 생성형 AI의 **창작 합성 자산**으로 제품 CSS 배경용 `hero.webp`와 별개다.
 
-이미지 제작·배포는 사용한 생성 도구/모델·권리 조건·source prompt/asset SHA·메타데이터/개인/학교 로고 여부·alt/CSS 장식 구분을 검토한다. 원본 외부 사진·학생·학교 캡처를 허가 없이 재배포하지 않는다. 현재 `hero.webp` 생성 도구 영수증은 추가 확인 대상(#252).
+이미지 제작·배포는 사용한 생성 도구/모델·권리 조건·source prompt/asset SHA·메타데이터/개인/학교 로고 여부·alt/CSS 장식 구분을 검토한다. 원본 외부 사진·학생·학교 캡처를 허가 없이 재배포하지 않는다. 현재 `hero.webp` 생성 도구 영수증은 추가 확인 대상([#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)).
 
 ## A13. DB·API·런타임 계약
 
 **DB 핵심 집합:** actor/session/role/consent/SharingGrant; private owner mapping/intake receipt(민감 영역), profile/academic transcript/RulePack/plan/major-What-if/forecast, experience/tag approval/bookmark/action, SourceRevision·media/PDF/OCR·verified claims·rights/reviewer·temporal index, recommendation/notice/context/overlay, AI job·budget usage·receipt.
 
 - 원본과 공유 projection은 다르고, owner/actor+context+scope+version·current right/asOf를 SQL/FORCE RLS/서버 양쪽에서 확인한다. 역할 최소화, 주입된 미검증 pool/권한 포트 거절, 읽기 전용/서명된 사용량 집계. `ai_budget_admin_usage()`/adminUsage role은 코드만 구현됐으며 운영 GRANT·migration은 미수락.
-- GitHub 계약 inventory **현재 등록 99개 route**, 설계 39개 contract, TASK 19개. **설계상 직접 미매핑 경로 7개**는 공개 endpoint 신설로 간주하지 않는다. [#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)과 `tools/api_contract_inventory.json`에서 비밀번호 로그인 폐기1·scope가 다른 대안 API3·operator-private3으로 분류하고 자동 감사한다. 대안 API는 설계 URL의 별칭이 아니다. `POST /api/auth/login`의 비밀번호 로그인은 retired; 실학생 파일 import는 private operator 전용.
+- GitHub 계약 inventory **현재 등록 99개 route**, 설계 39개 contract, TASK 19개. **설계상 직접 미매핑 경로 7개**는 공개 endpoint 신설로 간주하지 않는다. 병합된 [#270](https://github.com/ot4562-glitch/HUFS-One-AI/pull/270) 및 `tools/api_contract_inventory.json`에서 비밀번호 로그인 폐기1·scope가 다른 대안 API3·operator-private3으로 분류하고 자동 감사한다. 대안 API는 설계 URL의 별칭이 아니다. `POST /api/auth/login`의 비밀번호 로그인은 retired; 실학생 파일 import는 private operator 전용.
 - 현재 `GET /api/admin/usage`는 ADMIN 독립 authority·비공개 PG read-only·정확한 집계/금액 문자열, 미수집 token/error=`NOT_COLLECTED`. 실제 프로덕션 계측 또는 활성화 허가 없음.
 - 상태변경 요청은 CSRF/Origin·expectedVersion·actor/role, 쿠키는 HttpOnly/Secure/SameSite/host-only. HTTP `401` 인증 · `403` 권한 · `409` version · `422` 입력/근거 · `429` 한도 · `503` 공급자/미설정. 서버 내부 오류/SQL 원문·키·학생 다른 사람 메타데이터 비노출.
-- Google OAuth Authorization Code+PKCE/OIDC는 서버가 iss/aud/exp/signature/JWKS/nonce/state/`sub`·hd를 검증. Google 계정 `email_verified`만으로 현재 학교 이메일 소유권을 인정하지 않고 외대 메일 OTP·계정 allowlist를 결속한다. 실 계정 검증은 #252.
+- Google OAuth Authorization Code+PKCE/OIDC는 서버가 iss/aud/exp/signature/JWKS/nonce/state/`sub`·hd를 검증. Google 계정 `email_verified`만으로 현재 학교 이메일 소유권을 인정하지 않고 외대 메일 OTP·계정 allowlist를 결속한다. 실 계정 검증은 #276.
 - owner experience/saved/actions, studies/What-if, demo snapshot/calendar/overlay, synthetic REVIEWER, Source/AI worker는 **서로 다른 DTO·scope**로 동작한다. 설계 API 경로를 현재 다른 route와 동치라 주장하려면 실제 등록·소비자를 대조한다.
 
 ## A14. NCP·서비스 운영·공개 접근제어
@@ -141,7 +141,7 @@ Claude/GPT 기반 바이브코딩은 초안 코드·문서·테스트/재현을 
 
 ## A17. TASK 실행·검증 매핑
 
-여기 표는 현재 모듈·검증 책임의 **작업 종류**를 정의하며 완료/미완료 건수는 [STATUS](STATUS.md)·[#253](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253)·각 트랙 이슈로 판단한다. P2/선택 확장은 P0 릴리스 조건과 구분.
+여기 표는 현재 모듈·검증 책임의 **작업 종류**를 정의하며 완료/미완료 건수는 [STATUS](STATUS.md)·[#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)·각 트랙 이슈로 판단한다. P2/선택 확장은 P0 릴리스 조건과 구분.
 
 | 작업 | 담당 우선·읽을 절 | 완료 증거·독립 검토 |
 | --- | --- | --- |
@@ -177,3 +177,12 @@ Claude/GPT 기반 바이브코딩은 초안 코드·문서·테스트/재현을 
 참조 기술/서비스의 **사용자 문제 해결 원리**만 비교하여 채택하고 학교/외부 제품 UI·코드를 그대로 복제하지 않는다. npm direct/transitive/CycloneDX SBOM과 native/Python/pypdf/Poppler/bubblewrap·폰트·모델/그림·외부 원문·학교 로고의 LICENSE/NOTICE/상업·재배포/게시/전송 이용권을 별도 검수. UNKNOWN 증거는 배포 가능으로 승인하지 않는다.
 
 **정본 링크:** [HUFSAbility 공개 참고와 권리](reference/hufsability/INVENTORY.md) · [데이터 거버넌스](docs/DATA_GOVERNANCE.md) · [REVIEWER 접근](docs/REVIEWER_ACCESS.md) · [NCP 운영](docs/NCP_OPERATIONS_2026.md) · [실제 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+
+
+## 2026-11-06 현행 구현 보충 (규범 및 출시 조건은 그대로)
+
+- 오너 분할 #267~#275 중 8건, 본인 CSV 화면 [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277), 박준영 전망 [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278), 김채윤 추천/역량 [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) 모두 **main 병합**. 구 #264는 미병합 종료.
+- A09/TASK-17: #278은 정규 직전 **8학기/동일 계절 최대 4개**, `NOTICE_ONLY`/UNKNOWN·rolling-origin 합성 코어 테스트로 한정; 실학교 8학기 official course identity·RulePack 인수는 #11/#276에 남음.
+- A05/A06/A15: #279는 합성 40기회+10학사공지 분포 및 **AI 후보 ≠ 학생의 ACTIVE 승인 경험 신호**에 관한 결정론 코어. #259 한정 코어 완료, 실제 UI #258·독립 Gold·실출처/추천 전체 #10은 미완료.
+- A08/A13: `csv/`의 기존 Forms 1 + 학생별 수강 CSV 4개 총 5개 원본은 **무단 변경/삭제 금지**, 현행 Git blob SHA 검사. 운영 BETA actor↔4인 source rights/동의/owner registry·실 PG 적용/본인 조회는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 별도 검증; 단순 CSV 복구/DB 적재로 실학사 판정 완성 아님.
+- [NCP 서버 개설](docs/BEGINNER_NCP_SERVER_SETUP.md) · [제품·GPT(Codex)/Claude 설치](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [비전공자 제품 구조](docs/BEGINNER_PRODUCT_ARCHITECTURE.md). 자세한 병합·실운영 상태는 [STATUS](STATUS.md).

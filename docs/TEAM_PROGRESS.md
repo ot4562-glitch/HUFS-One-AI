@@ -1,6 +1,6 @@
 # HUFS One AI — 현재 팀 수락 게이트
 
-이 표는 **복합 인수 조건의 충족률**이지 개인 능력·실제 서비스 가동률·코드 완성률이 아닙니다. PR 증가/합성 검사 성공·이슈 통합으로 숫자를 임의 상향하지 않습니다. 실제 개별 증거는 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252), 구현 미결은 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253)를 기준으로 판단합니다.
+이 표는 **복합 인수 조건의 충족률**이지 개인 능력·실제 서비스 가동률·코드 완성률이 아닙니다. PR 증가/합성 검사 성공·이슈 통합으로 숫자를 임의 상향하지 않습니다. 운영·학생 원본 검증은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 코드 현재 상태는 [STATUS](../STATUS.md)를 기준으로 판단합니다. 이전 #252/#253/#257은 잔여 운영 항목을 #276에 이관하고 종료했습니다.
 
 | 담당 | 현재 수락 / 고정 조건 | 아직 충족하지 못한 핵심 |
 | --- | --- | --- |
@@ -9,6 +9,13 @@
 | 김채윤 `qamarrchae` | **7/12 (58.3%)** | 비작성자 추천 Gold·공식 출처 이용권/정정·실 정확도·운영 피드 통합 |
 | 박준영 `taewangim-alt` | **8/12 (66.7%)** | 학교 공식 RulePack·4인 학사 결과 독립 대조·owner/React 종단 |
 | 이서연 `lhh42001` | **1/5 (20.0%)** | 승인된 NCP 계정/리전/SKU/실비용·실서버/서비스 이용권·CPU/RSS/백업·중단/반납 운영 영수증 |
+
+## 2026-11-06 병합·교차 검토(위 수락 비율과 분리)
+
+- [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278): 박준영 `forecast-offering-v2` 과거 8학기·`NOTICE_ONLY` 합성 코어 리뷰/병합 완료. 학사 공식 근거·4인 원장/UI 수락은 #11/#260에 남음.
+- [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279): 김채윤 40+10 합성 코퍼스 분포·경험 승인 추천 코어 리뷰/병합 완료. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어 완료, UI #258/실사용자·실 모델/추천 독립 Gold는 남음.
+- 코드 통합 기준 `48134da` GitHub Actions 4/4 SUCCESS. **위 7/12·9/12·7/12·8/12·1/5 수락 비율은 새로운 독립 수락 증거가 없으므로 올리지 않음**.
+- `csv/` 5개 원본(Forms 1·이수 CSV 4) 복구 보존은 완료, 학생별 현재 actor/rights/동의·실 NCP/PG 연결은 #276에서 미완료.
 
 ## 수락 기준
 
