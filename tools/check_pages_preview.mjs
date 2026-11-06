@@ -53,13 +53,18 @@ try {
     if (!label.includes('합성 모의 연결') || !label.includes('실제 서버')) {
       throw new Error('Synthetic-only banner missing: ' + label);
     }
-    const nav = page.getByRole('navigation', {name: '주요 메뉴'});
-    await nav.getByRole('link', {name: '기회'}).click();
+    // Desktop shortcuts live in their category GNB/LNB, mobile shortcuts in the bottom bar.
+    if (viewport.width >= 1024) {
+      await page.getByRole('navigation', {name: '전체 메뉴'}).getByRole('link', {name: '채용/고용24'}).click();
+      await page.getByRole('navigation', {name: '채용/고용24 메뉴'}).getByRole('link', {name: '맞춤 기회'}).click();
+    } else {
+      await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회'}).click();
+    }
     await page.waitForURL(/\?page=%2Fopportunities(?:&|$)/);
     await page.reload({waitUntil: 'load'});
     const heading = await page.locator('.page__title').innerText();
     if (/페이지를 찾을 수 없습니다/.test(heading)) throw new Error('Lost static deep link');
-    await nav.getByRole('link', {name: '오늘'}).click();
+    await page.getByRole('link', {name: 'HUFS One AI', exact: true}).first().click();
     if (requests.length) throw new Error('Static UI attempted API/fetch: ' + requests.join(', '));
     if (errors.length) throw new Error('UI runtime exception: ' + errors.join('; '));
     console.log(`PASS static Pages ${viewport.width}px: synthetic, navigation, reload, no API`);
