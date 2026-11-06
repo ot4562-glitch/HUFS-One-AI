@@ -5,3 +5,5 @@
 경험에 붙이는 교과 기록(#260)은 "학생 제출 성적표에 이 과목이 이 학기에 있다"는 사실만 다룬다. 성적·재수강·학점·역량은 내보내지 않는다. 범위·정책·반례: [EXPERIENCE_EVIDENCE.md](EXPERIENCE_EVIDENCE.md).
 
 판본 비교(`rule-diff.ts`)에서 과목의 인정 영역은 RulePack이 아니라 성적표 행(`areaIds`)에서 온다. 새 판본에서 과목이 다른 영역으로 옮겨지면 `nextAttempts`에 새 판본 기준 분류를 넘겨야 `areaMembership` 변경으로 보인다. 넘기지 않으면 영역 요건 결과는 UNKNOWN이다. 같은 행을 넘기면 "분류 변화 없음"이라고 밝히는 것이다.
+
+학점 원장·동등 교과 속성 테스트가 재는 것, 겹치는 것, 재지 않는 것: [PROPERTY_COVERAGE.md](PROPERTY_COVERAGE.md).
