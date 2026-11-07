@@ -193,7 +193,7 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
   if (!scope.ready || !load || load.key !== key || load.scope !== scope) return null;
   const head = <h2 id="exp-review">경험에서 고른 관심 주제</h2>;
   if (load.kind === 'LOADING') return <section className="section exp-review" aria-labelledby="exp-review" aria-busy="true">{head}<p className="muted">경험 기록을 불러오는 중</p></section>;
-  if (load.kind === 'ERROR') return <section className="section exp-review" aria-labelledby="exp-review">{head}<p role="alert">경험 자료의 현재 판본이나 서버 응답을 확인할 수 없어 표시하지 않았습니다.</p><button type="button" className="button" onClick={() => setRound(n => n + 1)}>최신 경험 다시 조회</button></section>;
+  if (load.kind === 'ERROR') return <section className="section exp-review" aria-labelledby="exp-review">{head}<p role="alert">경험 자료의 현재 판본이나 서버 응답을 확인할 수 없어 표시하지 않았습니다.</p><button type="button" className="button" onClick={() => setRound(n => n + 1)}>최신 경험 다시 조회</button>{cursor&&port.loadPage&&<button type="button" className="button button--quiet" onClick={()=>{setCursor(undefined);setSelected([]);setConsent(false);}}>첫 경험 페이지로 돌아가기</button>}</section>;
   const {view} = load;
   const selectedCards = view.cards.filter(card => card.canRequest && selected.includes(card.experienceId));
   const shown = note && note.key === key && note.scope === scope ? note : null;
