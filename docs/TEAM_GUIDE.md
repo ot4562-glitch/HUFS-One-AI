@@ -6,7 +6,18 @@
 
 ## 2026-11-07 현행 이슈·팀 역할 재편
 
-GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 아래 '본선 진출 전 역할 기록'과 해당 수락률만 **역사적 기록**이며, 본선 이후 담당은 바로 다음 확정 역할표를 따릅니다. 본선 이후 역할은 새로 확정됐지만 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+
+## 본선 진출 이후 확정 역할 및 발표 담당 (2026-11-07)
+
+| 담당자 | 본선 이후 책임 | 협업 결과물 |
+| --- | --- | --- |
+| **이의상·박준영** | **AI 정확도와 자연어 처리 전체 공동 담당**: Laya·네이버 CLOVA OCR/Vision/HCX API·모델 조정, 실제 공급자 지원 시 파인튜닝, 프롬프트/성능 평가. 박준영은 학업 RulePack·What-if·전망 기능도 유지 | 재현 가능한 평가셋·오탐/근거·지연·비용·예외 사례 및 개선 전후 비교 |
+| **이서연** | **전체 웹 디자인/React UI 주담당**(기존 이의상 UI 책임 인수), 모바일·접근성 및 API 서버/NCP 계정·비용·운영 관리 | 화면 디자인/회귀/실기기 검토, 서버 설정·재시작/백업/복구·청구/키 취급 점검 |
+| **김채윤** | 전체 웹사이트를 발표장에서 시연, 학생 경험을 입력해 AI 결과/추천이 맞는지 검증, **60초·10분 발표 동선 확정 및 리허설** | 합성/실서버 구별 시연 시나리오·개인정보 없는 사례/정답·AI 오류 목록·대체 영상/스크린샷 |
+| **심민성** | 나머지 기능 구현·통합, 코드 품질·PR 리뷰/테스트/보안/API·DB 계약, 추가 기능 개발 및 제품 통합 | 리뷰/CI·공통 계약·실환경/AI 연동·신규 기능·릴리스 게이트 검증 |
+
+**시연 흐름 정본:** [DEMO_MANUAL의 본선 발표 루트 초안](DEMO_MANUAL.md). 실제 발표 루트 확정·학생 경험/AI 정확도 실검증·스크린리더/실기기 사람 인수는 아직 `NOT_RUN`; 김채윤이 실제 테스트 후 보완합니다. 상세 사람별 업무·계약 경계는 [WORKSTREAMS](WORKSTREAMS.md) 참조. 이슈 #316/#317/#318은 의도적으로 미배정 유지.
 
 ## 한눈에 보는 흐름
 
@@ -17,7 +28,7 @@ GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch
 5. **학업:** 취득/수강 중/계획 학점과 What-if를 구분하고 규칙이 불명확하면 `UNKNOWN/NEEDS_REVIEW`. 학과/학사지원팀 공식 판정과 다름.
 6. **운영:** React→Fastify→PostgreSQL→Source/AI·별도 NCP를 안전하게 조립할 코드가 존재해도 실계정·자료권리/서버비용/보안/사람 인수는 아직 남음.
 
-## 본선 진출 전 역할 기록 (향후 미배정)
+## 본선 진출 전 역할 기록 (현행 업무 분장 아님)
 
 심민성: 전체 API/DB·권한·Source/AI/NCP 관련 **코드**, 이의상: UI/접근성, 김채윤: 추천·공지, 박준영: 학사/전망, 이서연: **NCP 계정/요금/서버 비코드 운영**. 서로의 계약과 결과를 교차 검수합니다.
 
@@ -30,9 +41,9 @@ GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch
 | 박준영 학업 | [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 합성/교차 검토; #260 PR #262 정책/테스트 완료, 소비자 리뷰는 미완료 | [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) 공식 RulePack·4인 학업 원장·8학기 개설 실증 |
 | 이서연 비코드/운영 | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 계정·비용·권리 사전검토/문서 | [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) 실 NCP 계정·청구/복구/반납·실원본 이용권 검수 |
 
-**공통 원칙:** 본선 전 지정 11개 이슈는 **CLOSED**(10 completed, #260은 사람 검토를 이관한 not_planned)이며 본선 이후 실제 인수 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
+**공통 원칙:** 본선 전 지정 11개 이슈는 **CLOSED**(10 completed, #260은 사람 검토를 이관한 not_planned)이며 본선 이후 실제 인수는 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)에 OPEN/NOT_RUN으로 남아 있습니다. **본선 이후 새 담당은 위 확정 표**를 적용하고 심민성이 품질/통합을 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
 
-팀원에게 지금은 **합성 화면/코어 테스트, UX·문서/보안/비용 계획**만 맡기고, 본선 진출 이후에만 각각 검증된 운영 환경/실자료/실서버 인수에 착수합니다.
+본선 이후의 업무 분장은 이미 확정했으나, 검증된 운영 환경·실자료·실서버 권리/비용 준비가 되기 전에는 합성 화면/코어 테스트와 UX·문서/보안/비용 사전 계획만 수행합니다. 실제 허가된 학생 경험은 비공개 서버에서만 처리합니다.
 
 ## 발표에서 답해야 하는 10가지
 
