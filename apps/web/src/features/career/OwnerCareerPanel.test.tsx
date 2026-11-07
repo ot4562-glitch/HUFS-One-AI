@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {act,cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
+import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {ExperiencePortfolioSchema,SelfConsentSchema,SelfProfileSchema,type OwnerWorkspaceRecord} from '@hufs-one/contracts';
 import {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerCareerPanel,type OwnerCareerPort} from './OwnerCareerPanel.js';
@@ -27,6 +27,7 @@ function fixture(consent=grant){
   const getPortfolio=vi.fn(async()=>portfolio);
   const getBookmarks=vi.fn(async()=>({items:[bookmark],nextCursor:null}));
   const advanceBookmarkStage=vi.fn(async(_record:OwnerWorkspaceRecord,change:{stage:string})=>{
+    if(bookmark.value.kind!=='BOOKMARK')throw new Error('Expected bookmark');
     bookmark={...bookmark,version:bookmark.version+1,value:{...bookmark.value,stage:change.stage as 'PREPARING'}};
     return {item:bookmark};
   });
@@ -52,7 +53,7 @@ describe('#317 BETA owner timeline and self-reported stage',()=>{
     const f=fixture();
     render(<OwnerCareerPanel port={f.port} navigate={()=>{}}/>);
     const advance=await screen.findByRole('button',{name:'다음 단계로 기록'});
-    expect(screen.getByText(/외부 접수 미확인/)).toBeTruthy();
+    expect(screen.getByText(/실제 접수·결과는 외부 확인 없이 확정하지 않습니다/)).toBeTruthy();
     expect(f.getBookmarks).toHaveBeenCalledWith({limit:20},expect.any(AbortSignal));
     fireEvent.click(advance);
     await waitFor(()=>expect(f.advanceBookmarkStage).toHaveBeenCalledOnce());
@@ -68,7 +69,7 @@ describe('#317 BETA owner timeline and self-reported stage',()=>{
     await screen.findByRole('heading',{name:'정보 이용 목적과 철회'});
     fireEvent.click(screen.getByLabelText(/승인된 외부 AI 입력 전송/));
     fireEvent.click(screen.getByRole('button',{name:'목적별 동의 변경 저장'}));
-    await waitFor(()=>expect((f.port.updateConsents as ReturnType<typeof vi.fn>)).toHaveBeenCalledOnce());
+    await waitFor(()=>expect(f.port.updateConsents).toHaveBeenCalledTimes(1));
     expect(f.port.updateConsents).toHaveBeenCalledWith({
       expectedVersion:1,choices:{...grant.choices,externalAi:true},
     },expect.any(AbortSignal));
