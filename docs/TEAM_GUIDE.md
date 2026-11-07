@@ -4,6 +4,10 @@
 
 **과거 PR 증거(#292/#293/#295/#304)와 최신 통합:** [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)에서 본선 전 11개를 종결하고 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)에서 합성 홈 3단계/공고 검색·필터·정렬을 추가(정확한 PR HEAD 및 병합 main `d8e2144` Actions 각 4/4 PASS). 실제 학교 계정·NCP/학사 원장/사람 인수는 여전히 NOT_RUN/RELEASE_BLOCKED. 이하 기존 개별 근거: [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다. 학생용 실제 학교 로그인(#297/#299), 박준영 학사 수집자료의 서버/화면 적용(#301), 모델 실호출·캐시 재생 증빙(#302)은 아직 준비가 필요합니다.
 
+## 2026-11-07 현행 이슈·팀 역할 재편
+
+GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+
 ## 한눈에 보는 흐름
 
 1. **화면 선택:** 데스크톱 HUFSAbility 참고 대분류 11개 GNB/실제 화면 LNB(휴대폰 하단 5탭), HUFSAbility 원 메뉴는 이름/순서만 참고·미지원. 학교 원본 UI/계정을 복제하지 않는다.
@@ -13,11 +17,11 @@
 5. **학업:** 취득/수강 중/계획 학점과 What-if를 구분하고 규칙이 불명확하면 `UNKNOWN/NEEDS_REVIEW`. 학과/학사지원팀 공식 판정과 다름.
 6. **운영:** React→Fastify→PostgreSQL→Source/AI·별도 NCP를 안전하게 조립할 코드가 존재해도 실계정·자료권리/서버비용/보안/사람 인수는 아직 남음.
 
-## 팀 역할
+## 본선 진출 전 역할 기록 (향후 미배정)
 
 심민성: 전체 API/DB·권한·Source/AI/NCP 관련 **코드**, 이의상: UI/접근성, 김채윤: 추천·공지, 박준영: 학사/전망, 이서연: **NCP 계정/요금/서버 비코드 운영**. 서로의 계약과 결과를 교차 검수합니다.
 
-## 본선 진출 전/후 역할과 점검 이슈
+## 과거 본선 진출 전/후 역할 및 점검 이슈 (현재 배정 아님)
 
 | 담당 | 본선 진출 전 — 정리 종결(CLOSED) | 본선 진출 이후 — 실제 운영/실자료 수락 |
 | --- | --- | --- |
@@ -52,4 +56,4 @@
 2. [NCP 제품·GPT(Codex)·Claude Code 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) — 합성 미리보기와 운영/개발 에이전트 차이.
 3. [제품 구조·추천·학업·AI 흐름](BEGINNER_PRODUCT_ARCHITECTURE.md) — 10분 발표/비전공 용어집.
 
-**코드 진행:** 학업 #278·추천 #279·합성 통합 #306·홈/기회 인터랙션 #307 병합; #258와 #260을 포함한 본선 이전 11개 이슈는 종결했습니다. **미완료는 별도 운영 #276, 팀원 사람 인수 #280–#283, 실제 로그인·UX·커리어/학업·AI 후속 #297–#303**이며 실서비스 `RELEASE_BLOCKED`입니다.
+**현재(2026-11-07):** 기존 본선 전 11개와 PR #306/#307은 종료/병합 이력입니다. **현재 미완료는 #298 [UI/UX], #276 [본선 진출 이후], #255 [추가 기능 제안] 단 3개 OPEN/미배정**으로 추적하고, 과거 #280–#283/#297–#303/#310–#314는 통합 CLOSED입니다. 실서비스 `RELEASE_BLOCKED`를 유지합니다.

@@ -1,5 +1,7 @@
 # HUFS One AI — React 웹
 
+**2026-11-07 현행 UI 추적:** [#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298) 단일 이슈·**미배정**입니다. #310–#314의 고유 반례/협업자 피드백은 모두 이관됐고, 실제 NCP 계정/학생 인증은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 새 포트폴리오 제품 기능은 [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)입니다. 종전 #9/#119/#280은 CLOSED 기록입니다.
+
 **현재 웹:** 독립 제품 네이비/블루 v5 디자인, 1024px 이상 **11개 대분류 GNB + 실제 화면 LNB**, 모바일 하단 **5탭**, `HUFSAbility 메뉴` disclosure에 기존 24개 기능의 **미지원** 표시, 홈 장식 배너·맞춤 공고/7일 내 확정 마감/취득 학점 요약 및 페이지별 breadcrumb/h1. 상단 계정 인사는 현재 합성 개발/미리보기에서는 가상 선택기를 옮겨 놓은 것이며 **실제 팀원 학교 계정 로그인 기능이 아닙니다**. 공개 Pages 접근 제어와 인증된 실제 BETA 전환은 #297/#299 후속 과제입니다. 학교 공식 운영 화면이나 원본 UI 복제물이 아닙니다.
 
 ## 주요 화면

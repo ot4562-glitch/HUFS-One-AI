@@ -2,9 +2,13 @@
 
 > **기준:** `OWNER_CONFIRMED_APPROVED`는 프로젝트 승인이다. 개인별 현재 동의·권리, 실 Google/학교메일·NCP/TLS·DB CA·모델·운영비·실학생·사람 인수 통과를 의미하지 않는다. 운영 잔여 단일 이슈 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276). 현행 구현 상태 [STATUS](../STATUS.md).
 
-## 최신 운영 증거 기준 (2026-11-06)
+## 2026-11-07 이슈 통합 및 미배정
 
-**이 표의 이전 PR #267~#304는 개별 SHA의 당시 검증 기록입니다.** 현재 기준은 본선 이전 11개 이슈를 종결한 [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)(merge `462f6d3`) 및 합성 홈·공고 인터랙션 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)(merge [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c))입니다. #307 PR HEAD와 병합된 main SHA는 각각 TASK-00·Chrome·NCP·Pages 4/4 성공으로 별도 검증했으며, [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 `main` 대비 변경 파일 0개인 중복으로 리뷰 후 미병합 종료했습니다. **본선 이전 11개는 CLOSED(10 completed, #260 이관 not_planned)**이고, 사람·실 운영 인수 #276/#280–#283·신규 제품 #297–#303은 OPEN, 실제 운영 `RELEASE_BLOCKED`입니다. 추가 문서 SHA의 CI는 그 SHA에서 다시 확인합니다.
+현재 열린 이슈는 **[#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
+
+## 이전 운영 증거 기준 (2026-11-06 원장 기록)
+
+**이 표의 이전 PR #267~#304는 개별 SHA의 당시 검증 기록입니다.** 현재 기준은 본선 이전 11개 이슈를 종결한 [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)(merge `462f6d3`) 및 합성 홈·공고 인터랙션 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)(merge [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c))입니다. #307 PR HEAD와 병합된 main SHA는 각각 TASK-00·Chrome·NCP·Pages 4/4 성공으로 별도 검증했으며, [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 `main` 대비 변경 파일 0개인 중복으로 리뷰 후 미병합 종료했습니다. **본선 이전 11개는 CLOSED(10 completed, #260 이관 not_planned)**이고, 이 문단의 2026-11-06 당시 후속 #276/#280–#283·신규 제품 #297–#303은 OPEN이었으나, 2026-11-07 이후 현재 **#276·#298·#255만 OPEN**이며 나머지는 통합 CLOSED입니다. 실제 운영 `RELEASE_BLOCKED`는 같습니다. 추가 문서 SHA의 CI는 그 SHA에서 다시 확인합니다.
 
 ## 병합된 PR 근거
 
@@ -48,7 +52,7 @@
 | 추천·미디어 독립 Gold | `EXCLUDED_BY_REQUEST / NOT_MEASURED` | 이번 작업에서 제외, 합성 평가를 실제 Gold로 주장 금지 |
 | 프로덕션 공개 | **`RELEASE_BLOCKED`** | [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)의 실환경·권리·복구 조건 후만 |
 
-## 팀원 실환경 인수의 전/후 이슈 분리(2026-11-06)
+## 과거 팀원 실환경 인수의 전/후 이슈 분리(2026-11-06 당시 · 현재 역할 재배정 예정)
 
 | 담당 | 본선 진출 전 — 정리 종결(CLOSED) | 본선 진출 이후 — 실제 운영/실자료 수락 |
 | --- | --- | --- |
@@ -59,7 +63,7 @@
 
 **공통 원칙:** 본선 전 지정 11개 이슈는 **CLOSED**(10 completed, #260 not_planned로 사람 리뷰 후속 이관), 본선 이후 이슈는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
 
-팀원 후속 이슈 #280~#283은 **추적용 OPEN/NOT_RUN**이고, 실제 권리·계정·비용·인증·원본 서버 반입이 완료됐다는 증거가 아닙니다. 기존 #9·#10·#11·#12·#119·#258·#260·#261은 CLOSED이고, **실제 인수/교차 검토는 후속 #276/#280–#283 OPEN 유지**. 기존 자료·키의 새로운 공개 업로드는 하지 않습니다.
+과거 팀원 후속 #280~#283은 **#276/#298에 추적을 옮긴 후 CLOSED이며 실제 수락은 NOT_RUN**이고, 실제 권리·계정·비용·인증·원본 서버 반입이 완료됐다는 증거가 아닙니다. 기존 #9·#10·#11·#12·#119·#258·#260·#261은 CLOSED이고, **실제 인수/교차 검토는 후속 #276/#280–#283 OPEN 유지**. 기존 자료·키의 새로운 공개 업로드는 하지 않습니다.
 
 ## 인계와 운영 원칙
 
