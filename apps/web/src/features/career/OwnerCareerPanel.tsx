@@ -15,6 +15,7 @@ import {scanCareerInventory,type CareerInventory} from './portfolioInventory.js'
 import {CareerActionPlans} from './CareerActionPlans.js';
 import {CareerEvidenceAttachments,type CareerEvidenceAssetPort} from './CareerEvidenceAttachments.js';
 import {OwnerExperiencePanel,type OwnerExperiencePort} from '../experience/OwnerExperiencePanel.js';
+import {OfficialCareerReferences} from './OfficialCareerReferences.js';
 
 export interface OwnerCareerPort {
   readonly session:OwnerSessionController;
@@ -423,6 +424,7 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
       {bookmarkCursor&&<button type="button" disabled={busy} onClick={()=>setBookmarkCursor(undefined)}>보관함 첫 페이지</button>}
       {screen.bookmarks.nextCursor&&<p role="note">현재 보관함 목록은 20건 단위이며 계정 전체 지원 이력이 아닙니다.</p>}
     </section>
+    <OfficialCareerReferences/>
     <CareerActionPlans key={'action-'+(actionCursor??'first')+'-'+screen.consents.version}
       bookmarks={screen.bookmarks} actions={screen.actions} busy={busy} navigate={navigate}
       onCreate={value=>execute(signal=>port.create({itemId:'career-plan-'+crypto.randomUUID().replaceAll('-',''),value},signal))}
