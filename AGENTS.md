@@ -10,11 +10,11 @@
 
 | 단일 OPEN 이슈 | 통합 범위 | 담당 |
 | --- | --- | --- |
-| **[#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298)** | 화면/반응형·협업자별 #310–#314 및 기존 UI 결함, 실 UI 접근성 검수 | 미배정 |
-| **[#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)** | NCP·Google/학교메일·실학생 4인·PG/학칙·추천·AI/비용·실운영 인수 | 미배정 |
-| **[#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** | 신규 포트폴리오·커리어·AI 실행이력·동아리/기관 링크 제안 | 미배정 |
+| **[#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)** | 화면/반응형·협업자별 #310–#314 및 기존 UI 결함, 실 UI 접근성 검수 | 미배정 |
+| **[#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)** | NCP·Google/학교메일·실학생 4인·PG/학칙·추천·AI/비용·실운영 인수 | 미배정 |
+| **[#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** | 신규 포트폴리오·커리어·AI 실행이력·동아리/기관 링크 제안 | 미배정 |
 
-2026-11-07 기존 열린 이슈 **18건을 3건으로 통합**했습니다. #280–#283, #297/#299–#303, #310–#314의 상세 요구/고유 반례는 원본 댓글/본문을 보존해 closed/duplicate로 정리했으며, **기능 구현·인적 인수가 완료된 것이 아닙니다**. 본선 이후 역할은 재편할 예정이므로 **과거 업무 소유자 표는 신규 이슈의 배정 근거가 아닙니다**. 합성 CI 성공과 실제 서비스 RELEASE_BLOCKED/실 NCP·학교/학생 자료 CONFIGURATION_REQUIRED/NOT_RUN을 구별합니다.
+2026-11-07 열린 이슈를 정리한 뒤, **과거 이슈를 재사용하지 않고 댓글 없는 신규 #316/#317/#318을 발행**했습니다. 이전 #276/#255/#298은 기록 보관용 CLOSED이며 새 이슈 3건만 OPEN입니다. #280–#283, #297/#299–#303, #310–#314의 상세 요구/고유 반례는 원본 댓글/본문을 보존해 closed/duplicate로 정리했으며, **기능 구현·인적 인수가 완료된 것이 아닙니다**. 본선 이후 역할은 재편할 예정이므로 **과거 업무 소유자 표는 신규 이슈의 배정 근거가 아닙니다**. 합성 CI 성공과 실제 서비스 RELEASE_BLOCKED/실 NCP·학교/학생 자료 CONFIGURATION_REQUIRED/NOT_RUN을 구별합니다.
 
 ## 과거 본선 전 역할 기록 (향후 담당 자동 배정 아님)
 
@@ -34,7 +34,7 @@
 
 정확한 HEAD의 타입·합성/부정·일회용 PG·Chrome·CI 결과와 실패/미실행을 기록합니다. AI 코드 리뷰는 실제 비작성자의 사람 인수와 구별하고, 명시적인 개별 PR 병합 지시는 해당 PR에만 적용합니다. 현재 문서는 현재 상태만 설명하며 지난 진행 일지를 누적하지 않습니다.
 
-[현재 구현](STATUS.md) · [운영 통합 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [학업 코어 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [추천 코어 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279).
+[현재 구현](STATUS.md) · [운영 통합 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316) · [학업 코어 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [추천 코어 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279).
 ## 원본 CSV 5개 — 사용자 보존 지시 (2026-11-06)
 
 - 저장소에 현재 복구된 `csv/`의 **Google Forms 1개 + 학생별 수강 CSV 4개**는 **읽기 전용 원본**이다. 담당 에이전트·자동화·PR 정리 작업이 **임의로 삭제·변경·이동·파일명 변경·재인코딩·Git 추적 해제·원본 덮어쓰기·자동 정리해서는 안 된다**. 기존 원본 5개를 있는 그대로 유지한다.

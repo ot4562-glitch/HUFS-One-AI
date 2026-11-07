@@ -11,15 +11,15 @@
 
 ## 2026-11-07 이슈 통합 및 미배정
 
-현재 열린 이슈는 **[#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
+현재 열린 이슈는 **[#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
 
 ## 남은 실제 검증·기능과 기존 원본 링크
 
 | 현재 3개 OPEN 이슈 | 범위와 과거 상세 출처 |
 | --- | --- |
-| **[#298 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298)** | 현재 홈·공고/공지 숫자/판본·칸반·졸업/경험/설정·실기기/스크린리더 인수. 고유 4건 #313, 11건 #312, 5건 #310/#311, 4건 #314와 기존 #280/#303 통합 |
-| **[#276 본선 진출 이후](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)** | NCP/PG·Google 학교메일·실학생 4인·원본 권리·학업 RulePack·공식 출처/실추천·CLOVA/Laya 청구·복구/인수. 종전 #280–#283/#297/#299/#301 및 서버측 #302 이관 |
-| **[#255 추가 기능 제안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** | 기존 AI 경험 매핑·LinkedIn형 포트폴리오 #300, 실 AI 실행이력/캐시 재생 UI #302, 기관 웹페이지 링크·연합 동아리 확장 #312 등 비필수 제안 |
+| **[#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)** | 현재 홈·공고/공지 숫자/판본·칸반·졸업/경험/설정·실기기/스크린리더 인수. 고유 4건 #313, 11건 #312, 5건 #310/#311, 4건 #314와 기존 #280/#303 통합 |
+| **[#316 본선 진출 이후](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)** | NCP/PG·Google 학교메일·실학생 4인·원본 권리·학업 RulePack·공식 출처/실추천·CLOVA/Laya 청구·복구/인수. 종전 #280–#283/#297/#299/#301 및 서버측 #302 이관 |
+| **[#317 추가 기능 제안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** | 기존 AI 경험 매핑·LinkedIn형 포트폴리오 #300, 실 AI 실행이력/캐시 재생 UI #302, 기관 웹페이지 링크·연합 동아리 확장 #312 등 비필수 제안 |
 
 **종전 #280–#283/#297–#303/#310–#314는 closed/duplicate이며 새로운 세 이슈의 상세 본문·원본 링크에 체크리스트를 보존했습니다.** 원본 이슈 종료를 실제 구현/실출시 인수 완료로 착각하지 않습니다.
 

@@ -6,7 +6,7 @@
 
 ## 2026-11-07 현행 이슈·팀 역할 재편
 
-GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
 
 ## 한눈에 보는 흐름
 
@@ -47,7 +47,7 @@ GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch
 9. NCP의 비용/CPU/RSS·보안·실재 원본 전송을 누가 승인하는가?
 10. 실제 서비스 공개를 위한 인적 Gold·접근성·D03 출시 조건은 무엇인가?
 
-**실제 팀원 재설명/60초 데모·10분 발표·5분 질의응답 인수는 미완료**이며 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에 증거를 남깁니다. 기획 요약은 [README](../README.md), 실행은 [DEMO_MANUAL](DEMO_MANUAL.md).
+**실제 팀원 재설명/60초 데모·10분 발표·5분 질의응답 인수는 미완료**이며 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)에 증거를 남깁니다. 기획 요약은 [README](../README.md), 실행은 [DEMO_MANUAL](DEMO_MANUAL.md).
 
 
 ## 처음 참여하는 비전공자에게 보여 줄 중요 문서 (2026-11-06)
@@ -56,4 +56,4 @@ GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch
 2. [NCP 제품·GPT(Codex)·Claude Code 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) — 합성 미리보기와 운영/개발 에이전트 차이.
 3. [제품 구조·추천·학업·AI 흐름](BEGINNER_PRODUCT_ARCHITECTURE.md) — 10분 발표/비전공 용어집.
 
-**현재(2026-11-07):** 기존 본선 전 11개와 PR #306/#307은 종료/병합 이력입니다. **현재 미완료는 #298 [UI/UX], #276 [본선 진출 이후], #255 [추가 기능 제안] 단 3개 OPEN/미배정**으로 추적하고, 과거 #280–#283/#297–#303/#310–#314는 통합 CLOSED입니다. 실서비스 `RELEASE_BLOCKED`를 유지합니다.
+**현재(2026-11-07):** 기존 본선 전 11개와 PR #306/#307은 종료/병합 이력입니다. **현재 미완료는 #318 [UI/UX], #316 [본선 진출 이후], #317 [추가 기능 제안] 단 3개 OPEN/미배정**으로 추적하고, 과거 #280–#283/#297–#303/#310–#314는 통합 CLOSED입니다. 실서비스 `RELEASE_BLOCKED`를 유지합니다.
