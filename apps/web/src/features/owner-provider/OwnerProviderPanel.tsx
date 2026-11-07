@@ -80,7 +80,12 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const read=async(jobId:string,path:AiTaskPath)=>{
     const version=selectionVersion.current,candidate=++candidateVersion.current;
     setReceipt(null);
-    const job=await port.session.runLatest('provider-approved-result',signal=>port.read(jobId,path,signal));
+    const job=await port.session.runLatest('provider-approved-result',async signal=>{
+      const fetched=await port.read(jobId,path,signal);
+      if(fetched.jobId!==jobId||fetched.candidate.task!==AI_TASK_PATHS[path])
+        throw new Error('Stored AI response job/task does not match the authenticated request');
+      return fetched;
+    });
     if(job&&version===selectionVersion.current&&candidate===candidateVersion.current
       &&port.session.getState().status==='READY'){
       setStored(job);setReceipt(null);
