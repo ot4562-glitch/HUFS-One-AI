@@ -52,6 +52,7 @@ export type OwnerProviderReceipt=z.infer<typeof OwnerProviderReceiptSchema>;
  * owner feed, evidence and source revision. The client never synthesizes it. */
 export const OwnerOpportunityAiProofSchema=z.strictObject({
   opportunityId:Ref,sourceRevisionId:Ref,rankConfigVersion:Ref,
+  permissionRef:Ref,provider:Ref,modelRevision:Ref,
   feedVersion:z.string().regex(/^[0-9a-f]{64}$/),asOf:Utc,
   consentVersion:Version,jobId:JobId,
   mode:z.enum(['LIVE_PROVIDER_RUN','CACHED_PREVIOUS_RUN']),
