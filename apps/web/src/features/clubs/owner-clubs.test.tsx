@@ -59,6 +59,11 @@ describe('#123 actual owner/admin browser integration',()=>{
     const owner=createOwnerClubPort(h.api.owner,new OwnerSessionController(h.api));
     const view=render(<OwnerClubBoard port={owner} navigate={()=>{}}/>);await flush();
     expect(within(screen.getByRole('region',{name:'나에게 맞는 동아리'})).getByText('가상동아리 AI 탐험대')).toBeTruthy();
+    const scope=screen.getByRole('combobox',{name:'동아리 범위'}) as HTMLSelectElement;
+    expect(scope.value).toBe('ALL');
+    fireEvent.change(scope,{target:{value:'INTERUNIVERSITY'}});
+    expect(scope.value).toBe('INTERUNIVERSITY');
+    expect(screen.getByText(/범위 분류는 기존 합성 공고의 메타데이터/)).toBeTruthy();
     // Local responsive illustrations may appear on cards; the large server PNG stays detail-only.
     expect(document.querySelector('img[src^="/api/synthetic/clubs/"]')).toBeNull();
     view.rerender(<OwnerClubBoard port={owner} id="SYN-CLUB-090" navigate={()=>{}}/>);await flush();

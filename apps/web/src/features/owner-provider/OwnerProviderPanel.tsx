@@ -1,15 +1,21 @@
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {AI_TASK_PATHS,type AiTaskPath,type ApprovedProviderInput,
-  type ProviderAccepted,type ProviderStoredJob} from '@hufs-one/contracts';
+  type ProviderAccepted,type ProviderStoredJob,type OwnerProviderReceipt,
+  OwnerProviderCancellationResponseSchema} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import '../local-accounts/localAccounts.css';
 import {AiTaskResultView} from './AiTaskResultView.js';
+import {verifiedCareerReceipt} from '../career/aiEvidence.js';
 
 export interface OwnerProviderPort {
   readonly session:OwnerSessionController;
   list(signal?:AbortSignal):Promise<{items:ApprovedProviderInput[]}>;
   submit(input:ApprovedProviderInput,taskPath:AiTaskPath,key:string,signal?:AbortSignal):Promise<ProviderAccepted>;
   read(jobId:string,taskPath:AiTaskPath,signal?:AbortSignal):Promise<ProviderStoredJob>;
+  /** Optional future #325 API. Absent means NO_MEASURED_RECEIPT; never fabricate it. */
+  getReceipt?(jobId:string,signal?:AbortSignal):Promise<unknown>;
+  /** Optional #325 server cancellation. Local dismissal must not call this. */
+  cancelJob?(jobId:string,signal?:AbortSignal):Promise<unknown>;
 }
 type Choice={entry:ApprovedProviderInput;taskPath:AiTaskPath};
 type RecentJob={jobId:string;taskPath:AiTaskPath;operation:string;asOf:string;
@@ -36,6 +42,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const [confirmation,setConfirmation]=useState(false);
   const [accepted,setAccepted]=useState<ProviderAccepted|null>(null);
   const [stored,setStored]=useState<ProviderStoredJob|null>(null);
+  const [receipt,setReceipt]=useState<OwnerProviderReceipt|null>(null);
+  const [receiptBusy,setReceiptBusy]=useState(false);
   // Only job identifiers issued during this verified owner session. Never persist input text,
   // student identity, provider candidate bytes or keys in browser storage.
   const [recentJobs,setRecentJobs]=useState<RecentJob[]>([]);
@@ -44,13 +52,15 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const [manualJobId,setManualJobId]=useState('');
   const [manualTask,setManualTask]=useState<AiTaskPath>('experience-skills');
   const idempotency=useRef<string|null>(null);
+  const submitLock=useRef(false);
   const selectionVersion=useRef(0);
 
   useEffect(()=>{void port.session.initialize();},[port]);
   useEffect(()=>{
     selectionVersion.current++;
     setItems(null);setSelection('');setConfirmation(false);
-    setAccepted(null);setStored(null);setRecentJobs([]);setNotice('');
+    setAccepted(null);setStored(null);setReceipt(null);setReceiptBusy(false);
+    setRecentJobs([]);setNotice('');submitLock.current=false;
     setManualJobId('');setManualTask('experience-skills');idempotency.current=null;
     if(session.status!=='READY')return;
     let active=true;
@@ -68,13 +78,50 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const read=async(jobId:string,path:AiTaskPath)=>{
     const version=selectionVersion.current;
     const job=await port.session.runLatest('provider-approved-result',signal=>port.read(jobId,path,signal));
-    if(job&&version===selectionVersion.current&&port.session.getState().status==='READY')setStored(job);
+    if(job&&version===selectionVersion.current&&port.session.getState().status==='READY'){
+      setStored(job);setReceipt(null);
+    }
+  };
+  const requestServerCancel=async()=>{
+    if(!accepted||accepted.state!=='PENDING'||!port.cancelJob||busy||session.status!=='READY')return;
+    const pendingId=accepted.jobId;
+    setBusy(true);setNotice('');
+    try{
+      const response=await port.session.runMutation(async signal=>{
+        const raw=await port.cancelJob!(pendingId,signal);
+        const result=OwnerProviderCancellationResponseSchema.parse(raw);
+        if(result.jobId!==pendingId)throw new Error('Cancellation status is for another job');
+        return result;
+      });
+      if(response&&port.session.getState().status==='READY')setNotice(
+        response.status==='CANCELLED'
+          ?'서버에서 작업 취소 상태를 확인했습니다. 이미 청구된 금액이나 환불 여부는 별도 영수증 확인 전 미확정입니다.'
+          :response.status==='CANCEL_REQUESTED'
+            ?'서버에 취소 요청이 접수됐습니다. 공급자 작업 중단·과금/환불은 아직 확인되지 않았습니다.'
+            :'서버에서 현재 작업을 취소할 수 없습니다. 이미 진행된 실행/청구는 별도 확인이 필요합니다.');
+    }finally{setBusy(false);}
+  };
+  const readActualReceipt=async()=>{
+    if(!stored||!port.getReceipt||receiptBusy||busy||session.status!=='READY')return;
+    const storedSnapshot=stored,version=selectionVersion.current;
+    setReceipt(null);setReceiptBusy(true);
+    try{
+      const result=await port.session.runLatest('provider-private-receipt',async signal=>{
+        const raw=await port.getReceipt!(storedSnapshot.jobId,signal);
+        return verifiedCareerReceipt(raw,storedSnapshot,{
+          jobId:storedSnapshot.jobId,task:storedSnapshot.candidate.task,
+        });
+      });
+      if(result&&version===selectionVersion.current&&port.session.getState().status==='READY')
+        setReceipt(result);
+    }finally{setReceiptBusy(false);}
   };
   const submit=async()=>{
-    if(!selected||!taskPath||!canSubmit||busy||!confirmation||session.status!=='READY')return;
+    if(submitLock.current||!selected||!taskPath||!canSubmit||busy||!confirmation||session.status!=='READY')return;
     const key=idempotency.current??newKey();
     if(!key){setNotice('안전한 요청 ID를 생성할 수 없습니다. 실행하지 않았습니다.');return;}
-    idempotency.current=key;setBusy(true);setNotice('');setStored(null);
+    submitLock.current=true;
+    idempotency.current=key;setBusy(true);setNotice('');setStored(null);setReceipt(null);
     try{
       const response=await port.session.runMutation(signal=>port.submit(selected,taskPath,key,signal));
       if(!response||port.session.getState().status!=='READY')return;
@@ -89,7 +136,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         setNotice('독립 검토가 필요한 후보입니다. 승인·확정 결과가 아닙니다.');
         await read(response.jobId,taskPath);
       }
-    }finally{setBusy(false);}
+    }finally{submitLock.current=false;setBusy(false);}
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">본인 권한 확인 중입니다.</p>;
   if(session.status!=='READY')return <p role="alert">
@@ -111,7 +158,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
               onChange={()=>{
                 selectionVersion.current++;
                 setSelection(value);setConfirmation(false);setAccepted(null);
-                setStored(null);setNotice('');idempotency.current=null;
+                setStored(null);setReceipt(null);setNotice('');idempotency.current=null;
               }}/>
             후보 {index+1} · {item.task} · 검토 시각 {item.asOf}
             </label>;
@@ -128,6 +175,14 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         onClick={()=>{void submit();}}>
         {accepted?.state==='PENDING'?'동일 요청으로 상태 재확인':'선택된 승인 입력 실행'}
       </button></p>
+      {accepted?.state==='PENDING'&&port.cancelJob&&<button type="button" disabled={busy}
+        onClick={()=>{void requestServerCancel();}}>서버 작업 취소 요청 (실제 중단·환불 미보장)</button>}
+      {accepted?.state==='PENDING'&&<button type="button" disabled={busy}
+        onClick={()=>{
+          selectionVersion.current++;
+          setAccepted(null);setStored(null);setReceipt(null);setConfirmation(false);
+          setNotice('이 화면의 대기 표시만 닫았습니다. 공급자 실행·청구 취소가 아닙니다. 서버 작업 ID는 이번 세션 목록에 보존되며, 다시 실행하려면 명시 확인이 필요합니다.');
+        }}>대기 표시 접기 (공급자 실행 취소 아님)</button>}
       {accepted?.state==='NEEDS_REVIEW'&&taskPath&&<button type="button" disabled={busy}
         onClick={()=>{void read(accepted.jobId,taskPath);}}>보존된 후보 다시 조회</button>}
       {accepted?.state==='NEEDS_REVIEW'&&<button type="button" disabled={busy}
@@ -145,7 +200,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         {(Object.keys(AI_TASK_PATHS) as AiTaskPath[]).map(path=><option key={path} value={path}>{AI_TASK_PATHS[path]}</option>)}
       </select>
       <button type="button" disabled={busy||!validManualJob}
-        onClick={()=>{setStored(null);void read(manualJobId.trim(),manualTask);}}>이전 후보 ID 수동 재조회</button>
+        onClick={()=>{setStored(null);setReceipt(null);void read(manualJobId.trim(),manualTask);}}>이전 후보 ID 수동 재조회</button>
     </section>
     {recentJobs.length>0&&<section aria-label="이번 인증 세션에서 발급받은 AI 실행 ID">
       <h2>이번 세션의 직접 실행 기록 (최대 5건)</h2>
@@ -154,7 +209,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         <p>작업 ID {job.jobId} · 모델 {job.operation} · 요청 기준 {job.asOf} · 상태 {job.state}
           {job.provenance==='LIVE'?' · 실제 실행 확인':job.provenance==='CANDIDATE_CACHE'?' · 이전 결과 재사용':' · 실행 결과 미확정'}</p>
         {job.state==='NEEDS_REVIEW'&&<button type="button" disabled={busy}
-          onClick={()=>{setStored(null);void read(job.jobId,job.taskPath);}}>현재 권한으로 이 결과 수동 재조회</button>}
+          onClick={()=>{setStored(null);setReceipt(null);void read(job.jobId,job.taskPath);}}>현재 권한으로 이 결과 수동 재조회</button>}
       </li>)}</ul>
     </section>}
     {accepted&&<section aria-label="Provider 작업 상태">
@@ -171,7 +226,21 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
       <h2>독립 사람 검토 필요 · NEEDS_REVIEW</h2>
       <p>원장 상태: {stored.billing} · 출처: {stored.provenance}</p>
       <p role="note">CACHED_PREVIOUS_RUN · 현재 권한으로 서버에서 재조회한 후보이며 이 조회를 신규 공급자 실행으로 세지 않습니다. SYNTHETIC 예시는 이 BETA 화면에서 실호출처럼 표시하지 않습니다.</p>
-      <p>측정된 토큰 사용량: 입력 {stored.candidate.usage.promptTokens} / 출력 {stored.candidate.usage.completionTokens} / 합계 {stored.candidate.usage.totalTokens}. 실제 원화 비용·지연은 이 응답에 없으므로 별도 측정 전에는 표시하지 않습니다.</p>
+      <p>측정된 토큰 사용량: 입력 {stored.candidate.usage.promptTokens} / 출력 {stored.candidate.usage.completionTokens} / 합계 {stored.candidate.usage.totalTokens}. 실제 원화 비용·지연은 별도 서버 발행 영수증이 검증되기 전에는 표시하지 않습니다.</p>
+      {!port.getReceipt?<p role="note">현재 서버는 별도 비공개 실측 영수증 조회를 제공하지 않습니다. 새로운 청구액·지연 시간·실행 증거를 임의 계산하지 않습니다.</p>
+        :<button type="button" disabled={receiptBusy||busy}
+          onClick={()=>{void readActualReceipt();}}>{receiptBusy?'영수증 확인 중':'현재 권한으로 실측 영수증 조회 (과금 없음)'}</button>}
+      {receipt&&<section aria-label="권한 및 토큰 사용량이 검증된 비공개 영수증" role="region">
+        <h3>서버가 확인한 실행 근거 · {receipt.mode}</h3>
+        <p>작업 {receipt.jobId} · 서버 실행 {receipt.runId} · 공급자 {receipt.provider} · 모델 판본 {receipt.modelRevision}</p>
+        <p>출처 판본 {receipt.sourceRevisionId} · 권리 판본 {receipt.rightsVersion} · 동의 {receipt.consentVersion}판 · 기준 {receipt.asOf}</p>
+        <p>비민감 입력 해시 앞 12자리 {receipt.inputSha256.slice(0,12)}… · 영수증 유효기한 {receipt.expiresAt}</p>
+        <p>실제 응답 지연: {receipt.metrics.measuredLatencyMs!==undefined?receipt.metrics.measuredLatencyMs+'ms':'NOT_MEASURED'}</p>
+        <p>측정된 신규 비용: {receipt.mode==='CACHED_PREVIOUS_RUN'?'신규 과금 없음 (캐시 재생)'
+          :receipt.billingState==='SETTLED'&&receipt.metrics.measuredCostKrw!==undefined
+            ?receipt.metrics.measuredCostKrw+'원 (서버 원장 실측)':'NOT_MEASURED'}</p>
+        <p role="note">이 내역은 학생 본인 전용 서버 영수증이며, 개인이 승인한 AI 후보·학교 공식 확인 또는 모델 정확도 검증을 뜻하지 않습니다.</p>
+      </section>}
       {stored.candidate.result&&<AiTaskResultView result={stored.candidate.result}/>}
       <ul>{stored.candidate.citations.map((c,i)=><li key={c.sourceToken+':'+c.paragraphId+':'+i}>
         <strong>근거 {i+1} · {c.sourceToken} / {c.paragraphId}</strong> · {c.quote}

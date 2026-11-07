@@ -139,6 +139,120 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     expect(screen.queryByText(/Synthetic approved notice/)).toBeNull();
   });
 
+  it('never invents a live billing receipt when the server lacks a receipt read endpoint',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',provenance:'LIVE'});
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/Synthetic approved notice/);
+    expect(screen.getByText(/현재 서버는 별도 비공개 실측 영수증 조회를 제공하지 않습니다/)).toBeTruthy();
+    expect(screen.queryByRole('button',{name:/실측 영수증 조회/})).toBeNull();
+  });
+  it('renders operator-measured cost only for server-verified owner receipt bound to the candidate',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',provenance:'LIVE'});
+    const getReceipt=vi.fn(async()=>({
+      jobId,runId:jobId,task:'opportunity_terms',provider:'HCX_007',
+      modelRevision:'verified-model-1',sourceRevisionId:'rev-1',consentVersion:1,
+      rightsVersion:'rights-1',asOf:'2026-11-03T00:00:00.000Z',
+      recordedAt:'2026-11-07T12:00:00.000Z',expiresAt:'2030-01-01T00:00:00.000Z',
+      inputSha256:'a'.repeat(64),reviewState:'NEEDS_REVIEW',
+      metrics:{promptTokens:40,completionTokens:20,totalTokens:60,measuredCostKrw:123.45,measuredLatencyMs:319},
+      mode:'LIVE_PROVIDER_RUN',provenance:'SERVER_RECORDED',newProviderInvocation:true,billingState:'SETTLED',
+    }));
+    f.port.getReceipt=getReceipt;
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/Synthetic approved notice/);
+    fireEvent.click(screen.getByRole('button',{name:'현재 권한으로 실측 영수증 조회 (과금 없음)'}));
+    const region=await screen.findByRole('region',{name:'권한 및 토큰 사용량이 검증된 비공개 영수증'});
+    expect(region.textContent).toContain('123.45원');
+    expect(region.textContent).toContain('319ms');
+    expect(getReceipt).toHaveBeenCalledTimes(1);
+    expect(f.submit).toHaveBeenCalledTimes(1);
+    await act(async()=>{f.session.invalidateLocalSession();});
+    expect(screen.queryByRole('region',{name:'권한 및 토큰 사용량이 검증된 비공개 영수증'})).toBeNull();
+  });
+  it('fails closed when the receipt claims a different token total instead of trusting cost',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',provenance:'LIVE'});
+    f.port.getReceipt=vi.fn(async()=>({
+      jobId,runId:jobId,task:'opportunity_terms',provider:'HCX_007',modelRevision:'m1',
+      sourceRevisionId:'rev1',consentVersion:1,rightsVersion:'r1',
+      asOf:'2026-11-03T00:00:00Z',recordedAt:'2026-11-07T12:00:00Z',
+      expiresAt:'2030-01-01T00:00:00Z',inputSha256:'a'.repeat(64),reviewState:'NEEDS_REVIEW',
+      metrics:{promptTokens:100,completionTokens:20,totalTokens:120,measuredCostKrw:999},
+      mode:'LIVE_PROVIDER_RUN',provenance:'SERVER_RECORDED',newProviderInvocation:true,billingState:'SETTLED',
+    }));
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/Synthetic approved notice/);
+    fireEvent.click(screen.getByRole('button',{name:'현재 권한으로 실측 영수증 조회 (과금 없음)'}));
+    await screen.findByRole('alert');
+    expect(screen.queryByText(/999원/)).toBeNull();
+    expect(f.submit).toHaveBeenCalledTimes(1);
+  });
+  it('locks a double click into a single provider submission',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();let resolve!:(value:ProviderAccepted)=>void;
+    f.submit.mockImplementationOnce(()=>new Promise(r=>{resolve=r;}));
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    const run=screen.getByRole('button',{name:'선택된 승인 입력 실행'});
+    fireEvent.click(run);fireEvent.click(run);
+    // The guarded controller rechecks the signed-in actor before it calls the adapter.
+    await waitFor(()=>expect(f.submit).toHaveBeenCalledTimes(1));
+    await act(async()=>{resolve({jobId,state:'PENDING'});});
+  });
+
+  it('allows a pending view to be dismissed without claiming the remote job was cancelled',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'PENDING'});
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/아직 결과가 정산되지 않았습니다/);
+    fireEvent.click(screen.getByRole('button',{name:'대기 표시 접기 (공급자 실행 취소 아님)'}));
+    expect(screen.getByText(/공급자 실행·청구 취소가 아닙니다/)).toBeTruthy();
+    expect(screen.getByText(/작업 ID 00000000-0000-4000-8000-000000000001/)).toBeTruthy();
+    expect(f.submit).toHaveBeenCalledTimes(1);
+    expect(f.read).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await waitFor(()=>expect(f.submit).toHaveBeenCalledTimes(2));
+    expect(f.submit.mock.calls[1]![2]).toBe(f.submit.mock.calls[0]![2]);
+  });
+  it('requests server cancellation only when its authenticated capability exists and does not claim a refund',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'PENDING'});
+    const cancelJob=vi.fn(async()=>({
+      jobId,status:'CANCEL_REQUESTED',observedAt:'2026-11-07T12:00:00Z',
+    }));
+    f.port.cancelJob=cancelJob;
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/아직 결과가 정산되지 않았습니다/);
+    fireEvent.click(screen.getByRole('button',{name:'서버 작업 취소 요청 (실제 중단·환불 미보장)'}));
+    await waitFor(()=>expect(cancelJob).toHaveBeenCalledWith(jobId,expect.any(AbortSignal)));
+    await screen.findByText(/공급자 작업 중단·과금\/환불은 아직 확인되지 않았습니다/);
+    expect(f.submit).toHaveBeenCalledTimes(1);
+    expect(f.read).not.toHaveBeenCalled();
+  });
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);
