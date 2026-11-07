@@ -51,12 +51,13 @@ export const savedPage: PageRenderer = ({path, state, sandbox, navigate, service
 
 export const experiencePage: PageRenderer = ({path, state, sandbox, services, controller, navigate}) => {
   if (path !== '/experience') return null;
-  if (services.ownerExperience) return {title: '경험', body: <OwnerExperiencePanel port={services.ownerExperience} />};
+  if (services.ownerExperience) return {title: '경험', body: <><p><InAppLink to="/career" navigate={navigate}>비공개 포트폴리오·진로 로드맵</InAppLink></p><OwnerExperiencePanel port={services.ownerExperience} /></>};
   if (state.status === 'READY' && !state.profiles.find(p => p.demoSubjectId === state.selected)?.allowedSections.includes('EXPERIENCE'))
     return {title: '경험', body: <p className="muted">{NOT_SHARED_TEXT}</p>};
   if (services.experienceForSubject) {
     if (state.status !== 'READY' || !state.selected) return {title: '경험', body: <NoSnapshot state={state} />};
     return {title: '경험', body: <>
+      <p><InAppLink to="/career" navigate={navigate}>진로 포트폴리오 (본인 BETA 전용 기능 안내)</InAppLink></p>
       <p role="note">선택한 가상 학생의 합성 경험입니다. 실제 학생 기록·외부 AI 호출·학교 이수 인증이 아닙니다.</p>
       <ExperienceSkillReview state={state} controller={controller} port={services.experienceForSubject(state.selected)} navigate={navigate} />
       <p><InAppLink to="/opportunities" navigate={navigate}>내 관심에 맞는 기회 살펴보기</InAppLink></p>

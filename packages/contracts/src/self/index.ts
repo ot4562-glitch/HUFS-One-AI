@@ -8,6 +8,7 @@ export * from './synthetic-clubs.js';
 export * from './workspace.js';
 export * from './experience-approval.js';
 export * from './experience-portfolio.js';
+export * from './career-extensions.js';
 export * from './experience-skill-candidate.js';
 export * from './private-owner-intake.js';
 export * from './owner-feed.js';
@@ -19,6 +20,9 @@ const Utc=z.iso.datetime({offset:true});
 const Version=z.number().int().min(0).max(Number.MAX_SAFE_INTEGER-1);
 export const SelfProfileValueSchema=z.strictObject({
   displayName:z.string().trim().min(1).max(40),interestTopics:InterestTopicsSchema,desiredJobTopics:DesiredJobTopicsSchema,
+  // #317: owner-only presentation. There is intentionally no public profile route.
+  headline:z.string().trim().max(120).optional(),bio:z.string().trim().max(700).optional(),
+  visibility:z.literal('PRIVATE').optional(),
 });
 export const SelfProfilePatchSchema=z.strictObject({expectedVersion:Version,value:SelfProfileValueSchema});
 export const SelfProfileSchema=z.strictObject({version:Version.min(1),value:SelfProfileValueSchema,updatedAt:Utc});

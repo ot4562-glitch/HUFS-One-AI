@@ -26,6 +26,7 @@ function ClubCard({club, navigate, large}: {club: ClubCardView; navigate: (p: st
         <ul className="board__pills" aria-label="동아리 정보">
           <li className="pill">{club.categoryText}</li>
           <li className="pill">{club.campusText}</li>
+          <li className="pill">{club.scopeText}</li>
           <li className="pill pill--outline">{APPROVAL_TEXT}</li>
         </ul>
         <p className="board__small">{club.lifecycleText}{club.deadlineText ? ` · ${club.deadlineText}` : ''}{club.dday && <> · <DDayText dday={club.dday} /></>}</p>
@@ -48,6 +49,11 @@ function Filters({filter, onChange}: {filter: ClubFilter; onChange: (f: ClubFilt
       <select id="club-category" value={filter.category} onChange={e => onChange({...filter, category: e.target.value as ClubFilter['category']})}>
         <option value="ALL">전체</option>
         {(Object.keys(CATEGORY_TEXT) as (keyof typeof CATEGORY_TEXT)[]).map(c => <option key={c} value={c}>{CATEGORY_TEXT[c]}</option>)}
+      </select>
+      <label htmlFor="club-scope">모집 범위</label>
+      <select id="club-scope" value={filter.scope??'ALL'} onChange={e=>onChange({...filter,scope:e.target.value as ClubFilter['scope']})}>
+        <option value="ALL">모든 가상 동아리</option><option value="CAMPUS">교내 가상</option>
+        <option value="INTERUNIVERSITY">연합 가상</option><option value="EXTERNAL">교외 소모임 가상</option>
       </select>
       <label className="club__check"><input type="checkbox" checked={filter.includeClosed} onChange={e => onChange({...filter, includeClosed: e.target.checked})} /> 마감된 모집도 보기</label>
     </form>

@@ -20,6 +20,8 @@ export const SyntheticClubPostSchema=z.strictObject({
   id:ClubId,clubName:z.string().startsWith('가상동아리 ').max(90),
   summary:z.string().min(1).max(400),
   category:ClubDemoCategorySchema,campus:z.enum(['SEOUL','GLOBAL','BOTH']),
+  // The current synthetic moderator still approves every post. Optional for old fixtures.
+  organizationScope:z.enum(['CAMPUS','INTERUNIVERSITY','EXTERNAL']).optional(),
   topicCodes:z.array(TopicCodeSchema).max(12),
   activities:z.array(ClubDemoActivitySchema).max(10),
   conditions:z.array(EligibilityConditionSchema).max(20),
@@ -145,7 +147,7 @@ export type SyntheticClubDecisionResponse=z.infer<typeof SyntheticClubDecisionRe
 /** Publication inputs contain content only. Identity, provenance, effective time
  * and approval are supplied exclusively by the trusted server. */
 export const SyntheticClubContentSchema=SyntheticClubPostSchema.pick({
-  clubName:true,summary:true,category:true,campus:true,topicCodes:true,activities:true,
+  clubName:true,summary:true,category:true,campus:true,organizationScope:true,topicCodes:true,activities:true,
   conditions:true,recruitOpensAt:true,recruitClosesAt:true,posterAssetId:true,dataMode:true,
 }).superRefine((v,ctx)=>{
   if(v.recruitOpensAt&&v.recruitClosesAt&&Date.parse(v.recruitOpensAt)>Date.parse(v.recruitClosesAt))

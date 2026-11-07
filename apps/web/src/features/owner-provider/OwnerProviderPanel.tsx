@@ -12,6 +12,8 @@ export interface OwnerProviderPort {
   read(jobId:string,taskPath:AiTaskPath,signal?:AbortSignal):Promise<ProviderStoredJob>;
 }
 type Choice={entry:ApprovedProviderInput;taskPath:AiTaskPath};
+type RecentJob={jobId:string;taskPath:AiTaskPath;operation:string;asOf:string;
+  state:ProviderAccepted['state'];provenance:'LIVE'|'CANDIDATE_CACHE'|null};
 const keyFor=(item:ApprovedProviderInput)=>item.operation+':'+item.inputRef;
 function operationPath(item:ApprovedProviderInput):AiTaskPath|null{
   for(const key of Object.keys(AI_TASK_PATHS) as AiTaskPath[])
@@ -34,6 +36,9 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const [confirmation,setConfirmation]=useState(false);
   const [accepted,setAccepted]=useState<ProviderAccepted|null>(null);
   const [stored,setStored]=useState<ProviderStoredJob|null>(null);
+  // Only job identifiers issued during this verified owner session. Never persist input text,
+  // student identity, provider candidate bytes or keys in browser storage.
+  const [recentJobs,setRecentJobs]=useState<RecentJob[]>([]);
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
   const idempotency=useRef<string|null>(null);
@@ -43,7 +48,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   useEffect(()=>{
     selectionVersion.current++;
     setItems(null);setSelection('');setConfirmation(false);
-    setAccepted(null);setStored(null);setNotice('');idempotency.current=null;
+    setAccepted(null);setStored(null);setRecentJobs([]);setNotice('');idempotency.current=null;
     if(session.status!=='READY')return;
     let active=true;
     void port.session.runLatest('approved-ai-inputs',signal=>port.list(signal)).then(result=>{
@@ -70,6 +75,10 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
       const response=await port.session.runMutation(signal=>port.submit(selected,taskPath,key,signal));
       if(!response||port.session.getState().status!=='READY')return;
       setAccepted(response);
+      setRecentJobs(prev=>[{jobId:response.jobId,taskPath,operation:selected.operation,
+        asOf:selected.asOf,state:response.state,
+        provenance:response.state==='NEEDS_REVIEW'?response.provenance:null},
+        ...prev.filter(j=>j.jobId!==response.jobId)].slice(0,5));
       if(response.state==='PENDING'){
         setNotice('아직 결과가 정산되지 않았습니다. 동일 요청 ID로만 수동 재확인할 수 있습니다.');
       }else{
@@ -121,13 +130,31 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         onClick={()=>{selectionVersion.current++;idempotency.current=null;setAccepted(null);setStored(null);setConfirmation(false);
           setNotice('새 실행은 다시 확인해야 합니다.');}}>새 실행 준비</button>}
     </div>}
+    {recentJobs.length>0&&<section aria-label="이번 인증 세션에서 발급받은 AI 실행 ID">
+      <h2>이번 세션의 직접 실행 기록 (최대 5건)</h2>
+      <p role="note">현재 세션에서 직접 요청한 서버 발행 작업 ID만 표시합니다. 영구 실행 내역 전체 목록, 과금 영수증 원장, 실측 비용은 아닙니다. 로그아웃·계정 전환 시 목록이 삭제됩니다.</p>
+      <ul>{recentJobs.map(job=><li key={job.jobId}>
+        <p>작업 ID {job.jobId} · 모델 {job.operation} · 요청 기준 {job.asOf} · 상태 {job.state}
+          {job.provenance==='LIVE'?' · 실제 실행 확인':job.provenance==='CANDIDATE_CACHE'?' · 이전 결과 재사용':' · 실행 결과 미확정'}</p>
+        {job.state==='NEEDS_REVIEW'&&<button type="button" disabled={busy}
+          onClick={()=>{setStored(null);void read(job.jobId,job.taskPath);}}>현재 권한으로 이 결과 수동 재조회</button>}
+      </li>)}</ul>
+    </section>}
     {accepted&&<section aria-label="Provider 작업 상태">
+      <h2>AI 실행 모드·근거 확인</h2>
+      <p role="note">{accepted.state==='PENDING'
+        ? '실행 결과 대기 중 · 신규 실행이 완료됐다는 영수증이 아직 없습니다.'
+        : accepted.provenance==='LIVE'
+          ? 'LIVE_PROVIDER_RUN · 서버가 실제 공급자 처리를 확인한 작업입니다. 독립 사람 검토 전 후보입니다.'
+          : 'CACHED_PREVIOUS_RUN · 과거에 처리한 후보의 캐시입니다. 새로운 호출·과금이 아닙니다.'}</p>
       <p>작업 ID: {accepted.jobId}</p>
       <p>상태: {accepted.state} {accepted.state==='NEEDS_REVIEW'?(' · '+accepted.provenance):' · 아직 결과 없음'}</p>
     </section>}
     {stored&&<section aria-label="현재 권한으로 재검증된 AI 후보">
       <h2>독립 사람 검토 필요 · NEEDS_REVIEW</h2>
       <p>원장 상태: {stored.billing} · 출처: {stored.provenance}</p>
+      <p role="note">CACHED_PREVIOUS_RUN · 현재 권한으로 서버에서 재조회한 후보이며 이 조회를 신규 공급자 실행으로 세지 않습니다. SYNTHETIC 예시는 이 BETA 화면에서 실호출처럼 표시하지 않습니다.</p>
+      <p>측정된 토큰 사용량: 입력 {stored.candidate.usage.promptTokens} / 출력 {stored.candidate.usage.completionTokens} / 합계 {stored.candidate.usage.totalTokens}. 실제 원화 비용·지연은 이 응답에 없으므로 별도 측정 전에는 표시하지 않습니다.</p>
       {stored.candidate.result&&<AiTaskResultView result={stored.candidate.result}/>}
       <ul>{stored.candidate.citations.map((c,i)=><li key={c.sourceToken+':'+c.paragraphId+':'+i}>
         <strong>근거 {i+1} · {c.sourceToken} / {c.paragraphId}</strong> · {c.quote}
