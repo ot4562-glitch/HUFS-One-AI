@@ -69,13 +69,19 @@ export function upcomingDeadlines(cards: readonly FeedCardView[], notices: reado
 }
 
 /**
- * #298: the one date the listed D-days count from. Omitted when the list is empty or when its
- * opportunity and notice items count from different dates, so a single line is never wrong.
+ * #318: the basis lines for the listed D-days. One line when every listed item counts from the same
+ * date; otherwise one line per kind (공고, 공지), labelled. Only kinds actually listed are named, so a
+ * section the profile does not share never shows its date.
  */
-export function deadlineBasisText(items: ReturnType<typeof upcomingDeadlines>, basis: DemoScreenView['ddayBasis']): string | null {
-  const texts = new Set(items.map(i => i.kind === '공고' ? basis.feed : basis.notices));
-  const [only] = texts;
-  return texts.size === 1 && only ? only : null;
+export function deadlineBasisText(items: ReturnType<typeof upcomingDeadlines>, basis: DemoScreenView['ddayBasis']): string[] {
+  const byKind = new Map<string, string>();
+  for (const i of items) {
+    const text = i.kind === '공고' ? basis.feed : basis.notices;
+    if (text) byKind.set(i.kind, text);
+  }
+  const texts = new Set(byKind.values());
+  if (texts.size <= 1) return [...texts];
+  return [...byKind].map(([kind, text]) => `${kind} ${text}`);
 }
 
 export function DeadlineRow({item, navigate}: {item: ReturnType<typeof upcomingDeadlines>[number]; navigate: Nav}) {

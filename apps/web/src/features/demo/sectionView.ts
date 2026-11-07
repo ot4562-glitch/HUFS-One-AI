@@ -45,7 +45,7 @@ export interface DemoScreenView {
   readonly academics: SectionView<AcademicSummary>;
   readonly forecast: SectionView<ForecastSummary>;
   /**
-   * #298: the date D-day counts from, per source (feed and notices each carry their own asOf).
+   * #318: the date D-day counts from, per source (feed and notices each carry their own asOf).
    * Null when that section is not shown or its asOf is unreadable.
    */
   readonly ddayBasis: {readonly feed: string | null; readonly notices: string | null};
@@ -112,7 +112,6 @@ export function buildDemoScreenView(snapshot: DemoSnapshot, allowedSections: rea
     ...(snapshot.datasetMode === 'SYNTHETIC' ? ['합성 자료'] : snapshot.datasetMode === 'MIXED' ? ['실제+합성 혼합'] : []),
     ...(PROVENANCE_BADGE[snapshot.aiProvenance] ? [PROVENANCE_BADGE[snapshot.aiProvenance] as string] : []),
   ];
-  const synthetic = snapshot.datasetMode !== 'REAL_CONSENTED';
   return {
     snapshotBadges,
     feed: allow.has('FEED')
@@ -122,8 +121,8 @@ export function buildDemoScreenView(snapshot: DemoSnapshot, allowedSections: rea
     academics: gated<AcademicSummary>(allow.has('ACADEMICS'), snapshot.academics),
     forecast: gated<ForecastSummary>(allow.has('FORECAST'), snapshot.forecast),
     ddayBasis: {
-      feed: allow.has('FEED') ? ddayBasisText(snapshot.feed.asOf, synthetic) : null,
-      notices: allow.has('NOTICES') ? ddayBasisText(snapshot.notices.asOf, synthetic) : null,
+      feed: allow.has('FEED') ? ddayBasisText(snapshot.feed.asOf, snapshot.datasetMode) : null,
+      notices: allow.has('NOTICES') ? ddayBasisText(snapshot.notices.asOf, snapshot.datasetMode) : null,
     },
   };
 }

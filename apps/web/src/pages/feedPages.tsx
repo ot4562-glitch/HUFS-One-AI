@@ -50,7 +50,7 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
           <Module title="다가오는 확정 마감">
             {deadlines.length ? <ul className="mlist">{deadlines.map(d => <DeadlineRow key={d.key} item={d} navigate={navigate} />)}</ul>
               : <p className="muted">확정된 마감이 없어요.</p>}
-            {basis && <p className="muted mnote">{basis}</p>}
+            {basis.map(t => <p key={t} className="muted mnote">{t}</p>)}
           </Module>
           {feed ? (
             <Module title="나에게 맞춘 공고" wide action={<InAppLink to="/opportunities" navigate={navigate}>더보기</InAppLink>}>

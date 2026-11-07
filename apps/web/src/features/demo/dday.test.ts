@@ -87,36 +87,51 @@ describe('#79 where D-day appears', () => {
   });
 });
 
-describe('#298 D-day basis date: a fixed asOf is never presented as today', () => {
-  it('names the Seoul date of asOf; synthetic says it is not today, real only that it may differ', () => {
-    expect(ddayBasisText(AS_OF, true)).toBe('D-day는 시연 자료의 기준일 2026년 11월 20일부터 셉니다. 실제 오늘 날짜가 아니에요.');
-    expect(ddayBasisText(AS_OF, false)).toBe('D-day는 자료 기준일 2026년 11월 20일부터 셉니다. 오늘 날짜와 다를 수 있어요.');
-    // 15:30 UTC is already 00:30 the next day in Seoul.
-    expect(ddayBasisText('2026-11-20T15:30:00.000Z', true)).toContain('2026년 11월 21일');
-    expect(ddayBasisText('not-a-date', true)).toBeNull();
+describe('#318 D-day basis date: names where D-day is computed from, never claims it is today', () => {
+  it('names the Seoul date of asOf as the source, by dataset mode', () => {
+    expect(ddayBasisText(AS_OF, 'SYNTHETIC')).toBe('D-day는 브라우저의 오늘이 아니라 시연 자료의 기준일 2026년 11월 20일로 계산했어요.');
+    expect(ddayBasisText(AS_OF, 'MIXED')).toBe('D-day는 브라우저의 오늘이 아니라 자료의 기준일 2026년 11월 20일로 계산했어요.');
+    expect(ddayBasisText(AS_OF, 'REAL_CONSENTED')).toBe('D-day는 브라우저의 오늘이 아니라 자료의 기준일 2026년 11월 20일로 계산했어요.');
+    // 15:30 UTC is already 00:30 the next day in Seoul; 14:59 UTC is still the same day.
+    expect(ddayBasisText('2026-11-20T15:30:00.000Z', 'SYNTHETIC')).toContain('2026년 11월 21일');
+    expect(ddayBasisText('2026-11-20T14:59:59.999Z', 'SYNTHETIC')).toContain('2026년 11월 20일');
+    expect(ddayBasisText('not-a-date', 'SYNTHETIC')).toBeNull();
   });
 
-  it('screen view: per-source basis, null for a section the profile does not share', async () => {
+  it('never asserts the basis is or is not today, so an asOf that equals the real date stays true', () => {
+    for (const mode of ['SYNTHETIC', 'MIXED', 'REAL_CONSENTED'] as const) {
+      const text = ddayBasisText(new Date().toISOString(), mode) ?? '';
+      expect(text).not.toMatch(/아니에요|오늘 날짜(가|와)|오늘입니다/);
+      expect(text).toContain('브라우저의 오늘이 아니라');
+    }
+  });
+
+  it('screen view: per-source basis by snapshot mode, null for a section the profile does not share', async () => {
     const client = new SyntheticDemoClient({delayMs: 0});
     const ctx = await client.createContext('S01', 'RUN');
     const snapshot = await client.getSnapshot(ctx.contextId) as DemoSnapshot;
     const both = buildDemoScreenView(snapshot, ['FEED', 'NOTICES']);
-    expect(both.ddayBasis.feed).toContain('실제 오늘 날짜가 아니에요');
-    expect(both.ddayBasis.notices).toContain('실제 오늘 날짜가 아니에요');
+    expect(both.ddayBasis.feed).toContain('시연 자료의 기준일');
+    expect(both.ddayBasis.notices).toContain('시연 자료의 기준일');
+    const mixed = buildDemoScreenView({...snapshot, datasetMode: 'MIXED'}, ['FEED', 'NOTICES']);
+    expect(mixed.ddayBasis.feed).toMatch(/^D-day는 브라우저의 오늘이 아니라 자료의 기준일 /);
     expect(buildDemoScreenView(snapshot, ['NOTICES']).ddayBasis.feed).toBeNull();
     expect(buildDemoScreenView(snapshot, ['FEED']).ddayBasis.notices).toBeNull();
   });
 
-  it('home deadlines: one line only when every listed D-day counts from the same date', () => {
+  it('home deadlines: one line for one date; a labelled line per kind when 공고 and 공지 differ', () => {
     const d = {text: 'D-4', spoken: '4일 남음', days: 4};
     const opp = {key: 'o1', kind: '공고', title: 't', path: '/opportunities/x', dday: d};
     const notice = {key: 'n1', kind: '공지', title: 't', path: '/notices/x', dday: d};
-    const a = ddayBasisText(AS_OF, true);
-    const b = ddayBasisText('2026-11-22T00:00:00.000Z', true);
-    expect(deadlineBasisText([opp, notice], {feed: a, notices: a})).toBe(a);
-    expect(deadlineBasisText([opp, notice], {feed: a, notices: b})).toBeNull();
-    expect(deadlineBasisText([notice], {feed: a, notices: b})).toBe(b);
-    expect(deadlineBasisText([opp], {feed: null, notices: a})).toBeNull();
-    expect(deadlineBasisText([], {feed: a, notices: a})).toBeNull();
+    const a = ddayBasisText(AS_OF, 'SYNTHETIC');
+    const b = ddayBasisText('2026-11-22T00:00:00.000Z', 'SYNTHETIC');
+    expect(deadlineBasisText([opp, notice], {feed: a, notices: a})).toEqual([a]);
+    expect(deadlineBasisText([notice, opp], {feed: a, notices: b})).toEqual([`공지 ${b}`, `공고 ${a}`]);
+    // Different instants on the same Seoul date read as one line.
+    expect(deadlineBasisText([opp, notice], {feed: a, notices: ddayBasisText('2026-11-20T14:00:00.000Z', 'SYNTHETIC')})).toEqual([a]);
+    // Only listed kinds are named: an unlisted (or unshared) section's date never appears.
+    expect(deadlineBasisText([notice], {feed: a, notices: b})).toEqual([b]);
+    expect(deadlineBasisText([opp], {feed: null, notices: a})).toEqual([]);
+    expect(deadlineBasisText([], {feed: a, notices: a})).toEqual([]);
   });
 });
