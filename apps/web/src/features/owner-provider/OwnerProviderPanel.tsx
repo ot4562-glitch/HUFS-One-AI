@@ -41,6 +41,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const [recentJobs,setRecentJobs]=useState<RecentJob[]>([]);
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
+  const [manualJobId,setManualJobId]=useState('');
+  const [manualTask,setManualTask]=useState<AiTaskPath>('experience-skills');
   const idempotency=useRef<string|null>(null);
   const selectionVersion=useRef(0);
 
@@ -48,7 +50,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   useEffect(()=>{
     selectionVersion.current++;
     setItems(null);setSelection('');setConfirmation(false);
-    setAccepted(null);setStored(null);setRecentJobs([]);setNotice('');idempotency.current=null;
+    setAccepted(null);setStored(null);setRecentJobs([]);setNotice('');
+    setManualJobId('');setManualTask('experience-skills');idempotency.current=null;
     if(session.status!=='READY')return;
     let active=true;
     void port.session.runLatest('approved-ai-inputs',signal=>port.list(signal)).then(result=>{
@@ -60,6 +63,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const selected=items?.find(i=>keyFor(i)===selection);
   const taskPath=selected?operationPath(selected):null;
   const canSubmit=!!selected&&!!taskPath&&Date.parse(selected.expiresAt)>Date.now();
+  const validManualJob=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(manualJobId.trim());
 
   const read=async(jobId:string,path:AiTaskPath)=>{
     const version=selectionVersion.current;
@@ -130,6 +134,19 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         onClick={()=>{selectionVersion.current++;idempotency.current=null;setAccepted(null);setStored(null);setConfirmation(false);
           setNotice('새 실행은 다시 확인해야 합니다.');}}>새 실행 준비</button>}
     </div>}
+    <section aria-label="이전 서버 발급 작업 다시 확인" className="local-account__panel">
+      <h2>이전 발급 작업 직접 조회</h2>
+      <p role="note">내가 받은 작업 UUID를 직접 입력하여 현재 권한으로 서버에서 다시 확인합니다. 같은 인증 세션·유효한 입력·미철회 동의·보존 기간을 모두 통과한 작업만 읽습니다. 신규 AI 호출·재과금은 하지 않습니다. ID는 브라우저 저장소에 보관하지 않습니다.</p>
+      <label htmlFor="owner-provider-existing-job">내가 발급받은 작업 ID</label>
+      <input id="owner-provider-existing-job" type="text" autoComplete="off" spellCheck={false} maxLength={36}
+        value={manualJobId} onChange={e=>setManualJobId(e.target.value)} />
+      <label htmlFor="owner-provider-existing-task">그때 실행한 작업 종류</label>
+      <select id="owner-provider-existing-task" value={manualTask} onChange={e=>setManualTask(e.target.value as AiTaskPath)}>
+        {(Object.keys(AI_TASK_PATHS) as AiTaskPath[]).map(path=><option key={path} value={path}>{AI_TASK_PATHS[path]}</option>)}
+      </select>
+      <button type="button" disabled={busy||!validManualJob}
+        onClick={()=>{setStored(null);void read(manualJobId.trim(),manualTask);}}>이전 후보 ID 수동 재조회</button>
+    </section>
     {recentJobs.length>0&&<section aria-label="이번 인증 세션에서 발급받은 AI 실행 ID">
       <h2>이번 세션의 직접 실행 기록 (최대 5건)</h2>
       <p role="note">현재 세션에서 직접 요청한 서버 발행 작업 ID만 표시합니다. 영구 실행 내역 전체 목록, 과금 영수증 원장, 실측 비용은 아닙니다. 로그아웃·계정 전환 시 목록이 삭제됩니다.</p>

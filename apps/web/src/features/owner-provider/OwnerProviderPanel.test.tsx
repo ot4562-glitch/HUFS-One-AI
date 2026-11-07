@@ -122,6 +122,23 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     expect(f.read).toHaveBeenCalledTimes(1);
   });
 
+  it('recalls a server-issued job by explicit UUID without any new paid submission',async()=>{
+    const f=fixture('BETA',[]);
+    render(<OwnerProviderPanel port={f.port}/>);
+    await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);
+    const button=screen.getByRole('button',{name:'이전 후보 ID 수동 재조회'}) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText('내가 발급받은 작업 ID'),{target:{value:jobId}});
+    fireEvent.change(screen.getByLabelText('그때 실행한 작업 종류'),{target:{value:'opportunity-terms'}});
+    expect(button.disabled).toBe(false);
+    fireEvent.click(button);
+    await waitFor(()=>expect(f.read).toHaveBeenCalledWith(jobId,'opportunity-terms',expect.any(AbortSignal)));
+    expect(f.submit).not.toHaveBeenCalled();
+    await screen.findByText(/Synthetic approved notice/);
+    await act(async()=>{f.session.invalidateLocalSession();});
+    expect(screen.queryByText(/Synthetic approved notice/)).toBeNull();
+  });
+
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);

@@ -54,6 +54,8 @@ export function buildCareerTimeline(raw:unknown):CareerTimelineEntry[] {
       ...(record.value.startedOn?{startedOn:record.value.startedOn}:{}),
       ...(record.value.endedOn?{endedOn:record.value.endedOn}:{}),
       ...(record.value.sourceOpportunityId?{sourceOpportunityId:record.value.sourceOpportunityId}:{}),
+      ...(record.value.achievement?{achievement:record.value.achievement}:{}),
+      ...(record.value.referenceUrl?{referenceUrl:record.value.referenceUrl}:{}),
       updatedAt:record.updatedAt,dataMode:record.value.dataMode,evidence,
       certification:'NOT_INSTITUTION_VERIFIED',
     })];
