@@ -261,8 +261,10 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     let resolveReceipt!:(value:unknown)=>void;
     const getReceipt=vi.fn(()=>new Promise<unknown>(resolve=>{resolveReceipt=resolve;}));
     f.port.getReceipt=getReceipt;
-    const original=await f.read(jobId,'opportunity-terms');
-    f.read.mockImplementation(async(id:string)=>({...original,jobId:id}));
+    const original:ProviderStoredJob={jobId,state:'NEEDS_REVIEW',billing:'SETTLED',
+      provenance:'CANDIDATE_CACHE',candidate:{...candidate,citations:[...candidate.citations],
+        objectTokens:[],usage:{...candidate.usage}}};
+    f.read.mockImplementation(async(...args:unknown[])=>({...original,jobId:String(args[0])}));
     render(<OwnerProviderPanel port={f.port}/>);
     fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
     fireEvent.click(screen.getByRole('checkbox'));
