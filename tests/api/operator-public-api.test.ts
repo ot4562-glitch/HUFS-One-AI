@@ -19,8 +19,8 @@ const saramin={
 function fixture(payload:unknown=saramin,provider:OperatorPublicApiDiscoveryInput['scopes'][number]=scope){
   let permissionRevoked=false,remaining=30,reply=payload,revision='rights-v1';
   const resolveAddresses=vi.fn(async()=>['8.8.8.8']);
-  const requestPinned=vi.fn(async()=>new Response(JSON.stringify(reply),
-    {status:200,headers:{'content-type':'application/json'}}));
+  const requestPinned=vi.fn(async(_request:{url:URL;address:string;serverName:string;init:RequestInit})=>
+    new Response(JSON.stringify(reply),{status:200,headers:{'content-type':'application/json'}}));
   const resolveRights=vi.fn(async()=>({
     provider:provider.provider,permissionRef:provider.permissionRef,
     policyVersion:revision,status:permissionRevoked?'REVOKED' as const:'APPROVED' as const,
@@ -93,15 +93,8 @@ describe('Korean API directory: rights-gated server-only provider connection',()
   });
   it('rejects revoked or changed grants immediately before and after outbound IO',async()=>{
     const first=fixture();
-    first.resolveRights.mockImplementationOnce(async()=>({
-      provider:'SARAMIN_JOB' as const,permissionRef:scope.permissionRef,policyVersion:'rights-v1',
-      status:'APPROVED' as const,reviewedAt:'2026-11-01T00:00:00Z',
-      allowedPurposes:new Set(['LOOKUP_METADATA','DISPLAY_SOURCE_LINK'] as const),
-    })).mockImplementationOnce(async()=>({
-      provider:'SARAMIN_JOB' as const,permissionRef:scope.permissionRef,policyVersion:'rights-v2',
-      status:'APPROVED' as const,reviewedAt:'2026-11-01T00:00:00Z',
-      allowedPurposes:new Set(['LOOKUP_METADATA','DISPLAY_SOURCE_LINK'] as const),
-    }));
+    // A quota reservation raced an independent operator rights-version change.
+    first.reserveCall.mockImplementation(async()=>{first.change();return true;});
     await expect(first.service.lookup({provider:'SARAMIN_JOB',topic:'DATA_ANALYTICS'})).rejects.toThrow();
     expect(first.requestPinned).not.toHaveBeenCalled();
     const second=fixture();
