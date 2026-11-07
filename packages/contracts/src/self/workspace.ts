@@ -11,6 +11,8 @@ const Experience=z.strictObject({
   role:z.string().trim().max(80).optional(),
   startedOn:z.iso.date().optional(),endedOn:z.iso.date().optional(),
   sourceOpportunityId:Id.optional(),
+  // Optional, backwards compatible categories for the owner-only career timeline.
+  category:z.enum(['PROJECT','CLUB','VOLUNTEERING','WORK','INTERNSHIP','CONTEST','CERTIFICATE','EDUCATION','OTHER']).optional(),
 }).superRefine((x,ctx)=>{
   if(x.startedOn&&x.endedOn&&x.startedOn>x.endedOn)
     ctx.addIssue({code:'custom',message:'Experience dates out of order'});

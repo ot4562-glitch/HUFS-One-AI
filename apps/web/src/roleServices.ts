@@ -53,6 +53,15 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
   const ownerSession = new OwnerSessionController(api);
   return {
     ownerExperience: {session: ownerSession, skills: ownerExperienceSkillPort(api.owner)},
+    ownerCareer: {
+      session:ownerSession,
+      getProfile:signal=>api.owner.getProfile(signal),
+      saveProfile:(change,signal)=>api.owner.updateProfile(change,signal),
+      getPortfolio:(query,signal)=>api.owner.getExperiencePortfolio(query,signal),
+      create:(input,signal)=>api.owner.createWorkspace(input,signal),
+      update:(id,input,signal)=>api.owner.updateWorkspace(id,input,signal),
+      remove:(id,version,signal)=>api.owner.deleteWorkspace('EXPERIENCE',id,version,signal),
+    },
     ownerClubs:createOwnerClubPort(api.owner,ownerSession),
     overlay: {
       get: (ctx, signal) => api.getDemoOverlay(ctx, signal),

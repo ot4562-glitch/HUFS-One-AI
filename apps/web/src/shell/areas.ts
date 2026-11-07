@@ -33,7 +33,7 @@ export const AREAS: readonly Area[] = [
   {id: 'mentoring', label: '현직자멘토링', summary: '현직자 멘토링 소식을 확인하는 영역입니다.',
     ours: [], observed: ['멘토링 후기', '멘토링 공지']},
   {id: 'career', label: '전공·진로설계', summary: '나의 경험을 기록하고 진로 준비를 정리합니다.',
-    ours: [{route: '/experience', label: '나의 경험'}],
+    ours: [{route: '/experience', label: '나의 경험'}, {route: '/career', label: '커리어 포트폴리오'}],
     observed: ['나의진로정보', '진로 로드맵', '로드맵 성취도', '학과 전공·진로 로드맵', '자기소개서', 'MY커리어', '진로취업도서관리']},
   {id: 'counseling', label: '통합상담', summary: '학업·진로·심리 상담 안내 영역입니다.',
     ours: [], observed: ['상담신청', '상담참여이력', 'International Students', '国际学生咨询', '신입생세미나']},

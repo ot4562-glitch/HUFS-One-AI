@@ -29,6 +29,13 @@ export const EligibilityConditionSchema = z.strictObject({
 export const OpportunitySchema = z.strictObject({
   id:z.string().min(1),version:z.string().min(1),sourceSnapshotId:z.string().min(1),
   title:z.string().min(1),organization:z.string().min(1),
+  // #317 separate from source/application URL; HTTPS only, never inferred from organization name.
+  organizationHomepage:z.url().refine(value=>{
+    try{const u=new URL(value);return u.protocol==='https:'&&u.username===''&&u.password===''&&u.hostname.length>3
+      &&!['localhost','127.0.0.1','0.0.0.0','::1'].includes(u.hostname)
+      &&!u.hostname.endsWith('.localhost')&&!u.hostname.endsWith('.internal');}
+    catch{return false;}
+  }).optional(),
   kind:z.enum(['JOB','INTERNSHIP','CONTEST','EXTRACURRICULAR','SCHOLARSHIP']),
   /** Only present when source evidence distinguishes campus vs external activities. */
   programScope:z.enum(['ON_CAMPUS','OFF_CAMPUS','UNKNOWN']).optional(),
