@@ -145,7 +145,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         {(Object.keys(AI_TASK_PATHS) as AiTaskPath[]).map(path=><option key={path} value={path}>{AI_TASK_PATHS[path]}</option>)}
       </select>
       <button type="button" disabled={busy||!validManualJob}
-        onClick={()=>{setStored(null);void read(manualJobId.trim(),manualTask);}}>저장된 후보 수동 재조회 (실행 없음)</button>
+        onClick={()=>{setStored(null);void read(manualJobId.trim(),manualTask);}}>이전 후보 ID 수동 재조회</button>
     </section>
     {recentJobs.length>0&&<section aria-label="이번 인증 세션에서 발급받은 AI 실행 ID">
       <h2>이번 세션의 직접 실행 기록 (최대 5건)</h2>
