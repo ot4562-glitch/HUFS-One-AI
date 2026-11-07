@@ -1,6 +1,6 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
 import {TOPIC_CODES,type TopicCode} from '@hufs-one/contracts';
-import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent} from '@hufs-one/contracts';
+import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent,BookmarkStage,BookmarkOutcome} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
 import {careerSavedItem} from '../../../../../packages/core/src/career/bookmarks.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
@@ -9,6 +9,7 @@ import {attachCrossTabSessionClosure,SESSION_CLOSE_CHANNEL} from '../../app/sess
 import {InAppLink} from '../../shell/AppShell.js';
 import {TOPIC_TEXT} from '../demo/topicText.js';
 import {assertCareerConsentCurrent,requireCareerConsent} from './careerConsent.js';
+import {bookmarkProgressInput,nextBookmarkStage,STAGE_NAMES} from './bookmarkProgress.js';
 
 export interface OwnerCareerPort {
   readonly session:OwnerSessionController;
@@ -20,7 +21,8 @@ export interface OwnerCareerPort {
   update(itemId:string,input:{expectedVersion:number;value:OwnerWorkspaceValue},signal?:AbortSignal):Promise<unknown>;
   remove(id:string,version:number,signal?:AbortSignal):Promise<unknown>;
   getOpportunity(id:string,signal?:AbortSignal):Promise<OpportunityCatalogDetail>;
-  getBookmarks(signal?:AbortSignal):Promise<{items:OwnerWorkspaceRecord[];nextCursor:string|null}>;
+  getBookmarks(query?:{afterId?:string;limit?:number},signal?:AbortSignal):Promise<{items:OwnerWorkspaceRecord[];nextCursor:string|null}>;
+  advanceBookmarkStage(record:OwnerWorkspaceRecord,change:{stage:BookmarkStage;outcome?:BookmarkOutcome},signal?:AbortSignal):Promise<unknown>;
   getOwnerFeed(signal?:AbortSignal):Promise<OwnerFeedResponse>;
   explainOpportunity(id:string,request:{asOf:string;sourceRevisionId:string;rankConfigVersion:string;expectedFeedVersion?:string},signal?:AbortSignal):Promise<OpportunityExplanationResponse>;
 }
@@ -74,6 +76,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
   const session=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [screen,setScreen]=useState<Screen|null>(null);
   const [cursor,setCursor]=useState<string|undefined>();
+  const [bookmarkCursor,setBookmarkCursor]=useState<string|undefined>();
+  const [outcomes,setOutcomes]=useState<Record<string,BookmarkOutcome['result']|''>>({});
+  const [notice,setNotice]=useState('');
   const [rev,setRev]=useState(0);
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
@@ -98,21 +103,28 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     void port.session.runLatest('owner-career-page',async signal=>{
       const before=requireCareerConsent((await port.getConsents(signal)).consents);
       const [profile,portfolio,bookmarks]=await Promise.all([port.getProfile(signal),
-        port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal),port.getBookmarks(signal)]);
+        port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal),
+        port.getBookmarks(bookmarkCursor?{limit:20,afterId:bookmarkCursor}:{limit:20},signal)]);
       assertCareerConsentCurrent(before,(await port.getConsents(signal)).consents,portfolio.portfolio.consentVersion);
       return {profile:profile.profile,portfolio,bookmarks};
-    }).then(value=>{if(active&&value&&port.session.getState().status==='READY')setScreen(value);})
-      .catch(()=>{if(active)setError('포트폴리오를 조회할 수 없습니다. 현재 본인 권한·동의를 확인해 주세요.');});
+    }).then(value=>{
+      if(!active)return;
+      if(value&&port.session.getState().status==='READY')setScreen(value);
+      else if(port.session.getState().status==='READY')setError('현재 본인 기록을 조회할 수 없습니다. 다시 시도하거나 권한·동의를 확인해 주세요.');
+    }).catch(()=>{if(active)setError('포트폴리오를 조회할 수 없습니다. 현재 본인 권한·동의를 확인해 주세요.');});
     return ()=>{active=false;};
-  },[port,session.status,session.epoch,cursor,rev]);
+  },[port,session.status,session.epoch,cursor,bookmarkCursor,rev]);
   const execute=async(run:(signal:AbortSignal)=>Promise<unknown>)=>{
     if(busy||session.status!=='READY')return;
-    setBusy(true);setError('');
+    setBusy(true);setError('');setNotice('');
     try{
       const result=await port.session.runMutation(run);
       if(result&&port.session.getState().status==='READY'){
         setEditing(null);setDeleteId(null);setTitle('');setSummary('');setRole('');setStartedOn('');setEndedOn('');
-        setCursor(undefined);setRev(x=>x+1);
+        setCursor(undefined);setBookmarkCursor(undefined);setRev(x=>x+1);
+        setNotice('변경을 저장했습니다. 현재 본인 권한과 최신 판본으로 다시 조회했습니다.');
+      }else if(port.session.getState().status==='READY'){
+        setError('변경을 확인할 수 없었습니다. 중복 요청 없이 최신 상태를 조회해 주세요.');
       }
     }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');}
     finally{setBusy(false);}
@@ -125,13 +137,15 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     const name=title.trim();
     if(!name)return;
     if(startedOn&&endedOn&&startedOn>endedOn){setError('활동 종료일이 시작일보다 빠릅니다.');return;}
+    const record=screen?.portfolio.items.find(x=>x.itemId===editing);
     const value:OwnerWorkspaceValue={
       kind:'EXPERIENCE',dataMode:'OWNER_CONSENTED',state:'SELF_REPORTED',
       title:name,summary:summary.trim(),category,
+      ...(record?.value.kind==='EXPERIENCE'&&record.value.sourceOpportunityId
+        ?{sourceOpportunityId:record.value.sourceOpportunityId}:{}),
       ...(role.trim()?{role:role.trim()}:{}),
       ...(startedOn?{startedOn}:{}),...(endedOn?{endedOn}:{}),
     };
-    const record=screen?.portfolio.items.find(x=>x.itemId===editing);
     void execute(async signal=>{
       if(record)await port.update(record.itemId,{expectedVersion:record.version,value},signal);
       else await port.create({itemId:'career-'+crypto.randomUUID().replaceAll('-',''),value},signal);
@@ -139,7 +153,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">본인 계정과 동의를 확인하고 있습니다.</p>;
   if(session.status!=='READY')return <p role="alert">현재 사용자 세션을 확인할 수 없습니다. 이전 프로필과 타임라인은 표시하지 않습니다.</p>;
-  if(!screen)return <p aria-busy={!error}>{error||'본인 비공개 진로 자료를 불러오는 중입니다.'}</p>;
+  if(!screen)return error
+    ? <section role="alert"><p>{error}</p><button type="button" onClick={()=>setRev(n=>n+1)}>다시 조회</button></section>
+    : <p aria-busy="true">본인 비공개 진로 자료를 불러오는 중입니다.</p>;
 
   const roadmap=screen.profile?buildCareerRoadmap({profile:screen.profile,portfolio:screen.portfolio}):null;
   const timeline=buildCareerTimeline(screen.portfolio);
@@ -148,6 +164,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
   return <section aria-label="본인 전용 커리어 포트폴리오">
     <p role="note">본인만 볼 수 있는 자기보고 활동입니다. AI 제안·본인 승인과 학교의 공식 경력/자격 인증은 다릅니다. 목록은 최대 20건씩 조회됩니다.</p>
     {error&&<p role="alert">{error}</p>}
+    {notice&&<p role="status">{notice}</p>}
     <Form key={screen.profile?.version??0} data={screen.profile} onSave={saveProfile} busy={busy}/>
     <section aria-labelledby="career-roadmap-heading">
       <h2 id="career-roadmap-heading">나의 관심·진로 탐색 로드맵</h2>
@@ -208,14 +225,35 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     <section aria-labelledby="career-saved-heading">
       <h2 id="career-saved-heading">연결된 저장·지원 기록 (본인 작성)</h2>
       <p>기존 보관함 기록을 읽기 전용으로 보여 줍니다. 실제 모집처로 지원서를 발송하거나 합격을 확인한 기록이 아닙니다.</p>
-      {privateBookmarks.length===0?<p>아직 본인이 기록한 저장·지원 준비 기회가 없습니다. 합성 시연 기록은 제외합니다.</p>
-        :<ul>{privateBookmarks.map(raw=>{const item=careerSavedItem(raw);return <li key={item.itemId}>
+      {privateBookmarks.length===0?<p>이 페이지에는 본인이 기록한 기회가 없습니다. 합성 기록은 제외합니다.</p>
+        :<ul>{privateBookmarks.map(raw=>{const item=careerSavedItem(raw);const next=nextBookmarkStage(raw);return <li key={item.itemId}>
           <InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.opportunityId)} navigate={navigate}>
             기회 {item.opportunityId} (현재 출처·권한 재확인)
           </InAppLink> — {item.label}{item.synthetic?' · 합성 시연 기록':''}
           {item.outcome&&<span> · {item.outcome}</span>}
+          {next&&<div>
+            <p>다음 본인 기록 단계: {STAGE_NAMES[next]}. 실제 접수·결과는 외부 확인 없이 확정하지 않습니다.</p>
+            {next==='RESULT_RECORDED'&&<label>본인이 직접 기록할 결과 (공식 확인 전)
+              <select aria-label={'본인 결과 '+raw.itemId} value={outcomes[raw.itemId]??''} disabled={busy}
+                onChange={e=>setOutcomes(prev=>({...prev,[raw.itemId]:e.target.value as BookmarkOutcome['result']|''}))}>
+                <option value="">결과를 선택하세요</option>
+                <option value="ACCEPTED">합격이라고 직접 기록</option><option value="NOT_ACCEPTED">불합격이라고 직접 기록</option>
+                <option value="WAITLISTED">대기라고 직접 기록</option><option value="WITHDRAWN">철회했다고 직접 기록</option>
+                <option value="OTHER">기타 직접 기록</option>
+              </select>
+            </label>}
+            <button type="button" disabled={busy||(next==='RESULT_RECORDED'&&!outcomes[raw.itemId])}
+              onClick={()=>{
+                try{const change=bookmarkProgressInput(raw,outcomes[raw.itemId]||undefined);
+                  void execute(signal=>port.advanceBookmarkStage(raw,change,signal));
+                }catch{setError('단계를 변경할 수 없습니다. 최신 기록을 다시 확인해 주세요.');}
+              }}>다음 단계로 기록</button>
+          </div>}
         </li>;})}</ul>}
-      {screen.bookmarks.nextCursor&&<p role="note">보관함에 다음 페이지가 있습니다. 이 목록은 첫 20건만 표시하며 전체 지원 기록을 나타내지 않습니다.</p>}
+      {screen.bookmarks.nextCursor&&<button type="button" disabled={busy}
+        onClick={()=>setBookmarkCursor(screen.bookmarks.nextCursor??undefined)}>다음 보관함 20건</button>}
+      {bookmarkCursor&&<button type="button" disabled={busy} onClick={()=>setBookmarkCursor(undefined)}>보관함 첫 페이지</button>}
+      {screen.bookmarks.nextCursor&&<p role="note">현재 보관함 목록은 20건 단위이며 계정 전체 지원 이력이 아닙니다.</p>}
     </section>
   </section>;
 }
