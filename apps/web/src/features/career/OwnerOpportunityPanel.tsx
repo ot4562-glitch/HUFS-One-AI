@@ -72,6 +72,7 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
     const epoch=session.epoch;
     const proof=await port.session.runLatest('owner-career-ai-explain-proof',async signal=>{
       const before=requireCareerConsent((await port.getConsents(signal)).consents);
+      if(!before.choices.externalAi)throw new Error('Current external-AI purpose consent required');
       const latest=await port.getOpportunity(id,signal);
       if(latest.opportunity.dataMode!=='REAL'||latest.source.status!=='ACTIVE'||!latest.source.verifiedAt
         ||latest.source.permissionRef!==detail.source.permissionRef
@@ -80,7 +81,8 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
         throw new Error('Source rights changed; AI comparison denied');
       const feed=await port.getOwnerFeed(signal);
       const visible=[...feed.feed.featured,...feed.feed.compact,...(feed.feed.ineligible??[])];
-      if(!visible.some(card=>card.opportunityId===id&&card.dataMode==='REAL'))
+      if(Date.parse(latest.source.verifiedAt)>Date.parse(feed.feed.asOf)
+        ||!visible.some(card=>card.opportunityId===id&&card.dataMode==='REAL'))
         throw new Error('Opportunity not in current visible owner feed');
       const rule=await port.explainOpportunity(id,{
         asOf:feed.feed.asOf,sourceRevisionId:latest.source.revisionId,
@@ -92,15 +94,17 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
       },signal);
       const after=requireCareerConsent((await port.getConsents(signal)).consents);
       assertCareerConsentCurrent(before,after,before.version);
-      return verifiedCareerAiComparison(candidate,rule,{
+      const ai=verifiedCareerAiComparison(candidate,rule,{
         opportunityId:id,sourceRevisionId:latest.source.revisionId,
         permissionRef:latest.source.permissionRef,rankConfigVersion:feed.rankConfigVersion,
         feedVersion:feed.version,consentVersion:after.version,asOf:feed.feed.asOf,
         sourceVerified:true,
       });
+      return {ai,rule};
     });
     if(port.session.getState().status!=='READY'||port.session.getState().epoch!==epoch)return;
-    if(proof){setAiComparison(proof);setAiCompareStatus('READY');}
+    if(proof){setRuleExplanation(proof.rule);setRuleStatus('READY');
+      setAiComparison(proof.ai);setAiCompareStatus('READY');}
     else setAiCompareStatus('UNAVAILABLE');
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">기회 자료의 권한을 확인 중입니다.</p>;
