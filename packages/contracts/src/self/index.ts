@@ -9,6 +9,7 @@ export * from './workspace.js';
 export * from './experience-approval.js';
 export * from './experience-portfolio.js';
 export * from './career-extensions.js';
+export * from './career-assets.js';
 export * from './experience-skill-candidate.js';
 export * from './private-owner-intake.js';
 export * from './owner-feed.js';
