@@ -1,5 +1,5 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
-import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent} from '@hufs-one/contracts';
+import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent,TOPIC_CODES,type TopicCode} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
 import {careerSavedItem} from '../../../../../packages/core/src/career/bookmarks.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
@@ -31,17 +31,41 @@ const CATEGORY={
   CONTEST:'공모전',CERTIFICATE:'자격',EDUCATION:'교육',OTHER:'그 외 활동',
 } as const;
 
-function Form({data,onSave,busy}:{data:SelfProfile|null;onSave:(headline:string,bio:string)=>void;busy:boolean}){
+function Form({data,onSave,busy}:{
+  data:SelfProfile|null;onSave:(value:SelfProfile['value'])=>void;busy:boolean;
+}){
+  const [displayName,setDisplayName]=useState(data?.value.displayName??'나의 진로');
+  const [interests,setInterests]=useState<TopicCode[]>([...(data?.value.interestTopics??[])]);
+  const [goals,setGoals]=useState<TopicCode[]>([...(data?.value.desiredJobTopics??[])]);
   const [headline,setHeadline]=useState(data?.value.headline??'');
   const [bio,setBio]=useState(data?.value.bio??'');
-  return <form className="sandbox__form" onSubmit={(e:FormEvent)=>{e.preventDefault();onSave(headline,bio);}}>
-    <h3>비공개 포트폴리오 소개</h3>
-    <p>본인만 열람합니다. 공개 프로필·학교 공식 인증은 제공하지 않습니다.</p>
+  const valid=!!displayName.trim()&&interests.length<=5&&goals.length<=3;
+  return <form className="sandbox__form" onSubmit={(e:FormEvent)=>{
+    e.preventDefault();
+    if(!valid)return;
+    onSave({displayName:displayName.trim(),interestTopics:interests,desiredJobTopics:goals,
+      headline:headline.trim(),bio:bio.trim(),visibility:'PRIVATE'});
+  }}>
+    <h3>나의 비공개 프로필</h3>
+    <p>본인만 열람합니다. 직접 선택한 관심 분야·희망 직무는 탐색 기준이며 학교 공식 인증·취업 적격 판정이 아닙니다.</p>
+    <label htmlFor="career-display-name">표시 이름</label>
+    <input id="career-display-name" value={displayName} maxLength={40} required
+      onChange={e=>setDisplayName(e.target.value)} disabled={busy}/>
+    <label htmlFor="career-interests">관심 분야 (최대 5개, 여러 개 선택)</label>
+    <select id="career-interests" multiple size={6} value={interests} disabled={busy}
+      onChange={e=>setInterests(Array.from(e.currentTarget.selectedOptions,o=>o.value as TopicCode))}>
+      {TOPIC_CODES.map(code=><option value={code} key={code}>{TOPIC_TEXT[code]}</option>)}
+    </select>
+    <label htmlFor="career-goals">희망 직무 (최대 3개, 여러 개 선택)</label>
+    <select id="career-goals" multiple size={6} value={goals} disabled={busy}
+      onChange={e=>setGoals(Array.from(e.currentTarget.selectedOptions,o=>o.value as TopicCode))}>
+      {TOPIC_CODES.map(code=><option value={code} key={code}>{TOPIC_TEXT[code]}</option>)}
+    </select>
     <label htmlFor="career-headline">한 줄 소개</label>
     <input id="career-headline" value={headline} maxLength={120} onChange={e=>setHeadline(e.target.value)} disabled={busy}/>
     <label htmlFor="career-bio">자기소개</label>
     <textarea id="career-bio" value={bio} maxLength={700} rows={4} onChange={e=>setBio(e.target.value)} disabled={busy}/>
-    <button type="submit" disabled={busy}>비공개 소개 저장</button>
+    <button type="submit" disabled={busy||!valid}>비공개 프로필 저장</button>
   </form>;
 }
 
@@ -92,13 +116,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');}
     finally{setBusy(false);}
   };
-  const saveProfile=(headline:string,bio:string)=>{
-    const old=screen?.profile;
-    void execute(signal=>port.saveProfile({expectedVersion:old?.version??0,value:{
-      displayName:old?.value.displayName??'나의 진로',
-      interestTopics:old?.value.interestTopics??[],desiredJobTopics:old?.value.desiredJobTopics??[],
-      headline:headline.trim(),bio:bio.trim(),visibility:'PRIVATE',
-    }},signal));
+  const saveProfile=(value:SelfProfile['value'])=>{
+    void execute(signal=>port.saveProfile({expectedVersion:screen?.profile?.version??0,value},signal));
   };
   const submitExperience=(event:FormEvent)=>{
     event.preventDefault();
