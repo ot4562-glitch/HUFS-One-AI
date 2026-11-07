@@ -12,6 +12,7 @@ describe('#317 personal application progression without simulated external resul
     for(const stage of states){
       expect(nextBookmarkStage(record)).toBe(stage);
       expect(bookmarkProgressInput(record)).toEqual({stage});
+      if(record.value.kind!=='BOOKMARK')throw new Error('Expected bookmarked opportunity');
       record={...record,version:record.version+1,value:{...record.value,stage}};
     }
     expect(nextBookmarkStage(record)).toBe('RESULT_RECORDED');
@@ -23,6 +24,7 @@ describe('#317 personal application progression without simulated external resul
   });
   it('rejects synthetic or already terminal records',()=>{
     expect(nextBookmarkStage({...original,value:{...original.value,dataMode:'SYNTHETIC'}})).toBeNull();
+    if(original.value.kind!=='BOOKMARK')throw new Error('Expected bookmark fixture');
     expect(nextBookmarkStage({...original,value:{...original.value,stage:'RESULT_RECORDED',
       outcome:{provenance:'USER_ENTERED_UNVERIFIED',result:'OTHER'}}})).toBeNull();
     expect(()=>bookmarkProgressInput(original,'ACCEPTED')).toThrow();
