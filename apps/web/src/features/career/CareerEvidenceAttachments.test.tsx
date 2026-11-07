@@ -3,7 +3,7 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {
   CareerAssetPageSchema,CareerAssetPolicySchema,CareerAssetReceiptSchema,
-  type OwnerWorkspaceRecord,
+  type OwnerWorkspaceRecord,type CareerAssetPolicy,
 } from '@hufs-one/contracts';
 import {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {CareerEvidenceAttachments,type CareerEvidenceAssetPort} from './CareerEvidenceAttachments.js';
@@ -31,9 +31,9 @@ function fixture(policy:unknown=allowed){
   const session=new OwnerSessionController({getSession:async()=>({
     actorId:'owner-1',role:'BETA',schoolMailProofValid:true,betaAllowed:true,
   })});
-  const list=vi.fn(async()=>({experienceId:'exp1',contentVersion:2,policy,items:[]}));
-  const upload=vi.fn(async()=>receipt);
-  const remove=vi.fn(async()=>({removed:true}));
+  const list=vi.fn(async(_record:OwnerWorkspaceRecord,_signal?:AbortSignal)=>({experienceId:'exp1',contentVersion:2,policy,items:[]}));
+  const upload=vi.fn(async(_record:OwnerWorkspaceRecord,_policy:CareerAssetPolicy,_file:File,_signal?:AbortSignal)=>receipt);
+  const remove=vi.fn(async(_record:OwnerWorkspaceRecord,_policy:CareerAssetPolicy,_assetId:string,_signal?:AbortSignal)=>({removed:true}));
   const port:CareerEvidenceAssetPort={list,upload,remove};
   return {session,port,list,upload,remove};
 }
