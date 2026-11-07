@@ -344,7 +344,9 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
           {item.sourceOpportunityId&&<p><InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.sourceOpportunityId)} navigate={navigate}>연결된 기회 확인 (현재 권한 확인 필요)</InAppLink></p>}
           {item.evidence.state==='OWNER_APPROVED_TOPIC'&&<p role="note">확인된 내용 판본 {item.evidence.contentVersion} · 경험 {item.evidence.experienceId}. 개인 선택에 의한 주제 승인일 뿐 실제 AI 후보 검증이나 외부 자격 인증이 아닙니다.</p>}
           {item.referenceUrl?<p>본인 제공 링크가 있으며 기관 증빙 검증은 이 화면에서 수행하지 않았습니다.</p>
-            :<p>첨부된 증빙 링크 없음 · 이미지/포스터 업로드는 현재 인가된 저장 API 미제공으로 사용할 수 없습니다.</p>}
+            :<p>첨부된 증빙 링크 없음 · {port.assets
+              ? '현재 출처 사용권·동의 확인 후에만 이 경험의 파일 관리 가능 여부를 조회할 수 있습니다.'
+              : '이미지/포스터 업로드는 현재 인가된 저장 API 미제공으로 사용할 수 없습니다.'}</p>}
           <p><InAppLink to="/experience" navigate={navigate}>현재 판본의 AI 후보·인용·본인 주제 승인/철회 검토</InAppLink> (현재 경험 목록의 일부만 표시될 수 있음)</p>
           {screen.portfolio.items.some(raw=>raw.itemId===item.itemId)&&<button type="button"
             onClick={()=>setAssetItem(current=>current===item.itemId?null:item.itemId)}>
