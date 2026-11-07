@@ -129,9 +129,10 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     const button=screen.getByRole('button',{name:'이전 후보 ID 수동 재조회'}) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText('내가 발급받은 작업 ID'),{target:{value:jobId}});
+    fireEvent.change(screen.getByLabelText('그때 실행한 작업 종류'),{target:{value:'opportunity-terms'}});
     expect(button.disabled).toBe(false);
     fireEvent.click(button);
-    await waitFor(()=>expect(f.read).toHaveBeenCalledWith(jobId,'experience-skills',expect.any(AbortSignal)));
+    await waitFor(()=>expect(f.read).toHaveBeenCalledWith(jobId,'opportunity-terms',expect.any(AbortSignal)));
     expect(f.submit).not.toHaveBeenCalled();
     await screen.findByText(/Synthetic approved notice/);
     await act(async()=>{f.session.invalidateLocalSession();});
