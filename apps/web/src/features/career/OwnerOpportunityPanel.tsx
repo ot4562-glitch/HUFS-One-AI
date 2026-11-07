@@ -6,6 +6,7 @@ import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
 import {attachCrossTabSessionClosure,SESSION_CLOSE_CHANNEL} from '../../app/session-broadcast.js';
 import {assertCareerConsentCurrent,requireCareerConsent} from './careerConsent.js';
 import {verifiedCareerAiComparison} from './aiEvidence.js';
+import {OwnerOpportunityGovernance} from './OwnerOpportunityGovernance.js';
 
 /** Optional #325 server-verified, currently authorized comparison projection.
  * No endpoint is guessed and missing capability is an explicit NOT_RUN state. */
@@ -161,6 +162,15 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
       </section>}
       <p>규칙과 AI는 동일 권한·출처/판본·추천 설정·시점·인용이 모두 일치할 때만 나란히 볼 수 있습니다. 검증 실패 시 UI는 결과를 숨깁니다.</p>
     </section>
+    {verified&&<OwnerOpportunityGovernance
+      key={source.revisionId+':'+source.permissionRef}
+      port={proofPort}
+      rights={{opportunityId:op.id,sourceId:source.sourceId,
+        sourceRevisionId:source.revisionId,permissionRef:source.permissionRef}}
+      onSourceRevoked={()=>{
+        setAiComparison(null);setRuleExplanation(null);setRuleStatus('UNAVAILABLE');
+        setDetail(null);setError('게시 철회 또는 이용권 철회가 확인되어 이전 공고 정보를 숨겼습니다.');
+      }}/>} 
     <p><InAppLink to="/career" navigate={navigate}>내 비공개 포트폴리오로 돌아가기</InAppLink></p>
   </section>;
 }

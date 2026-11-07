@@ -54,10 +54,12 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const idempotency=useRef<string|null>(null);
   const submitLock=useRef(false);
   const selectionVersion=useRef(0);
+  /** Every candidate read/write invalidates receipts in flight under another read key. */
+  const candidateVersion=useRef(0);
 
   useEffect(()=>{void port.session.initialize();},[port]);
   useEffect(()=>{
-    selectionVersion.current++;
+    selectionVersion.current++;candidateVersion.current++;
     setItems(null);setSelection('');setConfirmation(false);
     setAccepted(null);setStored(null);setReceipt(null);setReceiptBusy(false);
     setRecentJobs([]);setNotice('');submitLock.current=false;
@@ -76,9 +78,16 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const validManualJob=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(manualJobId.trim());
 
   const read=async(jobId:string,path:AiTaskPath)=>{
-    const version=selectionVersion.current;
-    const job=await port.session.runLatest('provider-approved-result',signal=>port.read(jobId,path,signal));
-    if(job&&version===selectionVersion.current&&port.session.getState().status==='READY'){
+    const version=selectionVersion.current,candidate=++candidateVersion.current;
+    setReceipt(null);
+    const job=await port.session.runLatest('provider-approved-result',async signal=>{
+      const fetched=await port.read(jobId,path,signal);
+      if(fetched.jobId!==jobId||fetched.candidate.task!==AI_TASK_PATHS[path])
+        throw new Error('Stored AI response job/task does not match the authenticated request');
+      return fetched;
+    });
+    if(job&&version===selectionVersion.current&&candidate===candidateVersion.current
+      &&port.session.getState().status==='READY'){
       setStored(job);setReceipt(null);
     }
   };
@@ -103,7 +112,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   };
   const readActualReceipt=async()=>{
     if(!stored||!port.getReceipt||receiptBusy||busy||session.status!=='READY')return;
-    const storedSnapshot=stored,version=selectionVersion.current;
+    const storedSnapshot=stored,version=selectionVersion.current,
+      candidate=candidateVersion.current;
     setReceipt(null);setReceiptBusy(true);
     try{
       const result=await port.session.runLatest('provider-private-receipt',async signal=>{
@@ -112,8 +122,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
           jobId:storedSnapshot.jobId,task:storedSnapshot.candidate.task,
         });
       });
-      if(result&&version===selectionVersion.current&&port.session.getState().status==='READY')
-        setReceipt(result);
+      if(result&&version===selectionVersion.current&&candidate===candidateVersion.current
+        &&port.session.getState().status==='READY')setReceipt(result);
     }finally{setReceiptBusy(false);}
   };
   const submit=async()=>{
@@ -121,7 +131,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
     const key=idempotency.current??newKey();
     if(!key){setNotice('안전한 요청 ID를 생성할 수 없습니다. 실행하지 않았습니다.');return;}
     submitLock.current=true;
-    idempotency.current=key;setBusy(true);setNotice('');setStored(null);setReceipt(null);
+    idempotency.current=key;candidateVersion.current++;
+    setBusy(true);setNotice('');setStored(null);setReceipt(null);
     try{
       const response=await port.session.runMutation(signal=>port.submit(selected,taskPath,key,signal));
       if(!response||port.session.getState().status!=='READY')return;
@@ -156,7 +167,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
             return <label key={value}><input type="radio" name="approved-ai-input"
               checked={selection===value} disabled={busy}
               onChange={()=>{
-                selectionVersion.current++;
+                selectionVersion.current++;candidateVersion.current++;
                 setSelection(value);setConfirmation(false);setAccepted(null);
                 setStored(null);setReceipt(null);setNotice('');idempotency.current=null;
               }}/>
@@ -179,14 +190,15 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         onClick={()=>{void requestServerCancel();}}>서버 작업 취소 요청 (실제 중단·환불 미보장)</button>}
       {accepted?.state==='PENDING'&&<button type="button" disabled={busy}
         onClick={()=>{
-          selectionVersion.current++;
+          selectionVersion.current++;candidateVersion.current++;
           setAccepted(null);setStored(null);setReceipt(null);setConfirmation(false);
           setNotice('이 화면의 대기 표시만 닫았습니다. 공급자 실행·청구 취소가 아닙니다. 서버 작업 ID는 이번 세션 목록에 보존되며, 다시 실행하려면 명시 확인이 필요합니다.');
         }}>대기 표시 접기 (공급자 실행 취소 아님)</button>}
       {accepted?.state==='NEEDS_REVIEW'&&taskPath&&<button type="button" disabled={busy}
         onClick={()=>{void read(accepted.jobId,taskPath);}}>보존된 후보 다시 조회</button>}
       {accepted?.state==='NEEDS_REVIEW'&&<button type="button" disabled={busy}
-        onClick={()=>{selectionVersion.current++;idempotency.current=null;setAccepted(null);setStored(null);setConfirmation(false);
+        onClick={()=>{selectionVersion.current++;candidateVersion.current++;
+          idempotency.current=null;setAccepted(null);setStored(null);setReceipt(null);setConfirmation(false);
           setNotice('새 실행은 다시 확인해야 합니다.');}}>새 실행 준비</button>}
     </div>}
     <section aria-label="이전 서버 발급 작업 다시 확인" className="local-account__panel">
