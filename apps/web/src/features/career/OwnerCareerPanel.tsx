@@ -1,6 +1,7 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
 import type {ExperiencePortfolio,OpportunityCatalogDetail,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
+import {careerSavedItem} from '../../../../../packages/core/src/career/bookmarks.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
 import {attachCrossTabSessionClosure,SESSION_CLOSE_CHANNEL} from '../../app/session-broadcast.js';
@@ -16,9 +17,11 @@ export interface OwnerCareerPort {
   update(itemId:string,input:{expectedVersion:number;value:OwnerWorkspaceValue},signal?:AbortSignal):Promise<unknown>;
   remove(id:string,version:number,signal?:AbortSignal):Promise<unknown>;
   getOpportunity(id:string,signal?:AbortSignal):Promise<OpportunityCatalogDetail>;
+  getBookmarks(signal?:AbortSignal):Promise<{items:OwnerWorkspaceRecord[];nextCursor:string|null}>;
 }
 
-type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio};
+type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio;
+  bookmarks:{items:OwnerWorkspaceRecord[];nextCursor:string|null}};
 const CATEGORY={
   PROJECT:'프로젝트',CLUB:'동아리',VOLUNTEERING:'봉사',WORK:'근로',INTERNSHIP:'인턴',
   CONTEST:'공모전',CERTIFICATE:'자격',EDUCATION:'교육',OTHER:'그 외 활동',
@@ -64,9 +67,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     if(session.status!=='READY')return;
     let active=true;
     void port.session.runLatest('owner-career-page',async signal=>{
-      const [profile,portfolio]=await Promise.all([port.getProfile(signal),
-        port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal)]);
-      return {profile:profile.profile,portfolio};
+      const [profile,portfolio,bookmarks]=await Promise.all([port.getProfile(signal),
+        port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal),port.getBookmarks(signal)]);
+      return {profile:profile.profile,portfolio,bookmarks};
     }).then(value=>{if(active&&value&&port.session.getState().status==='READY')setScreen(value);})
       .catch(()=>{if(active)setError('포트폴리오를 조회할 수 없습니다. 현재 본인 권한·동의를 확인해 주세요.');});
     return ()=>{active=false;};
@@ -173,6 +176,18 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
       </li>)}</ol>}
       {screen.portfolio.nextCursor&&<button type="button" disabled={busy} onClick={()=>setCursor(screen.portfolio.nextCursor??undefined)}>다음 경험 20건</button>}
       {cursor&&<button type="button" disabled={busy} onClick={()=>setCursor(undefined)}>첫 페이지</button>}
+    </section>
+    <section aria-labelledby="career-saved-heading">
+      <h2 id="career-saved-heading">연결된 저장·지원 기록 (본인 작성)</h2>
+      <p>기존 보관함 기록을 읽기 전용으로 보여 줍니다. 실제 모집처로 지원서를 발송하거나 합격을 확인한 기록이 아닙니다.</p>
+      {screen.bookmarks.items.length===0?<p>아직 저장·지원 준비를 기록한 기회가 없습니다.</p>
+        :<ul>{screen.bookmarks.items.map(raw=>{const item=careerSavedItem(raw);return <li key={item.itemId}>
+          <InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.opportunityId)} navigate={navigate}>
+            기회 {item.opportunityId} (현재 출처·권한 재확인)
+          </InAppLink> — {item.label}{item.synthetic?' · 합성 시연 기록':''}
+          {item.outcome&&<span> · {item.outcome}</span>}
+        </li>;})}</ul>}
+      {screen.bookmarks.nextCursor&&<p role="note">보관함에 다음 페이지가 있습니다. 이 목록은 첫 20건만 표시하며 전체 지원 기록을 나타내지 않습니다.</p>}
     </section>
   </section>;
 }
