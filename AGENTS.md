@@ -6,27 +6,35 @@
 
 승인 완료는 실제 코드/설정/시험·학업 사실·독립 Gold·배포 성공을 대신하지 않습니다. 테스트하지 않은 결과는 `NOT_RUN`, 측정하지 않은 값은 `NOT_MEASURED`, 실제 주소/자격증명 미설정은 `CONFIGURATION_REQUIRED`입니다. 인증·소유권·RLS/CSRF·현재 철회·비밀 보호는 유지합니다.
 
+## #317 인수 분리: 최종 작업 소유권 (2026-11-07 사용자 후속 지시)
+
+- **이서연 #323 = 실운영:** NCP 실배포·접속·비용·복구 및 승인된 유료 모델 실호출/실과금 영수증·LIVE/CACHED/SYNTHETIC 실증. 라이브 실행 전에 #324의 입력별 자료 권리와 #325의 보안 계약을 확인한다.
+- **김채윤 #324 = 실자료·인적 인수:** 기관/개인별 수집·저장·전송·게시·보존·철회 이용권 확인, 실제 학생 BETA 2명 이상 독립 계정 A/B·모바일/스크린리더/실기기 검증. 비공개 근거만 공유한다.
+- **이의상 #321 + 박준영 #322 = 모델 코드/품질:** AI/NLP/OCR·인용·독립 평가/학업 정확도; 운영 실결제/영수증은 #323의 책임을 중복하지 않는다.
+- **심민성 #317/#325 = 신규 기능 코드 및 공통 백엔드:** #317 기능 UI·전용 회귀, #325 API/DB/RLS·보안 영수증 저장/조회·PR/릴리스 의사결정. 직접 NCP 실배포·권리서류 수집·실사용자 테스트를 담당 이슈에 중복 체크하지 않는다.
+- 작업/권한 이관은 완료 판정이 아니다. `OWNER_CONFIRMED_APPROVED`와 개별 자료/소유자별 실제 이용 가능 범위, 자동 CI와 사람/실환경 검증을 구분한다. `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED` 유지.
+
 ## 현재 OPEN 6개 — 담당자 지정 (2026-11-07)
 
 | 현재 이슈 | GitHub 담당자 | 업무 |
 | --- | --- | --- |
 | [#321 이의상 AI·NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya/CLOVA·자연어 처리·정확도 공동 |
 | [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI/NLP 공동 개선·학업 RulePack·개설 |
-| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
-| [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 전체 웹 시연·경험 AI 결과 평가 |
-| [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API/DB·보안·품질·통합 |
-| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 직접 개발 |
+| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | 웹·React/UX·NCP 실배포/복구, **유료 AI 실호출·실과금 영수증 발급/검증** (구 #318 통합) |
+| [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | **출처·기관·개인별 자료 이용권 증빙, 실학생 A/B·실기기/NVDA 인수**, 전체 웹 시연·경험 AI 결과 평가 |
+| [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | **공통 API/DB·RLS·보안·비공개 영수증 저장/조회 코드**·품질/릴리스 판단 (실발급 #323, 실사용자 #324) |
+| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | **신규 기능 코드 개발·자동 회귀 전용** (외부 운영/사람 인수는 #321–#325) |
 
-이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 POST-01~20은 개인별 #321~#325에 보존하고 #316은 CLOSED 처리했습니다. **기존 UI/UX [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 UX-01~25와 미완 인수 항목은 전부 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)으로 이전**하여 #318을 중복으로 종결했습니다. **현재 OPEN은 6개**이며 각각 지정 담당자 1명입니다. 이관·배정은 실제 구현·NCP 설치·보안/사람 인수·Awwwards 수상 완료를 뜻하지 않습니다. 실운영 상태는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`를 유지합니다.
+이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 POST-01~20은 개인별 #321~#325에 보존하고 #316은 CLOSED 처리했습니다. **기존 UI/UX [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 UX-01~25와 미완 인수 항목은 전부 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)으로 이전**하여 #318을 중복으로 종결했습니다. **현재 OPEN은 6개**이며 각각 지정 담당자 1명입니다. #317은 신규 코드만, #323은 실 NCP/유료 호출, #324는 자료별 권리/실학생·실기기, #325는 공통 서버/보안 코드를 소유합니다. 이관은 실운영·사람 인수 완료가 아닙니다. 실운영 상태는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`를 유지합니다.
 
 ## 본선 진출 이후 확정 역할 (2026-11-07 사용자 지정)
 
 | 사람별 업무 | 담당 및 인수 경계 |
 | --- | --- |
 | AI 정확도·Laya·CLOVA/HCX·NLP | **이의상 + 박준영 공동**. Laya·네이버 AI API의 지원 범위 내 모델 조정/파인튜닝 검토·전처리/자연어 해석·정확도 평가. 박준영은 학업 RulePack·What-if/전망 유지도 수행 |
-| 웹 디자인·React UI·서버 운영 | **이서연**. 기존 이의상의 UI 책임 인수, 전체 웹 디자인/반응형/접근성 및 API 서버/NCP 계정·비용·배포/운영 |
-| 전체 시연·경험 기반 AI 평가·발표 | **김채윤**. 학생 경험 입력→AI 후보/근거·승인→추천 검증, 60초/10분 전체 웹 시연 루트·실패/오류 재현 및 발표 준비 |
-| 코드 통합·품질·추가기능 | **심민성**. 공통 API/DB/보안/CI·품질 검수·기능 개발 및 각 담당 결과 통합 |
+| 웹 디자인·React UI·NCP/실 AI 운영 | **이서연**. 전체 웹 디자인/반응형/접근성 코드 및 API 서버/NCP 계정·비용·배포/운영·복구, **승인된 실제 유료 HCX/CLOVA 호출 1–2건과 영수증·캐시/신규 과금 구별 실측**을 주도 |
+| 자료 이용권·실학생/실기기 검증·시연 | **김채윤**. 기관/개인·공고/포스터·동아리 출처별 허가 범위/철회 검토, **서로 다른 실제 학생 2명 이상 A/B·모바일/NVDA 실기기 인수**. 경험→AI 후보/근거·승인→추천 평가 및 60초/10분 발표 |
+| 코드 통합·품질·추가기능 | **심민성**. 공통 API/DB/RLS·비공개 영수증 저장/조회·보안/CI·품질/통합 및 #317 신규 기능 개발. 실유료 실행·NCP 운영/권리증빙/실학생 인수 주책임을 갖지 않음 |
 
 **현행 GitHub 담당은 개인별 #321~#325에 실제 배정**됐으며, 추가 기능 #317은 심민성, 구 UI/UX #318의 전 작업은 이서연의 통합 #323에서 관리합니다. [업무 분장 정본](docs/WORKSTREAMS.md)을 따르고 과거 역할/이슈의 담당은 재활용하지 않습니다.
 
