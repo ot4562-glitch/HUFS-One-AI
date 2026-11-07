@@ -17,7 +17,7 @@ export interface ClubModerationPort{
 const STATE={DRAFT:'초안',REVIEW_PENDING:'검토 대기',APPROVED:'가상 승인',REJECTED:'반려',EXPIRED:'만료',REVOKED:'승인 취소'} as const;
 const ACTIVITY={STUDY:'스터디',PROJECT:'프로젝트',DEBATE:'토론',PERFORMANCE:'공연',VOLUNTEERING:'봉사',
   MATCH:'경기',TRIP:'답사·여행',NETWORKING:'교류',CREATION:'창작',MENTORING:'멘토링'} as const;
-const INITIAL:SyntheticClubContent={clubName:'가상동아리 ',summary:'',category:'IT_AI',campus:'SEOUL',
+const INITIAL:SyntheticClubContent={clubName:'가상동아리 ',summary:'',category:'IT_AI',campus:'SEOUL',organizationScope:'CAMPUS',
   topicCodes:['AI_ML','DATA_ANALYTICS'],activities:['PROJECT','STUDY'],conditions:[],
   recruitClosesAt:'2026-11-22T00:00:00.000Z',posterAssetId:'SYN-POSTER-CLUB-090',dataMode:'SYNTHETIC'};
 function editable(record:SyntheticClubAdminRecord):SyntheticClubContent{
@@ -32,6 +32,14 @@ function Fields({value,onChange,edit=false}:{value:SyntheticClubContent;onChange
       {Object.entries(CATEGORY_TEXT).map(([v,t])=><option key={v} value={v}>{t}</option>)}</select></label>
     <label>캠퍼스<select aria-label={edit?'캠퍼스 수정':'캠퍼스'} value={value.campus} onChange={e=>update({campus:e.target.value as SyntheticClubContent['campus']})}>
       {Object.entries(CAMPUS_TEXT).map(([v,t])=><option key={v} value={v}>{t}</option>)}</select></label>
+    <label>가상 동아리 모집 범위<select aria-label={edit?'가상 동아리 모집 범위 수정':'가상 동아리 모집 범위'}
+      value={value.organizationScope??'CAMPUS'}
+      onChange={e=>update({organizationScope:e.target.value as NonNullable<SyntheticClubContent['organizationScope']>})}>
+      <option value="CAMPUS">교내 가상 동아리</option>
+      <option value="INTERUNIVERSITY">연합 가상 동아리</option>
+      <option value="EXTERNAL">교외 가상 소모임</option>
+    </select></label>
+    <p role="note">이 구분은 합성 시연 전용이며 실제 HUFS 동아리·외부 기관의 승인이나 모집을 뜻하지 않습니다.</p>
     <label>관심 분야 (복수 선택)<select aria-label={edit?'관심 분야 수정':'관심 분야 (복수 선택)'} multiple value={value.topicCodes}
       onChange={e=>update({topicCodes:Array.from(e.target.selectedOptions,o=>o.value) as SyntheticClubContent['topicCodes']})}>
       {TOPIC_CODES.map(t=><option key={t} value={t}>{TOPIC_TEXT[t]}</option>)}</select></label>
