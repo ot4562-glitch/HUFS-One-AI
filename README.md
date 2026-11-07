@@ -4,19 +4,19 @@
 
 프로젝트 소유자가 문서상 자료·개인정보·기관·공유/게시·클라우드/모델·운영 승인을 모두 완료했다고 확인했습니다. 현재 승인 상태는 **`OWNER_CONFIRMED_APPROVED`**입니다. 실제 구현·자격증명 구성·시험·배포 여부는 [STATUS](STATUS.md)에서 별도로 관리합니다.
 
-## 현재 OPEN 7개 — 담당자 지정 (2026-11-07)
+## 현재 OPEN 6개 — 담당자 지정 (2026-11-07)
 
 | 현재 이슈 | GitHub 담당자 | 업무 |
 | --- | --- | --- |
 | [#321 이의상 AI·NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya/CLOVA·자연어 처리·정확도 공동 |
 | [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI/NLP 공동 개선·학업 RulePack·개설 |
-| [#323 이서연 NCP·서버](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | 서버 운영·NCP·비용·복구 |
+| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
 | [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 전체 웹 시연·경험 AI 결과 평가 |
 | [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API/DB·보안·품질·통합 |
 | [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 직접 개발 |
-| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` | 이서연 전체 디자인·React UI |
 
-이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 **원본 POST-01~20 전부를 누락 없이 개인별 #321~#325로 분리하고 보관 CLOSED**했습니다. 현재는 담당자가 지정된 개인별 5개와 #317(심민성 추가 기능)·#318(이서연 UI/UX) **7개만 OPEN**입니다. 과거 이슈와 댓글은 보존하며, 배정은 실제 NCP·모델·학생 자료·사람 인수 완료가 아닙니다. 미실행/미구성은 `NOT_RUN / CONFIGURATION_REQUIRED`, 실서비스는 `RELEASE_BLOCKED`입니다.
+이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 POST-01~20은 개인별 #321~#325에 보존하고 #316은 CLOSED 처리했습니다. **기존 UI/UX [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 UX-01~25와 미완 인수 항목은 전부 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)으로 이전**하여 #318을 중복으로 종결했습니다. **현재 OPEN은 6개**이며 각각 지정 담당자 1명입니다. 이관·배정은 실제 구현·NCP 설치·보안/사람 인수·Awwwards 수상 완료를 뜻하지 않습니다. 실운영 상태는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`를 유지합니다.
+
 ## 본선 진출 이후 확정 팀 역할 (2026-11-07)
 
 - **이의상·박준영:** AI 정확도 개선, Laya 및 네이버 CLOVA OCR/Vision·HCX AI API, 자연어 처리·모델 조정/지원되는 경우의 파인튜닝 검토. 박준영은 기존 학업 RulePack/What-if 기능도 유지.
@@ -24,7 +24,7 @@
 - **김채윤:** 사이트 전체·학생 경험 입력→AI 결과/정확도·추천 검증 시연, 발표용 60초/10분 경로·리허설.
 - **심민성:** 시스템 통합·공통 API/DB/보안/CI·코드 품질/리뷰·추가 기능 개발.
 
-**역할 정본:** [WORKSTREAMS](docs/WORKSTREAMS.md) · **발표 시연 루트:** [DEMO_MANUAL](docs/DEMO_MANUAL.md). 이의상/박준영 공동 AI, 이서연 UI/NCP 운영, 김채윤 시연, 심민성 통합/추가 기능을 담당하며 **GitHub OPEN 7개는 전부 개인별 배정**됐습니다.
+**역할 정본:** [WORKSTREAMS](docs/WORKSTREAMS.md) · **발표 시연 루트:** [DEMO_MANUAL](docs/DEMO_MANUAL.md). 이의상/박준영 공동 AI, 이서연 UI/NCP 운영, 김채윤 시연, 심민성 통합/추가 기능을 담당하며 **GitHub OPEN 6개는 전부 개인별 배정**됐습니다.
 
 ## 1. 기획 배경
 
@@ -70,7 +70,7 @@ npm run build:web
 
 관련 있는 공고·마감을 찾는 비용을 줄이고, 경험을 설명 가능한 기록으로 정리하며, 학업·진로 계획에서 확인해야 할 근거를 명확히 할 수 있습니다. 코드 기반 판단과 생성형 AI 후보를 분리하여 오판·비용·권한 문제를 관리하는 개발 사례를 제공합니다. 시간 절감·추천 정확도·학생 만족도 향상은 실제 측정 전에는 기대효과로만 표현합니다.
 
-**현재 후속은 개인별 본선 이후 #321~#325 5개와 #317(심민성 추가 기능), #318(이서연 UI/UX) 총 7개 OPEN**이며, 각각 담당자가 배정돼 있습니다.
+**현재 후속은 본선 이후 #321~#325 5개와 #317(심민성 추가 기능), 총 6개 OPEN**이며, 각각 담당자가 배정돼 있습니다.
 
 ## 6. 전체 문서 목록
 
