@@ -110,6 +110,15 @@ describe('#317 BETA owner timeline and self-reported stage',()=>{
     fireEvent.click(screen.getByRole('button',{name:'내 경험 AI 검토 접기'}));
     expect(screen.queryByRole('heading',{name:'경험에서 고른 관심 주제'})).toBeNull();
   });
+  it('recognizes the actual experience-create server receipt instead of treating a successful write as failure',async()=>{
+    const f=fixture();render(<OwnerCareerPanel port={f.port} navigate={()=>{}}/>);
+    await screen.findByRole('heading',{name:'새 경험 기록'});
+    fireEvent.change(screen.getByLabelText('제목'),{target:{value:'나의 데이터 프로젝트'}});
+    fireEvent.click(screen.getByRole('button',{name:'경험 등록'}));
+    await waitFor(()=>expect(f.port.create).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/변경을 저장했습니다/)).toBeTruthy();
+    await waitFor(()=>expect(f.getPortfolio).toHaveBeenCalledTimes(2));
+  });
   it('never enables an AI call when consent preferences are changed',async()=>{
     const f=fixture();
     render(<OwnerCareerPanel port={f.port} navigate={()=>{}}/>);
