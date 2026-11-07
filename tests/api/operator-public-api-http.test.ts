@@ -100,9 +100,9 @@ describe('operator-only public API discovery HTTP path',()=>{
   });
   it('rejects unreviewed leaked/private fields in the operator response and provider exceptions',async()=>{
     const x=fixture();
-    x.service.lookup.mockResolvedValueOnce({...response,candidates:[
-      {...response.candidates[0],rawStudentText:'PRIVATE'},
-    ]} as typeof response);
+    // Use a structurally valid TypeScript response with a forbidden runtime field.
+    const leaked={...response,candidates:[{...response.candidates[0]!,rawStudentText:'PRIVATE'}]};
+    x.service.lookup.mockResolvedValueOnce(leaked);
     const res=await x.app.inject({method:'POST',url:'/api/operator/public-api-discovery',
       headers:x.headers,payload});
     expect(res.statusCode).toBe(503);
