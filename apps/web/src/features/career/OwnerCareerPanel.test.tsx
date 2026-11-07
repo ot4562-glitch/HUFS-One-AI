@@ -32,6 +32,7 @@ function fixture(consent=grant){
     return {item:bookmark};
   });
   const port={session,getProfile,getConsents,getPortfolio,getBookmarks,advanceBookmarkStage,
+    getOwnerFeed:vi.fn(async()=>{throw new Error('No real source in isolated UI test');}),
     updateConsents:vi.fn(async()=>({})),saveProfile:vi.fn(async()=>({})),
     create:vi.fn(async()=>({})),update:vi.fn(async()=>({})),remove:vi.fn(async()=>({})),
   } as unknown as OwnerCareerPort;
