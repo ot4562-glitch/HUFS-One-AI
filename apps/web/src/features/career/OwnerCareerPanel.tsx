@@ -84,6 +84,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
   const [busy,setBusy]=useState(false);
   const [title,setTitle]=useState(''),[summary,setSummary]=useState('');
   const [role,setRole]=useState(''),[startedOn,setStartedOn]=useState(''),[endedOn,setEndedOn]=useState('');
+  const [achievement,setAchievement]=useState(''),[referenceUrl,setReferenceUrl]=useState('');
   const [category,setCategory]=useState<keyof typeof CATEGORY>('PROJECT');
   const [editing,setEditing]=useState<string|null>(null);
   const [deleteId,setDeleteId]=useState<string|null>(null);
@@ -121,6 +122,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
       const result=await port.session.runMutation(run);
       if(result&&port.session.getState().status==='READY'){
         setEditing(null);setDeleteId(null);setTitle('');setSummary('');setRole('');setStartedOn('');setEndedOn('');
+        setAchievement('');setReferenceUrl('');
         setCursor(undefined);setBookmarkCursor(undefined);setRev(x=>x+1);
         setNotice('변경을 저장했습니다. 현재 본인 권한과 최신 판본으로 다시 조회했습니다.');
       }else if(port.session.getState().status==='READY'){
@@ -141,6 +143,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     const value:OwnerWorkspaceValue={
       kind:'EXPERIENCE',dataMode:'OWNER_CONSENTED',state:'SELF_REPORTED',
       title:name,summary:summary.trim(),category,
+      ...(achievement.trim()?{achievement:achievement.trim()}:{}),
+      ...(referenceUrl.trim()?{referenceUrl:referenceUrl.trim()}:{}),
       ...(record?.value.kind==='EXPERIENCE'&&record.value.sourceOpportunityId
         ?{sourceOpportunityId:record.value.sourceOpportunityId}:{}),
       ...(role.trim()?{role:role.trim()}:{}),
@@ -193,10 +197,20 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
         <label htmlFor="career-role">담당 역할</label><input id="career-role" maxLength={80} value={role} onChange={e=>setRole(e.target.value)} disabled={busy}/>
         <label htmlFor="career-summary">활동 내용 (본인 작성)</label>
         <textarea id="career-summary" maxLength={500} value={summary} onChange={e=>setSummary(e.target.value)} disabled={busy}/>
+        <label htmlFor="career-achievement">직접 기록한 활동 결과 (공식 검증 전)</label>
+        <textarea id="career-achievement" maxLength={240} rows={2} value={achievement}
+          onChange={e=>setAchievement(e.target.value)} disabled={busy}/>
+        <label htmlFor="career-reference">내가 제공한 참고 링크 (공개 HTTPS 웹페이지, 공식 증명 아님)</label>
+        <input id="career-reference" type="url" maxLength={500} placeholder="https://example.com/page"
+          value={referenceUrl} onChange={e=>setReferenceUrl(e.target.value)} disabled={busy}/>
+        <p role="note">외부 링크는 본인 기록이며 서비스가 자동 조회하거나 학교·기관 사실로 인증하지 않습니다.</p>
         <label htmlFor="career-start">시작일</label><input id="career-start" type="date" value={startedOn} onChange={e=>setStartedOn(e.target.value)} disabled={busy}/>
         <label htmlFor="career-end">종료일</label><input id="career-end" type="date" value={endedOn} onChange={e=>setEndedOn(e.target.value)} disabled={busy}/>
         <button disabled={busy} type="submit">{editing?'수정 저장':'경험 등록'}</button>
-        {editing&&<button type="button" disabled={busy} onClick={()=>{setEditing(null);setTitle('');setSummary('');setRole('');setStartedOn('');setEndedOn('');}}>수정 취소</button>}
+        {editing&&<button type="button" disabled={busy} onClick={()=>{
+          setEditing(null);setTitle('');setSummary('');setRole('');setStartedOn('');setEndedOn('');
+          setAchievement('');setReferenceUrl('');
+        }}>수정 취소</button>}
       </form>
       {timeline.length===0?<p>기록한 경험이 없습니다.</p>:<ol>{timeline.map(item=><li key={item.itemId}>
         <article>
@@ -204,6 +218,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
           <p>{CATEGORY[item.category]} · {item.startedOn??'시작일 미기록'} ~ {item.endedOn??'종료일 미기록'}</p>
           {item.role&&<p>역할: {item.role}</p>}
           <p>{item.summary}</p>
+          {item.achievement&&<p>본인 기록 결과 (공식 미검증): {item.achievement}</p>}
+          {item.referenceUrl&&<p>본인이 첨부한 참고 링크 (기관 인증 아님): <a
+            href={item.referenceUrl} target="_blank" rel="noopener noreferrer nofollow">외부 참고 페이지 열기</a></p>}
           {item.sourceOpportunityId&&<p><InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.sourceOpportunityId)} navigate={navigate}>연결된 기회 확인 (현재 권한 확인 필요)</InAppLink></p>}
           {item.evidence.state==='OWNER_APPROVED_TOPIC'&&<ul aria-label="본인이 승인한 주제">{item.evidence.topicCodes.map(code=><li key={code}>{TOPIC_TEXT[code]}</li>)}</ul>}
           <p>{item.evidence.state==='OWNER_APPROVED_TOPIC'
@@ -212,6 +229,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
           <button type="button" disabled={busy} onClick={()=>{
             setEditing(item.itemId);setDeleteId(null);setTitle(item.title);setSummary(item.summary);
             setRole(item.role??'');setCategory(item.category);setStartedOn(item.startedOn??'');setEndedOn(item.endedOn??'');
+            setAchievement(item.achievement??'');setReferenceUrl(item.referenceUrl??'');
           }}>수정</button>
           {deleteId===item.itemId?<><p>삭제하면 이 경험에 대한 승인된 주제를 추천에 재사용하지 않습니다. 삭제하시겠습니까?</p>
             <button type="button" disabled={busy} onClick={()=>{const record=screen.portfolio.items.find((x:OwnerWorkspaceRecord)=>x.itemId===item.itemId);if(record)void execute(signal=>port.remove(item.itemId,record.version,signal));}}>삭제 확인</button>
