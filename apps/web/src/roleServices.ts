@@ -56,6 +56,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
     ownerCareer: {
       session:ownerSession,
       getProfile:signal=>api.owner.getProfile(signal),
+      getConsents:signal=>api.owner.getConsents(signal),
       saveProfile:(change,signal)=>api.owner.updateProfile(change,signal),
       getPortfolio:(query,signal)=>api.owner.getExperiencePortfolio(query,signal),
       create:(input,signal)=>api.owner.createWorkspace(input,signal),

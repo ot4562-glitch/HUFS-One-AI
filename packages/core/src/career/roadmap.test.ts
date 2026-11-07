@@ -44,7 +44,7 @@ describe('#317 owner-only roadmap and portfolio',()=>{
       portfolio:{...portfolio.portfolio,evidence:[{experienceId:'exp-one',contentVersion:2,approval}],topics:[]},
     });
     expect(buildCareerRoadmap({profile,portfolio:synthetic}).strengthTopics).toEqual([]);
-    expect(buildCareerTimeline(synthetic)[0]?.evidence.state).toBe('NOT_CERTIFIED');
+    expect(buildCareerTimeline(synthetic)).toEqual([]);
   });
 
   it('never invents a complete full-account assessment from a single cursor page',()=>{

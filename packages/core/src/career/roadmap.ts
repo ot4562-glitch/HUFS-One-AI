@@ -34,8 +34,10 @@ export function buildCareerRoadmap(raw:unknown):CareerRoadmap {
  */
 export function buildCareerTimeline(raw:unknown):CareerTimelineEntry[] {
   const page=ExperiencePortfolioSchema.parse(raw);
-  const rows=page.items.map((record,index)=>{
+  const rows=page.items.flatMap((record,index)=>{
     if(record.value.kind!=='EXPERIENCE')throw new Error('Non-experience in portfolio');
+    // Public synthetic entries must never appear in an authenticated owner's private timeline.
+    if(record.value.dataMode!=='OWNER_CONSENTED')return [];
     const a=page.portfolio.evidence[index]!.approval;
     const active=a.state==='ACTIVE'
       &&a.contentVersion===record.version
@@ -45,7 +47,7 @@ export function buildCareerTimeline(raw:unknown):CareerTimelineEntry[] {
       ? {state:'OWNER_APPROVED_TOPIC' as const,topicCodes:a.topics,
           experienceId:record.itemId,contentVersion:record.version}
       : {state:'NOT_CERTIFIED' as const};
-    return CareerTimelineEntrySchema.parse({
+    return [CareerTimelineEntrySchema.parse({
       itemId:record.itemId,title:record.value.title,summary:record.value.summary,
       ...(record.value.role?{role:record.value.role}:{}),
       category:record.value.category??'OTHER',
@@ -54,7 +56,7 @@ export function buildCareerTimeline(raw:unknown):CareerTimelineEntry[] {
       ...(record.value.sourceOpportunityId?{sourceOpportunityId:record.value.sourceOpportunityId}:{}),
       updatedAt:record.updatedAt,dataMode:record.value.dataMode,evidence,
       certification:'NOT_INSTITUTION_VERIFIED',
-    });
+    })];
   });
   return rows.sort((a,b)=>(
     (b.endedOn??b.startedOn??b.updatedAt).localeCompare(a.endedOn??a.startedOn??a.updatedAt)
