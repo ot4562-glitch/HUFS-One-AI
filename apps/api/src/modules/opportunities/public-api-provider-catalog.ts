@@ -44,6 +44,12 @@ export function approvedPublicApiSourcePolicy(input:{
     url.hostname==='localhost'||url.hostname.endsWith('.local')||
     url.hostname.endsWith('.localhost')||!url.hostname.includes('.'))
     throw new Error('Source must be an exact, query-free HTTPS public document');
+  const providerHost=new URL(provider.homepage).hostname;
+  // A provider entry must not launder an unrelated hostname into an
+  // operator allowlist. Subdomains of that exact provider are allowed only
+  // with their own independently reviewed source URL and DB receipt.
+  if(url.hostname!==providerHost&&!url.hostname.endsWith('.'+providerHost))
+    throw new Error('Source host does not belong to the selected provider');
   if(url.href===provider.homepage)
     throw new Error('API documentation is not a data source');
   // Operator approval of the exact URL is necessary, but this function cannot
