@@ -3,6 +3,18 @@ import {z} from 'zod';
 const Id=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
 const Mode=z.enum(['SYNTHETIC','OWNER_CONSENTED']);
 export const WorkspaceKindSchema=z.enum(['EXPERIENCE','STUDY_PLAN','BOOKMARK','ACTION_PLAN']);
+/** Owner-submitted references are links, not verified credentials or institution evidence. Never fetch automatically. */
+export const OwnerExperienceReferenceUrlSchema=z.url().max(500).refine(value=>{
+  try{
+    const u=new URL(value);
+    return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash
+      &&u.port===''&&/^[a-z0-9.-]+$/i.test(u.hostname)
+      &&u.hostname.includes('.')&&!u.hostname.endsWith('.localhost')
+      &&!u.hostname.endsWith('.internal')&&!u.hostname.endsWith('.local')
+      &&!u.hostname.includes('..')&&!/^\d+\.\d+\.\d+\.\d+$/.test(u.hostname)
+      &&u.hostname!=='localhost';
+  }catch{return false;}
+},{message:'Only public HTTPS reference pages without tracking/query tokens are allowed'});
 const Experience=z.strictObject({
   kind:z.literal('EXPERIENCE'),dataMode:Mode,
   state:z.enum(['DRAFT','SELF_REPORTED']),
@@ -13,6 +25,8 @@ const Experience=z.strictObject({
   sourceOpportunityId:Id.optional(),
   // Optional, backwards compatible categories for the owner-only career timeline.
   category:z.enum(['PROJECT','CLUB','VOLUNTEERING','WORK','INTERNSHIP','CONTEST','CERTIFICATE','EDUCATION','OTHER']).optional(),
+  achievement:z.string().trim().max(240).optional(),
+  referenceUrl:OwnerExperienceReferenceUrlSchema.optional(),
 }).superRefine((x,ctx)=>{
   if(x.startedOn&&x.endedOn&&x.startedOn>x.endedOn)
     ctx.addIssue({code:'custom',message:'Experience dates out of order'});
