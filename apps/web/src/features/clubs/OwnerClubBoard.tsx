@@ -17,7 +17,7 @@ type Loaded={key:string;value:unknown};
 function Card({club,navigate}:{club:ClubCardView;navigate:(path:string)=>void}){
   return <li className="club"><ClubPoster club={club}/><div className="club__body">
     <h3><InAppLink to={'/clubs/'+club.id} navigate={navigate}>{club.name}</InAppLink></h3>
-    <p>{club.summary}</p><p>{club.categoryText} · {club.campusText} · {APPROVAL_TEXT}</p>
+    <p>{club.summary}</p><p>{club.categoryText} · {club.campusText} · <strong>{club.scopeText}</strong> · {APPROVAL_TEXT}</p>
     <p>{club.lifecycleText}{club.dday&&<> · <DDayText dday={club.dday}/></>}</p>
     {club.reasons.length>0&&<ul>{club.reasons.slice(0,3).map(r=><li key={r}>{r}</li>)}</ul>}
     {club.poster&&<p className="board__small">상세에서 AI 생성 합성 포스터 보기</p>}
@@ -68,7 +68,8 @@ export function OwnerClubBoard({port,id,navigate}:{port:OwnerClubPort;id?:string
     const club=detail.club;
     return <><p role="note">{CLUB_DEMO_NOTE}</p><p>기준 시점 {detail.asOf} · 출처: 합성 데이터</p>{refresh}
       <article className="club-detail"><GeneratedPoster key={club.poster?.sha256??club.posterSeed} club={club}/><div>
-        <h2>{club.name}</h2><p>{club.summary}</p><p>{club.categoryText} · {club.campusText} · {APPROVAL_TEXT}</p>
+        <h2>{club.name}</h2><p>{club.summary}</p><p>{club.categoryText} · {club.campusText} · <strong>{club.scopeText}</strong> · {APPROVAL_TEXT}</p>
+        <p role="note">현재 모집 글은 가상 운영자의 현재 승인 판본만 보여줍니다. 수정·승인 철회된 글/포스터는 목록과 직접 URL에서 숨기며, 실제 연합/외부 동아리 소속·가입 승인 또는 신고 처리를 의미하지 않습니다.</p>
         <dl className="facts"><dt>모집 상태</dt><dd>{club.lifecycleText}</dd><dt>모집 조건</dt><dd>{club.eligibilityText}</dd>
           <dt>분야</dt><dd>{club.topicTexts.join(' · ')||'미정'}</dd><dt>활동</dt><dd>{club.activityTexts.join(' · ')||'미정'}</dd>
           {club.times.map(t=><Fragment key={t.label}><dt>{t.label}</dt><dd>{t.text}</dd></Fragment>)}</dl>
@@ -86,10 +87,17 @@ export function OwnerClubBoard({port,id,navigate}:{port:OwnerClubPort;id?:string
         <label>검색<input type="search" value={filter.query} onChange={e=>setFilter({...filter,query:e.target.value})}/></label>
         <label>캠퍼스<select aria-label="캠퍼스" value={filter.campus} onChange={e=>setFilter({...filter,campus:e.target.value as ClubFilter['campus']})}>
           <option value="ALL">전체</option><option value="SEOUL">서울캠퍼스</option><option value="GLOBAL">글로벌캠퍼스</option></select></label>
+        <label>동아리 범위<select aria-label="동아리 범위" value={filter.scope??'ALL'}
+          onChange={e=>setFilter({...filter,scope:e.target.value as ClubFilter['scope']})}>
+          <option value="ALL">모든 가상 범위</option><option value="CAMPUS">교내 가상 동아리</option>
+          <option value="INTERUNIVERSITY">연합 가상 동아리</option>
+          <option value="EXTERNAL">교외 가상 소모임</option>
+        </select></label>
         <label>분야<select aria-label="분야" value={filter.category} onChange={e=>setFilter({...filter,category:e.target.value as ClubFilter['category']})}>
           <option value="ALL">전체</option>{Object.entries(CATEGORY_TEXT).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
         <label><input type="checkbox" checked={filter.includeClosed} onChange={e=>setFilter({...filter,includeClosed:e.target.checked})}/> 마감된 모집도 보기</label>
       </form><p role="status">{board.view.all.length}개 중 {shown.length}개</p>
+      <p role="note">범위 분류는 기존 합성 공고의 메타데이터입니다. 실제 동아리 게시 허가·신고 접수·관리자 승인은 별도 운영 기능이며 여기에서는 실행되지 않습니다.</p>
       {shown.length?<ul className="club__grid">{shown.map(c=><Card key={c.id} club={c} navigate={navigate}/>)}</ul>:<p>조건에 맞는 모집 글이 없어요.</p>}
     </section></>;
 }
