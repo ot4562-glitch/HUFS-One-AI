@@ -238,7 +238,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
         :<ul>{related.map(item=><li key={item.id}>
           <InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.id)} navigate={navigate}>{item.title}</InAppLink>
           <p>관심 주제: {item.matchedTopics.map(code=>TOPIC_TEXT[code]).join(' · ')} · 지원 조건: {item.eligibility==='UNKNOWN'?'확인 필요':'현재 규칙상 적합 (출처 재확인 필요)'}</p>
-          <p role="note">현재 응답의 근거 참조 {item.evidenceRefs.length}건 · 자료 시점 {screen.feed.feed.asOf}</p>
+          <p role="note">현재 응답의 근거 참조 {item.evidenceRefs.length}건 · 자료 시점 {screen.feed?.feed.asOf??'확인 불가'}</p>
         </li>)}</ul>}
       {screen.feed?.feed.hasMore&&<p role="note">현재 목록의 표시 범위 밖에 다른 공고가 있을 수 있습니다. 전체 추천으로 판단하지 마세요.</p>}
     </section>
