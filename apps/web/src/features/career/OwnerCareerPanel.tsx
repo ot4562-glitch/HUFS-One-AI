@@ -15,6 +15,7 @@ export interface OwnerCareerPort {
   readonly session:OwnerSessionController;
   getProfile(signal?:AbortSignal):Promise<{profile:SelfProfile|null}>;
   getConsents(signal?:AbortSignal):Promise<{consents:SelfConsent|null}>;
+  updateConsents(change:{expectedVersion:number;choices:SelfConsent['choices']},signal?:AbortSignal):Promise<unknown>;
   saveProfile(change:{expectedVersion:number;value:SelfProfile['value']},signal?:AbortSignal):Promise<{profile:SelfProfile}>;
   getPortfolio(query:{afterId?:string;limit?:number},signal?:AbortSignal):Promise<ExperiencePortfolio>;
   create(input:{itemId:string;value:OwnerWorkspaceValue},signal?:AbortSignal):Promise<unknown>;
@@ -27,7 +28,7 @@ export interface OwnerCareerPort {
   explainOpportunity(id:string,request:{asOf:string;sourceRevisionId:string;rankConfigVersion:string;expectedFeedVersion?:string},signal?:AbortSignal):Promise<OpportunityExplanationResponse>;
 }
 
-type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio;
+type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio;consents:SelfConsent;
   bookmarks:{items:OwnerWorkspaceRecord[];nextCursor:string|null}};
 const CATEGORY={
   PROJECT:'프로젝트',CLUB:'동아리',VOLUNTEERING:'봉사',WORK:'근로',INTERNSHIP:'인턴',
@@ -72,6 +73,35 @@ function Form({data,onSave,busy}:{
   </form>;
 }
 
+
+/** Existing owner-only purpose grants. Edits never authorize a paid provider run automatically. */
+function ConsentControls({data,onSave,busy}:{
+  data:SelfConsent;onSave:(choices:SelfConsent['choices'])=>void;busy:boolean;
+}){
+  const [choices,setChoices]=useState<SelfConsent['choices']>({...data.choices});
+  const fields=[
+    {key:'personalStorage',text:'본인 경험·포트폴리오 개인 저장'},
+    {key:'externalAi',text:'승인된 외부 AI 입력 전송 (별도 명시 실행 필요)'},
+    {key:'ncpStorage',text:'승인된 NCP 서버 저장'},
+    {key:'teamReview',text:'검토를 위한 제한된 팀 공유'},
+    {key:'presentation',text:'허용된 발표 자료 활용'},
+  ] as const;
+  return <section aria-label="본인 목적별 동의 관리">
+    <h2>정보 이용 목적과 철회</h2>
+    <p>현재 본인의 동의 판본 {data.version}. 목적별 권한을 변경해도 과거 기록이 학교 공식 인증으로 바뀌거나 AI가 자동 실행되지는 않습니다.</p>
+    <form onSubmit={e=>{e.preventDefault();if(!busy)onSave(choices);}}>
+      {fields.map(field=><label key={field.key} className="mrow">
+        <input type="checkbox" checked={choices[field.key]} disabled={busy}
+          onChange={e=>setChoices(prev=>({...prev,[field.key]:e.target.checked}))}/>
+        {field.text}
+      </label>)}
+      {!choices.personalStorage&&<p role="alert">개인 저장 동의를 철회하면 이 페이지에서 즉시 본인 자료를 숨깁니다. 삭제·보존기간 정책은 서버 권한 및 별도 절차를 따릅니다.</p>}
+      <button type="submit" disabled={busy||fields.every(f=>choices[f.key]===data.choices[f.key])}>
+        목적별 동의 변경 저장</button>
+    </form>
+  </section>;
+}
+
 export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:(path:string)=>void}){
   const session=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [screen,setScreen]=useState<Screen|null>(null);
@@ -106,8 +136,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
       const [profile,portfolio,bookmarks]=await Promise.all([port.getProfile(signal),
         port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal),
         port.getBookmarks(bookmarkCursor?{limit:20,afterId:bookmarkCursor}:{limit:20},signal)]);
-      assertCareerConsentCurrent(before,(await port.getConsents(signal)).consents,portfolio.portfolio.consentVersion);
-      return {profile:profile.profile,portfolio,bookmarks};
+      const consents=requireCareerConsent((await port.getConsents(signal)).consents);
+      assertCareerConsentCurrent(before,consents,portfolio.portfolio.consentVersion);
+      return {profile:profile.profile,portfolio,bookmarks,consents};
     }).then(value=>{
       if(!active)return;
       if(value&&port.session.getState().status==='READY')setScreen(value);
@@ -130,6 +161,12 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
       }
     }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');}
     finally{setBusy(false);}
+  };
+  const saveConsents=(choices:SelfConsent['choices'])=>{
+    if(!screen)return;
+    // Clear private bytes immediately when the user asks to revoke personal storage.
+    if(!choices.personalStorage)setScreen(null);
+    void execute(signal=>port.updateConsents({expectedVersion:screen.consents.version,choices},signal));
   };
   const saveProfile=(value:SelfProfile['value'])=>{
     void execute(signal=>port.saveProfile({expectedVersion:screen?.profile?.version??0,value},signal));
@@ -170,6 +207,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     {error&&<p role="alert">{error}</p>}
     {notice&&<p role="status">{notice}</p>}
     <Form key={screen.profile?.version??0} data={screen.profile} onSave={saveProfile} busy={busy}/>
+    <ConsentControls key={'purposes-'+screen.consents.version} data={screen.consents} onSave={saveConsents} busy={busy}/>
     <section aria-labelledby="career-roadmap-heading">
       <h2 id="career-roadmap-heading">나의 관심·진로 탐색 로드맵</h2>
       {!roadmap?<p>관심·희망 분야를 계정 설정에서 먼저 입력해 주세요.</p>:<>
