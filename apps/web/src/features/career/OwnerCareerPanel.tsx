@@ -375,7 +375,7 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
     </section>
     <section aria-labelledby="career-review-heading">
       <h2 id="career-review-heading">경험별 AI 후보 · 인용 · 학생 승인 (동일 계정)</h2>
-      <p role="note">기존 /experience의 인증된 3단계 검토 컴포넌트를 그대로 재사용합니다. 원문 기록, 모델의 NEEDS_REVIEW 후보, 본인 승인/철회는 서로 다른 단계입니다. 이 검토 화면의 현재 응답은 최대 20건이며 모든 경험의 검토 상태를 대표하지 않습니다.</p>
+      <p role="note">기존 /experience의 인증된 3단계 검토 컴포넌트를 그대로 재사용합니다. 원문 기록, 모델의 NEEDS_REVIEW 후보, 본인 승인/철회는 서로 다른 단계입니다. 검토 목록은 20건씩 서버의 현재 커서·동의로 다음 페이지를 열 수 있으며, 각 페이지의 후보·승인은 다른 경험과 섞이지 않습니다.</p>
       {experienceReview?<><button type="button" disabled={busy}
         onClick={()=>setShowReview(open=>!open)}>
         {showReview?'내 경험 AI 검토 접기':'내 경험 AI 후보·인용·승인 검토 열기'}</button>
