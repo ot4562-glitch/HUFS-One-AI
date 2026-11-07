@@ -37,8 +37,11 @@ export const CareerAssetPageSchema=z.strictObject({
     ctx.addIssue({code:'custom',message:'Owner asset list is not bound to current experience version'});
   if(v.policy.state==='BLOCKED'&&v.items.length>0)
     ctx.addIssue({code:'custom',message:'Blocked rights must not return any private attachment metadata'});
-  if(v.policy.state==='ALLOWED'&&v.items.some(item=>item.sourceRightsVersion!==v.policy.sourceRightsVersion))
-    ctx.addIssue({code:'custom',message:'Asset rights version differs from current grant'});
+  if(v.policy.state==='ALLOWED'){
+    const rights=v.policy.sourceRightsVersion;
+    if(v.items.some(item=>item.sourceRightsVersion!==rights))
+      ctx.addIssue({code:'custom',message:'Asset rights version differs from current grant'});
+  }
 });
 export type CareerAssetPolicy=z.infer<typeof CareerAssetPolicySchema>;
 export type CareerAssetReceipt=z.infer<typeof CareerAssetReceiptSchema>;
