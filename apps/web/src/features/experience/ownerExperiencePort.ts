@@ -21,11 +21,9 @@ export function ownerExperienceSkillPort(api: HufsOwnerApiClient): ExperienceSki
     const epoch = generation;
     return () => { aborted(signal); if (epoch !== generation) throw new DOMException('Aborted', 'AbortError'); };
   };
-  return {
-    clear: () => { generation++; jobs.clear(); },
-    async load(signal) {
+  const loadPage=async(afterId:string|undefined,signal:AbortSignal)=>{
       const currentRequest = guard(signal);
-      const page = await api.getExperiencePortfolio({}, signal);
+      const page = await api.getExperiencePortfolio(afterId?{limit:20,afterId}:{limit:20}, signal);
       currentRequest();
       const items = [];
       for (const [index, item] of page.items.entries()) {
@@ -44,8 +42,12 @@ export function ownerExperienceSkillPort(api: HufsOwnerApiClient): ExperienceSki
           candidate, candidateState: current && job.accepted?.state === 'PENDING' ? 'PENDING' : 'NOT_REQUESTED'});
       }
       return ExperienceReviewPageSchema.parse({asOf: page.portfolio.asOf, consentVersion: page.portfolio.consentVersion,
-        complete: page.portfolio.complete, items});
-    },
+        complete: page.portfolio.complete, nextCursor: page.nextCursor, items});
+  };
+  return {
+    clear: () => { generation++; jobs.clear(); },
+    load: signal => loadPage(undefined, signal),
+    loadPage,
     approve: (id, input, signal) => api.approveExperienceTags(id, input, signal),
     revoke: (id, input, signal) => api.revokeExperienceTags(id, input, signal),
     async create(input, signal) {
