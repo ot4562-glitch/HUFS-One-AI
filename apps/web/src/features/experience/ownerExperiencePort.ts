@@ -23,7 +23,7 @@ export function ownerExperienceSkillPort(api: HufsOwnerApiClient): ExperienceSki
   };
   const loadPage=async(afterId:string|undefined,signal:AbortSignal)=>{
       const currentRequest = guard(signal);
-      const page = await api.getExperiencePortfolio(afterId?{limit:20,afterId}:{limit:20}, signal);
+      const page = await api.getExperiencePortfolio(afterId?{limit:20,afterId}:{}, signal);
       currentRequest();
       const items = [];
       for (const [index, item] of page.items.entries()) {
