@@ -48,6 +48,13 @@ export const OwnerProviderReceiptSchema=z.discriminatedUnion('mode',[
 });
 export type OwnerProviderReceipt=z.infer<typeof OwnerProviderReceiptSchema>;
 
+/** Backend-confirmed cancellation status. A request is not a completed refund. */
+export const OwnerProviderCancellationResponseSchema=z.strictObject({
+  jobId:JobId,status:z.enum(['CANCEL_REQUESTED','CANCELLED','NOT_CANCELLABLE']),
+  observedAt:Utc,
+});
+export type OwnerProviderCancellationResponse=z.infer<typeof OwnerProviderCancellationResponseSchema>;
+
 /** An optional candidate is only comparable to rules if it bears the exact
  * owner feed, evidence and source revision. The client never synthesizes it. */
 export const OwnerOpportunityAiProofSchema=z.strictObject({
