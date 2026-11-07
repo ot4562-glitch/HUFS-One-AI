@@ -1,6 +1,6 @@
 # React UI·모바일·시연 접근성
 
-**현재 열린 UI 업무는 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)에 전부 통합·미배정**입니다. 종전 이의상 `uisang2004-maker`의 본선 이전 #9/#119/#258 구현 기록은 과거 사실이지 향후 자동 업무 배정이 아닙니다. 실제 NCP·학교 로그인/권한은 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), 신규 기능은 [#317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)에서 추후 역할 결정. [현재 웹 구조](README.md) · [디자인 A11](../../Architecture.md).
+**현재 열린 UI 업무는 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)에 전부 통합·미배정**입니다. **2026-11-07 확정된 웹사이트 전체 디자인·React UI/서버 운영 주담당은 이서연 `lhh42001`**입니다. 본선 전 이의상 `uisang2004-maker`의 UI 구현은 과거 이력이고, **이의상·박준영은 이제 AI 정확도/Laya·CLOVA/NLP 공동 담당**입니다. 김채윤은 모든 웹 화면의 발표 시연·경험 데이터 입력/AI 결과 품질 확인, 심민성은 API/DB/품질 통합·추가 기능 개발을 맡습니다. 실제 NCP·학교 로그인/권한은 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), 신규 기능은 [#317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)에서 추적합니다. 각 통합 이슈 자체 assignee 0명은 유지합니다. [본선 이후 역할 정본](../../docs/WORKSTREAMS.md). [현재 웹 구조](README.md) · [디자인 A11](../../Architecture.md).
 
 - 넓은 화면에는 관찰된 11개 대분류 GNB·실제 구현 화면의 LNB, 휴대폰에는 하단 5탭을 사용한다. 별도 데스크톱 `ONE AI` 탭 배지는 없으며, 현재 합성 계정 선택은 공통 헤더의 계정 메뉴에 위치한다. 원래 HUFSAbility 메뉴 24개는 미지원 상태로 표시하고, 페이지 배너·h1/breadcrumb 및 검증된 홈 요약 수치만 사용한다.
 - 합성 S01–S05/EMPTY·ADMIN/REVIEWER와 실학생 원본 4명을 혼합하지 않으며 데이터/권한·학교 서비스 화면을 모방하거나 실제 지원/졸업을 확정하지 않음.
