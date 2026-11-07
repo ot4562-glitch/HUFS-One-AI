@@ -1,7 +1,7 @@
 import {useEffect,useState,useSyncExternalStore} from 'react';
 import {TOPIC_CODES,type TopicCode,type SelfProfile,type OwnerWorkspaceValue} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
-import type {OwnerCareerSnapshot,CareerExperience} from '../../../../packages/core/src/career/owner-roadmap.js';
+import type {OwnerCareerSnapshot,CareerExperience} from '../../../../../packages/core/src/career/owner-roadmap.js';
 import {TOPIC_TEXT} from '../demo/topicText.js';
 import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
 import {attachCrossTabSessionClosure,SESSION_CLOSE_CHANNEL} from '../../app/session-broadcast.js';
