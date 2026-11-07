@@ -4,6 +4,7 @@ export * from './study-plan-check.js';
 export * from './major-what-if.js';
 export * from './opportunity-explanation.js';
 export * from './opportunity-revision-comparison.js';
+export * from './owner-opportunity-moderation.js';
 export * from './synthetic-clubs.js';
 export * from './workspace.js';
 export * from './experience-approval.js';
