@@ -234,6 +234,25 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     await waitFor(()=>expect(f.submit).toHaveBeenCalledTimes(2));
     expect(f.submit.mock.calls[1]![2]).toBe(f.submit.mock.calls[0]![2]);
   });
+  it('requests server cancellation only when its authenticated capability exists and does not claim a refund',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'PENDING'});
+    const cancelJob=vi.fn(async()=>({
+      jobId,status:'CANCEL_REQUESTED',observedAt:'2026-11-07T12:00:00Z',
+    }));
+    f.port.cancelJob=cancelJob;
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/아직 결과가 정산되지 않았습니다/);
+    fireEvent.click(screen.getByRole('button',{name:'서버 작업 취소 요청 (실제 중단·환불 미보장)'}));
+    await waitFor(()=>expect(cancelJob).toHaveBeenCalledWith(jobId,expect.any(AbortSignal)));
+    await screen.findByText(/공급자 작업 중단·과금\/환불은 아직 확인되지 않았습니다/);
+    expect(f.submit).toHaveBeenCalledTimes(1);
+    expect(f.read).not.toHaveBeenCalled();
+  });
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);
