@@ -210,7 +210,8 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     fireEvent.click(screen.getByRole('checkbox'));
     const run=screen.getByRole('button',{name:'선택된 승인 입력 실행'});
     fireEvent.click(run);fireEvent.click(run);
-    expect(f.submit).toHaveBeenCalledTimes(1);
+    // The guarded controller rechecks the signed-in actor before it calls the adapter.
+    await waitFor(()=>expect(f.submit).toHaveBeenCalledTimes(1));
     await act(async()=>{resolve({jobId,state:'PENDING'});});
   });
 
