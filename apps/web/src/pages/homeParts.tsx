@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import type {FeedCardView} from '../features/demo/sectionView.js';
+import type {DemoScreenView, FeedCardView} from '../features/demo/sectionView.js';
 import type {NoticeItemView} from '../features/notices/noticeView.js';
 import type {DDayView} from '../features/demo/dday.js';
 import {DUE_SOON_DAYS} from '../features/today/TodaySummary.js';
@@ -66,6 +66,22 @@ export function upcomingDeadlines(cards: readonly FeedCardView[], notices: reado
     ...cards.flatMap(c => c.dday ? [{key: 'o' + c.opportunityId, kind: '공고', title: c.title, path: oppPath(c.opportunityId), dday: c.dday}] : []),
     ...notices.flatMap(n => n.dday ? [{key: 'n' + n.noticeId, kind: '공지', title: n.title, path: n.path, dday: n.dday}] : []),
   ].sort((a, b) => a.dday.days - b.dday.days).slice(0, max);
+}
+
+/**
+ * #318: the basis lines for the listed D-days. One line when every listed item counts from the same
+ * date; otherwise one line per kind (공고, 공지), labelled. Only kinds actually listed are named, so a
+ * section the profile does not share never shows its date.
+ */
+export function deadlineBasisText(items: ReturnType<typeof upcomingDeadlines>, basis: DemoScreenView['ddayBasis']): string[] {
+  const byKind = new Map<string, string>();
+  for (const i of items) {
+    const text = i.kind === '공고' ? basis.feed : basis.notices;
+    if (text) byKind.set(i.kind, text);
+  }
+  const texts = new Set(byKind.values());
+  if (texts.size <= 1) return [...texts];
+  return [...byKind].map(([kind, text]) => `${kind} ${text}`);
 }
 
 export function DeadlineRow({item, navigate}: {item: ReturnType<typeof upcomingDeadlines>[number]; navigate: Nav}) {

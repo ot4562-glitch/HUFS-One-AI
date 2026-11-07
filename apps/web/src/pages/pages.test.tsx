@@ -53,6 +53,16 @@ describe('오늘 page', () => {
     expect(within(pinned).getByText(/가상 졸업인증 서류 제출 안내/)).toBeTruthy();
   });
 
+  it('#318: states where D-day is computed from, next to the deadlines and on 기회', async () => {
+    await open();
+    const due = screen.getByRole('region', {name: '다가오는 확정 마감'});
+    const basis = /^(공고 |공지 )?D-day는 브라우저의 오늘이 아니라 시연 자료의 기준일 \d{4}년 \d{1,2}월 \d{1,2}일로 계산했어요\.$/;
+    expect(within(due).getAllByText(basis).length).toBeGreaterThan(0);
+    cleanup();
+    await open('/opportunities');
+    expect(screen.getByText(/^D-day는 브라우저의 오늘이 아니라 시연 자료의 기준일 .+로 계산했어요\.$/)).toBeTruthy();
+  });
+
   it("switching to S02 shows S02's own cards and none of S01's", async () => {
     await open();
     fireEvent.click(within(screen.getByRole('group', {name: /시연 대상 선택/})).getAllByRole('radio')[1]!);
