@@ -8,7 +8,7 @@ export function CareerActionPlans({bookmarks,actions,busy,onCreate,onEdit,onNext
   bookmarks:Page;actions:Page;busy:boolean;
   onCreate:(value:OwnerWorkspaceValue)=>void;
   onEdit:(record:OwnerWorkspaceRecord,value:OwnerWorkspaceValue)=>void;
-  onNext:(cursor:string)=>void;onFirst:()=>void;
+  onNext:(cursor:string)=>void;onFirst?:()=>void;
   navigate:(path:string)=>void;
 }){
   const allowed=bookmarks.items.filter(item=>
