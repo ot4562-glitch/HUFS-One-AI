@@ -188,8 +188,8 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
     }).catch(()=>{if(active)setError('포트폴리오를 조회할 수 없습니다. 현재 본인 권한·동의를 확인해 주세요.');});
     return ()=>{active=false;};
   },[port,session.status,session.epoch,cursor,bookmarkCursor,actionCursor,rev]);
-  const execute=async(run:(signal:AbortSignal)=>Promise<unknown>)=>{
-    if(busy||session.status!=='READY')return;
+  const execute=async(run:(signal:AbortSignal)=>Promise<unknown>):Promise<boolean>=>{
+    if(busy||session.status!=='READY')return false;
     setBusy(true);setError('');setNotice('');
     try{
       const result=await port.session.runMutation(run);
@@ -200,10 +200,12 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
         setInventory(null);setScanStatus('IDLE');setWholeTimeline(false);
         setAssetItem(null);setRev(x=>x+1);
         setNotice('변경을 저장했습니다. 현재 본인 권한과 최신 판본으로 다시 조회했습니다.');
+        return true;
       }else if(port.session.getState().status==='READY'){
         setError('변경을 확인할 수 없었습니다. 중복 요청 없이 최신 상태를 조회해 주세요.');
       }
-    }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');}
+      return false;
+    }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');return false;}
     finally{setBusy(false);}
   };
   const saveConsents=(choices:SelfConsent['choices'])=>{
@@ -243,10 +245,9 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
       ...(role.trim()?{role:role.trim()}:{}),
       ...(startedOn?{startedOn}:{}),...(endedOn?{endedOn}:{}),
     };
-    void execute(async signal=>{
-      if(record)await port.update(record.itemId,{expectedVersion:record.version,value},signal);
-      else await port.create({itemId:'career-'+crypto.randomUUID().replaceAll('-',''),value},signal);
-    });
+    void execute(signal=>record
+      ?port.update(record.itemId,{expectedVersion:record.version,value},signal)
+      :port.create({itemId:'career-'+crypto.randomUUID().replaceAll('-',''),value},signal));
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">본인 계정과 동의를 확인하고 있습니다.</p>;
   if(session.status!=='READY')return <p role="alert">현재 사용자 세션을 확인할 수 없습니다. 이전 프로필과 타임라인은 표시하지 않습니다.</p>;
@@ -422,8 +423,8 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
     </section>
     <CareerActionPlans key={'action-'+(actionCursor??'first')+'-'+screen.consents.version}
       bookmarks={screen.bookmarks} actions={screen.actions} busy={busy} navigate={navigate}
-      onCreate={value=>{void execute(signal=>port.create({itemId:'career-plan-'+crypto.randomUUID().replaceAll('-',''),value},signal));}}
-      onEdit={(record,value)=>{void execute(signal=>port.update(record.itemId,{expectedVersion:record.version,value},signal));}}
+      onCreate={value=>execute(signal=>port.create({itemId:'career-plan-'+crypto.randomUUID().replaceAll('-',''),value},signal))}
+      onEdit={(record,value)=>execute(signal=>port.update(record.itemId,{expectedVersion:record.version,value},signal))}
       onNext={afterId=>setActionCursor(afterId)}
       {...(actionCursor?{onFirst:()=>setActionCursor(undefined)}:{})}/>
   </section>;
