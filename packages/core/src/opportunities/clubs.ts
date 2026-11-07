@@ -46,7 +46,7 @@ export interface ClubPost {
   category:ClubCategory;
   campus:ClubCampus;
   /** Optional scope: missing means campus-only for backward-compatible synthetic posts. */
-  affiliation?:ClubAffiliation;
+  affiliation?:ClubAffiliation|undefined;
   topicCodes:readonly TopicCode[];
   activities:readonly ClubActivity[];
   /** Stated recruiting conditions (same evaluator as opportunities); UNKNOWN facts stay UNKNOWN. */
