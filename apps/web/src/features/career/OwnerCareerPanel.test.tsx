@@ -4,6 +4,7 @@ import {cleanup,fireEvent,render,screen,waitFor} from '@testing-library/react';
 import {ExperiencePortfolioSchema,SelfConsentSchema,SelfProfileSchema,type OwnerWorkspaceRecord} from '@hufs-one/contracts';
 import {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerCareerPanel,type OwnerCareerPort} from './OwnerCareerPanel.js';
+import type {ExperienceSkillPort} from '../experience/experienceSkillPort.js';
 
 const asOf='2026-11-07T08:00:00.000Z';
 const original:OwnerWorkspaceRecord={itemId:'b1',version:1,updatedAt:asOf,
@@ -93,6 +94,30 @@ describe('#317 BETA owner timeline and self-reported stage',()=>{
     expect(f.port.saveProfile).toHaveBeenCalledWith(expect.objectContaining({value:expect.objectContaining({
       activityStatus:'APPLYING_SELF_REPORTED',visibility:'PRIVATE',
     })}),expect.any(AbortSignal));
+  });
+  it('reuses the existing BETA three-stage experience AI review in the same private career screen',async()=>{
+    const f=fixture();
+    const skills:ExperienceSkillPort={
+      load:vi.fn(async()=>({asOf,consentVersion:1,complete:true,items:[]})),
+      approve:vi.fn(async()=>({})),revoke:vi.fn(async()=>({})),
+    };
+    render(<OwnerCareerPanel port={f.port} navigate={()=>{}}
+      experienceReview={{session:f.session,skills}}/>);
+    fireEvent.click(await screen.findByRole('button',{name:'내 경험 AI 후보·인용·승인 검토 열기'}));
+    await screen.findByRole('heading',{name:'경험에서 고른 관심 주제'});
+    expect(skills.load).toHaveBeenCalled();
+    expect(screen.getByText(/원문 기록, 모델의 NEEDS_REVIEW 후보, 본인 승인\/철회는 서로 다른 단계/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button',{name:'내 경험 AI 검토 접기'}));
+    expect(screen.queryByRole('heading',{name:'경험에서 고른 관심 주제'})).toBeNull();
+  });
+  it('recognizes the actual experience-create server receipt instead of treating a successful write as failure',async()=>{
+    const f=fixture();render(<OwnerCareerPanel port={f.port} navigate={()=>{}}/>);
+    await screen.findByRole('heading',{name:'새 경험 기록'});
+    fireEvent.change(screen.getByLabelText('제목'),{target:{value:'나의 데이터 프로젝트'}});
+    fireEvent.click(screen.getByRole('button',{name:'경험 등록'}));
+    await waitFor(()=>expect(f.port.create).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/변경을 저장했습니다/)).toBeTruthy();
+    await waitFor(()=>expect(f.getPortfolio).toHaveBeenCalledTimes(2));
   });
   it('never enables an AI call when consent preferences are changed',async()=>{
     const f=fixture();

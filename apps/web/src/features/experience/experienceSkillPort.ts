@@ -14,6 +14,8 @@ export interface ExperienceCandidateRequestResult {
 /** Every operation is enclosed by a current owner-session or synthetic context guard. */
 export interface ExperienceSkillPort {
   load(signal: AbortSignal): Promise<unknown>;
+  /** Optional keyset paging; each page is freshly owner/session/consent checked. */
+  loadPage?(afterId:string|undefined,signal:AbortSignal):Promise<unknown>;
   approve(experienceId: string, input: ExperienceTagApprovalPut, signal: AbortSignal): Promise<unknown>;
   revoke(experienceId: string, input: ExperienceTagApprovalDelete, signal: AbortSignal): Promise<unknown>;
   requestCandidates?(selection: readonly ExperienceCandidateSelection[], signal: AbortSignal): Promise<ExperienceCandidateRequestResult>;

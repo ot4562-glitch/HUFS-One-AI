@@ -150,6 +150,7 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
   const [note, setNote] = useState<Note | null>(null);
   const [busy, setBusy] = useState(false);
   const [round, setRound] = useState(0);
+  const [cursor,setCursor]=useState<string|undefined>();
   const [selected, setSelected] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
   const [title, setTitle] = useState('');
@@ -161,7 +162,8 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
     let live = true;
     setLoad({key, scope, kind: 'LOADING'});
     void scope.read(async signal => {
-      try { return {raw: await port.load(signal)}; }
+      try { return {raw: cursor&&port.loadPage
+        ?await port.loadPage(cursor,signal):await port.load(signal)}; }
       catch (error) {
         if (error instanceof HufsApiError && (error.status === 409 || error.status === 503)) return {raw: null};
         throw error;
@@ -173,7 +175,7 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
       setLoad(v.ok ? {key, scope, kind: 'VIEW', view: v.view} : {key, scope, kind: 'ERROR'});
     });
     return () => { live = false; };
-  }, [scope, port, round]);
+  }, [scope, port, round, cursor]);
 
   const mutate = useCallback(async (run: (signal: AbortSignal) => Promise<unknown>, done: string | ((value: unknown) => string)) => {
     if (mutationLock.current) return false;
@@ -191,7 +193,7 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
   if (!scope.ready || !load || load.key !== key || load.scope !== scope) return null;
   const head = <h2 id="exp-review">경험에서 고른 관심 주제</h2>;
   if (load.kind === 'LOADING') return <section className="section exp-review" aria-labelledby="exp-review" aria-busy="true">{head}<p className="muted">경험 기록을 불러오는 중</p></section>;
-  if (load.kind === 'ERROR') return <section className="section exp-review" aria-labelledby="exp-review">{head}<p role="alert">경험 자료의 현재 판본이나 서버 응답을 확인할 수 없어 표시하지 않았습니다.</p><button type="button" className="button" onClick={() => setRound(n => n + 1)}>최신 경험 다시 조회</button></section>;
+  if (load.kind === 'ERROR') return <section className="section exp-review" aria-labelledby="exp-review">{head}<p role="alert">경험 자료의 현재 판본이나 서버 응답을 확인할 수 없어 표시하지 않았습니다.</p><button type="button" className="button" onClick={() => setRound(n => n + 1)}>최신 경험 다시 조회</button>{cursor&&port.loadPage&&<button type="button" className="button button--quiet" onClick={()=>{setCursor(undefined);setSelected([]);setConsent(false);}}>첫 경험 페이지로 돌아가기</button>}</section>;
   const {view} = load;
   const selectedCards = view.cards.filter(card => card.canRequest && selected.includes(card.experienceId));
   const shown = note && note.key === key && note.scope === scope ? note : null;
@@ -268,6 +270,12 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
         </li>)}</ul>}
       </section>
       {view.partial && <p className="muted">경험이 더 있습니다. 이 목록은 일부이며 전체 주제 목록이 아닙니다.</p>}
+      {port.loadPage&&view.nextCursor&&<button type="button" className="button button--quiet" disabled={busy}
+        onClick={()=>{setCursor(view.nextCursor!);setSelected([]);setConsent(false);setNote(null);}}>
+        다음 경험 20건 검토</button>}
+      {port.loadPage&&cursor&&<button type="button" className="button button--quiet" disabled={busy}
+        onClick={()=>{setCursor(undefined);setSelected([]);setConsent(false);setNote(null);}}>
+        첫 경험 페이지로 돌아가기</button>}
     </section>
   );
 }

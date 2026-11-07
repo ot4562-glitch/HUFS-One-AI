@@ -13,9 +13,13 @@ import {assertCareerConsentCurrent,requireCareerConsent} from './careerConsent.j
 import {bookmarkProgressInput,nextBookmarkStage,STAGE_NAMES} from './bookmarkProgress.js';
 import {scanCareerInventory,type CareerInventory} from './portfolioInventory.js';
 import {CareerActionPlans} from './CareerActionPlans.js';
+import {CareerEvidenceAttachments,type CareerEvidenceAssetPort} from './CareerEvidenceAttachments.js';
+import {OwnerExperiencePanel,type OwnerExperiencePort} from '../experience/OwnerExperiencePanel.js';
 
 export interface OwnerCareerPort {
   readonly session:OwnerSessionController;
+  /** Optional #325 verified attachment provider. Never synthesize an upload endpoint. */
+  readonly assets?:CareerEvidenceAssetPort;
   getProfile(signal?:AbortSignal):Promise<{profile:SelfProfile|null}>;
   getConsents(signal?:AbortSignal):Promise<{consents:SelfConsent|null}>;
   updateConsents(change:{expectedVersion:number;choices:SelfConsent['choices']},signal?:AbortSignal):Promise<unknown>;
@@ -126,7 +130,9 @@ function ConsentControls({data,onSave,busy}:{
   </section>;
 }
 
-export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:(path:string)=>void}){
+export function OwnerCareerPanel({port,navigate,experienceReview}:{
+  port:OwnerCareerPort;navigate:(path:string)=>void;experienceReview?:OwnerExperiencePort;
+}){
   const session=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [screen,setScreen]=useState<Screen|null>(null);
   const [cursor,setCursor]=useState<string|undefined>();
@@ -136,6 +142,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
   const [inventory,setInventory]=useState<CareerInventory|null>(null);
   const [scanStatus,setScanStatus]=useState<'IDLE'|'SCANNING'|'ERROR'>('IDLE');
   const [wholeTimeline,setWholeTimeline]=useState(false);
+  const [showReview,setShowReview]=useState(false);
+  const [assetItem,setAssetItem]=useState<string|null>(null);
   const [outcomes,setOutcomes]=useState<Record<string,BookmarkOutcome['result']|''>>({});
   const [notice,setNotice]=useState('');
   const [rev,setRev]=useState(0);
@@ -158,6 +166,7 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
   },[port.session]);
   useEffect(()=>{
     setScreen(null);setInventory(null);setScanStatus('IDLE');setWholeTimeline(false);
+    setShowReview(false);setAssetItem(null);
     setError('');setDeleteId(null);setEditing(null);
     if(session.status!=='READY')return;
     let active=true;
@@ -179,8 +188,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     }).catch(()=>{if(active)setError('포트폴리오를 조회할 수 없습니다. 현재 본인 권한·동의를 확인해 주세요.');});
     return ()=>{active=false;};
   },[port,session.status,session.epoch,cursor,bookmarkCursor,actionCursor,rev]);
-  const execute=async(run:(signal:AbortSignal)=>Promise<unknown>)=>{
-    if(busy||session.status!=='READY')return;
+  const execute=async(run:(signal:AbortSignal)=>Promise<unknown>):Promise<boolean>=>{
+    if(busy||session.status!=='READY')return false;
     setBusy(true);setError('');setNotice('');
     try{
       const result=await port.session.runMutation(run);
@@ -188,12 +197,15 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
         setEditing(null);setDeleteId(null);setTitle('');setSummary('');setRole('');setStartedOn('');setEndedOn('');
         setAchievement('');setReferenceUrl('');
         setCursor(undefined);setBookmarkCursor(undefined);setActionCursor(undefined);
-        setInventory(null);setScanStatus('IDLE');setWholeTimeline(false);setRev(x=>x+1);
+        setInventory(null);setScanStatus('IDLE');setWholeTimeline(false);
+        setAssetItem(null);setRev(x=>x+1);
         setNotice('변경을 저장했습니다. 현재 본인 권한과 최신 판본으로 다시 조회했습니다.');
+        return true;
       }else if(port.session.getState().status==='READY'){
         setError('변경을 확인할 수 없었습니다. 중복 요청 없이 최신 상태를 조회해 주세요.');
       }
-    }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');}
+      return false;
+    }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');return false;}
     finally{setBusy(false);}
   };
   const saveConsents=(choices:SelfConsent['choices'])=>{
@@ -233,10 +245,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
       ...(role.trim()?{role:role.trim()}:{}),
       ...(startedOn?{startedOn}:{}),...(endedOn?{endedOn}:{}),
     };
-    void execute(async signal=>{
-      if(record)await port.update(record.itemId,{expectedVersion:record.version,value},signal);
-      else await port.create({itemId:'career-'+crypto.randomUUID().replaceAll('-',''),value},signal);
-    });
+    void execute(signal=>record
+      ?port.update(record.itemId,{expectedVersion:record.version,value},signal)
+      :port.create({itemId:'career-'+crypto.randomUUID().replaceAll('-',''),value},signal));
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">본인 계정과 동의를 확인하고 있습니다.</p>;
   if(session.status!=='READY')return <p role="alert">현재 사용자 세션을 확인할 수 없습니다. 이전 프로필과 타임라인은 표시하지 않습니다.</p>;
@@ -333,8 +344,16 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
           {item.sourceOpportunityId&&<p><InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.sourceOpportunityId)} navigate={navigate}>연결된 기회 확인 (현재 권한 확인 필요)</InAppLink></p>}
           {item.evidence.state==='OWNER_APPROVED_TOPIC'&&<p role="note">확인된 내용 판본 {item.evidence.contentVersion} · 경험 {item.evidence.experienceId}. 개인 선택에 의한 주제 승인일 뿐 실제 AI 후보 검증이나 외부 자격 인증이 아닙니다.</p>}
           {item.referenceUrl?<p>본인 제공 링크가 있으며 기관 증빙 검증은 이 화면에서 수행하지 않았습니다.</p>
-            :<p>첨부된 증빙 링크 없음 · 이미지/포스터 업로드는 현재 인가된 저장 API 미제공으로 사용할 수 없습니다.</p>}
+            :<p>첨부된 증빙 링크 없음 · {port.assets
+              ? '현재 출처 사용권·동의 확인 후에만 이 경험의 파일 관리 가능 여부를 조회할 수 있습니다.'
+              : '이미지/포스터 업로드는 현재 인가된 저장 API 미제공으로 사용할 수 없습니다.'}</p>}
           <p><InAppLink to="/experience" navigate={navigate}>현재 판본의 AI 후보·인용·본인 주제 승인/철회 검토</InAppLink> (현재 경험 목록의 일부만 표시될 수 있음)</p>
+          {screen.portfolio.items.some(raw=>raw.itemId===item.itemId)&&<button type="button"
+            onClick={()=>setAssetItem(current=>current===item.itemId?null:item.itemId)}>
+            {assetItem===item.itemId?'개인 증빙 관리 닫기':'권리 확인된 개인 증빙 관리'}</button>}
+          {assetItem===item.itemId&&screen.portfolio.items.filter(raw=>raw.itemId===item.itemId)
+            .map(raw=><CareerEvidenceAttachments key={raw.itemId+':'+raw.version}
+              record={raw} session={port.session} {...(port.assets?{port:port.assets}:{})}/>)}
           {item.evidence.state==='OWNER_APPROVED_TOPIC'&&<ul aria-label="본인이 승인한 주제">{item.evidence.topicCodes.map(code=><li key={code}>{TOPIC_TEXT[code]}</li>)}</ul>}
           <p>{item.evidence.state==='OWNER_APPROVED_TOPIC'
             ? '현재 페이지에서 본인이 주제를 승인했습니다. 공식 역량 인증은 아닙니다.'
@@ -353,6 +372,17 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
       </li>)}</ol>}
       {screen.portfolio.nextCursor&&<button type="button" disabled={busy} onClick={()=>setCursor(screen.portfolio.nextCursor??undefined)}>다음 경험 20건</button>}
       {cursor&&<button type="button" disabled={busy} onClick={()=>setCursor(undefined)}>첫 페이지</button>}
+    </section>
+    <section aria-labelledby="career-review-heading">
+      <h2 id="career-review-heading">경험별 AI 후보 · 인용 · 학생 승인 (동일 계정)</h2>
+      <p role="note">기존 /experience의 인증된 3단계 검토 컴포넌트를 그대로 재사용합니다. 원문 기록, 모델의 NEEDS_REVIEW 후보, 본인 승인/철회는 서로 다른 단계입니다. 검토 목록은 20건씩 서버의 현재 커서·동의로 다음 페이지를 열 수 있으며, 각 페이지의 후보·승인은 다른 경험과 섞이지 않습니다.</p>
+      {experienceReview?<><button type="button" disabled={busy}
+        onClick={()=>setShowReview(open=>!open)}>
+        {showReview?'내 경험 AI 검토 접기':'내 경험 AI 후보·인용·승인 검토 열기'}</button>
+        {showReview&&<><OwnerExperiencePanel port={experienceReview}/>
+          <button type="button" onClick={()=>{setInventory(null);setAssetItem(null);setRev(v=>v+1);}}>
+            승인/경험 변경 후 커리어 화면 최신 판본 재조회</button></>}</>
+        :<p>현재 동일 소유자의 경험 AI 검토 포트가 연결되지 않았습니다. /experience에서 승인·철회할 수 있습니다.</p>}
     </section>
     <section aria-labelledby="career-saved-heading">
       <h2 id="career-saved-heading">연결된 저장·지원 기록 (본인 작성)</h2>
@@ -395,8 +425,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     </section>
     <CareerActionPlans key={'action-'+(actionCursor??'first')+'-'+screen.consents.version}
       bookmarks={screen.bookmarks} actions={screen.actions} busy={busy} navigate={navigate}
-      onCreate={value=>{void execute(signal=>port.create({itemId:'career-plan-'+crypto.randomUUID().replaceAll('-',''),value},signal));}}
-      onEdit={(record,value)=>{void execute(signal=>port.update(record.itemId,{expectedVersion:record.version,value},signal));}}
+      onCreate={value=>execute(signal=>port.create({itemId:'career-plan-'+crypto.randomUUID().replaceAll('-',''),value},signal))}
+      onEdit={(record,value)=>execute(signal=>port.update(record.itemId,{expectedVersion:record.version,value},signal))}
       onNext={afterId=>setActionCursor(afterId)}
       {...(actionCursor?{onFirst:()=>setActionCursor(undefined)}:{})}/>
   </section>;

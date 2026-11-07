@@ -19,6 +19,8 @@ export const ExperienceReviewPageSchema = z.strictObject({
   consentVersion: Version,
   /** false when more cards exist than this page: approvals still apply per card, but nothing here may claim a full inventory. */
   complete: z.boolean(),
+  /** Opaque server-owned keyset cursor for the next authorized owner page. */
+  nextCursor: Id.nullable().optional(),
   items: z.array(z.strictObject({
     experienceId: Id,
     title: z.string().min(1).max(120),
@@ -62,6 +64,7 @@ export interface ExperienceCardView {
 export interface ExperienceReviewView {
   readonly asOf: string;
   readonly partial: boolean;
+  readonly nextCursor: string|null;
   readonly cards: readonly ExperienceCardView[];
 }
 
@@ -117,6 +120,7 @@ export function buildExperienceReviewView(raw: unknown): {ok: true; view: Experi
   return {ok: true, view: {
     asOf: dateText(page.asOf),
     partial: !page.complete,
+    nextCursor: page.nextCursor??null,
     cards: page.items.map(item => {
       const candidate = candidateView(item, page.consentVersion);
       const approval = approvalView(item, page.consentVersion);
