@@ -1,6 +1,7 @@
 import {createApi} from './server.js';
 import {assertRuntimeConfiguration,type RuntimeMode} from './runtime-policy.js';
 import {registerSourceJobControlRoutes} from './modules/opportunities/source-job-control-http.js';
+import {registerOperatorPublicApiDiscoveryRoute,type OperatorPublicApiDiscoveryControl} from './modules/opportunities/operator-public-api-http.js';
 import type {SourceJobControl} from './modules/opportunities/source-job-control-http.js';
 import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
 import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
@@ -46,6 +47,8 @@ interface SharedDependencies {
   runtime?:RuntimeMode;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
   sourceIngestionControl?:SourceJobControl;
+  /** Operator private API candidate discovery (never a normal owner search). */
+  publicApiDiscovery?:OperatorPublicApiDiscoveryControl;
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
   doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
   demoProfile?:DemoProfilePort;
@@ -110,6 +113,9 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   };
   const app=createApi(options),ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
   registerSourceJobControlRoutes({app,session:ownerSession,...(deps.sourceIngestionControl?{control:deps.sourceIngestionControl}:{})});
+  if(deps.publicApiDiscovery)registerOperatorPublicApiDiscoveryRoute({
+    app,session:ownerSession,allowedOrigin:deps.allowedOrigin,control:deps.publicApiDiscovery,
+  });
   registerRestrictedOwnerIntakeRoute({app,session:ownerSession,...(deps.restrictedOwnerDirectory?{directory:deps.restrictedOwnerDirectory}:{})});
   registerHufsAbilityCapabilitiesRoute(app,ownerSession);
   registerSyntheticClubRoutes({...deps.syntheticClubs,app,session:ownerSession,...(deps.adminAuthority?{adminAuthority:deps.adminAuthority}:{})});
