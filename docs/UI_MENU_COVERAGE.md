@@ -32,14 +32,23 @@
 
 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)로 홈의 기존 요약을 바탕으로 한 3단계 선택 패널 및 `/opportunities`의 **현재 표시된 허가 공고만** 검색/7일 내 확정 마감·자격 상태 필터/마감 정렬을 연결했습니다. 기존 데스크톱 11대분류·모바일 5탭 정보구조를 대체하지 않습니다. 현재 날짜가 아닌 자료의 `asOf`에 따른 마감·D-day이고 실제 학생 로그인/실원본 전체 검색이 아닙니다. PR HEAD CI 4/4 통과와 사람/실기기 인수는 구별합니다. #318 전체 UX/날짜 안내, #280 실제 UI 인수는 계속 OPEN입니다.
 
-## 2026-11-07 이슈 통합 및 미배정
+## 2026-11-07 최신 이슈 분리·담당 배정
 
-현재 열린 이슈는 **[#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
+| 현재 OPEN 7개 | 담당 |
+| --- | --- |
+| [#321 이의상 AI/NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` |
+| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` |
+| [#323 이서연 NCP 서버](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` |
+| [#324 김채윤 시연/검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` |
+| [#325 심민성 통합/릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` |
+| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` |
+| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` |
 
+구 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 기존 POST-01~20을 개인별 #321~#325로 중복 없이 옮긴 뒤 **CLOSED(이관)**했습니다. 추가 기능 #317→심민성, UI/UX #318→이서연; 각 OPEN 이슈는 담당자 1명입니다. 이전 이슈 본문/댓글은 이력 보존. **코드/합성 PASS는 실제 NCP·학교 데이터·실 AI·사람 수락 완료를 뜻하지 않으며 `RELEASE_BLOCKED` 유지**.
 ## 현재 인수 상태
 
 - React/Vite·합성 Chrome E2E는 상단/모바일 메뉴·키보드/닫힘/focus·미지원 상태/320–1440px 범위 검증 코드가 있습니다.
-- **실제 스크린리더/실학생 계정·운영 사용자 역할·학교 접근성·기관/자료 이용권은 통합 #318(UI/UX 사람 인수)·#316(실 NCP/권한)에서 아직 인수 전**. 구 #252는 과거 완료/이관 이력입니다.
+- **실제 스크린리더·사람 웹 검수는 이서연 [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), 실사용 시연/AI 결과는 김채윤 [#324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324), 실 NCP 서버·비용은 이서연 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 실 로그인/개별 권리·DB는 심민성 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 미인수 상태로 추적합니다.** 이전 #252는 완료/이관 이력입니다.
 - 특정 메뉴가 데이터/권리/운영 포트 없이 비활성이라면 `미지원`, `NOT_SHARED`, `UNKNOWN`을 명시하고 임의 응답/실지원 완료를 표시하지 않습니다.
 
 [UI 기술 및 토큰](../Architecture.md#a11-ui모바일디자인접근성) · [#9 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) · [#119 종단](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) · [#252 실기기](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).

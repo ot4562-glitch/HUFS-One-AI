@@ -1,11 +1,20 @@
 # HUFS One AI — 팀 작업과 실제 수락
 
-기준일 **2026-11-07** (하단 담당별 수락률은 2026-11-06의 **고정 역사적 수치**). 본선 전 이슈의 정리와 실제 사람/운영 인수를 분리한다. 코드 정본은 [STATUS](../STATUS.md), 실제 운영 증거는 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)이다.
+기준일 **2026-11-07** (하단 담당별 수락률은 2026-11-06의 **고정 역사적 수치**). 본선 전 이슈의 정리와 실제 사람/운영 인수를 분리한다. 코드 정본은 [STATUS](../STATUS.md), 실제 운영·서버 증거는 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 전체 인수·릴리스는 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 추적한다.
 
-## 2026-11-07 현행 이슈·팀 역할 재편
+## 현재 열린 이슈 7개 — 개인별 GitHub 담당 확정 (2026-11-07)
 
-GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 아래 '종전 담당별 실제 수락 수치'와 본선 전 이슈·PR은 **역사적 기록**이며, 새 담당은 이 문서의 '본선 진출 이후 책임별 신규 인수 항목'을 따릅니다. 본선 이후 사람별 역할은 위 표로 확정됐으나 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+| 이슈 | 담당 GitHub 계정 | 본선 이후 역할 |
+| --- | --- | --- |
+| [#321 이의상 AI/NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya·CLOVA·NLP 정확도 공동 |
+| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI 정확도 공동·학업 코어 |
+| [#323 이서연 서버/NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | NCP 계정·운영·비용/복구 |
+| [#324 김채윤 시연/AI 검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 학생 경험 입력·전 화면 시연 |
+| [#325 심민성 통합/품질](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API·DB·보안·CI·출시 |
+| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 개발 |
+| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` | 이서연 디자인·React UI |
 
+[구 통합 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 POST-01~20을 #321~#325로 각각 한 번씩 분리한 뒤 **CLOSED/기록 보관**했습니다. #317은 심민성, #318은 이서연에게 GitHub 담당을 배정했습니다. **총 7개 OPEN·담당자 1명씩**입니다. 과거 이슈와 역할은 기록일 뿐 현재 배정 근거가 아닙니다. 업무 배정은 실 NCP·유료 AI·학교/학생 데이터·사람 인수 완료를 의미하지 않으며 `NOT_RUN/CONFIGURATION_REQUIRED/RELEASE_BLOCKED`가 유지됩니다.
 ## 본선 진출 이후 책임별 신규 인수 항목 (2026-11-07 사용자 확정)
 
 아래는 **앞으로 수행할 체크리스트**이며 기존의 담당자별 본선 전 수락 수치/사람 검토를 바꾸지 않습니다. 사람별 책임이 정해졌더라도 운영 계정/실자료·실기기/유료 모델 검증은 **아직 NOT_RUN**입니다. 새 팀 역할 정본: [WORKSTREAMS](WORKSTREAMS.md).
@@ -17,7 +26,7 @@ GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch
 | **김채윤** | 전체 웹 시연 60초/10분 루트 확정, 시연용 학생 경험 입력→AI 후보/근거·학생 승인·추천 전후 기대/관찰 비교, 발표 리허설·실패 시 우회안 | `NOT_RUN` |
 | **심민성** | API/DB/인증·AI·React 연결·코드 리뷰/테스트·추가 기능·보안/권리, 모델/웹/시연 PR 통합 및 전체 릴리스 게이트 검토 | `NOT_RUN` |
 
-운영 중 AI·실자료를 입증하지 못한 경우 UI에서는 반드시 '합성 시연' 또는 '실제 호출/확인 안 됨'으로 구별합니다. **GitHub OPEN 통합 이슈 #316/#317/#318은 세 개 그대로·assignee 0명**입니다.
+운영 중 실 AI·실자료를 입증하지 못한 경우 UI에서는 '합성 시연' 또는 '실제 호출/확인 안 됨'으로 구별합니다. **GitHub OPEN 7개 (#321~#325 + #317/#318)는 모두 한 명씩 배정**됐습니다. 완료/인수 증거는 별도입니다.
 
 ## 이전 PR/이슈 반영 기록 (2026-11-06 당시)
 

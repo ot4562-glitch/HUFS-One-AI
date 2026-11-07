@@ -6,16 +6,19 @@
 
 승인 완료는 실제 코드/설정/시험·학업 사실·독립 Gold·배포 성공을 대신하지 않습니다. 테스트하지 않은 결과는 `NOT_RUN`, 측정하지 않은 값은 `NOT_MEASURED`, 실제 주소/자격증명 미설정은 `CONFIGURATION_REQUIRED`입니다. 인증·소유권·RLS/CSRF·현재 철회·비밀 보호는 유지합니다.
 
-## 2026-11-07 현재 열린 이슈 3개 · 모든 담당 미배정
+## 현재 OPEN 7개 — 담당자 지정 (2026-11-07)
 
-| 단일 OPEN 이슈 | 통합 범위 | 담당 |
+| 현재 이슈 | GitHub 담당자 | 업무 |
 | --- | --- | --- |
-| **[#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)** | 화면/반응형·협업자별 #310–#314 및 기존 UI 결함, 실 UI 접근성 검수 | 미배정 |
-| **[#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)** | NCP·Google/학교메일·실학생 4인·PG/학칙·추천·AI/비용·실운영 인수 | 미배정 |
-| **[#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** | 신규 포트폴리오·커리어·AI 실행이력·동아리/기관 링크 제안 | 미배정 |
+| [#321 이의상 AI·NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya/CLOVA·자연어 처리·정확도 공동 |
+| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI/NLP 공동 개선·학업 RulePack·개설 |
+| [#323 이서연 NCP·서버](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | 서버 운영·NCP·비용·복구 |
+| [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 전체 웹 시연·경험 AI 결과 평가 |
+| [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API/DB·보안·품질·통합 |
+| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 직접 개발 |
+| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` | 이서연 전체 디자인·React UI |
 
-2026-11-07 열린 이슈를 정리한 뒤, **과거 이슈를 재사용하지 않고 댓글 없는 신규 #316/#317/#318을 발행**했습니다. 이전 #276/#255/#298은 기록 보관용 CLOSED이며 새 이슈 3건만 OPEN입니다. #280–#283, #297/#299–#303, #310–#314의 상세 요구/고유 반례는 원본 댓글/본문을 보존해 closed/duplicate로 정리했으며, **기능 구현·인적 인수가 완료된 것이 아닙니다**. 본선 이후 역할은 2026-11-07 새로 확정됐으며 **과거 업무 소유자 표는 신규 배정 근거가 아닙니다**. 합성 CI 성공과 실제 서비스 RELEASE_BLOCKED/실 NCP·학교/학생 자료 CONFIGURATION_REQUIRED/NOT_RUN을 구별합니다.
-
+이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 **원본 POST-01~20 전부를 누락 없이 개인별 #321~#325로 분리하고 보관 CLOSED**했습니다. 현재는 담당자가 지정된 개인별 5개와 #317(심민성 추가 기능)·#318(이서연 UI/UX) **7개만 OPEN**입니다. 과거 이슈와 댓글은 보존하며, 배정은 실제 NCP·모델·학생 자료·사람 인수 완료가 아닙니다. 미실행/미구성은 `NOT_RUN / CONFIGURATION_REQUIRED`, 실서비스는 `RELEASE_BLOCKED`입니다.
 ## 본선 진출 이후 확정 역할 (2026-11-07 사용자 지정)
 
 | 사람별 업무 | 담당 및 인수 경계 |
@@ -25,7 +28,7 @@
 | 전체 시연·경험 기반 AI 평가·발표 | **김채윤**. 학생 경험 입력→AI 후보/근거·승인→추천 검증, 60초/10분 전체 웹 시연 루트·실패/오류 재현 및 발표 준비 |
 | 코드 통합·품질·추가기능 | **심민성**. 공통 API/DB/보안/CI·품질 검수·기능 개발 및 각 담당 결과 통합 |
 
-**본선 이후의 사람별 역할은 확정되었지만** [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317), [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 GitHub `assignees`는 앞선 요청에 따라 **비워 둡니다**. 자세한 RACI·산출물·인수 흐름은 [본선 이후 역할 정본](docs/WORKSTREAMS.md). 모든 역할은 실제 개인 승인·서버 자격증명·릴리스 권한의 자동 부여가 아닙니다. 모델 파인튜닝의 실제 공급자 지원/권한을 검증 전 가정하지 않습니다.
+**현행 GitHub 담당은 개인별 #321~#325에 실제 배정**됐으며, 추가 기능 #317은 심민성·UI/UX #318은 이서연입니다. [업무 분장 정본](docs/WORKSTREAMS.md)을 따르고 과거 역할/이슈의 담당은 재활용하지 않습니다.
 
 ## 과거 본선 전 역할 기록 (현재 역할 아님)
 
@@ -37,7 +40,7 @@
 | 박준영 `taewangim-alt` | 학업/RulePack·What-if·개설 전망·교과 근거; #11/#260 |
 | 이서연 `lhh42001` | NCP 계정/요금/호스트·기관 자료 증거·제품 요구사항 등 비코드 운영; #12/#261 |
 
-과거 협업자를 포함해 다른 사람의 dirty worktree·브랜치·핵심 코드를 초기화하거나 무단 대체하지 않습니다. **현재 열린 3개 이슈에는 assignee가 없지만 사람별 업무 역할은 위 표로 확정됐습니다.** 공통 계약/DB/lockfile은 소비자와 교차 검토합니다.
+다른 사람의 dirty worktree·브랜치·핵심 코드는 초기화·강제 갱신하지 않습니다. **OPEN 7개 이슈는 모두 지정 담당자 1명씩 배정**했습니다. 공통 계약·DB·lockfile은 관련 소비자와 교차 검토합니다.
 
 ## 구현·검증
 
@@ -45,7 +48,7 @@
 
 정확한 HEAD의 타입·합성/부정·일회용 PG·Chrome·CI 결과와 실패/미실행을 기록합니다. AI 코드 리뷰는 실제 비작성자의 사람 인수와 구별하고, 명시적인 개별 PR 병합 지시는 해당 PR에만 적용합니다. 현재 문서는 현재 상태만 설명하며 지난 진행 일지를 누적하지 않습니다.
 
-[현재 구현](STATUS.md) · [운영 통합 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316) · [학업 코어 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [추천 코어 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279).
+[현재 구현](STATUS.md) · [NCP 서버 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) · [통합·릴리스 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) · [학업 코어 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [추천 코어 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279).
 ## 원본 CSV 5개 — 사용자 보존 지시 (2026-11-06)
 
 - 저장소에 현재 복구된 `csv/`의 **Google Forms 1개 + 학생별 수강 CSV 4개**는 **읽기 전용 원본**이다. 담당 에이전트·자동화·PR 정리 작업이 **임의로 삭제·변경·이동·파일명 변경·재인코딩·Git 추적 해제·원본 덮어쓰기·자동 정리해서는 안 된다**. 기존 원본 5개를 있는 그대로 유지한다.

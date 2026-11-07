@@ -1,10 +1,10 @@
 # HUFS One AI — 본선 이후 확정 역할과 과거 업무 이력
 
-**기준:** 독립 학생 프로젝트. 코드 병합과 사람·기관·실환경 승인 권한은 별개다. 진행 상태 [STATUS](../STATUS.md) · 본선진출 이후 운영 인수 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316) · 협업 제안 [#317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317). 과거 #252/#253/#257은 후속 #316 이관 후 종료.
+**기준:** 독립 학생 프로젝트. 코드 병합과 사람·기관·실환경 승인 권한은 별개다. 진행 상태 [STATUS](../STATUS.md) · 본선진출 이후 서버 인수 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)·통합 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) · 협업 제안 [#317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317). 과거 #252/#253/#257은 후속 #316 이관 후 종료.
 
 ## 본선 진출 이후 역할 확정 (2026-11-07, 사용자 지정)
 
-**적용 시점:** 본선에 진출해 실제 연동·시연 작업을 착수할 때의 업무 분장. 이 역할 확정 자체가 본선 진출 결과·실서비스 출시/기관·사용자 승인·작업 완료를 뜻하지 않는다. **업무 책임과 GitHub 통합 이슈 assignee는 별개**이며 #316/#317/#318은 기존 방침대로 모두 미배정으로 둔다.
+**적용 시점:** 본선 진출 이후 사용자 지정 역할이며, **GitHub에도 담당자별 업무를 실제 배정**했습니다. #321~#325는 각 개인, #317은 심민성, #318은 이서연입니다. 담당 확정은 실서비스 출시·기관/학생 승인·기능 완료가 아닙니다.
 
 | 책임자 | 본선 이후 맡을 일 | 산출물·검증 |
 | --- | --- | --- |
@@ -16,12 +16,21 @@
 
 **책임 경계:** UI 디자인·React 구현의 주담당은 이제 **이서연**이며 이의상은 **박준영과 AI 정확도/NLP**로 이동한다. 이서연의 **서버 운영**과 심민성의 **서버/API 코드 통합·최종 품질 검토**는 다른 책임이며, 비밀·결제·운영 계정에 대한 임의 권한 부여를 뜻하지 않는다. AI 팀의 결과를 김채윤이 사용 시나리오에서 시험하고 심민성이 통합·릴리스 경계를 확인한다.
 
-**공통 산출물:** 역할별 작업은 #316 운영/실모델, #318 웹 UI·실사용 검증, #317 선택적 추가 기능에서 체크리스트 항목으로 추적한다. 필요하면 별도 PR로 세부 담당을 결정하되 **현재 세 통합 이슈는 계속 assignee 0명**이다. 실제 AI 호출/학칙/자료 권리·독립 사용자 검수·NCP 운영 실적은 아직 증거 없는 상태에서 PASS로 표시하지 않는다.
+**공통 산출물:** AI·NLP는 이의상 #321 + 박준영 #322 공동, 학업 자료 #322, 서버·NCP #323, 시연·AI 품질 #324, 통합·API/DB/릴리스 #325, 추가 기능 #317(심민성), 웹 UI #318(이서연). **7개 모두 assignee 1명 지정**. 실제 모델/사람 검증은 결과와 근거가 생긴 뒤에만 PASS.
 
-## 현행 OPEN 이슈 3개 — 이슈 자체는 미배정
+## 현재 열린 이슈 7개 — 개인별 GitHub 담당 확정 (2026-11-07)
 
-GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 본선 이후 역할은 위와 같이 확정됐지만 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+| 이슈 | 담당 GitHub 계정 | 본선 이후 역할 |
+| --- | --- | --- |
+| [#321 이의상 AI/NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya·CLOVA·NLP 정확도 공동 |
+| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI 정확도 공동·학업 코어 |
+| [#323 이서연 서버/NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | NCP 계정·운영·비용/복구 |
+| [#324 김채윤 시연/AI 검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 학생 경험 입력·전 화면 시연 |
+| [#325 심민성 통합/품질](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API·DB·보안·CI·출시 |
+| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 개발 |
+| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` | 이서연 디자인·React UI |
 
+[구 통합 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 POST-01~20을 #321~#325로 각각 한 번씩 분리한 뒤 **CLOSED/기록 보관**했습니다. #317은 심민성, #318은 이서연에게 GitHub 담당을 배정했습니다. **총 7개 OPEN·담당자 1명씩**입니다. 과거 이슈와 역할은 기록일 뿐 현재 배정 근거가 아닙니다. 업무 배정은 실 NCP·유료 AI·학교/학생 데이터·사람 인수 완료를 의미하지 않으며 `NOT_RUN/CONFIGURATION_REQUIRED/RELEASE_BLOCKED`가 유지됩니다.
 ## 과거 팀별 작업 소유 (이력 · 새 이슈의 assignee가 아님)
 
 | 이전 담당자 | 당시 구현·업무 | 당시 미완 인수·한계 |
@@ -36,7 +45,7 @@ GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch
 
 - [#306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)로 본선 이전 이슈 11개를 종결했습니다. 10개는 합성 코드/사전 계획 완료, #260은 미완 사람 리뷰를 #280/#281/#282로 이관한 `closed/not_planned`입니다.
 - [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)은 홈 액션/공고 필터 등 합성 UI 8파일에 대해 정확한 PR HEAD와 병합된 main `d8e2144`의 **4/4 CI SUCCESS** 후 병합됐습니다. [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 0-diff 중복으로 리뷰·미병합 종료했습니다. 지정 담당자 사람 검수는 별도입니다.
-- **2026-11-06 당시:** 이전 합성 이슈 #9/#10/#11/#12/#119/#258/#260/#261/#284/#294/#296은 CLOSED, 운영 #276·실인수 #280–#283·신제품/실자료 #297–#303은 당시 OPEN이었다. **현재는 모두 보관/통합 CLOSED**, 남은 실제 업무는 #316/#317/#318의 체크리스트로 이전됐다. `RELEASE_BLOCKED` 유지.
+- **2026-11-06 당시:** 이전 합성 이슈 #9/#10/#11/#12/#119/#258/#260/#261/#284/#294/#296은 CLOSED, 운영 #276·실인수 #280–#283·신제품/실자료 #297–#303은 당시 OPEN이었다. **현재는 모두 보관/통합 CLOSED**, 남은 실제 업무는 구 통합 #316을 거쳐 개인별 #321~#325, #317/#318로 이전됐다. `RELEASE_BLOCKED` 유지.
 
 ## 2026-11-06 팀 PR 병합 현황 (과거 개별 통합 기록)
 
@@ -64,9 +73,9 @@ GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch
 | 박준영 학업 | [#11](https://github.com/ot4562-glitch/HUFS-One-AI/issues/11), [#260](https://github.com/ot4562-glitch/HUFS-One-AI/issues/260) 합성/교차 검토; #260 PR #262 정책/테스트 완료, 소비자 리뷰는 미완료 | [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) 공식 RulePack·4인 학업 원장·8학기 개설 실증 |
 | 이서연 비코드/운영 | [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12), [#261](https://github.com/ot4562-glitch/HUFS-One-AI/issues/261) 계정·비용·권리 사전검토/문서 | [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) 실 NCP 계정·청구/복구/반납·실원본 이용권 검수 |
 
-**공통 원칙:** 본선 전 11개 이슈는 **CLOSED**(10 completed, #260 미완료 팀원 리뷰 이관 not_planned), 본선 이후 실제 인수는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 현재 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)에서 추적하며, **현 역할별 실행 책임은 문서 상단의 새 표**를 따릅니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
+**공통 원칙:** 본선 전 11개 이슈는 CLOSED, 본선 이후 운영은 개인별 #321~#325에서 OPEN/NOT_RUN입니다. NCP 운영·비용은 #323, SQL·로그인·AI 영수증·릴리스 통합은 #325, 실제 Laya/CLOVA/NLP 품질은 #321·#322 공동이고, 현 팀 역할을 적용합니다. 원본 `csv/` 5개는 수정/삭제 없이 보존하고 운영/CI/공개 페이지에 개인 자료를 담지 않습니다. 독립 사람 Gold·실서버/실모델 PASS는 아직 확인되지 않았습니다.
 
-**현재 담당 원칙:** 사용자는 2026-11-07 본선 이후 사람별 역할을 위 표로 확정했습니다. **#316/#317/#318의 GitHub assignee는 기존 요청대로 비워 둔 채** 역할 분담을 본문/문서로 관리합니다. #260의 팀원 교차 검토는 NOT_RUN으로 #316/#318에서 확인하며 과거 개별 이슈의 assignee를 자동 복원하지 않습니다.
+**현재 담당 원칙:** 2026-11-07 사용자 요청에 따라 본선 이후 통합 #316의 POST-01~20을 #321~#325로 나눠 원본을 보관/종결하고, 새 개인별 이슈에 해당 GitHub 계정을 배정했습니다. #317 심민성·#318 이서연도 배정 완료. 과거 #260의 미실시 팀원 교차 검토는 #324/325의 실제 인수에서 검증해야 하며 사람 승인으로 둔갑시키지 않습니다.
 
 ## 본선 이후 협업 인터페이스
 
