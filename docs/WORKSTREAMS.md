@@ -1,8 +1,14 @@
-# HUFS One AI — 현재 팀 역할과 협업 경계
+# HUFS One AI — 본선 전 분담 이력과 현행 미배정 원칙
 
 **기준:** 독립 학생 프로젝트. 코드 병합과 사람·기관·실환경 승인 권한은 별개다. 진행 상태 [STATUS](../STATUS.md) · 본선진출 이후 운영 인수 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · 협업 제안 [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255). 과거 #252/#253/#257은 후속 #276 이관 후 종료.
 
-| 담당자 | 현재 코드/업무 소유 | 공동 인수·한계 |
+## 2026-11-07 현행 이슈·팀 역할 재편
+
+GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+
+## 과거 팀별 작업 소유 (이력 · 새 이슈의 assignee가 아님)
+
+| 이전 담당자 | 당시 구현·업무 | 당시 미완 인수·한계 |
 | --- | --- | --- |
 | **심민성** `ot4562-glitch` | TypeScript/Zod 공통 계약, API·OIDC/메일·PostgreSQL·SourceRevision/RAG·OCR/HCX/Laya/예산·NCP 모든 **SDK/시스템/worker/IaC/CI/배포 코드**·보안 통합 | 병합된 오너 코드 #267~#275의 실제 8건 및 #277, 운영 잔여 #276. 개인·기관별 실제 권리/운영 인수 대행 금지 |
 | **이의상** `uisang2004-maker` | React/Vite UI·메뉴/디자인·모바일·시연·접근성, [#9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)/[#119](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) | 실제 스크린리더/학생·REVIEWER 권한 종단, 학업/추천 소비자 연동 |
@@ -33,7 +39,7 @@
 
 @uisang2004-maker의 A11 디자인/UI 소비자 범위에서 11대분류 관찰 메뉴·미지원 안내·홈·공고 레이아웃을 통합했습니다. 공통 `Architecture.md` A11 수정은 오너가 별도 리뷰했으나, 이 사실은 실제 학교 UI 공식 인증이나 NVDA 사람 인수가 아닙니다. 이후 [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)에서 [본선 전 #9](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9)의 합성 검증 범위를 종결했으며 실 현장 인수는 #280에서 진행합니다.
 
-## 본선 진출 전/후 팀별 이슈 분리 (2026-11-06)
+## 과거 본선 진출 전/후 팀별 이슈 분리 (2026-11-06 당시 이력)
 
 | 담당 | 본선 진출 전 — 정리 종결(CLOSED) | 본선 진출 이후 — 실제 운영/실자료 수락 |
 | --- | --- | --- |
@@ -44,7 +50,7 @@
 
 **공통 원칙:** 본선 전 11개 이슈는 **CLOSED**(10 completed, #260 미완료 팀원 리뷰 이관 not_planned), 본선 이후 실제 인수는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
 
-**담당 보존:** 새로운 4개 이슈의 assignee는 기존 각 트랙 담당자 그대로입니다. #260의 합성 PR #262 및 #306 통합을 확인했으나 @qamarrchae·@uisang2004-maker의 **실제 교차 소비자 사람 리뷰는 NOT_RUN**으로 #280/#281/#282에서 확인. 팀원에게 공통 API/DB·NCP 시스템 작업을 중복 지시하지 않습니다.
+**현재 담당 원칙:** 2026-11-07 기존 4개 실환경 후속과 UI 이슈는 #298/#276/#255로 통합하고 세 이슈 모두 assignee가 없습니다. #260의 실제 팀원 교차 리뷰는 NOT_RUN으로 #276/#298에서 확인하며, 과거 기술 역할/개별 이슈의 assignee를 자동 복원하거나 타인의 작업·권한을 대체하지 않습니다.
 
 ## 최신 협업 인터페이스
 

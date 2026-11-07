@@ -1,4 +1,4 @@
-# HUFS One AI — 현재 남은 구현·운영 인수 (2026-11-06 기준)
+# HUFS One AI — 현재 남은 구현·운영 인수 (2026-11-07 기준)
 
 이 경로는 과거 링크 호환을 위해 파일명 `20261104`를 유지합니다. **정본: [STATUS](../STATUS.md), 실제 증거: [REPORT](../REPORT.md), 역할/사람 인수: [TEAM_PROGRESS](TEAM_PROGRESS.md)**. 프로젝트 승인 `OWNER_CONFIRMED_APPROVED`는 실계정/실원본/공식 학칙/NCP·유료 공급자 설정 성공을 뜻하지 않습니다. 실제 서비스 `RELEASE_BLOCKED`.
 
@@ -9,21 +9,19 @@
 - [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) 현재 합성 화면으로 **홈 3단계 액션·공고 검색/7일 내 확정 마감/자격 상태 필터·마감 정렬·키보드/reduced-motion**을 구현. 변경 8파일의 [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875), PR HEAD `ba7bf2a` Actions [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963) **4/4 SUCCESS**, 병합 커밋 [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c). 병합 이후 정확한 `main d8e2144`의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797571)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797686)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797648)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797515) **4/4 SUCCESS** 확인. 이후 문서 PR의 CI는 별도.
 - 앞서 병합된 #267–#295(각 해당 PR/이슈 인용)에는 합성 개인화·학업/RulePack·SourceRevision·학생 명시 승인/철회·API/RLS/AI/NCP preview 코드가 있습니다. 공개 Pages는 **실자료 없는 합성 화면**, `main` push 시 자동 재배포합니다. 합성 자동검증과 현장 검증을 혼동하지 않습니다.
 
-## 아직 OPEN — 실구현·인수/근거가 필요한 일
+## 2026-11-07 이슈 통합 및 미배정
 
-| 이슈 | 남은 실작업 / 올바른 현재 경계 |
+현재 열린 이슈는 **[#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
+
+## 남은 실제 검증·기능과 기존 원본 링크
+
+| 현재 3개 OPEN 이슈 | 범위와 과거 상세 출처 |
 | --- | --- |
-| [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) | NCP 실호스트·PG/CA TLS·Google/학교메일·관리형 권한·실원본 인입·유료 모델·운영 장애/비용/복구: **CONFIGURATION_REQUIRED/NOT_RUN** |
-| [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280) | 실제 사용자별 UI, 모바일/키보드/스크린리더·다중탭/철회/권한·정정·경험 추천 **사람 종단 인수** |
-| [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281) | 허가된 실제 추천/공지 source revision·성능·독립 Gold/정정 및 사람 리뷰 |
-| [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282) | 공식 학칙/RulePack·학수번호/4인 실제 원장·과거 8학기 개설 및 학업 소비자 교차 리뷰 |
-| [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283) | NCP 실제 계정·최종 SKU/요금/청구·권리/동의·인수/복구·비코드 운영 검토 |
-| [#297](https://github.com/ot4562-glitch/HUFS-One-AI/issues/297) · [#299](https://github.com/ot4562-glitch/HUFS-One-AI/issues/299) | 정적 Pages 자동배포 유지와 별개로 실제 4명 **본인 인증·권리·동의/철회·소유자별 private intake** 확인. 공개 합성 선택기는 학교 로그인 아님 |
-| [#298](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298) · [#303](https://github.com/ot4562-glitch/HUFS-One-AI/issues/303) | 홈/기회 인터랙션 및 Pages S04 기본 오류 수정은 완료 체크. 남은 전체 화면·접근성/실기기·계정 권한 회복·`asOf`/D-day 안내는 **미완료** |
-| [#300](https://github.com/ot4562-glitch/HUFS-One-AI/issues/300) | 나의 경험 LinkedIn형 구조화 프로필·편집/기간/링크/역량 후보/동의 중심 전면 재설계 미완료 |
-| [#301](https://github.com/ot4562-glitch/HUFS-One-AI/issues/301) | 박준영 수집 자료의 실제 출처·권리/학업 API/공식 식별자·화면 소비 증거와 상태표 미확인 |
-| [#302](https://github.com/ot4562-glitch/HUFS-One-AI/issues/302) | 실 CLOVA/Laya API 호출 영수증·캐시 재생 증거/UI; 합성 Pages 결과를 실제 provider 호출로 소개하지 않음 |
-| [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255) | 경험→커리어 제안 상위 기획; 신규 제품 기능·실인수 전체의 체크리스트를 대체하지 않음 |
+| **[#298 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298)** | 현재 홈·공고/공지 숫자/판본·칸반·졸업/경험/설정·실기기/스크린리더 인수. 고유 4건 #313, 11건 #312, 5건 #310/#311, 4건 #314와 기존 #280/#303 통합 |
+| **[#276 본선 진출 이후](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)** | NCP/PG·Google 학교메일·실학생 4인·원본 권리·학업 RulePack·공식 출처/실추천·CLOVA/Laya 청구·복구/인수. 종전 #280–#283/#297/#299/#301 및 서버측 #302 이관 |
+| **[#255 추가 기능 제안](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** | 기존 AI 경험 매핑·LinkedIn형 포트폴리오 #300, 실 AI 실행이력/캐시 재생 UI #302, 기관 웹페이지 링크·연합 동아리 확장 #312 등 비필수 제안 |
+
+**종전 #280–#283/#297–#303/#310–#314는 closed/duplicate이며 새로운 세 이슈의 상세 본문·원본 링크에 체크리스트를 보존했습니다.** 원본 이슈 종료를 실제 구현/실출시 인수 완료로 착각하지 않습니다.
 
 ## 변하지 않는 보안·검증 조건
 
