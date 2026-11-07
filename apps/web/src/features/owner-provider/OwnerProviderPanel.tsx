@@ -153,6 +153,12 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         onClick={()=>{void submit();}}>
         {accepted?.state==='PENDING'?'동일 요청으로 상태 재확인':'선택된 승인 입력 실행'}
       </button></p>
+      {accepted?.state==='PENDING'&&<button type="button" disabled={busy}
+        onClick={()=>{
+          selectionVersion.current++;
+          setAccepted(null);setStored(null);setReceipt(null);setConfirmation(false);
+          setNotice('이 화면의 대기 표시만 닫았습니다. 공급자 실행·청구 취소가 아닙니다. 서버 작업 ID는 이번 세션 목록에 보존되며, 다시 실행하려면 명시 확인이 필요합니다.');
+        }}>대기 표시 접기 (공급자 실행 취소 아님)</button>}
       {accepted?.state==='NEEDS_REVIEW'&&taskPath&&<button type="button" disabled={busy}
         onClick={()=>{void read(accepted.jobId,taskPath);}}>보존된 후보 다시 조회</button>}
       {accepted?.state==='NEEDS_REVIEW'&&<button type="button" disabled={busy}
