@@ -1,5 +1,5 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
-import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile} from '@hufs-one/contracts';
+import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
 import {careerSavedItem} from '../../../../../packages/core/src/career/bookmarks.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
@@ -7,10 +7,12 @@ import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
 import {attachCrossTabSessionClosure,SESSION_CLOSE_CHANNEL} from '../../app/session-broadcast.js';
 import {InAppLink} from '../../shell/AppShell.js';
 import {TOPIC_TEXT} from '../demo/topicText.js';
+import {assertCareerConsentCurrent,requireCareerConsent} from './careerConsent.js';
 
 export interface OwnerCareerPort {
   readonly session:OwnerSessionController;
   getProfile(signal?:AbortSignal):Promise<{profile:SelfProfile|null}>;
+  getConsents(signal?:AbortSignal):Promise<{consents:SelfConsent|null}>;
   saveProfile(change:{expectedVersion:number;value:SelfProfile['value']},signal?:AbortSignal):Promise<{profile:SelfProfile}>;
   getPortfolio(query:{afterId?:string;limit?:number},signal?:AbortSignal):Promise<ExperiencePortfolio>;
   create(input:{itemId:string;value:OwnerWorkspaceValue},signal?:AbortSignal):Promise<unknown>;
@@ -69,8 +71,10 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     if(session.status!=='READY')return;
     let active=true;
     void port.session.runLatest('owner-career-page',async signal=>{
+      const before=requireCareerConsent((await port.getConsents(signal)).consents);
       const [profile,portfolio,bookmarks]=await Promise.all([port.getProfile(signal),
         port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal),port.getBookmarks(signal)]);
+      assertCareerConsentCurrent(before,(await port.getConsents(signal)).consents,portfolio.portfolio.consentVersion);
       return {profile:profile.profile,portfolio,bookmarks};
     }).then(value=>{if(active&&value&&port.session.getState().status==='READY')setScreen(value);})
       .catch(()=>{if(active)setError('포트폴리오를 조회할 수 없습니다. 현재 본인 권한·동의를 확인해 주세요.');});
@@ -119,6 +123,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
 
   const roadmap=screen.profile?buildCareerRoadmap({profile:screen.profile,portfolio:screen.portfolio}):null;
   const timeline=buildCareerTimeline(screen.portfolio);
+  const privateBookmarks=screen.bookmarks.items.filter(record=>
+    record.value.kind==='BOOKMARK'&&record.value.dataMode==='OWNER_CONSENTED');
   return <section aria-label="본인 전용 커리어 포트폴리오">
     <p role="note">본인만 볼 수 있는 자기보고 활동입니다. AI 제안·본인 승인과 학교의 공식 경력/자격 인증은 다릅니다. 목록은 최대 20건씩 조회됩니다.</p>
     {error&&<p role="alert">{error}</p>}
@@ -182,8 +188,8 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     <section aria-labelledby="career-saved-heading">
       <h2 id="career-saved-heading">연결된 저장·지원 기록 (본인 작성)</h2>
       <p>기존 보관함 기록을 읽기 전용으로 보여 줍니다. 실제 모집처로 지원서를 발송하거나 합격을 확인한 기록이 아닙니다.</p>
-      {screen.bookmarks.items.length===0?<p>아직 저장·지원 준비를 기록한 기회가 없습니다.</p>
-        :<ul>{screen.bookmarks.items.map(raw=>{const item=careerSavedItem(raw);return <li key={item.itemId}>
+      {privateBookmarks.length===0?<p>아직 본인이 기록한 저장·지원 준비 기회가 없습니다. 합성 시연 기록은 제외합니다.</p>
+        :<ul>{privateBookmarks.map(raw=>{const item=careerSavedItem(raw);return <li key={item.itemId}>
           <InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.opportunityId)} navigate={navigate}>
             기회 {item.opportunityId} (현재 출처·권한 재확인)
           </InAppLink> — {item.label}{item.synthetic?' · 합성 시연 기록':''}
