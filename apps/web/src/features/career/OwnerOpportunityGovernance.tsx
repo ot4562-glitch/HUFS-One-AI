@@ -1,6 +1,6 @@
 import {useState,useSyncExternalStore} from 'react';
 import {
-  OwnerOpportunityReportInputSchema,OwnerOpportunityRevisionComparisonRequestSchema,
+  OwnerOpportunityReportInputSchema,OpportunityRevisionComparisonContextResponseSchema,
   type OwnerOpportunityModerationStatus,type OwnerOpportunityReportReason,
   type OpportunityRevisionComparisonResponse,
 } from '@hufs-one/contracts';
@@ -98,12 +98,8 @@ export function OwnerOpportunityGovernance({port,rights,onSourceRevoked}:{
       const result=await port.session.runLatest('owner-reviewed-revisions',async signal=>{
         await current(signal);
         const ctx=await port.getRevisionContext!(rights.opportunityId,signal);
-        const parsed=OwnerOpportunityRevisionComparisonRequestSchema.safeParse(ctx);
-        // Context is the server-returned read-only availability projection,
-        // not an arbitrary request supplied by the browser.
-        void parsed;
-        const context=await import('@hufs-one/contracts').then(m=>
-          m.OpportunityRevisionComparisonContextResponseSchema.parse(ctx));
+        // Only use the backend-returned authorized pair. A browser URL cannot grant it.
+        const context=OpportunityRevisionComparisonContextResponseSchema.parse(ctx);
         if(!context.available)return null;
         const request={beforeRevisionId:context.beforeRevisionId,
           afterRevisionId:context.afterRevisionId,asOf:context.asOf};
