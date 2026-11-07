@@ -64,6 +64,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     ext('ext-notices', '학사 공지', '/notices'),
     ext('ext-graduation', '졸업지원', '/graduation'),
     ext('ext-experience', '나의 경험', '/experience'),
+    ext('ext-career', '내 커리어 · 비공개', '/career'),
     ext('ext-saved', '보관함', '/saved'),
     ext('ext-applications', '지원 현황', '/applications'),
     ext('ext-clubs', '동아리 모집', '/clubs'),

@@ -4,6 +4,7 @@ import type {SandboxPort} from './features/sandbox/useSandbox.js';
 import {OwnerSessionController} from './app/owner-session-controller.js';
 import {createOwnerClubPort,createClubModerationPort} from './features/clubs/ownerClubPort.js';
 import {ownerExperienceSkillPort} from './features/experience/ownerExperiencePort.js';
+import {buildOwnerCareerSnapshot} from '../../../packages/core/src/career/owner-roadmap.js';
 
 type RoleApi = Pick<HufsApiClient,
   'getSession' | 'loadReviewerCapabilities' | 'readReviewerActions' | 'saveReviewerAction'
@@ -53,6 +54,49 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
   const ownerSession = new OwnerSessionController(api);
   return {
     ownerExperience: {session: ownerSession, skills: ownerExperienceSkillPort(api.owner)},
+    ownerCareer: {
+      session: ownerSession,
+      async load(signal) {
+        const [profile,consent]=await Promise.all([
+          api.owner.getProfile(signal),api.owner.getConsents(signal),
+        ]);
+        const consents=consent.consents;
+        if(!consents?.choices.personalStorage)return buildOwnerCareerSnapshot({
+          profile:profile.profile,consents,pages:[],bookmarks:[],bookmarksComplete:false,
+        });
+        // Bounded owner-only cursor reads. Never silently claim full coverage.
+        const pages=[];
+        let afterId:string|undefined;
+        for(let index=0;index<6;index++){
+          const page=await api.owner.getExperiencePortfolio(
+            {limit:20,...(afterId?{afterId}:{})},signal);
+          pages.push(page);
+          if(page.nextCursor===null)break;
+          if(afterId!==undefined&&page.nextCursor<=afterId)throw new Error('Invalid career cursor');
+          afterId=page.nextCursor;
+        }
+        const bookmarks=[];
+        let savedAfter:string|undefined;
+        let bookmarksComplete=false;
+        for(let index=0;index<3;index++){
+          const page=await api.owner.listWorkspace('BOOKMARK',
+            {limit:50,...(savedAfter?{afterId:savedAfter}:{})},signal);
+          bookmarks.push(...page.items);
+          if(page.nextCursor===null){bookmarksComplete=true;break;}
+          if(savedAfter!==undefined&&page.nextCursor<=savedAfter)throw new Error('Invalid saved cursor');
+          savedAfter=page.nextCursor;
+        }
+        // Reject a consent-version race, even if each cursor page succeeded.
+        const latest=await api.owner.getConsents(signal);
+        if(!latest.consents||latest.consents.version!==consents.version||!latest.consents.choices.personalStorage)
+          throw new Error('Career consent changed while reading');
+        return buildOwnerCareerSnapshot({profile:profile.profile,
+          consents:latest.consents,pages,bookmarks,bookmarksComplete});
+      },
+      saveProfile:(change,signal)=>api.owner.updateProfile(change,signal),
+      updateExperience:(id,change,signal)=>api.owner.updateWorkspace(id,change,signal),
+      removeExperience:(id,version,signal)=>api.owner.deleteWorkspace('EXPERIENCE',id,version,signal),
+    },
     ownerClubs:createOwnerClubPort(api.owner,ownerSession),
     overlay: {
       get: (ctx, signal) => api.getDemoOverlay(ctx, signal),
