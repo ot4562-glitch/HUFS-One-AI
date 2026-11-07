@@ -253,6 +253,40 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     expect(f.submit).toHaveBeenCalledTimes(1);
     expect(f.read).not.toHaveBeenCalled();
   });
+  it('discards a late valid receipt when a different authenticated candidate is loaded',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'NEEDS_REVIEW',provenance:'LIVE'});
+    const nextId='11111111-1111-4111-8111-111111111111';
+    let resolveReceipt!:(value:unknown)=>void;
+    const getReceipt=vi.fn(()=>new Promise<unknown>(resolve=>{resolveReceipt=resolve;}));
+    f.port.getReceipt=getReceipt;
+    const original=await f.read(jobId,'opportunity-terms');
+    f.read.mockImplementation(async(id:string)=>({...original,jobId:id}));
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/Synthetic approved notice/);
+    fireEvent.click(screen.getByRole('button',{name:'현재 권한으로 실측 영수증 조회 (과금 없음)'}));
+    await waitFor(()=>expect(getReceipt).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText('내가 발급받은 작업 ID'),
+      {target:{value:nextId}});
+    fireEvent.click(screen.getByRole('button',{name:'이전 후보 ID 수동 재조회'}));
+    await waitFor(()=>expect(f.read).toHaveBeenCalledWith(nextId,
+      'experience-skills',expect.any(AbortSignal)));
+    await act(async()=>{resolveReceipt({
+      jobId,runId:jobId,task:'opportunity_terms',provider:'HCX_007',modelRevision:'m1',
+      sourceRevisionId:'rev1',consentVersion:1,rightsVersion:'rights1',
+      asOf:'2026-11-03T00:00:00Z',recordedAt:'2026-11-07T12:00:00Z',
+      expiresAt:'2030-01-01T00:00:00Z',inputSha256:'a'.repeat(64),
+      reviewState:'NEEDS_REVIEW',
+      metrics:{promptTokens:40,completionTokens:20,totalTokens:60,measuredCostKrw:111},
+      mode:'LIVE_PROVIDER_RUN',provenance:'SERVER_RECORDED',
+      newProviderInvocation:true,billingState:'SETTLED',
+    });});
+    expect(screen.queryByRole('region',{name:'권한 및 토큰 사용량이 검증된 비공개 영수증'})).toBeNull();
+  });
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);
