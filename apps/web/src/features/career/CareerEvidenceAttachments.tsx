@@ -63,12 +63,12 @@ export function CareerEvidenceAttachments({record,session,port}:{
       setError('파일 형식/크기/허가 기간/최대 10건을 확인해 주세요. 업로드하지 않았습니다.');
       return;
     }
-    const policy=CareerAssetPolicySchema.parse(page.policy);
+    const policy=CareerAssetPolicySchema.parse(page.policy),file=selected;
     void execute(async signal=>{
-      const result=CareerAssetReceiptSchema.parse(await port.upload(record,policy,selected,signal));
+      const result=CareerAssetReceiptSchema.parse(await port.upload(record,policy,file,signal));
       if(result.experienceId!==record.itemId||result.contentVersion!==record.version
         ||policy.state!=='ALLOWED'||result.sourceRightsVersion!==policy.sourceRightsVersion
-        ||result.mimeType!==selected.type||result.size!==selected.size)
+        ||result.mimeType!==file.type||result.size!==file.size)
         throw new Error('Upload receipt did not match user-selected file or rights');
       return result;
     });
