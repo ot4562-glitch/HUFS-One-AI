@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import {AI_TASK_PATHS,type AiTaskPath,type ApprovedProviderInput,
-  type ProviderAccepted,type ProviderStoredJob,type OwnerProviderReceipt} from '@hufs-one/contracts';
+  type ProviderAccepted,type ProviderStoredJob,type OwnerProviderReceipt,
+  OwnerProviderCancellationResponseSchema} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import '../local-accounts/localAccounts.css';
 import {AiTaskResultView} from './AiTaskResultView.js';
@@ -13,6 +14,8 @@ export interface OwnerProviderPort {
   read(jobId:string,taskPath:AiTaskPath,signal?:AbortSignal):Promise<ProviderStoredJob>;
   /** Optional future #325 API. Absent means NO_MEASURED_RECEIPT; never fabricate it. */
   getReceipt?(jobId:string,signal?:AbortSignal):Promise<unknown>;
+  /** Optional #325 server cancellation. Local dismissal must not call this. */
+  cancelJob?(jobId:string,signal?:AbortSignal):Promise<unknown>;
 }
 type Choice={entry:ApprovedProviderInput;taskPath:AiTaskPath};
 type RecentJob={jobId:string;taskPath:AiTaskPath;operation:string;asOf:string;
@@ -78,6 +81,25 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
     if(job&&version===selectionVersion.current&&port.session.getState().status==='READY'){
       setStored(job);setReceipt(null);
     }
+  };
+  const requestServerCancel=async()=>{
+    if(!accepted||accepted.state!=='PENDING'||!port.cancelJob||busy||session.status!=='READY')return;
+    const pendingId=accepted.jobId;
+    setBusy(true);setNotice('');
+    try{
+      const response=await port.session.runMutation(async signal=>{
+        const raw=await port.cancelJob!(pendingId,signal);
+        const result=OwnerProviderCancellationResponseSchema.parse(raw);
+        if(result.jobId!==pendingId)throw new Error('Cancellation status is for another job');
+        return result;
+      });
+      if(response&&port.session.getState().status==='READY')setNotice(
+        response.status==='CANCELLED'
+          ?'서버에서 작업 취소 상태를 확인했습니다. 이미 청구된 금액이나 환불 여부는 별도 영수증 확인 전 미확정입니다.'
+          :response.status==='CANCEL_REQUESTED'
+            ?'서버에 취소 요청이 접수됐습니다. 공급자 작업 중단·과금/환불은 아직 확인되지 않았습니다.'
+            :'서버에서 현재 작업을 취소할 수 없습니다. 이미 진행된 실행/청구는 별도 확인이 필요합니다.');
+    }finally{setBusy(false);}
   };
   const readActualReceipt=async()=>{
     if(!stored||!port.getReceipt||receiptBusy||busy||session.status!=='READY')return;
@@ -153,6 +175,8 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
         onClick={()=>{void submit();}}>
         {accepted?.state==='PENDING'?'동일 요청으로 상태 재확인':'선택된 승인 입력 실행'}
       </button></p>
+      {accepted?.state==='PENDING'&&port.cancelJob&&<button type="button" disabled={busy}
+        onClick={()=>{void requestServerCancel();}}>서버 작업 취소 요청 (실제 중단·환불 미보장)</button>}
       {accepted?.state==='PENDING'&&<button type="button" disabled={busy}
         onClick={()=>{
           selectionVersion.current++;
