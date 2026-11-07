@@ -46,7 +46,7 @@ describe('#317 authorized owner report and independently reviewed changes',()=>{
       comparisons:[{field:'DEADLINE',state:'CHANGED'}, {field:'STATUS',state:'CHANGED'},
         {field:'ELIGIBILITY',state:'UNCHANGED'}],
     });
-    expect(verifiedOwnerRevisionComparison({...context,available:false},response,expected)).toBeNull();
+    expect(verifiedOwnerRevisionComparison({opportunityId:'opp-1',asOf,available:false},response,expected)).toBeNull();
     expect(verifiedOwnerRevisionComparison({...context,afterRevisionId:'rev-obsolete'},response,expected)).toBeNull();
     expect(()=>verifiedOwnerRevisionComparison(context,{...response,
       after:{...after,sourceId:'different-source'}},expected)).toThrow();
