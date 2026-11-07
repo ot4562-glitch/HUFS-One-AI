@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {AiTaskSchema} from './index.js';
+const AiTaskSchema=z.enum(['experience_skills','opportunity_terms','personal_action_brief','graduation_explanation']);
 
 /** #317 strictly display-only server projection. No raw prompt, actor ID,
  * source text, account identity, provider token or unbounded receipt data. */
@@ -59,5 +59,5 @@ export const OwnerOpportunityAiProofSchema=z.strictObject({
   interpretation:z.string().min(1).max(600),
   evidenceRefs:z.array(Ref).min(1).max(20).refine(refs=>new Set(refs).size===refs.length),
   caveats:z.array(z.string().min(1).max(180)).max(6),
-}).strict();
+});
 export type OwnerOpportunityAiProof=z.infer<typeof OwnerOpportunityAiProofSchema>;
