@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {TopicCodeSchema,InterestTopicsSchema,DesiredJobTopicsSchema} from '../topics/index.js';
 import {ExperiencePortfolioSchema} from './experience-portfolio.js';
+import {OwnerExperienceReferenceUrlSchema} from './workspace.js';
 
 
 /**
@@ -26,6 +27,8 @@ export const CareerTimelineEntrySchema=z.strictObject({
   itemId:z.string().regex(/^[A-Za-z0-9_-]{1,90}$/),
   title:z.string().trim().min(1).max(120),summary:z.string().trim().max(500),
   role:z.string().trim().max(80).optional(),category:CareerEntryCategorySchema,
+  achievement:z.string().trim().max(240).optional(),
+  referenceUrl:OwnerExperienceReferenceUrlSchema.optional(),
   startedOn:z.iso.date().optional(),endedOn:z.iso.date().optional(),
   updatedAt:z.iso.datetime({offset:true}),dataMode:z.enum(['OWNER_CONSENTED','SYNTHETIC']),
   evidence:CareerEvidenceSchema,sourceOpportunityId:z.string().regex(/^[A-Za-z0-9_-]{1,90}$/).optional(),
