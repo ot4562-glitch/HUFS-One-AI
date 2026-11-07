@@ -1,10 +1,10 @@
 # HUFS One AI — 코드·원본·운영 실행 증거 원장 (2026-11-06)
 
-> **기준:** `OWNER_CONFIRMED_APPROVED`는 프로젝트 승인이다. 개인별 현재 동의·권리, 실 Google/학교메일·NCP/TLS·DB CA·모델·운영비·실학생·사람 인수 통과를 의미하지 않는다. 운영 잔여 단일 이슈 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276). 현행 구현 상태 [STATUS](../STATUS.md).
+> **기준:** `OWNER_CONFIRMED_APPROVED`는 프로젝트 승인이다. 개인별 현재 동의·권리, 실 Google/학교메일·NCP/TLS·DB CA·모델·운영비·실학생·사람 인수 통과를 의미하지 않는다. 운영 잔여 단일 이슈 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316). 현행 구현 상태 [STATUS](../STATUS.md).
 
 ## 2026-11-07 이슈 통합 및 미배정
 
-현재 열린 이슈는 **[#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
+현재 열린 이슈는 **[#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 정확히 3개이고 **모든 담당자는 미배정**입니다. 2026-11-07 당시 열린 18개 중 기존 15개는 핵심 요구와 중복/고유 반례를 위 3개에 병합하고 closed/duplicate로 남겼습니다. 과거 댓글·체크리스트/협업자 이름은 이력이지 미래 역할 배정이 아닙니다. 실제 사용권·학교 로그인·실 NCP/PG/AI 운영 및 사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED로, 실서비스 RELEASE_BLOCKED입니다.
 
 ## 이전 운영 증거 기준 (2026-11-06 원장 기록)
 
@@ -50,7 +50,7 @@
 | CLOVA OCR/HCX Vision·실결제·native worker | `CONFIGURATION_REQUIRED/NOT_RUN` | 실제 공급자 비밀·호출/청구/timeout·취소·보호 |
 | UI #258/학업 #260/비코드 #261 | `CLOSED` (본선 이전 이슈; #260은 `not_planned` 이관) | 남은 지정 담당자 교차 리뷰·실자료/사람 인수는 #280/#281/#282/#283 `NOT_RUN`, 원 이슈 완료와 별개 |
 | 추천·미디어 독립 Gold | `EXCLUDED_BY_REQUEST / NOT_MEASURED` | 이번 작업에서 제외, 합성 평가를 실제 Gold로 주장 금지 |
-| 프로덕션 공개 | **`RELEASE_BLOCKED`** | [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)의 실환경·권리·복구 조건 후만 |
+| 프로덕션 공개 | **`RELEASE_BLOCKED`** | [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 실환경·권리·복구 조건 후만 |
 
 ## 과거 팀원 실환경 인수의 전/후 이슈 분리(2026-11-06 당시 · 현재 역할 재배정 예정)
 
@@ -68,8 +68,8 @@
 ## 인계와 운영 원칙
 
 1. 코드·문서 SHA와 CI는 공개 URL로 추적. 서버/IP/키/원본 대응표·학생별 동의 파일·실비용 영수증은 별도 최소권한 저장소에 기록.
-2. 본선 진출 후 승인된 실제 NCP 계정/IAM·SKU·도메인/HTTPS·원본 권리·Google/메일/관리형 PG·CLOVA와 예산·원격 복구를 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 일괄 인수한다.
+2. 본선 진출 후 승인된 실제 NCP 계정/IAM·SKU·도메인/HTTPS·원본 권리·Google/메일/관리형 PG·CLOVA와 예산·원격 복구를 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)에서 일괄 인수한다.
 3. UI 담당 후속 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280), 추천 [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281), 학업 [#282](https://github.com/ot4562-glitch/HUFS-One-AI/issues/282), 비코드 [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283)에서 정확한 계약 소비자·사람 검증. 구 본선 전 #258/#10/#11/#260/#261은 이미 종결. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 완료 처리했으나 UI/실사용은 완료하지 않았음.
 4. 실제 수락에는 테스트 HEAD·환경·권리/원문 판본·실행 명령·PASS/FAIL/HOLD/NOT_RUN/CONFIGURATION_REQUIRED·비용·rollback과 검증자 기록을 요구한다. 미실시 항목은 성공 처리하지 않는다.
 
-[운영 인수 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [코드 리뷰 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [코드 리뷰 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) · [팀 현황](TEAM_PROGRESS.md).
+[운영 인수 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316) · [코드 리뷰 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [코드 리뷰 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) · [팀 현황](TEAM_PROGRESS.md).

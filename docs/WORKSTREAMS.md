@@ -1,10 +1,10 @@
 # HUFS One AI — 본선 전 분담 이력과 현행 미배정 원칙
 
-**기준:** 독립 학생 프로젝트. 코드 병합과 사람·기관·실환경 승인 권한은 별개다. 진행 상태 [STATUS](../STATUS.md) · 본선진출 이후 운영 인수 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · 협업 제안 [#255](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255). 과거 #252/#253/#257은 후속 #276 이관 후 종료.
+**기준:** 독립 학생 프로젝트. 코드 병합과 사람·기관·실환경 승인 권한은 별개다. 진행 상태 [STATUS](../STATUS.md) · 본선진출 이후 운영 인수 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316) · 협업 제안 [#317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317). 과거 #252/#253/#257은 후속 #316 이관 후 종료.
 
 ## 2026-11-07 현행 이슈·팀 역할 재편
 
-GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/298), [#276 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), [#255 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
+GitHub에서 **OPEN은 정확히 [#318 [UI/UX]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), [#316 [본선 진출 이후]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316), [#317 [추가 기능 제안]](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317)** 세 개뿐이며 **전부 미배정**입니다. 협업자 UI 피드백 #310–#314와 이전 운영/실인증/학업 후속 #280–#283/#297–#303은 이 3개에 병합·출처 링크를 남기고 closed/duplicate로 정리했습니다. 이 문서 아래의 개별 이름·과거 트랙·수락률은 **본선 이전 업무의 역사적 기록**이지 새 담당 배정표가 아닙니다. 향후 조직·역할은 별도 결정하며 실제 NCP/학생·학교 데이터/사람 인수는 NOT_RUN/CONFIGURATION_REQUIRED, 운영 출시 RELEASE_BLOCKED입니다.
 
 ## 과거 팀별 작업 소유 (이력 · 새 이슈의 assignee가 아님)
 
@@ -50,7 +50,7 @@ GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch
 
 **공통 원칙:** 본선 전 11개 이슈는 **CLOSED**(10 completed, #260 미완료 팀원 리뷰 이관 not_planned), 본선 이후 실제 인수는 **OPEN/NOT_RUN**이며 실제 NCP·SQL/AI/비밀키/운영자 구성과 실서비스 통합은 오너 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)이 총괄합니다. 본선 전 이슈 완료가 본선 이후 실서비스 인수 완료는 아닙니다. 원본 `csv/` 5개는 수정·삭제하지 않고 운영/배포/CI 번들에 포함하지 않습니다. 독립 사람 Gold는 현재 범위에서 제외되며 PASS 아님.
 
-**현재 담당 원칙:** 2026-11-07 기존 4개 실환경 후속과 UI 이슈는 #298/#276/#255로 통합하고 세 이슈 모두 assignee가 없습니다. #260의 실제 팀원 교차 리뷰는 NOT_RUN으로 #276/#298에서 확인하며, 과거 기술 역할/개별 이슈의 assignee를 자동 복원하거나 타인의 작업·권한을 대체하지 않습니다.
+**현재 담당 원칙:** 2026-11-07 기존 4개 실환경 후속과 UI 이슈는 #318/#316/#317로 통합하고 세 이슈 모두 assignee가 없습니다. #260의 실제 팀원 교차 리뷰는 NOT_RUN으로 #316/#318에서 확인하며, 과거 기술 역할/개별 이슈의 assignee를 자동 복원하거나 타인의 작업·권한을 대체하지 않습니다.
 
 ## 최신 협업 인터페이스
 
@@ -61,7 +61,7 @@ GitHub에서 **OPEN은 정확히 [#298 [UI/UX]](https://github.com/ot4562-glitch
 | 졸업/개설 What-if·RulePack | 박준영 → API/웹 | 취득/수강/계획 학점 분리·공식 조항/보류·동일 과목 |
 | 화면·모바일/접근성 | 이의상 ← 공통/추천/학업 | 8개 상단 주요 메뉴, 모바일 5탭·원 HUFSAbility 메뉴 미지원·사용자 안내, 권한 전환/철회 |
 | NCP·AI | 심민성 개발 ↔ 이서연 운영 | 비용·실권리 사전 승인, CPU/RSS/예산·재시작/키·유료 호출 fail-closed |
-| 독립 인수 | 실제 비작성자/권한자 → #276 | 서명/검증 환경/정확한 SHA, PASS·FAIL·HOLD·NOT_RUN |
+| 독립 인수 | 실제 비작성자/권한자 → #316 | 서명/검증 환경/정확한 SHA, PASS·FAIL·HOLD·NOT_RUN |
 
 ## 공동 규칙
 
