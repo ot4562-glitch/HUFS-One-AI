@@ -95,6 +95,7 @@ npm run build:web
 - [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md) — production 구성·진입점·실행 명령.
 - [CONTRACT_BOUNDARIES](docs/CONTRACT_BOUNDARIES.md) — 공통 계약과 소비자 범위.
 - [DATA_GOVERNANCE](docs/DATA_GOVERNANCE.md) — 승인된 데이터 처리·사용자별 보호.
+- [PUBLIC_API_SELECTION](docs/PUBLIC_API_SELECTION_20261108.md) — 국내 공개 API 선별, 서버 전용 사람인·커리어넷 연동 계약과 실제 키/권리 인수.
 - [DEMO_MANUAL](docs/DEMO_MANUAL.md) — 합성 시연 실행.
 - [EMPTY_DEMO_RUNBOOK](docs/EMPTY_DEMO_RUNBOOK.md) — 빈 계정·가상 동아리 시연.
 - [GENERATED_CLUB_POSTER](docs/GENERATED_CLUB_POSTER_20261105.md) — 합성 이미지 명세와 근거.
