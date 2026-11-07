@@ -264,7 +264,8 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     const original:ProviderStoredJob={jobId,state:'NEEDS_REVIEW',billing:'SETTLED',
       provenance:'CANDIDATE_CACHE',candidate:{...candidate,citations:[...candidate.citations],
         objectTokens:[],usage:{...candidate.usage}}};
-    f.read.mockImplementation(async(...args:unknown[])=>({...original,jobId:String(args[0])}));
+    f.read.mockImplementation(async(...args:unknown[])=>({...original,jobId:String(args[0]),
+      candidate:{...original.candidate,task:args[1]==='experience-skills'?'experience_skills':'opportunity_terms'}}));
     render(<OwnerProviderPanel port={f.port}/>);
     fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
     fireEvent.click(screen.getByRole('checkbox'));
@@ -288,6 +289,24 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
       newProviderInvocation:true,billingState:'SETTLED',
     });});
     expect(screen.queryByRole('region',{name:'권한 및 토큰 사용량이 검증된 비공개 영수증'})).toBeNull();
+  });
+  it('fails closed on server-stored job and task identities that differ from the owner request',async()=>{
+    const f=fixture('BETA',[]);
+    f.read.mockResolvedValueOnce({
+      jobId:'11111111-1111-4111-8111-111111111111',
+      state:'NEEDS_REVIEW',billing:'SETTLED',provenance:'CANDIDATE_CACHE',
+      candidate:{...candidate,citations:[...candidate.citations],objectTokens:[],
+        usage:{...candidate.usage}},
+    });
+    render(<OwnerProviderPanel port={f.port}/>);
+    await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);
+    fireEvent.change(screen.getByLabelText('내가 발급받은 작업 ID'),{target:{value:jobId}});
+    fireEvent.change(screen.getByLabelText('그때 실행한 작업 종류'),
+      {target:{value:'opportunity-terms'}});
+    fireEvent.click(screen.getByRole('button',{name:'이전 후보 ID 수동 재조회'}));
+    await screen.findByRole('alert');
+    expect(screen.queryByLabelText('현재 권한으로 재검증된 AI 후보')).toBeNull();
+    expect(f.submit).not.toHaveBeenCalled();
   });
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
