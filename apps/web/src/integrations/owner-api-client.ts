@@ -5,6 +5,7 @@ import {
   OwnerWorkspaceDeleteSchema,WorkspaceKindSchema,OwnerTranscriptSchema,
   CourseCatalogPageSchema,CourseOfferingsPageSchema,OpportunityCatalogPageSchema,
   OpportunityCatalogDetailSchema,
+  OwnerFeedResponseSchema,
   BookmarkStageSchema,BookmarkOutcomeSchema,BookmarkStagePatchSchema,isNextBookmarkStage,
   OwnerStudyPlanCheckRequestSchema,OwnerStudyPlanCheckResponseSchema,
   OwnerMajorWhatIfRequestSchema,OwnerMajorWhatIfResponseSchema,
@@ -293,6 +294,10 @@ export class HufsOwnerApiClient {
       freshSource(item.opportunity,page.asOf);
     }
     return page;
+  }
+  /** Current authorized owner feed version; never infer from S01–S05 synthetic snapshots. */
+  getOwnerFeed(signal?:AbortSignal){
+    return this.request('/api/owner/feed',OwnerFeedResponseSchema,{signal});
   }
   async getOpportunity(opportunityId:string,signal?:AbortSignal){
     const id=clientInput(CatalogId,opportunityId);

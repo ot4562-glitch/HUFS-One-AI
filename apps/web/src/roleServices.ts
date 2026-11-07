@@ -63,6 +63,8 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       remove:(id,version,signal)=>api.owner.deleteWorkspace('EXPERIENCE',id,version,signal),
       getOpportunity:(id,signal)=>api.owner.getOpportunity(id,signal),
       getBookmarks:signal=>api.owner.listWorkspace('BOOKMARK',{limit:20},signal),
+      getOwnerFeed:signal=>api.owner.getOwnerFeed(signal),
+      explainOpportunity:(id,request,signal)=>api.owner.explainOpportunity(id,request,signal),
     },
     ownerClubs:createOwnerClubPort(api.owner,ownerSession),
     overlay: {

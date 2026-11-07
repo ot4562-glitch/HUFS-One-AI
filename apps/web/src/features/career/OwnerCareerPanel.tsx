@@ -1,5 +1,5 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
-import type {ExperiencePortfolio,OpportunityCatalogDetail,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile} from '@hufs-one/contracts';
+import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
 import {careerSavedItem} from '../../../../../packages/core/src/career/bookmarks.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
@@ -18,6 +18,8 @@ export interface OwnerCareerPort {
   remove(id:string,version:number,signal?:AbortSignal):Promise<unknown>;
   getOpportunity(id:string,signal?:AbortSignal):Promise<OpportunityCatalogDetail>;
   getBookmarks(signal?:AbortSignal):Promise<{items:OwnerWorkspaceRecord[];nextCursor:string|null}>;
+  getOwnerFeed(signal?:AbortSignal):Promise<OwnerFeedResponse>;
+  explainOpportunity(id:string,request:{asOf:string;sourceRevisionId:string;rankConfigVersion:string;expectedFeedVersion?:string},signal?:AbortSignal):Promise<OpportunityExplanationResponse>;
 }
 
 type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio;

@@ -1,5 +1,5 @@
 import {useEffect,useState,useSyncExternalStore} from 'react';
-import type {OpportunityCatalogDetail} from '@hufs-one/contracts';
+import type {OpportunityCatalogDetail,OpportunityExplanationResponse} from '@hufs-one/contracts';
 import type {OwnerCareerPort} from './OwnerCareerPanel.js';
 import {InAppLink} from '../../shell/AppShell.js';
 import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
@@ -15,6 +15,8 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
   const session=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [detail,setDetail]=useState<OpportunityCatalogDetail|null>(null);
   const [error,setError]=useState('');
+  const [ruleExplanation,setRuleExplanation]=useState<OpportunityExplanationResponse|null>(null);
+  const [ruleStatus,setRuleStatus]=useState<'LOADING'|'NOT_SHOWN'|'UNAVAILABLE'|'READY'>('LOADING');
   useEffect(()=>{void port.session.initialize();},[port]);
   useEffect(()=>attachDemoResumeRevalidation(port.session,{page:document,view:window}),[port.session]);
   useEffect(()=>{
@@ -32,6 +34,26 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
       .catch(()=>{if(active)setError('현재 계정에서 확인할 수 없거나 공개가 허용되지 않은 기회입니다.');});
     return ()=>{active=false;};
   },[port,id,session.epoch,session.status]);
+  useEffect(()=>{
+    setRuleExplanation(null);setRuleStatus('LOADING');
+    if(session.status!=='READY'||!detail)return;
+    let active=true;
+    void port.session.runLatest('owner-career-rules',async signal=>{
+      const feed=await port.getOwnerFeed(signal);
+      const cards=[...feed.feed.featured,...feed.feed.compact,...(feed.feed.ineligible??[])];
+      if(!cards.some(c=>c.opportunityId===id))return {kind:'NOT_SHOWN' as const};
+      const explanation=await port.explainOpportunity(id,{
+        asOf:feed.feed.asOf,sourceRevisionId:detail.source.revisionId,
+        rankConfigVersion:feed.rankConfigVersion,expectedFeedVersion:feed.version,
+      },signal);
+      return {kind:'READY' as const,explanation};
+    }).then(value=>{
+      if(!active||!value||port.session.getState().status!=='READY')return;
+      if(value.kind==='READY'){setRuleExplanation(value.explanation);setRuleStatus('READY');}
+      else setRuleStatus('NOT_SHOWN');
+    }).catch(()=>{if(active){setRuleExplanation(null);setRuleStatus('UNAVAILABLE');}});
+    return ()=>{active=false;};
+  },[port,id,detail,session.status,session.epoch]);
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">기회 자료의 권한을 확인 중입니다.</p>;
   if(session.status!=='READY')return <p role="alert">본인 계정의 권한을 확인할 수 없어 상세 자료를 표시하지 않습니다.</p>;
   if(!detail)return <p role={error?'alert':undefined} aria-busy={!error}>{error||'출처·권리를 확인한 기회를 불러오는 중입니다.'}</p>;
@@ -60,6 +82,15 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
     <section aria-labelledby="rule-ai-heading">
       <h3 id="rule-ai-heading">규칙 기준 설명 vs AI 해석</h3>
       <p>규칙 근거: 등록된 지원 조건 {op.conditions.length}건 · 원문/현재 학업 확인 필요. 이 화면은 지원 자격을 임의로 확정하지 않습니다.</p>
+      {ruleStatus==='LOADING'?<p aria-busy="true">현재 추천 설정·본인 권한을 다시 검사하고 있습니다.</p>
+        :ruleStatus==='NOT_SHOWN'?<p>현재 본인 추천 목록에서 이 항목을 평가했다고 확인할 수 없습니다. 숨겨진 점수·조건을 추정하지 않습니다.</p>
+        :ruleStatus==='UNAVAILABLE'?<p>현재 판본·권한으로 재검증한 규칙 설명을 받을 수 없습니다. 오래된 설명은 표시하지 않았습니다.</p>
+        :ruleExplanation?<div role="status">
+          <p>현재 서버 규칙 평가: {ruleExplanation.state==='FEATURED'?'주요 추천에 표시됨':`주요 추천 제외 · ${ruleExplanation.reason}`}</p>
+          <p>판본: {ruleExplanation.sourceRevisionId} · 규칙 설정 {ruleExplanation.rankConfigVersion} · 기준시각 {ruleExplanation.asOf}</p>
+          <p>확인된 근거 참조 {ruleExplanation.evidenceRefs.length}개. 보이지 않는 학생 자료·미공개 항목의 근거는 제공하지 않습니다.</p>
+          {ruleExplanation.state==='NOT_FEATURED'&&ruleExplanation.notes.includes('ELIGIBILITY_UNKNOWN')&&<p>지원 자격 확인 필요는 지원 불가 확정이 아닙니다.</p>}
+        </div>:null}
       <p>AI 해석: 현재 이 기회의 출처 판본·동의에 연결된 **실제 공급자 후보가 전달되지 않았으므로 미실행/미검증**입니다. AI 결과가 있다고 가정한 전후 차이를 만들지 않습니다.</p>
       <p>AI 후보·실행 영수증은 별도 승인된 입력에 한해 표시됩니다. 실제 근거 비교는 동일 출처/판본·권한으로 결과가 확인된 경우에만 제공 가능합니다.</p>
     </section>
