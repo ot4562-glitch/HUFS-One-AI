@@ -35,6 +35,7 @@ export type ClubActivity = typeof CLUB_ACTIVITIES[number];
 
 export type ClubPostState = 'DRAFT'|'REVIEW_PENDING'|'APPROVED'|'REJECTED'|'EXPIRED'|'REVOKED';
 export type ClubCampus = 'SEOUL'|'GLOBAL'|'BOTH';
+export type ClubAffiliation='CAMPUS'|'INTER_UNIVERSITY'|'EXTERNAL';
 type Condition = Opportunity['conditions'][number];
 
 export interface ClubPost {
@@ -44,6 +45,8 @@ export interface ClubPost {
   summary:string;
   category:ClubCategory;
   campus:ClubCampus;
+  /** Optional scope: missing means campus-only for backward-compatible synthetic posts. */
+  affiliation?:ClubAffiliation;
   topicCodes:readonly TopicCode[];
   activities:readonly ClubActivity[];
   /** Stated recruiting conditions (same evaluator as opportunities); UNKNOWN facts stay UNKNOWN. */

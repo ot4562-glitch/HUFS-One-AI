@@ -15,6 +15,7 @@ export type SectionView<T> =
 export interface FeedCardView {
   readonly opportunityId: string;
   readonly title: string;
+  readonly organizationWebsite: FeedCard['organizationWebsite'] | null;
   /** Server verdict shown verbatim; the client never recomputes eligibility. */
   readonly eligibilityText: string;
   /** The same server verdict as a value, for icons; never recomputed. */
@@ -74,6 +75,7 @@ function cardView(card: FeedCard, asOf: string): FeedCardView {
   return {
     opportunityId: card.opportunityId,
     title: card.title,
+    organizationWebsite: card.organizationWebsite??null,
     eligibilityText: ELIGIBILITY_TEXT[card.eligibility],
     eligibility: card.eligibility,
     lifecycleText: LIFECYCLE_TEXT[card.lifecycle],

@@ -26,6 +26,7 @@ function ClubCard({club, navigate, large}: {club: ClubCardView; navigate: (p: st
         <ul className="board__pills" aria-label="동아리 정보">
           <li className="pill">{club.categoryText}</li>
           <li className="pill">{club.campusText}</li>
+          <li className="pill pill--outline">{club.affiliationText}</li>
           <li className="pill pill--outline">{APPROVAL_TEXT}</li>
         </ul>
         <p className="board__small">{club.lifecycleText}{club.deadlineText ? ` · ${club.deadlineText}` : ''}{club.dday && <> · <DDayText dday={club.dday} /></>}</p>

@@ -20,9 +20,9 @@
 | FEAT-04/05 개인 삭제·프로필 | 기존 CAS API와 신규 /career 폼 연결. 전 계정 데이터 삭제/보존 정책은 별도 |
 | FEAT-06/07/08 타임라인·승인·지원 단계 | 기존 workspace/approval/bookmark API 기반 read/edit/delete 연결, 학교/기관 공식 증빙 연동 없음 |
 | FEAT-09 실기기/보조공학·독립 운영 인수 | NOT_RUN |
-| FEAT-10/11/12 실 Provider 영수증·캐시·재실행 | /owner-ai 수동 승인 작업 재사용. 전체 실행 이력/캐시 재생·실제 NCP 호출은 미완료 |
-| FEAT-13 기관 홈페이지 출처 | 실제 기관 사이트/권리 검증 없이 외부 링크 자동 추가 금지 |
-| FEAT-14 연합·외부 동아리 확장 | 별도 출처/승인·관리자 권한·모집 범위 계약 필요 |
+| FEAT-10/11/12 실 Provider 영수증·캐시·재실행 | /owner-ai의 승인된 작업/수동 조회에 LIVE_PROVIDER_RUN·CACHED_PREVIOUS_RUN·SYNTHETIC 표시 계약 추가. 전체 작업 이력/금액·성능 실측/실제 NCP 호출은 아직 미완료 |
+| FEAT-13 기관 홈페이지 출처 | 별도 organizationWebsite HTTPS/verifiedAt/evidenceRef 계약·REAL 검증된 공고의 상세 링크를 구현. 운영에서 실제 기관 홈페이지의 신뢰/권리/링크를 승인·등록한 사례는 없음 |
+| FEAT-14 연합·외부 동아리 확장 | SYNTHETIC 모집글의 CAMPUS/INTER_UNIVERSITY/EXTERNAL 범위 필드 및 가상 게시판 라벨 추가. 실제 연합/교외 동아리의 운영·기관 동의·관리자 승인 기능은 별도 계약/권한 필요 |
 | FEAT-15 규칙/AI 전후 비교 | 기존 출처 정정 비교와 신규 AI 전후 구별 필요. 근거 없는 실모델 비교 미완료 |
 
 RELEASE_BLOCKED 실서비스 게이트 불변. 기존 csv/ 원본 5개·TUNING/REPORT split·API/DB 권한·실제 데이터/Google/NCP 구성은 변경하지 않는다.

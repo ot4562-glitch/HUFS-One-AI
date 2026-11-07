@@ -20,6 +20,8 @@ export const SyntheticClubPostSchema=z.strictObject({
   id:ClubId,clubName:z.string().startsWith('가상동아리 ').max(90),
   summary:z.string().min(1).max(400),
   category:ClubDemoCategorySchema,campus:z.enum(['SEOUL','GLOBAL','BOTH']),
+  /** Synthetic origin scope only. This never certifies real university club affiliation. */
+  affiliation:z.enum(['CAMPUS','INTER_UNIVERSITY','EXTERNAL']).optional(),
   topicCodes:z.array(TopicCodeSchema).max(12),
   activities:z.array(ClubDemoActivitySchema).max(10),
   conditions:z.array(EligibilityConditionSchema).max(20),

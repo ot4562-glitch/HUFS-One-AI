@@ -109,6 +109,12 @@ function toCard(r:RankedOpportunity, displayMode:'FEATURED_LARGE'|'COMPACT_LIST'
     opportunityId:r.opportunity.id,
     displayMode,
     title:r.opportunity.title,
+    // #317: official homepage is separate from sourceUrl/applicationUrlRef and may only
+    // be displayed on verified REAL, source-gated opportunities.
+    ...(r.opportunity.dataMode==='REAL'&&r.opportunity.verifiedAt
+      &&r.opportunity.dataQuality==='COMPLETE'&&r.opportunity.organizationWebsite
+      &&Date.parse(r.opportunity.organizationWebsite.verifiedAt)<=Date.parse(r.opportunity.verifiedAt)
+      ?{organizationWebsite:r.opportunity.organizationWebsite}:{}),
     eligibility:r.evaluation.eligibility,
     lifecycle:r.evaluation.lifecycle,
     topics:onlyKnownTopics(r.opportunity.topicCodes).slice(0, 5),

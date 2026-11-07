@@ -147,6 +147,12 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
         {art && <SyntheticArtwork key={art.id} art={art} className="opportunity-detail-art" />}
         <dl className="facts">
           <dt>모집 상태</dt><dd>{card.lifecycleText}</dd>
+          {card.organizationWebsite&&<><dt>기관 공식 홈페이지 (별도 검증)</dt><dd>
+            <a href={card.organizationWebsite.url} target="_blank" rel="noopener noreferrer nofollow">
+              기관 홈페이지 열기
+            </a> · 확인 시각 {new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium'}).format(new Date(card.organizationWebsite.verifiedAt))}
+          </dd></>}
+
           <dt>지원 조건</dt><dd>{card.eligibilityText}</dd>
           {card.deadlineText && <><dt>마감</dt><dd>{card.deadlineText}{card.dday && <> · <DDayText dday={card.dday} /></>}</dd></>}
           {card.topicTexts.length > 0 && <><dt>분야</dt><dd>{card.topicTexts.join(' · ')}</dd></>}

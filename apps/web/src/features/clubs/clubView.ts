@@ -39,6 +39,7 @@ export interface ClubCardView {
   readonly categoryText: string;
   readonly campus: ClubCampus;
   readonly campusText: string;
+  readonly affiliationText: string;
   readonly lifecycle: ClubLifecycle;
   readonly lifecycleText: string;
   readonly recruitable: boolean;
@@ -71,6 +72,8 @@ function cardView(r: Pick<RankedClub,'post'|'lifecycle'|'eligibility'|'reasons'>
     categoryText: CATEGORY_TEXT[p.category],
     campus: p.campus,
     campusText: CAMPUS_TEXT[p.campus],
+    affiliationText: p.affiliation==='INTER_UNIVERSITY'?'가상 대학 연합 동아리'
+      :p.affiliation==='EXTERNAL'?'가상 교외 소모임':'가상 교내 동아리',
     lifecycle: r.lifecycle,
     lifecycleText: LIFECYCLE_TEXT[r.lifecycle],
     recruitable: r.lifecycle !== 'CLOSED',

@@ -4,6 +4,7 @@ import {AI_TASK_PATHS,type AiTaskPath,type ApprovedProviderInput,
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import '../local-accounts/localAccounts.css';
 import {AiTaskResultView} from './AiTaskResultView.js';
+import {providerRunMode,AI_RUN_MODE_TEXT} from './runDisplay.js';
 
 export interface OwnerProviderPort {
   readonly session:OwnerSessionController;
@@ -55,6 +56,7 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
   const selected=items?.find(i=>keyFor(i)===selection);
   const taskPath=selected?operationPath(selected):null;
   const canSubmit=!!selected&&!!taskPath&&Date.parse(selected.expiresAt)>Date.now();
+  const runMode=providerRunMode(accepted,stored);
 
   const read=async(jobId:string,path:AiTaskPath)=>{
     const version=selectionVersion.current;
@@ -124,10 +126,12 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
     {accepted&&<section aria-label="Provider 작업 상태">
       <p>작업 ID: {accepted.jobId}</p>
       <p>상태: {accepted.state} {accepted.state==='NEEDS_REVIEW'?(' · '+accepted.provenance):' · 아직 결과 없음'}</p>
+      <p role="status">실행 유형: {runMode} · {AI_RUN_MODE_TEXT[runMode]}</p>
     </section>}
     {stored&&<section aria-label="현재 권한으로 재검증된 AI 후보">
       <h2>독립 사람 검토 필요 · NEEDS_REVIEW</h2>
       <p>원장 상태: {stored.billing} · 출처: {stored.provenance}</p>
+      <p>아래는 현재 권한으로 다시 확인한 기존 후보이며, 조회 자체는 신규 모델 실행이나 재과금이 아닙니다.</p>
       {stored.candidate.result&&<AiTaskResultView result={stored.candidate.result}/>}
       <ul>{stored.candidate.citations.map((c,i)=><li key={c.sourceToken+':'+c.paragraphId+':'+i}>
         <strong>근거 {i+1} · {c.sourceToken} / {c.paragraphId}</strong> · {c.quote}

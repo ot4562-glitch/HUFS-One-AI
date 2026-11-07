@@ -26,9 +26,27 @@ export const EligibilityConditionSchema = z.strictObject({
   evidenceId:z.string().min(1),
 });
 
+/** A separate, reviewable organization homepage, never source URL or application link.
+ * No credentials, fragments, internal hosts, IPs or synthetic-only reserved hosts. */
+export const OrganizationWebsiteSchema=z.strictObject({
+  url:z.url().max(2048).refine(text=>{
+    try{
+      const u=new URL(text);
+      return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash
+        &&u.port===''&&u.hostname.includes('.')
+        &&!u.hostname.startsWith('[')
+        &&!/^[0-9]+([.][0-9]+){3}$/.test(u.hostname)
+        &&!/(^|[.])(localhost|local|test|invalid|example)$/.test(u.hostname);
+    }catch{return false;}
+  },'Organization homepage must be a public HTTPS URL without query or credentials'),
+  verifiedAt:z.iso.datetime({offset:true}),
+  evidenceRef:z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),
+});
+
 export const OpportunitySchema = z.strictObject({
   id:z.string().min(1),version:z.string().min(1),sourceSnapshotId:z.string().min(1),
   title:z.string().min(1),organization:z.string().min(1),
+  organizationWebsite:OrganizationWebsiteSchema.optional(),
   kind:z.enum(['JOB','INTERNSHIP','CONTEST','EXTRACURRICULAR','SCHOLARSHIP']),
   /** Only present when source evidence distinguishes campus vs external activities. */
   programScope:z.enum(['ON_CAMPUS','OFF_CAMPUS','UNKNOWN']).optional(),
@@ -115,6 +133,8 @@ export const FeedCardSchema = z.strictObject({
   opportunityId:z.string().min(1),
   displayMode:z.enum(['FEATURED_LARGE','COMPACT_LIST']),
   title:z.string().min(1),
+  /** Only source-gated REAL cards; a web site is not the posting source or apply route. */
+  organizationWebsite:OrganizationWebsiteSchema.optional(),
   eligibility:EligibilitySchema,
   lifecycle:LifecycleSchema,
   topics:z.array(TopicCodeSchema).max(5),
@@ -123,6 +143,8 @@ export const FeedCardSchema = z.strictObject({
   dataMode:z.enum(['REAL','SYNTHETIC']),
   explanation:RecommendationExplanationSchema.optional(),
 }).superRefine((card,ctx)=>{
+  if(card.dataMode==='SYNTHETIC'&&card.organizationWebsite)
+    ctx.addIssue({code:'custom',path:['organizationWebsite'],message:'Synthetic cards cannot link to an official organization'});
   const explanation=card.explanation;
   if(!explanation)return;
   if(explanation.opportunityId!==card.opportunityId){
