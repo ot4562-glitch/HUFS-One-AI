@@ -41,7 +41,8 @@ describe('operator-only public API discovery HTTP path',()=>{
     const x=fixture(false);
     const res=await x.app.inject({method:'POST',url:'/api/operator/public-api-discovery',
       headers:x.headers,payload});
-    expect(res.statusCode).toBe(404);
+    // Global source-route gate rejects unknown operator endpoints before Fastify 404.
+    expect(res.statusCode).toBe(403);
     expect(x.service.lookup).not.toHaveBeenCalled();
   });
   it('uses authenticated owner, independently admitted operator and consumes a single explicit lookup',async()=>{
