@@ -2,6 +2,7 @@ import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
 import {TOPIC_CODES,type TopicCode} from '@hufs-one/contracts';
 import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent,BookmarkStage,BookmarkOutcome} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
+import {careerOpportunityLinks} from '../../../../../packages/core/src/career/opportunity-links.js';
 import {careerSavedItem} from '../../../../../packages/core/src/career/bookmarks.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
@@ -29,6 +30,7 @@ export interface OwnerCareerPort {
 }
 
 type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio;consents:SelfConsent;
+  feed:OwnerFeedResponse|null;
   bookmarks:{items:OwnerWorkspaceRecord[];nextCursor:string|null}};
 const CATEGORY={
   PROJECT:'프로젝트',CLUB:'동아리',VOLUNTEERING:'봉사',WORK:'근로',INTERNSHIP:'인턴',
@@ -133,12 +135,14 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
     let active=true;
     void port.session.runLatest('owner-career-page',async signal=>{
       const before=requireCareerConsent((await port.getConsents(signal)).consents);
-      const [profile,portfolio,bookmarks]=await Promise.all([port.getProfile(signal),
+      const [profile,portfolio,bookmarks,feed]=await Promise.all([port.getProfile(signal),
         port.getPortfolio(cursor?{limit:20,afterId:cursor}:{limit:20},signal),
-        port.getBookmarks(bookmarkCursor?{limit:20,afterId:bookmarkCursor}:{limit:20},signal)]);
+        port.getBookmarks(bookmarkCursor?{limit:20,afterId:bookmarkCursor}:{limit:20},signal),
+        // An unavailable feed must not block an otherwise authorized private portfolio.
+        port.getOwnerFeed(signal).catch(()=>null)]);
       const consents=requireCareerConsent((await port.getConsents(signal)).consents);
       assertCareerConsentCurrent(before,consents,portfolio.portfolio.consentVersion);
-      return {profile:profile.profile,portfolio,bookmarks,consents};
+      return {profile:profile.profile,portfolio,bookmarks,consents,feed};
     }).then(value=>{
       if(!active)return;
       if(value&&port.session.getState().status==='READY')setScreen(value);
@@ -200,6 +204,9 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
 
   const roadmap=screen.profile?buildCareerRoadmap({profile:screen.profile,portfolio:screen.portfolio}):null;
   const timeline=buildCareerTimeline(screen.portfolio);
+  const related=screen.feed&&screen.profile?careerOpportunityLinks(screen.feed,[
+    ...screen.profile.value.interestTopics,...screen.profile.value.desiredJobTopics,
+  ]):[];
   const privateBookmarks=screen.bookmarks.items.filter(record=>
     record.value.kind==='BOOKMARK'&&record.value.dataMode==='OWNER_CONSENTED');
   return <section aria-label="본인 전용 커리어 포트폴리오">
@@ -222,6 +229,18 @@ export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:
           <strong>{TOPIC_TEXT[t.topicCode]}</strong> — {t.explanation}
         </li>)}</ul>:<p>이 페이지에서는 추가 탐색 분야를 찾지 못했습니다. 전체 계정 분석을 의미하지 않습니다.</p>}
       </>}
+    </section>
+    <section aria-labelledby="career-related-heading">
+      <h2 id="career-related-heading">지금 확인할 수 있는 관련 기회</h2>
+      <p role="note">현재 본인 권한으로 받은 추천 목록의 주제 일치 항목만 연결합니다. 합격 가능성·전체 공고·공식 지원 적격이 아니며 상세를 열 때 다시 권한과 출처를 확인합니다.</p>
+      {!screen.feed?<p>현재 승인된 본인 추천 목록을 확인하지 못했습니다. 기회 목록을 추정하지 않습니다.</p>
+        :related.length===0?<p>이 페이지에서 관심 주제와 일치하는 검증된 실제 공고가 없습니다. 전체 검색 결과는 아닙니다.</p>
+        :<ul>{related.map(item=><li key={item.id}>
+          <InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.id)} navigate={navigate}>{item.title}</InAppLink>
+          <p>관심 주제: {item.matchedTopics.map(code=>TOPIC_TEXT[code]).join(' · ')} · 지원 조건: {item.eligibility==='UNKNOWN'?'확인 필요':'현재 규칙상 적합 (출처 재확인 필요)'}</p>
+          <p role="note">현재 응답의 근거 참조 {item.evidenceRefs.length}건 · 자료 시점 {screen.feed.feed.asOf}</p>
+        </li>)}</ul>}
+      {screen.feed?.feed.hasMore&&<p role="note">현재 목록의 표시 범위 밖에 다른 공고가 있을 수 있습니다. 전체 추천으로 판단하지 마세요.</p>}
     </section>
     <section aria-labelledby="career-timeline-heading">
       <h2 id="career-timeline-heading">경험·활동 타임라인 (비공개)</h2>
