@@ -150,6 +150,7 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
   const [note, setNote] = useState<Note | null>(null);
   const [busy, setBusy] = useState(false);
   const [round, setRound] = useState(0);
+  const [cursor,setCursor]=useState<string|undefined>();
   const [selected, setSelected] = useState<string[]>([]);
   const [consent, setConsent] = useState(false);
   const [title, setTitle] = useState('');
@@ -161,7 +162,8 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
     let live = true;
     setLoad({key, scope, kind: 'LOADING'});
     void scope.read(async signal => {
-      try { return {raw: await port.load(signal)}; }
+      try { return {raw: cursor&&port.loadPage
+        ?await port.loadPage(cursor,signal):await port.load(signal)}; }
       catch (error) {
         if (error instanceof HufsApiError && (error.status === 409 || error.status === 503)) return {raw: null};
         throw error;
@@ -173,7 +175,7 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
       setLoad(v.ok ? {key, scope, kind: 'VIEW', view: v.view} : {key, scope, kind: 'ERROR'});
     });
     return () => { live = false; };
-  }, [scope, port, round]);
+  }, [scope, port, round, cursor]);
 
   const mutate = useCallback(async (run: (signal: AbortSignal) => Promise<unknown>, done: string | ((value: unknown) => string)) => {
     if (mutationLock.current) return false;
@@ -268,6 +270,12 @@ export function ExperienceReviewPanel({scope, port, opportunities = [], navigate
         </li>)}</ul>}
       </section>
       {view.partial && <p className="muted">경험이 더 있습니다. 이 목록은 일부이며 전체 주제 목록이 아닙니다.</p>}
+      {port.loadPage&&view.nextCursor&&<button type="button" className="button button--quiet" disabled={busy}
+        onClick={()=>{setCursor(view.nextCursor!);setSelected([]);setConsent(false);setNote(null);}}>
+        다음 경험 20건 검토</button>}
+      {port.loadPage&&cursor&&<button type="button" className="button button--quiet" disabled={busy}
+        onClick={()=>{setCursor(undefined);setSelected([]);setConsent(false);setNote(null);}}>
+        첫 경험 페이지로 돌아가기</button>}
     </section>
   );
 }
