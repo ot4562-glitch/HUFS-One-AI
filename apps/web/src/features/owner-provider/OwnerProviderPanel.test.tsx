@@ -215,6 +215,25 @@ describe('BETA owner Provider UI — explicit, no auto-paid work',()=>{
     await act(async()=>{resolve({jobId,state:'PENDING'});});
   });
 
+  it('allows a pending view to be dismissed without claiming the remote job was cancelled',async()=>{
+    vi.stubGlobal('crypto',{randomUUID:()=>jobId});
+    const f=fixture();
+    f.submit.mockResolvedValueOnce({jobId,state:'PENDING'});
+    render(<OwnerProviderPanel port={f.port}/>);
+    fireEvent.click(await screen.findByRole('radio',{name:/후보 1/}));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await screen.findByText(/아직 결과가 정산되지 않았습니다/);
+    fireEvent.click(screen.getByRole('button',{name:'대기 표시 접기 (공급자 실행 취소 아님)'}));
+    expect(screen.getByText(/공급자 실행·청구 취소가 아닙니다/)).toBeTruthy();
+    expect(screen.getByText(/작업 ID 00000000-0000-4000-8000-000000000001/)).toBeTruthy();
+    expect(f.submit).toHaveBeenCalledTimes(1);
+    expect(f.read).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button',{name:'선택된 승인 입력 실행'}));
+    await waitFor(()=>expect(f.submit).toHaveBeenCalledTimes(2));
+    expect(f.submit.mock.calls[1]![2]).toBe(f.submit.mock.calls[0]![2]);
+  });
   it('never submits when no server-approved input is available',async()=>{
     const f=fixture('BETA',[]);render(<OwnerProviderPanel port={f.port}/>);
     await screen.findByText(/실행 가능한 승인된 입력이 없습니다/);
