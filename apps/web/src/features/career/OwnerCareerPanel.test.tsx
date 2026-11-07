@@ -79,7 +79,7 @@ describe('#317 BETA owner timeline and self-reported stage',()=>{
     fireEvent.change(screen.getByLabelText(/내가 할 일/),{target:{value:'지원 서류 점검'}});
     fireEvent.click(screen.getByRole('button',{name:'행동 계획 기록'}));
     await waitFor(()=>expect(f.port.create).toHaveBeenCalledOnce());
-    const submitted=(f.port.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const submitted=(f.port.create as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(submitted.value).toMatchObject({kind:'ACTION_PLAN',dataMode:'OWNER_CONSENTED',
       opportunityId:'opp1',state:'DRAFT',task:'지원 서류 점검',done:false});
   });
