@@ -25,7 +25,7 @@ describe('student private career external official navigation',()=>{
   });
   it('does not claim official academic approval or live provider integration',()=>{
     render(<OfficialCareerReferences/>);
-    expect(screen.getByText(/API 데이터 수집·게시 또는 실시간 추천 기능은 아닙니다/)).toBeTruthy();
+    expect(screen.getByText(/채용 공고 수집·게시 또는 실시간 추천 기능은 아닙니다/)).toBeTruthy();
     expect(screen.getByText(/별도의 검증된 서버 API, 출처별 이용권, 관리자 검토/)).toBeTruthy();
   });
 });
