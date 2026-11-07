@@ -1,8 +1,8 @@
 # HUFS One AI — React 웹
 
-**2026-11-07 현행 UI 추적:** [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)는 **이서연 `lhh42001` 담당(assignee 지정)**이며 협업자 #310~#314의 개별 반례를 포함합니다. 실제 NCP 서버·비용은 [이서연 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 로그인·실자료/API는 [심민성 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325), 추가 기능은 [심민성 #317](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317), 시연·AI 정확도는 [김채윤 #324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324)가 담당합니다. 과거 #9/#119/#280은 종료/이관 이력입니다.
+**2026-11-07 현행 UI 추적:** UX-01~25를 포함한 전체 디자인/React UI는 [이서연 통합 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)에서 NCP 서버 설치·보안·운영과 함께 30일 관리합니다. [구 #318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)은 중복 이관으로 CLOSED(개발 완료 아님)입니다. 인증/API·DB #325, 신규 기능 #317, 시연/QA #324, AI/NLP #321/#322의 담당은 그대로입니다.
 
-**본선 진출 후 웹 책임(2026-11-07):** 이서연 `lhh42001`이 전체 화면 디자인·React UI/반응형·접근성과 API 서버/NCP 운영을 맡으며, 김채윤이 전체 화면/학생 경험→AI 결과 발표 시연을 책임집니다. 이의상·박준영은 AI 정확도/Laya·네이버 AI API·NLP 공동 담당이고, 심민성은 API·DB 통합/코드 품질·추가 기능 담당입니다. 상세 분장은 [본선 이후 역할 정본](../../docs/WORKSTREAMS.md). **#318은 이서연에게 배정됨**이며 이전 이의상 UI 구현은 역사 기록입니다.
+**본선 진출 후 웹 책임(2026-11-07):** 이서연 `lhh42001`이 전체 화면 디자인·React UI/반응형·접근성과 API 서버/NCP 운영을 맡으며, 김채윤이 전체 화면/학생 경험→AI 결과 발표 시연을 책임집니다. 이의상·박준영은 AI 정확도/Laya·네이버 AI API·NLP 공동 담당이고, 심민성은 API·DB 통합/코드 품질·추가 기능 담당입니다. 상세 분장은 [본선 이후 역할 정본](../../docs/WORKSTREAMS.md). **구 #318은 #323에 이관·종결**됐으며 이전 이의상 UI 구현은 역사 기록입니다.
 
 **현재 웹:** 독립 제품 네이비/블루 v5 디자인, 1024px 이상 **11개 대분류 GNB + 실제 화면 LNB**, 모바일 하단 **5탭**, `HUFSAbility 메뉴` disclosure에 기존 24개 기능의 **미지원** 표시, 홈 장식 배너·맞춤 공고/7일 내 확정 마감/취득 학점 요약 및 페이지별 breadcrumb/h1. 상단 계정 인사는 현재 합성 개발/미리보기에서는 가상 선택기를 옮겨 놓은 것이며 **실제 팀원 학교 계정 로그인 기능이 아닙니다**. 공개 Pages 접근 제어와 인증된 실제 BETA 전환은 #297/#299 후속 과제입니다. 학교 공식 운영 화면이나 원본 UI 복제물이 아닙니다.
 
@@ -42,4 +42,4 @@ Chrome/Playwright·jsdom/단위·360/390/768/1440 viewport/키보드 검사와 *
 - 버튼·카드·홈 배너에는 절제된 hover/진입/스크롤 전환을 사용합니다. reduced-motion 설정에서는 움직임을 억제하며, 버튼은 키보드로 조작할 수 있습니다. 외부 스크립트·이미지·유료 템플릿은 추가하지 않았습니다.
 - 참고 관찰: [Motion 예제](https://motion.dev/examples)(전환/호버), [Motion 접근성](https://motion.dev/docs/react-accessibility)(움직임 축소), [Oversight Sections](https://supply.madebyoversight.com/sections)(구획의 시각적 위계). 코드는 새로 작성했으며 템플릿 소스를 복사하지 않았습니다. 실기기·스크린리더 인수는 별도입니다.
 
-**범위 주의:** 이 검색은 이미 서버/합성 클라이언트에서 승인해 현재 페이지에 표시한 공고에만 적용합니다. `hasMore`인 전체 데이터는 검색하지 않습니다. `7일 내 마감`은 현재 시스템 날짜 실시간 조회가 아니라 **snapshot `asOf` 기준**입니다. 날짜 기준 안내/전체 화면 사람 검수는 [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), 실제 로그인/실기기 인수는 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280)에서 계속합니다. 정확한 PR HEAD `ba7bf2a` Actions 4/4 SUCCESS, merge `d8e2144`; 이는 독립 사람 승인이나 출시 허가가 아닙니다.
+**범위 주의:** 이 검색은 이미 서버/합성 클라이언트에서 승인해 현재 페이지에 표시한 공고에만 적용합니다. `hasMore`인 전체 데이터는 검색하지 않습니다. `7일 내 마감`은 현재 시스템 날짜 실시간 조회가 아니라 **snapshot `asOf` 기준**입니다. 날짜 기준 안내/전체 화면 사람 검수는 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 실제 로그인/실기기 인수는 [#280](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280)에서 계속합니다. 정확한 PR HEAD `ba7bf2a` Actions 4/4 SUCCESS, merge `d8e2144`; 이는 독립 사람 승인이나 출시 허가가 아닙니다.

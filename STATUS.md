@@ -2,22 +2,22 @@
 
 기준일 **2026-11-07** (CI 증거는 각 정확한 SHA 기준). 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`다. 코드와 합성 자동검증, 실제 학교/학생·계정·서버·사람 인수를 구별한다. **실서비스는 `RELEASE_BLOCKED`**이며 실제 NCP 운영 증거는 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 통합/실인증·릴리스 검증은 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에 기록한다.
 
-## 현재 OPEN 7개 — 담당자 지정 (2026-11-07)
+## 현재 OPEN 6개 — 담당자 지정 (2026-11-07)
 
 | 현재 이슈 | GitHub 담당자 | 업무 |
 | --- | --- | --- |
 | [#321 이의상 AI·NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya/CLOVA·자연어 처리·정확도 공동 |
 | [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI/NLP 공동 개선·학업 RulePack·개설 |
-| [#323 이서연 NCP·서버](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | 서버 운영·NCP·비용·복구 |
+| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
 | [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 전체 웹 시연·경험 AI 결과 평가 |
 | [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API/DB·보안·품질·통합 |
 | [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 직접 개발 |
-| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` | 이서연 전체 디자인·React UI |
 
-이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 **원본 POST-01~20 전부를 누락 없이 개인별 #321~#325로 분리하고 보관 CLOSED**했습니다. 현재는 담당자가 지정된 개인별 5개와 #317(심민성 추가 기능)·#318(이서연 UI/UX) **7개만 OPEN**입니다. 과거 이슈와 댓글은 보존하며, 배정은 실제 NCP·모델·학생 자료·사람 인수 완료가 아닙니다. 미실행/미구성은 `NOT_RUN / CONFIGURATION_REQUIRED`, 실서비스는 `RELEASE_BLOCKED`입니다.
+이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 POST-01~20은 개인별 #321~#325에 보존하고 #316은 CLOSED 처리했습니다. **기존 UI/UX [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 UX-01~25와 미완 인수 항목은 전부 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)으로 이전**하여 #318을 중복으로 종결했습니다. **현재 OPEN은 6개**이며 각각 지정 담당자 1명입니다. 이관·배정은 실제 구현·NCP 설치·보안/사람 인수·Awwwards 수상 완료를 뜻하지 않습니다. 실운영 상태는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`를 유지합니다.
+
 ## 본선 진출 이후 책임 확정 (2026-11-07)
 
-역할은 **이의상·박준영(AI 정확도·Laya/네이버 AI API·NLP 공동)**, **이서연(웹 디자인/React UI+서버·NCP 운영)**, **김채윤(학생 경험 입력·AI 결과 품질 검증 및 전체 사이트 발표 시연 루트)**, **심민성(시스템 통합·코드 품질/리뷰·추가 기능)**으로 확정됐습니다. 박준영의 기존 학업 코어 유지도 포함합니다. [본선 이후 역할 정본](docs/WORKSTREAMS.md)를 정본으로 사용하며, 과거 팀원 담당/수락률은 이력입니다. **현재 7개 OPEN 이슈는 각각 담당자가 지정**됐으며 실제 이행·수락이 완료됐다는 의미가 아닙니다.
+역할은 **이의상·박준영(AI 정확도·Laya/네이버 AI API·NLP 공동)**, **이서연(웹 디자인/React UI+서버·NCP 운영)**, **김채윤(학생 경험 입력·AI 결과 품질 검증 및 전체 사이트 발표 시연 루트)**, **심민성(시스템 통합·코드 품질/리뷰·추가 기능)**으로 확정됐습니다. 박준영의 기존 학업 코어 유지도 포함합니다. [본선 이후 역할 정본](docs/WORKSTREAMS.md)를 정본으로 사용하며, 과거 팀원 담당/수락률은 이력입니다. **현재 6개 OPEN 이슈는 각각 담당자가 지정**됐으며 실제 이행·수락이 완료됐다는 의미가 아닙니다.
 
 ## 본선 진출 전 이슈 종결 범위
 
@@ -41,8 +41,8 @@
 - **[PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)** 통합 커밋 [`462f6d3`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/462f6d39641d4129addda0f5ad6ab700eebdf5cb)에서 본선 이전 11개 이슈 모두 종료(10 `completed`, #260 `not_planned`/미완 사람 리뷰 후속 이관). 그 커밋의 Actions 4종 성공은 이슈 종결 댓글에 연결.
 - **[PR #305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)** HEAD `f7fa7f3` → `main` 비교 시 변경 파일 0개, 기존 #306에 통합된 내용의 중복. [코드 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305#pullrequestreview-5797569357) 등록 후 **미병합 CLOSED**(빈 merge 만들지 않음).
 - **[PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)** HEAD `ba7bf2a` 8개 파일 홈/공고 인터랙션 및 Chrome 360px·reduced-motion/필터 회귀. [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875) 후 `main`에 [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c)로 **MERGED**. 정확한 PR HEAD의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963) **4/4 SUCCESS**. 병합 후 정확한 **`main d8e2144`**의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797571)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797686)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797648)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797515)도 **4/4 SUCCESS**를 재확인했다. 이후 문서 PR의 HEAD는 다시 별도로 확인한다.
-- **2026-11-06 당시** 후속 #280~#283/#297~#303 및 협업자 #310~#314는 #316/#317/#318에 통합됐으며, **2026-11-07 이후 #316의 POST-01~20을 #321~#325로 추가 분리·담당 배정하고 #316은 CLOSED**했습니다. 현재는 #317(심민성)·#318(이서연) 포함 7개 OPEN이며, 자동 CI 성공은 실제 서버·학생·사람 인수의 PASS와 다릅니다.
-- **7일 내 마감/정렬**은 이미 허용된 현재 화면의 snapshot `asOf` 및 D-day에 대한 클라이언트 탐색이다. 실제 오늘의 실시간 원본 전체 검색이 아니고, `hasMore`이면 화면 밖 공고는 제외된다. D-day 기준 날짜를 학생에게 설명하는 UX는 #318에서 계속 개선한다.
+- **2026-11-06 당시** 후속 #280~#283/#297~#303 및 협업자 #310~#314는 #316/#317/#318에 통합됐으며, **2026-11-07 이후 #316의 POST-01~20을 #321~#325로 추가 분리·담당 배정하고 #316은 CLOSED**했습니다. 현재는 #317(심민성) 포함 6개 OPEN이며(#318 UI/UX는 #323에 통합·종결), 자동 CI 성공은 실제 서버·학생·사람 인수의 PASS와 다릅니다.
+- **7일 내 마감/정렬**은 이미 허용된 현재 화면의 snapshot `asOf` 및 D-day에 대한 클라이언트 탐색이다. 실제 오늘의 실시간 원본 전체 검색이 아니고, `hasMore`이면 화면 밖 공고는 제외된다. D-day 기준 날짜를 학생에게 설명하는 UX는 통합 #323의 UX-01~25에서 계속 개선한다.
 
 ## 현재 제품 경계
 
@@ -63,7 +63,7 @@
 
 ## 남은 이슈와 문서
 
-현재 OPEN은 **#321 이의상 AI/NLP, #322 박준영 AI·학업, #323 이서연 NCP 운영, #324 김채윤 시연/AI 검증, #325 심민성 통합/품질, #317 심민성 추가 기능, #318 이서연 UI/UX** 7개이며 전부 담당자가 배정됐습니다. #316은 작업 이전 후 보관 CLOSED입니다.
+현재 OPEN은 **#321 이의상 AI/NLP, #322 박준영 AI·학업, #323 이서연 통합 웹 디자인·UI/UX·NCP 운영, #324 김채윤 시연/AI 검증, #325 심민성 통합/품질, #317 심민성 추가 기능** 6개이며 전부 담당자가 배정됐습니다. #316은 작업 이전 후 보관 CLOSED입니다.
 
 - [사전 운영 계획](docs/PREFINAL_OPERATIONS_PLAN.md) · [팀 수락 상태](docs/TEAM_PROGRESS.md) · [검증 보고](REPORT.md)
 - [NCP 서버 개설](docs/BEGINNER_NCP_SERVER_SETUP.md) · [제품·개발 CLI 설치](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [제품 원리](docs/BEGINNER_PRODUCT_ARCHITECTURE.md)

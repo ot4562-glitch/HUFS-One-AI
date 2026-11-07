@@ -6,19 +6,19 @@
 
 승인 완료는 실제 코드/설정/시험·학업 사실·독립 Gold·배포 성공을 대신하지 않습니다. 테스트하지 않은 결과는 `NOT_RUN`, 측정하지 않은 값은 `NOT_MEASURED`, 실제 주소/자격증명 미설정은 `CONFIGURATION_REQUIRED`입니다. 인증·소유권·RLS/CSRF·현재 철회·비밀 보호는 유지합니다.
 
-## 현재 OPEN 7개 — 담당자 지정 (2026-11-07)
+## 현재 OPEN 6개 — 담당자 지정 (2026-11-07)
 
 | 현재 이슈 | GitHub 담당자 | 업무 |
 | --- | --- | --- |
 | [#321 이의상 AI·NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya/CLOVA·자연어 처리·정확도 공동 |
 | [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI/NLP 공동 개선·학업 RulePack·개설 |
-| [#323 이서연 NCP·서버](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | 서버 운영·NCP·비용·복구 |
+| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
 | [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 전체 웹 시연·경험 AI 결과 평가 |
 | [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API/DB·보안·품질·통합 |
 | [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 직접 개발 |
-| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` | 이서연 전체 디자인·React UI |
 
-이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 **원본 POST-01~20 전부를 누락 없이 개인별 #321~#325로 분리하고 보관 CLOSED**했습니다. 현재는 담당자가 지정된 개인별 5개와 #317(심민성 추가 기능)·#318(이서연 UI/UX) **7개만 OPEN**입니다. 과거 이슈와 댓글은 보존하며, 배정은 실제 NCP·모델·학생 자료·사람 인수 완료가 아닙니다. 미실행/미구성은 `NOT_RUN / CONFIGURATION_REQUIRED`, 실서비스는 `RELEASE_BLOCKED`입니다.
+이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 POST-01~20은 개인별 #321~#325에 보존하고 #316은 CLOSED 처리했습니다. **기존 UI/UX [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 UX-01~25와 미완 인수 항목은 전부 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)으로 이전**하여 #318을 중복으로 종결했습니다. **현재 OPEN은 6개**이며 각각 지정 담당자 1명입니다. 이관·배정은 실제 구현·NCP 설치·보안/사람 인수·Awwwards 수상 완료를 뜻하지 않습니다. 실운영 상태는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`를 유지합니다.
+
 ## 본선 진출 이후 확정 역할 (2026-11-07 사용자 지정)
 
 | 사람별 업무 | 담당 및 인수 경계 |
@@ -28,7 +28,7 @@
 | 전체 시연·경험 기반 AI 평가·발표 | **김채윤**. 학생 경험 입력→AI 후보/근거·승인→추천 검증, 60초/10분 전체 웹 시연 루트·실패/오류 재현 및 발표 준비 |
 | 코드 통합·품질·추가기능 | **심민성**. 공통 API/DB/보안/CI·품질 검수·기능 개발 및 각 담당 결과 통합 |
 
-**현행 GitHub 담당은 개인별 #321~#325에 실제 배정**됐으며, 추가 기능 #317은 심민성·UI/UX #318은 이서연입니다. [업무 분장 정본](docs/WORKSTREAMS.md)을 따르고 과거 역할/이슈의 담당은 재활용하지 않습니다.
+**현행 GitHub 담당은 개인별 #321~#325에 실제 배정**됐으며, 추가 기능 #317은 심민성, 구 UI/UX #318의 전 작업은 이서연의 통합 #323에서 관리합니다. [업무 분장 정본](docs/WORKSTREAMS.md)을 따르고 과거 역할/이슈의 담당은 재활용하지 않습니다.
 
 ## 과거 본선 전 역할 기록 (현재 역할 아님)
 
@@ -40,7 +40,7 @@
 | 박준영 `taewangim-alt` | 학업/RulePack·What-if·개설 전망·교과 근거; #11/#260 |
 | 이서연 `lhh42001` | NCP 계정/요금/호스트·기관 자료 증거·제품 요구사항 등 비코드 운영; #12/#261 |
 
-다른 사람의 dirty worktree·브랜치·핵심 코드는 초기화·강제 갱신하지 않습니다. **OPEN 7개 이슈는 모두 지정 담당자 1명씩 배정**했습니다. 공통 계약·DB·lockfile은 관련 소비자와 교차 검토합니다.
+다른 사람의 dirty worktree·브랜치·핵심 코드는 초기화·강제 갱신하지 않습니다. **OPEN 6개 이슈는 모두 지정 담당자 1명씩 배정**했습니다. 공통 계약·DB·lockfile은 관련 소비자와 교차 검토합니다.
 
 ## 구현·검증
 
