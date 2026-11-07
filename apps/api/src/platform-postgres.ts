@@ -13,6 +13,7 @@ import {createPostgresTemporalGateway} from './modules/opportunities/temporal-ga
 import {PostgresSourceRevisionHistory} from './modules/opportunities/source-history-postgres.js';
 import {PostgresSourceIngestionQueue} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import type {SourceJobOperatorAuthority} from './modules/opportunities/source-job-control-http.js';
+import type {OperatorPublicApiDiscoveryControl} from './modules/opportunities/operator-public-api-http.js';
 import {PostgresReviewerSandboxStore} from './modules/auth/reviewer-sandbox-postgres.js';
 import {PostgresRestrictedIntakeImport} from './modules/academics/intake-postgres.js';
 import {PostgresSelfAccountStore} from './modules/profiles/self-account-postgres.js';
@@ -64,6 +65,8 @@ export interface PostgresPlatformConfig {
     authority:TrustedSourceIngestionAuthority;executor:TrustedDurableSourceExecutor};
   /** Explicit operator API opt-in. The same policy also guards worker dispatch. */
   sourceIngestionOperator?:SourceJobOperatorAuthority;
+  /** Root-controlled provider keys, reviewed usage grants, distributed quota and operator admission. */
+  publicApiDiscovery?:OperatorPublicApiDiscoveryControl;
   /** Independently restricted REVIEWER-only SQL pool, never a team projection. */
   reviewerSandbox?:ReviewerSqlPool;
   /** Strictly operator-only local import; NOT a public browser route. */
@@ -179,6 +182,7 @@ export function createPostgresPlatformServices(config:PostgresPlatformConfig){
       new PostgresTemporalEvidenceReader(config.pools.evidence),config.evidenceRights),
     // Calendar reader role has SELECT on source heads and revision metadata.
     sourceHistory:new PostgresSourceRevisionHistory(config.pools.calendar,config.evidenceRights),
+    ...(config.publicApiDiscovery?{publicApiDiscovery:config.publicApiDiscovery}:{}),
     ...(sourceIngestion?{
       sourceIngestion,
       ...(operator?{sourceIngestionControl:{queue:sourceIngestion,authority:operator}}:{}),
