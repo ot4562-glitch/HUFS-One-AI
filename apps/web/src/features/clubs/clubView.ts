@@ -117,7 +117,7 @@ export interface ClubFilter {
   readonly query: string;
   readonly campus: 'ALL' | 'SEOUL' | 'GLOBAL';
   readonly category: 'ALL' | ClubCategory;
-  readonly scope?:'ALL'|'CAMPUS'|'INTERUNIVERSITY'|'EXTERNAL';
+  readonly scope?:'ALL'|'CAMPUS'|'INTERUNIVERSITY'|'EXTERNAL'|undefined;
   readonly includeClosed: boolean;
 }
 export const NO_FILTER: ClubFilter = {query: '', campus: 'ALL', category: 'ALL', scope:'ALL', includeClosed: false};
