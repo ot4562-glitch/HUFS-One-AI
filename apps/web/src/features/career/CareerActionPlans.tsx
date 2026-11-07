@@ -6,8 +6,8 @@ import {newCareerAction,updateCareerAction} from './careerActions.js';
 type Page={items:OwnerWorkspaceRecord[];nextCursor:string|null};
 export function CareerActionPlans({bookmarks,actions,busy,onCreate,onEdit,onNext,onFirst,navigate}:{
   bookmarks:Page;actions:Page;busy:boolean;
-  onCreate:(value:OwnerWorkspaceValue)=>void;
-  onEdit:(record:OwnerWorkspaceRecord,value:OwnerWorkspaceValue)=>void;
+  onCreate:(value:OwnerWorkspaceValue)=>Promise<boolean>;
+  onEdit:(record:OwnerWorkspaceRecord,value:OwnerWorkspaceValue)=>Promise<boolean>;
   onNext:(cursor:string)=>void;onFirst?:()=>void;
   navigate:(path:string)=>void;
 }){
@@ -21,19 +21,21 @@ export function CareerActionPlans({bookmarks,actions,busy,onCreate,onEdit,onNext
   const [editing,setEditing]=useState<string|null>(null);
   const [error,setError]=useState('');
   const clear=()=>{setEditing(null);setTask('');setDueDate('');setError('');};
-  const submit=(e:FormEvent)=>{
+  const submit=async(e:FormEvent)=>{
     e.preventDefault();setError('');
     try{
       const record=rows.find(row=>row.itemId===editing);
       if(editing&&!record)throw new Error('Missing plan version');
+      let saved=false;
       if(record){
-        onEdit(record,updateCareerAction(record,{task,dueDate}));
+        saved=await onEdit(record,updateCareerAction(record,{task,dueDate}));
       }else{
         if(!allowed.some(row=>row.value.kind==='BOOKMARK'&&row.value.opportunityId===opportunity))
           throw new Error('Select a saved opportunity');
-        onCreate(newCareerAction(opportunity,task,dueDate));
+        saved=await onCreate(newCareerAction(opportunity,task,dueDate));
       }
-      clear();
+      if(saved)clear();
+      else setError('서버에서 저장을 확인하지 못했습니다. 작성한 내용을 유지하니 권한·판본을 점검해 주세요.');
     }catch{setError('계획 입력이나 최신 판본을 확인해 주세요. 허가된 저장 기회만 연결합니다.');}
   };
   return <section aria-labelledby="career-action-heading">
