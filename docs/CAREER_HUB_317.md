@@ -29,7 +29,7 @@
 | --- | --- | --- |
 | [#333](https://github.com/ot4562-glitch/HUFS-One-AI/pull/333) 본인 경험·진로 | 20건씩 최대 200건 **이중 조회**, 중간 동의/프로필/경험 수정과 합성 신호 제거, 개인 프로필 활동 상태·미리보기, 본인 보관함/행동계획 CAS·관련 공고·오류 복구 | 실제 권한 있는 학생 계정·개별 자료/모델 실측 #324/#323 |
 | [#334](https://github.com/ot4562-glitch/HUFS-One-AI/pull/334) AI 증거·설명 | 동일 source/revision/permission/consent/feed/asOf/evidenceRefs가 일치하는 설명만 사용, 서버 발행 LIVE/CACHED 모드와 **실측이 존재하는 필드만** 표시. 중복 유료 요청 잠금·명시 실행·안전한 로컬 대기 숨김 및 선택적 실제 취소 API, 합성 동아리 교내/연합/외부 범위 필터 | 실제 공급자 실행·비용 영수증 #323, 영수증·AI proof 서버 read/취소 API #325, 원문 권리 #324. 현재 API 미지원이면 UI는 미연결/미측정 표시 |
-| [#335](https://github.com/ot4562-glitch/HUFS-One-AI/pull/335) 경험 AI 검토·개인 첨부 | `/career`에서 기존 `/experience` AI 후보·출처/인용·학생 승인/철회를 인증된 동일 세션으로 **재사용**. 첨부 권한 정책은 backend-issued ALLOWED/BLOCKED, 경험/권리 판본, MIME·크기·10건 제한·삭제 응답 검증. 경험/행동계획 저장은 성공한 서버 응답 후에만 화면 초기화 | 파일 실제 업로드/삭제·멀웨어 검사·보존/삭제 DB/API #325, 자료 이용권 #324. 미연결 상태는 **업로드 불가** |
+| [#335](https://github.com/ot4562-glitch/HUFS-One-AI/pull/335) 경험 AI 검토·개인 첨부 | `/career`에서 기존 `/experience` AI 후보·출처/인용·학생 승인/철회를 인증된 동일 세션으로 **재사용**하며 20건 단위 서버 커서 페이지별 검토. 첨부 권한 정책은 backend-issued ALLOWED/BLOCKED, 경험/권리 판본, MIME·크기·10건 제한·삭제 응답 검증. 경험/행동계획 저장은 성공한 서버 응답 후에만 화면 초기화 | 파일 실제 업로드/삭제·멀웨어 검사·보존/삭제 DB/API #325, 자료 이용권 #324. 미연결 상태는 **업로드 불가** |
 
 **비교·캐시·첨부 UI가 있다고 실제 외부 API 비용이 청구되거나 문서가 저장된 것은 아닙니다.** 모델·진로 AI 검토는 `NEEDS_REVIEW`이며 실제 학교/기관·고용 성과와 다릅니다. 현재 정본 GitHub 팀별 #321~#325 업무 인수 및 `RELEASE_BLOCKED`는 유지합니다.
 
