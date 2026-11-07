@@ -67,7 +67,7 @@ npm run assets:check
 
 ## 본선 발표용 전체 사이트 시연 루트 초안 — 김채윤 담당
 
-**담당: [김채윤 #324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324)** — 전체 웹 시연, 가상 학생 경험 입력/AI 예상·관찰 결과 비교와 **발표 경로·60초/10분 리허설** 확정을 주도합니다. 본 문서는 시연 초안이고 실제 사람 인수/실모델 실증은 아직 `NOT_RUN`입니다. 이서연 [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) UI·[#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) 서버, 이의상 [#321](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) + 박준영 [#322](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) AI/NLP 공동, 심민성 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) 통합/보안과 상호 확인합니다. [역할 정본](WORKSTREAMS.md).
+**담당: [김채윤 #324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324)** — 전체 웹 시연, 가상 학생 경험 입력/AI 예상·관찰 결과 비교와 **발표 경로·60초/10분 리허설** 확정을 주도합니다. 본 문서는 시연 초안이고 실제 사람 인수/실모델 실증은 아직 `NOT_RUN`입니다. 이서연 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) 통합 UI/서버, 이의상 [#321](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) + 박준영 [#322](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) AI/NLP 공동, 심민성 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) 통합/보안과 상호 확인합니다. [역할 정본](WORKSTREAMS.md).
 
 **시연 전 안전 게이트:** 공개 GitHub Pages·S01–S05는 **합성 데이터/모의 AI**다. 실제 학생의 경험/포스터/성적·실 CLOVA/Laya/NCP 호출은 허가된 비공개 서버·본인/목적별 동의·금액/모델 호출 제한·권한/철회 검증을 갖춘 경우에만 사용한다. 공개 라이브 화면·PR·영상/로그에는 개인정보·비밀 키를 넣지 않는다. 권한 미확보 시 **인공 문장과 합성 승인 흐름만 보여 주고 실모델 처리라고 설명하지 않는다**.
 
