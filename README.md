@@ -30,6 +30,8 @@ React/Vite, Fastify/Zod, 개인화·학업 계산 코어, SQL 역할/RLS·CAS, S
 - 동아리/기회에 8종 창작 그림과 추가 합성 예시 12개를 연결했습니다. 반응형 이미지·깨짐 fallback·출처/해시·합성 고지를 유지하며 고정 평가 corpus를 바꾸지 않습니다.
 - NCP 사전 운영 문서와 WinSCP/plink 지문·PS 경로/인용·root 공개키 검증을 보완했습니다. 실제 서버·청구·업로드/복구는 #276/#283의 인수입니다.
 
+**2026-11-06 PR·이슈 점검:** [#306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306) 통합으로 `[본선진출 전]` 이슈 11개를 종결했습니다(10 completed, #260은 사람 검토 이관으로 not_planned). [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) 홈 3단계 액션 안내·공고 검색/필터/정렬·reduced-motion을 [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875) 후 병합했고 PR HEAD Actions 4/4 통과를 확인했습니다. [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 현재 `main` 대비 변경 파일 0개여서 리뷰 후 중복 종료했습니다. 합성 공고의 D-day는 자료에 기록된 `asOf` 기준이며 오늘 실시간 공고 전체 검색이 아닙니다. 실제 계정/실기기/학교 근거 인수는 열린 후속 이슈입니다.**
+
 운영 서비스는 **`RELEASE_BLOCKED`**이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 시 자동 배포합니다. `csv/` 원본 5개는 불변 보존하며, 실제 4인 Forms↔수강파일↔로그인 actor/동의·권리 연결은 #276/#299에서 검증합니다. 지정 팀원들의 사람 검토·실기기/NVDA·실제 성과는 수행한 것으로 표시하지 않습니다.
 
 ```sh

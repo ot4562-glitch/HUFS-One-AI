@@ -19,4 +19,4 @@
 - [ ] 미실행 인적 Gold·스크린리더·실계정·실 NCP/백업/복구를 성과로 서술하지 않는다. 실패·보류·미지원은 그 상태를 공개한다.
 - [ ] 최종 제출 및 발표·학교/기관 연락은 실제 권한자가 수행한다.
 
-**출시 차단:** `RELEASE_BLOCKED`. 미완료 구현은 [#253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253), 허가·인적 검증·실서비스 조건은 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+**출시 차단:** `RELEASE_BLOCKED`. 본선 이전 합성 작업 11개 이슈는 [통합 PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)에서 종결됐지만, 실제 운영·원본/학교·인적 검수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)·[#280–#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/280)·[#297–#303](https://github.com/ot4562-glitch/HUFS-One-AI/issues/297)에서 OPEN. 현재 사실은 [STATUS](STATUS.md).
