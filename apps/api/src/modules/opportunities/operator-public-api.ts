@@ -20,7 +20,8 @@ const ApiKey=z.string().min(8).max(128).regex(/^[A-Za-z0-9_+=-]+$/);
 const ApplicantId=z.union([z.string(),z.number().int().nonnegative()]);
 const Text=z.string().trim().min(1).max(2000);
 const SaraminItem=z.object({
-  id:ApplicantId,url:z.string().optional(),active:z.union([z.literal(1),z.literal('1')]),
+  id:ApplicantId,url:z.string().optional(),
+  active:z.union([z.literal(1),z.literal('1'),z.literal(0),z.literal('0')]),
   company:z.object({detail:z.object({name:Text})}),
   position:z.object({title:Text}),
 });
@@ -73,7 +74,7 @@ function replyCandidates(provider:PublicApiProvider,payload:unknown){
   if(provider==='SARAMIN_JOB'){
     const parsed=SaraminResult.parse(payload),jobs=parsed.jobs.job??[];
     const list=Array.isArray(jobs)?jobs:[jobs];
-    return list.slice(0,10).map(job=>{
+    return list.filter(job=>job.active===1||job.active==='1').slice(0,10).map(job=>{
       const id=safeId(job.id);
       return {providerItemId:id,kind:'JOB_POSTING' as const,
         title:safeText(job.position.title,180),
