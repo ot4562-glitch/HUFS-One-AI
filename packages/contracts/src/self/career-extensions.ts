@@ -14,6 +14,7 @@ export const CareerProfilePresentationSchema=z.strictObject({
   bio:z.string().trim().max(700),
   visibility:z.literal('PRIVATE'),
   provenance:z.literal('SELF_REPORTED_UNVERIFIED'),
+  activityStatus:z.enum(['EXPLORING','PREPARING','APPLYING_SELF_REPORTED','PAUSED']).optional(),
 });
 export const CareerEntryCategorySchema=z.enum([
   'PROJECT','CLUB','VOLUNTEERING','WORK','INTERNSHIP','CONTEST','CERTIFICATE','EDUCATION','OTHER',

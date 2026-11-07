@@ -23,6 +23,8 @@ export const SelfProfileValueSchema=z.strictObject({
   // #317: owner-only presentation. There is intentionally no public profile route.
   headline:z.string().trim().max(120).optional(),bio:z.string().trim().max(700).optional(),
   visibility:z.literal('PRIVATE').optional(),
+  /** Self-described career activity stage; never a hiring/admission/academic status. */
+  activityStatus:z.enum(['EXPLORING','PREPARING','APPLYING_SELF_REPORTED','PAUSED']).optional(),
 });
 export const SelfProfilePatchSchema=z.strictObject({expectedVersion:Version,value:SelfProfileValueSchema});
 export const SelfProfileSchema=z.strictObject({version:Version.min(1),value:SelfProfileValueSchema,updatedAt:Utc});

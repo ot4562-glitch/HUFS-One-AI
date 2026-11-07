@@ -65,6 +65,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       remove:(id,version,signal)=>api.owner.deleteWorkspace('EXPERIENCE',id,version,signal),
       getOpportunity:(id,signal)=>api.owner.getOpportunity(id,signal),
       getBookmarks:(query,signal)=>api.owner.listWorkspace('BOOKMARK',{limit:20,...query},signal),
+      getActions:(query,signal)=>api.owner.listWorkspace('ACTION_PLAN',{limit:20,...query},signal),
       advanceBookmarkStage:(record,change,signal)=>api.owner.advanceBookmarkStage(record,change,signal),
       getOwnerFeed:signal=>api.owner.getOwnerFeed(signal),
       explainOpportunity:(id,request,signal)=>api.owner.explainOpportunity(id,request,signal),
