@@ -39,6 +39,8 @@ export interface ClubCardView {
   readonly categoryText: string;
   readonly campus: ClubCampus;
   readonly campusText: string;
+  readonly scope:'CAMPUS'|'INTERUNIVERSITY'|'EXTERNAL';
+  readonly scopeText:string;
   readonly lifecycle: ClubLifecycle;
   readonly lifecycleText: string;
   readonly recruitable: boolean;
@@ -71,6 +73,8 @@ function cardView(r: Pick<RankedClub,'post'|'lifecycle'|'eligibility'|'reasons'>
     categoryText: CATEGORY_TEXT[p.category],
     campus: p.campus,
     campusText: CAMPUS_TEXT[p.campus],
+    scope:p.organizationScope??'CAMPUS',
+    scopeText:({CAMPUS:'교내 가상 동아리',INTERUNIVERSITY:'연합 가상 동아리',EXTERNAL:'교외 가상 소모임'} as const)[p.organizationScope??'CAMPUS'],
     lifecycle: r.lifecycle,
     lifecycleText: LIFECYCLE_TEXT[r.lifecycle],
     recruitable: r.lifecycle !== 'CLOSED',
@@ -113,9 +117,10 @@ export interface ClubFilter {
   readonly query: string;
   readonly campus: 'ALL' | 'SEOUL' | 'GLOBAL';
   readonly category: 'ALL' | ClubCategory;
+  readonly scope?:'ALL'|'CAMPUS'|'INTERUNIVERSITY'|'EXTERNAL';
   readonly includeClosed: boolean;
 }
-export const NO_FILTER: ClubFilter = {query: '', campus: 'ALL', category: 'ALL', includeClosed: false};
+export const NO_FILTER: ClubFilter = {query: '', campus: 'ALL', category: 'ALL', scope:'ALL', includeClosed: false};
 
 /** Narrows the visible list only; it never reveals a post the board did not include. */
 export function filterClubs(list: readonly ClubCardView[], f: ClubFilter): ClubCardView[] {
@@ -124,6 +129,7 @@ export function filterClubs(list: readonly ClubCardView[], f: ClubFilter): ClubC
     (f.includeClosed || c.recruitable)
     && (f.campus === 'ALL' || c.campus === f.campus || c.campus === 'BOTH')
     && (f.category === 'ALL' || c.category === f.category)
+    && (!f.scope || f.scope==='ALL'||f.scope===c.scope)
     && (!q || `${c.name} ${c.summary} ${c.categoryText} ${c.topicTexts.join(' ')}`.toLowerCase().includes(q)));
 }
 

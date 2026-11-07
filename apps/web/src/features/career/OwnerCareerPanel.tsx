@@ -1,7 +1,10 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
-import type {ExperiencePortfolio,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile} from '@hufs-one/contracts';
+import type {ExperiencePortfolio,OpportunityCatalogDetail,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
+import {attachDemoResumeRevalidation} from '../../app/resume-listener.js';
+import {attachCrossTabSessionClosure,SESSION_CLOSE_CHANNEL} from '../../app/session-broadcast.js';
+import {InAppLink} from '../../shell/AppShell.js';
 import {TOPIC_TEXT} from '../demo/topicText.js';
 
 export interface OwnerCareerPort {
@@ -12,6 +15,7 @@ export interface OwnerCareerPort {
   create(input:{itemId:string;value:OwnerWorkspaceValue},signal?:AbortSignal):Promise<unknown>;
   update(itemId:string,input:{expectedVersion:number;value:OwnerWorkspaceValue},signal?:AbortSignal):Promise<unknown>;
   remove(id:string,version:number,signal?:AbortSignal):Promise<unknown>;
+  getOpportunity(id:string,signal?:AbortSignal):Promise<OpportunityCatalogDetail>;
 }
 
 type Screen={profile:SelfProfile|null;portfolio:ExperiencePortfolio};
@@ -34,7 +38,7 @@ function Form({data,onSave,busy}:{data:SelfProfile|null;onSave:(headline:string,
   </form>;
 }
 
-export function OwnerCareerPanel({port}:{port:OwnerCareerPort}){
+export function OwnerCareerPanel({port,navigate}:{port:OwnerCareerPort;navigate:(path:string)=>void}){
   const session=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [screen,setScreen]=useState<Screen|null>(null);
   const [cursor,setCursor]=useState<string|undefined>();
@@ -48,6 +52,13 @@ export function OwnerCareerPanel({port}:{port:OwnerCareerPort}){
   const [deleteId,setDeleteId]=useState<string|null>(null);
 
   useEffect(()=>{void port.session.initialize();},[port]);
+  useEffect(()=>attachDemoResumeRevalidation(port.session,{page:document,view:window}),[port.session]);
+  useEffect(()=>{
+    if(typeof BroadcastChannel==='undefined')return;
+    const channel=new BroadcastChannel(SESSION_CLOSE_CHANNEL);
+    const dispose=attachCrossTabSessionClosure(port.session,channel);
+    return ()=>{dispose();channel.close();};
+  },[port.session]);
   useEffect(()=>{
     setScreen(null);setError('');setDeleteId(null);setEditing(null);
     if(session.status!=='READY')return;
@@ -65,7 +76,10 @@ export function OwnerCareerPanel({port}:{port:OwnerCareerPort}){
     setBusy(true);setError('');
     try{
       const result=await port.session.runMutation(run);
-      if(result&&port.session.getState().status==='READY'){setCursor(undefined);setRev(x=>x+1);}
+      if(result&&port.session.getState().status==='READY'){
+        setEditing(null);setDeleteId(null);setTitle('');setSummary('');setRole('');setStartedOn('');setEndedOn('');
+        setCursor(undefined);setRev(x=>x+1);
+      }
     }catch{setError('저장/변경에 실패했습니다. 본인 권한·동의 또는 최신 판본을 확인해 주세요.');}
     finally{setBusy(false);}
   };
@@ -142,6 +156,8 @@ export function OwnerCareerPanel({port}:{port:OwnerCareerPort}){
           <p>{CATEGORY[item.category]} · {item.startedOn??'시작일 미기록'} ~ {item.endedOn??'종료일 미기록'}</p>
           {item.role&&<p>역할: {item.role}</p>}
           <p>{item.summary}</p>
+          {item.sourceOpportunityId&&<p><InAppLink to={'/owner-opportunities/'+encodeURIComponent(item.sourceOpportunityId)} navigate={navigate}>연결된 기회 확인 (현재 권한 확인 필요)</InAppLink></p>}
+          {item.evidence.state==='OWNER_APPROVED_TOPIC'&&<ul aria-label="본인이 승인한 주제">{item.evidence.topicCodes.map(code=><li key={code}>{TOPIC_TEXT[code]}</li>)}</ul>}
           <p>{item.evidence.state==='OWNER_APPROVED_TOPIC'
             ? '현재 페이지에서 본인이 주제를 승인했습니다. 공식 역량 인증은 아닙니다.'
             : '본인 기록이며 확인된 역량 인증이 없습니다.'}</p>

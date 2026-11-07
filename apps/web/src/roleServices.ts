@@ -61,6 +61,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
       create:(input,signal)=>api.owner.createWorkspace(input,signal),
       update:(id,input,signal)=>api.owner.updateWorkspace(id,input,signal),
       remove:(id,version,signal)=>api.owner.deleteWorkspace('EXPERIENCE',id,version,signal),
+      getOpportunity:(id,signal)=>api.owner.getOpportunity(id,signal),
     },
     ownerClubs:createOwnerClubPort(api.owner,ownerSession),
     overlay: {

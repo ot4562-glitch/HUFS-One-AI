@@ -110,7 +110,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const sandbox = useSandbox(controller, state, services.sandbox);
   const independent = (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
     || (!!services.ownerExperience && path === '/experience')
-    || path === '/career'
+    || path === '/career' || path.startsWith('/owner-opportunities/')
     || path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics'
     || path === '/clubs/admin' || (!!services.ownerClubs && (path === '/clubs' || path.startsWith('/clubs/')));
   const ctx: PageContext = {path, state, controller, navigate, services, sandbox};

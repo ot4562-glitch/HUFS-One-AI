@@ -44,6 +44,8 @@ export interface ClubPost {
   summary:string;
   category:ClubCategory;
   campus:ClubCampus;
+  /** #317 synthetic recruiting scope: not an institutional endorsement. */
+  organizationScope?:'CAMPUS'|'INTERUNIVERSITY'|'EXTERNAL';
   topicCodes:readonly TopicCode[];
   activities:readonly ClubActivity[];
   /** Stated recruiting conditions (same evaluator as opportunities); UNKNOWN facts stay UNKNOWN. */

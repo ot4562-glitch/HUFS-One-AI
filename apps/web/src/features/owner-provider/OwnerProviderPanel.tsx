@@ -122,12 +122,20 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
           setNotice('새 실행은 다시 확인해야 합니다.');}}>새 실행 준비</button>}
     </div>}
     {accepted&&<section aria-label="Provider 작업 상태">
+      <h2>AI 실행 모드·근거 확인</h2>
+      <p role="note">{accepted.state==='PENDING'
+        ? '실행 결과 대기 중 · 신규 실행이 완료됐다는 영수증이 아직 없습니다.'
+        : accepted.provenance==='LIVE'
+          ? 'LIVE_PROVIDER_RUN · 서버가 실제 공급자 처리를 확인한 작업입니다. 독립 사람 검토 전 후보입니다.'
+          : 'CACHED_PREVIOUS_RUN · 과거에 처리한 후보의 캐시입니다. 새로운 호출·과금이 아닙니다.'}</p>
       <p>작업 ID: {accepted.jobId}</p>
       <p>상태: {accepted.state} {accepted.state==='NEEDS_REVIEW'?(' · '+accepted.provenance):' · 아직 결과 없음'}</p>
     </section>}
     {stored&&<section aria-label="현재 권한으로 재검증된 AI 후보">
       <h2>독립 사람 검토 필요 · NEEDS_REVIEW</h2>
       <p>원장 상태: {stored.billing} · 출처: {stored.provenance}</p>
+      <p role="note">CACHED_PREVIOUS_RUN · 현재 권한으로 서버에서 재조회한 후보이며 이 조회를 신규 공급자 실행으로 세지 않습니다. SYNTHETIC 예시는 이 BETA 화면에서 실호출처럼 표시하지 않습니다.</p>
+      <p>측정된 토큰 사용량: 입력 {stored.candidate.usage.promptTokens} / 출력 {stored.candidate.usage.completionTokens} / 합계 {stored.candidate.usage.totalTokens}. 실제 원화 비용·지연은 이 응답에 없으므로 별도 측정 전에는 표시하지 않습니다.</p>
       {stored.candidate.result&&<AiTaskResultView result={stored.candidate.result}/>}
       <ul>{stored.candidate.citations.map((c,i)=><li key={c.sourceToken+':'+c.paragraphId+':'+i}>
         <strong>근거 {i+1} · {c.sourceToken} / {c.paragraphId}</strong> · {c.quote}
