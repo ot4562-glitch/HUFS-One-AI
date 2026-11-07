@@ -13,7 +13,8 @@ const rights={opportunityId:'opp-1',sourceId:'source-1',
 const publication={opportunity:{id:'opp-1',dataMode:'REAL',version:'1'},
   source:{sourceId:'source-1',revisionId:'rev-new',status:'ACTIVE',
     permissionRef:'owner-perm-1',verifiedAt:asOf}};
-const base={...rights,checkedAt:asOf};
+const base={opportunityId:rights.opportunityId,sourceRevisionId:rights.sourceRevisionId,
+  permissionRef:rights.permissionRef,checkedAt:asOf};
 function fixture(){
   const session=new OwnerSessionController({getSession:async()=>({
     actorId:'owner-a',role:'BETA',schoolMailProofValid:true,betaAllowed:true,
