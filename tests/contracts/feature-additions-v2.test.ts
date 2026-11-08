@@ -43,7 +43,7 @@ describe('versioned feature contracts preserve source and actor-independent wire
   });
   it('accepts a finite, source-coded mentor and consented preference shape',()=>{
     expect(S.MentorCardSchema.parse(mentor('ment-1')).majorCodes).toEqual(['ECON']);
-    expect(S.MentorPreferenceSchema.parse(mentorPreference()).ownerApprovedTopics).toEqual(['DATA']);
+    expect(S.MentorPreferenceSchema.parse(mentorPreference()).ownerApprovedTopics).toEqual(['DATA_ANALYTICS']);
   });
   it('rejects mentor profile extras with contact details',()=>{
     expect(S.MentorCardSchema.safeParse({...mentor('m'),
