@@ -275,7 +275,7 @@ describe('#349 — badge prerequisites are not badge issuance',()=>{
   it('supports ANY badge prereqs and reports only required missing topics',()=>{
     const rule=badge({groups:[{id:'choice',join:'ANY',requirements:[
       {id:'a',topicCode:'DATA_ANALYTICS',minimumDistinctActivities:1},
-      {id:'b',topicCode:'DESIGN',minimumDistinctActivities:1}]}]});
+      {id:'b',topicCode:'PRODUCT_UX',minimumDistinctActivities:1}]}]});
     const r=prepareBadgeV2({badge:rule,evidence:[badgeEvidence('A')],asOf:FIXED_NOW});
     expect(r.status).toBe('READY_TO_REQUEST_REVIEW');
     expect(r.requiredNextTopics).toEqual([]);
