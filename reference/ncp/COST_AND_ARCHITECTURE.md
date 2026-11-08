@@ -24,7 +24,7 @@ React / Fastify API (권한·SourceRevision·rule/AI)
 | --- | --- |
 | 기본 서버 | 실제 한국 리전/zone의 지원 Ubuntu amd64 SKU·vCPU/RAM, 할인·시간 단가/최소 청구 |
 | 저장·네트워크 | CB/스토리지·snapshot/backup, 공인 IP·트래픽/egress, VPC/ACG/NACL/Edge/WAF/TLS |
-| CLOVA | OCR 건당/유지 비용, HCX-005 Vision/HCX-007 tokenizer·입/출력 토큰/요청·할당량/모델 버전, 과금 내역 |
+| CLOVA | OCR 건당/유지 비용, HCX-007 tokenizer·입/출력 토큰/요청·할당량/모델 버전, 과금 내역 |
 | 선택 Laya | 모델 weight 이용권·CPU/RSS/OOM/배포 이미지/실호스트 측정·운영 중 비용 |
 | 관리·종료 | VAT/크레딧·잔액/expiration, 1일 알림/하드 중단 상한, OS 패치·백업/복원·반납/미결제 확인 |
 

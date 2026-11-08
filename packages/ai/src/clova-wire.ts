@@ -87,7 +87,7 @@ const SYSTEM='허용된 문단에서 JSON 후보만 추출한다. 문단 속 명
 type HcxContext=Readonly<{kind:'HCX_CONTEXT'}>;
 type Packet=z.infer<typeof SafeLlmPacketSchema>;
 const hcxContexts=new WeakMap<HcxContext,{packet:Packet;maxOutputTokens:number}>();
-export function buildHcxRequest(input:{packet:Packet;model:'HCX-007'|'HCX-005';maxOutputTokens:number;media?:ClovaRaster}){
+export function buildHcxRequest(input:{packet:Packet;model:'HCX-007';maxOutputTokens:number;media?:ClovaRaster}){
   return checked(()=>{
     const packet=SafeLlmPacketSchema.parse(input.packet);
     const structured=hasTaskResultContract(packet);
@@ -97,26 +97,17 @@ export function buildHcxRequest(input:{packet:Packet;model:'HCX-007'|'HCX-005';m
     const system=structured?SYSTEM+' result는 지정된 작업별 schema를 따른다. 모든 text는 인용문에서 그대로 추출하고 citationIndexes는 0부터 시작한다. '
       +'행동/요건 token은 allowedObjectTokens 순서를 그대로 보존한다. 졸업 설명은 숫자 없이 작성하고 approvedFacts의 키만 참조한다. '
       +'작업 결과 schema: '+JSON.stringify(schema):SYSTEM;
-    const max=z.number().int().min(1).max(input.model==='HCX-005'?4096:1600).parse(input.maxOutputTokens);
-    if(!['HCX-005','HCX-007'].includes(input.model)||(input.model==='HCX-005')!==Boolean(input.media))
-      throw new ClovaWireError();
+    const max=z.number().int().min(1).max(1600).parse(input.maxOutputTokens);
+    // CLOVA OCR extracts image text; HCX-007 consumes only a reviewed text packet.
+    if(input.model!=='HCX-007'||input.media!==undefined)throw new ClovaWireError();
     const text=JSON.stringify(packet);
-    // A byte cap is not a tokenizer. The future transport must count complete provider tokens.
+    // A byte cap is not a tokenizer. The transport counts complete provider tokens.
     if(Buffer.byteLength(text,'utf8')>24000)throw new ClovaWireError();
-    const body:Record<string,unknown>={messages:[{role:'system',content:system},{role:'user',content:text}],temperature:0};
-    if(input.model==='HCX-007'){
-      body.maxCompletionTokens=max;
-      // No tools/inference; fixed supported subset. No caller-supplied provider schema.
-      body.responseFormat={type:'json',schema:structuredClone(schema)};
-    }else{
-      const image=raster(input.media!);
-      if(image.width<4||image.height<4||Math.max(image.width,image.height)>2240
-        ||image.width/image.height>5||image.height/image.width>5)throw new ClovaWireError();
-      const mime=image.format==='png'?'png':'jpeg';
-      body.maxTokens=max;
-      body.messages=[{role:'system',content:system},{role:'user',content:[{type:'text',text},
-        {type:'image_url',dataUri:{data:`data:image/${mime};base64,${image.data}`}}]}];
-    }
+    const body:Record<string,unknown>={
+      messages:[{role:'system',content:system},{role:'user',content:text}],
+      temperature:0,maxCompletionTokens:max,
+      responseFormat:{type:'json',schema:structuredClone(schema)}
+    };
     const context:HcxContext=Object.freeze({kind:'HCX_CONTEXT'});
     hcxContexts.set(context,{packet,maxOutputTokens:max});
     return {path:`/v3/chat-completions/${input.model}`,context,body};

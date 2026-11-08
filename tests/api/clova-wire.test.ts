@@ -72,12 +72,15 @@ describe('offline CLOVA wire adapters',()=>{
     expect(parseHcxResponse(req.context,hcx())).toMatchObject({reviewState:'NEEDS_REVIEW',
       task:packet.task,usage:{promptTokens:40,completionTokens:20,totalTokens:60}});
   });
-  it('builds HCX-005 bytes-only vision without assuming structured outputs support',()=>{
-    const req=buildHcxRequest({packet,model:'HCX-005',maxOutputTokens:800,media});
-    expect(req.body).not.toHaveProperty('responseFormat');
-    expect(JSON.stringify(req.body)).toContain('data:image/png;base64,');
+  it('routes images through independent OCR and keeps HCX-007 text-only',()=>{
+    const ocrRequest=buildOcrRequest(media,requestId,1);
+    expect(ocrRequest.body.images[0]?.data).toBe(bytes.toString('base64'));
+    const textRequest=buildHcxRequest({packet,model:'HCX-007',maxOutputTokens:800});
+    expect(textRequest.body).toHaveProperty('responseFormat.type','json');
+    expect(JSON.stringify(textRequest.body)).not.toContain('data:image/');
     expect(()=>buildHcxRequest({packet,model:'HCX-007',maxOutputTokens:800,media})).toThrow(ClovaWireError);
-    expect(()=>buildHcxRequest({packet,model:'HCX-005',maxOutputTokens:800})).toThrow(ClovaWireError);
+    const retired={packet,model:'HCX-005',maxOutputTokens:800,media} as unknown as Parameters<typeof buildHcxRequest>[0];
+    expect(()=>buildHcxRequest(retired)).toThrow(ClovaWireError);
   });
   it.each(['wrongTask','quote','blankQuote','source','topic','object','verified','truncated','tools','usage','overBudget','status','json'] as const)(
     'refuses HCX %s',kind=>{

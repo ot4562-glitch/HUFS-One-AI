@@ -7,7 +7,7 @@ import {AiTaskResultSchema,hasValidAiTaskResultBindings} from './task-results.js
 /** Server-approved metadata, not original packet/media, data rights or a price quote. */
 export const ApprovedProviderInputSchema=z.strictObject({
   inputRef:z.string().regex(/^[A-Za-z0-9_-]{1,90}$/),
-  operation:z.enum(['HCX_005','HCX_007']),
+  operation:z.literal('HCX_007'),
   task:Task,
   asOf:z.iso.datetime({offset:true}),
   expiresAt:z.iso.datetime({offset:true}),
