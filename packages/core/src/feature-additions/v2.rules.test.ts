@@ -324,3 +324,17 @@ describe('#352 — reviewed translations and owner-only administrative checklist
       .toBe('STALE_GUIDE');
   });
 });
+describe('#345 counseling destination applicability regressions',()=>{
+  it('excludes a service with a known nonmatching audience',()=>{
+    const r=routeCounselingV2({purposes:['CAREER'],audienceCodes:['STUDENT'],
+      services:[agency('staff-only',{audienceCodes:['EMPLOYEE']})],asOf:FIXED_NOW});
+    expect(r.matches).toEqual([]);
+    expect(r.excluded).toBe(1);
+  });
+  it('preserves explicitly unknown language and campus eligibility',()=>{
+    const r=routeCounselingV2({purposes:['CAREER'],campus:'SEOUL',language:'ko',
+      services:[agency('unverified-scope',{campuses:[],languages:[]})],asOf:FIXED_NOW});
+    expect(r.matches[0]).toMatchObject({campusState:'UNKNOWN',
+      languageState:'UNKNOWN'});
+  });
+});
