@@ -34,3 +34,38 @@
 - 타입 검사: `npm run typecheck` (프로젝트 전체 타입 오류 발생 시 본 PR 신규 코드와 기존 지역 수정/다른 협업자 파일의 오류를 별도로 기록).
 - 여기서 자동 검증하더라도 실자료·사람 Gold·API/DB·실 AI·NCP·웹 UI는 **NOT_RUN / NOT_CONNECTED**입니다.
 - 코어/DTO 소비 인터페이스를 기존 앱 API와 조립해 실제 화면에 장착하는 일은 #323, 모델/품질은 #321·#322, 데이터는 #324의 작업으로 인계합니다. 출시 승인은 #325 별도입니다.
+## 2026-11-08 확장 구현 — v2 계산 엔진·계약 인계
+
+기존 v1 함수는 중간 착수 버전으로 보존한다. **추가 구현의 소비자는 v2 함수를 기준**으로 개발한다. 기본 계산 로직뿐 아니라 Zod 입력/출력 검증, 권리/시점 경계, 모델 결과 재검증 및 부정 회귀를 추가했다.
+
+| 문제 | 구체 구현 파일 / export | 소비자 계약 |
+| --- | --- | --- |
+| #343 장학금 | scholarships-v2.ts: checkScholarship — 정책 학기/적용기간, ALL/ANY, GPA 등 검증 사실, 누락·상충·마감 | ScholarshipPolicySchema / ScholarshipReportV2Schema |
+| #344 멘토 | mentors-v2.ts: rankMentorsV2 — 전공·직무·본인 승인 경험 가중치, 검증된 semantic 후보만 선택 재정렬, 이유 코드 | MentorCardSchema, MentorPreferenceSchema / MentorRankingV2Schema |
+| #345 상담 | counseling-v2.ts: routeCounselingV2 — 목적·캠퍼스·언어·학생 대상 확인, 상위 3기관, 공개 HTTPS 링크 | CounselingServiceSchema / CounselingGuideV2Schema |
+| #346 교외활동 | recognition-v2.ts: prepareRecognitionV2, classifyProofCandidate — ALL/ANY 서류, 만료, 본인검토, 제출준비만 | ActivityRecognitionRuleSchema, ActivityProofSchema / RecognitionReportV2Schema |
+| #347 직무 | skills-v2.ts: compareSkillsV2, reviewSkillMatchProposals — 공식 NCS 코드↔정본 24 TopicCode 교차표, 미매핑/기록없음 구분 | JobRequirementSchema, TopicCrosswalkSchema / SkillRowV2Schema |
+| #348 공고 | catalog-v2.ts: searchApprovedCatalogV2 — **허가된 전체 스냅샷 내** 검색/필터/안정 정렬/커서. 실DB SQL·서버 서명은 API 담당 | OpportunityCatalogItemSchema, OpportunityQuerySchema / SignedCatalogPageV2Schema |
+| #349 배지 | badges-v2.ts: prepareBadgeV2 — 발급 기준 ALL/ANY·서로 다른 승인경험·기간·발급 분리 | BadgeDefinitionSchema / BadgePreparationV2Schema |
+| #350 튜터링 | learning-v2.ts: recommendLearningV2 — 학습목표/관심과목, 학기·캠퍼스·정원·선수과목(검증값만), AI 후보검증 | LearningProgramSchema / LearningRankingV2Schema |
+| #351 취업통계 | employment-v2.ts: evaluatePublishedStat, comparePublishedStats, validateEmploymentStatements — 표본 공개 억제·분자/분모·AI 수치 근거 검산 | EmploymentAggregateSchema / EmploymentValueV2Schema |
+| #352 국제학생 | international-v2.ts: resolveInternationalGuide, reconcileGuideChecklist — 학기/캠퍼스·대상, 사람 승인 KO/EN/ZH 및 한국어 대체·체크리스트 버전 | InternationalGuideSchema / GuideResolutionV2Schema |
+
+계약 import: 패키지 @hufs-one/contracts의 FeatureAdditions 네임스페이스를 사용한다. 순수 코어 export: packages/core/src/feature-additions/index.ts. 계약 결과는 실제 core 출력이 Zod 스키마와 정확히 맞는지 tests/contracts/feature-additions-results.test.ts에서 검증한다.
+
+### 팀이 장착할 때 절대 지켜야 할 경계
+
+- 검증된 SourceRevision과 개별 자료 사용권, 현재 actor/consent/RLS, asOf를 API에서 **요청 전후** 재확인한다. source-policy.ts의 verifySource는 도메인 자료의 VERIFIED/CLEARED/시점 확인용이며, 학생 인증이나 실제 데이터 권리를 대신하지 않는다. source.status SYNTHETIC는 명시적 SYNTHETIC 모드에서만 사용 가능.
+- 장학금 자격이 MET여도 지급/수혜 승인은 아니다. 인정 서류의 READY_FOR_OFFICIAL_REVIEW도 학교 인정 완료가 아니다. 오픈배지 READY_TO_REQUEST_REVIEW는 발급이 아니다. AI 관련성 점수는 공식 자격·지원/배정 결과를 만들지 못한다.
+- SemanticProposalSchema의 후보 ID, 승인된 근거 코드, 입력 digest, 모델 버전이 모두 맞아야 모델 후보를 적용한다. 박준영·이의상이 권한 확인·개인정보 제거·실제 모델 연결·독립 Gold/품질과 비용 경계를 맡는다. core는 모델을 **호출하지 않는다**.
+- searchApprovedCatalogV2가 반환하는 내부 커서는 HTTP 토큰이 아니다. 기존 API는 actor/consent/SourceRevision/asOf/필터에 결속한 **서명된 opaque cursor**로 변환해야 한다. 대량 실DB에서 정렬의 키셋 SQL/인덱스는 이서연·통합 담당이 구현한다. 이 pure 함수는 승인된 스냅샷의 참조 정답을 제공한다.
+- 출처별 통계의 최소 공개 셀 수, zero 공개 정책, 집계 정의는 김채윤의 자료 판본에 근거해 주입한다. 미확인 값은 공개 차단. 공식 URL은 OfficialHttpsUrlSchema로 javascript/http/내부 호스트 등을 제거하고 서버는 별도 허용 도메인 목록으로 재검증한다.
+- 본 코어 PR은 실학생 자료·실 API/DB·웹사이트 배치·NCP 서버·유료 모델 실행이 모두 **NOT_CONNECTED/NOT_RUN**. 실제 기관 자료·권리는 #324, 사이트 장착은 #323, AI 연결/품질은 #321·#322, 통합/출시는 #325에서 인수한다. 기존 csv/ 5개 파일 원본 불변.
+
+### 재현 명령
+
+- npm run build:contracts
+- npx vitest run packages/core/src/feature-additions tests/contracts/feature-additions-v2.test.ts tests/contracts/feature-additions-results.test.ts
+- npm run typecheck
+
+코어·계약의 해당 테스트는 2026-11-08 로컬 **193개 PASS**. 전체 로컬 주작업트리에는 범위 밖의 node-approved-egress.ts Headers iterable TS2488이 있어 full-root typecheck는 별도 실패로 보존; 정확한 PR HEAD CI 결과와 사람/실운영 인수는 별도 기록한다.
