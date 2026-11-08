@@ -6,11 +6,13 @@
  * actor and consent gates have independently approved it.
  */
 import {z} from 'zod';
+import {TopicCodeSchema} from '../topics/index.js';
 
 const Id = z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const Text = z.string().trim().min(1).max(1500);
 const Iso = z.iso.datetime({offset: true});
 const BoundedCodeList = z.array(Id).max(40);
+const ApprovedTopicCodes = z.array(TopicCodeSchema).max(24);
 export const FeatureSourceSchema = z.strictObject({
   sourceId: Id,
   revisionId: Id,
@@ -62,14 +64,14 @@ export type ScholarshipPolicy = z.infer<typeof ScholarshipPolicySchema>;
 export const MentorCardSchema = z.strictObject({
   id: Id, source: FeatureSourceSchema, active: z.boolean(),
   majorCodes: BoundedCodeList, jobCodes: BoundedCodeList,
-  experienceTopics: BoundedCodeList, languages: BoundedCodeList,
+  experienceTopics: ApprovedTopicCodes, languages: BoundedCodeList,
   campuses: BoundedCodeList, publicEvidenceRefs: z.array(Id).max(50),
   applicationUrl: z.url().optional(),
 });
 export type MentorCard = z.infer<typeof MentorCardSchema>;
 export const MentorPreferenceSchema = z.strictObject({
   majorCodes: BoundedCodeList, jobCodes: BoundedCodeList,
-  ownerApprovedTopics: BoundedCodeList, language: Id.optional(), campus: Id.optional(),
+  ownerApprovedTopics: ApprovedTopicCodes, language: Id.optional(), campus: Id.optional(),
   asOf: Iso,
 });
 export type MentorPreference = z.infer<typeof MentorPreferenceSchema>;
@@ -112,19 +114,19 @@ export const JobRequirementSchema = z.strictObject({
 });
 export type JobRequirement = z.infer<typeof JobRequirementSchema>;
 export const ExperienceEvidenceSchema = z.strictObject({
-  id: Id, approved: z.boolean(), topicCodes: BoundedCodeList,
+  id: Id, approved: z.boolean(), topicCodes: ApprovedTopicCodes,
   version: Id, evidenceSpanIds: z.array(Id).max(20),
 });
 export type ExperienceEvidence = z.infer<typeof ExperienceEvidenceSchema>;
 export const TopicCrosswalkSchema = z.strictObject({
-  id: Id, officialRequirementTopic: Id, oneAiTopic: Id,
+  id: Id, officialRequirementTopic: Id, oneAiTopic: TopicCodeSchema,
   source: FeatureSourceSchema,
 });
 export type TopicCrosswalk = z.infer<typeof TopicCrosswalkSchema>;
 
 export const OpportunityCatalogItemSchema = z.strictObject({
   id: Id, title: Text, summary: z.string().max(5000).default(''),
-  category: Id, campus: Id.optional(), topicCodes: BoundedCodeList,
+  category: Id, campus: Id.optional(), topicCodes: ApprovedTopicCodes,
   publishedAt: Iso.optional(), deadlineAt: Iso.optional(),
   eligibility: z.enum(['MET','NOT_MET','UNKNOWN']),
   source: FeatureSourceSchema,
@@ -146,7 +148,7 @@ export const BadgeDefinitionSchema = z.strictObject({
   groups: z.array(z.strictObject({
     id: Id, join: z.enum(['ALL','ANY']),
     requirements: z.array(z.strictObject({
-      id: Id, topicCode: Id,
+      id: Id, topicCode: TopicCodeSchema,
       minimumDistinctActivities: z.number().int().min(1).max(1000),
       after: Iso.optional(), before: Iso.optional(),
     })).min(1).max(50),
@@ -155,7 +157,7 @@ export const BadgeDefinitionSchema = z.strictObject({
 });
 export type BadgeDefinition = z.infer<typeof BadgeDefinitionSchema>;
 export const BadgeEvidenceSchema = z.strictObject({
-  id: Id, activityId: Id, topicCodes: BoundedCodeList,
+  id: Id, activityId: Id, topicCodes: ApprovedTopicCodes,
   date: Iso, ownerApproved: z.boolean(), officialVerified: z.boolean(),
   sourceRevisionId: Id.optional(),
 });
@@ -164,7 +166,7 @@ export type BadgeEvidence = z.infer<typeof BadgeEvidenceSchema>;
 export const LearningProgramSchema = z.strictObject({
   id: Id, source: FeatureSourceSchema, active: z.boolean(),
   goalTags: BoundedCodeList, courseCodes: BoundedCodeList,
-  topicCodes: BoundedCodeList, eligibleCampuses: BoundedCodeList,
+  topicCodes: ApprovedTopicCodes, eligibleCampuses: BoundedCodeList,
   term: Id, deadlineAt: Iso.optional(), capacity: z.enum(['OPEN','FULL','UNKNOWN']),
   requiredCourseCodes: BoundedCodeList,
   applicationUrl: z.url().optional(),
@@ -172,7 +174,7 @@ export const LearningProgramSchema = z.strictObject({
 export type LearningProgram = z.infer<typeof LearningProgramSchema>;
 export const LearningPreferenceSchema = z.strictObject({
   goalTags: BoundedCodeList, courseCodes: BoundedCodeList,
-  topicCodes: BoundedCodeList, campus: Id.optional(),
+  topicCodes: ApprovedTopicCodes, campus: Id.optional(),
   term: Id.optional(), asOf: Iso,
 });
 export type LearningPreference = z.infer<typeof LearningPreferenceSchema>;
