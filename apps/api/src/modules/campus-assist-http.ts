@@ -5,7 +5,7 @@ import {ActivityRecordSchema,ExchangeApplicantSchema,ExchangePolicySchema,
 import type {VerifiedActor,VerifySession} from '../types.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './auth/gates.js';
 import {archiveActivities,forecastActivity} from '../../../../packages/core/src/campus-assist/activities.js';
-import {evaluateExchange,exchangePolicyInEffect} from '../../../../packages/core/src/campus-assist/exchange.js';
+import {evaluateExchange,resolveExchangePolicy} from '../../../../packages/core/src/campus-assist/exchange.js';
 import {retrieveFaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
 import {buildFaqHcx007Request,parseFaqHcx007Response} from '../../../../packages/ai/src/faq-hcx007.js';
 
@@ -92,17 +92,13 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const args=z.strictObject({asOf:Iso}).parse(req.query);
       const snapshot=await read(port,actor,args.asOf);
       const rules=ExchangePolicySchema.array().max(500).parse(snapshot.items);
-      const grouped=new Map<string,ExchangePolicy[]>();
-      for(const rule of rules){
-        const key=rule.partnerId+':'+rule.track;
-        const group=grouped.get(key)||[];
-        group.push(rule);grouped.set(key,group);
-      }
-      const partners=[...grouped.values()].filter(group=>group.length===1).map(group=>group[0]!)
-        .filter(r=>r.rights==='APPROVED'&&Date.parse(r.publishedAt)<=Date.parse(args.asOf)
-          &&Date.parse(r.verifiedAt)<=Date.parse(args.asOf)
-          // Same KST day-boundary rule as evaluateExchange (#365).
-          &&exchangePolicyInEffect(r,args.asOf))
+      // One current policy per partner+track at asOf, chosen by the same resolver
+      // as the evaluation (#379): historical editions no longer hide the current one.
+      const pairs=new Map<string,Pick<ExchangePolicy,'partnerId'|'track'>>();
+      for(const rule of rules)pairs.set(rule.partnerId+':'+rule.track,{partnerId:rule.partnerId,track:rule.track});
+      const partners=[...pairs.values()]
+        .map(p=>resolveExchangePolicy(rules,p.partnerId,p.track,args.asOf).policy)
+        .filter((r):r is ExchangePolicy=>r!==null)
         .sort((a,b)=>a.partnerId.localeCompare(b.partnerId)).slice(0,50)
         .map(r=>({partnerId:r.partnerId,track:r.track,minimumGpa:r.minimumGpa,
           ...(r.partnerMinimumGpa!==undefined?{partnerMinimumGpa:r.partnerMinimumGpa}:{}),
@@ -117,9 +113,9 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const args=Exchange.parse(req.body);
       const snapshot=await read(port,actor,args.asOf);
       const rules=ExchangePolicySchema.array().max(500).parse(snapshot.items);
-      const matches=rules.filter(r=>r.partnerId===args.partnerId&&r.track===args.applicant.track);
-      // An unresolved revision conflict is not a license to pick a convenient policy.
-      const policy=matches.length===1?matches[0]!:null;
+      // An unresolved revision conflict is not a license to pick a convenient policy;
+      // resolveExchangePolicy quarantines conflicts and in-effect revocations (#379).
+      const policy=resolveExchangePolicy(rules,args.partnerId,args.applicant.track,args.asOf).policy;
       const result=evaluateExchange(args.applicant,policy,args.asOf);
       await current(req,actor,port,snapshot);
       return result;

@@ -119,4 +119,20 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect(await check(ends,'2026-11-07T15:30:00Z')).toEqual([false,false]);
     expect(await check(ends,'2026-11-07T14:30:00Z')).toEqual([true,true]);
   });
+  it('#379 historical editions no longer hide the current exchange policy',async()=>{
+    const h=fixture();
+    const base=SYNTHETIC_PARTNERS[0]!;
+    const old={...base,sourceRevision:'syn-old',effectiveFrom:'2025-01-01',effectiveUntil:'2025-12-31'};
+    const neu={...base,sourceRevision:'syn-new',effectiveFrom:'2026-01-01',effectiveUntil:'2026-12-31'};
+    h.exchange.read.mockResolvedValue({items:[old,neu],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const asOf='2026-09-01T00:00:00+09:00';
+    const list=(await h.app.inject({url:'/api/owner/exchange/partners?asOf='+encodeURIComponent(asOf)})).json();
+    const row=(list.partners as {partnerId:string;sourceRevision:string}[]).find(p=>p.partnerId===base.partnerId);
+    expect(row?.sourceRevision).toBe('syn-new');
+    const evaluated=(await h.post('/api/owner/exchange/evaluate',{asOf,partnerId:base.partnerId,
+      applicant:{duration:1,track:base.track,status:'ENROLLED',completedSemesters:3,gpa:3.2,
+        transfer:false,previousCancellation:'CLEAR'}})).json();
+    expect(evaluated.policyRevision).toBe('syn-new');
+  });
 });
