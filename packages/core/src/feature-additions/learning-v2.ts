@@ -73,7 +73,10 @@ export function recommendLearningV2(input:{
       eligibility,hardReasons,relevance,finalScore:relevance,matches,
       mode:'RULE_ONLY' as const}];
   }).sort((a,b)=>b.relevance-a.relevance||a.programId.localeCompare(b.programId,'en'));
-  const candidates=ranked.filter(r=>r.eligibility!=='NOT_MET').slice(0,15);
+  // Only evidence-bearing candidates enter the model rerank window.
+  // Other programs keep their deterministic scores and ordering.
+  const candidates=ranked.filter(r=>r.eligibility!=='NOT_MET'
+    && r.matches.some(m=>m.codes.length>0)).slice(0,15);
   const evidence=new Map(candidates.map(r=>[
     r.programId,r.matches.flatMap(m=>m.codes)] as const));
   const proposals=input.ai?.approved
