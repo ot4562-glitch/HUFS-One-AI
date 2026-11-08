@@ -12,6 +12,18 @@ import type {ReviewerSqlPool} from './modules/auth/reviewer-postgres.js';
 import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
+import type {CampusAssistServices} from './modules/campus-assist-http.js';
+
+export type ApprovedCampusSources=Pick<CampusAssistServices,'activities'|'exchange'|'faq'>;
+export function validateCampusSources(sources:ApprovedCampusSources):void{
+  const active=['activities','exchange','faq'] as const;
+  if(!sources||active.every(name=>!sources[name])||
+    active.some(name=>sources[name] && (typeof sources[name].read!=='function'
+      ||typeof sources[name].revalidate!=='function'))
+    ||'hcx007' in sources)
+    throw new Error('Campus assistance requires explicit approved source and rights ports; paid AI cannot be injected here');
+}
+
 
 export interface PostgresApplicationConfig {
   runtime?:RuntimeMode;
@@ -19,6 +31,9 @@ export interface PostgresApplicationConfig {
   trustedProxyAddresses?:readonly string[];
   auth:PostgresGoogleAuthConfig;
   schoolMailProof?:TrustedSchoolMailPort;
+  /** Optional operator-owned, current rights/revision guarded source ports.
+   * No synthetic fallback and no direct billable provider adapter. */
+  campusAssist?:ApprovedCampusSources;
   platform:Omit<PostgresPlatformConfig,'now'>;
   /** Explicit operator-supplied restricted 4-owner CSV/registry loaders; no auto import or demo fallback. */
   ownerIntake?:Omit<Parameters<typeof createRestrictedOwnerDirectory>[0],'now'>;
@@ -53,12 +68,14 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   if(config.ownerIntake&&['loadRegistry','verifyStorage','loadSources'].some(
     name=>typeof config.ownerIntake?.[name as keyof typeof config.ownerIntake]!=='function'))
     throw new Error('Restricted owner intake requires all three verified operator loaders');
+  if(config.campusAssist)validateCampusSources(config.campusAssist);
   const googleAuth=createPostgresGoogleAuth(config.auth);
   const clock=config.auth.google.now??(()=>new Date());
   const now=()=>clock().toISOString();
   const platform=createPostgresPlatformServices({...config.platform,now});
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
+    ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
     ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),
     ...(config.ai?{realAi:config.ai.runtime,approvedAiInputs:config.ai.inputs,
