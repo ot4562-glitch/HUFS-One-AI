@@ -32,7 +32,7 @@ describe('#348 server-only opaque cursor signer and verifier',()=>{
     const original=sign();
     const [body,mac]=original.split('.');
     fail(body+'A.'+mac);
-    fail(body+'.'+mac!.slice(0,-1)+'A');
+    fail(body+'.'+mac!.slice(0,-1)+(mac!.endsWith('A')?'B':'A'));
   });
   it('rejects missing signature, JSON, object or super-long token',()=>{
     fail('bad');
