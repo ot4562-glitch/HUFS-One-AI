@@ -77,7 +77,7 @@ export function recommendLearningV2(input:{
   const evidence=new Map(candidates.map(r=>[
     r.programId,r.matches.flatMap(m=>m.codes)] as const));
   const proposals=input.ai?.approved
-    ?verifySemanticProposals(evidence,input.ai.proposals,input.ai.inputDigest)
+    ?verifySemanticProposals(evidence,input.ai.proposals,input.ai.inputDigest,{requireCompleteSet:true})
     :new Map<string,{score:number;evidenceCodes:readonly string[]}>();
   const accepted=!!input.ai?.approved && candidates.length>0 && proposals.size===candidates.length;
   const result=ranked.map(m=>{
