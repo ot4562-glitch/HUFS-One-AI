@@ -7,7 +7,7 @@
 | 구분 | 하는 일 | 기존 코드/상태 | 어디에 설치? |
 | --- | --- | --- | --- |
 | **제품(React/서버 API/DB)** | 학생에게 추천·학업·경험 화면 제공 | UI·Fastify·SQL 코드 있음. 실운영 자격증명·인수 별도 | NCP 서버/사설 DB |
-| **제품 내 AI(CLOVA OCR/HCX)** | 허가된 자료에서 텍스트 추출, 구조화된 AI 후보 | `OCR_GENERAL`, `HCX_005`, `HCX_007` 공급자 코드. 실제 API·비용 미검증 | 제품 서버에서 승인된 NCP API 호출 |
+| **제품 내 AI(CLOVA OCR/HCX)** | 허가된 자료에서 텍스트 추출, 구조화된 AI 후보 | `OCR_GENERAL`(이미지 문자인식), `HCX_007`(구조화 자연어) 공급자 코드. 실제 API·비용 미검증 | 제품 서버에서 승인된 NCP API 호출 |
 | **GPT(Codex)·Claude Code** | 개발자의 코드를 분석·수정 제안·테스트 | **개발 에이전트 CLI**. 학생 서비스 모델과 별개 | 개발 PC 권장, 필요하면 **격리된 NCP 개발 호스트** |
 
 **중요:** `codex`/`claude`를 설치한다고 학생 웹사이트에 GPT/Claude AI가 자동 연결되지 않는다. 현재 제품 서버의 모델 호출은 CLOVA 기반이며 OpenAI/Anthropic 제품용 provider adapter는 별도 구현·검증이 필요하다.
