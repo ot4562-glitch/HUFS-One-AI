@@ -79,6 +79,7 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /infra/ncp/terraform/
+            /tests/release/test_ncp_provider_mirror.py
       - name: Install checksum-pinned Terraform in runner temporary storage
         env:
           TF_VERSION: '1.17.1'
@@ -91,7 +92,18 @@ jobs:
           printf '%s  %s\n' "$TF_ZIP_SHA256" "$RUNNER_TEMP/terraform.zip" | sha256sum --check --status
           mkdir "$RUNNER_TEMP/hufs-terraform"
           unzip -q "$RUNNER_TEMP/terraform.zip" terraform -d "$RUNNER_TEMP/hufs-terraform"
+      - name: Test NCP provider-mirror integrity and offline failure paths
+        run: python3 -m unittest discover -s tests/release -p test_ncp_provider_mirror.py -v
+      - name: Restore only the immutable checksum-pinned NCP provider archive
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ${{ runner.temp }}/hufs-ncloud-provider-mirror
+          key: ncloud-provider-4.0.7-linux-amd64-edbaca618aa59b9e5d5b04db1c4aabc34d108015609268ea276ace34eefac285
+      - name: Acquire official NCP provider with independent pinned SHA-256
+        # Cached ZIP is rehashed. Cold runners try two official endpoints and
+        # fail closed when neither yields the exact approved release bytes.
+        run: python3 infra/ncp/terraform/provider-mirror.py --mirror "$RUNNER_TEMP/hufs-ncloud-provider-mirror"
       - name: Schema validation and mock-only network/host contracts, no credentials
         run: |
-          python3 infra/ncp/terraform/check-offline.py --module network --terraform "$RUNNER_TEMP/hufs-terraform/terraform"
-          python3 infra/ncp/terraform/check-offline.py --module host --terraform "$RUNNER_TEMP/hufs-terraform/terraform"
+          python3 infra/ncp/terraform/check-offline.py --module network --terraform "$RUNNER_TEMP/hufs-terraform/terraform" --provider-mirror "$RUNNER_TEMP/hufs-ncloud-provider-mirror"
+          python3 infra/ncp/terraform/check-offline.py --module host --terraform "$RUNNER_TEMP/hufs-terraform/terraform" --provider-mirror "$RUNNER_TEMP/hufs-ncloud-provider-mirror"

@@ -1,4 +1,6 @@
 export * from './topics/index.js';
+// Opt-in addition namespace; keep away from bottom where PR #342 adds campus-assist.
+export * as FeatureAdditions from './feature-additions/index.js';
 export * from './corpus/index.js';
 export * from './recommendation-inputs/index.js';
 export * from './academics/index.js';
