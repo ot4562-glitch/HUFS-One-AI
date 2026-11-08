@@ -1,7 +1,7 @@
 /** #345 — purpose-aware routing to verified institutional help. */
 import {FeatureAdditions as V} from '@hufs-one/contracts';
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {safeIntersection,verifySource,type FeatureMode} from './source-policy.js';
+import {conflictingIds,safeIntersection,verifySource,type FeatureMode} from './source-policy.js';
 
 export type CounselingMatch={
   serviceId:string; score:number; exactPurposes:readonly string[];
@@ -25,10 +25,10 @@ export function routeCounselingV2(input:{
 }):CounselingGuide{
   if (!input.purposes.length) return {matches:[],excluded:0,status:'NO_PURPOSE'};
   let excluded=0;
-  const seen=new Set<string>();
+  // Quarantine every copy of a repeated service ID (order-independent).
+  const conflicts=conflictingIds(input.services);
   const matches=input.services.flatMap(s=>{
-    if (seen.has(s.id)) {excluded++;return [];}
-    seen.add(s.id);
+    if (conflicts.has(s.id)) {excluded++;return [];}
     if (!s.active || !verifySource(s.source,input.asOf,input.mode).usable
       || (input.campus && s.campuses.length>0 && !s.campuses.includes(input.campus))
       || (input.language && s.languages.length>0 && !s.languages.includes(input.language))
