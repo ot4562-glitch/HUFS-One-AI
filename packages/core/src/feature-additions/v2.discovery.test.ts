@@ -76,8 +76,8 @@ describe('#348 — permission-filtered full catalog search and cursor stability'
   });
   it('does not search a phrase from one item as if it belonged to another',()=>{
     const r=searchApprovedCatalogV2({items:[
-      opportunity('a',{title:'Physics conference',summary:'Robotics'}),
-      opportunity('b',{title:'Computer internship',summary:'Data engineering'}),
+      opportunity('a',{title:'Physics conference',summary:'Robotics',topicCodes:[]}),
+      opportunity('b',{title:'Computer internship',summary:'Data engineering',topicCodes:[]}),
     ],query:query({q:'physics data'}),...opts});
     expect(r.items).toEqual([]);
   });
