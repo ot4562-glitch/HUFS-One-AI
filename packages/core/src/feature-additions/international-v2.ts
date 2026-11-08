@@ -3,7 +3,7 @@ import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {parseAsOf,verifySource,type FeatureMode} from './source-policy.js';
 export type GuideLocale='ko'|'en'|'zh';
 export type GuideStep={id:string;order:number;documentCodes:readonly string[];
-  officeCode?:string;sourceSpanId:string};
+  officeCode?:string|undefined;sourceSpanId:string};
 export type GuideResponse={
   guideId:string;sourceRevisionId:string;
   status:'READY'|'KOREAN_FALLBACK'|'UNKNOWN_SOURCE'|'NOT_APPLICABLE'
