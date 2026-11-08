@@ -1,6 +1,7 @@
 import {createApi} from './server.js';
 import {assertRuntimeConfiguration,type RuntimeMode} from './runtime-policy.js';
 import {registerSourceJobControlRoutes} from './modules/opportunities/source-job-control-http.js';
+import {registerCampusAssistRoutes,type CampusAssistServices} from './modules/campus-assist-http.js';
 import type {SourceJobControl} from './modules/opportunities/source-job-control-http.js';
 import {registerSourceRevisionHistoryRoute} from './modules/opportunities/source-history-http.js';
 import {registerSelfAccountRoutes} from './modules/profiles/self-account-http.js';
@@ -44,6 +45,7 @@ export interface TrustedSchoolMailPort {
 }
 interface SharedDependencies {
   runtime?:RuntimeMode;
+  campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
   sourceIngestionControl?:SourceJobControl;
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
@@ -109,6 +111,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options),ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
+  if(deps.campusAssist)registerCampusAssistRoutes(app,deps.campusAssist,{...ownerSession,allowedOrigin:deps.allowedOrigin});
   registerSourceJobControlRoutes({app,session:ownerSession,...(deps.sourceIngestionControl?{control:deps.sourceIngestionControl}:{})});
   registerRestrictedOwnerIntakeRoute({app,session:ownerSession,...(deps.restrictedOwnerDirectory?{directory:deps.restrictedOwnerDirectory}:{})});
   registerHufsAbilityCapabilitiesRoute(app,ownerSession);

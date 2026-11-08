@@ -13,10 +13,12 @@ import {ownerAcademicsPage} from './ownerAcademicsPage.js';
 import {ownerIntakePage} from './ownerIntakePage.js';
 import {ownerProviderPage} from './ownerProviderPage.js';
 import {careerPage} from './careerPage.js';
+import {activityArchivePage,exchangePage,faqPage} from './campusAssistPages.js';
 
 /** Feature pages, checked in order before the shell's placeholders. */
 export const appPages: readonly PageRenderer[] = [
   ownerIntakePage, todayPage, opportunitiesPage, opportunityDetailPage, noticesPage, noticeDetailPage, reviewerInvitePage, graduationPage, whatIfPage, areaPage,
   savedPage, experiencePage, settingsPage, applicationsPage, menuPage, clubsPage, clubDetailPage,
   ownerDemoProfilePage,ownerAcademicsPage,ownerProviderPage,careerPage,
+  activityArchivePage,exchangePage,faqPage,
 ];

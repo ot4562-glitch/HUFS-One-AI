@@ -28,6 +28,10 @@ import {
 import type {WorkspaceKind,OwnerWorkspaceRecord,OwnerWorkspaceValue} from '@hufs-one/contracts';
 import type {ApprovedProviderInput,AiTaskPath} from '@hufs-one/contracts';
 import {HufsApiError,clientInput,requireMatchingReceipt} from './api-error.js';
+import {ActivityArchiveResponseSchema,ActivityForecastSchema,ExchangePartnerListSchema,
+  ExchangeApplicantSchema,ExchangeResultSchema,FaqAskResponseSchema} from '@hufs-one/contracts';
+import type {ExchangeApplicant} from '@hufs-one/contracts';
+const CampusToken=z.string().min(1).max(120).regex(/^[A-Za-z0-9_.:-]+$/);
 
 export interface BrowserRequestOptions {
   method?:'GET'|'POST'|'PATCH'|'PUT'|'DELETE';body?:unknown;
@@ -403,4 +407,37 @@ export class HufsOwnerApiClient {
     return result;
   }
 
+
+  /** #339: the server owns the rights-gated source data. Never accept browser source payloads. */
+  listCampusActivities(query:{asOf:string;organizationId?:string;year?:number;query?:string},signal?:AbortSignal){
+    const checked=clientInput(z.strictObject({asOf:Iso,organizationId:CampusToken.optional(),
+      year:z.number().int().min(2000).max(2200).optional(),query:z.string().max(100).optional()}),query);
+    return this.request(queryPath('/api/owner/activities',checked),ActivityArchiveResponseSchema,{signal});
+  }
+  getCampusActivityForecast(query:{asOf:string;organizationId:string;seriesId:string;targetYear:number},signal?:AbortSignal){
+    const checked=clientInput(z.strictObject({asOf:Iso,organizationId:CampusToken,
+      seriesId:CampusToken,targetYear:z.number().int().min(2000).max(2200)}),query);
+    const result=this.request(queryPath('/api/owner/activities/forecast',checked),
+      ActivityForecastSchema,{signal});
+    return result;
+  }
+  /** #340: one current server-approved partner rule per track; missing or forked rules stay UNKNOWN. */
+  listExchangePartners(asOf:string,signal?:AbortSignal){
+    const at=clientInput(Iso,asOf);
+    return this.request(queryPath('/api/owner/exchange/partners',{asOf:at}),ExchangePartnerListSchema,{signal});
+  }
+  async checkExchangeEligibility(change:{asOf:string;partnerId:string;applicant:ExchangeApplicant},signal?:AbortSignal){
+    const input=clientInput(z.strictObject({asOf:Iso,partnerId:CampusToken,
+      applicant:ExchangeApplicantSchema}),change);
+    const result=await this.mutate('/api/owner/exchange/evaluate',ExchangeResultSchema,'POST',input,signal);
+    requireMatchingReceipt(Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
+  }
+  /** #341: no local model/keys; only the bounded, authorized server-side FAQ query. */
+  async askCampusFaq(change:{asOf:string;question:string},signal?:AbortSignal){
+    const input=clientInput(z.strictObject({asOf:Iso,question:z.string().trim().min(2).max(500)}),change);
+    const result=await this.mutate('/api/owner/faq/ask',FaqAskResponseSchema,'POST',input,signal);
+    requireMatchingReceipt(Date.parse(result.asOf)===Date.parse(input.asOf));
+    return result;
+  }
 }
