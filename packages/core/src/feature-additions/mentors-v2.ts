@@ -57,7 +57,8 @@ export function rankMentorsV2(input:{
       sourceRevisionId:m.source.revisionId,mode:'RULE_ONLY' as const};
   }).sort((a,b)=>b.ruleScore-a.ruleScore||a.mentorId.localeCompare(b.mentorId,'en'));
   // Semantic candidates must be from the top 15 within a bounded, rights-cleared set.
-  const allowed=candidates.slice(0,15);
+  const allowed=candidates.filter(m=>m.reasons.some(r=>r.codes.length>0)
+    || (catalog.find(c=>c.id===m.mentorId)?.publicEvidenceRefs.length??0)>0).slice(0,15);
   const evidence=new Map(allowed.map(m=>[m.mentorId,[
     ...m.reasons.flatMap(r=>r.codes),
     ...((catalog.find(c=>c.id===m.mentorId)?.publicEvidenceRefs)??[]),
