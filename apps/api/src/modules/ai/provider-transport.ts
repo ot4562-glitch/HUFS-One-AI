@@ -33,10 +33,11 @@ export function createNodeClovaTransport(options:NodeClovaOptions){
   return {async post(input:ProviderPost):Promise<Response>{
     try{
       if(input.signal.aborted||Buffer.byteLength(input.body)>8*1024*1024||!/^[-0-9a-f]{36}$/.test(input.requestId)
-        ||!['TOKENIZE','INFER'].includes(input.stage)||!['OCR_GENERAL','HCX_005','HCX_007'].includes(input.operation))throw denied();
+        ||!['TOKENIZE','INFER'].includes(input.stage)||!['OCR_GENERAL','HCX_007'].includes(input.operation))throw denied();
       const image=input.operation==='OCR_GENERAL';
       if(image&&(input.stage!=='INFER'||!ocr))throw denied();
-      const model=input.operation==='HCX_007'?'HCX-007':'HCX-005';
+      // The only text model endpoint is HCX-007; image extraction uses OCR_GENERAL.
+      const model='HCX-007';
       const url=image?new URL(ocr!.href):new URL(input.stage==='TOKENIZE'?`https://clovastudio.stream.ntruss.com/v3/api-tools/chat-tokenize/${model}`
         :`https://clovastudio.stream.ntruss.com/v3/chat-completions/${model}`);
       const secret=await options.secret(image?'OCR':'STUDIO');
