@@ -47,13 +47,20 @@ export class CatalogCursorError extends Error {
   }
 }
 const checkId=(value:string):boolean=>Id.safeParse(value).success;
-const checkContext=(context:CursorRequestContext):void=>{
+const checkContext=(context:CursorRequestContext,
+  timeCode:'MISCONFIGURED_CURSOR'|'INVALID_CURSOR'='MISCONFIGURED_CURSOR'):void=>{
   if(!checkId(context.actorId)||!checkId(context.consentVersion)
     ||!checkId(context.catalogRevision)
     ||!context.scopeKey||context.scopeKey.length>512
     ||!Number.isSafeInteger(context.nowMs)||context.nowMs<0
     ||!V.OpportunityQuerySchema.safeParse(context.query).success)
     throw new CatalogCursorError('MISCONFIGURED_CURSOR');
+  // Query asOf must originate from the authenticated server clock; a
+  // user-chosen future reference exposes unpublished catalog entries.
+  const asOf=Date.parse(context.query.asOf);
+  if(!Number.isFinite(asOf)||asOf>context.nowMs
+    ||context.nowMs-asOf>15*60_000)
+    throw new CatalogCursorError(timeCode);
 };
 export type CatalogCursorSigner={
   sign:(cursor:CatalogInternalCursor,context:CursorRequestContext)=>string;
@@ -107,7 +114,7 @@ export function createCatalogCursorSigner(config:{
     return output;
   };
   const verify=(token:string,context:CursorRequestContext):CatalogInternalCursor=>{
-    checkContext(context);
+    checkContext(context,'INVALID_CURSOR');
     if(typeof token!=='string'||token.length<16||token.length>2048
       ||!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token))
       throw new CatalogCursorError('INVALID_CURSOR');
