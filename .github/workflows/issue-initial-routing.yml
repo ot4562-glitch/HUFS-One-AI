@@ -1,0 +1,56 @@
+name: Initial issue routing (feature/data)
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  assign-initial-owner:
+    # Existing [본선 진출 이후] role tickets are strictly read-only.
+    if: github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply initial assignee from issue type
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const ticket = context.payload.issue;
+            const title = String(ticket?.title || '').trim();
+            const number = ticket?.number;
+            if (!number) return;
+
+            // Never write to immutable role tickets (including any naming variation).
+            const frozen = ['[본선 진출 이후]', '[본선진출이후]'];
+            if (frozen.some(prefix => title.startsWith(prefix))) {
+              core.info('Role issue: read-only, no assignment action.');
+              return;
+            }
+
+            let expected = null;
+            if (title.startsWith('[추가 기능]') || title.startsWith('[추가기능]')) {
+              // Project lead creates the structure and implements non-AI code.
+              // Subsequent AI handoff is tracked by agents in the feature issue.
+              expected = 'ot4562-glitch';
+            } else if (title.startsWith('[데이터 요청]')) {
+              // Dataset requests are independent tickets. Agents also add Kim
+              // as co-assignee on the linked feature when sources/Gold are needed.
+              expected = 'qamarrchae';
+            } else {
+              core.info('Issue type outside automatic routing.');
+              return;
+            }
+
+            const current = new Set((ticket.assignees || []).map(user => user.login));
+            if (current.has(expected)) {
+              core.info('Expected initial owner already assigned.');
+              return;
+            }
+            await github.rest.issues.addAssignees({
+              owner, repo, issue_number: number, assignees: [expected]
+            });
+            core.info(`Added initial assignee ${expected} to issue #${number}.`);
