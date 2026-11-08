@@ -139,6 +139,9 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
         evidence:[],asOf:args.asOf};
       if(!await services.hcx007.admit({actor,sourceVersion:snapshot.receipt.sourceVersion,now:session.now()}))
         throw new ApiFailure('RATE_LIMITED');
+      // Admission may involve asynchronous budget/authority work. Revalidate
+      // the actor and source revision immediately before a billable model call.
+      await current(req,actor,port,snapshot);
       const wire=buildFaqHcx007Request(args.question,evidence);
       let raw:unknown;
       try{raw=await services.hcx007.execute({actor,wire});}
