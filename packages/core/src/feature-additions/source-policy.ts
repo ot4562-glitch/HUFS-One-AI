@@ -71,9 +71,17 @@ export function evaluateVerifiedCondition(
     && f.provenance==='SOURCE_VERIFIED' && f.sourceRevisionId
     && allowedFactRevisions.has(f.sourceRevisionId));
   if (!hits.length) return {...checked(),reason:'FACT_NOT_VERIFIED_OR_AVAILABLE'};
-  // Use the newest *authorized* observation. Conflicts at the same instant abstain.
-  const newest=Math.max(...hits.map(f=>parseAsOf(f.observedAt)));
-  const latest=hits.filter(f=>parseAsOf(f.observedAt)===newest);
+  // Semester-sensitive academic facts require an *official policy-defined*
+  // observation term, which may differ from the scholarship application term.
+  // Timestamp recency alone cannot establish that a GPA/credit rule is met.
+  const termSensitive=/(?:^|[._:-])(gpa|grade|grades|credit|credits|semester|term|attendance)(?:$|[._:-])/i
+    .test(rule.factKey);
+  if(termSensitive && !rule.factTerm) return {...checked(),reason:'FACT_TERM_UNSPECIFIED'};
+  const scoped=rule.factTerm?hits.filter(f=>f.academicTerm===rule.factTerm):hits;
+  if(!scoped.length) return {...checked(),reason:'FACT_OUT_OF_TERM'};
+  // Use the newest *authorized, term-matched* observation.
+  const newest=Math.max(...scoped.map(f=>parseAsOf(f.observedAt)));
+  const latest=scoped.filter(f=>parseAsOf(f.observedAt)===newest);
   if (new Set(latest.map(f=>JSON.stringify(f.value))).size!==1)
     return {...checked(),reason:'CONFLICTING_FACTS'};
   const f=latest[0]!;
