@@ -9,7 +9,7 @@ const actor={role:'BETA' as const,actorId:'SYN-OWNER',sessionIdHash:'H'.repeat(3
   betaAllowed:true,sessionExpiresAt:'2026-12-01T00:00:00Z',schoolMailProofExpiresAt:'2026-12-01T00:00:00Z'};
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
 afterEach(async()=>{await Promise.all(apps.splice(0).map(a=>a.close()));});
-function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>){
+function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>,now:()=>string=()=>NOW){
   let enabled=true,rights=true,sameActor=true;
   const receipt={actorId:actor.actorId,sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'};
   const activities={read:vi.fn(async()=>({items:SYNTHETIC_ACTIVITIES,receipt})),
@@ -19,7 +19,7 @@ function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>){
   const faq={read:vi.fn(async()=>({items:SYNTHETIC_FAQ_DOCUMENTS,receipt})),
     revalidate:vi.fn(async()=>rights)};
   const app=createIntegratedApi({
-    allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
+    allowedOrigin:ORIGIN,repository:closedRepository,now,
     auth:{verifySession:async()=>enabled?(sameActor?actor:{...actor,actorId:'SYN-OTHER'}):null,
       revokeSession:async()=>{}},campusAssist:{activities,exchange,faq,...(hcx007?{hcx007}:{})},
   });
@@ -135,4 +135,52 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
         transfer:false,previousCancellation:'CLEAR'}})).json();
     expect(evaluated.policyRevision).toBe('syn-new');
   });
+  it.each([
+    ['invalid', 'not-a-date'],
+    ['timezone missing', '2026-12-01T00:00:00'],
+    ['empty', ''],
+    ['expired', '2026-11-07T23:59:59Z'],
+    ['exact expiry boundary', NOW],
+  ])('#363 rejects %s receipt timestamps for activity, exchange and FAQ ports',
+    async(_case,expiresAt)=>{
+      const h=fixture();
+      const receipt={actorId:actor.actorId,sourceVersion:'SYN-REV-1',expiresAt};
+      h.activities.read.mockResolvedValue({items:SYNTHETIC_ACTIVITIES,receipt});
+      h.exchange.read.mockResolvedValue({items:SYNTHETIC_PARTNERS,receipt});
+      h.faq.read.mockResolvedValue({items:SYNTHETIC_FAQ_DOCUMENTS,receipt});
+      const activities=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
+      const exchange=await h.app.inject({url:'/api/owner/exchange/partners?asOf='+encodeURIComponent(NOW)});
+      const faq=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학'});
+      expect([activities.statusCode,exchange.statusCode,faq.statusCode]).toEqual([503,503,503]);
+      expect(h.activities.revalidate).not.toHaveBeenCalled();
+      expect(h.exchange.revalidate).not.toHaveBeenCalled();
+      expect(h.faq.revalidate).not.toHaveBeenCalled();
+    });
+
+  it('#363 rejects invalid server clock before accessing the source ports',async()=>{
+    const h=fixture(undefined,()=> 'not-a-date');
+    const r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
+    expect(r.statusCode).toBe(503);
+    expect(h.activities.read).not.toHaveBeenCalled();
+  });
+  it('#363 rechecks receipt TTL after async rights revalidation',async()=>{
+    let clock=NOW;
+    const h=fixture(undefined,()=>clock);
+    h.activities.revalidate.mockImplementation(async()=>{
+      clock='2026-12-01T00:00:00Z';
+      return true;
+    });
+    const r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
+    expect(r.statusCode).toBe(503);
+    expect(h.activities.revalidate).toHaveBeenCalledOnce();
+    expect(r.body).not.toContain('SYN-ECON');
+  });
+  it('#363 valid future receipt still succeeds and an invalid source version is refused',async()=>{
+    const h=fixture();
+    expect((await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(200);
+    h.activities.read.mockResolvedValue({items:SYNTHETIC_ACTIVITIES,
+      receipt:{actorId:actor.actorId,sourceVersion:'   ',expiresAt:'2026-12-01T00:00:00Z'}});
+    expect((await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(503);
+  });
+
 });
