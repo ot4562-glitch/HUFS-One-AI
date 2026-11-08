@@ -45,6 +45,16 @@ export const FeatureConditionSchema = z.strictObject({
   expected: z.union([z.number().finite(),z.string().max(256),z.boolean(),BoundedCodeList]),
   sourceSpanId: Id,
   required: z.boolean(),
+}).superRefine((condition,ctx)=>{
+  const e=condition.expected;
+  const valid=condition.op==='NUM_GTE'||condition.op==='NUM_LTE'
+    ? typeof e==='number'
+    : condition.op==='TEXT_EQ' ? typeof e==='string'
+      : condition.op==='TEXT_IN' ? Array.isArray(e)&&e.length>0
+        : condition.op==='BOOL_EQ' ? typeof e==='boolean'
+          : condition.op==='DOCUMENT_PRESENT' ? e===true : false;
+  if(!valid) ctx.addIssue({code:'custom',path:['expected'],
+    message:'condition operator and expected value type disagree'});
 });
 export type FeatureCondition = z.infer<typeof FeatureConditionSchema>;
 export const ScholarshipPolicySchema = z.strictObject({
@@ -58,6 +68,8 @@ export const ScholarshipPolicySchema = z.strictObject({
     ctx.addIssue({code:'custom',path:['closesAt'],message:'closing before opening'});
   const ids=s.groups.flatMap(g=>g.conditions.map(c=>c.id));
   if (new Set(ids).size!==ids.length) ctx.addIssue({code:'custom',message:'duplicate condition IDs'});
+  if(new Set(s.groups.map(g=>g.id)).size!==s.groups.length)
+    ctx.addIssue({code:'custom',message:'duplicate condition group IDs'});
 });
 export type ScholarshipPolicy = z.infer<typeof ScholarshipPolicySchema>;
 
@@ -154,6 +166,17 @@ export const BadgeDefinitionSchema = z.strictObject({
     })).min(1).max(50),
   })).min(1).max(20),
   officialIssuerUrl: z.url().optional(),
+}).superRefine((badge,ctx)=>{
+  const ids=badge.groups.flatMap(g=>g.requirements.map(r=>r.id));
+  if(new Set(ids).size!==ids.length)
+    ctx.addIssue({code:'custom',message:'duplicate badge requirement IDs'});
+  for(const [gi,g] of badge.groups.entries()) {
+    for(const [ri,r] of g.requirements.entries()) {
+      if(r.after&&r.before&&Date.parse(r.after)>Date.parse(r.before))
+        ctx.addIssue({code:'custom',path:['groups',gi,'requirements',ri],
+          message:'badge activity time window reversed'});
+    }
+  }
 });
 export type BadgeDefinition = z.infer<typeof BadgeDefinitionSchema>;
 export const BadgeEvidenceSchema = z.strictObject({
@@ -213,5 +236,9 @@ export const InternationalGuideSchema = z.strictObject({
     officeCode: Id.optional(),
     sourceSpanId: Id,
   })).max(50),
+}).superRefine((guide,ctx)=>{
+  const ids=guide.steps.map(s=>s.id);
+  if(new Set(ids).size!==ids.length)
+    ctx.addIssue({code:'custom',message:'duplicate international guide step IDs'});
 });
 export type InternationalGuide = z.infer<typeof InternationalGuideSchema>;
