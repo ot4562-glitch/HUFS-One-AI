@@ -10,7 +10,7 @@ export function source(revisionId='source-r1'):C.FeatureSource {
 }
 export function condition(overrides:Partial<C.FeatureCondition>={}):C.FeatureCondition {
   return {id:'grade-rule',factKey:'gpa',op:'NUM_GTE',expected:3.5,
-    sourceSpanId:'span-1',required:true,...overrides};
+    sourceSpanId:'span-1',required:true,factTerm:'2026-1',...overrides};
 }
 export function scholarship(overrides:Partial<C.ScholarshipPolicy>={}):C.ScholarshipPolicy{
   return {id:'fictional-scholarship',academicTerm:'2026-2',source:source(),
@@ -23,7 +23,7 @@ export function fact(
 ):C.FeatureVerifiedFact {
   return {key:'gpa',value,provenance:'SOURCE_VERIFIED',
     observedAt:'2026-11-02T00:00:00+09:00',
-    sourceRevisionId:'transcript-r1',...overrides};
+    sourceRevisionId:'transcript-r1',academicTerm:'2026-1',...overrides};
 }
 export const FACT_REVISIONS=new Set(['transcript-r1']);
 export function mentor(id:string, overrides:Partial<C.MentorCard>={}):C.MentorCard{
