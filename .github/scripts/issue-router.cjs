@@ -35,14 +35,17 @@ const isProtected = issue => settings.protectedIssueNumbers.includes(issue.numbe
 
 // P0 and potentially sensitive reports must not be silently assigned.
 // This is a routing gate, not an automated vulnerability severity assessment.
+function isSensitiveIssue(issue) {
+  const title = String(issue.title || '').trim();
+  const labels = new Set(getNames(issue));
+  return labels.has('type:security') ||
+    /\b(?:security|privacy|cve|credential|secret|vulnerability|pii|data\s+leak)\b|\ubcf4\uc548|\uac1c\uc778\uc815\ubcf4|\ucde8\uc57d\uc810|\uc778\uc99d\s*\uc6b0\ud68c|\ube44\ubc00\ud0a4|\uc790\ub8cc\s*\uc720\ucd9c|\uad8c\ud55c\s*(?:\ub204\ucd9c|\ub178\ucd9c)/i.test(title);
+}
 function humanGateReason(issue) {
   const title = String(issue.title || '').trim();
   const labels = new Set(getNames(issue));
   if (/\bP0\b/i.test(title) || labels.has('priority:P0')) return 'P0 needs a human incident owner';
-  if (labels.has('type:security') ||
-    /\b(?:security|privacy|cve|credential|secret|vulnerability|pii|data\s+leak)\b|\ubcf4\uc548|\uac1c\uc778\uc815\ubcf4|\ucde8\uc57d\uc810|\uc778\uc99d\s*\uc6b0\ud68c|\ube44\ubc00\ud0a4|\uc790\ub8cc\s*\uc720\ucd9c|\uad8c\ud55c\s*(?:\ub204\ucd9c|\ub178\ucd9c)/i.test(title)) {
-    return 'Possible security or privacy issue: human/private review required';
-  }
+  if (isSensitiveIssue(issue)) return 'Possible security or privacy issue: human/private review required';
   return null;
 }
 
@@ -165,7 +168,7 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   if (prefix?.typeLabel) add.push(prefix.typeLabel);
   if (title.includes('[\ucf54\ub4dc \uc804\uc218\uc870\uc0ac]')) add.push('source:code-audit');
   if (title.startsWith('[\ub370\uc774\ud130 \uc694\uccad][\uc815\uc815]')) add.push('type:data-correction');
-  if (gate?.includes('security') || gate?.includes('privacy')) add.push('type:security');
+  if (isSensitiveIssue(ticket)) add.push('type:security');
 
   if (decision.area) add.push('area:' + decision.area);
   if (!decision.area || gate) add.push('triage:needs-review');
@@ -202,4 +205,4 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   }
 }
 
-module.exports = {classify, effortPoints, chooseAssignee, isProtected, humanGateReason, routeIssue};
+module.exports = {classify, effortPoints, chooseAssignee, isProtected, humanGateReason, isSensitiveIssue, routeIssue};
