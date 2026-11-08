@@ -40,7 +40,16 @@ export function planScholarshipPreparation(input:{
   if(conditions.size!==policy.groups.flatMap(g=>g.conditions).length)
     throw new RangeError('DUPLICATE_SCHOLARSHIP_RULE');
   const actions:ScholarshipPreparationAction[]=[];
+  if(!report.groups.length){
+    for(const condition of conditions.values()){
+      if(!condition.required) continue;
+      actions.push({id:'scholarship:'+condition.id,kind:'CHECK_RULE_SOURCE',
+        factKey:condition.factKey,conditionId:condition.id,
+        sourceSpanId:condition.sourceSpanId,reason:'RULE_UNVERIFIED',officialAward:false});
+    }
+  }
   for(const group of report.groups){
+    if(group.state==='MET') continue;
     for(const check of group.conditions){
       if(!check.required||check.state==='MET') continue;
       const rule=conditions.get(check.id);
@@ -105,18 +114,20 @@ export function planEvidenceOpportunities(input:{
       && r.requiredOneAiTopics.length>0).map(r=>({id:r.requirementId,topics:r.requiredOneAiTopics}))
     :(input.badgeReport?.requiredNextTopics??[]).map(topic=>({id:topic,topics:[topic]}));
   const seen=new Set<string>();
+  const counts=new Map<string,number>();
+  for(const item of input.approvedCatalog)
+    counts.set(item.id,(counts.get(item.id)??0)+1);
   const permitted=input.approvedCatalog.filter(item=>{
     // Reject *all* duplicated catalog IDs instead of selecting one arbitrarily.
-    if(!item.permitted||!verifySource(item.source,input.asOf,input.mode).usable) return false;
+    if(counts.get(item.id)!==1 || !item.permitted
+      ||!verifySource(item.source,input.asOf,input.mode).usable) return false;
     if(item.publishedAt && parseAsOf(item.publishedAt)>at) return false;
     if(item.deadlineAt && parseAsOf(item.deadlineAt)<=at) return false;
     if(item.eligibility==='NOT_MET') return false;
     if(input.campus&&item.campus&&item.campus!==input.campus) return false;
     return true;
   });
-  const counts=new Map<string,number>();
-  for(const row of permitted) counts.set(row.id,(counts.get(row.id)??0)+1);
-  const unique=permitted.filter(p=>counts.get(p.id)===1);
+  const unique=permitted;
   const suggestions:OpportunityAction[]=[];
   const noVerifiedMatchingOptionFor:string[]=[];
   for(const target of targets){
@@ -136,12 +147,15 @@ export function planEvidenceOpportunities(input:{
       const key=input.issue+':'+target.id+':'+item.id;
       if(seen.has(key)) continue;
       seen.add(key);
+      const eligibility:'MET'|'UNKNOWN'=item.eligibility==='MET'
+        && (!item.campus || (input.campus!==undefined && item.campus===input.campus))
+        ?'MET':'UNKNOWN';
       suggestions.push({
         issue:input.issue,targetId:target.id,opportunityId:item.id,
         matchedTopicCodes:overlap,sourceRevisionId:item.source.revisionId,
         ...(item.deadlineAt?{deadlineAt:item.deadlineAt}:{}),
-        eligibility:item.eligibility,
-        reviewFlag:item.eligibility==='MET'?'CHECK_OFFICIAL_APPLICATION':
+        eligibility,
+        reviewFlag:eligibility==='MET'?'CHECK_OFFICIAL_APPLICATION':
           'CHECK_PERSONAL_ELIGIBILITY',
         guaranteedOutcome:false,
       });
