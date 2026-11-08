@@ -66,6 +66,32 @@ describe('real-role PostgreSQL API operator composition',()=>{
     expect(result.application.platform.pools.evidence).toBe(result.pools.evidence);
     await Promise.all(REQUIRED_SQL_ROLES.map(role=>result.pools[role].close()));
   });
+
+  it('#367 binds optional current campus source ports without a DB query or synthetic fallback',async()=>{
+    const activities={read:vi.fn(async()=>null),revalidate:vi.fn(async()=>false)};
+    const configured=prepareOperatorPostgres({...makeConfig(),
+      campusAssist:{activities}} as any);
+    expect(configured.application.campusAssist?.activities).toBe(activities);
+    expect(configured.application.campusAssist?.exchange).toBeUndefined();
+    expect(Object.keys(configured.extraPools??{})).toHaveLength(0);
+    expect(activities.read).not.toHaveBeenCalled();
+    expect(activities.revalidate).not.toHaveBeenCalled();
+    await Promise.all(Object.values(configured.pools).map(p=>p.close()));
+    const absent=prepareOperatorPostgres(makeConfig() as any);
+    expect(absent.application.campusAssist).toBeUndefined();
+    await Promise.all(Object.values(absent.pools).map(p=>p.close()));
+  });
+  it('#367 forbids malformed or paid operator campus adapters',()=>{
+    const invalid=[
+      {},
+      {activities:{read:async()=>null}},
+      {activities:{read:async()=>null,revalidate:async()=>false},
+        hcx007:{admit:async()=>true,execute:async()=>({})}},
+    ];
+    for(const campusAssist of invalid)
+      expect(()=>prepareOperatorPostgres({...makeConfig(),campusAssist} as any))
+        .toThrow(/source and rights ports|paid AI/);
+  });
   it('wires only explicitly reviewed immediate proxy IPs into the real operator application',async()=>{
     const input={...makeConfig(),trustedProxyAddresses:['127.0.0.1']};
     const prepared=prepareOperatorPostgres(input as any);
