@@ -1,5 +1,8 @@
 # 기회 추천·적격·시점 코어
 
+> **최신 에이전트 공통 규칙(2026-11-08):** `[본선 진출 이후]`/`[본선진출이후]` 고정 역할 #355–#359는 **절대 쓰기 금지**(본문·댓글·담당·상태 포함). 새 `[추가 기능]`은 **심민성 먼저 배정·가능한 일반 Core/API/DB/통합 코드 직접 구현** 후 **규칙/코드 기반 추천·랭킹/예측 등 AI와 OCR/HCX-007/NLP/RAG 부분은 박준영 또는 이의상에게 반드시 구현 인계**한다. 자료/포스터·공식 문서/Gold가 필요한 경우 **별도의 `[데이터 요청]` 이슈를 김채윤 담당으로 생성하고 원 기능에도 김채윤을 공동 assignee로 추가**한다. 현재 13개 기능의 공통 자료는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360). 박준영 AI 제품 기술 QA, 이의상·박준영 양방향 교차검증, 김채윤 실제 데이터 입력/가벼운 시연, 이서연 웹 UI/디자인, 심민성 전 과정 검수를 수행한다. [상세 의사결정 절차](../../../../docs/ISSUE_ASSIGNMENT_PLAYBOOK.md).
+
+
 **현행 역할:** 김채윤([#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358))은 실제 공고/포스터·공식 모집조건·권리/정정 자료와 독립 Gold를 공급한다. 신규 기능은 **심민성 최초 구조/계약 → 박준영 또는 이의상 기능 개발 주작성자 배정** 순서로 인수하며, 두 AI 개발자가 추천·코드/모델 결과를 상호 교차검증한다. **박준영은 AI 제품 기술 QA**를, 이서연([#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357))은 공고/추천 웹 화면과 API 연계를, 심민성([#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359))은 전 과정 검수를 맡는다. [루트 AGENTS](../../../../AGENTS.md).
 
 결정론 `evaluateOpportunity`, `rankOpportunities`, `composeFeed`와 featured/compact, 출처 revision·마감/적격 상태 `ELIGIBLE/INELIGIBLE/UNKNOWN`·제외 사유를 구분한다. 실제 학생 권한/소유권/출처·검증 시점은 API와 함께 확인하고, 모델 관련도와 공식 지원·합격 가능성을 구분한다. 독립 Gold의 존재·모델 시험 통과는 실행 증거로 확인한다.
