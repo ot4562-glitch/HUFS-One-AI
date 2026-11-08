@@ -37,7 +37,7 @@ export const EXTRA_SQL_ROLES=[
 ] as const;
 type ExtraSqlRole=typeof EXTRA_SQL_ROLES[number];
 export type OperatorManagedAi=Omit<PostgresProviderConfig,'pools'|'operation'>&{
-  operation:'HCX_005'|'HCX_007';
+  operation:'HCX_007';
   roles:Readonly<Record<'authority'|'budget'|'results',DataPoolSettings>>;
 };
 type ExtraSqlPools=Partial<Record<ExtraSqlRole,ManagedDataPool>>;
@@ -104,7 +104,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
   if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
   if(input.managedAi){
     const value=input.managedAi;
-    if(!['HCX_005','HCX_007'].includes(value.operation)||!value.roles
+    if(value.operation!=='HCX_007'||!value.roles
       ||Object.keys(value.roles).sort().join(',')!=='authority,budget,results'
       ||typeof value.sessionIsCurrent!=='function'||typeof value.secret!=='function'
       ||(value.enabled!==undefined&&typeof value.enabled!=='function')
