@@ -1,0 +1,41 @@
+name: Read-only npm dependency vulnerability audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout lockfile and audit tools only (never student sources)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /package.json
+            /package-lock.json
+            /tools/audit_dependency_vulnerabilities.mjs
+            /tools/tests/dependency-audit.node.mjs
+      - name: Prove original student/Forms data are absent
+        run: |
+          test ! -d csv
+          test ! -d local_only
+          test ! -d templates/real5-intake
+          test ! -d reference/hufsability/raw
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Verify parser and registry-outage fail-closed decisions offline
+        run: node --test tools/tests/dependency-audit.node.mjs
+      - name: Audit the committed lockfile without install or fix
+        run: node tools/audit_dependency_vulnerabilities.mjs
