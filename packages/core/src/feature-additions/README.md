@@ -1,5 +1,24 @@
 # 추가 기능 코어 선행 구현 (#341–#352)
 
+## 핵심: AI 추천은 LLM 호출과 다르다
+
+- 기본 추천은 **규칙·가중치·토픽 교집합·Jaccard·조건/시점 검증**으로 동작한다. `rankMentorsV2`와 `recommendLearningV2`는 기본적으로 `RULE_ONLY`이며 **HCX-007 또는 외부 LLM 호출이 전혀 없다**.
+- #339의 반복 행사 전망은 과거 일정 통계, #340 교환 자격은 판본별 규칙으로 계산한다. **#341의 자연어 FAQ RAG 답변**만 명시적으로 HCX-007을 필요로 한다. 다른 10개 기능에 HCX-007을 강제하지 않는다.
+- 추천 엔진의 최종 방식(가중치 조정, 형태소·동의어/집합 매칭, 임베딩, 필요한 경우에만 LLM)은 **박준영·이의상**이 결정한다. 기본 알고리즘을 대체하거나 추가 재정렬할 때도 기존 자격·근거·출처 검증은 유지한다. 모델 미설정/실패 시 규칙 추천으로 복귀한다.
+- `SemanticProposalSchema.modelVersion`은 추가 전략의 **버전 식별자**이며 LLM 구동 증거가 아니다. `AI_RERANKED`는 입력된 재정렬 후보가 검증됐음을 의미하지 유료 모델이 사용됐다는 뜻이 아니다.
+
+## 현재 협업 담당 (사용자 최신 지시)
+
+| 담당 | 책임 |
+| --- | --- |
+| **심민성** | #339~#352 기능 코어·공통 계약·안전성 및 선행 PR #342/#353. 실사용 연결 완료 선언은 하지 않음 |
+| **박준영·이의상** | **내부 추천 알고리즘 및 AI 추천 방식 구현**: 우선 코드 기반, 필요한 경우만 ML/LLM |
+| **김채윤** | **실데이터 생성·공식 출처/권리·내용/결과 검증, 독립 Gold 자료** |
+| **이서연** | **기존 웹사이트 UI 배치·동선·API 소비 화면 연결** |
+
+#339~#341의 시연 코어/API/UI는 [PR #342](https://github.com/ot4562-glitch/HUFS-One-AI/pull/342), #343~#352의 추가 코어와 Zod 입출력 계약은 [PR #353](https://github.com/ot4562-glitch/HUFS-One-AI/pull/353)에 있다. **두 PR 병합이 나머지 팀 작업이나 실제 서비스 배포를 자동 완료시키지는 않는다.**
+
+
 이 디렉터리는 **학교 운영 데이터·웹페이지·유료 AI를 전혀 연결하지 않는 순수 계산 코어**입니다. 확정 학교 자격/발급/상담/취업률을 생성하지 않습니다. 구현 책임 분리 지시에 따라 모델 포트·프런트엔드·DB·NCP 배치 코드는 여기서 건드리지 않습니다.
 
 ## 진행 매핑
@@ -26,7 +45,7 @@
 3. `RULE_ONLY`는 네이버 HCX/GPT/Laya **모델 호출 없음**을 의미합니다. AI가 필요할 때는 박준영·이의상의 서버 포트가 별도 실행·검증 후 후보만 입력하고, 적격·발급·마감·학교 규정 판단은 AI 점수로 덮지 않습니다.
 4. `READY_TO_CHECK`, `READY_FOR_OFFICIAL_REVIEW`, `SUPPORTED_BY_EVIDENCE`는 본인이 준비하거나 증빙을 연결할 준비 상태일 뿐 기관 인증·발급 또는 합격을 의미하지 않습니다.
 5. 취업통계의 0 공개·소표본 억제는 **출처별 공개 규칙**의 승인과 분리할 수 없습니다. 현재 계산 함수는 검증된 정책을 인자로 요구하며 정책 미확인 시 공개를 막습니다.
-6. 기존 `csv/` 5개 원본은 변경하지 않습니다. 이 PR은 `packages/core/src/feature-additions/` 신규 파일 외 다른 영역을 건드리지 않습니다.
+6. 기존 `csv/` 5개 원본은 변경하지 않습니다. 이 PR에는 `packages/core/src/feature-additions/` 이외에 `packages/contracts/src/feature-additions/` 및 NCP IaC 오프라인 CI의 안전한 수정도 포함한다. 기존 `csv/` 5개 원본은 변경하지 않는다.
 
 ## 검증·미완료 표기
 
@@ -68,7 +87,7 @@
 - npx vitest run packages/core/src/feature-additions tests/contracts/feature-additions-v2.test.ts tests/contracts/feature-additions-results.test.ts
 - npm run typecheck
 
-코어·계약의 해당 테스트는 2026-11-08 로컬 **193개 PASS**. 전체 로컬 주작업트리에는 범위 밖의 node-approved-egress.ts Headers iterable TS2488이 있어 full-root typecheck는 별도 실패로 보존; 정확한 PR HEAD CI 결과와 사람/실운영 인수는 별도 기록한다.
+당시 v2 코어·계약 **193개 PASS**는 중간 결과이며, 후속 보강으로 **230개 PASS(2026-11-08 로컬)**를 추가 확인했다. 전체 로컬 주작업트리에는 범위 밖의 node-approved-egress.ts Headers iterable TS2488이 있어 full-root typecheck는 별도 실패로 보존; 정확한 PR HEAD CI 결과와 사람/실운영 인수는 별도 기록한다.
 ## 2026-11-08 추가 구현·인수 준비 점검
 
 - #343: action-planner.ts / planScholarshipPreparation 는 checkScholarship 산출물과 **같은 공식 정책 판본**을 대조한 뒤, 증빙 미확인·검증된 미충족·철회된 정책 재확인 항목을 구분한다. 별도의 장학금 지급/학교 승인 판단이 아니다. 출력 계약 ScholarshipPreparationV2Schema.
@@ -81,3 +100,7 @@
 재현 테스트: 'npx vitest run packages/core/src/feature-additions tests/contracts/feature-additions-v2.test.ts tests/contracts/feature-additions-results.test.ts tests/api/feature-cursor.test.ts'. **230/230 PASS** (2026-11-08 로컬). 타입 검사/계약 빌드도 성공. 실 OAuth·실학교 자료·학생 A/B·NCP/모델 과금·Pages 운영 URL과 본선 이후 독립 검증은 **미인수**다.
 
 **병합 지침:** PR #342 → PR #353 순서로 비작성자 리뷰/정확한 HEAD CI를 확인하고 병합한다. 병합은 코드만 main에 합치는 작업이며 웹 화면·실DB·학교 데이터·HCX/OCR 모델 자동 연결은 하지 않는다. 실제 학교 자료는 김채윤 #324, UI/API/NCP 실운영은 이서연 #323, AI 모델과 품질은 박준영 #322·이의상 #321이 담당한다. #325는 공통 권한·보안과 최종 릴리스 게이트를 확인한다. 자동 이슈 종결 금지.
+
+## NCP IaC CI 복구
+
+기존 GitHub Terraform 공급자 서명 조회가 HTTP 504로 반복 실패했다. 이를 CI 예외 처리하거나 검사를 생략하지 않고, **공식 ncloud v4.0.7 ZIP의 SHA-256 검증 → 캐시된 로컬 파일시스템 미러 → 네트워크 없는 init/validate/mock test**로 바꿨다. 수집/해시가 실패하면 CI도 실패한다. `infra/ncp/terraform/provider-mirror.py`, `check-offline.py`, `ncp-iac-offline.yml` 및 14개 Python 부정 테스트로 재현한다. 수정 HEAD에서 NCP IaC Windows/Ubuntu/network-mock 잡 모두 성공했으나 실제 NCP API·apply·배포는 `NOT_RUN / RELEASE_BLOCKED`다.
