@@ -1,5 +1,5 @@
 /** #347 — NCS-like requirement/source evidence crosswalk and owner review. */
-import type {FeatureAdditions as C} from '@hufs-one/contracts';
+import {TOPIC_CODES,type FeatureAdditions as C} from '@hufs-one/contracts';
 import {safeIntersection,verifySemanticProposals,verifySource,
   type FeatureMode} from './source-policy.js';
 export type RequirementEvidenceRow={
@@ -29,7 +29,12 @@ export function compareSkillsV2(input:{
       || !req.source.evidenceSpanIds.includes(req.sourceSpanId)) return {...base,
         status:'NEEDS_REVIEW',interpretation:'UNKNOWN'};
     if (!req.topicCodes.length) return {...base,status:'UNMAPPED',interpretation:'UNKNOWN'};
-    const mapped=[...new Set(req.topicCodes.flatMap(c=>[c,...(xwalk.get(c)??[])]))].sort();
+    // Distinguish an unknown official taxonomy label from a genuinely absent
+    // student record: only approved One AI codes or reviewed crosswalks count.
+    const oneAiCodes=new Set<string>(TOPIC_CODES);
+    const mapped=[...new Set(req.topicCodes.flatMap(c=>[
+      ...(oneAiCodes.has(c)?[c]:[]),...(xwalk.get(c)??[]),
+    ]))].sort();
     // An unmapped requirement is not evidence that a student lacks capability.
     if (!mapped.length) return {...base,status:'UNMAPPED',interpretation:'UNKNOWN'};
     const eligible=input.experiences.filter(e=>e.approved && e.evidenceSpanIds.length>0
