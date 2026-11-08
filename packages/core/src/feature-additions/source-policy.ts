@@ -99,14 +99,28 @@ export function verifySemanticProposals(
   candidateEvidence: ReadonlyMap<string, readonly string[]>,
   proposals: readonly C.SemanticProposal[],
   expectedInputDigest: string,
+  options?:{requireCompleteSet?:boolean},
 ): ReadonlyMap<string,{score:number; evidenceCodes:readonly string[]}> {
   const output=new Map<string,{score:number;evidenceCodes:readonly string[]}>();
+  const strict=options?.requireCompleteSet===true;
+  let malformed=false;
+  const versions=new Set<string>();
   for (const p of proposals) {
     const allowed=candidateEvidence.get(p.candidateId);
     if (!allowed || output.has(p.candidateId) || p.inputDigest!==expectedInputDigest
+      || !p.modelVersion?.trim()
       || !Number.isFinite(p.score) || p.score<0 || p.score>1
-      || !p.evidenceCodes.length || p.evidenceCodes.some(id=>!allowed.includes(id))) continue;
+      || !p.evidenceCodes.length || p.evidenceCodes.some(id=>!allowed.includes(id))) {
+      malformed=true;
+      continue;
+    }
+    versions.add(p.modelVersion);
     output.set(p.candidateId,{score:p.score,evidenceCodes:[...new Set(p.evidenceCodes)].sort()});
   }
+  // Rankings require the entire preapproved candidate set. Reject even one
+  // hallucinated extra ID, duplicate, missing ID or mixed model version;
+  // partial filtering would accidentally allow a poisoned reranking.
+  if(strict && (malformed || versions.size!==1 || proposals.length!==candidateEvidence.size
+    || output.size!==candidateEvidence.size)) return new Map();
   return output;
 }
