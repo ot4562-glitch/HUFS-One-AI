@@ -243,3 +243,11 @@ describe('#350 — personalized study-group and tutoring ranking',()=>{
     expect(r.items.find(x=>x.programId==='closed')?.eligibility).toBe('NOT_MET');
   });
 });
+describe('#347 crosswalk coverage is distinct from student ability',()=>{
+  it('marks unreviewed taxonomy mapping as UNMAPPED, not as weak student skills',()=>{
+    const r=compareSkillsV2({requirements:[requirement()],
+      experiences:[experience()],crosswalk:[crosswalk({
+        source:{...source(),status:'REVOKED'}})],asOf:FIXED_NOW});
+    expect(r).toMatchObject([{status:'UNMAPPED',interpretation:'UNKNOWN'}]);
+  });
+});
