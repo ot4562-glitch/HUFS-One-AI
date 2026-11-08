@@ -69,6 +69,10 @@ function validBox(box:NormalizedBbox):boolean{
 }
 function imageMatches(span:Extract<SourceSpanVNext,{kind:'IMAGE'}>,
   original:TrustedImageOrigin):boolean{
+  // #381: a trusted OCR original with a repeated line id is ambiguous (a Map
+  // would keep the last copy and the result would depend on line order), so
+  // it supports no citation at all — even when the copies are identical.
+  if(new Set(original.ocrLines.map(x=>x.id)).size!==original.ocrLines.length)return false;
   if(!matchesImageSpan(span,{
     revisionId:original.revisionId,assetId:original.assetId,
     originalSha256:original.originalSha256,pageCount:original.pageCount,
