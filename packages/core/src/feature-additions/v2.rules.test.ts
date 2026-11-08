@@ -213,10 +213,12 @@ describe('#345 — counseling institutional routing',()=>{
     ],asOf:FIXED_NOW});
     expect(r.matches[0]?.officialApplicationUrl).toBeNull();
   });
-  it('limits recommendations to three and resolves duplicates',()=>{
+  it('limits recommendations to three and quarantines every copy of a duplicate',()=>{
+    // #364: the repeated 'a' is excluded entirely instead of keeping the first copy.
     const services=[agency('a'),agency('b'),agency('c'),agency('d'),agency('a')];
     const r=routeCounselingV2({purposes:['CAREER'],services,asOf:FIXED_NOW});
-    expect(r.matches.map(x=>x.serviceId)).toEqual(['a','b','c']);
+    expect(r.matches.map(x=>x.serviceId)).toEqual(['b','c','d']);
+    expect(r.excluded).toBe(2);
   });
 });
 describe('#346 — consented private activity evidence preparation',()=>{

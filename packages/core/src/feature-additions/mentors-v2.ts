@@ -1,6 +1,6 @@
 /** #344 — mentor similarity reranking (no AI calls in this module). */
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {jaccard,safeIntersection,verifySemanticProposals,verifySource,
+import {conflictingIds,jaccard,safeIntersection,verifySemanticProposals,verifySource,
   type FeatureMode} from './source-policy.js';
 
 export type MentorReason = {kind:'MAJOR'|'JOB'|'APPROVED_EXPERIENCE'|'MODEL_EVIDENCE';codes:readonly string[]};
@@ -33,10 +33,11 @@ export function rankMentorsV2(input:{
     {weight:0.30,used:preference.ownerApprovedTopics.length>0},
   ];
   const den=dims.filter(d=>d.used).reduce((sum,d)=>sum+d.weight,0);
-  const seen=new Set<string>();
+  // Every copy of a repeated mentor ID is quarantined: a later revoked or
+  // inactive copy must not be hidden by an earlier approved one.
+  const conflicts=conflictingIds(catalog);
   const candidates=catalog.filter(m=>{
-    if (seen.has(m.id)) return false;
-    seen.add(m.id);
+    if (conflicts.has(m.id)) return false;
     return m.active && verifySource(m.source,preference.asOf,mode).usable
       && (!preference.language||m.languages.includes(preference.language))
       && (!preference.campus||m.campuses.includes(preference.campus));
