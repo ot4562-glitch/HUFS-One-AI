@@ -40,8 +40,22 @@ const Exchange=z.strictObject({asOf:Iso,partnerId:Id,applicant:ExchangeApplicant
 const Ask=z.strictObject({asOf:Iso,question:z.string().trim().min(2).max(500)});
 /** Only explicitly injected, currently revalidated BETA routes. No public or synthetic backdoor. */
 export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAssistServices,session:Session):void{
+  // Invalid or timezone-less timestamps must never pass a NaN comparison.
+  const strictTime=(value:string):number=>{
+    if(!Iso.safeParse(value).success)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const time=Date.parse(value);
+    if(!Number.isFinite(time))throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    return time;
+  };
+  const validReceipt=(receipt:Receipt,actor:VerifiedActor,now:string):void=>{
+    if(receipt.actorId!==actor.actorId||!receipt.sourceVersion?.trim()
+      ||strictTime(receipt.expiresAt)<=strictTime(now))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+  };
   const verify=async(request:Parameters<VerifySession>[0]):Promise<VerifiedActor>=>{
-    const actor=authorizeSession(await session.verify(request),session.now());
+    const now=session.now();
+    strictTime(now);
+    const actor=authorizeSession(await session.verify(request),now);
     if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
     return actor;
   };
@@ -52,17 +66,19 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
     return fresh;
   };
   const read=async<T>(port:SourcePort<T>,actor:VerifiedActor,asOf:string):Promise<Snapshot<T>>=>{
-    if(Date.parse(asOf)>Date.parse(session.now()))throw new ApiFailure('FORBIDDEN');
+    if(strictTime(asOf)>strictTime(session.now()))throw new ApiFailure('FORBIDDEN');
     const snapshot=await port.read({actor,asOf});
-    if(!snapshot||snapshot.receipt.actorId!==actor.actorId||!snapshot.receipt.sourceVersion
-      ||Date.parse(snapshot.receipt.expiresAt)<=Date.parse(session.now()))
-      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    if(!snapshot?.receipt)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    validReceipt(snapshot.receipt,actor,session.now());
     return snapshot;
   };
   const current=async<T>(request:Parameters<VerifySession>[0],actor:VerifiedActor,port:SourcePort<T>,snapshot:Snapshot<T>)=>{
     const fresh=await same(request,actor);
+    validReceipt(snapshot.receipt,fresh,session.now());
     if(!await port.revalidate({actor:fresh,receipt:snapshot.receipt,now:session.now()}))
       throw new ApiFailure('FORBIDDEN');
+    // Rights validation may be asynchronous. Recheck the TTL after it returns.
+    validReceipt(snapshot.receipt,fresh,session.now());
   };
   if(services.activities){
     const port=services.activities;
