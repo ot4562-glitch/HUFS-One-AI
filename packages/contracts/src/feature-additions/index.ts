@@ -37,6 +37,7 @@ export const FeatureVerifiedFactSchema = z.strictObject({
   provenance: z.enum(['SOURCE_VERIFIED','OWNER_SELF_REPORTED']),
   observedAt: Iso,
   sourceRevisionId: Id.optional(),
+  academicTerm: Id.optional(), // independently verified observation term
 });
 export type FeatureVerifiedFact = z.infer<typeof FeatureVerifiedFactSchema>;
 export const FeatureConditionSchema = z.strictObject({
@@ -46,6 +47,7 @@ export const FeatureConditionSchema = z.strictObject({
   expected: z.union([z.number().finite(),z.string().max(256),z.boolean(),BoundedCodeList]),
   sourceSpanId: Id,
   required: z.boolean(),
+  factTerm: Id.optional(), // term the official rule requires (e.g. prior semester)
 }).superRefine((condition,ctx)=>{
   const e=condition.expected;
   const valid=condition.op==='NUM_GTE'||condition.op==='NUM_LTE'
@@ -151,6 +153,7 @@ export const OpportunityQuerySchema = z.strictObject({
   category: Id.optional(), campus: Id.optional(),
   eligibility: z.enum(['MET','NOT_MET','UNKNOWN']).optional(),
   deadlineBefore: Iso.optional(),
+  includeClosed: z.boolean().optional(),
   sort: z.enum(['TITLE','DEADLINE_ASC','PUBLISHED_DESC']).default('TITLE'),
   asOf: Iso, pageSize: z.number().int().min(1).max(50).default(20),
 });
@@ -160,6 +163,7 @@ export const BadgeDefinitionSchema = z.strictObject({
   id: Id, source: FeatureSourceSchema,
   groups: z.array(z.strictObject({
     id: Id, join: z.enum(['ALL','ANY']),
+    allowActivityReuse: z.boolean().optional(), // only if official issuer allows reuse
     requirements: z.array(z.strictObject({
       id: Id, topicCode: TopicCodeSchema,
       minimumDistinctActivities: z.number().int().min(1).max(1000),
