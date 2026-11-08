@@ -209,7 +209,7 @@ GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위�
 
 **P0·보안 이슈:** P0 및 보안·개인정보 관련 내용은 자동 배정하지 않고 사람 검토로 보냅니다. 공격 재현법·비밀·학생 원본은 공개 이슈에 올리지 말고 GitHub의 비공개 보안 신고 또는 관리자 비공개 채널을 사용하세요. 결함 조사에는 `[버그][코드 전수조사]`, 정정해야 할 공식 데이터에는 `[데이터 요청][정정]`을 사용합니다. 문서/성능/리팩터링은 새로운 제목 접두어를 만들기보다 `type:docs`, `type:performance`, `type:refactor` 라벨로 관리합니다.
 
-**[봇 자동 라벨·공정 배정 가이드](docs/ISSUE_ROUTING_BOT.md)** · **[새 이슈 템플릿](.github/ISSUE_TEMPLATE/)** · **[Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)**. PR #382의 기능이 `main`에 병합되기 전에는 새 자동화가 활성화된 것으로 간주하지 마세요. 팀 고정 역할 이슈 #355–#359는 읽기 전용이며 기존 실제 자료/개인정보·`csv/` 원본 5개는 보호합니다.
+**[보안 취약점 비공개 신고](SECURITY.md)** · **[봇 자동 라벨·공정 배정 가이드](docs/ISSUE_ROUTING_BOT.md)** · **[새 이슈 템플릿](.github/ISSUE_TEMPLATE/)** · **[Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)**. PR #382의 기능이 `main`에 병합되기 전에는 새 자동화가 활성화된 것으로 간주하지 마세요. 팀 고정 역할 이슈 #355–#359는 읽기 전용이며 기존 실제 자료/개인정보·`csv/` 원본 5개는 보호합니다.
 
 ## 팀과 협업
 
