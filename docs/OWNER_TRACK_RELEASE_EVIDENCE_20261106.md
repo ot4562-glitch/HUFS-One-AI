@@ -5,7 +5,7 @@
 
 > **기준:** `OWNER_CONFIRMED_APPROVED`는 프로젝트 승인이다. 개인별 현재 동의·권리, 실 Google/학교메일·NCP/TLS·DB CA·모델·운영비·실학생·사람 인수 통과를 의미하지 않는다. 운영 책임은 [이서연 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 전체 보안/DB·출시 게이트는 [심민성 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)으로 분리 인수. 현행 구현 상태 [STATUS](../STATUS.md).
 
-## 2026-11-07 최신 이슈 분리·담당 배정
+## 2026-11-07 당시 이슈 분리·담당 배정 — 역사적 기록 (현행 배정 아님)
 
 | 현재 OPEN 7개 | 담당 |
 | --- | --- |
