@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import type {ExchangeApplicant,ExchangePolicy} from '@hufs-one/contracts';
-import {evaluateExchange} from './exchange.js';
+import {evaluateExchange,exchangePolicyInEffect} from './exchange.js';
 const NOW='2026-06-01T00:00:00Z';
 const policy:ExchangePolicy={
   ruleId:'SYN-OIA',sourceRevision:'SYN-POLICY-1',sourceUrl:'https://example.org/synthetic-exchange',
@@ -69,5 +69,36 @@ describe('deterministic exchange checks (#340)',()=>{
       expect(r.result).toBe('UNKNOWN');
       expect(r.checks.every(c=>c.status==='UNKNOWN')).toBe(true);
     }
+  });
+});
+
+describe('#365 policy dates are Asia/Seoul calendar days',()=>{
+  const window={effectiveFrom:'2026-11-08',effectiveUntil:'2026-11-30'};
+  it.each([
+    ['2026-11-07T23:59:59.999+09:00',false,'one ms before KST start'],
+    ['2026-11-08T00:00:00+09:00',true,'KST start'],
+    ['2026-11-08T00:30:00+09:00',true,'issue example: KST 00:30 on the start day'],
+    ['2026-11-07T15:00:00Z',true,'same instant as KST start, written in UTC'],
+    ['2026-11-07T14:59:59Z',false,'UTC instant just before KST start'],
+    ['2026-11-30T23:59:59.999+09:00',true,'last ms of the inclusive end day'],
+    ['2026-12-01T00:00:00+09:00',false,'KST start of the next day'],
+    ['2026-12-01T00:30:00+09:00',false,'issue example: KST 00:30 after the end day'],
+    ['2026-11-30T15:00:00Z',false,'UTC form of KST 12-01 00:00'],
+    ['2026-11-30T09:00:00-05:00',true,'another offset, still 11-30 23:00 KST'],
+  ])('%s -> %s (%s)',(asOf,expected)=>{
+    expect(exchangePolicyInEffect(window,asOf)).toBe(expected);
+  });
+  it('open-ended policies have no end',()=>{
+    expect(exchangePolicyInEffect({effectiveFrom:'2026-11-08'},'2099-01-01T00:00:00+09:00')).toBe(true);
+  });
+  it('evaluateExchange uses the same boundary',()=>{
+    const p={...policy,publishedAt:'2026-11-01T00:00:00Z',verifiedAt:'2026-11-01T00:00:00Z',...window};
+    const inside=evaluateExchange(applicant,p,'2026-11-08T00:30:00+09:00');
+    expect(inside.checks.find(c=>c.code==='TRACK')?.status).toBe('PASS');
+    const after=evaluateExchange(applicant,p,'2026-12-01T00:30:00+09:00');
+    expect(after.checks.every(c=>c.status==='UNKNOWN')).toBe(true);
+  });
+  it('rejects an invalid asOf',()=>{
+    expect(()=>exchangePolicyInEffect(window,'not-a-date')).toThrow(RangeError);
   });
 });

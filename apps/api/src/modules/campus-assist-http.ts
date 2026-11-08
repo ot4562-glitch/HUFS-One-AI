@@ -5,7 +5,7 @@ import {ActivityRecordSchema,ExchangeApplicantSchema,ExchangePolicySchema,
 import type {VerifiedActor,VerifySession} from '../types.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './auth/gates.js';
 import {archiveActivities,forecastActivity} from '../../../../packages/core/src/campus-assist/activities.js';
-import {evaluateExchange} from '../../../../packages/core/src/campus-assist/exchange.js';
+import {evaluateExchange,exchangePolicyInEffect} from '../../../../packages/core/src/campus-assist/exchange.js';
 import {retrieveFaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
 import {buildFaqHcx007Request,parseFaqHcx007Response} from '../../../../packages/ai/src/faq-hcx007.js';
 
@@ -101,8 +101,8 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const partners=[...grouped.values()].filter(group=>group.length===1).map(group=>group[0]!)
         .filter(r=>r.rights==='APPROVED'&&Date.parse(r.publishedAt)<=Date.parse(args.asOf)
           &&Date.parse(r.verifiedAt)<=Date.parse(args.asOf)
-          &&r.effectiveFrom<=args.asOf.slice(0,10)
-          &&(!r.effectiveUntil||r.effectiveUntil>=args.asOf.slice(0,10)))
+          // Same KST day-boundary rule as evaluateExchange (#365).
+          &&exchangePolicyInEffect(r,args.asOf))
         .sort((a,b)=>a.partnerId.localeCompare(b.partnerId)).slice(0,50)
         .map(r=>({partnerId:r.partnerId,track:r.track,minimumGpa:r.minimumGpa,
           ...(r.partnerMinimumGpa!==undefined?{partnerMinimumGpa:r.partnerMinimumGpa}:{}),
