@@ -8,6 +8,7 @@
  */
 import {z} from 'zod';
 import {OpportunityCatalogItemSchema} from './index.js';
+import {OfficialHttpsUrlSchema} from './official-url.js';
 
 const Id=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const Code=z.string().min(1).max(128);
@@ -52,7 +53,7 @@ export const CounselingGuideV2Schema=z.strictObject({
     audienceState:z.enum(['CONFIRMED','UNKNOWN']),
     campusState:z.enum(['CONFIRMED','UNKNOWN']),
     languageState:z.enum(['CONFIRMED','UNKNOWN']),
-    officialApplicationUrl:z.url().nullable(),
+    officialApplicationUrl:OfficialHttpsUrlSchema.nullable(),
     sourceRevisionId:Id,
   })).max(3),
   excluded:z.number().int().nonnegative(),
