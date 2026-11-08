@@ -54,6 +54,18 @@ describe('SourceRevision/time rights gate used by all new features',()=>{
   });
 });
 describe('verified fact evaluation does not promote untrusted fields',()=>{
+  it('rejects a stale semester GPA even when the observation timestamp is permitted',()=>{
+    const r=evaluateVerifiedCondition(condition(),[fact(3.9,{
+      academicTerm:'2024-1',observedAt:'2024-03-01T12:00:00+09:00'})],
+      FIXED_NOW,FACT_REVISIONS);
+    expect(r).toMatchObject({state:'UNKNOWN',reason:'FACT_OUT_OF_TERM'});
+  });
+  it('requires the official rule to specify the GPA evidence term',()=>{
+    const r=evaluateVerifiedCondition(condition({factTerm:undefined}),[fact(3.9)],
+      FIXED_NOW,FACT_REVISIONS);
+    expect(r).toMatchObject({state:'UNKNOWN',reason:'FACT_TERM_UNSPECIFIED'});
+  });
+
   it('supports inclusive numeric boundary',()=>{
     expect(evaluateVerifiedCondition(condition(),[fact(3.5)],FIXED_NOW,FACT_REVISIONS).state).toBe('MET');
     expect(evaluateVerifiedCondition(condition(),[fact(3.49)],FIXED_NOW,FACT_REVISIONS).state).toBe('NOT_MET');
@@ -250,6 +262,20 @@ describe('#346 — consented private activity evidence preparation',()=>{
   });
 });
 describe('#349 — badge prerequisites are not badge issuance',()=>{
+  it('abstains when two ALL requirements reuse the same activity without issuer permission',()=>{
+    const shared=badge({groups:[{id:'multiple',join:'ALL',requirements:[
+      {id:'data',topicCode:'DATA_ANALYTICS',minimumDistinctActivities:2},
+      {id:'design',topicCode:'PRODUCT_UX',minimumDistinctActivities:2}]}]});
+    const evidence=[badgeEvidence('A',{topicCodes:['DATA_ANALYTICS','PRODUCT_UX']}),
+      badgeEvidence('B',{topicCodes:['DATA_ANALYTICS','PRODUCT_UX']})];
+    const r=prepareBadgeV2({badge:shared,evidence,asOf:FIXED_NOW});
+    expect(r.status).toBe('UNKNOWN');
+    expect(r.groups[0]?.reason).toBe('ACTIVITY_REUSE_UNVERIFIED');
+    const withPermission=prepareBadgeV2({badge:badge({groups:[{
+      ...shared.groups[0]!,allowActivityReuse:true}]}),evidence,asOf:FIXED_NOW});
+    expect(withPermission.status).toBe('READY_TO_REQUEST_REVIEW');
+  });
+
   it('requires two distinct owner-reviewed activities',()=>{
     const r=prepareBadgeV2({badge:badge(),evidence:[badgeEvidence('A'),badgeEvidence('A')],
       asOf:FIXED_NOW});
