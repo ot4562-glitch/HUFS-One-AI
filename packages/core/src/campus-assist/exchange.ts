@@ -22,6 +22,31 @@ export function exchangePolicyInEffect(
   if(!Number.isFinite(start)||Number.isNaN(endExclusive))return false;
   return start<=at&&at<endExclusive;
 }
+export type ExchangePolicyResolution={
+  policy:ExchangePolicy|null;
+  reason:'CURRENT'|'NONE_IN_EFFECT'|'REVOKED_OR_BLOCKED_IN_EFFECT'|'CONFLICTING_IN_EFFECT';
+};
+/**
+ * The one policy row that governs `partnerId`+`track` at `asOf` (#379).
+ * Rows not yet published or verified at `asOf` are ignored; among the rows in
+ * effect at `asOf` (KST day rule above): any REVOKED/BLOCKED row quarantines
+ * the pair (a revocation never falls back to an older approval), two or more
+ * approved rows are a conflict, and exactly one approved row is current.
+ * Old and new editions with non-overlapping windows therefore no longer hide
+ * each other. The partner list and the evaluation must both use this.
+ */
+export function resolveExchangePolicy(
+  rules:readonly ExchangePolicy[],partnerId:string,track:ExchangePolicy['track'],asOf:string,
+):ExchangePolicyResolution{
+  const at=Date.parse(asOf);
+  if(!Number.isFinite(at))throw new RangeError('Invalid asOf');
+  const inEffect=rules.filter(r=>r.partnerId===partnerId&&r.track===track
+    &&Date.parse(r.publishedAt)<=at&&Date.parse(r.verifiedAt)<=at&&exchangePolicyInEffect(r,asOf));
+  if(!inEffect.length)return {policy:null,reason:'NONE_IN_EFFECT'};
+  if(inEffect.some(r=>r.rights!=='APPROVED'))return {policy:null,reason:'REVOKED_OR_BLOCKED_IN_EFFECT'};
+  if(inEffect.length>1)return {policy:null,reason:'CONFLICTING_IN_EFFECT'};
+  return {policy:inEffect[0]!,reason:'CURRENT'};
+}
 export function evaluateExchange(rawApplicant:ExchangeApplicant,rawPolicy:ExchangePolicy|null,asOf:string):ExchangeResult{
   const applicant=ExchangeApplicantSchema.parse(rawApplicant);
   const clock=Date.parse(asOf);
