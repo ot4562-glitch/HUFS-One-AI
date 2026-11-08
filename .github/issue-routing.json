@@ -1,0 +1,11 @@
+{
+  "protectedIssueNumbers": [355, 356, 357, 358, 359],
+  "areas": {
+    "integration": {"members": [{"login": "ot4562-glitch", "capacity": 1}]},
+    "ai": {"members": [{"login": "taewangim-alt", "capacity": 1}, {"login": "uisang2004-maker", "capacity": 1}]},
+    "web": {"members": [{"login": "lhh42001", "capacity": 1}]},
+    "data": {"members": [{"login": "qamarrchae", "capacity": 1}]}
+  },
+  "effortPoints": {"S": 1, "M": 3, "L": 8},
+  "defaultEffortPoints": 3
+}
