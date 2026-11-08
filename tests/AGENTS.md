@@ -1,5 +1,7 @@
 # 독립 검증과 정직한 결과
 
+**현행 QA 협업:** 박준영 `taewangim-alt`([#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356))은 **AI 제품 기술 QA·독립 Gold 정량 평가·결함 재현/재시험**을 주도하고, 이의상 `uisang2004-maker`([#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355))과 AI 코드/모델 결과를 양방향 교차검증한다. 김채윤 `qamarrchae`([#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358))은 실데이터·Gold와 전체 사용자 동선의 가벼운 시연·간단 이슈 제보를 제공한다. 이서연은 웹 UI 구현/접근성 코드를 작성하고 심민성은 테스트 계약·보안·전 과정 코드/릴리스 검수를 수행한다. 새 `[추가 기능]`은 심민성이 최초 구조/기본 테스트를 설계한 뒤 박준영 또는 이의상에게 구현을 인계한다. [루트 AGENTS](../AGENTS.md).
+
 테스트는 **합성/일회용 PostgreSQL/Chrome/NCP offline mock**과 별도 실제 사람/실학교/운영 환경을 구분한다. Zod/공통 API 소비자 4트랙·SourceRevision/AI·학점/공지·actor/SharingGrant·20개 전환·동시성/철회·401/403/409/429/503/비밀·배포 산출물 부정시험을 재현한다.
 
 `npm run check`, `npm run check:privacy`, `npm run audit:api-contracts`와 실제 HEAD Actions 명시. 실패·SKIP·NOT_RUN을 숨기지 않고, 테스트가 PASS해도 인적 Gold/공식 RulePack·실 NCP/PG/Google/학교메일/스린리더 승인으로 승격 금지. 개인 CSV/실원문/키·실명↔SID는 어떤 fixture/CI에도 포함하지 않는다.
