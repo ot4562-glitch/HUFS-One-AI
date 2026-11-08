@@ -54,5 +54,6 @@
 - GitHub `GITHUB_TOKEN`의 `issues:write`와 `contents:read`만 사용하며, 외부 토큰·유료 API는 필요하지 않습니다. 이슈 제목·본문을 셸 명령으로 실행하지 않습니다.
 - 보호 이슈·수동 배정은 유지하고, 애매한 문제는 검토 대상으로 보류합니다. 담당자 배정이 GitHub API에서 거절되면 `triage:needs-review`로 기록합니다.
 - GitHub Actions의 동시 실행은 리포지터리 단위로 직렬화합니다. 완전한 일정·휴가·PR 리뷰 시간을 자동 인지하는 것은 아닙니다.
+- **지연된 이벤트 보호:** `opened/edited/reopened/labeled/unlabeled` 이벤트와 수동 실행 모두 최신 GitHub 이슈를 재조회하며, 담당자 지정 직전에 담당자·`routing:hold`·P0·보안·제목·분류·닫힘 상태를 다시 검사합니다. 사람이 상태를 바꾸었다면 기존 담당자/보류를 우선하고 자동 배정을 중단합니다. GitHub `addAssignees` API는 트랜잭션식 조건부 쓰기를 제공하지 않으므로 마지막 조회 이후의 극히 짧은 경쟁 창은 남습니다. 운영 중에는 수동 `routing:hold`를 우선 사용하고 활동 로그를 점검하세요.
 - 테스트: `node --test tests/automation/issue-router.test.cjs` (보호 이슈, 최초 배정, AI 공정 배정, 수동 배정 유지, 모호함, 수동 홀드, dry-run, 오류 복구).
 - 코드나 문서 변경만으로 실제 운영 환경에서 GitHub Actions 실행이 성공했다고 주장하지 않습니다. PR HEAD의 CI와 기본 브랜치 활성화 결과를 따로 확인해야 합니다.
