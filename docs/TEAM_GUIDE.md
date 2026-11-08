@@ -4,6 +4,12 @@
 
 **과거 PR 증거(#292/#293/#295/#304)와 최신 통합:** [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)에서 본선 전 11개를 종결하고 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)에서 합성 홈 3단계/공고 검색·필터·정렬을 추가(정확한 PR HEAD 및 병합 main `d8e2144` Actions 각 4/4 PASS). 실제 학교 계정·NCP/학사 원장/사람 인수는 여전히 NOT_RUN/RELEASE_BLOCKED. 이하 기존 개별 근거: [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다. 학생용 실제 학교 로그인(#297/#299), 박준영 학사 수집자료의 서버/화면 적용(#301), 모델 실호출·캐시 재생 증빙(#302)은 아직 준비가 필요합니다.
 
+## 처음 합류한 에이전트·팀원의 이슈 작성
+
+기능/버그를 발견하면 먼저 [루트 AGENTS](../AGENTS.md)와 [이슈 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md)을 읽고 기존 이슈/PR 중복을 확인하세요. **제목 맨 앞에 `[추가 기능]` / `[데이터 요청]` / `[웹 구현]` / `[AI 구현]` / `[AI QA]` / `[기술 통합]` 중 알맞은 접두어를 붙이세요.** 어느 분야가 책임져야 할지 모르면 `[분류 검토]`로 작성하면 사람 검토 대상으로 남습니다. AI가 포함된 **신규 기능 전체**는 항상 `[추가 기능]`으로 시작해 심민성 최초 구현·별도 데이터 요청·AI 인계를 거칩니다.
+
+우선순위 `P1/P2/P3`와 작업 강도 `effort:S/M/L`은 별도로 표기하고, 정확한 재현·수용 기준과 실자료/권리 경계를 적으세요. `[TASK-xx]`만으로는 자동 배정이 보장되지 않습니다. 자동화는 [봇 설명](ISSUE_ROUTING_BOT.md) 및 PR #382의 병합 상태를 확인하세요. **역할 이슈 #355–#359는 절대 수정하지 않습니다.**
+
 ## 현재 업무·추가 기능 인계 (2026-11-08)
 
 팀원의 현행 고정 역할 이슈 **#355–#359는 이제 읽기 전용**이다. 제목·본문·댓글·담당자·상태를 변경하지 않는다. 상세 실행은 [팀 운영 정본](WORKSTREAMS.md)과 [에이전트 자동 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md), 실제 데이터 요청은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)에서 관리한다.
