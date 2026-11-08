@@ -1,4 +1,6 @@
 export * from './topics/index.js';
+// Opt-in addition namespace; keep away from bottom where PR #342 adds campus-assist.
+export * as FeatureAdditions from './feature-additions/index.js';
 export * from './corpus/index.js';
 export * from './recommendation-inputs/index.js';
 export * from './academics/index.js';
@@ -15,6 +17,3 @@ export * from './demo-overlay/index.js';
 export * from './local-accounts/index.js';
 export * from './local-accounts/demo-profile.js';
 export * from './demo-scenarios/index.js';
-
-// Opt-in versioned addition contracts; existing consumers remain unchanged.
-export * as FeatureAdditions from './feature-additions/index.js';
