@@ -28,6 +28,9 @@ const isProtected = issue => settings.protectedIssueNumbers.includes(issue.numbe
 
 function classify(issue) {
   const title = String(issue.title || '').trim();
+  if (hasPrefix(title, ['[\ubd84\ub958 \uac80\ud1a0]'])) {
+    return {area: null, reason: 'Manual triage explicitly requested'};
+  }
   const present = new Set(getNames(issue));
   const explicit = AREA_LABELS.filter(label => present.has(label)).map(label => label.slice(5));
   if (explicit.length > 1) return {area: null, reason: 'Conflicting area labels'};
