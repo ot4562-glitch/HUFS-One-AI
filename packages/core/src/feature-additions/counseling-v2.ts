@@ -6,6 +6,8 @@ export type CounselingMatch={
   serviceId:string; score:number; exactPurposes:readonly string[];
   relatedPurposes:readonly string[];
   audienceState:'CONFIRMED'|'UNKNOWN';
+  campusState:'CONFIRMED'|'UNKNOWN';
+  languageState:'CONFIRMED'|'UNKNOWN';
   officialApplicationUrl:string|null;
   sourceRevisionId:string;
 };
@@ -28,7 +30,9 @@ export function routeCounselingV2(input:{
     seen.add(s.id);
     if (!s.active || !verifySource(s.source,input.asOf,input.mode).usable
       || (input.campus && s.campuses.length>0 && !s.campuses.includes(input.campus))
-      || (input.language && s.languages.length>0 && !s.languages.includes(input.language))) {
+      || (input.language && s.languages.length>0 && !s.languages.includes(input.language))
+      || (input.audienceCodes?.length && s.audienceCodes.length>0
+        && safeIntersection(input.audienceCodes,s.audienceCodes).length===0)) {
       excluded++;return [];
     }
     const exact=safeIntersection(input.purposes,s.purposeCodes);
@@ -38,8 +42,12 @@ export function routeCounselingV2(input:{
     const audienceKnown=input.audienceCodes?.length
       ? !!safeIntersection(input.audienceCodes,s.audienceCodes).length : s.audienceCodes.length===0;
     const audienceState=audienceKnown?'CONFIRMED' as const:'UNKNOWN' as const;
-    const campus=input.campus&&s.campuses.includes(input.campus)?1:0;
-    const language=input.language&&s.languages.includes(input.language)?1:0;
+    const campusState=input.campus&&s.campuses.includes(input.campus)
+      ?'CONFIRMED' as const:'UNKNOWN' as const;
+    const languageState=input.language&&s.languages.includes(input.language)
+      ?'CONFIRMED' as const:'UNKNOWN' as const;
+    const campus=campusState==='CONFIRMED'?1:0;
+    const language=languageState==='CONFIRMED'?1:0;
     const score=3*exact.length+related.length+campus+language;
     let officialApplicationUrl:string|null=null;
     try {
@@ -51,7 +59,8 @@ export function routeCounselingV2(input:{
       }
     } catch { /* untrusted URL is not a valid application destination */ }
     return [{serviceId:s.id,score,exactPurposes:exact,relatedPurposes:related,
-      audienceState,officialApplicationUrl,sourceRevisionId:s.source.revisionId}];
+      audienceState,campusState,languageState,officialApplicationUrl,
+      sourceRevisionId:s.source.revisionId}];
   });
   matches.sort((a,b)=>b.score-a.score||a.serviceId.localeCompare(b.serviceId,'en'));
   return {matches:matches.slice(0,3),excluded,status:matches.length?'MATCHES':'NO_MATCH'};
