@@ -24,17 +24,25 @@ export function evaluateExchange(rawApplicant:ExchangeApplicant,rawPolicy:Exchan
   const minimum=policy.minimumGpa;
   add('GPA',applicant.gpa===undefined?'UNKNOWN':applicant.gpa>=minimum?'PASS':'FAIL',
     applicant.gpa===undefined?'평점 기준 입력 필요':'일반 평점 기준 '+minimum.toFixed(1)+' 이상과 대조했습니다.');
-  const max=applicant.duration===1?5:4, leave=applicant.duration===1?6:5;
+  const term=applicant.duration===1?policy.termRules?.one:policy.termRules?.two;
   const sem=applicant.completedSemesters;
-  const pass=sem!==undefined&&(applicant.status==='ENROLLED'&&sem>=2&&sem<=max
-    ||applicant.status==='LEAVE'&&sem===leave);
-  add('SEMESTERS',applicant.status==='UNKNOWN'||sem===undefined?'UNKNOWN':pass?'PASS':'FAIL',
-    '1학기 파견은 재학 2~5/휴학 6학기, 2학기 파견은 재학 2~4/휴학 5학기 기준을 별도로 대조합니다.');
-  add('TRANSFER',applicant.duration===1?'NOT_APPLICABLE':applicant.transfer===undefined?'UNKNOWN'
-    :applicant.transfer?'FAIL':'PASS','2학기 프로그램의 편입생 제한은 1학기 프로그램과 구분합니다.');
-  add('CANCELLATION',applicant.previousCancellation==='UNKNOWN'?'UNKNOWN'
-    :applicant.previousCancellation==='CANCELLED'?'FAIL':'PASS',
-    '이전 선발 프로그램 취소 이력은 현재 제도 범위의 공식 확인이 필요합니다.');
+  const interval=applicant.status==='ENROLLED'?term?.ENROLLED:applicant.status==='LEAVE'?term?.LEAVE:undefined;
+  add('SEMESTERS',sem===undefined||!interval?'UNKNOWN'
+    :sem>=interval.min&&sem<=interval.max?'PASS':'FAIL',
+    interval?'규정 판본의 수료 학기 허용 구간 '+interval.min+'~'+interval.max+'와 대조했습니다.'
+      :'학적별 파견 가능 수료 학기 구간의 최신 공식 근거가 누락되어 보류합니다.');
+  let transfer:Status='NOT_APPLICABLE';
+  if(applicant.duration===2)transfer=policy.twoSemesterTransfersAllowed===undefined
+    ||applicant.transfer===undefined?'UNKNOWN'
+    :applicant.transfer&&!policy.twoSemesterTransfersAllowed?'FAIL':'PASS';
+  add('TRANSFER',transfer,policy.twoSemesterTransfersAllowed===undefined
+    ?'2학기 프로그램의 편입생 제한 규정 출처가 미확인입니다.'
+    :'2학기 프로그램의 확인된 편입생 제한과 대조했습니다.');
+  const prior=policy.priorCancellationAllowed;
+  add('CANCELLATION',prior===undefined||applicant.previousCancellation==='UNKNOWN'?'UNKNOWN'
+    :applicant.previousCancellation==='CANCELLED'&&!prior?'FAIL':'PASS',
+    prior===undefined?'이전 선발 취소 이력에 대한 현행 규정 확인이 필요합니다.'
+      :'규정 판본의 과거 취소 이력 제한을 대조했습니다.');
   add('PARTNER_GPA',policy.partnerMinimumGpa===undefined?'UNKNOWN':applicant.gpa===undefined?'UNKNOWN'
     :applicant.gpa>=policy.partnerMinimumGpa?'PASS':'FAIL',
     policy.partnerMinimumGpa===undefined?'파견대학별 평점 요건이 아직 검증되지 않았습니다.':'파견대학별 추가 평점 기준을 대조했습니다.');

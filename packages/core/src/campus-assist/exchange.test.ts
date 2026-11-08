@@ -7,6 +7,9 @@ const policy:ExchangePolicy={
   track:'OIA',publishedAt:'2025-01-01T00:00:00Z',verifiedAt:'2025-01-02T00:00:00Z',
   effectiveFrom:'2025-01-01',rights:'APPROVED',provenance:'SYNTHETIC',
   minimumGpa:3,partnerMinimumGpa:3,partnerId:'SYN-UNI-A',
+  termRules:{one:{ENROLLED:{min:2,max:5},LEAVE:{min:6,max:6}},
+    two:{ENROLLED:{min:2,max:4},LEAVE:{min:5,max:5}}},
+  twoSemesterTransfersAllowed:false,priorCancellationAllowed:false,
   requiredLanguage:{test:'TOEFL',minimumScore:80},
 };
 const applicant:ExchangeApplicant={
@@ -45,6 +48,10 @@ describe('deterministic exchange checks (#340)',()=>{
     {name:'partner language unpublished',change:{},policy:{requiredLanguage:undefined},check:'LANGUAGE',status:'UNKNOWN',overall:'UNKNOWN'},
     {name:'wrong selection track',change:{track:'DEPARTMENT'},check:'TRACK',status:'UNKNOWN',overall:'UNKNOWN'},
     {name:'unverified school year',change:{status:'UNKNOWN'},check:'SEMESTERS',status:'UNKNOWN',overall:'UNKNOWN'},
+    {name:'semester rule missing in policy',change:{},policy:{termRules:undefined},check:'SEMESTERS',status:'UNKNOWN',overall:'UNKNOWN'},
+    {name:'transfer rule missing in policy',change:{duration:2},policy:{twoSemesterTransfersAllowed:undefined},check:'TRANSFER',status:'UNKNOWN',overall:'UNKNOWN'},
+    {name:'prior cancellation rule missing',change:{},policy:{priorCancellationAllowed:undefined},check:'CANCELLATION',status:'UNKNOWN',overall:'UNKNOWN'},
+    {name:'prior cancellation allowed in policy',change:{previousCancellation:'CANCELLED'},policy:{priorCancellationAllowed:true},overall:'PASS'},
   ];
   it.each(cases)('$name',({change,policy:override,check,status,overall})=>{
     const clean=(value:Record<string,unknown>)=>Object.fromEntries(Object.entries(value).filter(([,v])=>v!==undefined));

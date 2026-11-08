@@ -18,18 +18,28 @@ export const SYNTHETIC_ACTIVITIES:readonly ActivityRecord[]=orgs.flatMap((org,in
     sourceUrl:'https://example.org/synthetic/activity/'+org.id+'/'+year,
     status:'CONFIRMED' as const,rights:'APPROVED' as const,provenance:'SYNTHETIC' as const,
   })));
+
+/** These ranges exist only as fictional fixture policy, never hard-coded official eligibility. */
+const SYN_TERM_RULES={
+  one:{ENROLLED:{min:2,max:5},LEAVE:{min:6,max:6}},
+  two:{ENROLLED:{min:2,max:4},LEAVE:{min:5,max:5}},
+} as const;
+
 export const SYNTHETIC_PARTNERS:readonly ExchangePolicy[]=[
   {partnerId:'SYN-PARTNER-1',ruleId:'SYN-OIA-1',sourceRevision:'syn-rule-r1',sourceUrl:'https://example.org/synthetic/exchange-1',
     track:'OIA',publishedAt:'2026-01-01T00:00:00Z',verifiedAt:'2026-01-02T00:00:00Z',
     effectiveFrom:'2026-01-01',rights:'APPROVED',provenance:'SYNTHETIC',
+    termRules:SYN_TERM_RULES,twoSemesterTransfersAllowed:false,priorCancellationAllowed:false,
     minimumGpa:3,partnerMinimumGpa:3,requiredLanguage:{test:'TOEFL',minimumScore:80}},
   {partnerId:'SYN-PARTNER-2',ruleId:'SYN-OIA-2',sourceRevision:'syn-rule-r2',sourceUrl:'https://example.org/synthetic/exchange-2',
     track:'OIA',publishedAt:'2026-01-01T00:00:00Z',verifiedAt:'2026-01-02T00:00:00Z',
     effectiveFrom:'2026-01-01',rights:'APPROVED',provenance:'SYNTHETIC',
+    termRules:SYN_TERM_RULES,twoSemesterTransfersAllowed:false,priorCancellationAllowed:false,
     minimumGpa:3,partnerMinimumGpa:3.5,requiredLanguage:{test:'IELTS',minimumScore:6.5}},
   {partnerId:'SYN-PARTNER-3',ruleId:'SYN-OIA-3',sourceRevision:'syn-rule-r3',sourceUrl:'https://example.org/synthetic/exchange-3',
     track:'OIA',publishedAt:'2026-01-01T00:00:00Z',verifiedAt:'2026-01-02T00:00:00Z',
-    effectiveFrom:'2026-01-01',rights:'APPROVED',provenance:'SYNTHETIC',minimumGpa:3},
+    effectiveFrom:'2026-01-01',rights:'APPROVED',provenance:'SYNTHETIC',termRules:SYN_TERM_RULES,twoSemesterTransfersAllowed:false,priorCancellationAllowed:false,
+    minimumGpa:3},
 ];
 const topics=[
   {category:'SERVICE' as const,title:'HUFS One AI 가상 사용법',text:'합성 시연 계정은 실제 학생 기록이 아닙니다. 학교 공식 서비스가 아니므로 담당 부서의 확인을 권장합니다.'},

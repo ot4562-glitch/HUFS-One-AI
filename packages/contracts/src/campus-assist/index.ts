@@ -42,12 +42,23 @@ export const ExchangeApplicantSchema = z.strictObject({
   departureOn:Day.optional(),
 });
 export type ExchangeApplicant = z.infer<typeof ExchangeApplicantSchema>;
+/** Semester limits must come from an approved, versioned official source. Omitted means UNKNOWN. */
+const SemesterRangeSchema=z.strictObject({min:z.number().int().min(0).max(15),
+  max:z.number().int().min(0).max(15)}).refine(v=>v.min<=v.max);
+const ProgramTermRulesSchema=z.strictObject({
+  one:z.strictObject({ENROLLED:SemesterRangeSchema,LEAVE:SemesterRangeSchema}),
+  two:z.strictObject({ENROLLED:SemesterRangeSchema,LEAVE:SemesterRangeSchema}),
+});
 export const ExchangePolicySchema = z.strictObject({
   ruleId:Id, sourceRevision:Id, sourceUrl:Source,
   track:z.enum(['OIA','DEPARTMENT']), publishedAt:Iso, verifiedAt:Iso,
   effectiveFrom:Day, effectiveUntil:Day.optional(),
   rights:CampusRightsSchema, provenance:CampusProvenanceSchema,
   minimumGpa:z.number().finite().min(0).max(4.5),
+  /** Policy-specific rules; never infer these from a program length or student assertion. */
+  termRules:ProgramTermRulesSchema.optional(),
+  twoSemesterTransfersAllowed:z.boolean().optional(),
+  priorCancellationAllowed:z.boolean().optional(),
   partnerMinimumGpa:z.number().finite().min(0).max(4.5).optional(),
   requiredLanguage:z.strictObject({test:Id,minimumScore:z.number().finite().nonnegative()}).optional(),
   /** Officially identified partner/term scope; an unknown partner must stay UNKNOWN. */
