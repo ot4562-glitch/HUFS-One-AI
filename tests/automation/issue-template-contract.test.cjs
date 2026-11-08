@@ -6,15 +6,8 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '../..');
 const read = relative => fs.readFileSync(path.join(ROOT, relative), 'utf8');
-const canonical = [
-  '[\ucd94\uac00 \uae30\ub2a5]',
-  '[\ub370\uc774\ud130 \uc694\uccad]',
-  '[\uc6f9 \uad6c\ud604]',
-  '[AI \uad6c\ud604]',
-  '[AI QA]',
-  '[\uae30\uc220 \ud1b5\ud569]',
-  '[\ubd84\ub958 \uac80\ud1a0]'
-];
+const routingConfig = require('../../.github/issue-routing.json');
+const canonical = routingConfig.prefixes.map(entry => entry.title);
 const templates = [
   ['additional-feature.yml', canonical[0]],
   ['data-request.yml', canonical[1]],
@@ -23,7 +16,9 @@ const templates = [
   ['ai-qa.yml', canonical[4]],
   ['integration-task.yml', canonical[5]],
   ['needs-triage.yml', canonical[6]],
-  ['agent-task.md', canonical[6]]
+  ['agent-task.md', canonical[6]],
+  ['bug-report.yml', canonical[7]],
+  ['real-acceptance.yml', canonical[8]]
 ];
 
 test('all GitHub issue templates prefill a canonical routing prefix', () => {
@@ -58,7 +53,7 @@ test('every scoped AGENTS.md points newcomers to the canonical playbook', () => 
   }
 });
 
-test('starter docs describe the seven canonical prefixes and protected issues', () => {
+test('starter docs describe all nine canonical prefixes and protected issues', () => {
   for (const file of ['AGENTS.md', 'README.md', 'docs/ISSUE_ASSIGNMENT_PLAYBOOK.md',
                        'docs/ISSUE_ROUTING_BOT.md']) {
     const content = read(file);
@@ -69,9 +64,33 @@ test('starter docs describe the seven canonical prefixes and protected issues', 
 
 test('all template prefixes map to an issue routing area or manual review', () => {
   const {classify} = require('../../.github/scripts/issue-router.cjs');
-  const expected = ['integration', 'data', 'web', 'ai', 'ai', 'integration', null];
+  const expected = ['integration', 'data', 'web', 'ai', 'ai', 'integration', null, null, null];
   canonical.forEach((prefix, index) => {
     const result = classify({number: 888, title: prefix + ' smoke test', body: '', labels: [], assignees: []});
     assert.equal(result.area, expected[index], prefix);
   });
+});
+
+
+test('prefix config contains unique canonical titles and valid routing policies', () => {
+  assert.equal(canonical.length, 9);
+  assert.equal(new Set(canonical).size, canonical.length);
+  for (const entry of routingConfig.prefixes) {
+    assert.match(entry.title, /^\[[^\]]+\]$/);
+    assert.ok(['assign', 'infer', 'review', 'dedicated'].includes(entry.policy));
+    if (entry.policy === 'dedicated') {
+      assert.ok(routingConfig.areas[entry.area].members.some(user => user.login === entry.assignee));
+    }
+    if (entry.policy === 'assign' || entry.policy === 'dedicated') {
+      assert.ok(routingConfig.areas[entry.area], entry.title + ' has no eligible area');
+    }
+  }
+});
+
+test('issue templates communicate P0 and sensitive-report privacy gate', () => {
+  for (const name of ['bug-report.yml', 'real-acceptance.yml']) {
+    const contents = read('.github/ISSUE_TEMPLATE/' + name);
+    assert.match(contents, /P0/, name + ' must mention high-priority incidents');
+    assert.match(contents, /\ubcf4\uc548|\uac1c\uc778\uc815\ubcf4|\ube44\ubc00/, name + ' must warn about sensitive public disclosures');
+  }
 });
