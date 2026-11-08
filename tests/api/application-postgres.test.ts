@@ -67,6 +67,36 @@ describe('server-owned durable PostgreSQL application assembly',()=>{
     expect((await app.inject({url:'/api/admin/usage'})).statusCode).toBe(401);
     expect(usage.connect).not.toHaveBeenCalled();
   });
+
+  it('#367 does not advertise campus endpoints unless a current source is explicitly installed',async()=>{
+    const c=config();
+    const missing=createPostgresApplication(c);opened.push(missing);
+    expect(missing.hasRoute({method:'GET',url:'/api/owner/activities'})).toBe(false);
+    expect(missing.hasRoute({method:'POST',url:'/api/owner/faq/ask'})).toBe(false);
+
+    const activities={read:vi.fn(async()=>null),revalidate:vi.fn(async()=>false)};
+    const ready=createPostgresApplication({...c,campusAssist:{activities}});opened.push(ready);
+    expect(ready.hasRoute({method:'GET',url:'/api/owner/activities'})).toBe(true);
+    expect(ready.hasRoute({method:'GET',url:'/api/owner/activities/forecast'})).toBe(true);
+    expect(ready.hasRoute({method:'GET',url:'/api/owner/exchange/partners'})).toBe(false);
+    expect(ready.hasRoute({method:'POST',url:'/api/owner/faq/ask'})).toBe(false);
+    expect((await ready.inject({url:'/api/owner/activities?asOf=2026-11-08T00%3A00%3A00Z'}))
+      .statusCode).toBe(401);
+    expect(activities.read).not.toHaveBeenCalled();
+    expect(activities.revalidate).not.toHaveBeenCalled();
+    for(const p of [...Object.values(c.auth.pools),...Object.values(c.platform.pools)])
+      expect(p.connect).not.toHaveBeenCalled();
+  });
+  it('#367 rejects a malformed adapter or direct paid-provider injection',()=>{
+    const c=config();
+    expect(()=>createPostgresApplication({...c,campusAssist:{}})).toThrow(/source and rights ports/);
+    expect(()=>createPostgresApplication({...c,campusAssist:{
+      activities:{read:async()=>null}} as any})).toThrow(/source and rights ports/);
+    expect(()=>createPostgresApplication({...c,campusAssist:{
+      activities:{read:async()=>null,revalidate:async()=>false},
+      hcx007:{admit:async()=>true,execute:async()=>({})}} as any}))
+      .toThrow(/paid AI/);
+  });
   it.each(['APP_ENV','NODE_ENV'])('retains the production refusal through %s',name=>{
     vi.stubEnv(name,'production');
     const c=config();expect(()=>createPostgresApplication(c)).toThrow(/Production integration disabled/);
