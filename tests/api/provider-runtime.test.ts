@@ -49,6 +49,15 @@ function fixture(){
     setEnabled:(v:boolean)=>enabled=v,setLive:(v:boolean)=>live=v};
 }
 describe('provider execution gates and billing lifecycle',()=>{
+  it('rejects the retired model before authority lookup, tokenization, billing or network',async()=>{
+    const f=fixture(),executor=createProviderExecutor(f.options);
+    const legacy={...request,operation:'HCX_005' as const};
+    const result=await executor.execute(legacy);
+    expect(result.state).toBe('UNAVAILABLE');
+    expect(f.read).not.toHaveBeenCalled();
+    expect(f.reserve).not.toHaveBeenCalled();
+    expect(f.post).not.toHaveBeenCalled();
+  });
   it.each(['OFF','noApproval','reviewer','expiredSession','noAuthority'] as const)('makes zero paid/tokenizer requests for %s',async kind=>{
     const f=fixture();if(kind==='OFF')f.setEnabled(false);if(kind==='noApproval')f.setLive(false);if(kind==='noAuthority')f.setCurrent(null);
     const req=kind==='reviewer'?{...request,actor:{...actor,role:'REVIEWER' as const}}:kind==='expiredSession'?{...request,actor:{...actor,sessionExpiresAt:NOW}}:request;

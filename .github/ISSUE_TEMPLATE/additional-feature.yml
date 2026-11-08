@@ -1,0 +1,64 @@
+name: "추가 기능 제안"
+description: "신규 기능. 심민성이 일반 코드까지 먼저 구현하고 AI 영역은 이의상/박준영에게 인계합니다."
+title: "[추가 기능] "
+assignees:
+  - ot4562-glitch
+body:
+  - type: markdown
+    attributes:
+      value: |
+        최초 assignee는 심민성입니다. 자료가 필요하면 별도 [데이터 요청] 이슈를 만들고 김채윤을 이 기능의 공동 담당자로 추가합니다. AI/코드 기반 추천·OCR·LLM이 시작되면 이의상 또는 박준영을 주구현자로 인계합니다.
+        기존 [본선 진출 이후] #355–#359는 읽기 전용이며 수정·댓글 추가 대상이 아닙니다.
+        상세 절차: docs/ISSUE_ASSIGNMENT_PLAYBOOK.md
+  - type: textarea
+    id: product-need
+    attributes:
+      label: "사용자 문제와 목표"
+      description: "어떤 문제를 누구를 위해 해결하는가"
+      placeholder: "대상 사용자, 입력, 화면에서 기대하는 최소 동작"
+    validations:
+      required: true
+  - type: textarea
+    id: existing-code
+    attributes:
+      label: "기존 코드와 재사용할 구조"
+      description: "최초 심민성 담당 범위: Core/Contracts/API/DB/비AI 구현"
+      placeholder: "관련 경로·함수·계약·현재 PR·테스트"
+    validations:
+      required: false
+  - type: dropdown
+    id: data-needed
+    attributes:
+      label: "실자료·공식 문서·포스터·독립 Gold 필요 여부"
+      description: "필요 또는 미확정이면 독립 데이터 요청 이슈를 검토합니다."
+      options:
+        - "필요"
+        - "미확정/검토 필요"
+        - "불필요"
+    validations:
+      required: true
+  - type: textarea
+    id: data-spec
+    attributes:
+      label: "요청할 자료/권리/Gold·웹 디자인 자산"
+      placeholder: "관련 기능·코드 DTO, 공식 원문, 포스터/이미지, 권리, 데이터 요청 이슈 번호"
+    validations:
+      required: false
+  - type: dropdown
+    id: ai-needed
+    attributes:
+      label: "AI·코드 기반 AI 구현 예상 여부"
+      description: "추천/랭킹·규칙 AI·LLM·OCR·NLP·ML 등을 포함합니다."
+      options:
+        - "필요"
+        - "미확정/검토 필요"
+        - "불필요"
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: "최소 검증·완료 기준"
+      placeholder: "해당 UI 동선, 권한/출처, 테스트와 실데이터/시연/QA"
+    validations:
+      required: false

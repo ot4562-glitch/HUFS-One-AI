@@ -20,6 +20,13 @@ function fixture(status=200,headers:Record<string,string>={'content-type':'appli
   return {transport,input,request,resolve,secret,sent,beforeSend};
 }
 describe('pinned CLOVA POST transport',()=>{
+  it('blocks retired model before secrets, DNS or outbound sockets',async()=>{
+    const f=fixture();
+    await expect(f.transport.post({...f.input,operation:'HCX_005'})).rejects.toThrow('Provider transport unavailable');
+    expect(f.resolve).not.toHaveBeenCalled();
+    expect(f.secret).not.toHaveBeenCalled();
+    expect(f.request).not.toHaveBeenCalled();
+  });
   it('pins two identical public DNS answers, validates TLS name and reauthorizes immediately before sending',async()=>{
     const f=fixture(),r=await f.transport.post(f.input);expect(await r.json()).toEqual({ok:true});
     expect(f.resolve).toHaveBeenCalledTimes(2);expect(f.beforeSend).toHaveBeenCalledOnce();

@@ -10,7 +10,7 @@
 
 ### 운영 AI 입력·경험 등록
 
-- `managedAi`는 `HCX_005` 또는 `HCX_007`의 입력/권한(`aiAuthority`), 예산(`aiBudget`), 정산·결과(`aiResults`)를 서로 다른 관리 SQL 역할로 조립합니다.
+- `managedAi`는 `HCX_007`의 입력/권한(`aiAuthority`), 예산(`aiBudget`), 정산·결과(`aiResults`)를 서로 다른 관리 SQL 역할로 조립합니다.
 - 선택적 `aiInputRegistration`은 네 번째 독립 SQL 역할 `aiInputOperator`와 외부의 검증된 `reviewer.verify`를 요구합니다. **공개 API로 노출되지 않는** `operatorRegistration.service.register`가 현재 경험·동의·소스/검토 근거를 검증해 불변 provider input과 현재 HEAD를 같은 트랜잭션에 기록합니다. 이 서비스는 운영 설정 없이 자동 실행되지 않습니다.
 - 선행 schema와 역할은 `20261103_ai_provider_inputs.sql` → `20261105_ai_consented_personal_inputs.sql` → `20261105_ai_experience_bindings.sql` → `20261106_ai_experience_input_operator.sql` 순서로 준비합니다. 후속 migration은 같은 운영 DB와 operator 검증용 비공개 역할에서만 적용합니다. 직접 개인 데이터·역할·계정·유료 모델을 자동 생성하지 않습니다.
 - 경험 수정·삭제, 개별 모델 동의 철회, 버전·세션 변경은 기존 입력의 payload와 HEAD를 폐기/재검증합니다. 학생은 `POST /api/experience/ai-skills/prepare`에서 승인된 자신의 경험을 선택하고, 결과를 확인한 뒤 `tag-approval`에서 명시적으로 선택합니다. AI 후보는 숙련도 인증이 아닙니다.

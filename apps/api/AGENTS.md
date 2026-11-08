@@ -1,9 +1,14 @@
-# API·DB·AI 개발 규칙
+# API·DB·AI 기능 개발 규칙
 
-심민성 `ot4562-glitch` 소유: Fastify/OIDC·학교메일·PG/RLS·Source/RAG·AI 예산/worker·CI/운영 조립. 프로젝트 문서상의 자료·정보/기관·외부 전송·운영 승인은 **OWNER_CONFIRMED_APPROVED**이며 동일 승인 대기를 다시 만들지 않습니다. [승인 정본](../../docs/AUTHORIZATION.md).
+> **최신 역할/이슈 처리 지침(2026-11-08 · 우선 적용):** 고정 `[본선 진출 이후]`/`[본선진출이후]` #355–#359는 **읽기 전용**으로 제목·본문·댓글·담당·상태 등 어떤 쓰기도 수행하지 않는다. 신규 요청은 새 기능·데이터 이슈를 생성한다. `[추가 기능]`은 **심민성 최초 배정·가능한 일반 Core/API/DB/계약/통합 구현**, **규칙/랭킹/추천 등 코드 기반 AI·OCR·LLM과 겹치면 박준영 또는 이의상에게 개발 인계**한다. 공식 자료·포스터·Gold가 필요하면 **별도 `[데이터 요청]` 이슈(김채윤 담당)**를 만들고 원 기능 이슈에 **김채윤을 공동 assignee**로 지정한다. 기존 13개 기능 데이터 요청은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360). 박준영 AI 기술 QA, 이의상↔박준영 교차검증, 김채윤 데이터 직접 입력/가벼운 사용자 시연, 이서연 웹 디자인·기능 배치, 심민성 전 과정 검수를 적용한다. 상세 결정표: [이슈 배정 플레이북](../../docs/ISSUE_ASSIGNMENT_PLAYBOOK.md).
 
-실제 서비스는 명시적 production 구성과 현재 actor/세션·역할·source/version·DB 최소권한으로 동작합니다. 익명 요청/다른 사용자 사칭·CSRF·삭제/철회·비밀 노출 방지는 유지합니다. 잘못된 데이터나 없는 자격증명은 승인 문제로 오분류하지 않고 오류/CONFIGURATION_REQUIRED를 반환합니다.
 
-UI·추천·학업 순수 코어 소유는 각 협업자에게 유지합니다. 공통 계약/DB 변경은 소비자 리뷰·정확한 HEAD 테스트로 확인합니다. 승인된 실제 데이터 사용과 테스트용 합성 fixture를 구별하고, 실제 시험하지 않은 결과는 NOT_RUN입니다.
+**신규 추가 기능 인계:** 기능 이슈 최초 assignee는 **심민성 `ot4562-glitch`**이며 Core·Contracts·API·DB·보안 구조를 설계한다. 구조와 기본 코어 인수가 가능해지면 **박준영 `taewangim-alt` 또는 이의상 `uisang2004-maker`을 실제 기능 구현 주담당**으로 배정한다. 심민성은 계약·DB/RLS·보안과 전체 개발 과정을 계속 검수한다. [루트 AGENTS](../../AGENTS.md) · [팀 역할](../../docs/WORKSTREAMS.md).
 
-[운영 진입점](../../docs/PRODUCTION_RUNTIME.md) · [경험 API](../../docs/EXPERIENCE_API.md) · #253/#257.
+이의상·박준영은 HCX-007·CLOVA OCR·규칙/비LLM 처리를 모두 사용할 수 있으며 모델/코드 결과를 **양방향 교차검증**한다. 박준영은 AI 제품 기술 QA·정량 정확도·결함 재시험, 김채윤은 원장/독립 Gold·전 과정 가벼운 사용자 시연, 이서연은 실제 웹 UI·API 소비/디자인을 담당한다. 기능별 구체 코어 작성자·리뷰어는 해당 기능 이슈의 최신 인계 댓글로 정한다.
+
+운영의 기본 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`([승인](../../docs/AUTHORIZATION.md))이다. 실제 서비스는 명시적 production 구성과 현재 actor/세션·역할·SourceRevision·동의/권리·DB 최소권한으로 동작한다. 익명/타인 사칭·CSRF·삭제/철회·비밀 노출·데이터 품질 오류를 안전하게 처리한다.
+
+공통 계약/DB 변경은 실제 소비자 리뷰와 정확한 HEAD 테스트로 검증한다. 승인된 실데이터와 합성 fixture, 합성 CI와 독립 사람/운영 인수를 구분하며 미실시 결과는 `NOT_RUN`으로 기록한다.
+
+[운영 API](../../docs/PRODUCTION_RUNTIME.md) · [경험 API](../../docs/EXPERIENCE_API.md).

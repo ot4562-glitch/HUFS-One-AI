@@ -1,31 +1,26 @@
 # HUFS One AI — 팀 작업과 실제 수락
 
-기준일 **2026-11-07** (하단 담당별 수락률은 2026-11-06의 **고정 역사적 수치**). 본선 전 이슈의 정리와 실제 사람/운영 인수를 분리한다. 코드 정본은 [STATUS](../STATUS.md), 실제 운영·서버 증거는 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 전체 인수·릴리스는 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 추적한다.
+**현재 역할 기준 2026-11-08**, 하단의 2026-11-06~07 수락 수치는 고정 역사적 기록. 본선 전 이슈의 정리와 실제 사람/운영 인수를 분리한다. 코드 정본은 [STATUS](../STATUS.md), 실제 운영·서버 증거는 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 전체 인수·릴리스는 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 추적한다.
 
-## 현재 열린 이슈 6개 — 개인별 GitHub 담당 확정 (2026-11-07)
+## 현행 업무 배정 및 실제 검증 상태 (2026-11-08)
 
-| 이슈 | 담당 GitHub 계정 | 본선 이후 역할 |
+**정본:** [루트 AGENTS](../AGENTS.md) · [팀 역할/기능 인계](WORKSTREAMS.md) · [업무 자동 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md). 역할 이슈 **#355–#359는 읽기 전용 고정**이다. 단계별 변경, 자료 요청, AI 테스트 기록은 **별도 기능/데이터 이슈**에서만 관리한다.
+
+| 담당자 | 현행 역할 | 이슈 |
 | --- | --- | --- |
-| [#321 이의상 AI/NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya·CLOVA·NLP 정확도 공동 |
-| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI 정확도 공동·학업 코어 |
-| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
-| [#324 김채윤 시연/AI 검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 학생 경험 입력·전 화면 시연 |
-| [#325 심민성 통합/품질](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API·DB·보안·CI·출시 |
-| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 개발 |
+| 심민성 | 추가 기능 최초 배정·**가능한 일반/비AI Core/API/DB/보안·통합 실제 구현**, AI 겹침 시 개발 인계, 전 과정 코드 검수 | [#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) |
+| 박준영 | AI 추천/코드 기반 AI/HCX-007·OCR 공동개발·AI 제품 기술 QA/재시험 | [#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356) |
+| 이의상 | NLP/문서/RAG·HCX-007/OCR·코드 기반 AI·상호 교차 검증 | [#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355) |
+| 이서연 | 기존 사이트 UI/UX·웹 디자인·기능/API 배치 | [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357) |
+| 김채윤 | 공식 실사용 데이터/포스터·독립 Gold·권리·디자인 자산·가벼운 사용자 시연 | [#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358) |
 
-[구 통합 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 POST-01~20을 #321~#325로 각각 한 번씩 분리한 뒤 **CLOSED/기록 보관**했습니다. #317은 심민성, 구 #318의 UI/UX 전체는 이서연 #323에 통합됐습니다. **총 6개 OPEN·각 담당자 1명**입니다. 과거 이슈와 역할은 기록일 뿐 현재 배정 근거가 아닙니다. 업무 배정은 실 NCP·유료 AI·학교/학생 데이터·사람 인수 완료를 의미하지 않으며 `NOT_RUN/CONFIGURATION_REQUIRED/RELEASE_BLOCKED`가 유지됩니다.
-## 본선 진출 이후 책임별 신규 인수 항목 (2026-11-07 사용자 확정)
+**현재 추가 기능 13개:** 박준영 6개(#339/#340/#344/#348/#349/#350)·이의상 7개(#341/#343/#345/#346/#347/#351/#352) **각 AI 구현 주담당**, **김채윤은 13개 모두 데이터 공동 assignee**, 자료 요구는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)에 통합했다. 신규 기능에서 자료가 필요하면 별도의 `[데이터 요청]`을 생성한다.
 
-아래는 **앞으로 수행할 체크리스트**이며 기존의 담당자별 본선 전 수락 수치/사람 검토를 바꾸지 않습니다. 사람별 책임이 정해졌더라도 운영 계정/실자료·실기기/유료 모델 검증은 **아직 NOT_RUN**입니다. 새 팀 역할 정본: [WORKSTREAMS](WORKSTREAMS.md).
+**단계별 증거:** 심민성 구현 diff/PR·AI 코드 인계/상호 피드백·김채윤 공식 자료/Gold·이서연 웹 배치·박준영 AI 기술 QA·김채윤 사용자 시연·현재 HEAD 테스트/사람 코드 리뷰·실서버는 각각 독립 판정한다. PR #342/#353의 합성 코어가 존재해도 실제 운영·실모델·학생·자료 인수 증거가 없으면 `NOT_RUN/NOT_CONNECTED/RELEASE_BLOCKED`를 유지한다.
 
-| 업무 담당 | 처음 확인할 결과와 인계 조건 | 현재 수락 |
-| --- | --- | --- |
-| **이의상·박준영 (공동)** | Laya/네이버 CLOVA OCR·Vision/HCX 실제 호출 지원/권리·예산 확인, 자연어 이해·경험→역량·인용/환각·정답 기준/오류율·전후 정확도 기록; 박준영은 학업 RulePack/공식 학칙 대조도 유지 | `NOT_RUN` |
-| **이서연** | 화면 전체 디자인/React UI·모바일/키보드·접근성 회귀, 운영 NCP/서버/API 상태/비용·배포/재시작/복구·로그/권한 증거 | `NOT_RUN` |
-| **김채윤** | 전체 웹 시연 60초/10분 루트 확정, 시연용 학생 경험 입력→AI 후보/근거·학생 승인·추천 전후 기대/관찰 비교, 발표 리허설·실패 시 우회안 | `NOT_RUN` |
-| **심민성** | API/DB/인증·AI·React 연결·코드 리뷰/테스트·추가 기능·보안/권리, 모델/웹/시연 PR 통합 및 전체 릴리스 게이트 검토 | `NOT_RUN` |
+### 과거 진척·수락 기록 (2026-11-06~07)
 
-운영 중 실 AI·실자료를 입증하지 못한 경우 UI에서는 '합성 시연' 또는 '실제 호출/확인 안 됨'으로 구별합니다. **GitHub OPEN 6개 (#321~#325 + #317)는 모두 한 명씩 배정**됐습니다. 완료/인수 증거는 별도입니다.
+아래 숫자와 당시 #321–#325 등의 명칭은 **이전 기록**이며 현재 역할/이슈 배정 표가 아니다. 현재 팀 및 이슈 담당은 위의 2026-11-08 절차를 따른다.
 
 ## 이전 PR/이슈 반영 기록 (2026-11-06 당시)
 

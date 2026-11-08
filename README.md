@@ -190,15 +190,17 @@ GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위�
 
 ## 팀과 협업
 
-| 담당 | 현재 역할 | 이슈 |
-|---|---|---|
-| **이의상** | Laya · CLOVA/HCX · NLP · AI 정확도 개선 | [#321](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) |
-| **박준영** | AI 모델 공동 검증 · 학업 RulePack·What-if·개설 전망 | [#322](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) |
-| **이서연** | 전체 React UI/UX · 반응형/접근성 · NCP 운영/실 AI 호출 | [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) |
-| **김채윤** | 이용권·실학생/실기기 검증 · 발표 시연·AI 품질 평가 | [#324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) |
-| **심민성** | 프로젝트 총괄 · API/DB/RLS · 보안·CI·리뷰·통합 | [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) |
+| 담당 | 현행 역할 | 고정 역할 이슈 |
+| --- | --- | --- |
+| **심민성** | 전체 총괄·코드 검수, 신규 기능의 **최초 배정 및 가능한 일반 Core/API/DB/계약/통합 직접 구현**, AI 겹침 시 구현 인계 | [#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) |
+| **박준영** | 추천/랭킹·HCX-007/OCR·규칙/코드 기반 AI 개발, 이의상 교차검증, **AI 제품 기술 QA·재시험** | [#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356) |
+| **이의상** | AI·NLP·OCR·RAG·코드 기반 AI 개발, 박준영 구현/모델의 의미·근거 교차검증 | [#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355) |
+| **이서연** | React UI/UX·웹 디자인·실제 기능/API 배치·김채윤 데이터 시각화 | [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357) |
+| **김채윤** | 실사용 동아리·공모전·학사/포스터 데이터/권리/독립 Gold, 디자인 자산 제공 및 **가벼운 전체 사용자 시연/이슈 제보** | [#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358) |
 
-현재 열린 팀 이슈는 **#321–#325, 5개**입니다(2026-11-08 확인). 추가 기능 #317은 종결됐으며, 이전 UI/UX #318의 미완 작업은 #323으로 이관되었습니다. 이슈 담당 지정은 실제 구현·검증 완료가 아닙니다. 업무의 현재 정본은 [WORKSTREAMS](docs/WORKSTREAMS.md)입니다.
+**고정 역할 이슈 #355–#359는 이제 읽기 전용이며 댓글을 포함해 절대 수정하지 않습니다.** 신규 `[추가 기능]`은 심민성에게 최초 배정하고 구현 가능한 비AI 부분을 직접 진행합니다. **규칙·코드 기반 AI·LLM·OCR·추천/랭킹 등 AI가 겹치면 이의상/박준영에게 구현을 넘깁니다.** 데이터가 필요한 기능에는 **별도의 `[데이터 요청]` 이슈**를 김채윤에게 만들고 기능 이슈에도 김채윤을 **공동 assignee**로 지정합니다.
+
+현재 13개 `[추가 기능]` 중 박준영이 6개, 이의상이 7개를 개발하며 **김채윤이 모두 데이터 공동 담당**입니다. [대규모 공식자료·포스터·독립 Gold 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)에서 실제 자료를 관리합니다. [신규 에이전트용 자동 배정 절차](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md) · [팀 역할/기능 인수](docs/WORKSTREAMS.md) · [에이전트 기본 규칙](AGENTS.md).
 
 ## 중요 문서 — 처음 읽는 분부터 개발자까지
 
@@ -211,6 +213,8 @@ GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위�
 | **[현재 구현·검증](STATUS.md)** | 전체 팀 — 검증된 것과 미실행·구성 필요 영역 |
 | **[시연 매뉴얼](docs/DEMO_MANUAL.md)** | 심사자·발표자 — 합성 시연 경로와 설명 |
 | **[보안·데이터 정책](docs/DATA_GOVERNANCE.md)** | 전체 팀 — 원본 CSV, 권리, 철회, 접근 제어 |
+| **[에이전트 자동 배정·데이터 요청 절차](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md)** | 처음 참여하는 코딩 에이전트 — 고정 역할 이슈 동결, 새 기능/데이터 분리 배정, AI 인계 규칙 |
+| **[대규모 실제 자료 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)** | 김채윤 및 AI/웹 개발팀 — 13개 기능 공식 데이터/포스터·권리·Gold 요구 |
 | **[PR·리뷰 기준](docs/PR_WORKFLOW.md)** | 개발자 — CI·독립 리뷰·병합 절차 |
 
 <details>
