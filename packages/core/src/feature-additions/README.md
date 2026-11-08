@@ -69,3 +69,15 @@
 - npm run typecheck
 
 코어·계약의 해당 테스트는 2026-11-08 로컬 **193개 PASS**. 전체 로컬 주작업트리에는 범위 밖의 node-approved-egress.ts Headers iterable TS2488이 있어 full-root typecheck는 별도 실패로 보존; 정확한 PR HEAD CI 결과와 사람/실운영 인수는 별도 기록한다.
+## 2026-11-08 추가 구현·인수 준비 점검
+
+- #343: action-planner.ts / planScholarshipPreparation 는 checkScholarship 산출물과 **같은 공식 정책 판본**을 대조한 뒤, 증빙 미확인·검증된 미충족·철회된 정책 재확인 항목을 구분한다. 별도의 장학금 지급/학교 승인 판단이 아니다. 출력 계약 ScholarshipPreparationV2Schema.
+- #347: compareSkillsV2 는 matchedOneAiTopics(실제 승인된 경험과 겹친 항목)와 **requiredOneAiTopics(공식 NCS 교차표에서 요구하는 항목)**를 분리한다. 경험이 전무해도 요구 TopicCode가 살아 있어 보완 활동을 찾을 수 있다.
+- #347·#349: action-planner.ts / planEvidenceOpportunities 는 **이미 actor에게 허가되고 SourceRevision이 확인된 공고 목록**에서 실제 요구 토픽과 일치하는 공고만 상위 1~10개 제안한다. 공고의 마감·캠퍼스·개인 적격·철회·중복을 적용하며, 미검증 상태는 UNKNOWN으로 표시한다. 출력 계약 EvidenceOpportunityPlanV2Schema. 이는 취업 합격·배지 발급을 보장하지 않는다.
+- #344·#350: source-policy.ts / verifySemanticProposals의 requireCompleteSet 옵션은 **모든 허가 후보가 정확히 한 번, 동일 모델버전/입력 digest와 실제 근거로 제출**됐을 때만 AI 재정렬을 허용한다. 하나라도 허위 ID/중복/누락이면 전량 규칙 기반으로 복귀한다.
+- #348: **서버 전용** server-cursor.ts / createCatalogCursorSigner는 Node 내장 crypto의 HMAC-SHA256을 사용한다. 실제 서버에서만 주입한 32바이트 이상 키와 최대 15분 TTL로 검색 커서를 서명·검증하고, actor/동의·출처 스냅샷·검색필터·시점이 달라지면 실패한다. 키 교체를 지원하며 토큰 내부의 학생 ID/동의 판본/검색어는 복원 불가능한 키 기반 결속값으로 저장한다. node:crypto와 서버 비밀을 쓰므로 **브라우저 공용 barrel에는 export하지 않는다**. API의 Node 코드에서 'packages/core/src/feature-additions/server-cursor.js'를 직접 import한다. 내부 Core Cursor 객체를 HTTP에 직접 넘기지 않는다.
+- 계약 export 동시 편집: PR #342도 packages/contracts/src/index.ts 하단에 campus-assist를 추가한다. PR #353은 같은 파일 **상단**에 FeatureAdditions namespace를 배치해 동일 하단 줄 변경 충돌 위험을 낮췄다. 두 PR의 실제 순차 병합 후 **새 HEAD에서 CI 재확인**은 필수다.
+
+재현 테스트: 'npx vitest run packages/core/src/feature-additions tests/contracts/feature-additions-v2.test.ts tests/contracts/feature-additions-results.test.ts tests/api/feature-cursor.test.ts'. **230/230 PASS** (2026-11-08 로컬). 타입 검사/계약 빌드도 성공. 실 OAuth·실학교 자료·학생 A/B·NCP/모델 과금·Pages 운영 URL과 본선 이후 독립 검증은 **미인수**다.
+
+**병합 지침:** PR #342 → PR #353 순서로 비작성자 리뷰/정확한 HEAD CI를 확인하고 병합한다. 병합은 코드만 main에 합치는 작업이며 웹 화면·실DB·학교 데이터·HCX/OCR 모델 자동 연결은 하지 않는다. 실제 학교 자료는 김채윤 #324, UI/API/NCP 실운영은 이서연 #323, AI 모델과 품질은 박준영 #322·이의상 #321이 담당한다. #325는 공통 권한·보안과 최종 릴리스 게이트를 확인한다. 자동 이슈 종결 금지.
