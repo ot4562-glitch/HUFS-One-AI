@@ -242,3 +242,6 @@ export const InternationalGuideSchema = z.strictObject({
     ctx.addIssue({code:'custom',message:'duplicate international guide step IDs'});
 });
 export type InternationalGuide = z.infer<typeof InternationalGuideSchema>;
+
+// Strict response wire payloads; API signs/validates the catalog cursor.
+export * from './results.js';
