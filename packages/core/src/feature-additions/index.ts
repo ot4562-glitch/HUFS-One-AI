@@ -2,3 +2,16 @@
 export * from './eligibility.js';
 export * from './recommendations.js';
 export * from './discovery.js';
+
+// Domain v2: reviewed source-aware, policy and evidence-driven cores.
+export * from './source-policy.js';
+export * from './scholarships-v2.js';
+export * from './mentors-v2.js';
+export * from './counseling-v2.js';
+export * from './recognition-v2.js';
+export * from './skills-v2.js';
+export * from './catalog-v2.js';
+export * from './badges-v2.js';
+export * from './learning-v2.js';
+export * from './employment-v2.js';
+export * from './international-v2.js';
