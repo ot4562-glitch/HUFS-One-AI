@@ -25,7 +25,7 @@
 
 ## 사용법
 
-1. 저장소 [Actions](../actions)에서 **Issue triage and fair assignment** 워크플로가 활성화되어 있는지 확인합니다. 이 PR이 기본 브랜치에 병합된 뒤부터 새 이슈의 `opened / edited / reopened / labeled / unlabeled` 이벤트에서 실행됩니다.
+1. 저장소 [Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)에서 **Issue triage and fair assignment** 워크플로가 활성화되어 있는지 확인합니다. 이 PR이 기본 브랜치에 병합된 뒤부터 새 이슈의 `opened / edited / reopened / labeled / unlabeled` 이벤트에서 실행됩니다.
 2. 이슈 제목에 `[추가 기능]`, `[AI 구현]`, `[웹 구현]`, `[데이터 요청]` 중 하나를 사용하거나 확실한 제목·코드 경로를 적습니다. 복합 이슈는 가급적 하위 작업으로 나눕니다.
 3. 사람에게 역할을 명시하려면 **한 개의** `area:ai`, `area:web`, `area:data`, `area:integration` 라벨을 부착합니다. 영역 라벨이 여러 개면 `triage:needs-review`로 남깁니다. 잘못 붙은 기존 영역 라벨은 직접 제거하세요.
 4. 기존 담당자가 이미 있으면 **자동 배정을 하지 않습니다**. 자동 배정을 잠시 막으려면 `routing:hold` 라벨을 만듭니다(`Issues → Labels`) 및 부착합니다. `triage:needs-review`는 분류가 해결되면 봇이 제거합니다.
