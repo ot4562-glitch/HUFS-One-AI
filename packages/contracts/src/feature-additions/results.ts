@@ -79,6 +79,7 @@ export const SkillRowV2Schema=z.strictObject({
   requirementId:Id,sourceSpanId:Id,
   status:z.enum(['SUPPORTED_BY_EVIDENCE','EVIDENCE_MISSING','UNMAPPED','NEEDS_REVIEW']),
   ownerEvidenceIds:Ids,matchedOneAiTopics:Ids,requiredOneAiTopics:Ids,
+  unmappedRequirementTopics:Ids.optional(),
   interpretation:z.enum(['RECORD_MATCH','RECORD_MISSING','UNKNOWN']),
 });
 export type SkillRowV2=z.infer<typeof SkillRowV2Schema>;
@@ -88,6 +89,7 @@ export const BadgePreparationV2Schema=z.strictObject({
   status:z.enum(['READY_TO_REQUEST_REVIEW','IN_PROGRESS','UNKNOWN']),
   groups:z.array(z.strictObject({
     id:Id,join:z.enum(['ALL','ANY']),state:Status,
+    reason:z.literal('ACTIVITY_REUSE_UNVERIFIED').optional(),
     requirements:z.array(z.strictObject({
       id:Id,topicCode:Id,required:z.number().int().nonnegative(),
       observedDistinct:z.number().int().nonnegative(),
