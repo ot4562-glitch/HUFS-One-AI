@@ -157,3 +157,37 @@ export const SignedCatalogPageV2Schema=z.strictObject({
     ctx.addIssue({code:'custom',path:['nextCursor'],message:'terminal page must not have cursor'});
 });
 export type SignedCatalogPageV2=z.infer<typeof SignedCatalogPageV2Schema>;
+/** Preparation suggestions are review tasks only; never institutional approvals. */
+export const ScholarshipPreparationV2Schema=z.strictObject({
+  scholarshipId:Id,sourceRevisionId:Id,
+  applicationWindow:z.enum(['BEFORE_OPEN','OPEN','CLOSED','UNKNOWN']),
+  officialAward:z.literal(false),
+  actions:z.array(z.strictObject({
+    id:Id,
+    kind:z.enum(['VERIFY_STUDENT_FACT','REVIEW_UNMET_REQUIREMENT','CHECK_RULE_SOURCE']),
+    factKey:Id,conditionId:Id,sourceSpanId:Id,
+    reason:z.enum(['MISSING_OR_UNVERIFIED','VERIFIED_UNMET','RULE_UNVERIFIED']),
+    officialAward:z.literal(false),
+  })).max(1000),
+});
+export type ScholarshipPreparationV2=z.infer<typeof ScholarshipPreparationV2Schema>;
+
+export const EvidenceOpportunityPlanV2Schema=z.strictObject({
+  issue:z.union([z.literal(347),z.literal(349)]),
+  suggestions:z.array(z.strictObject({
+    issue:z.union([z.literal(347),z.literal(349)]),
+    targetId:Id,opportunityId:Id,
+    matchedTopicCodes:Ids,
+    sourceRevisionId:Id,
+    deadlineAt:z.iso.datetime({offset:true}).optional(),
+    eligibility:z.enum(['MET','UNKNOWN']),
+    reviewFlag:z.enum(['CHECK_OFFICIAL_APPLICATION','CHECK_PERSONAL_ELIGIBILITY']),
+    guaranteedOutcome:z.literal(false),
+  })).max(1000),
+  noVerifiedMatchingOptionFor:Ids,
+  scope:z.literal('APPROVED_OWNER_CATALOG'),
+}).superRefine((plan,ctx)=>{
+  if(plan.suggestions.some(s=>s.issue!==plan.issue))
+    ctx.addIssue({code:'custom',message:'mixed issue records in action plan'});
+});
+export type EvidenceOpportunityPlanV2=z.infer<typeof EvidenceOpportunityPlanV2Schema>;
