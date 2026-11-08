@@ -251,3 +251,37 @@ describe('#347 crosswalk coverage is distinct from student ability',()=>{
     expect(r).toMatchObject([{status:'UNMAPPED',interpretation:'UNKNOWN'}]);
   });
 });
+describe('fail-closed all-or-nothing semantic rerank batch defense',()=>{
+  const valid=(candidateId:string,modelVersion='approved-v1')=>({
+    candidateId,score:0.9,evidenceCodes:['DATA_ANALYTICS'],
+    inputDigest:'digest-1',modelVersion,
+  });
+  it('rejects an extra hallucinated mentor even when every legitimate candidate is present',()=>{
+    const r=rankMentorsV2({preference:mentorPreference(),catalog:[mentor('m1')],
+      rerank:{modelApproved:true,inputDigest:'digest-1',
+        proposals:[valid('m1'),valid('invented')]}});
+    expect(r.modelOutcome).toBe('REJECTED');
+    expect(r.items[0]?.mode).toBe('RULE_ONLY');
+  });
+  it('rejects duplicate mentor candidates and inconsistent model revisions',()=>{
+    const r=rankMentorsV2({preference:mentorPreference(),
+      catalog:[mentor('m1'),mentor('m2')],
+      rerank:{modelApproved:true,inputDigest:'digest-1',
+        proposals:[valid('m1'),valid('m1')]}});
+    expect(r.modelOutcome).toBe('REJECTED');
+    const mixed=rankMentorsV2({preference:mentorPreference(),
+      catalog:[mentor('m1'),mentor('m2')],
+      rerank:{modelApproved:true,inputDigest:'digest-1',
+        proposals:[valid('m1','v1'),valid('m2','v2')]}});
+    expect(mixed.modelOutcome).toBe('REJECTED');
+  });
+  it('rejects an extra fabricated learning program ID',()=>{
+    const r=recommendLearningV2({preference:learningPreference(),
+      programs:[learning('study')],
+      ai:{approved:true,inputDigest:'digest-1',
+        proposals:[{...valid('study'),evidenceCodes:['STATISTICS']},
+          {...valid('fabricated'),evidenceCodes:['STATISTICS']}]}});
+    expect(r.modelOutcome).toBe('REJECTED');
+    expect(r.items[0]?.mode).toBe('RULE_ONLY');
+  });
+});
