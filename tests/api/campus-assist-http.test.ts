@@ -57,7 +57,7 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect(r.statusCode).toBe(200);
     expect(r.json().status).toBe('CONFIGURATION_REQUIRED');
     expect(r.body).not.toContain('가상 파견대학의 어학 점수는');
-    const none=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'공식 학적 원본 비밀번호'});
+    const none=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'양자악어비행선'});
     expect(none.json().status).toBe('NOT_FOUND');
   });
   it('revoked rights or logout fail closed for all three features',async()=>{
@@ -67,11 +67,11 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     h.logout();
     expect((await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(401);
   });
-  it('no production route is exposed without independently injected source ports',async()=>{
+  it('protected production routes deny requests without independently injected source ports',async()=>{
     const app=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,
       now:()=>NOW,auth:{verifySession:async()=>actor,revokeSession:async()=>{}}});
     apps.push(app);
-    expect((await app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(404);
-    expect((await app.inject({method:'POST',url:'/api/owner/faq/ask',payload:{asOf:NOW,question:'질문'}})).statusCode).toBe(404);
+    expect((await app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(403);
+    expect((await app.inject({method:'POST',url:'/api/owner/faq/ask',payload:{asOf:NOW,question:'질문'}})).statusCode).toBe(403);
   });
 });
