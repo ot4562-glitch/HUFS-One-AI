@@ -6,7 +6,7 @@ import type {PostgresProviderAuthority} from './provider-authority-postgres.js';
 import {authorizeSession} from '../auth/gates.js';
 
 const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,128}$/);
-const Operation=z.enum(['HCX_005','HCX_007']);
+const Operation=z.literal('HCX_007');
 const Iso=z.iso.datetime({offset:true});
 const metadata=z.strictObject({
   input_ref:z.string().regex(/^[A-Za-z0-9_-]{1,90}$/),
@@ -19,9 +19,9 @@ export class PostgresApprovedProviderDirectory {
     private readonly pool:ReviewerSqlPool,
     private readonly authority:Pick<PostgresProviderAuthority,'read'>,
     private readonly phaseId:string,
-    private readonly operation:'HCX_005'|'HCX_007',
+    private readonly operation:'HCX_007',
     private readonly now:()=>string=()=>new Date().toISOString(),
-  ){Ref.parse(phaseId);Operation.parse(operation);if(operation!=='HCX_007')throw Error('Unavailable');}
+  ){Ref.parse(phaseId);Operation.parse(operation);}
   async list(actor:VerifiedActor):Promise<ApprovedProviderInputs>{
     const time=Iso.parse(this.now());
     if(actor.role!=='BETA')throw Error('Unavailable');
