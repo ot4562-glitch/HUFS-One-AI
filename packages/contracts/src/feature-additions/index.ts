@@ -7,6 +7,7 @@
  */
 import {z} from 'zod';
 import {TopicCodeSchema} from '../topics/index.js';
+import {OfficialHttpsUrlSchema} from './official-url.js';
 
 const Id = z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const Text = z.string().trim().min(1).max(1500);
@@ -78,7 +79,7 @@ export const MentorCardSchema = z.strictObject({
   majorCodes: BoundedCodeList, jobCodes: BoundedCodeList,
   experienceTopics: ApprovedTopicCodes, languages: BoundedCodeList,
   campuses: BoundedCodeList, publicEvidenceRefs: z.array(Id).max(50),
-  applicationUrl: z.url().optional(),
+  applicationUrl: OfficialHttpsUrlSchema.optional(),
 });
 export type MentorCard = z.infer<typeof MentorCardSchema>;
 export const MentorPreferenceSchema = z.strictObject({
@@ -98,7 +99,7 @@ export const CounselingServiceSchema = z.strictObject({
   id: Id, source: FeatureSourceSchema, active: z.boolean(),
   purposeCodes: BoundedCodeList, relatedPurposeCodes: BoundedCodeList,
   campuses: BoundedCodeList, audienceCodes: BoundedCodeList,
-  languages: BoundedCodeList, officialUrl: z.url().optional(),
+  languages: BoundedCodeList, officialUrl: OfficialHttpsUrlSchema.optional(),
 });
 export type CounselingService = z.infer<typeof CounselingServiceSchema>;
 
@@ -109,7 +110,7 @@ export const ActivityRecognitionRuleSchema = z.strictObject({
     id: Id, join: z.enum(['ALL','ANY']),
     kinds: BoundedCodeList.min(1),
   })).min(1).max(20),
-  officialApplicationUrl: z.url().optional(),
+  officialApplicationUrl: OfficialHttpsUrlSchema.optional(),
 });
 export type ActivityRecognitionRule = z.infer<typeof ActivityRecognitionRuleSchema>;
 export const ActivityProofSchema = z.strictObject({
@@ -165,7 +166,7 @@ export const BadgeDefinitionSchema = z.strictObject({
       after: Iso.optional(), before: Iso.optional(),
     })).min(1).max(50),
   })).min(1).max(20),
-  officialIssuerUrl: z.url().optional(),
+  officialIssuerUrl: OfficialHttpsUrlSchema.optional(),
 }).superRefine((badge,ctx)=>{
   const ids=badge.groups.flatMap(g=>g.requirements.map(r=>r.id));
   if(new Set(ids).size!==ids.length)
@@ -192,7 +193,7 @@ export const LearningProgramSchema = z.strictObject({
   topicCodes: ApprovedTopicCodes, eligibleCampuses: BoundedCodeList,
   term: Id, deadlineAt: Iso.optional(), capacity: z.enum(['OPEN','FULL','UNKNOWN']),
   requiredCourseCodes: BoundedCodeList,
-  applicationUrl: z.url().optional(),
+  applicationUrl: OfficialHttpsUrlSchema.optional(),
 });
 export type LearningProgram = z.infer<typeof LearningProgramSchema>;
 export const LearningPreferenceSchema = z.strictObject({
@@ -245,3 +246,4 @@ export type InternationalGuide = z.infer<typeof InternationalGuideSchema>;
 
 // Strict response wire payloads; API signs/validates the catalog cursor.
 export * from './results.js';
+export {OfficialHttpsUrlSchema} from './official-url.js';
