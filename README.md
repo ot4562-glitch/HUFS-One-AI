@@ -1,80 +1,220 @@
-# HUFS One AI
+<div align="center">
 
-**한국외국어대학교 학생의 기회 탐색·경험 기록·학업 계획을 근거와 연결하는 독립 학생 프로젝트입니다.** 학교 공식 행정 시스템이나 공식 졸업 사정을 대신하지 않습니다.
+# 🎓 HUFS One AI
 
-프로젝트 소유자가 문서상 자료·개인정보·기관·공유/게시·클라우드/모델·운영 승인을 모두 완료했다고 확인했습니다. 현재 승인 상태는 **`OWNER_CONFIRMED_APPROVED`**입니다. 실제 구현·자격증명 구성·시험·배포 여부는 [STATUS](STATUS.md)에서 별도로 관리합니다.
+### 학생의 기회, 경험, 학업을 하나의 근거 있는 선택으로
 
-## 현재 OPEN 6개 — 담당자 지정 (2026-11-07)
+흩어진 **교과·비교과·장학·채용·학사 정보**를 학생의 조건과 연결하고,  
+**왜 추천했는지 · 무엇을 확인해야 하는지 · 다음 행동은 무엇인지** 보여 주는 AI 기반 학생 지원 플랫폼입니다.
 
-| 현재 이슈 | GitHub 담당자 | 업무 |
-| --- | --- | --- |
-| [#321 이의상 AI·NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya/CLOVA·자연어 처리·정확도 공동 |
-| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI/NLP 공동 개선·학업 RulePack·개설 |
-| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
-| [#324 김채윤 시연·평가](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 전체 웹 시연·경험 AI 결과 평가 |
-| [#325 심민성 통합·릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API/DB·보안·품질·통합 |
-| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 직접 개발 |
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Fastify](https://img.shields.io/badge/Fastify-5-202020?logo=fastify&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Vitest](https://img.shields.io/badge/Vitest-5-6E9F18?logo=vitest&logoColor=white)
 
-이전 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)의 POST-01~20은 개인별 #321~#325에 보존하고 #316은 CLOSED 처리했습니다. **기존 UI/UX [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318)의 UX-01~25와 미완 인수 항목은 전부 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)으로 이전**하여 #318을 중복으로 종결했습니다. **현재 OPEN은 6개**이며 각각 지정 담당자 1명입니다. 이관·배정은 실제 구현·NCP 설치·보안/사람 인수·Awwwards 수상 완료를 뜻하지 않습니다. 실운영 상태는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`를 유지합니다.
+**한국외국어대학교 학생팀의 독립 프로젝트 · 2026 AI 캠퍼스 바이브코딩 경진대회 관련**
 
-## 본선 진출 이후 확정 팀 역할 (2026-11-07)
+[서비스 소개](#해결하려는-문제) · [주요 기능](#주요-기능) · [시스템 구조](#시스템-구조) · [실행 방법](#실행-방법) · [팀](#팀과-협업)
 
-- **이의상·박준영:** AI 정확도 개선, Laya 및 네이버 CLOVA OCR/Vision·HCX AI API, 자연어 처리·모델 조정/지원되는 경우의 파인튜닝 검토. 박준영은 기존 학업 RulePack/What-if 기능도 유지.
-- **이서연:** 웹사이트 전체 디자인·React UI 개선/반응형·접근성 및 서버 운영·NCP 계정/비용 관리.
-- **김채윤:** 사이트 전체·학생 경험 입력→AI 결과/정확도·추천 검증 시연, 발표용 60초/10분 경로·리허설.
-- **심민성:** 시스템 통합·공통 API/DB/보안/CI·코드 품질/리뷰·추가 기능 개발.
+</div>
 
-**역할 정본:** [WORKSTREAMS](docs/WORKSTREAMS.md) · **발표 시연 루트:** [DEMO_MANUAL](docs/DEMO_MANUAL.md). 이의상/박준영 공동 AI, 이서연 UI/NCP 운영, 김채윤 시연, 심민성 통합/추가 기능을 담당하며 **GitHub OPEN 6개는 전부 개인별 배정**됐습니다.
+> [!IMPORTANT]
+> **현재 공개 가능한 범위는 합성 데이터 기반 시연 및 자동 검증된 코드입니다.** 실서비스 출시는 `RELEASE_BLOCKED`이며, 학교 공식 인증·졸업 판정·실학생 데이터 사용·실 NCP/AI 유료 호출의 완료를 뜻하지 않습니다. 프로젝트 소유자의 `OWNER_CONFIRMED_APPROVED`와 실제 환경 구성·권리·검증은 별개입니다. [현재 상태](STATUS.md) · [데이터 승인·권리](docs/AUTHORIZATION.md)
 
-## 1. 기획 배경
+![HUFS One AI 시스템 아키텍처: 학생/합성 시연, React 프런트엔드, Fastify API, 추천·학업 코어, PostgreSQL 데이터 경계, 선택적 AI 및 NCP 출시 게이트](docs/images/hufs-one-ai-architecture.svg)
 
-학생에게 필요한 교과·비교과·장학·진로/채용·학사 공지는 여러 출처에 흩어져 있습니다. 같은 정보도 전공·이수 상태·관심·경험·마감에 따라 의미가 달라집니다. HUFS One AI는 학생이 무엇을 확인하고 다음에 어떤 행동을 선택할지, 원문과 개인 조건을 함께 보여 주는 서비스를 지향합니다.
+*아키텍처 이미지는 저장소 구현을 이해하기 쉽게 정리한 논리도입니다. 배포 완료 화면이나 실제 운영망을 뜻하지 않습니다.*
 
-## 2. 서비스 개요 및 차이점
+## 해결하려는 문제
 
-맞춤 기회·공지/달력, 경험 기록과 학생이 승인한 역량 태그, 보관함·행동 계획, 취득/수강/계획 학점·전공 What-if를 연결합니다. 추천 점수를 합격률로 표현하지 않고 지원 자격과 관심 적합성, 확정 사실과 미확인 근거를 분리합니다. SourceRevision과 시점별 근거를 보존하고 개인 정보는 로그인한 사용자와 권한에 맞게 제공합니다.
+대학생은 같은 정보도 **학과·학년·이수 현황·관심사·지원 자격·마감일**에 따라 다르게 판단해야 합니다. 하지만 학교 공지, 장학·비교과·채용 공고, 학점과 개인 경험은 서로 다른 곳에 흩어져 있습니다.
 
-기존 HUFSAbility의 기능을 전부 대체하거나 실제 연동이 없는 메뉴를 지원한다고 주장하지 않습니다. 독립 React UI의 넓은 화면 11개 대분류 GNB/실제 메뉴 LNB·모바일 5탭, 홈 요약·합성 REVIEWER/EMPTY_DEMO와 실제 사용자 경로를 구분합니다. 현재 공개 Pages 합성 미리보기는 학교 계정 인증과 다른 경로이며 실제 팀원 본인 데이터는 #297/#299 검증 전에 표시하지 않습니다. 경험 기반 커리어 기능은 경험 사실→AI 후보→학생 확인→추천 활용의 단계로 구성합니다.
+HUFS One AI는 학생이 직접 확인해야 할 근거를 연결합니다.
 
-## 3. 생성형 AI 및 바이브코딩 활용 방식
+1. **찾기** — 내 조건에 관련 있는 공고와 학사 정보를 모읍니다.
+2. **판단하기** — 자격 충족 여부, 근거와 시점, 미확인 항목을 분리합니다.
+3. **계획하기** — 경험·학업·지원 준비를 다음 행동으로 이어 갑니다.
 
-서비스 AI는 경험 기술 후보, 공고 조건 해석, 개인 행동 요약, 졸업 설명의 네 작업을 다룹니다. 원문·이미지/PDF·시점 근거와 사용 권한을 연결한 뒤 필요한 OCR/HCX 결과를 구조화하고 JSON/인용·숫자/날짜·예산/취소 조건을 검증합니다. AI가 학칙·실제 활동·지원 적격·취업 성과를 임의 확정하지 않습니다. 승인된 실제 정보를 처리하는 것과 비밀키·타인 자료를 무분별하게 노출하는 것은 다릅니다.
+추천 점수는 합격 확률이 아니며, 지원 자격과 공식 졸업요건을 AI가 임의로 확정하지 않습니다.
 
-개발에서는 자연어 요구와 반례로 코드·테스트·문서 초안을 만들고 실제 TypeScript·React·Fastify·SQL을 검토합니다. 회귀 테스트를 먼저 실패시키고 구현 후 CI로 확인하는 방식으로 AI 보조 개발 결과를 검증합니다. 모델이 생성한 초안·자체 리뷰를 독립 사람의 품질 측정으로 소개하지 않습니다.
+## 주요 기능
 
-## 4. 구현 현황 및 실제 서비스 실현 가능성
+| 기능 | 학생에게 보이는 가치 | 현재 구현 경계 |
+|---|---|---|
+| **맞춤 기회 탐색** | 관심사와 이수 조건에 맞는 비교과·장학·진로/채용 정보 | 고정 합성 공고 40건·공지 10건 기반 시연 및 관련 코어 |
+| **공지·마감 캘린더** | 확정 마감, 변경된 공지와 확인할 일정 파악 | `SourceRevision` 및 `asOf` 기준; 모든 실시간 공고 수집 아님 |
+| **학점·졸업·What-if** | 취득·수강·계획 학점을 나누고 전공 선택 시나리오 비교 | `RulePack`·합성 원장 기반, 공식 졸업 사정 아님 |
+| **경험·역량·커리어** | 경험 초안 → AI 역량 후보 → 학생 승인·철회 → 추천 활용 | 본인 권한·현재 작업 결과의 일치성 검증; 실데이터 인수 별도 |
+| **북마크·행동 계획** | 관심 공고·지원 초안·해야 할 일 정리 | 실제 지원서 제출·기관 합격 판정 제공하지 않음 |
+| **동아리·캠퍼스** | 동아리 기회와 학생 활동을 탐색하는 화면 | 합성 동아리·가상 ADMIN 시연; 공식 게시 권한 없음 |
+| **설명 가능한 AI** | 공고 조건 해석·행동 요약·졸업 설명·경험 기술 후보 | OCR/HCX/Laya와 외부 모델은 승인된 서버 구성에서 선택적 실행 |
 
-React/Vite, Fastify/Zod, 개인화·학업 계산 코어, SQL 역할/RLS·CAS, SourceRevision/RAG, AI 예산·취소, NCP IaC/SSH 합성 preview 코드가 있습니다. **본선 진출 전 11개 이슈**의 합성 UI·경험 API 연결·추천 평가·학업 검증·운영 사전 계획·배포 회귀·포스터를 통합했습니다. 이슈별 범위와 후속은 [STATUS](STATUS.md)를 기준으로 확인합니다.
+웹에는 데스크톱 11개 대분류 메뉴와 모바일 5탭, 합성 계정 선택·빈 계정·REVIEWER 시연이 있습니다. 기존 HUFSAbility의 모든 메뉴를 구현했다고 주장하지 않으며, 미지원 기능은 미지원으로 표시합니다. [화면별 범위](docs/UI_MENU_COVERAGE.md) · [제품 방향](PROJECT.md)
 
-- `/experience`에서 합성 대상과 BETA owner의 경험·AI 후보·학생 승인/철회를 분리합니다. 현재 세션에서 명시적으로 요청한 job의 응답만 사용하며 401/403·철회·이전 응답에서 화면을 비웁니다. 실제 로그인/유료 공급자 연결 성공은 별도입니다.
-- 추천 보고서는 고정 r1 40공고·10공지와 opt-in 정정 시나리오를 구별합니다. 이전 원문 판본의 평가 라벨을 새 판본에 재사용하지 않습니다. 독립 사람 Gold와 실정확도는 `NOT_RUN`입니다.
-- 학업 RulePack·원장·What-if·8학기/rolling-origin 합성 코어는 검증하되, 실제 학수번호·공식 학칙은 [박준영 #322](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322), owner API·DB 연계는 [심민성 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 추적합니다.
-- 동아리/기회에 8종 창작 그림과 추가 합성 예시 12개를 연결했습니다. 반응형 이미지·깨짐 fallback·출처/해시·합성 고지를 유지하며 고정 평가 corpus를 바꾸지 않습니다.
-- NCP 사전 운영 문서와 WinSCP/plink 지문·PS 경로/인용·root 공개키 검증을 보완했습니다. 실제 서버·청구·업로드/복구는 [이서연 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323)에서 인수합니다.
+## 사용자 흐름
 
-**2026-11-06 PR·이슈 점검:** [#306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306) 통합으로 `[본선진출 전]` 이슈 11개를 종결했습니다(10 completed, #260은 사람 검토 이관으로 not_planned). [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) 홈 3단계 액션 안내·공고 검색/필터/정렬·reduced-motion을 [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875) 후 병합했고 PR HEAD Actions 4/4 통과를 확인했습니다. [#305](https://github.com/ot4562-glitch/HUFS-One-AI/pull/305)는 현재 `main` 대비 변경 파일 0개여서 리뷰 후 중복 종료했습니다. 합성 공고의 D-day는 자료에 기록된 `asOf` 기준이며 오늘 실시간 공고 전체 검색이 아닙니다. 실제 계정/실기기/학교 근거 인수는 열린 후속 이슈입니다.**
+학생은 공고를 보기 전에 개인정보와 입력 조건을 스스로 확인하고, 결과를 받은 후에도 원문·날짜·권한을 확인합니다. AI는 검토할 **후보**를 작성할 수 있지만 확정 사실을 대신 만들지 않습니다.
 
-운영 서비스는 **`RELEASE_BLOCKED`**이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 시 자동 배포합니다. `csv/` 원본 5개는 불변 보존하며, 실제 4인 Forms↔수강파일↔로그인 actor/동의·권리 연결은 [심민성 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 검증합니다. 지정 팀원들의 사람 검토·실기기/NVDA·실제 성과는 수행한 것으로 표시하지 않습니다.
-
-```sh
-npm ci --ignore-scripts --no-audit --no-fund
-npm run check
-npm run assets:check
-npm run build:api
-npm run build:web
+```mermaid
+flowchart LR
+    P["학생 조건 / 가상 시연 프로필"] --> S["권한과 최신 출처 확인"]
+    S --> E["추천 · 자격 · 학업 RulePack"]
+    E --> V{"근거가 충분한가?"}
+    V -- "확인됨" --> R["근거를 붙여 결과 설명"]
+    V -- "미확인" --> U["UNKNOWN / NEEDS_REVIEW"]
+    R --> A["경험 승인 · 보관 · 행동 계획"]
+    U --> A
+    AI["선택적 OCR / LLM 후보"] -. "학생 승인·검증 후" .-> A
+    classDef trust fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef caution fill:#fef3c7,stroke:#d97706,color:#78350f
+    class S,E,R,A trust
+    class V,U,AI caution
 ```
 
-운영용 앱은 [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md)의 구성을 사용합니다. 정확한 SHA의 CI/로컬 결과와 실패·미실행은 각 이슈 종결 기록과 [검증 보고](REPORT.md)에 구분합니다.
+## 시스템 구조
 
-## 5. 기대 효과
+위의 **[아키텍처 이미지](docs/images/hufs-one-ai-architecture.svg)**는 실제 코드와 운영 준비 단계를 구분합니다. 기술 계약의 정본은 [Architecture.md](Architecture.md)입니다.
 
-관련 있는 공고·마감을 찾는 비용을 줄이고, 경험을 설명 가능한 기록으로 정리하며, 학업·진로 계획에서 확인해야 할 근거를 명확히 할 수 있습니다. 코드 기반 판단과 생성형 AI 후보를 분리하여 오판·비용·권한 문제를 관리하는 개발 사례를 제공합니다. 시간 절감·추천 정확도·학생 만족도 향상은 실제 측정 전에는 기대효과로만 표현합니다.
+| 영역 | 구성 | 책임 |
+|---|---|---|
+| **웹** | React 19 · Vite 8 · TypeScript | 기회·학업·경험 화면, 현재 사용자와 근거/불확실성 표시 |
+| **API** | Fastify 5 · Zod 4 | 입력 검증, 세션·권한·CSRF, API 응답과 취소/철회 경계 |
+| **순수 코어** | `packages/core` | 추천·자격, 공지·정규화, 학점·What-if·개설 전망 |
+| **공통 계약** | `packages/contracts` | 타입·API DTO 버전, 호출자와 공급자 사이의 검증 |
+| **데이터** | PostgreSQL · RLS · CAS | 사용자별 데이터, 출처 판본, 승인·철회, 감사 및 예산 경계 |
+| **AI** | `packages/ai` · 선택적 OCR/HCX/Laya | 근거 있는 후보 생성, 인용·수치·JSON 검증 및 비용 제한 |
+| **검증** | Vitest · Playwright · GitHub Actions | 합성/계약 테스트, Chrome 시나리오, 오프라인 NCP IaC 검사 |
+| **운영 준비** | GitHub Pages 합성 프리뷰 · NCP 구성 코드 | 공개 시연과 실서버 운영을 명확히 분리 |
 
-**현재 후속은 본선 이후 #321~#325 5개와 #317(심민성 추가 기능), 총 6개 OPEN**이며, 각각 담당자가 배정돼 있습니다.
+### 원문·데이터·AI의 책임 분리
 
-## 6. 전체 문서 목록
+```mermaid
+flowchart TB
+    SRC["허용된 원문 / 공고 / 학사 규칙"] --> REV["출처 판본·시간·권한 검사"]
+    REV --> CORE["결정적 자격·학업 코어"]
+    REV -. "승인된 입력만" .-> MODEL["선택적 OCR / HCX / Laya"]
+    MODEL --> CHECK["인용·숫자·형식 검증"]
+    CORE --> OUT["근거 / 조건 / 미확인 상태"]
+    CHECK --> CAND["AI 제안 후보"]
+    OUT --> VIEW["현재 사용자 화면"]
+    CAND --> OK["사용자 검토·승인 / 철회"]
+    OK --> VIEW
+    classDef core fill:#dbeafe,stroke:#2563eb,color:#1e40af
+    classDef opt fill:#fef3c7,stroke:#d97706,color:#78350f
+    class REV,CORE,OUT,VIEW core
+    class MODEL,CHECK,CAND,OK opt
+```
 
-문서별 기술 범위와 구현을 구분합니다. 현재 프로젝트 승인 상태는 [AUTHORIZATION](docs/AUTHORIZATION.md), 실제 코드·실행 상태는 [STATUS](STATUS.md)를 기준으로 합니다.
+**자료 이용과 개인정보:** 합성 시연의 S01–S05/REVIEWER/EMPTY_DEMO는 실제 학생 기록과 다릅니다. `csv/`에 복구·보존된 **원본 CSV 5개**는 무단 수정·삭제·이동하지 않으며 공개 웹 번들·CI·모델 추론에 넣지 않습니다. 실제 학생 정보는 인증된 actor와 목적별 권리·동의·현재 접근권 검증을 통과할 때만 전용 API로 접근해야 합니다. [데이터 정책](docs/DATA_GOVERNANCE.md)
+
+## 실행 방법
+
+### 준비물
+
+- Node.js **22.22.2 이상(22계열)** 또는 **24.15.0 이상(24계열)** (저장소 `package.json`의 범위 확인)
+- npm, Git; 브라우저 E2E를 실행하려면 Playwright/Chrome 환경
+- 기본 합성 시연에는 실제 학생 원본·학교 계정·유료 AI 키를 넣지 않습니다.
+
+### 1. 설치
+
+```bash
+git clone https://github.com/ot4562-glitch/HUFS-One-AI.git
+cd HUFS-One-AI
+npm ci --ignore-scripts --no-audit --no-fund
+```
+
+### 2. 합성 시연 실행
+
+먼저 **터미널 A**에서 합성 계정 API를 실행합니다.
+
+```bash
+npm run start:api:synthetic-accounts
+```
+
+다른 **터미널 B**에서 웹을 실행합니다.
+
+```bash
+npm run dev:web -- --mode synthetic
+```
+
+시연 프로필과 실제 사용자 인증은 다른 체계입니다. 독립 빈 계정/가상 ADMIN은 [EMPTY_DEMO_RUNBOOK](docs/EMPTY_DEMO_RUNBOOK.md)에 따라 별도 모드로 실행합니다. [웹 사용 설명](apps/web/README.md) · [API 사용 설명](apps/api/README.md)
+
+### 3. 검증
+
+```bash
+npm run check
+npm run assets:check
+npm run check:privacy
+npm run build:api
+npm run build:web
+npm run test:e2e:web
+```
+
+각 명령이 검사하는 범위와 실제 실행 성공은 서로 다릅니다. **이 README 편집 자체로 위 명령의 통과나 실제 NCP/실학생 인수를 주장하지 않습니다.** 최신 근거는 [STATUS](STATUS.md) · [REPORT](REPORT.md) · [Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)에서 확인합니다.
+
+## 프로젝트 구조
+
+```text
+HUFS-One-AI/
+├── apps/
+│   ├── web/                # React/Vite 학생·시연 화면
+│   └── api/                # Fastify API, 인증·인가·DB 연계
+├── packages/
+│   ├── core/               # 추천·학업·공지·개인정보 로직
+│   ├── contracts/          # 공통 DTO / Zod 계약
+│   ├── ai/                 # 선택적 AI 공급자·후보 검증
+│   ├── fixtures/           # 합성 테스트용 자료
+│   └── ui/                 # 공통 UI
+├── infra/ncp/              # NCP IaC·배포·운영 절차
+├── tests/                  # 계약·통합·회귀 검증
+├── docs/                   # 사용/팀/운영 문서
+│   └── images/             # 이 README 아키텍처 그림
+├── csv/                    # 보호 대상 원본 5개; 배포 금지
+└── tools/                  # 검사·평가·감사 도구
+```
+
+## 현재 상태와 출시 조건
+
+| 항목 | 상태 |
+|---|---|
+| 프로젝트 소유자 승인 | `OWNER_CONFIRMED_APPROVED` — 실제 구성/이용권·검증과 구별 |
+| 합성 웹·코어·API 및 자동 검증 | 코드와 CI 근거 존재; 각 정확한 SHA 기준 |
+| 실제 대학 계정·실학생 2명 이상 검증 | 실제 인수 미확인 · `NOT_RUN / CONFIGURATION_REQUIRED` |
+| 공식 학칙·교과코드·실원본 통합 검증 | 개별 검토·연계 필요 |
+| 실제 NCP 운영·유료 HCX/OCR 호출·과금 | 별도 운영 구성·영수증·복구 확인 필요 |
+| 실서비스 릴리스 | **`RELEASE_BLOCKED`** |
+
+GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위한 것이며 프로덕션 API/학교 계정 로그인과 다릅니다. 자동 배포 구성은 [Pages 워크플로](.github/workflows/pages-synthetic-preview.yml), 실제 서비스 구성 기준은 [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md)에서 확인하세요.
+
+## 팀과 협업
+
+| 담당 | 현재 역할 | 이슈 |
+|---|---|---|
+| **이의상** | Laya · CLOVA/HCX · NLP · AI 정확도 개선 | [#321](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) |
+| **박준영** | AI 모델 공동 검증 · 학업 RulePack·What-if·개설 전망 | [#322](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) |
+| **이서연** | 전체 React UI/UX · 반응형/접근성 · NCP 운영/실 AI 호출 | [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) |
+| **김채윤** | 이용권·실학생/실기기 검증 · 발표 시연·AI 품질 평가 | [#324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) |
+| **심민성** | 프로젝트 총괄 · API/DB/RLS · 보안·CI·리뷰·통합 | [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) |
+
+현재 열린 팀 이슈는 **#321–#325, 5개**입니다(2026-11-08 확인). 추가 기능 #317은 종결됐으며, 이전 UI/UX #318의 미완 작업은 #323으로 이관되었습니다. 이슈 담당 지정은 실제 구현·검증 완료가 아닙니다. 업무의 현재 정본은 [WORKSTREAMS](docs/WORKSTREAMS.md)입니다.
+
+## 중요 문서 — 처음 읽는 분부터 개발자까지
+
+| 문서 | 대상 및 내용 |
+|---|---|
+| **[① NCP 서버 생성·기본 보안](docs/BEGINNER_NCP_SERVER_SETUP.md)** | 비전공 운영자 — VPC/ACG, 인스턴스, SSH, 요금·반납 |
+| **[② 제품·GPT(Codex)·Claude Code 설치](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md)** | 서버/개발 담당자 — 배포·SSH·롤백과 개발용 CLI 구분 |
+| **[③ 제품 구조와 동작 원리](docs/BEGINNER_PRODUCT_ARCHITECTURE.md)** | 비전공자·심사자 — React/API/DB, 추천/학업, RAG, 개인정보 |
+| **[기술 아키텍처 정본](Architecture.md)** | 개발자 — A00–A19 인터페이스·시점·권한 계약 |
+| **[현재 구현·검증](STATUS.md)** | 전체 팀 — 검증된 것과 미실행·구성 필요 영역 |
+| **[시연 매뉴얼](docs/DEMO_MANUAL.md)** | 심사자·발표자 — 합성 시연 경로와 설명 |
+| **[보안·데이터 정책](docs/DATA_GOVERNANCE.md)** | 전체 팀 — 원본 CSV, 권리, 철회, 접근 제어 |
+| **[PR·리뷰 기준](docs/PR_WORKFLOW.md)** | 개발자 — CI·독립 리뷰·병합 절차 |
+
+<details>
+<summary><b>모든 개발·검증·운영 문서 링크 펼치기</b></summary>
 
 ### 프로젝트 소개·상태·설계
 
@@ -166,15 +306,8 @@ npm run build:web
 - [테스트 AGENTS](tests/AGENTS.md) — 자동검증과 실제 인수 구분.
 - [tools README](tools/README.md) — 계약·의존성·산출물 감사.
 
-## 7. 중요 문서 — 처음 설치하는 분·비전공자용
+</details>
 
-**NCP 서버를 처음 만드는 팀원, 제품을 설치하려는 운영자, 소프트웨어 비전공자를 위한 상세 설명서입니다.** 아래 순서대로 읽으면 실제 NCP 비용 발생 단계와 합성 시연·제품 운영·GPT/Claude 개발 에이전트의 차이를 이해할 수 있습니다.
+---
 
-| 중요 문서 | 읽는 사람 / 핵심 내용 |
-| --- | --- |
-| **[① NCP 서버 개설·초기 보안 가이드](docs/BEGINNER_NCP_SERVER_SETUP.md)** | 비전공 운영자용: NCP 계정·KR VPC·Subnet·서버 생성·공인 IP·ACG/Network ACL·SSH 키·Ubuntu/Node 설치·비용/반납 |
-| **[② NCP에 제품 및 GPT(Codex)·Claude Code 설치 가이드](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md)** | 서버/개발 담당자용: 안전한 합성 미리보기 배포·SSH 터널·롤백, 운영 API·DB·TLS 준비, Codex/Claude Code 개인용 개발 환경 설치와 제품 AI의 차이 |
-| **[③ 제품 구조와 동작 원리 — 비전공자 가이드](docs/BEGINNER_PRODUCT_ARCHITECTURE.md)** | 기획·심사·신규 팀원용: React↔API↔DB·추천/학업·RAG·AI 후보→학생 승인·개인정보·합성/실자료 구분·10분 발표 흐름 |
-
-**설치 전 반드시 확인:** 개발용 합성 미리보기, GitHub Pages 미리보기, GPT/Claude 개발 CLI 설치는 **실제 학생 서비스의 배포 성공이 아닙니다.** 현재 실서비스 환경·사용자별 권한·NCP/Google/PG/유료 공급자·인수 검증은 [NCP 서버·운영 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), [API·실자료·보안 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325), [현재 구현 상태](STATUS.md), [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md)에서 확인합니다. 복구된 `csv/` 원본 5개는 무단 수정·삭제하지 않으며 공개 배포·CI/AI 작업공간에 포함하지 않습니다.
-
+**HUFS One AI는 학교가 운영하는 공식 시스템이 아닌 독립 학생 프로젝트입니다.** 실제 학생·공고·기관 정보의 사용과 출시 상태는 [STATUS](STATUS.md) 및 승인된 운영 기록으로만 판단합니다.
