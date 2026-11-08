@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **인수는 자동화하지 않습니다.** 이 이슈에는 type:acceptance / triage:needs-review가 표시됩니다.
+        **인수는 자동화하지 않습니다.** P0 수준의 긴급 상황은 인수 이슈만 만들고 방치하지 말고 관리자에게 비공개/직접 즉시 알립니다. 이 이슈에는 type:acceptance / triage:needs-review가 표시됩니다.
         담당자, 승인자, 검증 환경, 비용, 근거·접근권을 사람이 정하고 확인한 뒤에만 완료 판단합니다.
         기존 기능/코드 PR의 합성 PASS는 실제 학교 계정·자료 권리·HCX/OCR·NCP·사람 검증의 완료가 아닙니다.
         제목 맨 앞 [실증 인수]를 유지하고, AGENTS.md 및 docs/ISSUE_ASSIGNMENT_PLAYBOOK.md를 읽으세요.
