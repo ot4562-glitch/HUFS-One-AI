@@ -50,7 +50,7 @@ describe('#348 server-only opaque cursor signer and verifier',()=>{
   });
   it('binds cursor to filter changes and reference time',()=>{
     fail(sign(),{...context,query:query({...request,q:'finance'})},'STALE_CURSOR');
-    fail(sign(),{...context,query:query({...request,asOf:'2026-11-07T12:00:00+09:00'})},
+    fail(sign(),{...context,query:query({...request,asOf:'2026-11-08T11:59:30+09:00'})},
       'STALE_CURSOR');
   });
   it('expires deterministically and does not trust the browser clock',()=>{
@@ -83,6 +83,14 @@ describe('#348 server-only opaque cursor signer and verifier',()=>{
     expect(()=>signer.sign({...cursor,scopeKey:'another-actor'},context)).toThrow('STALE_CURSOR');
   });
   it('does not accept client-defined future or broken query context',()=>{
+
+    const future=query({...request,asOf:'2026-12-02T12:00:00+09:00'});
+    expect(()=>signer.sign({...cursor,filterKey:catalogFilterKey(future)},
+      {...context,query:future})).toThrow('MISCONFIGURED_CURSOR');
+    const stale=query({...request,asOf:'2026-11-07T12:00:00+09:00'});
+    expect(()=>signer.sign({...cursor,filterKey:catalogFilterKey(stale)},
+      {...context,query:stale})).toThrow('MISCONFIGURED_CURSOR');
+
     expect(()=>signer.sign(cursor,{...context,nowMs:NaN})).toThrow('MISCONFIGURED_CURSOR');
     expect(()=>signer.sign(cursor,{...context,query:query({...request,pageSize:1000})}))
       .toThrow('MISCONFIGURED_CURSOR');
