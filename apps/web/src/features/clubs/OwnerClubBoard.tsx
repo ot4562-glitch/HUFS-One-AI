@@ -1,4 +1,5 @@
 import {Fragment,useEffect,useState,useSyncExternalStore} from 'react';
+import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import type {z} from 'zod';
 import type {SyntheticClubBoardResponse,SyntheticClubDetailResponseSchema} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
@@ -60,7 +61,7 @@ export function OwnerClubBoard({port,id,navigate}:{port:OwnerClubPort;id?:string
   },[port,id,key,session.status]);
   const refresh=<button type="button" onClick={()=>setTick(n=>n+1)}>모집 상태 새로고침</button>;
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">현재 사용자 권한을 확인하고 있어요.</p>;
-  if(session.status!=='READY')return <><p role="alert">본인 권한 또는 현재 게시 승인을 확인할 수 없어 동아리 자료를 표시하지 않았어요. 다시 로그인하거나 권한을 확인해 주세요.</p>{refresh}</>;
+  if(session.status!=='READY')return <OwnerSessionFailure controller={port.session}>본인 권한 또는 현재 게시 승인을 확인할 수 없어 동아리 자료를 표시하지 않았어요.</OwnerSessionFailure>;
   if(!loaded||loaded.key!==key)return <p aria-busy="true">현재 승인된 합성 동아리를 불러오는 중이에요.</p>;
   if(id){
     const detail=buildOwnerClubDetail(loaded.value);
