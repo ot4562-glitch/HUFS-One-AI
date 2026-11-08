@@ -15,7 +15,7 @@ const applicant:ExchangeApplicant={
   language:{test:'TOEFL',score:90,expiresOn:'2027-01-01'},departureOn:'2026-09-01',
 };
 describe('deterministic exchange checks (#340)',()=>{
-  const cases:{name:string;change:Partial<ExchangeApplicant>;policy?:Partial<ExchangePolicy>;
+  const cases:{name:string;change:Record<string,unknown>;policy?:Record<string,unknown>;
     check?:string;status?:string;overall:string}[]=[
     {name:'baseline 1-semester',change:{},overall:'PASS'},
     {name:'GPA lower than 3.0',change:{gpa:2.99},check:'GPA',status:'FAIL',overall:'FAIL'},
@@ -47,7 +47,9 @@ describe('deterministic exchange checks (#340)',()=>{
     {name:'unverified school year',change:{status:'UNKNOWN'},check:'SEMESTERS',status:'UNKNOWN',overall:'UNKNOWN'},
   ];
   it.each(cases)('$name',({change,policy:override,check,status,overall})=>{
-    const actual=evaluateExchange({...applicant,...change},{...policy,...override},NOW);
+    const clean=(value:Record<string,unknown>)=>Object.fromEntries(Object.entries(value).filter(([,v])=>v!==undefined));
+    const actual=evaluateExchange(clean({...applicant,...change}) as ExchangeApplicant,
+      clean({...policy,...override}) as ExchangePolicy,NOW);
     expect(actual.result).toBe(overall);
     if(check)expect(actual.checks.find(x=>x.code===check)?.status).toBe(status);
     expect(actual.disclaimer).toContain('공식 지원 자격');

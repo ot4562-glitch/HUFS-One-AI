@@ -59,7 +59,7 @@ describe('activity archive and past-only seasonal outlook (#339)',()=>{
     expect(archiveActivities([a,b],ASOF,{year:2025,campus:'SEOUL',query:'오리엔테이션'})).toHaveLength(1);
   });
   it('does not treat a post date as a missing event date',()=>{
-    const a=row(2025,'03','07',{eventDate:undefined});
+    const a=row(2025); delete a.eventDate;
     const result=forecastActivity([a],ASOF,2026,'synthetic-dept','orientation');
     expect(result.state).toBe('INSUFFICIENT_DATA');
   });

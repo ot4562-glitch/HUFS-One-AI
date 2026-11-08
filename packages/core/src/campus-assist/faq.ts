@@ -50,7 +50,7 @@ export function validateFaqCandidate(raw:unknown,evidence:readonly FaqEvidence[]
     cited.push(paragraph.text);
   }
   // Reject unsupported numerical assertions; proof text must contain the exact numeric token.
-  const facts=cited.join(' ').match(/\d+(?:[.,]\d+)*/g)||[];
+  const facts:string[]=cited.join(' ').match(/\d+(?:[.,]\d+)*/g)||[];
   for(const token of candidate.answer.match(/\d+(?:[.,]\d+)*/g)||[])
     if(!facts.includes(token))throw new RangeError('FAQ numeric fact lacks citation');
   if(/https?:\/\/|www\./i.test(candidate.answer))throw new RangeError('Unreviewed URL in FAQ answer');
