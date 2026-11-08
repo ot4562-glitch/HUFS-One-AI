@@ -62,19 +62,21 @@ export function evaluateVerifiedCondition(
   rule: C.FeatureCondition,
   facts: readonly C.FeatureVerifiedFact[],
   asOf: string,
-  sourceRevisionId: string,
+  allowedFactRevisions: ReadonlySet<string>,
 ): ProofCheck {
   const checked=()=>({state:'UNKNOWN' as const,reason:'CONDITION_UNCHECKED',
     factKey:rule.factKey,evidence:[rule.sourceSpanId]});
   const at=parseAsOf(asOf);
-  const hits=facts.filter(f=>f.key===rule.factKey && parseAsOf(f.observedAt)<=at);
-  if (!hits.length) return {...checked(),reason:'FACT_NOT_AVAILABLE'};
-  // Inconsistent duplicates must abstain rather than selecting an arbitrary value.
-  const uniq=new Set(hits.map(f=>JSON.stringify(f.value)));
-  if (uniq.size!==1) return {...checked(),reason:'CONFLICTING_FACTS'};
-  const f=hits[0]!;
-  if (f.provenance!=='SOURCE_VERIFIED' || f.sourceRevisionId!==sourceRevisionId)
-    return {...checked(),reason:'FACT_NOT_VERIFIED_FOR_SOURCE'};
+  const hits=facts.filter(f=>f.key===rule.factKey && parseAsOf(f.observedAt)<=at
+    && f.provenance==='SOURCE_VERIFIED' && f.sourceRevisionId
+    && allowedFactRevisions.has(f.sourceRevisionId));
+  if (!hits.length) return {...checked(),reason:'FACT_NOT_VERIFIED_OR_AVAILABLE'};
+  // Use the newest *authorized* observation. Conflicts at the same instant abstain.
+  const newest=Math.max(...hits.map(f=>parseAsOf(f.observedAt)));
+  const latest=hits.filter(f=>parseAsOf(f.observedAt)===newest);
+  if (new Set(latest.map(f=>JSON.stringify(f.value))).size!==1)
+    return {...checked(),reason:'CONFLICTING_FACTS'};
+  const f=latest[0]!;
   let pass: boolean|undefined;
   if (rule.op==='NUM_GTE' && typeof f.value==='number' && typeof rule.expected==='number')
     pass=f.value>=rule.expected;
