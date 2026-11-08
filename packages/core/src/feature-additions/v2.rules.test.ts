@@ -344,12 +344,44 @@ describe('#352 — reviewed translations and owner-only administrative checklist
   it('reconciles checked steps only for the exact guide version',()=>{
     const saved={guideId:'international-guide-1',guideRevisionId:'source-r1',
       ownerCheckedStepIds:['step-1','ghost','step-1'],expectedVersion:3};
-    expect(reconcileGuideChecklist(guide(),saved,3)).toMatchObject({
+    expect(reconcileGuideChecklist(guide(),saved,3,FIXED_NOW)).toMatchObject({
       state:'READY',checkedStepIds:['step-1'],invalidatedStepIds:['ghost'],
       officialAdministrationComplete:false});
-    expect(reconcileGuideChecklist(guide(),saved,4).state).toBe('VERSION_CONFLICT');
-    expect(reconcileGuideChecklist(guide({source:source('new-rev')}),saved,3).state)
+    expect(reconcileGuideChecklist(guide(),saved,4,FIXED_NOW).state).toBe('VERSION_CONFLICT');
+    expect(reconcileGuideChecklist(guide({source:source('new-rev')}),saved,3,FIXED_NOW).state)
       .toBe('STALE_GUIDE');
+  });
+
+  it('#377 refuses saved checkmarks when the same guide revision loses rights or expires',()=>{
+    const saved={guideId:'international-guide-1',guideRevisionId:'source-r1',
+      ownerCheckedStepIds:['step-1','step-1','removed-step'],expectedVersion:3};
+    const invalid=[
+      guide({source:{...source(),status:'REVOKED'}}),
+      guide({source:{...source(),rights:'BLOCKED'}}),
+      guide({source:{...source(),rights:'UNKNOWN'}}),
+      guide({source:{...source(),verifiedAt:'2026-12-01T00:00:00+09:00'}}),
+      guide({source:{...source(),effectiveUntil:FIXED_NOW}}),
+      guide({source:{...source(),evidenceSpanIds:[]}}),
+      guide({steps:[{id:'step-1',order:1,documentCodes:[],sourceSpanId:'not-a-span'}]}),
+      guide({steps:[{id:'step-1',order:1,documentCodes:[],sourceSpanId:'span-1'},
+        {id:'step-1',order:2,documentCodes:[],sourceSpanId:'span-2'}]}),
+    ];
+    for(const item of invalid){
+      const result=reconcileGuideChecklist(item,saved,3,FIXED_NOW);
+      expect(result).toEqual({state:'STALE_GUIDE',checkedStepIds:[],
+        invalidatedStepIds:['removed-step','step-1'],
+        officialAdministrationComplete:false});
+    }
+  });
+  it('#377 invalidates removed steps and never marks official administration complete',()=>{
+    const saved={guideId:'international-guide-1',guideRevisionId:'source-r1',
+      ownerCheckedStepIds:['step-1'],expectedVersion:3};
+    const changed=guide({steps:[{id:'step-2',order:1,documentCodes:['APPLICATION'],
+      sourceSpanId:'span-1'}]});
+    expect(reconcileGuideChecklist(changed,saved,3,FIXED_NOW)).toEqual({
+      state:'READY',checkedStepIds:[],invalidatedStepIds:['step-1'],
+      officialAdministrationComplete:false});
+    expect(()=>reconcileGuideChecklist(guide(),saved,3,'not-a-date')).toThrow();
   });
 });
 describe('#345 counseling destination applicability regressions',()=>{
