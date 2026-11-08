@@ -89,4 +89,34 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect((await app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(403);
     expect((await app.inject({method:'POST',url:'/api/owner/faq/ask',payload:{asOf:NOW,question:'질문'}})).statusCode).toBe(403);
   });
+  it('#365 partner list and evaluation agree at KST day boundaries',async()=>{
+    const h=fixture();
+    const base=SYNTHETIC_PARTNERS[0]!;
+    const policy={...base,publishedAt:'2026-11-01T00:00:00Z',verifiedAt:'2026-11-01T00:00:00Z',
+      effectiveFrom:'2026-11-08',effectiveUntil:'2026-11-07'};
+    const check=async(rule:Omit<typeof policy,'effectiveUntil'>&{effectiveUntil?:string},asOf:string)=>{
+      h.exchange.read.mockResolvedValue({items:[rule],receipt:{actorId:actor.actorId,
+        sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+      const list=await h.app.inject({url:'/api/owner/exchange/partners?asOf='+encodeURIComponent(asOf)});
+      const listed=(list.json().partners as {partnerId:string}[]).some(p=>p.partnerId===rule.partnerId);
+      const evaluated=(await h.post('/api/owner/exchange/evaluate',{asOf,partnerId:rule.partnerId,
+        applicant:{duration:1,track:rule.track,status:'ENROLLED',completedSemesters:3,gpa:3.2,
+          transfer:false,previousCancellation:'CLEAR'}})).json();
+      const inEffect=evaluated.checks.find((c:{code:string})=>c.code==='TRACK').status==='PASS';
+      return [listed,inEffect];
+    };
+    const {effectiveUntil:_openEnded,...starts}=policy;
+    // Issue example 1: KST 00:30 on the start day -> both see the policy.
+    expect(await check(starts,'2026-11-08T00:30:00+09:00')).toEqual([true,true]);
+    expect(await check(starts,'2026-11-07T23:30:00+09:00')).toEqual([false,false]);
+    // Issue example 2: KST 00:30 after the (inclusive) end day -> neither sees it.
+    const ends={...policy,effectiveFrom:'2026-11-01'};
+    expect(await check(ends,'2026-11-08T00:30:00+09:00')).toEqual([false,false]);
+    expect(await check(ends,'2026-11-07T23:30:00+09:00')).toEqual([true,true]);
+    // The same instants written in UTC must give the same answers (the list used
+    // to compare the request string's own calendar date).
+    expect(await check(starts,'2026-11-07T15:30:00Z')).toEqual([true,true]);
+    expect(await check(ends,'2026-11-07T15:30:00Z')).toEqual([false,false]);
+    expect(await check(ends,'2026-11-07T14:30:00Z')).toEqual([true,true]);
+  });
 });
