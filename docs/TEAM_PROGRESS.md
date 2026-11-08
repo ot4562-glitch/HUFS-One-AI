@@ -1,6 +1,6 @@
 # HUFS One AI — 팀 작업과 실제 수락
 
-**현재 역할 기준 2026-11-08**, 하단의 2026-11-06~07 수락 수치는 고정 역사적 기록. 본선 전 이슈의 정리와 실제 사람/운영 인수를 분리한다. 코드 정본은 [STATUS](../STATUS.md), 실제 운영·서버 증거는 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 전체 인수·릴리스는 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 추적한다.
+**현재 역할 기준 2026-11-08**, 하단의 2026-11-06~07 수락 수치·과거 #321~#325는 역사적 기록이며 현재 열린 이슈가 아닙니다. 코드 리뷰·완료/미완/CI의 현행 정본은 [STATUS](../STATUS.md)와 [2026-11-08 증거 원장](REVIEW_AND_ISSUE_AUDIT_20261108.md)입니다. 실 운영/출처 권리 인수는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)·[#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362)·[#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367) 등 열린 기능별 이슈로 추적합니다. 실제 사람/운영 인수는 RELEASE_BLOCKED입니다.
 
 ## 현행 업무 배정 및 실제 검증 상태 (2026-11-08)
 
