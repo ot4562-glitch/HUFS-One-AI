@@ -7,9 +7,14 @@ function ticket(number, title, extra = {}) {
   return {number, title, labels: [], assignees: [], body: '', ...extra};
 }
 function mock(issue, openIssues = []) {
+  let liveIssue = issue;
   const calls = {added: [], removed: [], assigned: [], created: []};
   const existingLabels = new Set();
   const rest = {issues: {
+    get: async ({issue_number}) => {
+      assert.equal(issue_number, liveIssue.number);
+      return {data: liveIssue};
+    },
     getLabel: async ({name}) => {
       if (!existingLabels.has(name)) throw {status: 404};
       return {data: {name}};
@@ -23,7 +28,7 @@ function mock(issue, openIssues = []) {
   const github = {rest, paginate: async () => openIssues};
   const context = {repo: {owner: 'ot4562-glitch', repo: 'HUFS-One-AI'}, payload: {issue}};
   const core = {info() {}, warning() {}};
-  return {calls, github, context, core};
+  return {calls, github, context, core, setLiveIssue(next) {liveIssue = next;}};
 }
 
 test('immutable #355-359 never receive any writes, regardless of title', async () => {
@@ -255,4 +260,66 @@ test('new canonical prefix configuration defines nine entries', () => {
   assert.equal(cfg.prefixes.length, 9);
   assert.equal(classify(ticket(568, '[\uc2e4\uc99d \uc778\uc218] NCP')).area, null);
   assert.equal(classify(ticket(569, '[\ubc84\uadf8] React')).area, 'web');
+});
+
+test('queued webhook snapshots cannot overwrite the current human decision', async () => {
+  const event = ticket(610, '[AI 구현] queued original');
+  for (const [label, live, status] of [
+    ['human assignee', {...event, assignees: [{login: 'ot4562-glitch'}]}, 'preserved'],
+    ['human hold', {...event, labels: ['routing:hold']}, 'held'],
+    ['P0 label', {...event, labels: ['priority:P0']}, 'needs-review'],
+    ['security title', {...event, title: '[AI 구현] 보안 취약점'}, 'needs-review'],
+    ['manual triage', {...event, title: '[분류 검토] manually flagged'}, 'needs-review'],
+    ['closed issue', {...event, state: 'closed'}, 'closed'],
+    ['protected title', {...event, title: '[본선 진출 이후] immutable'}, 'protected']
+  ]) {
+    const env = mock(event);
+    env.setLiveIssue(live);
+    const result = await routeIssue({...env});
+    assert.equal(result.status, status, label);
+    assert.deepEqual(env.calls.assigned, [], label);
+    if (status === 'protected' || status === 'closed')
+      assert.deepEqual(env.calls, {added: [], removed: [], assigned: [], created: []}, label);
+  }
+  const env = mock(event);
+  env.setLiveIssue({...event, title: '[웹 구현] reassigned role'});
+  assert.equal((await routeIssue({...env})).assignee, 'lhh42001',
+    'the current title, not the stale event prefix, determines the initial owner');
+});
+
+test('human updates during routing stop assignment immediately before the API write', async () => {
+  const initial = ticket(611, '[AI 구현] queued OCR');
+  const changes = [
+    ['assignee', {...initial, assignees: [{login: 'ot4562-glitch'}]}, 'preserved'],
+    ['hold', {...initial, labels: ['routing:hold']}, 'held'],
+    ['new P0 label', {...initial, labels: ['priority:P0']}, 'needs-review'],
+    ['new P0 title', {...initial, title: '[AI 구현] P0 incident'}, 'needs-review'],
+    ['security', {...initial, title: '[AI 구현] 개인정보 유출'}, 'needs-review'],
+    ['area changed', {...initial, labels: ['area:web']}, 'needs-review'],
+    ['title edited', {...initial, title: '[웹 구현] corrected role'}, 'needs-review'],
+    ['closed while queued', {...initial, state: 'closed'}, 'closed']
+  ];
+  for (const [label, changed, status] of changes) {
+    const env = mock(initial);
+    let reads = 0;
+    env.github.rest.issues.get = async () => ({data: ++reads === 1 ? initial : changed});
+    const result = await routeIssue({...env});
+    assert.equal(result.status, status, label);
+    assert.equal(reads, 2, label + ': read at entry and before write');
+    assert.deepEqual(env.calls.assigned, [], label);
+    if (status === 'needs-review') assert.ok(env.calls.added.includes('triage:needs-review'),
+      label + ': new safety gate needs a visible triage label');
+  }
+});
+
+test('the last live read still permits a normal unassigned issue', async () => {
+  const issue = ticket(612, '[AI 구현] safe path');
+  const env = mock(issue);
+  let reads = 0;
+  const get = env.github.rest.issues.get;
+  env.github.rest.issues.get = async (...args) => {reads++; return get(...args);};
+  const result = await routeIssue({...env});
+  assert.equal(result.status, 'assigned');
+  assert.equal(reads, 2);
+  assert.equal(env.calls.assigned.length, 1);
 });
