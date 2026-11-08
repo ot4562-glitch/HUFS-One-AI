@@ -103,3 +103,14 @@ describe('#348 server-only opaque cursor signer and verifier',()=>{
     expect(second.nextCursor).toBeNull();
   });
 });
+describe('#348 cursor confidentiality at the transport boundary',()=>{
+  it('does not expose actor identity, consent revision, scope or search text in decoded payload',()=>{
+    const token=sign();
+    const decoded=Buffer.from(token.split('.')[0]!,'base64url').toString('utf8');
+    expect(decoded).not.toContain(context.actorId);
+    expect(decoded).not.toContain(context.consentVersion);
+    expect(decoded).not.toContain(context.scopeKey);
+    expect(decoded).not.toContain('economics');
+    expect(JSON.parse(decoded)).toHaveProperty('actorBinding');
+  });
+});
