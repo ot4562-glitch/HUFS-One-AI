@@ -132,3 +132,40 @@ describe('versioned feature contracts preserve source and actor-independent wire
     expect(S.InternationalGuideSchema.safeParse({...g,passportNumber:'private'}).success).toBe(false);
   });
 });
+describe('v2 contract cross-field defensive validation',()=>{
+  it('rejects comparison operators bound to the wrong data type',()=>{
+    const base={id:'rule-1',factKey:'gpa',sourceSpanId:'span-1',required:true};
+    expect(S.FeatureConditionSchema.safeParse({...base,op:'NUM_GTE',expected:'3.5'}).success).toBe(false);
+    expect(S.FeatureConditionSchema.safeParse({...base,op:'TEXT_IN',expected:[]}).success).toBe(false);
+    expect(S.FeatureConditionSchema.safeParse({...base,op:'BOOL_EQ',expected:'true'}).success).toBe(false);
+    expect(S.FeatureConditionSchema.safeParse({...base,op:'DOCUMENT_PRESENT',expected:false}).success)
+      .toBe(false);
+  });
+  it('rejects made-up topic codes in owner-authorized inputs',()=>{
+    expect(S.MentorPreferenceSchema.safeParse({...mentorPreference(),
+      ownerApprovedTopics:['AI_PROMPT_HALLUCINATION']}).success).toBe(false);
+    expect(S.ExperienceEvidenceSchema.safeParse({...experience(),
+      topicCodes:['FAKE_CODE']}).success).toBe(false);
+    expect(S.TopicCrosswalkSchema.safeParse({...crosswalk(),
+      oneAiTopic:'INVALID_TOPIC'}).success).toBe(false);
+  });
+  it('rejects repeated badge requirement IDs and a reversed evidence period',()=>{
+    const b=badge(),group=b.groups[0]!,req=group.requirements[0]!;
+    expect(S.BadgeDefinitionSchema.safeParse({...b,groups:[{
+      ...group,requirements:[req,req]}]}).success).toBe(false);
+    expect(S.BadgeDefinitionSchema.safeParse({...b,groups:[{
+      ...group,requirements:[{...req,after:'2026-12-01T00:00:00+09:00',
+        before:'2026-11-01T00:00:00+09:00'}]}]}).success).toBe(false);
+  });
+  it('rejects duplicated international checklist step keys',()=>{
+    const g=guide();
+    expect(S.InternationalGuideSchema.safeParse({...g,steps:[...g.steps,...g.steps]}).success)
+      .toBe(false);
+  });
+  it('rejects repeated scholarship group IDs even when the rule IDs differ',()=>{
+    const p=scholarship(),first=p.groups[0]!;
+    expect(S.ScholarshipPolicySchema.safeParse({...p,groups:[
+      first,{...first,conditions:[{...first.conditions[0]!,id:'distinct-rule'}]},
+    ]}).success).toBe(false);
+  });
+});
