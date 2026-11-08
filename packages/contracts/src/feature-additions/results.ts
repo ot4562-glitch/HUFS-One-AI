@@ -78,7 +78,7 @@ export type RecognitionReportV2=z.infer<typeof RecognitionReportV2Schema>;
 export const SkillRowV2Schema=z.strictObject({
   requirementId:Id,sourceSpanId:Id,
   status:z.enum(['SUPPORTED_BY_EVIDENCE','EVIDENCE_MISSING','UNMAPPED','NEEDS_REVIEW']),
-  ownerEvidenceIds:Ids,matchedOneAiTopics:Ids,
+  ownerEvidenceIds:Ids,matchedOneAiTopics:Ids,requiredOneAiTopics:Ids,
   interpretation:z.enum(['RECORD_MATCH','RECORD_MISSING','UNKNOWN']),
 });
 export type SkillRowV2=z.infer<typeof SkillRowV2Schema>;
