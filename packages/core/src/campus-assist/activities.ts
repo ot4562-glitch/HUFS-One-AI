@@ -26,16 +26,30 @@ function windowDate(targetYear:number,day:number,marginDays:number):string{
 export interface ActivityFilter{
   organizationId?:string; year?:number; campus?:ActivityRecord['campus']; query?:string;
 }
-/** Newest revision per sourceId that was both published and verified by asOf. */
+/** Key-order independent comparison form of one record. */
+function canonical(row:ActivityRecord):string{
+  return JSON.stringify(Object.keys(row).sort().map(k=>[k,row[k as keyof ActivityRecord]]));
+}
+/**
+ * Newest revision per sourceId that was both published and verified by asOf
+ * (newest publishedAt instant, then revisionId). If several rows carry that
+ * same newest revision but disagree in any field (rights, status, dates,
+ * text), the whole source is quarantined and has no head (#373): input order
+ * must never decide which copy survives. Identical copies collapse to one.
+ */
 function sourceHeadsAt(parsed:readonly ActivityRecord[],time:number):Map<string,ActivityRecord>{
-  const heads=new Map<string,ActivityRecord>();
+  const newest=new Map<string,ActivityRecord[]>();
   for(const item of parsed){
     if(epoch(item.publishedAt)>time||epoch(item.verifiedAt)>time)continue;
-    const prev=heads.get(item.sourceId);
-    if(!prev||epoch(prev.publishedAt)<epoch(item.publishedAt)||
-      (prev.publishedAt===item.publishedAt&&prev.revisionId<item.revisionId))
-      heads.set(item.sourceId,item);
+    const prev=newest.get(item.sourceId)?.[0];
+    const order=!prev?1:epoch(item.publishedAt)-epoch(prev.publishedAt)
+      ||(item.revisionId<prev.revisionId?-1:item.revisionId>prev.revisionId?1:0);
+    if(order>0)newest.set(item.sourceId,[item]);
+    else if(order===0)newest.get(item.sourceId)!.push(item);
   }
+  const heads=new Map<string,ActivityRecord>();
+  for(const [sourceId,rows] of newest)
+    if(new Set(rows.map(canonical)).size===1)heads.set(sourceId,rows[0]!);
   return heads;
 }
 /** Fail closed on newer revoked/blocked heads, never resurrect an older approved revision. */
@@ -45,14 +59,18 @@ export function currentActivityRecords(raw:readonly ActivityRecord[],asOf:string
   const heads=sourceHeadsAt(parsed,time);
   const latest=[...heads.values()].filter(item=>item.rights==='APPROVED'&&item.status!=='DELETED');
   const events=new Map<string,ActivityRecord>();
+  const tied=new Set<string>();
   for(const item of latest){
     const y=item.eventDate?year(item.eventDate):year(item.publishedAt.slice(0,10));
     const key=item.organizationId+':'+item.seriesId+':'+y;
     const prev=events.get(key);
-    if(!prev||epoch(item.publishedAt)>epoch(prev.publishedAt)||
-      (item.publishedAt===prev.publishedAt&&item.revisionId>prev.revisionId))
-      events.set(key,item);
+    const order=!prev?1:epoch(item.publishedAt)-epoch(prev.publishedAt)
+      ||(item.revisionId<prev.revisionId?-1:item.revisionId>prev.revisionId?1:0);
+    if(order>0){events.set(key,item);tied.delete(key);}
+    // Same instant and revision from two sources but different content: no winner (#373).
+    else if(order===0&&canonical(item)!==canonical(prev!))tied.add(key);
   }
+  for(const key of tied)events.delete(key);
   return [...events.values()].sort((a,b)=>b.publishedAt.localeCompare(a.publishedAt)||a.entryId.localeCompare(b.entryId));
 }
 export function archiveActivities(raw:readonly ActivityRecord[],asOf:string,filter:ActivityFilter={}):ActivityRecord[]{

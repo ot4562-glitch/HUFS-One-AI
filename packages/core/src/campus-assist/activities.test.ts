@@ -201,3 +201,48 @@ describe('#371 review follow-up: cancellation before a dated confirmation, trust
     });
   });
 });
+
+describe('#373 conflicting copies of one revision never depend on input order',()=>{
+  const AS_OF='2026-02-01T00:00:00Z';
+  const approved=row(2025);
+  const revoked={...row(2025),rights:'REVOKED' as const};
+  const both=<T,>(a:T,b:T)=>[[a,b],[b,a]];
+  it('same source, instant and revision: approved vs revoked -> quarantined in both orders',()=>{
+    for(const pair of both(approved,revoked))
+      expect(currentActivityRecords(pair,AS_OF)).toHaveLength(0);
+  });
+  it('same revision with a different event date is also a conflict',()=>{
+    for(const pair of both(approved,{...row(2025),eventDate:'2025-04-01'}))
+      expect(currentActivityRecords(pair,AS_OF)).toHaveLength(0);
+  });
+  it('identical copies collapse to one record',()=>{
+    expect(currentActivityRecords([approved,{...approved}],AS_OF)).toHaveLength(1);
+  });
+  it('a conflicting newest revision does not resurrect an older approved revision',()=>{
+    const older={...row(2025),revisionId:'rev2025-old',publishedAt:'2025-01-01T00:00:00Z',verifiedAt:'2025-01-02T00:00:00Z'};
+    for(const pair of both(approved,revoked))
+      expect(currentActivityRecords([older,...pair],AS_OF)).toHaveLength(0);
+  });
+  it('a newer clean revision supersedes an older conflicted one',()=>{
+    const newer={...row(2025),revisionId:'rev2025-new',publishedAt:'2025-03-01T00:00:00Z',verifiedAt:'2025-03-02T00:00:00Z'};
+    for(const pair of both(approved,revoked))
+      expect(currentActivityRecords([...pair,newer],AS_OF).map(r=>r.revisionId)).toEqual(['rev2025-new']);
+  });
+  it('the same offset-written instant counts as a tie (not a string comparison)',()=>{
+    const kst={...revoked,publishedAt:'2025-02-01T09:00:00+09:00'};
+    for(const pair of both(approved,kst))
+      expect(currentActivityRecords(pair,AS_OF)).toHaveLength(0);
+  });
+  it('two sources with the same instant and revision but different content: no winner for that year',()=>{
+    const a={...row(2025),sourceId:'feed-a'},b={...row(2025),sourceId:'feed-b',eventDate:'2025-03-21'};
+    for(const pair of both(a,b))
+      expect(currentActivityRecords(pair,AS_OF)).toHaveLength(0);
+  });
+  it('forecast does not change with input order when a revision is conflicted',()=>{
+    const rows=[row(2023),row(2024),approved,revoked];
+    const one=forecastActivity(rows,AS_OF,2026,'synthetic-dept','orientation');
+    const two=forecastActivity([...rows].reverse(),AS_OF,2026,'synthetic-dept','orientation');
+    expect(two).toEqual(one);
+    expect(one.observedYears).toEqual([2023,2024]);
+  });
+});
