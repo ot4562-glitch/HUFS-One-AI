@@ -1,6 +1,6 @@
 # HUFS One AI — 승인된 운영 API 실행
 
-프로젝트 승인 상태는 **OWNER_CONFIRMED_APPROVED**입니다. 오너 분할 PR #267~#275 중 실제 8개 및 [#277](https://github.com/ot4562-glitch/HUFS-One-AI/pull/277), 학업 전망 [#278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278), 추천 코어 [#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279)는 `main` **병합 완료**. 구 #264는 미병합 대체. **실 Google/학교메일·운영 DB/NCP·학생별 실제 자료/모델 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) OPEN / `RELEASE_BLOCKED`.** [운영 증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)에서 코드와 실제 환경을 구별합니다.
+프로젝트 승인 상태는 **OWNER_CONFIRMED_APPROVED**입니다. 2026-11-08 기준 인증된 PostgreSQL 조립/운영 엔트리 코드는 `main`에 존재하고, [PR #396](https://github.com/ot4562-glitch/HUFS-One-AI/pull/396)에서 CampusAssist의 **명시적 승인 source 포트 전달 경로만** 추가됐습니다. 그러나 실제 Google/학교 메일·현재 학생 동의/권리·관리형 PostgreSQL/NCP·실기관 자료/모델과 청구·복구·독립 사람 검증은 **`NOT_RUN/NOT_CONNECTED`**이며 실서비스는 **`RELEASE_BLOCKED`**입니다. 현행 열린 요구사항은 [상태](../STATUS.md), [공식 출처 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360), [개인정보 공개 검토 #362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362), [기능 API 통합 #366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366), [CampusAssist 실연결 #367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367)에서 추적합니다. 이전 연혁은 [보관 이력](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)에 유지합니다.
 
 ## 구성
 
@@ -13,6 +13,10 @@
 `OperatorPostgresInputs.campusAssist`는 **root가 관리하는 비공개 operator factory가 승인된 포트를 명시적으로 공급할 때만** `createPostgresApplication`과 인증된 API로 전달됩니다. 현재 선택 가능한 포트는 `activities`, `exchange`, `faq`이며 각각 `read({actor,asOf})`와 `revalidate({actor,receipt,now})`를 반드시 구현해야 합니다. 모든 포트가 빠지거나 하나라도 인터페이스가 불완전하면 조립을 거부합니다. 설정이 없으면 해당 API route가 등록되지 않습니다. 임의 합성 fixture, 공개 CSV와 브라우저 입력을 운영 출처로 자동 연결하지 않습니다.
 
 **여전히 필요한 실제 인수:** operator가 별도 검수된 현행 출처 저장소/동의·자료 권리·revision/receipt/세션 취소를 포트에 실제 구현해야 하며, 운영 PostgreSQL 읽기 역할·권한 및 원문 이용권 실증은 **NOT_CONNECTED/NOT_RUN**입니다. FAQ의 유료 `hcx007` adapter를 이 포트로 직접 공급하는 것은 거부하므로 운영 질문은 제공자 승인/예산 게이트가 별도로 조립될 때까지 `CONFIGURATION_REQUIRED`입니다. 이 조치는 경로 연결 누락만 해소하는 **단계별 구현**이며 #367 운영 E2E 수락을 완료했다는 뜻이 아닙니다.
+
+### 의존성 취약점 감사 CI (#394)
+
+[PR #394](https://github.com/ot4562-glitch/HUFS-One-AI/pull/394)의 `.github/workflows/npm-dependency-audit.yml`은 PR/main/주간/수동에서 **package lockfile 중심 sparse checkout** 후 `npm audit --json`(runtime `--omit=dev` 및 전체)으로 High/Critical 항목을 차단하고, registry/metadata 오류 시 `SCAN_UNAVAILABLE` 실패로 처리합니다. 실제 [검증 실행](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42490419934)은 parser 6개 PASS 및 검사된 lockfile의 runtime/dev-only high=0, critical=0으로 끝났습니다. GitHub Dependabot alerts·CodeQL 보안 설정의 실제 활성화는 확인되지 않아 [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378) OPEN입니다. 이것은 운영 host 이미지/OS/실서비스 취약점 무결성 인수가 아닙니다.
 
 ### 운영 AI 입력·경험 등록
 
