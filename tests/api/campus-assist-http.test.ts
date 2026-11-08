@@ -157,10 +157,11 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
       expect(h.faq.revalidate).not.toHaveBeenCalled();
     });
 
-  it('#363 rejects invalid server clock before accessing the source ports',async()=>{
+  it('#363 invalid server clock is denied by the outer authentication gate',async()=>{
     const h=fixture(undefined,()=> 'not-a-date');
     const r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
-    expect(r.statusCode).toBe(503);
+    // Outer authentication rejects this clock first; no source is consulted.
+    expect(r.statusCode).toBe(401);
     expect(h.activities.read).not.toHaveBeenCalled();
   });
   it('#363 rechecks receipt TTL after async rights revalidation',async()=>{
