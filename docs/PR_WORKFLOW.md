@@ -1,10 +1,29 @@
 # HUFS One AI — PR 리뷰·검증·병합
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
+## 2026-11-08 최신 리뷰·병합·이슈 대조
+
+새로 작성된 PR **#391–#396 총 6건**은 각각 최신 HEAD의 실제 diff/부정시험/권한·자료·운영 영향을 검토한 뒤 GitHub **COMMENT** 리뷰를 제출하고, 사용자 지시에 따라 exact `expected_head_sha`를 확인해 main에 squash 병합했습니다. 이 6건은 동일한 오너 계정 `ot4562-glitch`이 작성했으므로 GitHub의 **작성자 본인 APPROVE 금지**를 우회하거나 COMMENT를 독립 사람 승인으로 기록하지 않습니다.
+
+| PR | 리뷰 ID | 병합 SHA |
+| --- | --- | --- |
+| [#391](https://github.com/ot4562-glitch/HUFS-One-AI/pull/391) | `5818347733` | `3fa8f3ce6a819382c5e349d768ce0837e0396be9` |
+| [#392](https://github.com/ot4562-glitch/HUFS-One-AI/pull/392) | `5818347868` | `736a1294371a5fc983ba55be96bb01bda9b3eaba` |
+| [#393](https://github.com/ot4562-glitch/HUFS-One-AI/pull/393) | `5818348002` | `307ad29b5422a664405cf698e95526859cacc1cd` |
+| [#394](https://github.com/ot4562-glitch/HUFS-One-AI/pull/394) | `5818348703` | `85de975d5102ba7f95d2b598c8e518ee5d5c92db` |
+| [#395](https://github.com/ot4562-glitch/HUFS-One-AI/pull/395) | `5818348867` | `234d072ac8c292316851f5f653faa1a2ca23033b` |
+| [#396](https://github.com/ot4562-glitch/HUFS-One-AI/pull/396) | `5818348993` | `be2e8566fd64717753e32441f75f3a8de8fa6d29` |
+
+정확한 PR HEAD에서 TASK-00/Chrome/NCP(해당하는 경우 Pages 및 #394 자체 npm audit) 모두 SUCCESS였습니다. **병합 후 새 main SHA의 자동 테스트·독립 사람/실운영 수락은 별개**입니다. 특히 #396은 operator source 포트 조립만 완료되어 #367 OPEN, #394는 SCA 코드만 완료되어 Dependabot/CodeQL 설정 확인 전 #378 OPEN입니다.
+
+**남은 PR 3건은 변경 요청 상태:** [#361 FAQ citation/부정 의미](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361), [#372 OCR 다중기간/기관 오인/개인정보](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372), [#386 중복 ID·폐기 근거 의미 연결](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386). 앞선 COMMENT와 별개로 공식 `CHANGES_REQUESTED`가 유효하므로 새 코드·회귀·HEAD CI가 없으면 병합하지 않습니다.
+
+[PR별 head/review/merge와 이슈 정리 전체 원장](REVIEW_AND_ISSUE_AUDIT_20261108.md) · [최신 상태](../STATUS.md).
+
 
 ## 에이전트가 새 이슈를 만들거나 PR과 연결할 때
 
-[신규 에이전트 이슈 생성 표준](ISSUE_ASSIGNMENT_PLAYBOOK.md)에 따라 제목 **맨 앞의 표준 접두어** `[추가 기능]`, `[데이터 요청]`, `[웹 구현]`, `[AI 구현]`, `[AI QA]`, `[기술 통합]`, `[분류 검토]`, `[버그]`, `[실증 인수]` 중 정확한 유형을 사용합니다. `[코드 전수조사]` 또는 `[TASK-xx]`는 후속 태그입니다. 새 PR의 본문에 연결된 이슈 번호, 담당 영역, 예상 난이도/실제 검증 근거를 적고, 분리된 AI·웹·데이터 작업은 별도 이슈로 추적합니다. 자동 분류·가중 업무량 배정의 적용 여부는 PR #382가 기본 브랜치에 병합된 상태와 [Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)를 확인하세요. 고정 역할 이슈 #355–#359는 쓰기 금지입니다.
+[신규 에이전트 이슈 생성 표준](ISSUE_ASSIGNMENT_PLAYBOOK.md)에 따라 제목 **맨 앞의 표준 접두어** `[추가 기능]`, `[데이터 요청]`, `[웹 구현]`, `[AI 구현]`, `[AI QA]`, `[기술 통합]`, `[분류 검토]`, `[버그]`, `[실증 인수]` 중 정확한 유형을 사용합니다. `[코드 전수조사]` 또는 `[TASK-xx]`는 후속 태그입니다. 새 PR의 본문에 연결된 이슈 번호, 담당 영역, 예상 난이도/실제 검증 근거를 적고, 분리된 AI·웹·데이터 작업은 별도 이슈로 추적합니다. **PR #382는 main에 병합되었지만**, 실제 이슈 생성/변경 이벤트가 워크플로를 성공적으로 실행하고 예상 담당·라벨을 적용했는지는 [Actions](https://github.com/ot4562-glitch/HUFS-One-AI/actions)에서 건별 확인하세요. 고정 역할 이슈 #355–#359는 쓰기 금지입니다.
 
 **신규 규칙:** `[버그][코드 전수조사]`는 `type:bug`·`source:code-audit`를 표시하되 분류가 불명확하면 사람 검토, `[실증 인수]`는 독립 실제 환경/사람·권리/비용 검증으로 자동 배정·완료 처리하지 않는다. `P0`(또는 `priority:P0`)와 보안·개인정보 신고는 `triage:needs-review`로 자동 담당 배정을 보류한다. 비밀·실학생 자료·취약점 세부 내용은 공개 이슈가 아닌 비공개 채널로 전달한다. 새 표준 접두어의 단일 정본은 [라우팅 설정](../.github/issue-routing.json)이며, 데이터 정정에는 `[데이터 요청][정정]`을 사용한다.
 
