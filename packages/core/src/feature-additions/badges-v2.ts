@@ -9,7 +9,7 @@ export type BadgeRequirementState={
   officialEvidenceIds:readonly string[];
 };
 export type BadgeGroupState={id:string;join:'ALL'|'ANY';state:EvidenceState;
-  requirements:readonly BadgeRequirementState[]};
+  reason?:'ACTIVITY_REUSE_UNVERIFIED';requirements:readonly BadgeRequirementState[]};
 export type BadgePreparationReport={
   badgeId:string;sourceRevisionId:string;
   status:'READY_TO_REQUEST_REVIEW'|'IN_PROGRESS'|'UNKNOWN';
@@ -49,8 +49,21 @@ export function prepareBadgeV2(input:{
     });
     const states:EvidenceState[]=requirements.map(r=>r.state==='EVIDENCE_RECORDED'?'MET'
       :r.state==='DOCUMENTS_NEEDED'?'NOT_MET':'UNKNOWN');
-    return {id:g.id,join:g.join,state:g.join==='ALL'?aggregateAnd(states):aggregateOr(states),
-      requirements};
+    // Issuer rules determine whether a single activity may satisfy two
+    // simultaneous ALL-group requirements. Abstain until reuse is explicit.
+    const alreadyUsed=new Set<string>();
+    let overlapping=false;
+    if(g.join==='ALL' && g.allowActivityReuse!==true) {
+      for(const r of requirements) {
+        if(r.activityIds.some(id=>alreadyUsed.has(id))) overlapping=true;
+        for(const id of r.activityIds) alreadyUsed.add(id);
+      }
+    }
+    const baseState=g.join==='ALL'?aggregateAnd(states):aggregateOr(states);
+    return {id:g.id,join:g.join,state:overlapping && baseState==='MET'
+      ?'UNKNOWN' as const:baseState,
+      ...(overlapping && baseState==='MET'
+        ?{reason:'ACTIVITY_REUSE_UNVERIFIED' as const}:{}),requirements};
   });
   const overall=aggregateAnd(groups.map(g=>g.state));
   const requiredNextTopics=[...new Set(groups.filter(g=>g.state!=='MET').flatMap(g=>
