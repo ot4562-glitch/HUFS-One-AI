@@ -18,11 +18,12 @@ const Envelope=z.strictObject({
   keyId:Id,
   issuedAt:z.number().int().nonnegative(),
   expiresAt:z.number().int().positive(),
-  actorId:Id,
-  consentVersion:Id,
-  catalogRevision:Id,
-  scopeKey:z.string().min(1).max(512),
-  filterKey:z.string().min(1).max(512),
+  // Non-reversible keyed bindings: never expose actor/consent/search text.
+  actorBinding:z.string().regex(/^[a-f0-9]{64}$/),
+  consentBinding:z.string().regex(/^[a-f0-9]{64}$/),
+  revisionBinding:z.string().regex(/^[a-f0-9]{64}$/),
+  scopeBinding:z.string().regex(/^[a-f0-9]{64}$/),
+  filterBinding:z.string().regex(/^[a-f0-9]{64}$/),
   lastId:Id,
   lastSortValue:z.string().max(1024),
 });
@@ -77,6 +78,9 @@ export function createCatalogCursorSigner(config:{
   for(const [id,key] of config.keys) keys.set(id,Buffer.from(key));
   const signature=(key:Buffer,data:string):Buffer=>
     createHmac('sha256',key).update(data,'ascii').digest();
+  const binding=(key:Buffer,field:string,value:string):string=>
+    createHmac('sha256',key).update(field,'utf8').update(Buffer.from([0]))
+      .update(value,'utf8').digest('hex');
   const build=(value:Envelope):string=>Buffer.from(JSON.stringify(value),'utf8').toString('base64url');
   const sign=(cursor:CatalogInternalCursor,context:CursorRequestContext):string=>{
     checkContext(context);
@@ -85,12 +89,16 @@ export function createCatalogCursorSigner(config:{
       ||cursor.filterKey!==filterKey
       ||!checkId(cursor.lastId)||cursor.lastSortValue.length>1024)
       throw new CatalogCursorError('STALE_CURSOR');
+    const key=keys.get(config.activeKeyId)!;
     const payload:Envelope={
       v:1,keyId:config.activeKeyId,issuedAt:context.nowMs,
       expiresAt:context.nowMs+ttlMs,
-      actorId:context.actorId,consentVersion:context.consentVersion,
-      catalogRevision:context.catalogRevision,scopeKey:context.scopeKey,
-      filterKey,lastId:cursor.lastId,lastSortValue:cursor.lastSortValue,
+      actorBinding:binding(key,'ACTOR',context.actorId),
+      consentBinding:binding(key,'CONSENT',context.consentVersion),
+      revisionBinding:binding(key,'REVISION',context.catalogRevision),
+      scopeBinding:binding(key,'SCOPE',context.scopeKey),
+      filterBinding:binding(key,'FILTER',filterKey),
+      lastId:cursor.lastId,lastSortValue:cursor.lastSortValue,
     };
     const encoded=build(payload);
     const mac=signature(keys.get(config.activeKeyId)!,encoded).toString('base64url');
@@ -128,15 +136,16 @@ export function createCatalogCursorSigner(config:{
       ||payload.issuedAt<0) throw new CatalogCursorError('INVALID_CURSOR');
     if(context.nowMs>=payload.expiresAt)
       throw new CatalogCursorError('EXPIRED_CURSOR');
-    if(payload.actorId!==context.actorId
-      ||payload.consentVersion!==context.consentVersion
-      ||payload.catalogRevision!==context.catalogRevision
-      ||payload.scopeKey!==context.scopeKey
-      ||payload.filterKey!==catalogFilterKey(context.query))
+    const filterKey=catalogFilterKey(context.query);
+    if(payload.actorBinding!==binding(key,'ACTOR',context.actorId)
+      ||payload.consentBinding!==binding(key,'CONSENT',context.consentVersion)
+      ||payload.revisionBinding!==binding(key,'REVISION',context.catalogRevision)
+      ||payload.scopeBinding!==binding(key,'SCOPE',context.scopeKey)
+      ||payload.filterBinding!==binding(key,'FILTER',filterKey))
       throw new CatalogCursorError('STALE_CURSOR');
     return {
-      scopeKey:payload.scopeKey,catalogRevision:payload.catalogRevision,
-      filterKey:payload.filterKey,lastId:payload.lastId,lastSortValue:payload.lastSortValue,
+      scopeKey:context.scopeKey,catalogRevision:context.catalogRevision,
+      filterKey,lastId:payload.lastId,lastSortValue:payload.lastSortValue,
     };
   };
   return {sign,verify};
