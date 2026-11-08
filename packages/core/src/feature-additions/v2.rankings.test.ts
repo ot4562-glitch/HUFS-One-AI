@@ -6,6 +6,18 @@ import {FIXED_NOW,source,mentor,mentorPreference,requirement,experience,crosswal
   learning,learningPreference} from './v2.fixtures.js';
 
 describe('#344 — explanation-backed mentor ranking for approved experiences',()=>{
+  it('reranks the evidence-backed window with unrelated uncited mentors present',()=>{
+    const result=rankMentorsV2({preference:mentorPreference(),
+      catalog:[mentor('related'),mentor('irrelevant',{majorCodes:[],jobCodes:[],
+        experienceTopics:[],publicEvidenceRefs:[]})],
+      rerank:{modelApproved:true,inputDigest:'digest-1',proposals:[
+        {candidateId:'related',score:0.9,evidenceCodes:['DATA_ANALYTICS'],
+          modelVersion:'model-v1',inputDigest:'digest-1'}]}});
+    expect(result.modelOutcome).toBe('ACCEPTED');
+    expect(result.items.find(x=>x.mentorId==='related')?.mode).toBe('AI_RERANKED');
+    expect(result.items.find(x=>x.mentorId==='irrelevant')?.mode).toBe('RULE_ONLY');
+  });
+
   it('moves same-major, same-job, same-project mentor to the top',()=>{
     const r=rankMentorsV2({preference:mentorPreference(),catalog:[
       mentor('unrelated',{majorCodes:['ART'],jobCodes:['DESIGN'],experienceTopics:[]}),
@@ -92,6 +104,15 @@ describe('#344 — explanation-backed mentor ranking for approved experiences',(
   });
 });
 describe('#347 — NCS-style requirement-to-experience matching',()=>{
+  it('retains an unmapped official subrequirement even with one matching skill',()=>{
+    const r=compareSkillsV2({requirements:[requirement('mixed',{
+      topicCodes:['STATISTICS','NCS-UNMAPPED']})],experiences:[experience()],
+      crosswalk:[crosswalk()],asOf:FIXED_NOW});
+    expect(r[0]).toMatchObject({status:'NEEDS_REVIEW',interpretation:'UNKNOWN',
+      unmappedRequirementTopics:['NCS-UNMAPPED'],
+      matchedOneAiTopics:['DATA_ANALYTICS']});
+  });
+
   it('maps official requirement topics via the verified crosswalk',()=>{
     const r=compareSkillsV2({requirements:[requirement()],experiences:[experience()],
       crosswalk:[crosswalk()],asOf:FIXED_NOW});
@@ -150,6 +171,25 @@ describe('#347 — NCS-style requirement-to-experience matching',()=>{
   });
 });
 describe('#350 — personalized study-group and tutoring ranking',()=>{
+  it('abstains when a renamed completed course has no verified canonical mapping',()=>{
+    const result=recommendLearningV2({preference:learningPreference(),
+      verifiedCompletedCourses:['ECO101-OLD'],
+      programs:[learning('rename',{requiredCourseCodes:['ECO101-NEW']})]});
+    expect(result.items[0]?.eligibility).toBe('UNKNOWN');
+    expect(result.items[0]?.hardReasons).toContain('COURSE_IDENTITY_UNVERIFIED');
+  });
+  it('reranks only independently evidenced programs in a mixed candidate list',()=>{
+    const result=recommendLearningV2({preference:learningPreference(),
+      programs:[learning('matched'),learning('unrelated',{
+        goalTags:[],courseCodes:[],topicCodes:[]})],
+      ai:{approved:true,inputDigest:'digest-1',proposals:[
+        {candidateId:'matched',score:0.8,evidenceCodes:['STATISTICS'],
+          modelVersion:'model-v1',inputDigest:'digest-1'}]}});
+    expect(result.modelOutcome).toBe('ACCEPTED');
+    expect(result.items.find(x=>x.programId==='matched')?.mode).toBe('AI_RERANKED');
+    expect(result.items.find(x=>x.programId==='unrelated')?.mode).toBe('RULE_ONLY');
+  });
+
   it('prioritizes matching goals/course/topic and explains each match',()=>{
     const r=recommendLearningV2({preference:learningPreference(),
       programs:[learning('unrelated',{goalTags:['ART'],courseCodes:[],topicCodes:[]}),
