@@ -5,6 +5,19 @@ import {evaluatePublishedStat,comparePublishedStats,validateEmploymentStatements
 import {FIXED_NOW,source,opportunity,query,stat} from './v2.fixtures.js';
 
 describe('#348 — permission-filtered full catalog search and cursor stability',()=>{
+
+  it('hides expired opportunities by default and permits explicit archive browsing',()=>{
+    const items=[opportunity('expired',{deadlineAt:'2026-11-01T12:00:00+09:00'}),
+      opportunity('open',{deadlineAt:'2026-11-20T12:00:00+09:00'})];
+    const normal=searchApprovedCatalogV2({items,query:query({sort:'DEADLINE_ASC'}),...opts});
+    expect(normal.items.map(x=>x.id)).toEqual(['open']);
+    const archive=searchApprovedCatalogV2({items,
+      query:query({sort:'DEADLINE_ASC',includeClosed:true}),...opts});
+    expect(archive.items.map(x=>x.id)).toEqual(['expired','open']);
+    expect(catalogFilterKey(query({includeClosed:true})))
+      .not.toEqual(catalogFilterKey(query()));
+  });
+
   const opts={scopeKey:'owner-a-consent-v1',catalogRevision:'catalog-r1'};
   const snapshot=Array.from({length:121},(_,i)=>opportunity(String(i).padStart(4,'0'),
     {title:i===120?'Rare astronomy internship':'Common economics internship',
