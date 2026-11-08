@@ -169,3 +169,12 @@ test('AI QA prefix assigns dedicated technical QA owner irrespective of AI devel
   ]);
   assert.equal((await routeIssue({...env})).assignee, 'taewangim-alt');
 });
+
+
+test('explicit triage prefix overrides even clear code paths and retains unassigned status', async () => {
+  const issue = ticket(550, '[\ubd84\ub958 \uac80\ud1a0] React AI API', {body: 'apps/web/src/page.tsx'});
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.ok(env.calls.added.includes('triage:needs-review'));
+  assert.deepEqual(env.calls.assigned, []);
+});
