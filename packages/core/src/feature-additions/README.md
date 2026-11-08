@@ -62,6 +62,7 @@
 | #344 멘토 | mentors-v2.ts: rankMentorsV2 — 전공·직무·본인 승인 경험 가중치, 검증된 semantic 후보만 선택 재정렬, 이유 코드 | MentorCardSchema, MentorPreferenceSchema / MentorRankingV2Schema |
 | #345 상담 | counseling-v2.ts: routeCounselingV2 — 목적·캠퍼스·언어·학생 대상 확인, 상위 3기관, 공개 HTTPS 링크 | CounselingServiceSchema / CounselingGuideV2Schema |
 | #346 교외활동 | recognition-v2.ts: prepareRecognitionV2, classifyProofCandidate — ALL/ANY 서류, 만료, 본인검토, 제출준비만 | ActivityRecognitionRuleSchema, ActivityProofSchema / RecognitionReportV2Schema |
+| #346 OCR 후보 (이의상) | proof-ocr.ts: extractProofCandidate — OCR 줄 → 문서 종류·기관·기간·발급일·시간·수상명 후보(줄 id·bbox 결속), 본인 입력 대조 플래그, 개인정보 줄 제외. 규칙 기반, 모델 호출 없음, 항상 NEEDS_REVIEW | 입력: `normalizeOcrEvidence` 줄 / 출력: `classifyProofCandidate`의 proposedKind·confidence |
 | #347 직무 | skills-v2.ts: compareSkillsV2, reviewSkillMatchProposals — 공식 NCS 코드↔정본 24 TopicCode 교차표, 미매핑/기록없음 구분 | JobRequirementSchema, TopicCrosswalkSchema / SkillRowV2Schema |
 | #348 공고 | catalog-v2.ts: searchApprovedCatalogV2 — **허가된 전체 스냅샷 내** 검색/필터/안정 정렬/커서. 실DB SQL·서버 서명은 API 담당 | OpportunityCatalogItemSchema, OpportunityQuerySchema / SignedCatalogPageV2Schema |
 | #349 배지 | badges-v2.ts: prepareBadgeV2 — 발급 기준 ALL/ANY·서로 다른 승인경험·기간·발급 분리 | BadgeDefinitionSchema / BadgePreparationV2Schema |

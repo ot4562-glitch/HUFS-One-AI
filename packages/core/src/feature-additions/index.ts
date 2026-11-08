@@ -9,6 +9,8 @@ export * from './scholarships-v2.js';
 export * from './mentors-v2.js';
 export * from './counseling-v2.js';
 export * from './recognition-v2.js';
+// #346 OCR lines → reviewable proof candidate (rule-based, no model call).
+export * from './proof-ocr.js';
 export * from './skills-v2.js';
 export * from './catalog-v2.js';
 export * from './badges-v2.js';
