@@ -133,3 +133,39 @@ test('failed assignment preserves a needs-review flag', async () => {
   assert.ok(env.calls.removed.includes('triage:needs-review'));
   assert.ok(env.calls.added.includes('triage:needs-review'));
 });
+
+
+test('canonical issue prefixes route correctly and resist misleading prose', async () => {
+  for (const [prefix, expected] of [
+    ['[\uae30\uc220 \ud1b5\ud569]', 'ot4562-glitch'],
+    ['[AI \uad6c\ud604]', null],
+    ['[\uc6f9 \uad6c\ud604]', 'lhh42001'],
+    ['[\ub370\uc774\ud130 \uc694\uccad]', 'qamarrchae'],
+    ['[\ucd94\uac00 \uae30\ub2a5]', 'ot4562-glitch']
+  ]) {
+    const issue = ticket(540, prefix + ' React AI API project');
+    const env = mock(issue);
+    const result = await routeIssue({...env});
+    assert.equal(result.area, prefix === '[AI \uad6c\ud604]' ? 'ai' :
+      prefix === '[\uc6f9 \uad6c\ud604]' ? 'web' :
+      prefix === '[\ub370\uc774\ud130 \uc694\uccad]' ? 'data' : 'integration');
+    if (expected) assert.equal(result.assignee, expected);
+    else assert.ok(['taewangim-alt', 'uisang2004-maker'].includes(result.assignee));
+  }
+});
+
+test('explicit area label conflicting with a canonical prefix requires human review', async () => {
+  const issue = ticket(541, '[\ucd94\uac00 \uae30\ub2a5] LLM prototype',
+    {labels: ['area:ai']});
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.equal(env.calls.assigned.length, 0);
+});
+
+test('AI QA prefix assigns dedicated technical QA owner irrespective of AI development load', async () => {
+  const issue = ticket(542, '[AI QA] recommendation regression');
+  const env = mock(issue, [
+    ticket(543, 'active', {assignees: [{login: 'taewangim-alt'}], labels: ['effort:L']})
+  ]);
+  assert.equal((await routeIssue({...env})).assignee, 'taewangim-alt');
+});
