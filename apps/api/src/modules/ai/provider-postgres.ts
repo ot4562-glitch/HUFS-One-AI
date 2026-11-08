@@ -13,7 +13,7 @@ import type {ProviderRuntimeOptions} from './provider-runtime.js';
 
 export interface PostgresProviderConfig {
   pools:{authority:ReviewerSqlPool;budget:ReviewerSqlPool;results:ReviewerSqlPool};
-  phaseId:string;operation:'OCR_GENERAL'|'HCX_005'|'HCX_007';inputPolicyVersion:string;
+  phaseId:string;operation:'OCR_GENERAL'|'HCX_007';inputPolicyVersion:string;
   sessionIsCurrent:PostgresProviderAuthorityOptions['sessionIsCurrent'];
   policy:ProviderRuntimeOptions['policy'];secret:NodeClovaOptions['secret'];ocrEndpoint?:string;
   enabled?:()=>boolean;
@@ -29,7 +29,7 @@ export interface PostgresProviderConfig {
 export function createPostgresProviderRuntime<O extends PostgresProviderConfig['operation']>(
   config:PostgresProviderConfig & {operation:O}){
   const phaseId=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).parse(config.phaseId);
-  const operation=z.enum(['OCR_GENERAL','HCX_005','HCX_007']).parse(config.operation) as O;
+  const operation=z.enum(['OCR_GENERAL','HCX_007']).parse(config.operation) as O;
   if(operation==='OCR_GENERAL'&&!config.transport&&!config.ocrEndpoint)
     throw new Error('Configured General OCR endpoint required');
   const now=config.now??(()=>new Date().toISOString());
