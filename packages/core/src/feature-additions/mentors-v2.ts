@@ -64,7 +64,7 @@ export function rankMentorsV2(input:{
   ] as readonly string[]]));
   const requested=input.rerank!==undefined;
   const verified=requested&&input.rerank!.modelApproved
-    ? verifySemanticProposals(evidence,input.rerank!.proposals,input.rerank!.inputDigest)
+    ? verifySemanticProposals(evidence,input.rerank!.proposals,input.rerank!.inputDigest,{requireCompleteSet:true})
     : new Map<string,{score:number;evidenceCodes:readonly string[]}>();
   // To avoid a partially validated model ranking moving the rest silently,
   // accept only a complete set for the 15 candidate rerank window.
