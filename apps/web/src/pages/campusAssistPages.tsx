@@ -6,6 +6,7 @@ import {evaluateExchange} from '../../../../packages/core/src/campus-assist/exch
 import {retrieveFaqEvidence,type FaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
 import {SYNTHETIC_ACTIVITIES,SYNTHETIC_FAQ_DOCUMENTS,SYNTHETIC_ORGANIZATIONS,SYNTHETIC_PARTNERS} from '../features/campus-assist/synthetic.js';
 import {InAppLink} from '../shell/AppShell.js';
+import {OwnerActivityPanel,OwnerExchangePanel,OwnerFaqPanel} from '../features/campus-assist/OwnerPanels.js';
 
 const NOTICE='이 화면은 허구의 합성 데이터로 기능을 검증하는 시연입니다. 실제 학교 행사·교환학생 요건·FAQ 답변이 아닙니다.';
 const labels={PASS:'입력 기준 충족',FAIL:'기준 불충족',UNKNOWN:'확인 필요',NOT_APPLICABLE:'해당 없음'} as const;
@@ -146,9 +147,15 @@ function FaqDemo({navigate}: {navigate:(p:string)=>void}){
     <p><InAppLink to="/exchange" navigate={navigate}>교환학생 조건 확인</InAppLink> · <InAppLink to="/activities" navigate={navigate}>학과 활동 아카이브</InAppLink></p>
   </section>;
 }
-export const activityArchivePage:PageRenderer=({path,navigate})=>path==='/activities'
-  ? {title:'학과·학생회 활동 기록과 시기 전망',body:<ActivityDemo navigate={navigate}/>} : null;
-export const exchangePage:PageRenderer=({path,navigate})=>path==='/exchange'
-  ? {title:'교환학생 지원 조건 비교',body:<ExchangeDemo navigate={navigate}/>} : null;
-export const faqPage:PageRenderer=({path,navigate})=>path==='/faq'
-  ? {title:'FAQ·질문하기',body:<FaqDemo navigate={navigate}/>} : null;
+export const activityArchivePage:PageRenderer=({path,navigate,services})=>path==='/activities'
+  ? {title:'학과·학생회 활동 기록과 시기 전망',body:services.campusAssist
+    ? <OwnerActivityPanel port={services.campusAssist} navigate={navigate}/>
+    : <ActivityDemo navigate={navigate}/>} : null;
+export const exchangePage:PageRenderer=({path,navigate,services})=>path==='/exchange'
+  ? {title:'교환학생 지원 조건 비교',body:services.campusAssist
+    ? <OwnerExchangePanel port={services.campusAssist} navigate={navigate}/>
+    : <ExchangeDemo navigate={navigate}/>} : null;
+export const faqPage:PageRenderer=({path,navigate,services})=>path==='/faq'
+  ? {title:'FAQ·질문하기',body:services.campusAssist
+    ? <OwnerFaqPanel port={services.campusAssist} navigate={navigate}/>
+    : <FaqDemo navigate={navigate}/>} : null;
