@@ -1,4 +1,5 @@
 /** #345 — purpose-aware routing to verified institutional help. */
+import {FeatureAdditions as V} from '@hufs-one/contracts';
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {safeIntersection,verifySource,type FeatureMode} from './source-policy.js';
 
@@ -51,12 +52,8 @@ export function routeCounselingV2(input:{
     const score=3*exact.length+related.length+campus+language;
     let officialApplicationUrl:string|null=null;
     try {
-      if (s.officialUrl) {
-        const url=new URL(s.officialUrl);
-        if (url.protocol==='https:' && !url.username && !url.password
-          && url.hostname!=='localhost' && !url.hostname.endsWith('.local'))
-          officialApplicationUrl=url.href;
-      }
+      if (s.officialUrl && V.OfficialHttpsUrlSchema.safeParse(s.officialUrl).success)
+        officialApplicationUrl=new URL(s.officialUrl).href;
     } catch { /* untrusted URL is not a valid application destination */ }
     return [{serviceId:s.id,score,exactPurposes:exact,relatedPurposes:related,
       audienceState,campusState,languageState,officialApplicationUrl,
