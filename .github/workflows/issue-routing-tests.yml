@@ -1,0 +1,47 @@
+name: Issue routing unit tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/issue-routing.json'
+      - '.github/scripts/issue-router.cjs'
+      - '.github/workflows/issue-initial-routing.yml'
+      - '.github/workflows/issue-routing-tests.yml'
+      - 'tests/automation/*.test.cjs'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'AGENTS.md'
+      - '**/AGENTS.md'
+      - 'README.md'
+      - 'docs/ISSUE_ASSIGNMENT_PLAYBOOK.md'
+      - 'docs/ISSUE_ROUTING_BOT.md'
+      - 'SECURITY.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/issue-routing.json'
+      - '.github/scripts/issue-router.cjs'
+      - '.github/workflows/issue-initial-routing.yml'
+      - '.github/workflows/issue-routing-tests.yml'
+      - 'tests/automation/*.test.cjs'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'AGENTS.md'
+      - '**/AGENTS.md'
+      - 'README.md'
+      - 'docs/ISSUE_ASSIGNMENT_PLAYBOOK.md'
+      - 'docs/ISSUE_ROUTING_BOT.md'
+      - 'SECURITY.md'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/automation/*.test.cjs

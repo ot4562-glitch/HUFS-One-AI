@@ -1,0 +1,34 @@
+name: "담당 분야 분류 검토"
+description: "AI/웹/API/데이터 경계가 불분명한 결함·요청. 자동 배정하지 않고 사람 검토"
+title: "[분류 검토] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        에이전트: 제목 맨 앞 표준 접두어를 변경하지 마세요. 저장소 AGENTS.md와 docs/ISSUE_ASSIGNMENT_PLAYBOOK.md를 먼저 확인하세요.
+        우선순위 P0/P1/P2/P3는 제목에, 강도 S/M/L은 검토 후 effort:S/M/L 라벨로 표시하세요.
+        P0·보안/개인정보 위험은 자동 담당 배정하지 않고 사람이 검토합니다. 실제 취약점 상세는 공개 이슈에 적지 마세요.
+        기존 고정 역할 이슈 #355-#359는 어떤 내용도 변경/댓글 추가하지 않습니다.
+        실학생 정보, csv/ 원본, 비밀키 및 미확인 학교 원문을 본문에 포함하지 않습니다.
+        어느 담당자가 맞는지 불명확할 때만 사용합니다. 봇은 triage:needs-review로 보류하고 임의 배정하지 않습니다.
+  - type: textarea
+    id: symptoms
+    attributes:
+      label: "관찰한 문제/목표"
+      placeholder: "재현 조건, 관련 파일 경로, 기대 결과와 실제 결과"
+    validations:
+      required: true
+  - type: textarea
+    id: uncertainty
+    attributes:
+      label: "분류가 애매한 이유"
+      placeholder: "예: OCR 후보 오류인지 API 근거 검증 문제인지 미확정"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: "관련 이슈/PR·추가 증거"
+      placeholder: "#이슈, PR, 실험/로그(비밀·개인 원본 제외)"
+    validations:
+      required: false

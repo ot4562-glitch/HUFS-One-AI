@@ -1,0 +1,106 @@
+{
+  "protectedIssueNumbers": [
+    355,
+    356,
+    357,
+    358,
+    359
+  ],
+  "areas": {
+    "integration": {
+      "members": [
+        {
+          "login": "ot4562-glitch",
+          "capacity": 1
+        }
+      ]
+    },
+    "ai": {
+      "members": [
+        {
+          "login": "taewangim-alt",
+          "capacity": 1
+        },
+        {
+          "login": "uisang2004-maker",
+          "capacity": 1
+        }
+      ]
+    },
+    "web": {
+      "members": [
+        {
+          "login": "lhh42001",
+          "capacity": 1
+        }
+      ]
+    },
+    "data": {
+      "members": [
+        {
+          "login": "qamarrchae",
+          "capacity": 1
+        }
+      ]
+    }
+  },
+  "effortPoints": {
+    "S": 1,
+    "M": 3,
+    "L": 8
+  },
+  "defaultEffortPoints": 3,
+  "prefixes": [
+    {
+      "title": "[추가 기능]",
+      "area": "integration",
+      "policy": "assign",
+      "aliases": [
+        "[추가기능]"
+      ]
+    },
+    {
+      "title": "[데이터 요청]",
+      "area": "data",
+      "policy": "assign"
+    },
+    {
+      "title": "[웹 구현]",
+      "area": "web",
+      "policy": "assign"
+    },
+    {
+      "title": "[AI 구현]",
+      "area": "ai",
+      "policy": "assign"
+    },
+    {
+      "title": "[AI QA]",
+      "area": "ai",
+      "policy": "dedicated",
+      "assignee": "taewangim-alt"
+    },
+    {
+      "title": "[기술 통합]",
+      "area": "integration",
+      "policy": "assign"
+    },
+    {
+      "title": "[분류 검토]",
+      "area": null,
+      "policy": "review"
+    },
+    {
+      "title": "[버그]",
+      "area": null,
+      "policy": "infer",
+      "typeLabel": "type:bug"
+    },
+    {
+      "title": "[실증 인수]",
+      "area": null,
+      "policy": "review",
+      "typeLabel": "type:acceptance"
+    }
+  ]
+}
