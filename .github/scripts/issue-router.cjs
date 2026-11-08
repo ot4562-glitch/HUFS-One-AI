@@ -9,6 +9,7 @@ const LABELS = {
   'area:ai': ['8250df', 'AI, OCR, RAG, ranking and AI QA'],
   'area:web': ['0e8a16', 'React, UI, UX and web integration'],
   'area:data': ['fbca04', 'Official sources, rights, posters and human Gold'],
+  'priority:P0': ['8b0000', 'Emergency priority: human triage required'],
   'priority:P1': ['b60205', 'High priority'],
   'priority:P2': ['d93f0b', 'Medium priority'],
   'priority:P3': ['c2e0c6', 'Low priority'],
@@ -17,39 +18,55 @@ const LABELS = {
   'effort:L': ['d4c5f9', 'Estimated workload: 8 points'],
   'effort:unestimated': ['ededed', 'Needs a human workload estimate; counts as M until estimated'],
   'triage:needs-review': ['f9d0c4', 'Routing unclear or cannot assign; human review needed'],
-  'routing:hold': ['ffffff', 'Human override: do not auto-assign this issue']
+  'routing:hold': ['ffffff', 'Human override: do not auto-assign this issue'],
+  'type:bug': ['d73a4a', 'Reproducible defect requiring investigation'],
+  'type:acceptance': ['0e8a16', 'Human and real-environment acceptance gate'],
+  'type:data-correction': ['fbca04', 'Correction of an already-collected official data record'],
+  'type:security': ['b60205', 'Security or privacy report: manual triage'],
+  'source:code-audit': ['bfd4f2', 'Discovered during code audit']
 };
 
 const hasPrefix = (title, values) => values.some(value => title.startsWith(value));
+const matchingPrefix = title => settings.prefixes.find(entry =>
+  [entry.title, ...(entry.aliases || [])].some(prefix => title.startsWith(prefix)));
 const frozenTitle = title => /^\[(?:\ubcf8\uc120\s*\uc9c4\ucd9c\s*\uc774\ud6c4|\ubcf8\uc120\uc9c4\ucd9c\uc774\ud6c4)\]/.test(title);
-const featureTitle = title => /^\[(?:\ucd94\uac00\s*\uae30\ub2a5)\]/.test(title);
 const getNames = item => (item.labels || []).map(label => typeof label === 'string' ? label : label.name);
 const isProtected = issue => settings.protectedIssueNumbers.includes(issue.number) || frozenTitle(issue.title || '');
 
+// P0 and potentially sensitive reports must not be silently assigned.
+// This is a routing gate, not an automated vulnerability severity assessment.
+function humanGateReason(issue) {
+  const title = String(issue.title || '').trim();
+  const labels = new Set(getNames(issue));
+  if (/\bP0\b/i.test(title) || labels.has('priority:P0')) return 'P0 needs a human incident owner';
+  if (labels.has('type:security') ||
+    /\b(?:security|privacy|cve|credential|secret|vulnerability|pii|data\s+leak)\b|\ubcf4\uc548|\uac1c\uc778\uc815\ubcf4|\ucde8\uc57d\uc810|\uc778\uc99d\s*\uc6b0\ud68c|\ube44\ubc00\ud0a4|\uc790\ub8cc\s*\uc720\ucd9c|\uad8c\ud55c\s*(?:\ub204\ucd9c|\ub178\ucd9c)/i.test(title)) {
+    return 'Possible security or privacy issue: human/private review required';
+  }
+  return null;
+}
+
 function classify(issue) {
   const title = String(issue.title || '').trim();
-  if (hasPrefix(title, ['[\ubd84\ub958 \uac80\ud1a0]'])) {
-    return {area: null, reason: 'Manual triage explicitly requested'};
-  }
   const present = new Set(getNames(issue));
   const explicit = AREA_LABELS.filter(label => present.has(label)).map(label => label.slice(5));
-  if (explicit.length > 1) return {area: null, reason: 'Conflicting area labels'};
-  // Explicit issue prefixes are stronger than prose/paths. If a human area
-  // label conflicts with the prefix, request review instead of misrouting.
-  const prefixed = featureTitle(title) ? 'integration'
-    : hasPrefix(title, ['[\ub370\uc774\ud130 \uc694\uccad]']) ? 'data'
-    : hasPrefix(title, ['[\uc6f9 \uad6c\ud604]']) ? 'web'
-    : hasPrefix(title, ['[AI \uad6c\ud604]', '[AI QA]']) ? 'ai'
-    : hasPrefix(title, ['[\uae30\uc220 \ud1b5\ud569]']) ? 'integration'
-    : null;
-  if (prefixed && explicit.length === 1 && explicit[0] !== prefixed) {
-    return {area: null, reason: 'Prefix conflicts with explicit area label'};
+  const prefix = matchingPrefix(title);
+  if (prefix?.policy === 'review') {
+    return {area: null, reason: 'Human review requested by ' + prefix.title};
   }
-  if (prefixed) return {area: prefixed, reason: 'Canonical issue title prefix'};
+  if (explicit.length > 1) return {area: null, reason: 'Conflicting area labels'};
+  // Canonical prefix wins over text/path heuristics, but not conflicting
+  // explicit area labels. A conflict must be resolved by a human.
+  if (prefix?.area) {
+    if (explicit.length === 1 && explicit[0] !== prefix.area) {
+      return {area: null, reason: 'Prefix conflicts with explicit area label'};
+    }
+    return {area: prefix.area, reason: 'Canonical issue title prefix'};
+  }
+  // [버그] is intentionally not tied to a role. A single explicit label,
+  // strong title signal, or a single code path must be present.
   if (explicit.length === 1) return {area: explicit[0], reason: 'Explicit area label'};
 
-  // Use strong *title* signals before reading paths. Broad prose is often
-  // cross-functional, so its keywords must not silently decide the owner.
   const signals = [];
   if (/\b(ai|ocr|rag|llm|hcx|nlp|bm25|tf-idf|embedding|recommendation)\b|\ucd94\ucc9c|\ub7ad\ud0b9|\uc608\uce21/i.test(title)) signals.push('ai');
   if (/\b(ui|ux|react|frontend|css|vite)\b|\ud504\ub860\ud2b8|\ub514\uc790\uc778|\uc6f9\s*\ud654\uba74/i.test(title)) signals.push('web');
@@ -57,7 +74,6 @@ function classify(issue) {
   if (signals.length === 1) return {area: signals[0], reason: 'Single strong title signal'};
   if (signals.length > 1) return {area: null, reason: 'Multiple disciplines in title'};
 
-  // Source code paths can be used only when they identify exactly one area.
   const body = String(issue.body || '').slice(0, 40000);
   const paths = [];
   if (/\bpackages\/ai\//i.test(body)) paths.push('ai');
@@ -135,18 +151,28 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
 
   const {owner, repo} = context.repo;
   const current = new Set(getNames(ticket));
+  const title = String(ticket.title || '').trim();
+  const prefix = matchingPrefix(title);
   const decision = classify(ticket);
+  const gate = humanGateReason(ticket);
   const add = [], remove = [];
-  const priority = String(ticket.title || '').match(/\bP([123])\b/i)?.[1];
-  if (priority && ![...current].some(label => /^priority:P[123]$/.test(label))) add.push('priority:P' + priority);
+  const priority = title.match(/\bP([0123])\b/i)?.[1];
+  if (priority !== undefined && ![...current].some(label => /^priority:P[0123]$/.test(label))) {
+    add.push('priority:P' + priority);
+  }
   if (![...current].some(label => EFFORT_LABELS.includes(label))) add.push('effort:unestimated');
   else remove.push('effort:unestimated');
-  if (decision.area) {
-    add.push('area:' + decision.area);
-    remove.push('triage:needs-review');
-  } else add.push('triage:needs-review');
+  if (prefix?.typeLabel) add.push(prefix.typeLabel);
+  if (title.includes('[\ucf54\ub4dc \uc804\uc218\uc870\uc0ac]')) add.push('source:code-audit');
+  if (title.startsWith('[\ub370\uc774\ud130 \uc694\uccad][\uc815\uc815]')) add.push('type:data-correction');
+  if (gate?.includes('security') || gate?.includes('privacy')) add.push('type:security');
+
+  if (decision.area) add.push('area:' + decision.area);
+  if (!decision.area || gate) add.push('triage:needs-review');
+  else remove.push('triage:needs-review');
 
   await applyLabels({github, core, owner, repo, number: ticket.number, current, add, remove, dryRun});
+  if (gate) return {status: 'needs-review', reason: gate};
   if (!decision.area) return {status: 'needs-review', reason: decision.reason};
   if (current.has('routing:hold')) return {status: 'held', area: decision.area};
   if ((ticket.assignees || []).length) return {status: 'preserved', area: decision.area};
@@ -156,10 +182,10 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   const openIssues = pool.length > 1
     ? await github.paginate(github.rest.issues.listForRepo, {owner, repo, state: 'open', per_page: 100})
     : [];
-  // AI technical QA is the dedicated responsibility of taewangim-alt.
-  // General AI implementation is load-balanced between both AI developers.
-  const assignee = hasPrefix(String(ticket.title || '').trim(), ['[AI QA]'])
-    ? 'taewangim-alt'
+  // Dedicated owner (AI QA) comes from the same prefix configuration as
+  // the documentation contract; other AI implementation is load-balanced.
+  const assignee = prefix?.policy === 'dedicated'
+    ? prefix.assignee
     : chooseAssignee(decision.area, openIssues, ticket.number);
   if (!assignee) return {status: 'needs-review', reason: 'No candidate'};
   core.info('Issue #' + ticket.number + ': ' + decision.area + ', chosen ' + assignee + ' (' + decision.reason + '), dryRun=' + dryRun);
@@ -176,4 +202,4 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   }
 }
 
-module.exports = {classify, effortPoints, chooseAssignee, isProtected, routeIssue};
+module.exports = {classify, effortPoints, chooseAssignee, isProtected, humanGateReason, routeIssue};
