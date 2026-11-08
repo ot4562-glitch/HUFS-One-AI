@@ -186,7 +186,8 @@ describe('#350 learning programs', () => {
     ], '2026-11-08T12:00:00+09:00')).toEqual([]);
   });
   it('labels applicability unknown when the applicant does not disclose campus', () => {
-    const r = recommendLearningPrograms({...profile, campus: undefined}, programs,
+    const r = recommendLearningPrograms({goalTags: profile.goalTags, courseCodes: profile.courseCodes,
+      topicCodes: profile.topicCodes, term: profile.term}, programs,
       '2026-11-08T12:00:00+09:00');
     expect(r.find(x => x.id === 'best')?.eligibility).toBe('UNKNOWN');
   });
@@ -249,12 +250,14 @@ describe('#351 safe published statistics', () => {
   it('distinguishes observed zero from unknown records', () => {
     expect(calculatePublicEmploymentRate({...data, numerator: 0})).toEqual(
       {status: 'OBSERVED_ZERO', percentage: 0});
-    expect(calculatePublicEmploymentRate({...data, numerator: undefined}).status).toBe('NO_DATA');
+    expect(calculatePublicEmploymentRate({denominator: 40, sourceState: 'VERIFIED', publicApproved: true,
+      minPublishablePositiveCount: 5}).status).toBe('NO_DATA');
   });
   it('suppresses low population or unapproved data', () => {
     expect(calculatePublicEmploymentRate({...data, numerator: 1}).status).toBe('SUPPRESSED');
     expect(calculatePublicEmploymentRate({...data, publicApproved: false}).status).toBe('SUPPRESSED');
-    expect(calculatePublicEmploymentRate({...data, minPublishablePositiveCount: undefined}).status)
+    expect(calculatePublicEmploymentRate({numerator: 20, denominator: 40, sourceState: 'VERIFIED',
+      publicApproved: true}).status)
       .toBe('SUPPRESSED');
   });
   it('rejects impossible denominators and numerators', () => {
