@@ -145,14 +145,23 @@ async function applyLabels({github, core, owner, repo, number, current, add, rem
 }
 
 async function routeIssue({github, context, core, issue, dryRun = false}) {
-  const ticket = issue || context.payload.issue;
-  if (!ticket || !ticket.number || ticket.pull_request) return {status: 'skipped'};
+  const eventIssue = issue || context.payload.issue;
+  if (!eventIssue || !eventIssue.number || eventIssue.pull_request) return {status: 'skipped'};
+
+  const {owner, repo} = context.repo;
+  // Webhook events can wait in the Actions queue while a human edits this issue.
+  // Always use the current GitHub issue, not an opened/edited/labeled payload.
+  const ticket = (await github.rest.issues.get({
+    owner, repo, issue_number: eventIssue.number
+  })).data;
+  if (!ticket || ticket.number !== eventIssue.number || ticket.pull_request)
+    return {status: 'skipped'};
+  if (ticket.state && ticket.state !== 'open') return {status: 'closed'};
   if (isProtected(ticket)) {
     core.info('Immutable role issue #' + ticket.number + ': no writes.');
     return {status: 'protected'};
   }
 
-  const {owner, repo} = context.repo;
   const current = new Set(getNames(ticket));
   const title = String(ticket.title || '').trim();
   const prefix = matchingPrefix(title);
@@ -193,6 +202,29 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   if (!assignee) return {status: 'needs-review', reason: 'No candidate'};
   core.info('Issue #' + ticket.number + ': ' + decision.area + ', chosen ' + assignee + ' (' + decision.reason + '), dryRun=' + dryRun);
   if (dryRun) return {status: 'dry-run', area: decision.area, assignee};
+
+  // A human may have assigned, held, closed or reprioritized the issue while
+  // this run was creating labels or calculating the weighted backlog. Refresh
+  // immediately before the non-atomic GitHub addAssignees API write.
+  const latest = (await github.rest.issues.get({
+    owner, repo, issue_number: ticket.number
+  })).data;
+  if (!latest || latest.number !== ticket.number || latest.pull_request)
+    return {status: 'skipped'};
+  if (latest.state && latest.state !== 'open') return {status: 'closed'};
+  if (isProtected(latest)) return {status: 'protected'};
+  const latestLabels = new Set(getNames(latest));
+  if (latestLabels.has('routing:hold')) return {status: 'held', area: decision.area};
+  if ((latest.assignees || []).length) return {status: 'preserved', area: decision.area};
+  const latestGate = humanGateReason(latest);
+  const latestDecision = classify(latest);
+  if (latestGate || latestDecision.area !== decision.area || latest.title !== ticket.title) {
+    await applyLabels({github, core, owner, repo, number: ticket.number,
+      current: latestLabels, add: ['triage:needs-review'], remove: [], dryRun: false});
+    return {status: 'needs-review',
+      reason: latestGate || 'Issue changed during routing; retry after human review'};
+  }
+
   try {
     await github.rest.issues.addAssignees({owner, repo, issue_number: ticket.number, assignees: [assignee]});
     return {status: 'assigned', area: decision.area, assignee};
