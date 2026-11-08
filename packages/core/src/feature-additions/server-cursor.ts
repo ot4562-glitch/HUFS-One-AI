@@ -115,6 +115,11 @@ export function createCatalogCursorSigner(config:{
     if(!key) throw new CatalogCursorError('INVALID_CURSOR');
     const expected=signature(key,encoded);
     const supplied=Buffer.from(mac,'base64url');
+    // Noncanonical base64url can decode to identical MAC bytes with altered
+    // unused trailing bits; reject alternate textual encodings.
+    if(Buffer.from(encoded,'base64url').toString('base64url')!==encoded
+      ||supplied.toString('base64url')!==mac)
+      throw new CatalogCursorError('INVALID_CURSOR');
     if(supplied.length!==expected.length||!timingSafeEqual(supplied,expected))
       throw new CatalogCursorError('INVALID_CURSOR');
     if(payload.expiresAt-payload.issuedAt>ttlMs
