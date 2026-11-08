@@ -1,5 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {FeatureAdditions as S} from '@hufs-one/contracts';
+import {planScholarshipPreparation,planEvidenceOpportunities} from
+  '../../packages/core/src/feature-additions/action-planner.js';
 import {checkScholarship} from '../../packages/core/src/feature-additions/scholarships-v2.js';
 import {rankMentorsV2} from '../../packages/core/src/feature-additions/mentors-v2.js';
 import {routeCounselingV2} from '../../packages/core/src/feature-additions/counseling-v2.js';
@@ -93,5 +95,37 @@ describe('ten pure domain implementations serialize into the shared wire contrac
     const report=rankMentorsV2({preference:mentorPreference(),catalog:[mentor('mentor-1')]});
     expect(S.MentorRankingV2Schema.safeParse({...report,studentEmail:'private@example.com'})
       .success).toBe(false);
+  });
+});
+
+
+describe('completed feature handoff: actionable results are strict DTOs',()=>{
+  it('serializes evidence-scoped scholarship preparation to a strict result',()=>{
+    const policy=scholarship();
+    const report=checkScholarship({policy,verifiedFacts:[],
+      authorizedFactRevisions:FACT_REVISIONS,asOf:FIXED_NOW});
+    const result=planScholarshipPreparation({policy,report});
+    expect(S.ScholarshipPreparationV2Schema.parse(result).actions[0]?.kind)
+      .toBe('VERIFY_STUDENT_FACT');
+    expect(S.ScholarshipPreparationV2Schema.safeParse({...result,
+      officialAward:true}).success).toBe(false);
+  });
+  it('serializes a specific NCS evidence opportunity without claiming skill certification',()=>{
+    const rows=compareSkillsV2({requirements:[requirement()],
+      experiences:[],crosswalk:[crosswalk()],asOf:FIXED_NOW});
+    const plan=planEvidenceOpportunities({issue:347,skillRows:rows,
+      approvedCatalog:[opportunity('exercise')],asOf:FIXED_NOW,campus:'SEOUL'});
+    expect(S.EvidenceOpportunityPlanV2Schema.parse(plan).suggestions[0])
+      .toMatchObject({issue:347,opportunityId:'exercise',guaranteedOutcome:false});
+    expect(S.EvidenceOpportunityPlanV2Schema.safeParse({...plan,
+      suggestions:[{...plan.suggestions[0],issue:349}]}).success).toBe(false);
+  });
+  it('keeps badge preparation from promising issuance or admission',()=>{
+    const report=prepareBadgeV2({badge:badge(),evidence:[badgeEvidence('A')],asOf:FIXED_NOW});
+    const plan=planEvidenceOpportunities({issue:349,badgeReport:report,
+      approvedCatalog:[opportunity('course')],asOf:FIXED_NOW,campus:'SEOUL'});
+    expect(S.EvidenceOpportunityPlanV2Schema.parse(plan).suggestions[0]?.issue).toBe(349);
+    expect(S.EvidenceOpportunityPlanV2Schema.safeParse({...plan,
+      suggestions:[{...plan.suggestions[0],guaranteedOutcome:true}]}).success).toBe(false);
   });
 });
