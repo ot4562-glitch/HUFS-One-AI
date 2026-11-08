@@ -152,3 +152,25 @@ describe('TASK-21 original- and rights-bound provider evidence (synthetic only)'
     }})).toBeNull();
   });
 });
+describe('#381 duplicate OCR line ids in a trusted image original (synthetic only)',()=>{
+  const dup=(lines:TrustedImageOrigin['ocrLines'])=>({...image,ocrLines:lines});
+  const good={id:'line-1',text:'지원',pageIndex:0,bboxNorm:[0.2,0.2,0.4,0.3] as const};
+  const rest=image.ocrLines.slice(1);
+  it.each([
+    ['different text','지원 불가',0,[0.2,0.2,0.4,0.3]],
+    ['different page','지원',1,[0.2,0.2,0.4,0.3]],
+    ['different box','지원',0,[0.6,0.6,0.9,0.9]],
+    ['identical copy','지원',0,[0.2,0.2,0.4,0.3]],
+  ] as const)('%s: rejected in both line orders',(_label,text,pageIndex,box)=>{
+    const other={id:'line-1',text,pageIndex,bboxNorm:box};
+    for(const lines of [[other,good,...rest],[good,other,...rest]])
+      expect(verifyRetrievalForAi(scenario(imageSpan,[dup(lines)]))).toBeNull();
+  });
+  it('a duplicate id the span does not cite still makes the original ambiguous',()=>{
+    const lines=[...image.ocrLines,{id:'line-3',text:'심사',pageIndex:1,bboxNorm:[0.3,0.3,0.6,0.4] as const}];
+    expect(verifyRetrievalForAi(scenario(imageSpan,[dup(lines)]))).toBeNull();
+  });
+  it('control: unique ids still verify',()=>{
+    expect(verifyRetrievalForAi(scenario(imageSpan,[image]))?.retrievalState).toBe('READY');
+  });
+});
