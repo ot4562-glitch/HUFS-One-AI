@@ -55,7 +55,15 @@ export function recommendLearningV2(input:{
       if(eligibility==='MET') eligibility='UNKNOWN';
       hardReasons.push('COURSE_ELIGIBILITY_NOT_SHARED');
     } else if (program.requiredCourseCodes.some(code=>!input.verifiedCompletedCourses?.includes(code))) {
-      eligibility='NOT_MET';hardReasons.push('PREREQUISITE_NOT_MET');
+      // An approved transcript can contain an old/renamed course code. A
+      // nonempty list with unmatched identifiers requires canonical course
+      // identity verification before a definitive rejection.
+      if (input.verifiedCompletedCourses?.length) {
+        if(eligibility==='MET') eligibility='UNKNOWN';
+        hardReasons.push('COURSE_IDENTITY_UNVERIFIED');
+      } else {
+        eligibility='NOT_MET';hardReasons.push('PREREQUISITE_NOT_MET');
+      }
     }
     const goals=safeIntersection(p.goalTags,program.goalTags);
     const courses=safeIntersection(p.courseCodes,program.courseCodes);
