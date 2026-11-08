@@ -4,28 +4,25 @@
 
 **과거 PR 증거(#292/#293/#295/#304)와 최신 통합:** [PR #306](https://github.com/ot4562-glitch/HUFS-One-AI/pull/306)에서 본선 전 11개를 종결하고 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)에서 합성 홈 3단계/공고 검색·필터·정렬을 추가(정확한 PR HEAD 및 병합 main `d8e2144` Actions 각 4/4 PASS). 실제 학교 계정·NCP/학사 원장/사람 인수는 여전히 NOT_RUN/RELEASE_BLOCKED. 이하 기존 개별 근거: [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다. 학생용 실제 학교 로그인(#297/#299), 박준영 학사 수집자료의 서버/화면 적용(#301), 모델 실호출·캐시 재생 증빙(#302)은 아직 준비가 필요합니다.
 
-## 현재 열린 이슈 6개 — 개인별 GitHub 담당 확정 (2026-11-07)
+## 현재 업무·추가 기능 인계 (2026-11-08)
 
-| 이슈 | 담당 GitHub 계정 | 본선 이후 역할 |
-| --- | --- | --- |
-| [#321 이의상 AI/NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` | Laya·CLOVA·NLP 정확도 공동 |
-| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` | AI 정확도 공동·학업 코어 |
-| [#323 이서연 통합 웹·UI/UX·NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` | Awwwards 수준 30일 디자인·React UI/UX·서버 설치·보안·운영·복구(구 #318 이관) |
-| [#324 김채윤 시연/AI 검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` | 학생 경험 입력·전 화면 시연 |
-| [#325 심민성 통합/품질](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` | API·DB·보안·CI·출시 |
-| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` | 심민성 개발 |
+팀원의 현행 고정 역할 이슈 **#355–#359는 이제 읽기 전용**이다. 제목·본문·댓글·담당자·상태를 변경하지 않는다. 상세 실행은 [팀 운영 정본](WORKSTREAMS.md)과 [에이전트 자동 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md), 실제 데이터 요청은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)에서 관리한다.
 
-[구 통합 #316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 POST-01~20을 #321~#325로 각각 한 번씩 분리한 뒤 **CLOSED/기록 보관**했습니다. #317은 심민성, 구 #318의 UI/UX 전체는 이서연 #323에 통합됐습니다. **총 6개 OPEN·각 담당자 1명**입니다. 과거 이슈와 역할은 기록일 뿐 현재 배정 근거가 아닙니다. 업무 배정은 실 NCP·유료 AI·학교/학생 데이터·사람 인수 완료를 의미하지 않으며 `NOT_RUN/CONFIGURATION_REQUIRED/RELEASE_BLOCKED`가 유지됩니다.
-## 본선 진출 이후 확정 역할 및 발표 담당 (2026-11-07)
+| 사람 | 현행 역할·이슈 |
+| --- | --- |
+| **심민성** | [#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) — 전체 코드/품질 검수, 신규 기능 **최초 배정·가능한 일반 Core/API/DB/계약/통합 실제 구현**, AI 교차 작업 인계 |
+| **박준영** | [#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356) — 추천·규칙/코드 기반 AI·HCX-007/OCR 개발, 이의상 교차 피드백, **AI 제품 기술 QA·재시험** |
+| **이의상** | [#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355) — NLP/OCR·RAG·모델/코드 기반 AI 개발, 박준영의 추천·언어·근거 결과 교차 검증 |
+| **이서연** | [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357) — 웹 UI/UX·React·실제 API/기능 배치, 데이터 기반 콘텐츠·포스터 디자인 |
+| **김채윤** | [#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358) — 공식 실데이터/포스터·출처권리·독립 Gold·웹 디자인 자산, 데이터를 직접 넣어 가볍게 사용자 시연·이슈 제보 |
 
-| 담당자 | 본선 이후 책임 | 협업 결과물 |
-| --- | --- | --- |
-| **이의상·박준영** | **AI 정확도와 자연어 처리 전체 공동 담당**: Laya·네이버 CLOVA OCR/Vision/HCX API·모델 조정, 실제 공급자 지원 시 파인튜닝, 프롬프트/성능 평가. 박준영은 학업 RulePack·What-if·전망 기능도 유지 | 재현 가능한 평가셋·오탐/근거·지연·비용·예외 사례 및 개선 전후 비교 |
-| **이서연** | **전체 웹 디자인/React UI 주담당**(기존 이의상 UI 책임 인수), 모바일·접근성 및 API 서버/NCP 계정·비용·운영 관리 | 화면 디자인/회귀/실기기 검토, 서버 설정·재시작/백업/복구·청구/키 취급 점검 |
-| **김채윤** | 전체 웹사이트를 발표장에서 시연, 학생 경험을 입력해 AI 결과/추천이 맞는지 검증, **60초·10분 발표 동선 확정 및 리허설** | 합성/실서버 구별 시연 시나리오·개인정보 없는 사례/정답·AI 오류 목록·대체 영상/스크린샷 |
-| **심민성** | 나머지 기능 구현·통합, 코드 품질·PR 리뷰/테스트/보안/API·DB 계약, 추가 기능 개발 및 제품 통합 | 리뷰/CI·공통 계약·실환경/AI 연동·신규 기능·릴리스 게이트 검증 |
+**기능/데이터 배정 규칙:** 새 `[추가 기능]` 이슈에는 심민성이 최초로 배정되어 구현 가능한 **비AI 부분을 직접 최대한 진행**한다. 추천/랭킹·규칙/코드 기반 AI·RAG/OCR 등 AI 개발이 겹치면 이의상 또는 박준영 중 주작성자에게 구현을 인계한다. 공식 자료·포스터/Gold가 필요하면 **새 `[데이터 요청]` 이슈**를 김채윤에게 만들고 원 기능에도 김채윤을 공동 담당자로 추가한다. 현재 13개 추가 기능의 데이터는 #360으로 관리하며 **13개 모두 김채윤 공동 assignee**다.
 
-**시연 흐름 정본:** [DEMO_MANUAL의 본선 발표 루트 초안](DEMO_MANUAL.md). **[#324 김채윤](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324)**이 학생 경험 입력/AI 정확도 및 60초·10분 전체 시연을 실제 검증합니다. 이서연 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) 통합 웹 UI/서버, 이의상·박준영 #321/#322 AI, 심민성 #325 통합의 결과를 연결하며, 인적 리허설은 아직 NOT_RUN입니다. [WORKSTREAMS](WORKSTREAMS.md) 참조.
+**발표/시연 흐름:** 김채윤은 데이터를 넣고 사용자의 눈으로 기능을 가볍게 시연해 이슈를 제보한다. 박준영의 **AI 기술 QA·정량 정확도/재시험**은 별도로 진행한다. 이서연은 화면 연결·디자인 개선, 이의상과 박준영은 AI 결과 교차 피드백, 심민성은 기획부터 통합/릴리스까지 상시 검수한다.
+
+### 과거 업무 배정 기록의 읽기 원칙
+
+아래의 2026-11-06~07 자료는 당시 설계/구현·발표 방향의 **역사적 참고 기록**이다. 포함된 #317·#321–#325 역할/진척·인수 책임은 현재 담당자를 뜻하지 않으며 최신 배정은 위 표와 각 추가기능 이슈의 최신 댓글이 우선한다.
 
 ## 한눈에 보는 흐름
 
