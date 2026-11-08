@@ -1,5 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
+import type {CampusAssistServices} from '../../apps/api/src/modules/campus-assist-http.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
 import {SYNTHETIC_ACTIVITIES,SYNTHETIC_PARTNERS,SYNTHETIC_FAQ_DOCUMENTS}
   from '../../apps/web/src/features/campus-assist/synthetic.js';
@@ -8,7 +9,7 @@ const actor={role:'BETA' as const,actorId:'SYN-OWNER',sessionIdHash:'H'.repeat(3
   betaAllowed:true,sessionExpiresAt:'2026-12-01T00:00:00Z',schoolMailProofExpiresAt:'2026-12-01T00:00:00Z'};
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
 afterEach(async()=>{await Promise.all(apps.splice(0).map(a=>a.close()));});
-function fixture(){
+function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>){
   let enabled=true,rights=true,sameActor=true;
   const receipt={actorId:actor.actorId,sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'};
   const activities={read:vi.fn(async()=>({items:SYNTHETIC_ACTIVITIES,receipt})),
@@ -20,7 +21,7 @@ function fixture(){
   const app=createIntegratedApi({
     allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
     auth:{verifySession:async()=>enabled?(sameActor?actor:{...actor,actorId:'SYN-OTHER'}):null,
-      revokeSession:async()=>{}},campusAssist:{activities,exchange,faq},
+      revokeSession:async()=>{}},campusAssist:{activities,exchange,faq,...(hcx007?{hcx007}:{})},
   });
   apps.push(app);
   const post=(url:string,payload:object)=>app.inject({method:'POST',url,
@@ -29,6 +30,20 @@ function fixture(){
     revoke:()=>{rights=false;},switchActor:()=>{sameActor=false;}};
 }
 describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=>{
+  it('aborts HCX execution if data rights are revoked while budget admission is in flight',async()=>{
+    let revokeRights=()=>{};
+    const provider:NonNullable<CampusAssistServices['hcx007']>={
+      admit:vi.fn(async()=>{revokeRights();return true;}),
+      execute:vi.fn(async()=>({status:{code:'20000'}})),
+    };
+    const h=fixture(provider);
+    revokeRights=h.revoke;
+    const r=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학'});
+    expect(r.statusCode).toBe(403);
+    expect(provider.admit).toHaveBeenCalledOnce();
+    expect(provider.execute).not.toHaveBeenCalled();
+  });
+
   it('scopes activity reads to an authorized, revalidated snapshot',async()=>{
     const h=fixture(),r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
     expect(r.statusCode).toBe(200);
