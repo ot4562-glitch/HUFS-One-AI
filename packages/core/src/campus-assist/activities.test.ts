@@ -64,3 +64,89 @@ describe('activity archive and past-only seasonal outlook (#339)',()=>{
     expect(result.state).toBe('INSUFFICIENT_DATA');
   });
 });
+
+describe('#370 seasonal window uses the target year calendar',()=>{
+  const AFTER='2027-06-01T00:00:00Z';
+  const march1=[row(2025,'03','01'),row(2026,'03','01')];
+  it('a leap target year keeps March 1 as March 1 (window ±7 days in that calendar)',()=>{
+    const r=forecastActivity(march1,AFTER,2028,'synthetic-dept','orientation');
+    expect(r.state).toBe('PREDICTED');
+    expect(r.from).toBe('2028-02-23');
+    expect(r.to).toBe('2028-03-08');
+  });
+  it('a common target year is unchanged',()=>{
+    const r=forecastActivity(march1,AFTER,2027,'synthetic-dept','orientation');
+    expect(r.from).toBe('2027-02-22');
+    expect(r.to).toBe('2027-03-08');
+  });
+  it('February 28 history in a leap target year spans February 29',()=>{
+    const r=forecastActivity([row(2025,'02','28'),row(2026,'02','28')],AFTER,2028,
+      'synthetic-dept','orientation');
+    expect(r.from).toBe('2028-02-21');
+    expect(r.to).toBe('2028-03-06');
+  });
+  it('late-December history clamps to December 31 even in a leap year',()=>{
+    const dec=[row(2025,'12','28'),row(2026,'12','29')];
+    const late='2027-01-15T00:00:00Z';
+    expect(forecastActivity(dec,late,2028,'synthetic-dept','orientation').to).toBe('2028-12-31');
+    expect(forecastActivity(dec,late,2027,'synthetic-dept','orientation').to).toBe('2027-12-31');
+  });
+  it('early-January history clamps to January 1',()=>{
+    const jan=[row(2025,'01','02'),row(2026,'01','03')];
+    const r=forecastActivity(jan,'2026-06-01T00:00:00Z',2028,'synthetic-dept','orientation');
+    expect(r.from).toBe('2028-01-01');
+    expect(r.to).toBe('2028-01-10');
+  });
+});
+
+describe('#371 a cancellation without an exact event date is not ignored',()=>{
+  const AS_OF='2027-02-15T00:00:00Z';
+  const history=[row(2025),row(2026)];
+  const undated=(extra:Partial<ActivityRecord>={})=>{
+    const c=row(2027,'03','07',{entryId:'cancel-2027',sourceId:'cancel',revisionId:'cancel-r1',
+      status:'CANCELLED',publishedAt:'2027-02-01T00:00:00Z',verifiedAt:'2027-02-02T00:00:00Z',...extra});
+    delete c.eventDate;
+    return c;
+  };
+  it('withholds the target-year window instead of predicting over the cancellation',()=>{
+    const r=forecastActivity([...history,undated()],AS_OF,2027,'synthetic-dept','orientation');
+    expect(r.state).toBe('UNKNOWN');
+    expect(r.from).toBeUndefined();
+    expect(r.evidenceRefs[0]).toBe('cancel-r1');
+  });
+  it('the same history without the cancellation still predicts (control)',()=>{
+    expect(forecastActivity(history,AS_OF,2027,'synthetic-dept','orientation').state).toBe('PREDICTED');
+  });
+  it('a cancellation that supersedes a dated target-year announcement is CANCELLED',()=>{
+    const announced=row(2027,'03','09',{entryId:'ann-2027',sourceId:'announce',revisionId:'ann-r1',
+      status:'ANNOUNCED',publishedAt:'2027-01-10T00:00:00Z',verifiedAt:'2027-01-11T00:00:00Z'});
+    const r=forecastActivity([...history,announced,undated({supersedes:'ann-r1'})],AS_OF,2027,
+      'synthetic-dept','orientation');
+    expect(r.state).toBe('CANCELLED');
+    expect(r.from).toBeUndefined();
+  });
+  it('a cancellation that supersedes another year does not block this year',()=>{
+    const old=row(2024,'03','07',{entryId:'old-2024',sourceId:'old',revisionId:'old-r1'});
+    const late=undated({supersedes:'old-r1',publishedAt:'2026-12-01T00:00:00Z',verifiedAt:'2026-12-02T00:00:00Z'});
+    const r=forecastActivity([old,...history,late],AS_OF,2027,'synthetic-dept','orientation');
+    expect(r.state).toBe('PREDICTED');
+  });
+  it('an old undated cancellation followed by a held edition no longer blocks',()=>{
+    // Published in 2024 (its own archive year), before the 2025 and 2026 editions were held.
+    const early=undated({publishedAt:'2024-12-05T00:00:00Z',verifiedAt:'2024-12-06T00:00:00Z'});
+    const r=forecastActivity([early,...history],AS_OF,2027,'synthetic-dept','orientation');
+    expect(r.state).toBe('PREDICTED');
+  });
+  it('supersedes cannot resolve through a record published after asOf',()=>{
+    const later=row(2027,'03','09',{entryId:'ann-2027',sourceId:'announce',revisionId:'ann-r1',
+      status:'ANNOUNCED',publishedAt:'2027-03-01T00:00:00Z',verifiedAt:'2027-03-02T00:00:00Z'});
+    const r=forecastActivity([...history,later,undated({supersedes:'ann-r1'})],AS_OF,2027,
+      'synthetic-dept','orientation');
+    expect(r.state).toBe('UNKNOWN');
+  });
+  it('a cancellation published after asOf does not time travel',()=>{
+    const future=undated({publishedAt:'2027-03-01T00:00:00Z',verifiedAt:'2027-03-02T00:00:00Z'});
+    expect(forecastActivity([...history,future],AS_OF,2027,'synthetic-dept','orientation').state)
+      .toBe('PREDICTED');
+  });
+});
