@@ -15,7 +15,7 @@ describe('#344 — explanation-backed mentor ranking for approved experiences',(
     expect(r.items[0]?.ruleScore).toBe(1);
     expect(r.items[0]?.reasons).toEqual([
       {kind:'MAJOR',codes:['ECON']},{kind:'JOB',codes:['ANALYST']},
-      {kind:'APPROVED_EXPERIENCE',codes:['DATA']},
+      {kind:'APPROVED_EXPERIENCE',codes:['DATA_ANALYTICS']},
     ]);
     expect(r.modelOutcome).toBe('NOT_REQUESTED');
   });
@@ -40,7 +40,7 @@ describe('#344 — explanation-backed mentor ranking for approved experiences',(
     const r=rankMentorsV2({preference:mentorPreference({
       majorCodes:[],jobCodes:[]}),catalog:[mentor('similar')]});
     expect(r.items[0]?.ruleScore).toBe(1);
-    expect(r.items[0]?.reasons).toEqual([{kind:'APPROVED_EXPERIENCE',codes:['DATA']}]);
+    expect(r.items[0]?.reasons).toEqual([{kind:'APPROVED_EXPERIENCE',codes:['DATA_ANALYTICS']}]);
   });
   it('produces stable names and no fabricated reason for empty profile',()=>{
     const r=rankMentorsV2({preference:mentorPreference({
@@ -51,16 +51,16 @@ describe('#344 — explanation-backed mentor ranking for approved experiences',(
   it('fails closed when the model is not independently approved',()=>{
     const r=rankMentorsV2({preference:mentorPreference(),
       catalog:[mentor('m')],rerank:{modelApproved:false,inputDigest:'digest-1',
-      proposals:[{candidateId:'m',score:1,evidenceCodes:['DATA'],
+      proposals:[{candidateId:'m',score:1,evidenceCodes:['DATA_ANALYTICS'],
         inputDigest:'digest-1',modelVersion:'model-v1'}]}});
     expect(r.modelOutcome).toBe('REJECTED');
     expect(r.items[0]?.mode).toBe('RULE_ONLY');
   });
   it('accepts a complete, cited, current semantic proposal set',()=>{
     const r=rankMentorsV2({preference:mentorPreference(),catalog:[
-      mentor('m-1'),mentor('m-2',{majorCodes:['ECON'],jobCodes:[],experienceTopics:['DATA']}),
+      mentor('m-1'),mentor('m-2',{majorCodes:['ECON'],jobCodes:[],experienceTopics:['DATA_ANALYTICS']}),
     ],rerank:{modelApproved:true,inputDigest:'digest-1',proposals:[
-      {candidateId:'m-1',score:0.95,evidenceCodes:['DATA'],inputDigest:'digest-1',modelVersion:'model-v1'},
+      {candidateId:'m-1',score:0.95,evidenceCodes:['DATA_ANALYTICS'],inputDigest:'digest-1',modelVersion:'model-v1'},
       {candidateId:'m-2',score:0.80,evidenceCodes:['public-project'],
         inputDigest:'digest-1',modelVersion:'model-v1'},
     ]}});
@@ -79,7 +79,7 @@ describe('#344 — explanation-backed mentor ranking for approved experiences',(
   it('rejects a model response for a mentor not in the verified catalog',()=>{
     const r=rankMentorsV2({preference:mentorPreference(),catalog:[mentor('m-1')],
       rerank:{modelApproved:true,inputDigest:'digest-1',proposals:[
-        {candidateId:'fictional-model-hallucination',score:1,evidenceCodes:['DATA'],
+        {candidateId:'fictional-model-hallucination',score:1,evidenceCodes:['DATA_ANALYTICS'],
           inputDigest:'digest-1',modelVersion:'model-v1'},
       ]}});
     expect(r.modelOutcome).toBe('REJECTED');
