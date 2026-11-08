@@ -88,3 +88,25 @@ export const FaqCandidateSchema = z.strictObject({
   suggestedLinks:z.array(z.enum(['/exchange','/activities','/notices'])).max(3),
 });
 export type FaqCandidate = z.infer<typeof FaqCandidateSchema>;
+
+export const ActivityArchiveResponseSchema=z.strictObject({
+  asOf:Iso,sourceVersion:Id,items:z.array(ActivityRecordSchema).max(200),
+});
+export const ExchangePartnerSummarySchema=z.strictObject({
+  partnerId:Id,track:z.enum(['OIA','DEPARTMENT']),minimumGpa:z.number().min(0).max(4.5),
+  partnerMinimumGpa:z.number().min(0).max(4.5).optional(),
+  requiredLanguage:z.strictObject({test:Id,minimumScore:z.number().nonnegative()}).optional(),
+  sourceRevision:Id,sourceUrl:Source,verifiedAt:Iso,provenance:CampusProvenanceSchema,
+});
+export const ExchangePartnerListSchema=z.strictObject({
+  asOf:Iso,sourceVersion:Id,partners:z.array(ExchangePartnerSummarySchema).max(50),
+});
+export const FaqAskResponseSchema=z.discriminatedUnion('status',[
+  z.strictObject({status:z.literal('NOT_FOUND'),asOf:Iso,evidence:z.array(z.never()).length(0)}),
+  z.strictObject({status:z.literal('CONFIGURATION_REQUIRED'),asOf:Iso,evidence:z.array(z.never()).length(0)}),
+  z.strictObject({status:z.literal('NEEDS_REVIEW'),asOf:Iso,answer:FaqCandidateSchema,
+    evidence:z.array(z.strictObject({citationId:Id,sourceUrl:Source,title:z.string().min(1),verifiedAt:Iso})).max(6),
+    usage:z.strictObject({promptTokens:z.number().int().nonnegative(),completionTokens:z.number().int().positive(),
+      totalTokens:z.number().int().positive()})}),
+]);
+export type FaqAskResponse=z.infer<typeof FaqAskResponseSchema>;
