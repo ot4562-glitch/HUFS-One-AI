@@ -1,4 +1,5 @@
 import {useEffect,useState,useSyncExternalStore} from 'react';
+import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import type {OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerOpportunityAiProof} from '@hufs-one/contracts';
 import type {OwnerCareerPort} from './OwnerCareerPanel.js';
 import {InAppLink} from '../../shell/AppShell.js';
@@ -109,7 +110,7 @@ export function OwnerOpportunityPanel({port,id,navigate}:{
     else setAiCompareStatus('UNAVAILABLE');
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">기회 자료의 권한을 확인 중입니다.</p>;
-  if(session.status!=='READY')return <p role="alert">본인 계정의 권한을 확인할 수 없어 상세 자료를 표시하지 않습니다.</p>;
+  if(session.status!=='READY')return <OwnerSessionFailure controller={port.session}>본인 계정의 권한을 확인할 수 없어 상세 자료를 표시하지 않습니다.</OwnerSessionFailure>;
   if(!detail)return <p role={error?'alert':undefined} aria-busy={!error}>{error||'출처·권리를 확인한 기회를 불러오는 중입니다.'}</p>;
   const {opportunity:op,source}=detail;
   const verified=op.dataMode==='REAL'&&source.status==='ACTIVE'&&!!source.verifiedAt;
