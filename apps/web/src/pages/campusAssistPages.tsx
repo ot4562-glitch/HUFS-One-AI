@@ -6,9 +6,14 @@ import {evaluateExchange} from '../../../../packages/core/src/campus-assist/exch
 import {retrieveFaqEvidence,type FaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
 import {SYNTHETIC_ACTIVITIES,SYNTHETIC_FAQ_DOCUMENTS,SYNTHETIC_ORGANIZATIONS,SYNTHETIC_PARTNERS} from '../features/campus-assist/synthetic.js';
 import {InAppLink} from '../shell/AppShell.js';
+import {STATIC_PAGES_PREVIEW} from '../shell/router.js';
 import {OwnerActivityPanel,OwnerExchangePanel,OwnerFaqPanel} from '../features/campus-assist/OwnerPanels.js';
 
 const NOTICE='이 화면은 허구의 합성 데이터로 기능을 검증하는 시연입니다. 실제 학교 행사·교환학생 요건·FAQ 답변이 아닙니다.';
+/** Synthetic fixtures are visible only in explicitly opted-in local/Pages demo builds. */
+const syntheticPreview=STATIC_PAGES_PREVIEW||(import.meta.env.DEV&&import.meta.env.MODE==='synthetic'
+  &&(location.hostname==='localhost'||location.hostname==='127.0.0.1'));
+const AUTH_REQUIRED=<p role="alert">인증된 BETA 세션과 승인된 자료 연결이 필요합니다. 일반 환경에서는 가상 자료를 실제 정보처럼 표시하지 않습니다.</p>;
 const labels={PASS:'입력 기준 충족',FAIL:'기준 불충족',UNKNOWN:'확인 필요',NOT_APPLICABLE:'해당 없음'} as const;
 function ActivityDemo({navigate}: {navigate:(p:string)=>void}){
   const [org,setOrg]=useState('ALL');
@@ -150,12 +155,12 @@ function FaqDemo({navigate}: {navigate:(p:string)=>void}){
 export const activityArchivePage:PageRenderer=({path,navigate,services})=>path==='/activities'
   ? {title:'학과·학생회 활동 기록과 시기 전망',body:services.campusAssist
     ? <OwnerActivityPanel port={services.campusAssist} navigate={navigate}/>
-    : <ActivityDemo navigate={navigate}/>} : null;
+    : syntheticPreview ? <ActivityDemo navigate={navigate}/> : AUTH_REQUIRED} : null;
 export const exchangePage:PageRenderer=({path,navigate,services})=>path==='/exchange'
   ? {title:'교환학생 지원 조건 비교',body:services.campusAssist
     ? <OwnerExchangePanel port={services.campusAssist} navigate={navigate}/>
-    : <ExchangeDemo navigate={navigate}/>} : null;
+    : syntheticPreview ? <ExchangeDemo navigate={navigate}/> : AUTH_REQUIRED} : null;
 export const faqPage:PageRenderer=({path,navigate,services})=>path==='/faq'
   ? {title:'FAQ·질문하기',body:services.campusAssist
     ? <OwnerFaqPanel port={services.campusAssist} navigate={navigate}/>
-    : <FaqDemo navigate={navigate}/>} : null;
+    : syntheticPreview ? <FaqDemo navigate={navigate}/> : AUTH_REQUIRED} : null;
