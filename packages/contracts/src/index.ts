@@ -15,3 +15,6 @@ export * from './demo-overlay/index.js';
 export * from './local-accounts/index.js';
 export * from './local-accounts/demo-profile.js';
 export * from './demo-scenarios/index.js';
+
+// Opt-in versioned addition contracts; existing consumers remain unchanged.
+export * as FeatureAdditions from './feature-additions/index.js';
