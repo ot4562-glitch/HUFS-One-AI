@@ -159,7 +159,7 @@ describe('#343 — actionable scholarship evaluation',()=>{
       conditions:[condition({sourceSpanId:'unapproved-span'})]}]})).overall).toBe('UNKNOWN');
   });
   it('invalidates all checks when source is revoked',()=>{
-    expect(run(scholarship({source:{...source(),status:'REVOKED'}})).toMatchObject({
+    expect(run(scholarship({source:{...source(),status:'REVOKED'}}))).toMatchObject({
       mode:'NOT_AVAILABLE',overall:'UNKNOWN',sourceReason:'REVOKED'});
   });
   it('separates application not yet open and closed',()=>{
