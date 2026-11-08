@@ -26,10 +26,8 @@ function windowDate(targetYear:number,day:number,marginDays:number):string{
 export interface ActivityFilter{
   organizationId?:string; year?:number; campus?:ActivityRecord['campus']; query?:string;
 }
-/** Fail closed on newer revoked/blocked heads, never resurrect an older approved revision. */
-export function currentActivityRecords(raw:readonly ActivityRecord[],asOf:string):ActivityRecord[]{
-  const time=epoch(asOf);
-  const parsed=ActivityRecordSchema.array().max(10000).parse(raw);
+/** Newest revision per sourceId that was both published and verified by asOf. */
+function sourceHeadsAt(parsed:readonly ActivityRecord[],time:number):Map<string,ActivityRecord>{
   const heads=new Map<string,ActivityRecord>();
   for(const item of parsed){
     if(epoch(item.publishedAt)>time||epoch(item.verifiedAt)>time)continue;
@@ -38,6 +36,13 @@ export function currentActivityRecords(raw:readonly ActivityRecord[],asOf:string
       (prev.publishedAt===item.publishedAt&&prev.revisionId<item.revisionId))
       heads.set(item.sourceId,item);
   }
+  return heads;
+}
+/** Fail closed on newer revoked/blocked heads, never resurrect an older approved revision. */
+export function currentActivityRecords(raw:readonly ActivityRecord[],asOf:string):ActivityRecord[]{
+  const time=epoch(asOf);
+  const parsed=ActivityRecordSchema.array().max(10000).parse(raw);
+  const heads=sourceHeadsAt(parsed,time);
   const latest=[...heads.values()].filter(item=>item.rights==='APPROVED'&&item.status!=='DELETED');
   const events=new Map<string,ActivityRecord>();
   for(const item of latest){
@@ -79,19 +84,23 @@ export function forecastActivity(raw:readonly ActivityRecord[],asOf:string,targe
     evidenceRefs:leading?[leading.revisionId,...evidence]:evidence,reason,
     ...(from?{from}:{}),...(to?{to}:{}),
   });
-  if(selected)return result(selected.status==='CANCELLED'?'CANCELLED':'CONFIRMED','NONE',
-    '해당 연도의 확인된 출처가 과거 패턴보다 우선합니다.',selected.eventDate,selected.eventDate,selected);
-  // #371: a verified cancellation may omit the exact event date. Resolve its year
-  // through `supersedes` when it points at a dated record; otherwise, a
-  // cancellation published after the last held edition may refer to the target
-  // year's edition, so the seasonal guess is withheld instead of ignoring it.
-  const visible=ActivityRecordSchema.array().max(10000).parse(raw).filter(row=>
-    row.organizationId===organizationId&&row.seriesId===seriesId&&epoch(row.publishedAt)<=epoch(asOf));
+  // #371: a verified cancellation may omit the exact event date. It is checked
+  // *before* a dated target-year record is returned, because the two can sit
+  // under different archive years (e.g. confirmation posted 2026-10 for a 2027
+  // event, cancellation posted 2026-12). A `supersedes` link is trusted only
+  // when it points at a current, verified, approved head at asOf; otherwise the
+  // link is treated as unresolved. Only a newer dated record overrides it.
+  const time=epoch(asOf);
+  const heads=sourceHeadsAt(ActivityRecordSchema.array().max(10000).parse(raw),time);
+  const trustedTarget=(ref:string)=>[...heads.values()].find(row=>
+    (row.revisionId===ref||row.entryId===ref)&&row.organizationId===organizationId
+    &&row.seriesId===seriesId&&row.rights==='APPROVED'&&row.status!=='DELETED'&&row.eventDate);
   const lastHeld=records.filter(row=>row.status==='CONFIRMED'&&row.eventDate
-    &&Date.parse(row.eventDate+'T00:00:00Z')<=epoch(asOf)).map(row=>row.eventDate!).sort().at(-1);
+    &&Date.parse(row.eventDate+'T00:00:00Z')<=time).map(row=>row.eventDate!).sort().at(-1);
+  const supersededBySelected=(cancel:ActivityRecord)=>!!selected&&epoch(selected.publishedAt)>epoch(cancel.publishedAt);
   for(const cancel of records.filter(row=>row.status==='CANCELLED'&&!row.eventDate)){
-    const target=cancel.supersedes===undefined?undefined:visible.find(row=>row.eventDate
-      &&(row.revisionId===cancel.supersedes||row.entryId===cancel.supersedes));
+    if(supersededBySelected(cancel))continue;
+    const target=cancel.supersedes===undefined?undefined:trustedTarget(cancel.supersedes);
     if(target){
       if(year(target.eventDate!)===targetYear)return result('CANCELLED','NONE',
         '해당 연도 행사를 대상으로 한 확인된 취소 공지가 있습니다(정확한 날짜 미기재).',
@@ -104,6 +113,8 @@ export function forecastActivity(raw:readonly ActivityRecord[],asOf:string,targe
         '날짜가 없는 취소 공지가 있어 어느 회차의 취소인지 확인될 때까지 예측을 보류합니다.',
         undefined,undefined,cancel);
   }
+  if(selected)return result(selected.status==='CANCELLED'?'CANCELLED':'CONFIRMED','NONE',
+    '해당 연도의 확인된 출처가 과거 패턴보다 우선합니다.',selected.eventDate,selected.eventDate,selected);
   if(history.length<2)return result('INSUFFICIENT_DATA','NONE','서로 다른 연도의 개최 근거가 2개 미만입니다.');
   const dates=history.map(r=>dayOfYear(r.eventDate!));
   const spread=Math.max(...dates)-Math.min(...dates);

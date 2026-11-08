@@ -150,3 +150,54 @@ describe('#371 a cancellation without an exact event date is not ignored',()=>{
       .toBe('PREDICTED');
   });
 });
+
+describe('#371 review follow-up: cancellation before a dated confirmation, trusted links only',()=>{
+  const AS_OF='2027-02-15T00:00:00Z';
+  const history=[row(2025),row(2026)];
+  const confirmed2027=row(2027,'03','09',{entryId:'conf-2027',sourceId:'announce',revisionId:'conf-r1',
+    publishedAt:'2026-10-01T00:00:00Z',verifiedAt:'2026-10-02T00:00:00Z'});
+  const cancel=(extra:Partial<ActivityRecord>={})=>{
+    const c=row(2026,'12','01',{entryId:'cancel',sourceId:'cancel',revisionId:'cancel-r1',status:'CANCELLED',
+      publishedAt:'2026-12-01T00:00:00Z',verifiedAt:'2026-12-02T00:00:00Z',...extra});
+    delete c.eventDate;
+    return c;
+  };
+  it('review case 1: 2027 confirmation posted 2026-10, undated cancellation of it posted 2026-12 -> CANCELLED',()=>{
+    const r=forecastActivity([...history,confirmed2027,cancel({supersedes:'conf-r1'})],AS_OF,2027,
+      'synthetic-dept','orientation');
+    expect(r.state).toBe('CANCELLED');
+    expect(r.evidenceRefs[0]).toBe('cancel-r1');
+  });
+  it('the same cancellation without a link still withholds instead of CONFIRMED',()=>{
+    expect(forecastActivity([...history,confirmed2027,cancel()],AS_OF,2027,'synthetic-dept','orientation').state)
+      .toBe('UNKNOWN');
+  });
+  it('a dated confirmation published after the cancellation wins (event re-confirmed)',()=>{
+    const later={...confirmed2027,revisionId:'conf-r2',publishedAt:'2027-01-10T00:00:00Z',verifiedAt:'2027-01-11T00:00:00Z'};
+    expect(forecastActivity([...history,later,cancel()],AS_OF,2027,'synthetic-dept','orientation').state)
+      .toBe('CONFIRMED');
+  });
+  describe('review case 2: an untrusted supersedes target never lets the cancellation be skipped',()=>{
+    const other=(extra:Partial<ActivityRecord>)=>row(2024,'03','07',{entryId:'old-2024',sourceId:'old',
+      revisionId:'old-r1',...extra});
+    const late=cancel({supersedes:'old-r1',publishedAt:'2027-02-01T00:00:00Z',verifiedAt:'2027-02-02T00:00:00Z'});
+    it.each([
+      ['not yet verified at asOf',other({verifiedAt:'2027-03-01T00:00:00Z'})],
+      ['revoked',other({rights:'REVOKED'})],
+      ['blocked',other({rights:'BLOCKED'})],
+    ])('%s -> UNKNOWN',(_label,target)=>{
+      expect(forecastActivity([target,...history,late],AS_OF,2027,'synthetic-dept','orientation').state)
+        .toBe('UNKNOWN');
+    });
+    it('superseded by a newer head of the same source -> UNKNOWN',()=>{
+      const newerHead=other({revisionId:'old-r2',eventDate:'2024-03-09',publishedAt:'2024-02-10T00:00:00Z',
+        verifiedAt:'2024-02-11T00:00:00Z'});
+      expect(forecastActivity([other({}),newerHead,...history,late],AS_OF,2027,'synthetic-dept','orientation').state)
+        .toBe('UNKNOWN');
+    });
+    it('control: a trusted link to another year is ignored -> PREDICTED',()=>{
+      expect(forecastActivity([other({}),...history,late],AS_OF,2027,'synthetic-dept','orientation').state)
+        .toBe('PREDICTED');
+    });
+  });
+});
