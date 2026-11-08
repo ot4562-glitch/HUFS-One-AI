@@ -32,19 +32,14 @@
 
 [PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)로 홈의 기존 요약을 바탕으로 한 3단계 선택 패널 및 `/opportunities`의 **현재 표시된 허가 공고만** 검색/7일 내 확정 마감·자격 상태 필터/마감 정렬을 연결했습니다. 기존 데스크톱 11대분류·모바일 5탭 정보구조를 대체하지 않습니다. 현재 날짜가 아닌 자료의 `asOf`에 따른 마감·D-day이고 실제 학생 로그인/실원본 전체 검색이 아닙니다. PR HEAD CI 4/4 통과와 사람/실기기 인수는 구별합니다. #318 전체 UX/날짜 안내, #280 실제 UI 인수는 계속 OPEN입니다.
 
-## 2026-11-07 최신 이슈 분리·담당 배정
+## 현재 메뉴 구현·추가기능 협업 상태 (2026-11-08)
 
-| 현재 OPEN 7개 | 담당 |
-| --- | --- |
-| [#321 이의상 AI/NLP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/321) | `uisang2004-maker` |
-| [#322 박준영 AI·학업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/322) | `taewangim-alt` |
-| [#323 이서연 NCP 서버](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) | `lhh42001` |
-| [#324 김채윤 시연/검증](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324) | `qamarrchae` |
-| [#325 심민성 통합/릴리스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) | `ot4562-glitch` |
-| [#317 추가 기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/317) | `ot4562-glitch` |
-| [#318 UI/UX](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318) | `lhh42001` |
+신규 `[추가 기능]` 이슈는 **심민성이 최초 assignee**로 구조/일반 코드를 가능한 범위까지 구현하며, 추천/랭킹·규칙/코드 기반 AI·LLM/OCR 등은 **박준영 또는 이의상에게 실제 구현을 인계**한다. [#339–#352](https://github.com/ot4562-glitch/HUFS-One-AI/issues/339) 중 13개 기능의 AI 개발 담당은 박준영 6개·이의상 7개이고, **김채윤은 모두 데이터 공동 assignee**다. 실제 데이터 요청은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)이며, 새 자료 요청은 별도 `[데이터 요청]` 이슈로 만든다.
 
-구 통합 [#316](https://github.com/ot4562-glitch/HUFS-One-AI/issues/316)은 기존 POST-01~20을 개인별 #321~#325로 중복 없이 옮긴 뒤 **CLOSED(이관)**했습니다. 추가 기능 #317→심민성, UI/UX #318→이서연; 각 OPEN 이슈는 담당자 1명입니다. 이전 이슈 본문/댓글은 이력 보존. **코드/합성 PASS는 실제 NCP·학교 데이터·실 AI·사람 수락 완료를 뜻하지 않으며 `RELEASE_BLOCKED` 유지**.
+**이서연**([#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357))은 기존 웹사이트에 기능을 실제 배치하고 김채윤이 준비한 허가된 포스터·공고를 화면 디자인에 활용한다. **박준영**([#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356))은 AI 제품 QA, **이의상**([#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355))은 AI 교차 검증, **김채윤**([#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358))은 가벼운 사용자 시연, **심민성**([#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359))은 전체 코드/품질/통합 검수를 수행한다.
+
+**고정 역할 #355–#359에는 더 이상 수정·댓글·담당 변경 등 어떤 쓰기도 수행하지 않는다.** 화면의 현재 실제 구현 여부는 각 feature PR의 병합 상태와 UI/API 실제 동작을 확인한 뒤 갱신하며, PR #342/#353의 미병합 합성 화면을 운영 완료로 표시하지 않는다. [업무 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md) · [팀 운영](WORKSTREAMS.md).
+
 ## 현재 인수 상태
 
 - React/Vite·합성 Chrome E2E는 상단/모바일 메뉴·키보드/닫힘/focus·미지원 상태/320–1440px 범위 검증 코드가 있습니다.
