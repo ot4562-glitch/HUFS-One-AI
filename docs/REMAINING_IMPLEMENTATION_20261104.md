@@ -12,7 +12,7 @@
 - [#307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307) 현재 합성 화면으로 **홈 3단계 액션·공고 검색/7일 내 확정 마감/자격 상태 필터·마감 정렬·키보드/reduced-motion**을 구현. 변경 8파일의 [리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307#pullrequestreview-5797568875), PR HEAD `ba7bf2a` Actions [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685945)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685929)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182686098)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42182685963) **4/4 SUCCESS**, 병합 커밋 [`d8e2144`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/d8e2144184d06577ff76d8e5e1ed3a13be09af4c). 병합 이후 정확한 `main d8e2144`의 [TASK-00](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797571)·[Chrome](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797686)·[NCP](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797648)·[Pages](https://github.com/ot4562-glitch/HUFS-One-AI/actions/runs/42187797515) **4/4 SUCCESS** 확인. 이후 문서 PR의 CI는 별도.
 - 앞서 병합된 #267–#295(각 해당 PR/이슈 인용)에는 합성 개인화·학업/RulePack·SourceRevision·학생 명시 승인/철회·API/RLS/AI/NCP preview 코드가 있습니다. 공개 Pages는 **실자료 없는 합성 화면**, `main` push 시 자동 재배포합니다. 합성 자동검증과 현장 검증을 혼동하지 않습니다.
 
-## 2026-11-07 최신 이슈 분리·담당 배정
+## 2026-11-07 당시 이슈 분리·담당 배정 — 역사적 기록 (현행 배정 아님)
 
 | 현재 OPEN 7개 | 담당 |
 | --- | --- |
