@@ -34,7 +34,7 @@ export function decodeDetailId(segment: string): string | null {
   try {
     const id = decodeURIComponent(segment);
     if (id.length < 1 || id.length > 120 || id === '.' || id === '..'
-      || !/^[\\p{L}\\p{N}_.:-]+$/u.test(id)
+      || !/^[\p{L}\p{N}_.:-]+$/u.test(id)
       || encodeURIComponent(id).toLowerCase() !== segment.toLowerCase()) return null;
     return id;
   } catch {
@@ -43,8 +43,8 @@ export function decodeDetailId(segment: string): string | null {
 }
 export function validPath(path: string): boolean {
   if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) return false;
-  if (/^\\/[A-Za-z0-9/_-]*$/.test(path)) return true;
-  const match = /^\\/(?:opportunities|notices)\\/([^/]+)$/.exec(path);
+  if (/^\/[A-Za-z0-9/_-]*$/.test(path)) return true;
+  const match = /^\/(?:opportunities|notices)\/([^/]+)$/.exec(path);
   return match !== null && decodeDetailId(match[1]!) !== null;
 }
 
