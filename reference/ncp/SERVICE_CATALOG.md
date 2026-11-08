@@ -8,7 +8,7 @@
 | Load Balancer/Global Edge/WAF/TLS/DNS | 독립 Google/메일 인가·직접 origin/IPv6·비인가 assets·KR Geo 우회 차단 | 운영 전 코드+보안 독립 인수 필요 |
 | 서버 내 PostgreSQL TLS/최소 역할·백업 | Auth/Owner/SourceRevision/권한 영수증/AI budget·원장 | SQL/격리 PG 코드 존재, 운영 DB 미적용 |
 | CLOVA General OCR | 허가된 포스터/PDF에서만 bbox·문단 근거 추출 | 프로토콜/권한·비용 코드 있음, 실 외부 호출 OFF |
-| CLOVA Studio HCX-005(Vision)/HCX-007 | 검증형 4개 AI 제품 task의 필요한 후보 설명/구조화 | 구조화 요청/예산·검증 코드, 실 모델/청구 인수 전 |
+| CLOVA OCR + CLOVA Studio HCX-007 | 검증형 4개 AI 제품 task의 필요한 후보 설명/구조화 | 구조화 요청/예산·검증 코드, 실 모델/청구 인수 전 |
 | Laya 모델 (NCP 서비스 아님) | 비동기 분류 보조, CPUQuota/RSS/OOM·API 우선 | 코드 정책 존재, **기본 OFF**, 실호스트 수락 전 |
 | Object Storage/모니터링·알림 | 허가된 증거의 비공개 저장/복구, 실비용/오류 알림 | 검토/선택 단계; 실제 사용·이용권 별도 |
 | 기타 AI/DB/메시징·앱/모바일/전면 오프라인 | 핵심 개인화/학업/근거 기반 시연과 직접 관련 없는 서비스 | P2/P3 선택·현재 필수 운영 범위에서 제외 |
