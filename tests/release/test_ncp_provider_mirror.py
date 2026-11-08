@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import io
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -49,9 +50,13 @@ class ProviderMirrorTests(unittest.TestCase):
         )
         self.assertEqual(self.m.MIRROR_PATH, self.v.PROVIDER_RELATIVE_PATH)
         for name in ("network", "host"):
-            lock = (REPO / "infra" / "ncp" / "terraform" / name / ".terraform.lock.hcl").read_text(
-                encoding="utf-8"
-            )
+            lockfile = REPO / "infra" / "ncp" / "terraform" / name / ".terraform.lock.hcl"
+            if not lockfile.exists():
+                # Older local developer checkouts may omit NCP IaC. On GitHub
+                # Actions the sparse checkout MUST include both real locks.
+                self.assertNotEqual(os.environ.get("GITHUB_ACTIONS"), "true")
+                continue
+            lock = lockfile.read_text(encoding="utf-8")
             self.assertIn(f'"zh:{self.m.SHA256}"', lock)
             self.assertIn('version     = "4.0.7"', lock)
 
