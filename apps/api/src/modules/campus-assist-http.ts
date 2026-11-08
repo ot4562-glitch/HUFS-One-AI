@@ -87,6 +87,31 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
   }
   if(services.exchange){
     const port=services.exchange;
+    app.get('/api/owner/exchange/partners',async req=>{
+      const actor=await verify(req);
+      const args=z.strictObject({asOf:Iso}).parse(req.query);
+      const snapshot=await read(port,actor,args.asOf);
+      const rules=ExchangePolicySchema.array().max(500).parse(snapshot.items);
+      const grouped=new Map<string,ExchangePolicy[]>();
+      for(const rule of rules){
+        const key=rule.partnerId+':'+rule.track;
+        const group=grouped.get(key)||[];
+        group.push(rule);grouped.set(key,group);
+      }
+      const partners=[...grouped.values()].filter(group=>group.length===1).map(group=>group[0]!)
+        .filter(r=>r.rights==='APPROVED'&&Date.parse(r.publishedAt)<=Date.parse(args.asOf)
+          &&Date.parse(r.verifiedAt)<=Date.parse(args.asOf)
+          &&r.effectiveFrom<=args.asOf.slice(0,10)
+          &&(!r.effectiveUntil||r.effectiveUntil>=args.asOf.slice(0,10)))
+        .sort((a,b)=>a.partnerId.localeCompare(b.partnerId)).slice(0,50)
+        .map(r=>({partnerId:r.partnerId,track:r.track,minimumGpa:r.minimumGpa,
+          ...(r.partnerMinimumGpa!==undefined?{partnerMinimumGpa:r.partnerMinimumGpa}:{}),
+          ...(r.requiredLanguage?{requiredLanguage:r.requiredLanguage}:{}),
+          sourceRevision:r.sourceRevision,sourceUrl:r.sourceUrl,verifiedAt:r.verifiedAt,
+          provenance:r.provenance}));
+      await current(req,actor,port,snapshot);
+      return {asOf:args.asOf,sourceVersion:snapshot.receipt.sourceVersion,partners};
+    });
     app.post('/api/owner/exchange/evaluate',async req=>{
       const actor=await verify(req);requireStateChangeProof(req,actor,session.allowedOrigin);
       const args=Exchange.parse(req.body);
