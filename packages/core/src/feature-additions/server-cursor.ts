@@ -8,6 +8,7 @@
  */
 import {createHmac, timingSafeEqual} from 'node:crypto';
 import {z} from 'zod';
+import {FeatureAdditions as V} from '@hufs-one/contracts';
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {catalogFilterKey, type CatalogInternalCursor} from './catalog-v2.js';
 
@@ -50,7 +51,7 @@ const checkContext=(context:CursorRequestContext):void=>{
     ||!checkId(context.catalogRevision)
     ||!context.scopeKey||context.scopeKey.length>512
     ||!Number.isSafeInteger(context.nowMs)||context.nowMs<0
-    ||!C.OpportunityQuerySchema.safeParse(context.query).success)
+    ||!V.OpportunityQuerySchema.safeParse(context.query).success)
     throw new CatalogCursorError('MISCONFIGURED_CURSOR');
 };
 export type CatalogCursorSigner={
