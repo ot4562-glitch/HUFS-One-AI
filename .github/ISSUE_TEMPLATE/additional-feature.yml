@@ -9,6 +9,9 @@ body:
       value: |
         최초 assignee는 심민성입니다. 자료가 필요하면 별도 [데이터 요청] 이슈를 만들고 김채윤을 이 기능의 공동 담당자로 추가합니다. AI/코드 기반 추천·OCR·LLM이 시작되면 이의상 또는 박준영을 주구현자로 인계합니다.
         기존 [본선 진출 이후] #355–#359는 읽기 전용이며 수정·댓글 추가 대상이 아닙니다.
+        제목의 [추가 기능] 접두어를 유지하세요. 전체 기능은 AI/UI가 있어도 심민성에게 최초 배정되며, 이후 필요한 AI 구현은 별도 [AI 구현] 이슈/인계로 진행합니다.
+        우선순위는 제목 P1/P2/P3, 작업 강도는 확인 후 effort:S/M/L 라벨로 설정합니다. 봇은 난이도를 임의 추측하지 않습니다.
+        처음 온 에이전트는 AGENTS.md와 docs/ISSUE_ASSIGNMENT_PLAYBOOK.md의 접두어 표를 먼저 읽으세요.
         상세 절차: docs/ISSUE_ASSIGNMENT_PLAYBOOK.md
   - type: textarea
     id: product-need
