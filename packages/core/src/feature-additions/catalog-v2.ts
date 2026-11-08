@@ -27,7 +27,8 @@ function normalize(value:string):string{
 export function catalogFilterKey(query:C.OpportunityQuery):string {
   return JSON.stringify([
     normalize(query.q??''),query.category??null,query.campus??null,
-    query.eligibility??null,query.deadlineBefore??null,query.sort,query.asOf,
+    query.eligibility??null,query.deadlineBefore??null,query.includeClosed??false,
+    query.sort,query.asOf,
   ]);
 }
 function sortValue(row:C.OpportunityCatalogItem,sort:C.OpportunityQuery['sort']):string {
@@ -79,6 +80,8 @@ export function searchApprovedCatalogV2(input:{
     if(ids.get(item.id)!==1 || !item.permitted
       || !verifySource(item.source,query.asOf,input.mode).usable) return false;
     if(item.publishedAt && parseAsOf(item.publishedAt)>at) return false;
+    // Default catalog is actionable; expired entries are an explicit archive opt-in.
+    if(!query.includeClosed && item.deadlineAt && parseAsOf(item.deadlineAt)<=at) return false;
     if(query.category && query.category!==item.category) return false;
     if(query.campus && item.campus!==query.campus) return false;
     if(query.eligibility && item.eligibility!==query.eligibility) return false;
