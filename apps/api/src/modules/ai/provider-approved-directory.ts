@@ -21,7 +21,7 @@ export class PostgresApprovedProviderDirectory {
     private readonly phaseId:string,
     private readonly operation:'HCX_005'|'HCX_007',
     private readonly now:()=>string=()=>new Date().toISOString(),
-  ){Ref.parse(phaseId);Operation.parse(operation);}
+  ){Ref.parse(phaseId);Operation.parse(operation);if(operation!=='HCX_007')throw Error('Unavailable');}
   async list(actor:VerifiedActor):Promise<ApprovedProviderInputs>{
     const time=Iso.parse(this.now());
     if(actor.role!=='BETA')throw Error('Unavailable');
