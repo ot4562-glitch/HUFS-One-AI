@@ -143,7 +143,7 @@ export type GuideResolutionV2=z.infer<typeof GuideResolutionV2Schema>;
 
 /** HTTP layer MUST sign an opaque cursor; the pure core's cursor is internal. */
 export const SignedCatalogPageV2Schema=z.strictObject({
-  items:z.array(OpportunityCatalogItemSchema).max(50),
+  items:z.array(z.lazy(()=>OpportunityCatalogItemSchema)).max(50),
   nextCursor:z.string().min(16).max(2048).nullable(),
   hasMore:z.boolean(),
   totalInAuthorizedScope:z.number().int().nonnegative(),
