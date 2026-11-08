@@ -25,8 +25,31 @@ export const STATIC_PAGES_PREVIEW = import.meta.env.PROD
   && import.meta.env.MODE === 'pages-preview'
   && import.meta.env.VITE_STATIC_PAGES_PREVIEW === 'true';
 
-function validPath(path: string): boolean {
-  return /^\/[A-Za-z0-9/_-]*$/.test(path) && !path.startsWith('//');
+/**
+ * Only one encoded ID segment is accepted on detail routes. Decode exactly
+ * once, reject path separators, control characters, malformed UTF-8 and
+ * non-canonical percent escapes before any history or preview navigation.
+ */
+export function decodeDetailId(segment: string): string | null {
+  try {
+    const id = decodeURIComponent(segment);
+    if (id.length < 1 || id.length > 120 || id === '.' || id === '..'
+      || !/^[\p{L}\p{N}_.:-]+$/u.test(id)
+      || encodeURIComponent(id).toLowerCase() !== segment.toLowerCase()) return null;
+    return id;
+  } catch {
+    return null;
+  }
+}
+export function validPath(path: string): boolean {
+  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) return false;
+  // Evaluate detail routes before the legacy static-path allowance: otherwise
+  // unencoded /../, extra segments or overlong plain IDs bypass the ID limit.
+  if (path.startsWith('/opportunities/') || path.startsWith('/notices/')) {
+    const match = /^\/(?:opportunities|notices)\/([^/]+)$/.exec(path);
+    return match !== null && decodeDetailId(match[1]!) !== null;
+  }
+  return /^\/[A-Za-z0-9/_-]*$/.test(path);
 }
 
 function readPath(port: HistoryPort): string {
