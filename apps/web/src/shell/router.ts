@@ -43,9 +43,13 @@ export function decodeDetailId(segment: string): string | null {
 }
 export function validPath(path: string): boolean {
   if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) return false;
-  if (/^\/[A-Za-z0-9/_-]*$/.test(path)) return true;
-  const match = /^\/(?:opportunities|notices)\/([^/]+)$/.exec(path);
-  return match !== null && decodeDetailId(match[1]!) !== null;
+  // Evaluate detail routes before the legacy static-path allowance: otherwise
+  // unencoded /../, extra segments or overlong plain IDs bypass the ID limit.
+  if (path.startsWith('/opportunities/') || path.startsWith('/notices/')) {
+    const match = /^\/(?:opportunities|notices)\/([^/]+)$/.exec(path);
+    return match !== null && decodeDetailId(match[1]!) !== null;
+  }
+  return /^\/[A-Za-z0-9/_-]*$/.test(path);
 }
 
 function readPath(port: HistoryPort): string {
