@@ -125,6 +125,9 @@ export function createProviderExecutor(options:ProviderRuntimeOptions){
       ||Date.parse(policy.approvedAt)>now||Date.parse(policy.expiresAt)<=now)throw Error();return now;
   };
   const validate=async(req:ProviderRequest):Promise<ProviderSnapshot>=>{
+    // Legacy job records retain their operation identifier for audit, while
+    // only standalone CLOVA OCR and HCX-007 can initiate provider execution.
+    if(req.operation==='HCX_005')throw Error();
     const at=open();if(req.actor.role!=='BETA')throw Error();authorizeSession(req.actor,new Date(at).toISOString());
     Ref.parse(req.inputRef);Ref.parse(req.phaseId);Ref.parse(req.idempotencyKey);Operation.parse(req.operation);Iso.parse(req.asOf);
     if(Date.parse(req.asOf)>at||req.signal?.aborted)throw Error();
@@ -176,7 +179,7 @@ export function createProviderExecutor(options:ProviderRuntimeOptions){
         {signal:controller.signal,timeoutMs:Math.min(timeoutMs,5000)})):undefined;
       const outputLimit=Math.min(policy.maxOutputTokens,start.packet?.task==='opportunity_terms'?1600:start.packet?.task==='experience_skills'?800:600);
       const wire=req.operation==='OCR_GENERAL'?buildOcrRequest(media!,randomUUID(),open()):buildHcxRequest({packet:start.packet!,
-        model:req.operation==='HCX_007'?'HCX-007':'HCX-005',maxOutputTokens:outputLimit,...(media?{media}:{})});
+        model:'HCX-007',maxOutputTokens:outputLimit});
       const body=JSON.stringify(wire.body);if(Buffer.byteLength(body)>8*1024*1024)throw Error();
       const cost=req.operation==='OCR_GENERAL'?BigInt(policy.ocrImageUnits):BigInt(policy.tokenizerUnits)
         +BigInt(policy.maxInputTokens)*BigInt(policy.inputUnitsPerToken)+BigInt(outputLimit)*BigInt(policy.outputUnitsPerToken);
