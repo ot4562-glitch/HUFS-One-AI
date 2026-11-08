@@ -38,10 +38,15 @@ jobs:
             const {routeIssue} = require('./.github/scripts/issue-router.cjs');
             const {owner, repo} = context.repo;
             const manual = context.eventName === 'workflow_dispatch';
-            const issue = manual
-              ? (await github.rest.issues.get({owner, repo,
-                  issue_number: Number(context.payload.inputs.issue_number)})).data
-              : context.payload.issue;
+            // Both webhook and manual runs must route the *current* issue,
+            // never a potentially stale queued event payload.
+            const issueNumber = manual
+              ? Number(context.payload.inputs.issue_number)
+              : context.payload.issue?.number;
+            if (!Number.isSafeInteger(issueNumber) || issueNumber < 1)
+              throw new Error('Invalid issue number');
+            const issue = (await github.rest.issues.get({owner, repo,
+              issue_number: issueNumber})).data;
             const dryRun = manual && String(context.payload.inputs.dry_run) === 'true';
             const result = await routeIssue({github, context, core, issue, dryRun});
             core.info('Routing result: ' + JSON.stringify(result));
