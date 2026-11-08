@@ -178,3 +178,81 @@ test('explicit triage prefix overrides even clear code paths and retains unassig
   assert.ok(env.calls.added.includes('triage:needs-review'));
   assert.deepEqual(env.calls.assigned, []);
 });
+
+
+test('[버그] with one clear UI role is assigned and carries type:bug', async () => {
+  const issue = ticket(560, '[\ubc84\uadf8][\ucf54\ub4dc \uc804\uc218\uc870\uc0ac] P2 React URL route fails');
+  const env = mock(issue);
+  const result = await routeIssue({...env});
+  assert.equal(result.area, 'web');
+  assert.equal(result.assignee, 'lhh42001');
+  assert.ok(env.calls.added.includes('type:bug'));
+  assert.ok(env.calls.added.includes('source:code-audit'));
+  assert.ok(env.calls.added.includes('priority:P2'));
+});
+
+test('ambiguous [버그] does not assign a person', async () => {
+  const issue = ticket(561, '[\ubc84\uadf8] shared client and server error');
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.ok(env.calls.added.includes('triage:needs-review'));
+  assert.deepEqual(env.calls.assigned, []);
+});
+
+test('[실증 인수] never auto-assigns even with explicit area', async () => {
+  const issue = ticket(562, '[\uc2e4\uc99d \uc778\uc218] production NCP approval',
+    {labels: ['area:integration']});
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.ok(env.calls.added.includes('type:acceptance'));
+  assert.ok(env.calls.added.includes('triage:needs-review'));
+  assert.deepEqual(env.calls.assigned, []);
+});
+
+test('P0 is labeled and always requires a human before assigning', async () => {
+  const issue = ticket(563, '[\ubc84\uadf8] P0 React issue');
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.ok(env.calls.added.includes('priority:P0'));
+  assert.ok(env.calls.added.includes('triage:needs-review'));
+  assert.deepEqual(env.calls.assigned, []);
+});
+
+test('existing priority:P0 label also blocks assignment, preserving human owner', async () => {
+  const issue = ticket(564, '[AI \uad6c\ud604] model bug', {labels: ['priority:P0']});
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.deepEqual(env.calls.assigned, []);
+});
+
+test('security/P0 combination retains security label while blocking assignment', async () => {
+  const issue = ticket(565, '[\ubc84\uadf8] P0 \uac1c\uc778\uc815\ubcf4 \ub178\ucd9c');
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.ok(env.calls.added.includes('type:security'));
+  assert.ok(env.calls.added.includes('priority:P0'));
+  assert.ok(env.calls.added.includes('triage:needs-review'));
+  assert.deepEqual(env.calls.assigned, []);
+});
+
+test('security keyword with otherwise obvious owner remains unassigned', async () => {
+  const issue = ticket(566, '[\uae30\uc220 \ud1b5\ud569] P1 \ubcf4\uc548 \ucde8\uc57d\uc810');
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).status, 'needs-review');
+  assert.ok(env.calls.added.includes('type:security'));
+  assert.deepEqual(env.calls.assigned, []);
+});
+
+test('data correction is a data-request subtype, not a tenth prefix', async () => {
+  const issue = ticket(567, '[\ub370\uc774\ud130 \uc694\uccad][\uc815\uc815] \uacf5\uc2dd \uc790\ub8cc \uc624\ub958');
+  const env = mock(issue);
+  assert.equal((await routeIssue({...env})).assignee, 'qamarrchae');
+  assert.ok(env.calls.added.includes('type:data-correction'));
+});
+
+test('new canonical prefix configuration defines nine entries', () => {
+  const cfg = require('../../.github/issue-routing.json');
+  assert.equal(cfg.prefixes.length, 9);
+  assert.equal(classify(ticket(568, '[\uc2e4\uc99d \uc778\uc218] NCP')).area, null);
+  assert.equal(classify(ticket(569, '[\ubc84\uadf8] React')).area, 'web');
+});
