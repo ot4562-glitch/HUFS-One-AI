@@ -1,7 +1,9 @@
-# NCP·OS·배포 코드 책임
+# NCP·OS·배포 코드와 운영 협업
 
-심민성은 NCP SDK/IaC/Terraform·PowerShell/OS·systemd/worker·배포/복구·CI의 코드 소유자이고 이서연은 계정/IAM·리전/SKU·가격·실호스트·청구/반납의 비코드 담당입니다.
+**현행 역할:** 심민성 `ot4562-glitch`은 시스템 구조·보안/권한 계약·코드/통합 검수를 총괄하고, 이서연 `lhh42001`은 웹 기능 배치 및 NCP 운영·디자인 관련 실무를 협의한다. 신규 `[추가 기능]`은 **심민성 최초 구조 설계 → 박준영/이의상 중 주구현자 배정** 순서로 진행한다. 실제 인프라 코드의 변경 작성자·리뷰어는 기능 이슈에서 정한다. [역할 정본](../AGENTS.md) · [팀 업무](../docs/WORKSTREAMS.md).
 
-프로젝트에 필요한 운영·자료/모델 전송·출시 승인은 소유자가 모두 완료 확인했습니다. 승인 미취득을 이유로 같은 요청을 반복하지 않습니다. 실제 명령은 구체적인 대상 계정/주소/자격증명·비용 설정과 rollback 대상을 확인한 환경에서 실행합니다. 이것이 없으면 CONFIGURATION_REQUIRED입니다.
+프로젝트에 필요한 기본 승인 상태는 `OWNER_CONFIRMED_APPROVED`이다. 실제 환경 접근은 해당 계정·호스트·키·사용권·비용 한도·롤백 대상이 구성됐는지 확인하고 실행한다. 준비된 자료가 없으면 `CONFIGURATION_REQUIRED`로 보고한다.
 
-계획 명령은 부작용 없이 유지하고, 실제 적용은 명시적으로 선택합니다. TLS·host key·네트워크·역할/비밀·실 client IP·서비스 종료/청구·복구를 실제 결과로 검증합니다. 승인 완료와 실행 성공은 다릅니다. [승인 정본](../docs/AUTHORIZATION.md) · [production 실행](../docs/PRODUCTION_RUNTIME.md).
+계획 명령은 부작용 없이 검토하고, 실제 적용은 승인된 대상·설정으로 구분한다. TLS·host key·네트워크·최소 SQL/운영 역할·비밀·실 client IP·서비스 중단/청구·복구를 실제 결과로 확인한다. 합성 preview와 실제 NCP 서비스 검증을 구분한다.
+
+[승인 정본](../docs/AUTHORIZATION.md) · [운영 실행](../docs/PRODUCTION_RUNTIME.md).
