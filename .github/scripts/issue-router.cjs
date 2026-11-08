@@ -31,12 +31,19 @@ function classify(issue) {
   const present = new Set(getNames(issue));
   const explicit = AREA_LABELS.filter(label => present.has(label)).map(label => label.slice(5));
   if (explicit.length > 1) return {area: null, reason: 'Conflicting area labels'};
+  // Explicit issue prefixes are stronger than prose/paths. If a human area
+  // label conflicts with the prefix, request review instead of misrouting.
+  const prefixed = featureTitle(title) ? 'integration'
+    : hasPrefix(title, ['[\ub370\uc774\ud130 \uc694\uccad]']) ? 'data'
+    : hasPrefix(title, ['[\uc6f9 \uad6c\ud604]']) ? 'web'
+    : hasPrefix(title, ['[AI \uad6c\ud604]', '[AI QA]']) ? 'ai'
+    : hasPrefix(title, ['[\uae30\uc220 \ud1b5\ud569]']) ? 'integration'
+    : null;
+  if (prefixed && explicit.length === 1 && explicit[0] !== prefixed) {
+    return {area: null, reason: 'Prefix conflicts with explicit area label'};
+  }
+  if (prefixed) return {area: prefixed, reason: 'Canonical issue title prefix'};
   if (explicit.length === 1) return {area: explicit[0], reason: 'Explicit area label'};
-
-  if (featureTitle(title)) return {area: 'integration', reason: 'New feature starts with the integration owner'};
-  if (hasPrefix(title, ['[\ub370\uc774\ud130 \uc694\uccad]'])) return {area: 'data', reason: 'Data request'};
-  if (hasPrefix(title, ['[\uc6f9 \uad6c\ud604]'])) return {area: 'web', reason: 'Web task'};
-  if (hasPrefix(title, ['[AI \uad6c\ud604]', '[AI QA]'])) return {area: 'ai', reason: 'AI task'};
 
   // Use strong *title* signals before reading paths. Broad prose is often
   // cross-functional, so its keywords must not silently decide the owner.
@@ -146,7 +153,11 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   const openIssues = pool.length > 1
     ? await github.paginate(github.rest.issues.listForRepo, {owner, repo, state: 'open', per_page: 100})
     : [];
-  const assignee = chooseAssignee(decision.area, openIssues, ticket.number);
+  // AI technical QA is the dedicated responsibility of taewangim-alt.
+  // General AI implementation is load-balanced between both AI developers.
+  const assignee = hasPrefix(String(ticket.title || '').trim(), ['[AI QA]'])
+    ? 'taewangim-alt'
+    : chooseAssignee(decision.area, openIssues, ticket.number);
   if (!assignee) return {status: 'needs-review', reason: 'No candidate'};
   core.info('Issue #' + ticket.number + ': ' + decision.area + ', chosen ' + assignee + ' (' + decision.reason + '), dryRun=' + dryRun);
   if (dryRun) return {status: 'dry-run', area: decision.area, assignee};
