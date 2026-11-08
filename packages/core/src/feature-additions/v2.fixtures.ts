@@ -28,11 +28,11 @@ export function fact(
 export const FACT_REVISIONS=new Set(['transcript-r1']);
 export function mentor(id:string, overrides:Partial<C.MentorCard>={}):C.MentorCard{
   return {id,source:source(),active:true,majorCodes:['ECON'],
-    jobCodes:['ANALYST'],experienceTopics:['DATA'],languages:['ko'],
+    jobCodes:['ANALYST'],experienceTopics:['DATA_ANALYTICS'],languages:['ko'],
     campuses:['SEOUL'],publicEvidenceRefs:['public-project'],...overrides};
 }
 export function mentorPreference(overrides:Partial<C.MentorPreference>={}):C.MentorPreference{
-  return {majorCodes:['ECON'],jobCodes:['ANALYST'],ownerApprovedTopics:['DATA'],
+  return {majorCodes:['ECON'],jobCodes:['ANALYST'],ownerApprovedTopics:['DATA_ANALYTICS'],
     language:'ko',campus:'SEOUL',asOf:FIXED_NOW,...overrides};
 }
 export function agency(id:string,overrides:Partial<C.CounselingService>={}):C.CounselingService {
