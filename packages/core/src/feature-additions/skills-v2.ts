@@ -7,6 +7,8 @@ export type RequirementEvidenceRow={
   status:'SUPPORTED_BY_EVIDENCE'|'EVIDENCE_MISSING'|'UNMAPPED'|'NEEDS_REVIEW';
   ownerEvidenceIds:readonly string[];
   matchedOneAiTopics:readonly string[];
+  /** Reviewed official requirement mapping, including when no experience is recorded. */
+  requiredOneAiTopics:readonly string[];
   /** An absence of recorded evidence is not evidence of inability. */
   interpretation:'RECORD_MATCH'|'RECORD_MISSING'|'UNKNOWN';
 };
@@ -24,7 +26,7 @@ export function compareSkillsV2(input:{
   }
   return input.requirements.map(req=>{
     const base={requirementId:req.id,sourceSpanId:req.sourceSpanId,
-      ownerEvidenceIds:[] as string[],matchedOneAiTopics:[] as string[]};
+      ownerEvidenceIds:[] as string[],matchedOneAiTopics:[] as string[],requiredOneAiTopics:[] as string[]};
     if(!verifySource(req.source,input.asOf,input.mode).usable
       || !req.source.evidenceSpanIds.includes(req.sourceSpanId)) return {...base,
         status:'NEEDS_REVIEW',interpretation:'UNKNOWN'};
@@ -41,7 +43,7 @@ export function compareSkillsV2(input:{
       && safeIntersection(e.topicCodes,mapped).length);
     const ids=[...new Set(eligible.map(e=>e.id))].sort();
     const matched=[...new Set(eligible.flatMap(e=>safeIntersection(e.topicCodes,mapped)))].sort();
-    return {...base,ownerEvidenceIds:ids,matchedOneAiTopics:matched,
+    return {...base,ownerEvidenceIds:ids,matchedOneAiTopics:matched,requiredOneAiTopics:mapped,
       status:ids.length?'SUPPORTED_BY_EVIDENCE':'EVIDENCE_MISSING',
       interpretation:ids.length?'RECORD_MATCH':'RECORD_MISSING'};
   });
