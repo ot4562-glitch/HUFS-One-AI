@@ -60,4 +60,5 @@
 - **`csv/` 원본 5개(Google Forms 1개 + 학생별 수강 CSV 4개)는 읽기 전용으로 보존**한다. 삭제·이동·재인코딩·변경·Git 해제/배포 이미지·공개 웹 번들 포함 등을 방지한다. 저장소의 검증 경계 `tools/verify_release_boundary.py`를 준수하고 법적 삭제·철회 요청은 별도 처리한다.
 - 다른 사람의 dirty worktree/브랜치·핵심 코드를 초기화·강제 push하지 않는다. 공통 계약/DB/lockfile은 소비자들과 교차 검토한다.
 - 현재 HEAD 테스트·CI·코드 diff·독립 사람 리뷰 및 실제 환경 실행 결과를 구분한다. **PR 병합/릴리스는 관련 게이트와 사용자 권한을 확인**한 뒤 수행한다. 합성 PASS로 실 운영·인적 Gold·모델 사용 성공을 주장하지 않는다.
+- **필수 병합 금지선(2026-11-09):** 모든 PR은 작성자가 아닌 실제 `write` 이상 협업자의 **현재 HEAD에 대한 `APPROVED` 1건 이상**, 미해결 `CHANGES_REQUESTED` 없음, 필수 CI 성공을 확인한 뒤에만 병합한다. 오너 본인 `COMMENT`, 봇·에이전트 검토, 과거 SHA PASS 또는 사용자의 일반적 작업 지시는 예외가 아니다. GitHub Ruleset/브랜치 보호에 이 조건을 별도 활성화할 때까지 코드 CI만으로 강제됐다고 주장하지 않는다. [필수 절차](docs/PR_WORKFLOW.md).
 - 수정 전에 현재 코드, 관련 기능 이슈, 폴더별 `AGENTS.md`, [STATUS](STATUS.md), [Architecture](Architecture.md), [PR workflow](docs/PR_WORKFLOW.md)를 읽고 정확한 변경 내용과 남은 미검증을 보고한다.
