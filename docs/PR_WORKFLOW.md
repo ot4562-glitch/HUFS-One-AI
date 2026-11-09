@@ -1,5 +1,16 @@
 # HUFS One AI — PR 리뷰·검증·병합
 
+## 2026-11-09 개정: 독립 협업자 승인 **무조건 필수**
+
+**PR 작성자의 자체 `COMMENT`, 자동 에이전트 리뷰, CI 성공, 저장소 소유자라는 지위는 동료의 `APPROVED`를 대체하지 않는다. 작성자 아닌 실제 협업자(`write` 이상) 1명 이상의 유효한 `APPROVED` 없이는 어떤 PR도 병합하지 않는다.** 임의의 "오너 요청" 예외를 더 이상 적용하지 않는다.
+
+- 해당 PR의 **현재 HEAD SHA**를 승인한 협업자 리뷰가 최소 하나 있어야 한다. 승인 뒤 새 커밋/merge commit이 생기면 현재 HEAD에서 다시 승인받는다. 유효한 `CHANGES_REQUESTED`가 한 건이라도 남아 있으면 `APPROVED` 수와 상관없이 병합 금지.
+- [독립 리뷰 CI](../.github/workflows/independent-pr-review.yml)는 PR 수정 및 리뷰 제출/취소 이벤트에서 GitHub **서버의 리뷰, 커밋 SHA, 현재 팀원 쓰기권한**을 read-only로 검사한다. `COMMENTED`, 오래된 SHA, 작성자 셀프 리뷰, bot, 읽기전용 계정은 무효다. 이 검사는 소스/학생 원본을 체크아웃하지 않는다.
+- [CODEOWNERS](../.github/CODEOWNERS)는 업무별 실제 팀원에게 자동 요청하기 위한 설정이다. 리뷰를 요청했다는 사실은 승인을 받았다는 사실이 아니다. **모든 신규 PR**에서 충분한 팀원에게 구체적인 diff·실행 테스트·보안/데이터/AI 위험을 전달한다.
+- **GitHub 저장소 관리자 조치 필수(현재 API 연결에서 직접 변경 불가):** `Settings → Rules → Rulesets` 또는 `Settings → Branches → Branch protection`에서 `main`을 대상으로 (1) PR 필수, (2) 최소 1명 비작성자 `APPROVED`, (3) 새 push 시 과거 승인 무효, (4) 가장 최근 reviewable push의 별도 사람 승인, (5) CODEOWNERS 승인, (6) `Independent collaborator review / exact-HEAD independent approval` 및 중요한 보안/계약/Chrome 검사 성공을 required checks로 등록, (7) 관리자/우회 계정도 가능한 범위 내에서 동일하게 제한. 실제 적용된 Ruleset/branch protection UI와 거부 테스트를 사람이 확인해야 **ENFORCED**라 표시한다.
+- **중요:** CI 파일을 추가해도 보호 규칙이 관리자 설정에 연결되지 않으면 GitHub Merge 버튼 자체를 강제로 차단하지 못한다. 체크가 없는 상태를 `ENFORCED`로 주장하지 않는다. CI가 승인까지 빨간불인 것은 정상이며 통과하더라도 독립 코드·테스트 검토가 필요하다.
+- **사후 감사:** 2026-11-09에 작성자 셀프 `COMMENT`만으로 병합한 [#399](https://github.com/ot4562-glitch/HUFS-One-AI/pull/399), [#400](https://github.com/ot4562-glitch/HUFS-One-AI/pull/400), [#401](https://github.com/ot4562-glitch/HUFS-One-AI/pull/401), [#411](https://github.com/ot4562-glitch/HUFS-One-AI/pull/411)은 **규칙 위반 이력**으로 남긴다. 사후 리뷰가 이미 발생한 병합을 소급해 승인한 것으로 간주하지 않는다. 각 변경은 동료가 diff·운영 영향 재검토하고 발견사항을 별도 PR로 수정한다. 원본 CSV/과거 기록은 임의 되돌리기·강제 push 금지.
+
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 ## 2026-11-09 최신 검수 결과
 
