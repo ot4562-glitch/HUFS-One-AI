@@ -10,6 +10,7 @@ export interface CampusAssistPort {
 /** Install only after the server verified BETA owner identity. */
 export function ownerCampusAssistPort(owner:HufsOwnerApiClient):CampusAssistPort{
   return {
+    capabilities:s=>owner.getCampusAssistCapabilities(s),
     activities:(q,s)=>owner.listCampusActivities(q,s),
     forecast:(q,s)=>owner.getCampusActivityForecast(q,s),
     partners:(q,s)=>owner.listExchangePartners(q,s),
