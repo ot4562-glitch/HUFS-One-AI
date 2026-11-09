@@ -57,6 +57,8 @@
 | Dependabot [#402](https://github.com/ot4562-glitch/HUFS-One-AI/pull/402)·[#403](https://github.com/ot4562-glitch/HUFS-One-AI/pull/403)·[#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | 각각 HEAD TASK-00 실패: pinned checkout CI 경계, upload-artifact 스크린샷 안전 경계, TypeScript 7 compiler API `TS2339`. [공식 REQUEST_CHANGES #402](https://github.com/ot4562-glitch/HUFS-One-AI/pull/402#pullrequestreview-5821010137) · [#403](https://github.com/ot4562-glitch/HUFS-One-AI/pull/403#pullrequestreview-5821010313) · [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406#pullrequestreview-5821010508) | 모두 미병합/OPEN. 취약점 발견 확정 의미 아님 |
 | Dependabot [#404](https://github.com/ot4562-glitch/HUFS-One-AI/pull/404)·[#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405)·[#407](https://github.com/ot4562-glitch/HUFS-One-AI/pull/407)·[#408](https://github.com/ot4562-glitch/HUFS-One-AI/pull/408)·[#409](https://github.com/ot4562-glitch/HUFS-One-AI/pull/409) | SHA별 diff·기존 HEAD 워크플로 SUCCESS 확인 후 `COMMENT` 리뷰 제출. 현재 main mergeable false/변경 경합, 별도 사람 승인 부족 | 모두 HOLD, 자동 병합 안 함 |
 
+**PR 계수 기준:** 이 2차 감사 시점 OPEN PR 13건이었고, 이 기록을 제안하는 [문서 PR #419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)를 생성한 뒤에는 리뷰 대기 PR이 하나 늘어 **14건 OPEN**입니다. #419 역시 다른 사람의 정확한 HEAD APPROVED/CI 전 미병합합니다.
+
 ### 이슈 28건 현황 및 안전 경계
 
 - **5 고정 역할 #355–#359 (읽기 전용), 1 자료 #360, 13 추가기능 #339–#341/#343–#352, 7 기존 결함 #362/#366/#367/#373/#375/#378/#381, 2 신규 추적 #416·#418**. 총 OPEN **28건**.
