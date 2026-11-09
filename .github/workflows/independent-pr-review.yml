@@ -1,0 +1,111 @@
+name: Independent collaborator review (required by policy)
+
+# No checkout: inspect GitHub-owned review and collaborator metadata only.
+# A branch ruleset must require this check. A workflow ALONE cannot disable
+# the Merge button for repository administrators (see docs/PR_WORKFLOW.md).
+on:
+  # Retargeting the base branch emits 'edited': never leave a stale skipped
+  # required check after switching a stacked PR to main.
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, edited]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  independent-approval:
+    # Never skip: GitHub may treat a skipped required job as successful.
+    # The Python script rejects non-main bases and drafts fail-closed.
+    name: exact-HEAD independent approval
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify one current non-author collaborator APPROVED and no outstanding change requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          GH_API_URL: ${{ github.api_url }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from urllib.error import HTTPError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
+
+          repo = os.environ['REPO']
+          number = int(os.environ['NUMBER'])
+          base = os.environ['GH_API_URL'].rstrip('/')
+          token = os.environ['GH_TOKEN']
+
+          def github(path):
+              request = Request(base + path, headers={
+                  'Authorization': 'Bearer ' + token,
+                  'Accept': 'application/vnd.github+json',
+                  'X-GitHub-Api-Version': '2022-11-28',
+              })
+              with urlopen(request, timeout=20) as response:
+                  return json.load(response)
+
+          def pull():
+              return github(f'/repos/{repo}/pulls/{number}')
+
+          pr = pull()
+          if pr.get('state') != 'open' or pr.get('draft') or pr['base']['ref'] != 'main':
+              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: only open ready PRs into main may pass')
+          head = pr['head']['sha']
+          author = pr['user']['login'].casefold()
+          reviews = []
+          for page in range(1, 21):
+              batch = github(f'/repos/{repo}/pulls/{number}/reviews?per_page=100&page={page}')
+              if not isinstance(batch, list):
+                  raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: reviews unavailable')
+              reviews.extend(batch)
+              if len(batch) < 100:
+                  break
+          else:
+              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: too many review records')
+
+          # Keep the latest *decisive* review for each reviewer. COMMENTED and
+          # PENDING are not approvals and do not clear a CHANGES_REQUESTED.
+          decisive = {}
+          for r in sorted(reviews, key=lambda r:(r.get('submitted_at') or '', r.get('id') or 0)):
+              user = r.get('user') or {}
+              login = user.get('login') or ''
+              if not login or login.casefold() == author or login.casefold().endswith('[bot]'):
+                  continue
+              state = r.get('state')
+              if state in ('APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'):
+                  decisive[login.casefold()] = (login, state, r.get('commit_id'))
+
+          eligible = []
+          blocking = []
+          for login, state, reviewed_sha in decisive.values():
+              # GitHub confirms CURRENT write/maintain/admin membership, not
+              # a mutable user-provided title or a COMMENTED endorsement.
+              try:
+                  role = github(f'/repos/{repo}/collaborators/{quote(login, safe="")}/permission')['permission']
+              except HTTPError as error:
+                  if error.code == 404:
+                      continue  # departed/non-member cannot approve
+                  raise  # uncertain permission is fail-closed
+              if role not in ('write', 'maintain', 'admin'):
+                  continue
+              if state == 'CHANGES_REQUESTED':
+                  blocking.append(login)
+              if state == 'APPROVED' and reviewed_sha == head:
+                  eligible.append(login)
+
+          latest = pull()
+          if latest['head']['sha'] != head:
+              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: PR HEAD changed during review check')
+          if blocking:
+              raise SystemExit(f'INDEPENDENT_REVIEW_REQUIRED: {len(blocking)} outstanding collaborator change requests')
+          if not eligible:
+              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: zero valid non-author approvals on exact PR HEAD')
+          print(f'PASS: {len(eligible)} current collaborator approval(s), exact HEAD {head[:12]}, zero change requests')
+          PY

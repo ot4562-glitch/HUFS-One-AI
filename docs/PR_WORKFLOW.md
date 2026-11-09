@@ -16,6 +16,13 @@
 
 2026-11-09에 다른 팀원의 `APPROVED` 없이 `#399/#400/#401/#411`이 병합된 것을 리뷰 API로 확인했습니다. 이는 **이 정책을 충족하지 않은 병합**입니다. 이미 병합된 Git 기록에 사후 검토를 붙여도 '병합 전 승인'으로 소급 인정하지 않으며, 서명/기록을 소급 조작하지 않습니다. 각 SHA의 코드·보안/자료 영향을 다른 사람에게 재검토받고 필요하면 **별도 수정 또는 되돌리기 PR을 독립 승인 후** 처리합니다. 확인 없이 main을 무단 force push하거나 기존 원본을 편집하지 않습니다. 이 문제를 새 PR 검토의 예외 선례로 삼지 않습니다.
 
+### CI 구현 제안 [#415] — 서버측 보호 설정과 구분
+
+- `.github/workflows/independent-pr-review.yml`은 `pull_request` 및 `pull_request_review` 이벤트에 대해 현재 PR HEAD를 재조회하고, GitHub REST의 실제 review commit·해당 계정 협업 쓰기권한을 검증합니다. 작성자·봇·`COMMENTED`·stale approval·미해결 `CHANGES_REQUESTED`는 승인으로 세지 않습니다.
+- 학생 자료·원본 코드 checkout 없이 read-only GitHub API만 사용합니다. `tests/release/test_independent_pr_review.py`는 승인·반려·동시 HEAD 변경·권한 실패를 합성 REST로 검증하며 `TASK-00` allowlist에 검사 대상 workflow만 추가합니다.
+- **주의:** 리뷰가 아직 없으면 workflow의 `exact-HEAD independent approval` 체크 실패가 정상입니다. 이 check를 Ruleset required status check로 지정할 때는 실제 GitHub 관리자가 워크플로 이벤트와 브랜치 우회 정책을 함께 검증해야 합니다. `CODEOWNERS`는 [#413](https://github.com/ot4562-glitch/HUFS-One-AI/pull/413)에서 독립 승인 후 병합한 5인 리뷰어 지도를 그대로 유지합니다. 기존 승인된 정책과 중복·상충하는 추가 CODEOWNERS/AGENTS 교체는 하지 않습니다.
+- 본 기능은 [PR #415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415)의 제안이며 해당 PR이 **타 협업자의 최신 HEAD APPROVED/CI를 거쳐 병합되기 전에는 적용 완료 상태가 아닙니다.** 관리자 Ruleset 활성화도 [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416)의 별도 인수입니다.
+
 ## 2026-11-09 최신 검수 결과
 
 - [PR #386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) (HEAD `0fdb638`): 중복 요건/경험 ID 격리와 순서 반전 회귀 확인, 다른 계정의 AI QA APPROVED 및 오너 [APPROVED](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386#pullrequestreview-5820570040). HEAD 5종 Actions SUCCESS, 과거 차단 스레드 2건 해결 후 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 **squash MERGED**. #347은 AI 코드 일부 완료이며 API/UI·실원장·사람 Gold 미완으로 OPEN.
