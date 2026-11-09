@@ -10,7 +10,13 @@ DECLARE n integer; unique_n integer; bad_n integer;
 BEGIN
   -- Images are immutable once inserted. Verify IDs at the lasting write boundary,
   -- independent of the private TypeScript normalization path.
-  IF NEW.image_evidence IS NULL THEN RETURN NEW; END IF;
+  -- The existing IMAGE/PDF insert guards enforce the version for their media kind.
+  -- This additional field-ID policy applies ONLY to source-image-v1: PDF bundles
+  -- have distinct page/OCR structures and must not be rejected as IMAGE fields.
+  IF NEW.image_evidence IS NULL
+    OR NEW.image_evidence->>'version' IS DISTINCT FROM 'source-image-v1' THEN
+    RETURN NEW;
+  END IF;
   IF jsonb_typeof(NEW.image_evidence) IS DISTINCT FROM 'object'
     OR jsonb_typeof(NEW.image_evidence->'ocrFields') IS DISTINCT FROM 'array' THEN
     RAISE EXCEPTION 'invalid OCR field ID list';

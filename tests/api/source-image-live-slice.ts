@@ -71,13 +71,17 @@ export async function proveSourceImagePg(admin:Pool,reader:Pool):Promise<void>{
     await guardConn.query(`CREATE TRIGGER synthetic_ocr_id_guard_insert BEFORE INSERT
       ON synthetic_ocr_id_guard FOR EACH ROW
       EXECUTE FUNCTION public.guard_source_image_ocr_field_ids()`);
-    const ok={ocrFields:[{id:'SYN-OCR-1',text:'synthetic'},{id:'SYN-OCR-2',text:'synthetic'}]};
+    const ok={version:'source-image-v1',ocrFields:[{id:'SYN-OCR-1',text:'synthetic'},{id:'SYN-OCR-2',text:'synthetic'}]};
     await expect(guardConn.query('INSERT INTO synthetic_ocr_id_guard(image_evidence) VALUES($1::jsonb)',
       [JSON.stringify(ok)])).resolves.toBeDefined();
-    const duplicateSame={ocrFields:[{id:'SYN-OCR-1',text:'x'},{id:'SYN-OCR-1',text:'x'}]};
-    const duplicateDifferent={ocrFields:[{id:'SYN-OCR-1',text:'x'},{id:'SYN-OCR-1',text:'y'}]};
-    const missingId={ocrFields:[{id:'SYN-OCR-1'},{text:'x'}]};
-    const invalidList={ocrFields:'not-a-list'};
+    const duplicateSame={version:'source-image-v1',ocrFields:[{id:'SYN-OCR-1',text:'x'},{id:'SYN-OCR-1',text:'x'}]};
+    const duplicateDifferent={version:'source-image-v1',ocrFields:[{id:'SYN-OCR-1',text:'x'},{id:'SYN-OCR-1',text:'y'}]};
+    const missingId={version:'source-image-v1',ocrFields:[{id:'SYN-OCR-1'},{text:'x'}]};
+    const invalidList={version:'source-image-v1',ocrFields:'not-a-list'};
+    // Existing PDF original bundles reuse the column but use another schema.
+    // Do not change the separate PDF provenance/approval gates.
+    await expect(guardConn.query('INSERT INTO synthetic_ocr_id_guard(image_evidence) VALUES($1::jsonb)',
+      [JSON.stringify({version:'source-pdf-v1',pages:[]})])).resolves.toBeDefined();
     for(const bad of [duplicateSame,duplicateDifferent,missingId,invalidList]){
       await expect(guardConn.query('INSERT INTO synthetic_ocr_id_guard(image_evidence) VALUES($1::jsonb)',
         [JSON.stringify(bad)])).rejects.toThrow(/(?:duplicate or invalid|invalid OCR field ID list)/);
