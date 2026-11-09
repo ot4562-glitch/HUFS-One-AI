@@ -132,6 +132,40 @@ const cellText = (cell:string):string => decode(cell.replace(/<[^>]*>/g, ' ')).r
 const cells = (row:string, tag:'td'|'th'):string[] =>
   [...row.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, 'gi'))].map(match => match[1]!);
 
+/**
+ * Cut every script block or HTML comment out of the saved page before its text is read as table
+ * rows. This is not an HTML sanitizer (nothing here is rendered as HTML); it keeps script source
+ * and commented-out markup from being parsed as rows. Matching is case-insensitive, a closing tag
+ * may carry spaces or attributes (`</script >`), and an unclosed block runs to the end of the page
+ * as a browser would treat it. After each cut the search resumes at the same place, so pieces that
+ * meet after a cut ("<scr" + "ipt") are cut as well.
+ */
+export function withoutBlocks(html:string, kind:'script'|'comment'):string {
+  let out = html;
+  let from = 0;
+  for (;;) {
+    const lower = out.toLowerCase();
+    let start:number;
+    let end:number;
+    if (kind === 'comment') {
+      start = lower.indexOf('<!--', from);
+      if (start < 0) return out;
+      const close = lower.indexOf('-->', start + 4);
+      end = close < 0 ? out.length : close + 3;
+    } else {
+      start = lower.indexOf('<script', from);
+      if (start < 0) return out;
+      if (/[a-z0-9_-]/.test(lower.charAt(start + 7))) { from = start + 1; continue; }
+      let close = lower.indexOf('</script', start + 7);
+      while (close >= 0 && /[a-z0-9_-]/.test(lower.charAt(close + 8))) close = lower.indexOf('</script', close + 1);
+      const gt = close < 0 ? -1 : lower.indexOf('>', close + 8);
+      end = gt < 0 ? out.length : gt + 1;
+    }
+    out = out.slice(0, start) + out.slice(end);
+    from = Math.max(0, start - 8);
+  }
+}
+
 function savedFromUrl(html:string):string {
   const match = /<!--\s*saved from url=\(\d+\)(\S+)\s*-->/i.exec(html);
   if (!match) throw new TypeError('not a browser-saved page: no "saved from url" comment');
@@ -233,7 +267,7 @@ function units(text:string):number|null {
 
 export function importWisTimetable(input:TimetableImportRequest):TimetableImport {
   if (!Number.isFinite(Date.parse(input.savedAt))) throw new TypeError('savedAt must be a datetime');
-  const html = input.html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
+  const html = withoutBlocks(input.html, 'script');
   const url = savedFromUrl(input.html);
 
   const rowsHtml = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(match => match[1]!);
@@ -347,7 +381,7 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
  * name), lists inside HTML comments are ignored, and two lists that disagree count as none.
  */
 function basicFields(html:string):Set<string> {
-  const page = html.replace(/<!--[\s\S]*?-->/g, '');
+  const page = withoutBlocks(html, 'comment');
   const lists = [...page.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)]
     .filter(match => /(?:^|\s)name\s*=\s*(?:"ag_basic_fld_cd"|'ag_basic_fld_cd'|ag_basic_fld_cd(?=[\s/>]|$))/i.test(match[1]!))
     .map(match => [...match[2]!.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
@@ -389,7 +423,7 @@ function result(
     source:{system:'HUFS_WIS_LECTURE_TIMETABLE', savedFromUrl:savedFrom, fileName:input.fileName, savedAt:input.savedAt},
     term:{...term, ...(term.session === '1' || term.session === '2' ? {academicTerm:`${term.year}-${term.session}`} : {})},
     departmentLabel,
-    campus:pageCampus(input.html.replace(/<script\b[\s\S]*?<\/script>/gi, '')),
+    campus:pageCampus(withoutBlocks(input.html, 'script')),
     coverage:'ONE_DEPARTMENT_PAGE',
     codeFormat:{reviewed:input.codeFormatReviewed === true, consistentWithCourse7Section2:consistent},
     rows,

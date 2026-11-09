@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {importWisTimetable, type TimetableImportRequest} from './wis-timetable.js';
+import {importWisTimetable, withoutBlocks, type TimetableImportRequest} from './wis-timetable.js';
 
 /**
  * Synthetic pages only: the layout mirrors a saved wis.hufs.ac.kr 강의시간표 page, but every
@@ -275,5 +275,31 @@ describe('importWisTimetable', () => {
   it('refuses a card list left over from another term', () => {
     const stale = ROWS.map(row => ({...row, year:'2026', sessn:'1'}));
     expect(() => importWisTimetable(request(page(ROWS, {cards:stale})))).toThrow(/more than one year and session/);
+  });
+});
+
+describe('script and comment blocks are cut before rows are read (CodeQL #1-#6)', () => {
+  const FAKE = '<tr><td>99</td><td>가상 스크립트 행</td></tr>';
+  it('a closing tag with a space or attributes still ends the script', () => {
+    for (const close of ['</script >', '</SCRIPT  >', '</script data-x="1">']) {
+      const html = page(ROWS).replace('<script>', `<script>${FAKE}`).replace('</script>', close);
+      // Before: the regex needed exactly "</script>", so the fake row was read and the import refused it.
+      expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
+    }
+  });
+  it('cuts pieces that meet after a cut, and is case-insensitive', () => {
+    expect(withoutBlocks('a<scr<script>x</script>ipt>b</script>c', 'script')).toBe('ac');
+    expect(withoutBlocks('a<SCRIPT type="t">x</Script >b', 'script')).toBe('ab');
+    expect(withoutBlocks('a<!<!-- x -->-- y -->b', 'comment')).toBe('ab');
+  });
+  it('an unclosed block runs to the end, as a browser treats it', () => {
+    expect(withoutBlocks('keep<script>var x = 1;', 'script')).toBe('keep');
+    expect(withoutBlocks('keep<!-- open', 'comment')).toBe('keep');
+  });
+  it('leaves look-alike tags and plain text alone', () => {
+    expect(withoutBlocks('<scripture>t</scripture><noscript>n</noscript>', 'script'))
+      .toBe('<scripture>t</scripture><noscript>n</noscript>');
+    expect(withoutBlocks('no blocks here', 'comment')).toBe('no blocks here');
+    expect(withoutBlocks('<script>a</scripts>b</script>c', 'script')).toBe('c');
   });
 });
