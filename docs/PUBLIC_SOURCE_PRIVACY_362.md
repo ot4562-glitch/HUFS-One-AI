@@ -6,7 +6,7 @@ Five previously committed original CSV files under `csv/` are already tracked in
 
 ## Executable containment
 
-The metadata-only [protected CSV PR gate](../.github/workflows/tracked-csv-change-guard.yml) rejects *new PR changes* to either the previous or current `csv/` path (including renames/removals). It **does not checkout, print, transform or read** those original files. GitHub workflow permissions are read-only. Existing [release boundary verification](../tools/verify_release_boundary.py) continues to protect distribution bundles. CI cannot revoke already public Git objects, forks or local downloads. Do not interpret a successful gate as consent or remediated historical exposure.
+The metadata-only [protected CSV PR gate](../.github/workflows/tracked-csv-change-guard.yml) rejects *new PR changes* to either the previous or current `csv/` path (including renames/removals), case-variant aliases, and **byte-identical copies of the already tracked original blobs under any other path** by comparing Git tree and PR file SHA metadata. It **does not checkout, print, transform or read** those original files. GitHub workflow permissions are read-only. Existing [release boundary verification](../tools/verify_release_boundary.py) continues to protect distribution bundles. CI cannot identify edited, reformatted or partially copied versions solely from blob hashes, nor revoke already public Git objects, forks or local downloads. PR file lists over 3,000 or truncated base trees are denied pending private review. Do not interpret a successful gate as consent or remediated historical exposure.
 
 ## Restricted human review (record outside public GitHub/CI)
 
