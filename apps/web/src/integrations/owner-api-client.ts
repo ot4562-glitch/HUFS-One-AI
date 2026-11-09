@@ -415,6 +415,15 @@ export class HufsOwnerApiClient {
       activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
     }),{signal});
   }
+  /** #366: kind is a closed enum; never accept caller-created source or evidence payloads. */
+  async getOwnerInsights(kind:V.OwnerInsightsKind,signal?:AbortSignal){
+    const name=clientInput(V.OwnerInsightsKindSchema,kind);
+    const result=await this.request('/api/owner/features/v2/insights/'+name,
+      V.OwnerInsightsResponseSchema,{signal});
+    requireMatchingReceipt(result.state==='NOT_CONNECTED'
+      ?result.kind===name:result.result.kind===name);
+    return result;
+  }
   /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
   async searchApprovedV2Catalog(query:z.input<typeof V.OwnerV2CatalogQuerySchema>={},signal?:AbortSignal){
     const input=clientInput(V.OwnerV2CatalogQuerySchema,query);
