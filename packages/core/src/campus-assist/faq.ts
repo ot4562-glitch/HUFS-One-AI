@@ -1,4 +1,5 @@
 import {FaqCandidateSchema,FaqDocumentSchema,type FaqCandidate,type FaqDocument} from '@hufs-one/contracts';
+import {exchangePolicyInEffect} from './exchange.js';
 import {checkFaqCandidate} from './faq-guard.js';
 import {searchFaqParagraphs} from './faq-search.js';
 
@@ -11,7 +12,10 @@ function newer(a:FaqDocument,b:FaqDocument):boolean{
   const ta=Date.parse(a.publishedAt),tb=Date.parse(b.publishedAt);
   return ta!==tb?ta>tb:a.revisionId.localeCompare(b.revisionId,'en',{numeric:true})>0;
 }
-/** New revoked, blocked or expired document heads quarantine the whole document. */
+/** New revoked, blocked or expired document heads quarantine the whole document.
+ * Effective dates are KST calendar days compared on the absolute `asOf` instant (same rule as #365/#385).
+ * Citation IDs carry the document ID, so two documents that both use revision "r1" and paragraph "p1"
+ * stay separate; an ID that still collides (repeated paragraph ID, over-long key) fails closed. */
 export function retrieveFaqEvidence(question:string,raw:readonly FaqDocument[],asOf:string,limit=6):FaqEvidence[]{
   const time=Date.parse(asOf);
   if(!Number.isFinite(time)||question.trim().length<2||question.length>500)throw new RangeError('Invalid FAQ query');
@@ -25,10 +29,10 @@ export function retrieveFaqEvidence(question:string,raw:readonly FaqDocument[],a
   }
   const paragraphs=new Map<string,FaqEvidence>();
   for(const doc of heads.values()){
-    if(doc.rights!=='APPROVED'||doc.effectiveFrom>asOf.slice(0,10)||
-      doc.effectiveUntil&&doc.effectiveUntil<asOf.slice(0,10))continue;
+    if(doc.rights!=='APPROVED'||!exchangePolicyInEffect(doc,asOf))continue;
     for(const p of doc.paragraphs){
-      const citationId=doc.revisionId+':'+p.id;
+      const citationId=doc.documentId+':'+doc.revisionId+':'+p.id;
+      if(paragraphs.has(citationId)||citationId.length>120)throw new RangeError('Ambiguous FAQ citation ID');
       paragraphs.set(citationId,{citationId,documentId:doc.documentId,revisionId:doc.revisionId,title:doc.title,
         sourceUrl:doc.sourceUrl,verifiedAt:doc.verifiedAt,text:p.text,provenance:doc.provenance});
     }

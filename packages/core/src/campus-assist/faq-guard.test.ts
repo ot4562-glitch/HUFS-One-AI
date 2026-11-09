@@ -51,7 +51,7 @@ describe('#341 question masking before an external model',()=>{
     const r=maskFaqQuestion('제 학번 202312345, 010-1234-5678, me@example.com, 990101-1234567 인데 3.0이면 되나요?');
     expect(r.text).not.toMatch(/202312345|1234-5678|me@example|990101/);
     expect(r.text).toContain('3.0');
-    expect(r.redactions).toEqual(['RRN','PHONE','EMAIL','LONG_NUMBER']);
+    expect(r.redactions).toEqual(['RRN','PHONE','EMAIL','STUDENT_ID']);
     expect(maskFaqQuestion('졸업 학점 134학점 맞나요').redactions).toEqual([]);
   });
 });

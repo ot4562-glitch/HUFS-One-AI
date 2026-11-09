@@ -42,7 +42,7 @@ describe('#341 FAQ route with the AI guard (offline fake model, synthetic docume
     const body=FaqAskResponseSchema.parse(r.json());
     expect(body.status).toBe('NEEDS_REVIEW');
     expect(grounded.prompts.at(-1)).not.toContain('202312345');
-    expect(grounded.prompts.at(-1)).toContain('[번호]');
+    expect(grounded.prompts.at(-1)).toContain('[학번]');
   });
   it('withholds a personal eligibility verdict even when its quote is genuine',async()=>{
     const model=fakeModel(()=>({answer:'입력하신 조건이면 교환학생 지원 자격을 충족하여 합격 가능합니다.',

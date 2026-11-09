@@ -30,8 +30,16 @@ const SYNONYMS:Readonly<Record<string,readonly string[]>>={
 export function normalizeFaqText(s:string):string{
   return s.normalize('NFKC').toLocaleLowerCase('ko').replace(/\s+/g,' ').trim();
 }
+/** Two-letter words ending in one of these are far more often nouns ("강의", "평가", "진로", "제도",
+ * "추가") than a one-letter word plus particle, so they stay whole instead of losing their topic. */
+const NOUN_FINAL=new Set(['의','가','도','로','이']);
+/** A one-letter remainder is a verb or pronoun fragment ("내요", "와요", "중에") and is dropped later. */
 function stem(w:string):string{
-  for(const suf of SUFFIXES)if(w.length>suf.length&&w.endsWith(suf))return w.slice(0,-suf.length);
+  for(const suf of SUFFIXES){
+    if(w.length<=suf.length||!w.endsWith(suf))continue;
+    if(w.length-suf.length===1&&NOUN_FINAL.has(suf))return w;
+    return w.slice(0,-suf.length);
+  }
   return w;
 }
 /** Content words: stop words and one-letter stems are dropped; long digit runs (IDs) never act as topics. */
