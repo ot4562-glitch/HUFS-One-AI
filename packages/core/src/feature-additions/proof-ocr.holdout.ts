@@ -28,7 +28,7 @@ export const PROOF_OCR_HOLDOUT:readonly ProofOcrCase[]=[
     expect:{kind:'CERTIFICATE',issuer:'Virtual Learning Institute',start:'2026-06-01',end:'2026-07-10',issued:'2026-07-15'}},
   {id:'h-report-plain',lines:doc('h6',[['가상 해외탐방 결과 보고서',0.06],['탐방 기간 2026.07.20 ~ 2026.07.30',0.18],
     ['방문 기관 3곳, 인터뷰 5회',0.26],['배운 점: 현지 스타트업 문화',0.4]]),
-    expect:{kind:'ACTIVITY_REPORT',start:'2026-07-20',end:'2026-07-30',flags:['ISSUER_NOT_FOUND']}},
+    expect:{kind:'REPORT',start:'2026-07-20',end:'2026-07-30',flags:['ISSUER_NOT_FOUND']}},
   {id:'h-thanks',lines:doc('h7',[['감 사 장',0.08],['위 사람은 가상 지역행사 운영에 기여하였기에 감사의 뜻을 전합니다.',0.4],
     ['2026년 9월 9일',0.72],['가상시청 시장',0.82]]),expect:{kind:'OTHER',issued:'2026-09-09'}},
   {id:'h-transcript',lines:doc('h8',[['성적증명서',0.06],['학번 202212345 성명 홍길동',0.15],['과목 데이터분석 A+',0.3],
