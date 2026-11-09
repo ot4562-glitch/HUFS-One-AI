@@ -9,7 +9,7 @@ const request=(actorId:string,operation='V2_OWNER_COUNSELING')=>({
 });
 describe('#433 durable owner counseling quota PostgreSQL adapter',()=>{
   it('never connects during construction and passes only the keyed actor digest to SQL',async()=>{
-    const query=vi.fn(async()=>({rows:[{allowed:true}]})),release=vi.fn();
+    const query=vi.fn(async(_sql:string,_params?:readonly unknown[])=>({rows:[{allowed:true}]})),release=vi.fn();
     const connect=vi.fn(async()=>({query,release}));
     const quota=new PostgresOwnerCounselingQuota({connect},key);
     expect(connect).not.toHaveBeenCalled();

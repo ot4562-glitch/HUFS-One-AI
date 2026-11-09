@@ -20,9 +20,9 @@ export class PostgresOwnerCounselingQuota implements TrustedOwnerCounselingQuota
   async consume(input:{actorId:string;operation:'V2_OWNER_COUNSELING';now:string}):Promise<boolean>{
     if(typeof input?.actorId!=='string'||!Actor.test(input.actorId)
       ||input.operation!=='V2_OWNER_COUNSELING'||!Number.isFinite(Date.parse(input.now))
-      ||!/(?:Z|[+-]\\d\\d:\\d\\d)$/i.test(input.now))throw new OwnerCounselingQuotaUnavailable();
+      ||!/(?:Z|[+-]\d\d:\d\d)$/i.test(input.now))throw new OwnerCounselingQuotaUnavailable();
     const digest=createHmac('sha256',this.key)
-      .update('hufs-one:owner-counseling:actor:v1\\0').update(input.actorId,'utf8').digest('hex');
+      .update('hufs-one:owner-counseling:actor:v1\0').update(input.actorId,'utf8').digest('hex');
     let c:Awaited<ReturnType<ReviewerSqlPool['connect']>>;
     try{c=await this.pool.connect();}
     catch{throw new OwnerCounselingQuotaUnavailable();}

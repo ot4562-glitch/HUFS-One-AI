@@ -111,8 +111,8 @@ describe('#366 read-only owner counseling consumes only trusted current source',
     expect(h.quota.consume).toHaveBeenCalledWith({actorId:actor.actorId,
       operation:'V2_OWNER_COUNSELING',now:NOW});
     expect(h.quota.consume).toHaveBeenCalledOnce();
-    expect(h.quota.consume.mock.invocationCallOrder[0]).toBeLessThan(
-      h.port.read.mock.invocationCallOrder[0]!);
+    expect(vi.mocked(h.quota.consume).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(h.port.read).mock.invocationCallOrder[0]!);
   });
   it('returns 429 without reading the source when quota is exhausted',async()=>{
     const h=fixture();h.exhaust();
