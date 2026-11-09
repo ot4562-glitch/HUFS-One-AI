@@ -4,40 +4,51 @@
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. 팀 고정 역할 이슈 #355–#359는 읽기 전용입니다.
 
-## 0. 2026-11-09 최신 검수 (3차) — 아래 과거 스냅샷보다 우선
+## 0. 최신 2026-11-09 검수 — 아래 1차 기록보다 우선
 
-**OPEN Issue 28 / OPEN PR 8 / 본인 배정 Issue 8 중 고정 역할 #359 제외 작업 대상 7.** 아래의 과거 26건 이슈/2건 PR 기록은 작성 당시 기준이며 현행이 아닙니다.
+**OPEN Issue 28 / OPEN PR 7 / 본인 배정 8 중 고정 역할 #359 제외 이행 대상 7.** 본선 이후 역할 이슈 #355–#359에 어떠한 쓰기도 하지 않았습니다. 본 검수에서 #424/#420/#402/#403/#404/#409/#407/#408/**#422 총 9개 PR 실제 squash 병합**. 이전 26개 이슈/2개 PR 기록은 1차 시점의 이력입니다.
 
-**이번 검수에서 실제 병합한 PR:** [#424](https://github.com/ot4562-glitch/HUFS-One-AI/pull/424) · [#420](https://github.com/ot4562-glitch/HUFS-One-AI/pull/420) · [#402](https://github.com/ot4562-glitch/HUFS-One-AI/pull/402) · [#403](https://github.com/ot4562-glitch/HUFS-One-AI/pull/403) · [#404](https://github.com/ot4562-glitch/HUFS-One-AI/pull/404) · [#409](https://github.com/ot4562-glitch/HUFS-One-AI/pull/409) · [#407](https://github.com/ot4562-glitch/HUFS-One-AI/pull/407) · [#408](https://github.com/ot4562-glitch/HUFS-One-AI/pull/408). 각 merge SHA와 변경 내역은 [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)에 명시. 동료 PR #424는 독립 검토, 소유자 작성 #420은 팀원 승인 확보, Dependabot #402/#403/#404/#409/#407/#408은 현재 HEAD 독립 리뷰 및 필수 CI 승인 이후 squash 병합했습니다.
+### 실병합 9건
 
-**남은 열린 PR:** [#422](https://github.com/ot4562-glitch/HUFS-One-AI/pull/422) · [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) · [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) · [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) · [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) · [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) · [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) · [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361).
-
-| PR | 작업 상태 및 차단 요인 |
-| --- | --- |
-| [#422](https://github.com/ot4562-glitch/HUFS-One-AI/pull/422) | 6종 owner insights: main 충돌 합성 HEAD 6379472, 최신 CI/팀 승인 대기 |
-| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV Git 메타데이터 감사 제안; 팀 승인·비공개 권리 검토 필요 |
-| [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) | 현행 문서 조정; 최신 HEAD 팀 승인·CI 대기 |
-| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 API/UI 연결; 팀 승인·main 합성 확인 필요 |
-| [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | TypeScript 7 파서/빌드 분리 HEAD 3282c42, 최신 CI·팀 승인 대기 |
-| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | github-script v9; 실제 issues.opened 경로 확인 전 HOLD |
-| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 별개 발급처 SAME 오판, CHANGES_REQUESTED |
-| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 부정/긍정 극성 오판, CHANGES_REQUESTED |
-
-**병합 보호:** #415 정확한 HEAD 독립 리뷰 검사 PR은 이미 main에 병합(merge commit [6cef538](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6cef53869d828bd99952dcf7bd26f0df192a2e7c)). 그러나 Ruleset 목록은 빈 배열, main 보호 상세 API는 403으로 실제 서버의 강제 보호를 확인하지 못했습니다. #416에서 관리자 UI의 필수 PR/1명 승인/새 HEAD 재승인/필수 CI/우회 금지와 거부 동작을 확인해야 합니다.
-
-### 3차 담당 이슈 점검
-
-| 이슈 | 현재 코드 근거와 남은 인수 | 판정 |
+| PR | 변경 | merge SHA |
 | --- | --- | --- |
-| [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416) | #415 병합 및 현재 검수 절차 개선. 과거 4건의 무승인 병합 사후 동료 감사와 main Ruleset 활성화 미확인 | **OPEN** |
-| [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) | API + 공통 matchesImageSpan 중복 OCR line ID 거부 코드 있음. 실제 OCR 생성/저장소 유일성과 실원본 권한 인수 미검증 | **OPEN** |
-| [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378) | #394 npm audit/SCAN_UNAVAILABLE CI 구현. 비공개 Dependabot alerts/CodeQL 설정 및 CVE 대응 운영 인수 미검증 | **OPEN** |
-| [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375) | owner API가 경험-교과 엔진 호출하고 BETA 웹/합성 테스트 존재. 공식 강좌 identity/원장/목적 동의/실계정 미연결 | **OPEN** |
-| [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367) | #396 CampusAssist 운영 포트 조립 있음. 권리 확인된 실제 source/FAQ 비용·권한/실 E2E 미연결 | **OPEN** |
-| [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366) | #420/#424 병합, #422 충돌 해결 CI/재승인 대기, #410 상담 대기. 10기능의 운영 source/rights/QA 미인수 | **OPEN** |
-| [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362) | 공개 CSV 5개 원본 게시권/동의와 Git 역사·복제 영향 조사 미완. #421 메타데이터 감사 PR 대기, 원본 불변 | **OPEN** |
+| [#424](https://github.com/ot4562-glitch/HUFS-One-AI/pull/424) | 배지 그룹 간 활동 재사용 차단 | [850ba49](https://github.com/ot4562-glitch/HUFS-One-AI/commit/850ba49cd5f38967374b096b0ef4376ad2208b02) |
+| [#420](https://github.com/ot4562-glitch/HUFS-One-AI/pull/420) | 장학/배지 준비 API/UI | [c73d8de](https://github.com/ot4562-glitch/HUFS-One-AI/commit/c73d8ded6df0c3b286df46c5bc0f60c39d33f61d) |
+| [#402](https://github.com/ot4562-glitch/HUFS-One-AI/pull/402) | checkout v7.0.1 | [bec7805](https://github.com/ot4562-glitch/HUFS-One-AI/commit/bec7805f0ee755843d8930641599d3945708da03) |
+| [#403](https://github.com/ot4562-glitch/HUFS-One-AI/pull/403) | upload-artifact v7 | [9ab5647](https://github.com/ot4562-glitch/HUFS-One-AI/commit/9ab5647e04b7f332833b59af3940670e92652616) |
+| [#404](https://github.com/ot4562-glitch/HUFS-One-AI/pull/404) | cache v6.1.0 | [da6e3f7](https://github.com/ot4562-glitch/HUFS-One-AI/commit/da6e3f77176707dac4c726c63025bcecf5291e95) |
+| [#409](https://github.com/ot4562-glitch/HUFS-One-AI/pull/409) | Fastify 5.12.8 | [966942c](https://github.com/ot4562-glitch/HUFS-One-AI/commit/966942ce688548663f721ea373c9f61eb29684c7) |
+| [#407](https://github.com/ot4562-glitch/HUFS-One-AI/pull/407) | Postgres pg 8.23.1 | [e16319b](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e16319ba6aeb130493d798e46ff3a02eae34e382) |
+| [#408](https://github.com/ot4562-glitch/HUFS-One-AI/pull/408) | jsdom 31 | [895f219](https://github.com/ot4562-glitch/HUFS-One-AI/commit/895f2191306a9a8f16326e66af68b0a49241a111) |
+| [#422](https://github.com/ot4562-glitch/HUFS-One-AI/pull/422) | 6종 owner insights API/UI 통합 | [6062230](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6062230952035e364fe54fdaf65ab56d7eca83c7) |
 
-그밖의 공식 자료 #360, 기능 #339–#341 및 #343–#352, 권리 충돌 #373, UI 시점·KST 결함 #418과 고정 역할 #355–#359는 계속 OPEN입니다. **새로 완료 처리한 이슈: 0건.** 운영 source/학생 동의·권한, PostgreSQL RLS, NCP/HCX, 독립 Gold, 실제 사용자는 자동 CI로 대체할 수 없습니다. **RELEASE_BLOCKED** 유지.
+### 남은 PR 7건 (최신 HEAD CI·협업자 리뷰가 우선)
+
+| PR | 다음 단계 |
+| --- | --- |
+| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV Git 메타데이터 프라이버시 감사; 동료 리뷰 대기 |
+| [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) | 현재 상태/이슈/PR 감사 문서; 새 HEAD 독립 승인/CI 확인 필요 |
+| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 source→API/UI 통합. #422와 재합성 HEAD e925ada, CI·동료 승인 대기 |
+| [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | TypeScript 7 호환성 교정 HEAD 3282c42: 일반 CI 성공, 과거 변경 요청/독립 승인 미해결 |
+| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | github-script v9: issue 이벤트 실제 workflow 실행·독립 승인 전 보류 |
+| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 기관 동일성 허위확정 CHANGES_REQUESTED, 충돌 해결·재리뷰 전 보류 |
+| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 인용 극성 반전 CHANGES_REQUESTED 및 미해결 스레드 |
+
+[#415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415) 독립 리뷰 자동 검사 이미 main merge SHA [6cef538](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6cef53869d828bd99952dcf7bd26f0df192a2e7c). GitHub main Ruleset GET 결과 빈 배열/branch protection 상세 403이므로 **REVIEW_PROTECTION_NOT_VERIFIED**. 과거 #399/#400/#401/#411 동료 사후 감사와 관리자 실제 강제 보호 별도(#416).
+
+### 본인 배정 7개 이슈: 코드 진행 ≠ 완료
+
+| 이슈 | 현행 미충족 조건 | 상태 |
+| --- | --- | --- |
+| [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416) | 보호 CI #415 병합. 과거 4건 무승인 병합 동료 사후 감사와 main Ruleset 설정 미완 | **OPEN** |
+| [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) | 공통 OCR line ID fail-closed 방어 존재. 실제 OCR 변환·DB/실자료 검증 미완 | **OPEN** |
+| [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378) | #394 npm audit gate 구현. 실제 Dependabot alerts/CodeQL 권한 및 운영 CVE 대응 미확인 | **OPEN** |
+| [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375) | 경험/교과 owner API·BETA 웹/합성 회귀 존재. 학교 공식 원장·canonical identity·실동의/철회 미연결 | **OPEN** |
+| [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367) | CampusAssist operator 선택 포트 조립 있음. 승인 source·권리/HCX 과금·실 E2E 미연결 | **OPEN** |
+| [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366) | #420/#424/#422 병합으로 장학·배지·6종 코어 UI 소비자 존재. 상담 #410 CI·동료 승인 대기. 실데이터·권리·Gold/실계정 미인수 | **OPEN** |
+| [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362) | 공개 CSV 원본 5개 권리·동의·Git 역사 노출 감사 미완. #421 메타데이터 감사 PR 보류, 원본 변경 없음 | **OPEN** |
+
+팀 기능 #339–#341/#343–#352, 데이터 #360, 충돌 #373, 사용자 UX #418도 운영 인수 전 OPEN. 고정 역할 #355–#359는 변동 없음. 원본 CSV 다섯 개·민감 학생정보·Git history 불변. **신규 이슈 완료 종결 0 / RELEASE_BLOCKED**. [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)에 코드와 운영 검증 경계 기록.
 
 ---
 
