@@ -13,6 +13,11 @@ export interface ApprovedV2CatalogSnapshot {
   scopeKey:string;catalogRevision:string;consentVersion:string;
   receipt:Receipt;
 }
+export interface TrustedOwnerV2SearchQuota {
+  /** Must consume atomically under a bounded, per-actor time window in durable SQL.
+   * A process-local counter is insufficient for a production multi-replica deployment. */
+  consume(input:{actorId:string;now:string;operation:'V2_CATALOG_SEARCH'}):Promise<boolean>;
+}
 export interface TrustedOwnerV2CatalogSource {
   read(input:{actorId:string;asOf:string}):Promise<ApprovedV2CatalogSnapshot|null>;
   /** Must re-read current actor, consent/rights and source HEAD; no cached allow flag. */
@@ -26,8 +31,12 @@ export interface TrustedOwnerV2CatalogSource {
 export function registerOwnerV2CatalogRoutes(input:{
   app:FastifyInstance;session:BetaRouteVerifier;
   source?:TrustedOwnerV2CatalogSource;signer?:CatalogCursorSigner;
+  quota?:TrustedOwnerV2SearchQuota;
 }):void{
-  const {app,session,source,signer}=input;
+  const {app,session,source,signer,quota}=input;
+  // Partial activation is forbidden: no live unmetered search route.
+  if((source||signer||quota)&&(!source||!signer||!quota))
+    throw new Error('V2 catalog requires a trusted source, signer and durable per-actor quota');
   app.get('/api/owner/features/v2/catalog',async(req,reply)=>{
     reply.header('Cache-Control','no-store');
     const actor=await betaActor(req,session);
@@ -37,10 +46,18 @@ export function registerOwnerV2CatalogRoutes(input:{
     if(!Number.isFinite(nowMs)||!Number.isFinite(asOfMs)
       ||asOfMs>nowMs||nowMs-asOfMs>15*60_000)
       throw new ApiFailure('INVALID_INPUT');
-    if(!source||!signer){
+    if(!source){
       await betaRecheck(req,session,actor);
       return V.OwnerV2CatalogResponseSchema.parse({state:'NOT_CONNECTED',asOf});
     }
+    // Quota is consumed BEFORE reading a potentially expensive permission-scoped
+    // full catalog; current BETA session is checked again after async admission.
+    let admitted=false;
+    try{admitted=await quota!.consume({actorId:actor.actorId,now,
+      operation:'V2_CATALOG_SEARCH'})===true;}
+    catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    if(!admitted)throw new ApiFailure('RATE_LIMITED');
+    await betaRecheck(req,session,actor);
     const {cursor:opaque,asOf:_asOf,...filters}=args;
     const query=V.OpportunityQuerySchema.parse({...filters,asOf});
     let snapshot:ApprovedV2CatalogSnapshot|null;
