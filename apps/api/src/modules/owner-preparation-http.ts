@@ -82,7 +82,8 @@ export function registerOwnerPreparationRoutes(input:{
     // could otherwise shadow each other. Never pick a convenient first/last row.
     if(new Set(snapshot.scholarships.map(p=>p.id)).size!==snapshot.scholarships.length
       ||new Set(snapshot.badges.map(b=>b.id)).size!==snapshot.badges.length
-      ||new Set(snapshot.facts.map(f=>f.key+'::'+(f.academicTerm??''))).size!==snapshot.facts.length
+      // Fact keys are *not* unique per term: the core selects the newest
+      // authorized observation and quarantines conflicting latest values.
       ||new Set(snapshot.badgeEvidence.map(e=>e.id)).size!==snapshot.badgeEvidence.length
       ||new Set(snapshot.authorizedFactRevisions).size!==snapshot.authorizedFactRevisions.length)
       throw new ApiFailure('PROVIDER_UNAVAILABLE');
