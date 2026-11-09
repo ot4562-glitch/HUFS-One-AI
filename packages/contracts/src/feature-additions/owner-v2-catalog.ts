@@ -8,7 +8,8 @@ export const OwnerV2CatalogQuerySchema=z.strictObject({
   q:z.string().trim().max(100).optional(),
   category:Id.optional(),campus:Id.optional(),
   eligibility:z.enum(['MET','NOT_MET','UNKNOWN']).optional(),
-  deadlineBefore:Iso.optional(),includeClosed:z.boolean().optional(),
+  deadlineBefore:Iso.optional(),includeClosed:z.union([z.boolean(),z.enum(['true','false'])])
+    .transform(value=>value===true||value==='true').optional(),
   sort:z.enum(['TITLE','DEADLINE_ASC','PUBLISHED_DESC']).default('TITLE'),
   pageSize:z.coerce.number().int().min(1).max(50).default(20),
   asOf:Iso.optional(),
