@@ -36,7 +36,7 @@ export const AREAS: readonly Area[] = [
     ours: [{route: '/experience', label: '나의 경험'}, {route: '/career', label: '커리어 포트폴리오'}, {route:'/owner-insights/SKILLS',label:'NCS·경험 근거 비교'}],
     observed: ['나의진로정보', '진로 로드맵', '로드맵 성취도', '학과 전공·진로 로드맵', '자기소개서', 'MY커리어', '진로취업도서관리']},
   {id: 'counseling', label: '통합상담', summary: '학업·진로·심리 상담 안내 영역입니다.',
-    ours: [{route:'/owner-insights/INTERNATIONAL',label:'국제학생 확인 안내'}], observed: ['상담신청', '상담참여이력', 'International Students', '国际学生咨询', '신입생세미나']},
+    ours: [{route:'/owner-insights/INTERNATIONAL',label:'국제학생 확인 안내'}, {route:'/counseling',label:'공식 상담기관 찾기'}], observed: ['상담신청', '상담참여이력', 'International Students', '国际学生咨询', '신입생세미나']},
   {id: 'community', label: '커뮤니티', summary: '나와 관련된 학사 공지와 일정을 확인합니다.',
     ours: [{route: '/notices', label: '학사 공지'}, {route: '/activities', label: '학과 활동'}, {route: '/faq', label: 'FAQ·질문하기'}],
     observed: ['시스템문의', '자료실', '설문참여', '사회봉사 활동 경험 사례공유']},

@@ -13,6 +13,7 @@ import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
+import type {TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
 import {validateOwnerInsightsServices,type OwnerInsightsServices} from './modules/owner-v2-insights-http.js';
 import {validateOwnerPreparationServices,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
 import type {TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
@@ -39,6 +40,8 @@ export interface PostgresApplicationConfig {
   /** Optional operator-owned, current rights/revision guarded source ports.
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
+  /** Current official counseling source; no synthetic fallback. */
+  ownerCounseling?:TrustedOwnerCounselingSource;
   ownerInsights?:OwnerInsightsServices;
   ownerPreparation?:OwnerPreparationServices;
   /** Purpose-specific official canonical course and owner-link source. */
@@ -80,6 +83,9 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     name=>typeof config.ownerIntake?.[name as keyof typeof config.ownerIntake]!=='function'))
     throw new Error('Restricted owner intake requires all three verified operator loaders');
   if(config.campusAssist)validateCampusSources(config.campusAssist);
+  if(config.ownerCounseling&&(typeof config.ownerCounseling.read!=='function'
+    ||typeof config.ownerCounseling.revalidate!=='function'))
+    throw new Error('Counseling source requires current rights and snapshot revalidation');
   if(config.ownerInsights)validateOwnerInsightsServices(config.ownerInsights);
   if(config.ownerPreparation)validateOwnerPreparationServices(config.ownerPreparation);
   if(config.ownerExperienceCourse&&(typeof config.ownerExperienceCourse.read!=='function'
@@ -99,6 +105,7 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
     ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
+    ...(config.ownerCounseling?{ownerCounseling:config.ownerCounseling}:{}),
     ...(config.ownerInsights?{ownerInsights:config.ownerInsights}:{}),
     ...(config.ownerPreparation?{ownerPreparation:config.ownerPreparation}:{}),
     ...(config.ownerExperienceCourse?{ownerExperienceCourse:config.ownerExperienceCourse}:{}),

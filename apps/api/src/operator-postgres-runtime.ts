@@ -52,6 +52,7 @@ export interface OperatorPostgresInputs {
   /** Root-owned, explicitly authorized source/revision and rights-reading ports.
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
+  ownerCounseling?:PostgresApplicationConfig['ownerCounseling'];
   ownerInsights?:PostgresApplicationConfig['ownerInsights'];
   ownerPreparation?:PostgresApplicationConfig['ownerPreparation'];
   /** Requires current purpose-granted academic source. */
@@ -112,6 +113,9 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     throw new Error('Demo profile quota needs an independent digest key');
   if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
   if(input.campusAssist)validateCampusSources(input.campusAssist);
+  if(input.ownerCounseling&&(typeof input.ownerCounseling.read!=='function'
+    ||typeof input.ownerCounseling.revalidate!=='function'))
+    throw new Error('Counseling requires current official operator source and rights');
   if(input.ownerInsights&&(
     typeof input.ownerInsights.source?.read!=='function'||
     typeof input.ownerInsights.source?.revalidate!=='function'||
@@ -191,6 +195,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
+      ...(input.ownerCounseling?{ownerCounseling:input.ownerCounseling}:{}),
       ...(input.ownerInsights?{ownerInsights:input.ownerInsights}:{}),
       ...(input.ownerPreparation?{ownerPreparation:input.ownerPreparation}:{}),
       ...(input.ownerExperienceCourse?{ownerExperienceCourse:input.ownerExperienceCourse}:{}),

@@ -102,6 +102,7 @@ export const CounselingServiceSchema = z.strictObject({
   purposeCodes: BoundedCodeList, relatedPurposeCodes: BoundedCodeList,
   campuses: BoundedCodeList, audienceCodes: BoundedCodeList,
   languages: BoundedCodeList, officialUrl: OfficialHttpsUrlSchema.optional(),
+  verifiedName:z.strictObject({text:z.string().trim().min(2).max(160),sourceSpanId:Id}).optional(),
 });
 export type CounselingService = z.infer<typeof CounselingServiceSchema>;
 
