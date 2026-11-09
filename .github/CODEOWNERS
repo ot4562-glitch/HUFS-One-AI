@@ -1,2 +1,13 @@
-# Integration owner until teammates' GitHub IDs are confirmed. Enforcement depends on repo plan.
-* @ot4562-glitch
+# Reviewed team owners (all verified with write permission on 2026-11-09).
+# Assign multiple eligible people to every path: a PR author cannot self-approve.
+# CODEOWNERS requests are advisory until branch protection/ruleset is enforced.
+* @ot4562-glitch @lhh42001 @uisang2004-maker
+/apps/web/ @ot4562-glitch @lhh42001 @qamarrchae
+/apps/api/ @ot4562-glitch @lhh42001 @uisang2004-maker
+/packages/core/ @ot4562-glitch @uisang2004-maker @taewangim-alt
+/packages/ai/ @ot4562-glitch @taewangim-alt @uisang2004-maker
+/packages/contracts/ @ot4562-glitch @lhh42001 @uisang2004-maker
+/infra/ @ot4562-glitch @lhh42001 @uisang2004-maker
+/.github/ @ot4562-glitch @lhh42001 @uisang2004-maker
+/docs/ @ot4562-glitch @lhh42001 @qamarrchae
+/csv/ @ot4562-glitch @qamarrchae @lhh42001
