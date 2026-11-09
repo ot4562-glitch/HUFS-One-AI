@@ -94,6 +94,56 @@ export class PostgresApprovedOwnerReader {
         const end=timestamp(until);
         if(Date.parse(end)<Date.parse(validUntil))validUntil=end;
       };
+      // Validate actor and permissions before fetching any approved source proof.
+      // The same data-integrity and temporal checks also run on the return path.
+      const refKey=(r:{sourceId:string;revisionId:string;permissionRef:string})=>
+        JSON.stringify([r.sourceId,r.revisionId,r.permissionRef]);
+      const distinctRefs=new Map<string,{sourceId:string;revisionId:string;permissionRef:string}>();
+      for(const projection of rows){
+        if(projection.actor_id!==query.actorId||projection.kind!==query.kind
+          ||projection.reviewed_by===projection.actor_id
+          ||query.entityId!==undefined&&projection.entity_id!==query.entityId
+          ||canonicalProjectionHash(projection.payload_json)!==projection.payload_sha256)
+          throw new Error('Approved owner projection binding failed');
+        for(const ref of projection.sources_json){
+          if(!grants.permissionRefs.has(ref.permissionRef)
+            ||grants.sourceIds&&!grants.sourceIds.has(ref.sourceId))
+            return await this.deny(c,()=>{open=false;});
+          distinctRefs.set(refKey(ref),ref);
+        }
+      }
+      const proofsByKey=new Map<string,Record<string,unknown>>();
+      if(distinctRefs.size){
+        const proofBatch=await c.query(`SELECT s.*,rights.rights_expires_at,
+          o.original_sha256 AS stored_original_sha256,
+          a.original_sha256 AS review_original_sha256,a.content_sha256 AS review_content_sha256,
+          a.decision AS review_decision,a.checked_at AS review_checked_at,a.reviewer_id
+          FROM jsonb_to_recordset($1::jsonb) AS r(source_id text,revision_id text,permission_ref text)
+          JOIN source_effective_revisions_vnext s
+            ON s.source_id=r.source_id AND s.revision_id=r.revision_id AND s.permission_ref=r.permission_ref
+          JOIN source_ingest_heads h ON h.source_id=s.source_id AND h.revision_id=s.revision_id
+          JOIN source_originals_vnext o ON o.revision_id=s.revision_id
+          JOIN source_review_attestations_vnext a ON a.revision_id=s.revision_id
+          JOIN LATERAL(SELECT min(g.expires_at) AS rights_expires_at FROM source_rights_receipts g
+            WHERE g.actor_id=$2 AND g.source_id=s.source_id AND g.permission_ref=s.permission_ref
+            AND 'SEARCH'=ANY(g.purposes) AND g.reviewed_by<>g.actor_id
+            AND g.reviewed_at<=LEAST($3::timestamptz,$4::timestamptz,clock_timestamp())
+            AND g.starts_at<=LEAST($3::timestamptz,$4::timestamptz,clock_timestamp())
+            AND g.expires_at>GREATEST($3::timestamptz,$4::timestamptz,clock_timestamp())
+            AND NOT EXISTS(SELECT 1 FROM source_rights_revocations x WHERE x.receipt_id=g.receipt_id)) rights
+            ON rights.rights_expires_at IS NOT NULL`,
+        [JSON.stringify([...distinctRefs.values()].map(ref=>({source_id:ref.sourceId,
+          revision_id:ref.revisionId,permission_ref:ref.permissionRef}))),query.actorId,now,clock]);
+        // Missing (including RLS/withdrawn rights), extra or duplicate proofs deny
+        // the ENTIRE response. We never return a partially authorized catalog.
+        for(const raw of proofBatch.rows){
+          const candidate=raw as Record<string,unknown>;
+          const key=JSON.stringify([candidate.source_id,candidate.revision_id,candidate.permission_ref]);
+          if(!distinctRefs.has(key)||proofsByKey.has(key))return await this.deny(c,()=>{open=false;});
+          proofsByKey.set(key,candidate);
+        }
+        if(proofsByKey.size!==distinctRefs.size)return await this.deny(c,()=>{open=false;});
+      }
       for(const p of rows){
         bound(p.expires_at);
         if(p.actor_id!==query.actorId||p.kind!==query.kind||p.reviewed_by===p.actor_id
@@ -108,25 +158,8 @@ export class PostgresApprovedOwnerReader {
         for(const ref of p.sources_json){
           if(!grants.permissionRefs.has(ref.permissionRef)||grants.sourceIds&&!grants.sourceIds.has(ref.sourceId))
             return await this.deny(c,()=>{open=false;});
-          const proof=await c.query(`SELECT s.*,rights.rights_expires_at,o.original_sha256 AS stored_original_sha256,
-            a.original_sha256 AS review_original_sha256,a.content_sha256 AS review_content_sha256,
-            a.decision AS review_decision,a.checked_at AS review_checked_at,a.reviewer_id
-            FROM source_effective_revisions_vnext s
-            JOIN source_ingest_heads h ON h.source_id=s.source_id AND h.revision_id=s.revision_id
-            JOIN source_originals_vnext o ON o.revision_id=s.revision_id
-            JOIN source_review_attestations_vnext a ON a.revision_id=s.revision_id
-            JOIN LATERAL(SELECT min(g.expires_at) AS rights_expires_at FROM source_rights_receipts g
-              WHERE g.actor_id=$4 AND g.source_id=s.source_id AND g.permission_ref=s.permission_ref
-              AND 'SEARCH'=ANY(g.purposes) AND g.reviewed_by<>g.actor_id
-              AND g.reviewed_at<=LEAST($5::timestamptz,$6::timestamptz,clock_timestamp())
-              AND g.starts_at<=LEAST($5::timestamptz,$6::timestamptz,clock_timestamp())
-              AND g.expires_at>GREATEST($5::timestamptz,$6::timestamptz,clock_timestamp())
-              AND NOT EXISTS(SELECT 1 FROM source_rights_revocations x WHERE x.receipt_id=g.receipt_id)) rights
-              ON rights.rights_expires_at IS NOT NULL
-            WHERE s.source_id=$1 AND s.revision_id=$2 AND s.permission_ref=$3`,
-          [ref.sourceId,ref.revisionId,ref.permissionRef,query.actorId,now,clock]);
-          const s=proof.rows[0];
-          if(proof.rows.length!==1||!s||s.revision_id!==ref.revisionId||s.source_id!==ref.sourceId
+          const s=proofsByKey.get(refKey(ref));
+          if(!s||s.revision_id!==ref.revisionId||s.source_id!==ref.sourceId
             ||s.permission_ref!==ref.permissionRef||s.status!=='ACTIVE'||s.change_kind==='CANCELLED'
             ||s.source_class==='RESEARCH_REFERENCE_ONLY'||s.provenance==='RESEARCH_ONLY'
             ||s.review_decision!=='APPROVED'||s.reviewer_id===query.actorId
