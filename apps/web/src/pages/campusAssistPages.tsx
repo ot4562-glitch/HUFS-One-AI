@@ -1,4 +1,5 @@
-import {useState,type FormEvent} from 'react';
+import {useEffect,useState,type FormEvent,type ReactNode} from 'react';
+import type {CampusAssistPort} from '../features/campus-assist/ownerPort.js';
 import type {PageRenderer} from '../App.js';
 import type {ExchangeApplicant} from '@hufs-one/contracts';
 import {archiveActivities,forecastActivity} from '../../../../packages/core/src/campus-assist/activities.js';
@@ -152,15 +153,38 @@ function FaqDemo({navigate}: {navigate:(p:string)=>void}){
     <p><InAppLink to="/exchange" navigate={navigate}>교환학생 조건 확인</InAppLink> · <InAppLink to="/activities" navigate={navigate}>학과 활동 아카이브</InAppLink></p>
   </section>;
 }
+/** #367 — configured ports are not live permissions. Show NOT_CONNECTED before
+ * a user tries a service if operator never provisioned that source port. */
+function OwnerSourceGate({port,source,children}:{port:CampusAssistPort;
+  source:'activities'|'exchange'|'faq';children:ReactNode}){
+  const [caps,setCaps]=useState<Awaited<ReturnType<CampusAssistPort['capabilities']>>|null>(null);
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>{
+    const abort=new AbortController();
+    setCaps(null);setFailed(false);
+    void port.capabilities(abort.signal)
+      .then(value=>{if(!abort.signal.aborted)setCaps(value);})
+      .catch(()=>{if(!abort.signal.aborted)setFailed(true);});
+    return ()=>abort.abort();
+  },[port]);
+  if(failed)return <p role="alert">현재 세션에서 서버 기능 연결 상태를 확인할 수 없습니다. 로그인·서버 상태를 확인한 뒤 다시 열어 주세요.</p>;
+  if(!caps)return <p role="status">승인된 자료 연결 상태를 확인 중입니다.</p>;
+  if(!caps[source])return <p role="status">NOT_CONNECTED — 이 기능의 승인 출처 포트가 서버에 설정되지 않았습니다. 실제 자료나 합성 자료로 대체하지 않습니다.</p>;
+  return <>
+    {source==='faq'&&!caps.hcx007&&<p role="status">CONFIGURATION_REQUIRED — FAQ 출처 조회 포트는 설정됐지만 HCX-007 모델 실행·과금은 연결되지 않았습니다.</p>}
+    {children}
+  </>;
+}
+
 export const activityArchivePage:PageRenderer=({path,navigate,services})=>path==='/activities'
   ? {title:'학과·학생회 활동 기록과 시기 전망',body:services.campusAssist
-    ? <OwnerActivityPanel port={services.campusAssist} navigate={navigate}/>
+    ? <OwnerSourceGate port={services.campusAssist} source="activities"><OwnerActivityPanel port={services.campusAssist} navigate={navigate}/></OwnerSourceGate>
     : syntheticPreview ? <ActivityDemo navigate={navigate}/> : AUTH_REQUIRED} : null;
 export const exchangePage:PageRenderer=({path,navigate,services})=>path==='/exchange'
   ? {title:'교환학생 지원 조건 비교',body:services.campusAssist
-    ? <OwnerExchangePanel port={services.campusAssist} navigate={navigate}/>
+    ? <OwnerSourceGate port={services.campusAssist} source="exchange"><OwnerExchangePanel port={services.campusAssist} navigate={navigate}/></OwnerSourceGate>
     : syntheticPreview ? <ExchangeDemo navigate={navigate}/> : AUTH_REQUIRED} : null;
 export const faqPage:PageRenderer=({path,navigate,services})=>path==='/faq'
   ? {title:'FAQ·질문하기',body:services.campusAssist
-    ? <OwnerFaqPanel port={services.campusAssist} navigate={navigate}/>
+    ? <OwnerSourceGate port={services.campusAssist} source="faq"><OwnerFaqPanel port={services.campusAssist} navigate={navigate}/></OwnerSourceGate>
     : syntheticPreview ? <FaqDemo navigate={navigate}/> : AUTH_REQUIRED} : null;

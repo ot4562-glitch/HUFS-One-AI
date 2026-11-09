@@ -1,6 +1,28 @@
 # HUFS One AI — PR 리뷰·검증·병합
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
+
+## 병합 필수 조건 — 2026-11-09 사용자 직접 지시 (이전 예외 규정 폐기)
+
+**모든 PR은 작성자가 아닌 저장소 협업자의 실제 `APPROVED` 리뷰가 적어도 1건 있어야만 병합합니다.** CI 통과, 작성자의 `COMMENT`, 봇의 리뷰/코멘트, 작성자 자신의 검토, 사용자가 '검토/병합'을 일괄 요청했다는 사실, 오래된 다른 커밋의 승인 어느 것도 이를 대체할 수 없습니다. 정책상 **예외가 없습니다**. 작성자가 `ot4562-glitch`이면 반드시 `taewangim-alt`, `uisang2004-maker`, `lhh42001`, `qamarrchae` 등 write 이상 권한이 확인된 *다른 사람*의 승인만 인정합니다. AI/웹/데이터/보안 등 영향을 받는 책임 분야의 리뷰어를 지정하고, 권한/권리 또는 운영 승인이 추가로 필요할 경우 각각 별도 인수합니다.
+
+병합 직전에는 현재 PR HEAD SHA와 각 `APPROVED`의 `commit_id`를 대조합니다. 새 커밋이나 base 충돌 수정으로 HEAD가 바뀌면 **새 HEAD에 대해 다시 승인**을 받아야 합니다. 유효한 `CHANGES_REQUESTED`/미해결 리뷰 스레드가 있거나, 필수 CI가 실패·대기·누락되었으면 병합 금지입니다. `DRAFT`도 병합하지 않습니다. CODEOWNERS에 작성자 자신이 올라 있더라도 본인이 승인하는 것은 인정하지 않습니다. 에이전트와 담당자는 GitHub의 리뷰 승인 권한을 대신 행사하지 않습니다. **승인 없는 PR을 에이전트가 독단적으로 병합하거나 직접 main에 push하지 않습니다.**
+
+### GitHub의 강제 설정 (코드 변경만으로 자동 활성화되지 않음)
+
+저장소 **Settings → Rules → Rulesets** 또는 **Settings → Branches**에서 `main` 대상 보호 규칙을 관리자 권한으로 **Active** 상태로 설정해야 합니다. PR 필수, **승인 1명 이상**, **Code Owners 리뷰 필수**, 새 커밋 시 오래된 승인 무효화, 리뷰 스레드 해결 필수, 필수 CI 통과, 관리자·봇·이슈 관리자의 bypass 허용 안 함, 직접 push/force push 금지가 필요합니다. [CODEOWNERS](../.github/CODEOWNERS)는 리뷰 요청 대상만 정하며, 보호 규칙이 실제 켜졌다는 뜻이 아닙니다. 저장소 UI에서 규칙·해당 PR의 병합 차단 메시지를 직접 재검증하기 전에는 **`REVIEW_PROTECTION_NOT_VERIFIED`** 입니다.
+
+### 사후 검토 부채
+
+2026-11-09에 다른 팀원의 `APPROVED` 없이 `#399/#400/#401/#411`이 병합된 것을 리뷰 API로 확인했습니다. 이는 **이 정책을 충족하지 않은 병합**입니다. 이미 병합된 Git 기록에 사후 검토를 붙여도 '병합 전 승인'으로 소급 인정하지 않으며, 서명/기록을 소급 조작하지 않습니다. 각 SHA의 코드·보안/자료 영향을 다른 사람에게 재검토받고 필요하면 **별도 수정 또는 되돌리기 PR을 독립 승인 후** 처리합니다. 확인 없이 main을 무단 force push하거나 기존 원본을 편집하지 않습니다. 이 문제를 새 PR 검토의 예외 선례로 삼지 않습니다.
+
+### CI 구현 제안 [#415] — 서버측 보호 설정과 구분
+
+- `.github/workflows/independent-pr-review.yml`은 `pull_request` 및 `pull_request_review` 이벤트에 대해 현재 PR HEAD를 재조회하고, GitHub REST의 실제 review commit·해당 계정 협업 쓰기권한을 검증합니다. 작성자·봇·`COMMENTED`·stale approval·미해결 `CHANGES_REQUESTED`는 승인으로 세지 않습니다.
+- 학생 자료·원본 코드 checkout 없이 read-only GitHub API만 사용합니다. `tests/release/test_independent_pr_review.py`는 승인·반려·동시 HEAD 변경·권한 실패를 합성 REST로 검증하며 `TASK-00` allowlist에 검사 대상 workflow만 추가합니다.
+- **주의:** 리뷰가 아직 없으면 workflow의 `exact-HEAD independent approval` 체크 실패가 정상입니다. 이 check를 Ruleset required status check로 지정할 때는 실제 GitHub 관리자가 워크플로 이벤트와 브랜치 우회 정책을 함께 검증해야 합니다. `CODEOWNERS`는 [#413](https://github.com/ot4562-glitch/HUFS-One-AI/pull/413)에서 독립 승인 후 병합한 5인 리뷰어 지도를 그대로 유지합니다. 기존 승인된 정책과 중복·상충하는 추가 CODEOWNERS/AGENTS 교체는 하지 않습니다.
+- 본 기능은 [PR #415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415)의 제안이며 해당 PR이 **타 협업자의 최신 HEAD APPROVED/CI를 거쳐 병합되기 전에는 적용 완료 상태가 아닙니다.** 관리자 Ruleset 활성화도 [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416)의 별도 인수입니다.
+
 ## 2026-11-09 최신 검수 결과
 
 - [PR #386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) (HEAD `0fdb638`): 중복 요건/경험 ID 격리와 순서 반전 회귀 확인, 다른 계정의 AI QA APPROVED 및 오너 [APPROVED](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386#pullrequestreview-5820570040). HEAD 5종 Actions SUCCESS, 과거 차단 스레드 2건 해결 후 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 **squash MERGED**. #347은 AI 코드 일부 완료이며 API/UI·실원장·사람 Gold 미완으로 OPEN.
@@ -68,7 +90,7 @@
 1. PR은 담당 소유권/변경 대상 계약·실제 결함/반례와 인가·자료/AI·migration·lockfile·출시 영향 범위를 명시합니다.
 2. 비교 대상은 **최신 HEAD SHA**와 main diff. 접근권/데이터 범위·race/취소/철회·로그/자산/시점·다중탭/SQL role·fail-closed/rollback 위험을 검토합니다.
 3. 같은 HEAD의 GitHub Actions **합성계약·실제 일회용 PG·Chrome·NCP IaC(mock)** 중 영향을 받는 필수 워크플로를 확인합니다. FAIL/SKIP/NOT_RUN은 그대로 보고하고, 실패를 성공 재실행만 골라 숨기지 않습니다.
-4. 일반 규칙: 작성자가 아닌 실제 리뷰어의 `APPROVED`와 미해결 `CHANGES_REQUESTED`/스레드 해소, 필요한 CI SUCCESS, mergeable/base/HEAD를 모두 확인한 후 병합합니다. 자동 에이전트 COMMENT는 사람 APPROVED가 아닙니다. 사용자가 특정 PR에 직접 병합을 지시한 예외는 **그 PR에만** 적용하고 사실대로 기록합니다.
+4. **필수 규칙(예외 없음):** 작성자가 아닌 협업자(write 이상)의 **현재 HEAD `APPROVED`**, 미해결 `CHANGES_REQUESTED`/스레드 해소, 필요한 CI SUCCESS, mergeable/base/HEAD를 모두 확인한 후에만 병합합니다. 자동 에이전트/작성자 COMMENT와 사용자 일괄 검토 지시는 승인 예외가 아닙니다.
 5. merge 후 동일 SHA의 main Actions·영향 받은 API/화면을 재확인합니다. 프로덕션/실계정/원본/유료 AI/NCP apply·RELEASE_BLOCKED 해제는 **PR 병합과 별도 승인**입니다.
 
 ## 2026-11-06 코드 리뷰·병합 근거
