@@ -26,7 +26,7 @@ function fixture(withSource=true){
     auth:{verifySession:async()=>sessionActive?{...actor,role:role as 'BETA',actorId:id}:null,revokeSession:async()=>{}},
     ...(withSource?{ownerCounseling:port}:{})});
   apps.push(app);
-  const send=(body:unknown,csrf=true)=>app.inject({url:'/api/owner/counseling/routes',method:'POST',
+  const send=(body:Record<string,unknown>,csrf=true)=>app.inject({url:'/api/owner/counseling/routes',method:'POST',
     headers:csrf?{origin:ORIGIN,'x-csrf-token':actor.csrfToken}:undefined,payload:body});
   return {app,port,send,revoke:()=>{allowed=false;},switchActor:()=>{id='SYN-OTHER';},
     logout:()=>{sessionActive=false;},setRole:(value:string)=>{role=value;}};
