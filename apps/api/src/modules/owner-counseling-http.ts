@@ -53,12 +53,26 @@ export function registerOwnerCounselingRoutes(input:{
     let report:z.infer<typeof V.CounselingGuideV2Schema>;
     try{
       guide=V.CounselingServiceSchema.array().max(500).parse(snapshot.items);
-      report=V.CounselingGuideV2Schema.parse(routeCounselingV2({
+      const core=routeCounselingV2({
         purposes:query.purposes,services:guide,asOf,
         ...(query.campus?{campus:query.campus}:{}),
         ...(query.language?{language:query.language}:{}),
         // Audience codes must come from current trusted identity; never from browser input.
-      }));
+      });
+      // #345: refuse unnamed/unsourced offices. A raw service ID is not an
+      // intelligible counseling office to a student and must not impersonate one.
+      // The name must be independently reviewed and cite the SAME current source.
+      const byId=new Map(guide.map(service=>[service.id,service]));
+      const matches=core.matches.flatMap(match=>{
+        const service=byId.get(match.serviceId),name=service?.verifiedName;
+        if(!name||!service?.source.evidenceSpanIds.includes(name.sourceSpanId))return [];
+        return [{...match,serviceName:name.text}];
+      });
+      report=V.CounselingGuideV2Schema.parse({
+        ...core,matches,
+        excluded:core.excluded+core.matches.length-matches.length,
+        status:matches.length?'MATCHES':core.status==='NO_PURPOSE'?'NO_PURPOSE':'NO_MATCH',
+      });
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     await betaRecheck(req,session,actor);
     let current=false;
