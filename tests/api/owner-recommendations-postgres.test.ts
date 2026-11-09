@@ -20,13 +20,20 @@ function fixture(){
     })};
     if(sql.includes('SELECT revision_id,published_at'))return {rows:opportunities.filter(o=>(args[0] as string[]).includes(o.sourceSnapshotId))
       .map(o=>({revision_id:o.sourceSnapshotId,published_at:before}))};
-    if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:[{
-      source_id:args[0],revision_id:args[1],permission_ref:args[2],status:state.badSource?'RETRACTED':'ACTIVE',change_kind:'NEW',
-      source_class:'SYNTHETIC',provenance:'SYNTHETIC',original_sha256:'a'.repeat(64),stored_original_sha256:'a'.repeat(64),
-      review_original_sha256:'a'.repeat(64),content_sha256:'b'.repeat(64),review_content_sha256:'b'.repeat(64),
-      last_verified_at:before,fetched_at:before,review_checked_at:before,review_decision:'APPROVED',reviewer_id:'SYN-INDEPENDENT',
-      rights_expires_at:expires,valid_from:null,valid_until:null,
-    }]};
+    if(sql.includes('FROM jsonb_to_recordset(')){
+      const refs=JSON.parse(String(args[0])) as Array<{
+        source_id:string;revision_id:string;permission_ref:string}>;
+      return {rows:refs.map(ref=>({
+        source_id:ref.source_id,revision_id:ref.revision_id,permission_ref:ref.permission_ref,
+        status:state.badSource?'RETRACTED':'ACTIVE',change_kind:'NEW',
+        source_class:'SYNTHETIC',provenance:'SYNTHETIC',
+        original_sha256:'a'.repeat(64),stored_original_sha256:'a'.repeat(64),
+        review_original_sha256:'a'.repeat(64),content_sha256:'b'.repeat(64),review_content_sha256:'b'.repeat(64),
+        last_verified_at:before,fetched_at:before,review_checked_at:before,
+        review_decision:'APPROVED',reviewer_id:'SYN-INDEPENDENT',
+        rights_expires_at:expires,valid_from:null,valid_until:null,
+      }))};
+    }
     if(sql.includes('FROM api_self_profiles'))return {rows:[state.profile]};
     if(sql.includes('FROM api_experience_tag_approvals'))return {rows:state.approvals};
     return {rows:[]};
