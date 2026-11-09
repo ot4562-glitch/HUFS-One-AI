@@ -59,3 +59,9 @@
 - **지연된 이벤트 보호:** `opened/edited/reopened/labeled/unlabeled` 이벤트와 수동 실행 모두 최신 GitHub 이슈를 재조회하며, 담당자 지정 직전에 담당자·`routing:hold`·P0·보안·제목·분류·닫힘 상태를 다시 검사합니다. 사람이 상태를 바꾸었다면 기존 담당자/보류를 우선하고 자동 배정을 중단합니다. GitHub `addAssignees` API는 트랜잭션식 조건부 쓰기를 제공하지 않으므로 마지막 조회 이후의 극히 짧은 경쟁 창은 남습니다. 운영 중에는 수동 `routing:hold`를 우선 사용하고 활동 로그를 점검하세요.
 - 테스트: `node --test tests/automation/issue-router.test.cjs` (보호 이슈, 최초 배정, AI 공정 배정, 수동 배정 유지, 모호함, 수동 홀드, dry-run, 오류 복구).
 - 코드나 문서 변경만으로 실제 운영 환경에서 GitHub Actions 실행이 성공했다고 주장하지 않습니다. PR HEAD의 CI와 기본 브랜치 활성화 결과를 따로 확인해야 합니다.
+
+
+## 2026-11-09 병합 후 런타임 검증 보강
+
+- [PR #405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405)의 `actions/github-script` v9 갱신과 [병합 커밋](https://github.com/ot4562-glitch/HUFS-One-AI/commit/c4628abe485b9e19dcbf4c9de01e6411cd43ad1c)이 `main`에 반영되었습니다. 테스트 워크플로의 Node.js 24 런타임에서 실제 inline script를 합성 이벤트 `opened/edited`, `workflow_dispatch dry_run`과 GitHub REST stub으로 실행하는 회귀가 추가됐습니다. 고정 역할 이슈 #355–#359에는 쓰기를 하지 않는 합성 경계를 확인했습니다.
+- **한계:** 실제 GitHub `issues.opened` webhook 인수, 실제 `workflow_dispatch` 운영 이벤트, GitHub 설치·쓰기권한·재진입 사례는 이 합성 시험에서 실행한 것이 아닙니다. 개별 운영 실행은 GitHub Actions 로그 및 실제 변경 이력으로 별도 확인합니다. 자동 배정 봇은 PR 리뷰 승인 강제 검사와 **서로 다른** 기능이며, 사용자 지시로 삭제된 것은 [PR #425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)의 독립 승인 CI입니다.
