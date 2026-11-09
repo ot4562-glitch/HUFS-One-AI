@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout synthetic test subset only (no student CSV, Forms, local raw, reference)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           sparse-checkout-cone-mode: false
@@ -48,6 +48,7 @@ jobs:
             /apps/web/
             /.github/workflows/task00-contracts.yml
             /.github/workflows/ui-browser-e2e.yml
+            /.github/workflows/independent-pr-review.yml
             /tests/release/
             /tests/security/
             /tools/release_entrypoint_gate.mjs
@@ -138,7 +139,7 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout synthetic backend subset only
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           sparse-checkout-cone-mode: false
@@ -228,7 +229,7 @@ jobs:
     timeout-minutes: 12
     steps:
       - name: Checkout synthetic backend subset for approved revision claims
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           sparse-checkout-cone-mode: false

@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {OwnerExperienceCourseResponseSchema} from '@hufs-one/contracts';
 import {FeatureAdditions as V} from '@hufs-one/contracts';
 import {
   SelfProfileSchema,SelfProfilePatchSchema,SelfConsentSchema,SelfConsentPutSchema,
@@ -271,6 +272,10 @@ export class HufsOwnerApiClient {
       &&result.item.value.summary===''&&result.item.value.sourceOpportunityId===input.opportunityId);
     return result;
   }
+  /** #375 current purpose-granted links only, no browser-supplied transcript. */
+  getExperienceCourseEvidence(signal?:AbortSignal){
+    return this.request('/api/owner/academics/experience-courses',OwnerExperienceCourseResponseSchema,{signal});
+  }
   async getTranscript(signal?:AbortSignal){
     const result=await this.request('/api/academics/transcript',z.strictObject({transcript:OwnerTranscriptSchema}),{signal});
     if(Date.parse(result.transcript.reviewedAt)>Date.parse(result.transcript.asOf))unavailable();
@@ -414,6 +419,10 @@ export class HufsOwnerApiClient {
     return this.request('/api/owner/campus-assist/capabilities',z.strictObject({
       activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
     }),{signal});
+  }
+  /** #343/#349: current owner-only read, never browser-created sources. */
+  getOwnerPreparation(signal?:AbortSignal){
+    return this.request('/api/owner/features/v2/preparation',V.OwnerPreparationResponseSchema,{signal});
   }
   /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
   async searchApprovedV2Catalog(query:z.input<typeof V.OwnerV2CatalogQuerySchema>={},signal?:AbortSignal){

@@ -103,9 +103,58 @@ export function prepareBadgeV2(input:{
       ...(overlapping && baseState==='MET'
         ?{reason:'ACTIVITY_REUSE_UNVERIFIED' as const}:{}),requirements};
   });
-  const overall=aggregateAnd(groups.map(g=>g.state));
-  const requiredNextTopics=[...new Set(groups.filter(g=>g.state!=='MET').flatMap(g=>
+  const checked=withCrossGroupReuseCheck(groups,badge.groups.map(g=>g.allowActivityReuse===true));
+  const overall=aggregateAnd(checked.map(g=>g.state));
+  const requiredNextTopics=[...new Set(checked.filter(g=>g.state!=='MET').flatMap(g=>
     g.requirements.filter(r=>r.state==='DOCUMENTS_NEEDED').map(r=>r.topicCode)))].sort();
   return {...base,status:overall==='MET'?'READY_TO_REQUEST_REVIEW':
-    overall==='NOT_MET'?'IN_PROGRESS':'UNKNOWN',groups,requiredNextTopics};
+    overall==='NOT_MET'?'IN_PROGRESS':'UNKNOWN',groups:checked,requiredNextTopics};
+}
+
+/** Search budget for the cross-group check; more ANY-group choices than this stay UNKNOWN. */
+export const BADGE_CROSS_GROUP_LIMITS={maxChoiceCombinations:256} as const;
+
+/**
+ * #349 — can the whole badge be met with each activity counted once, across groups?
+ * A group whose issuer rule allows reuse is left out, so its activities may also
+ * count elsewhere. An ALL group needs every requirement. An ANY group needs one of
+ * its recorded requirements, and every such choice is tried. Returns false when no
+ * choice fits or the choices exceed the budget, so the caller abstains.
+ */
+export function assignableAcrossGroups(groups:readonly {
+  join:'ALL'|'ANY';allowActivityReuse:boolean;requirements:readonly BadgeRequirementState[];
+}[]):boolean{
+  const checked=groups.filter(g=>!g.allowActivityReuse);
+  const fixed=checked.filter(g=>g.join==='ALL').flatMap(g=>g.requirements);
+  const options=checked.filter(g=>g.join==='ANY')
+    .map(g=>g.requirements.filter(r=>r.state==='EVIDENCE_RECORDED'));
+  if(options.some(o=>o.length===0)) return false;
+  const combinations=options.reduce((n,o)=>n*o.length,1);
+  if(combinations>BADGE_CROSS_GROUP_LIMITS.maxChoiceCombinations) return false;
+  const pick=(i:number,chosen:BadgeRequirementState[]):boolean=>
+    i===options.length?assignableWithoutReuse([...fixed,...chosen])
+      :options[i]!.some(r=>pick(i+1,[...chosen,r]));
+  return pick(0,[]);
+}
+
+/**
+ * Within-group reuse is decided above (#380). This adds the check between groups:
+ * when every group is met but an activity is a candidate in two groups without
+ * reuse permission, the badge is ready only if the activities can be split so no
+ * activity counts twice. Otherwise each group sharing such an activity becomes
+ * UNKNOWN / ACTIVITY_REUSE_UNVERIFIED. Unshared badges are returned unchanged.
+ */
+function withCrossGroupReuseCheck(
+  groups:readonly BadgeGroupState[],allowReuse:readonly boolean[],
+):BadgeGroupState[]{
+  if(aggregateAnd(groups.map(g=>g.state))!=='MET') return [...groups];
+  const candidates=groups.map((g,i)=>allowReuse[i]?new Set<string>()
+    :new Set(g.requirements.filter(r=>r.state==='EVIDENCE_RECORDED').flatMap(r=>r.activityIds)));
+  const shared=candidates.map((own,i)=>[...own].some(id=>
+    candidates.some((other,j)=>j!==i && other.has(id))));
+  if(!shared.includes(true)) return [...groups];
+  if(assignableAcrossGroups(groups.map((g,i)=>({join:g.join,
+    allowActivityReuse:allowReuse[i]===true,requirements:g.requirements})))) return [...groups];
+  return groups.map((g,i)=>shared[i]
+    ?{...g,state:'UNKNOWN' as const,reason:'ACTIVITY_REUSE_UNVERIFIED' as const}:g);
 }

@@ -18,6 +18,8 @@ import type {DemoProfilePort} from './modules/profiles/demo-profile.js';
 import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
+import {registerOwnerPreparationRoutes,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
+import {registerOwnerExperienceCourseRoutes,type TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
 import {registerOwnerV2CatalogRoutes,type TrustedOwnerV2CatalogSource,type TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
 import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
@@ -49,6 +51,8 @@ interface SharedDependencies {
   runtime?:RuntimeMode;
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
+  ownerPreparation?:OwnerPreparationServices;
+  ownerExperienceCourse?:TrustedExperienceCourseSource;
   /** Operator-only current-source scope and HMAC signer, never a browser/route-supplied key. */
   ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   sourceIngestionControl?:SourceJobControl;
@@ -128,6 +132,10 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
   registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
+  registerOwnerPreparationRoutes({app,session:ownerSession,
+    ...(deps.ownerPreparation?{services:deps.ownerPreparation}:{})});
+  registerOwnerExperienceCourseRoutes({app,session:ownerSession,
+    ...(deps.ownerExperienceCourse?{source:deps.ownerExperienceCourse}:{})});
   registerOwnerV2CatalogRoutes({app,session:ownerSession,...(deps.ownerV2Catalog??{})});
   registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});
   if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,ownerSession);

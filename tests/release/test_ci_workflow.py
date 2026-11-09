@@ -12,9 +12,9 @@ from pathlib import Path
 
 
 WORKFLOW = Path(__file__).resolve().parents[2] / ".github/workflows/task00-contracts.yml"
-# Resolved 2026-11-01 from the official actions/* refs/tags/v4 Git objects.
+# Explicitly reviewed action/checkout v7.0.1 full Git tag commit (Node 24 runtime).
 # Require full commit identity, not a mutable tag, branch or unreviewed action.
-PINNED_CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+PINNED_CHECKOUT = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 PINNED_SETUP_NODE = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 SAFE_SPARSE_PATHS = frozenset({
     "/tools/evaluation/", "/docs/INDEPENDENT_EVALUATION.md",
@@ -43,6 +43,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/.github/workflows/release-readiness.yml",
     "/.github/workflows/task00-contracts.yml",
     "/.github/workflows/ui-browser-e2e.yml",
+    "/.github/workflows/independent-pr-review.yml",
 })
 EXCLUDED_DIRECTORIES = (
     "csv", "local_only", "templates/real5-intake", "reference/hufsability/raw",
@@ -201,6 +202,7 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/tools/verify_browser_release_surface.py",
             "/tools/verify_release_boundary.py",
             "/.github/workflows/release-readiness.yml",
+            "/.github/workflows/independent-pr-review.yml",
         }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
         if any("/infra/sql/" not in paths or "/tests/api/" not in paths for paths in sparse[1:]):
