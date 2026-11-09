@@ -253,6 +253,4 @@ export * from './results.js';
 export {OfficialHttpsUrlSchema} from './official-url.js';
 
 export * from './owner-v2-catalog.js';
-
-// Authenticated read-only preparation dashboard wire contract (#366).
 export * from './owner-preparation.js';

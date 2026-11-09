@@ -14,6 +14,7 @@ import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-c
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
 import {validateOwnerPreparationServices,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
+import type {TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
 import type {TrustedOwnerV2CatalogSource,TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
 import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 
@@ -37,8 +38,9 @@ export interface PostgresApplicationConfig {
   /** Optional operator-owned, current rights/revision guarded source ports.
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
-  /** Current operator-owned scholarship/badge source + distributed admission quota. */
   ownerPreparation?:OwnerPreparationServices;
+  /** Purpose-specific official canonical course and owner-link source. */
+  ownerExperienceCourse?:TrustedExperienceCourseSource;
   /** Current-approved bounded catalog + server-only HMAC keyset, not a client source. */
   ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   platform:Omit<PostgresPlatformConfig,'now'>;
@@ -77,6 +79,9 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     throw new Error('Restricted owner intake requires all three verified operator loaders');
   if(config.campusAssist)validateCampusSources(config.campusAssist);
   if(config.ownerPreparation)validateOwnerPreparationServices(config.ownerPreparation);
+  if(config.ownerExperienceCourse&&(typeof config.ownerExperienceCourse.read!=='function'
+    ||typeof config.ownerExperienceCourse.revalidate!=='function'))
+    throw new Error('Experience-course source needs current owner grant and revalidation');
   if(config.ownerV2Catalog&&(
     typeof config.ownerV2Catalog.source?.read!=='function'||
     typeof config.ownerV2Catalog.source?.revalidate!=='function'||
@@ -92,6 +97,7 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
     ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
     ...(config.ownerPreparation?{ownerPreparation:config.ownerPreparation}:{}),
+    ...(config.ownerExperienceCourse?{ownerExperienceCourse:config.ownerExperienceCourse}:{}),
     ...(config.ownerV2Catalog?{ownerV2Catalog:config.ownerV2Catalog}:{}),
     ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),

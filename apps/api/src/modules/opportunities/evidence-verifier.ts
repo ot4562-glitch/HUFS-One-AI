@@ -108,6 +108,25 @@ export function verifyRetrievalForAi(
     ||retrieval.asOf!==input.asOf
     ||retrieval.permissionPolicyVersion!==input.permissionPolicyVersion
     ||input.trustedOriginals.length>2000)return null;
+  // #381: a span is not uniquely sourced when the trusted reader returns two
+  // originals with the SAME canonical identity. A successful .some() could
+  // otherwise pick the convenient/first version and bypass OCR-line ambiguity,
+  // even if each individual original has unique line IDs. Fail closed rather
+  // than depending on SQL or array ordering (also applies to TEXT paragraphs).
+  const seenOriginals=new Set<string>();
+  const duplicatedOriginals=new Set<string>();
+  const originalKey=(item:TrustedEvidenceOrigin)=>JSON.stringify([
+    item.kind,item.revisionId,item.kind==='IMAGE'?item.assetId:item.paragraphId,
+  ]);
+  for(const item of input.trustedOriginals){
+    const key=originalKey(item);
+    if(seenOriginals.has(key))duplicatedOriginals.add(key);
+    seenOriginals.add(key);
+  }
+  if(retrieval.evidence.some(span=>duplicatedOriginals.has(JSON.stringify([
+    span.kind,span.sourceRevisionId,
+    span.kind==='IMAGE'?span.assetId:span.paragraphId,
+  ]))))return null;
   const referenced=new Set(retrieval.evidence.map(x=>x.sourceRevisionId));
   if(referenced.size!==retrieval.sourceRevisionIds.length
     ||retrieval.sourceRevisionIds.some(x=>!referenced.has(x)))return null;
