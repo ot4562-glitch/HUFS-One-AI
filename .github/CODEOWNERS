@@ -1,13 +1,13 @@
-# Reviewed team owners (all verified with write permission on 2026-11-09).
-# Assign multiple eligible people to every path: a PR author cannot self-approve.
-# CODEOWNERS requests are advisory until branch protection/ruleset is enforced.
-* @ot4562-glitch @lhh42001 @uisang2004-maker
-/apps/web/ @ot4562-glitch @lhh42001 @qamarrchae
-/apps/api/ @ot4562-glitch @lhh42001 @uisang2004-maker
-/packages/core/ @ot4562-glitch @uisang2004-maker @taewangim-alt
-/packages/ai/ @ot4562-glitch @taewangim-alt @uisang2004-maker
-/packages/contracts/ @ot4562-glitch @lhh42001 @uisang2004-maker
-/infra/ @ot4562-glitch @lhh42001 @uisang2004-maker
-/.github/ @ot4562-glitch @lhh42001 @uisang2004-maker
-/docs/ @ot4562-glitch @lhh42001 @qamarrchae
-/csv/ @ot4562-glitch @qamarrchae @lhh42001
+# HUFS One AI — reviewer owners. All five accounts have repository write access
+# (verified 2026-11-09). The PR author cannot approve their own PR.
+# This is a REVIEW REQUEST MAP, not server-side merge enforcement by itself.
+# An administrator must enable main branch rules requiring:
+#  - at least one independent approval;
+#  - CODEOWNERS review;
+#  - stale approvals dismissed on new commits;
+#  - unresolved review conversations resolved;
+#  - mandatory CI and no administrator bypass.
+#
+# Keep multiple reviewers in the default rule: any eligible co-owner can
+# review even when ot4562-glitch authored the implementation.
+* @ot4562-glitch @taewangim-alt @uisang2004-maker @lhh42001 @qamarrchae
