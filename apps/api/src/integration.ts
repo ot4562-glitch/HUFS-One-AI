@@ -18,6 +18,7 @@ import type {DemoProfilePort} from './modules/profiles/demo-profile.js';
 import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
+import {registerOwnerExperienceCourseRoutes,type TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
 import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
 import {registerExperienceApprovalRoutes} from './modules/profiles/experience-approval-http.js';
@@ -47,6 +48,7 @@ interface SharedDependencies {
   runtime?:RuntimeMode;
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
+  ownerExperienceCourse?:TrustedExperienceCourseSource;
   sourceIngestionControl?:SourceJobControl;
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
   doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
@@ -124,6 +126,8 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
   registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
+  registerOwnerExperienceCourseRoutes({app,session:ownerSession,
+    ...(deps.ownerExperienceCourse?{source:deps.ownerExperienceCourse}:{})});
   registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});
   if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,ownerSession);
   if(deps.experienceCandidates)registerExperienceSkillCandidateRoute(app,deps.experienceCandidates,ownerSession);
