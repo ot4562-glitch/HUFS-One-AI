@@ -7,7 +7,7 @@
 흩어진 **교과·비교과·장학·채용·학사 정보**를 학생의 조건과 연결하고,  
 **왜 추천했는지 · 무엇을 확인해야 하는지 · 다음 행동은 무엇인지** 보여 주는 AI 기반 학생 지원 플랫폼입니다.
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Fastify](https://img.shields.io/badge/Fastify-5-202020?logo=fastify&logoColor=white)
@@ -22,6 +22,13 @@
 
 > [!IMPORTANT]
 > **현재 공개 가능한 범위는 합성 데이터 기반 시연 및 자동 검증된 코드입니다.** 실서비스 출시는 `RELEASE_BLOCKED`이며, 학교 공식 인증·졸업 판정·실학생 데이터 사용·실 NCP/AI 유료 호출의 완료를 뜻하지 않습니다. 프로젝트 소유자의 `OWNER_CONFIRMED_APPROVED`와 실제 환경 구성·권리·검증은 별개입니다. [현재 상태](STATUS.md) · [데이터 승인·권리](docs/AUTHORIZATION.md)
+
+## 개발·검수 현황 — 2026-11-09 전수 PR 정리
+
+- 이번 작업의 코드/의존성 **실제 병합 15건**: 먼저 병합된 #424/#420/#402/#403/#404/#409/#407/#408/#422 **9건**과, 직접 수정 또는 재검토 후 GitHub 병합이 확인된 **#361/#372/#405/#406/#410/#421 6건**입니다. 개별 병합 SHA는 [STATUS](STATUS.md)와 [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)을 참고하세요.
+- **마지막 열린 PR [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)**은 문서 정리 및 독립 리뷰 자동 CI를 선택적 수동 감사로 변경합니다. **이 PR까지 병합되면 이번 전수검토의 열린 PR이 0건**이 됩니다. GitHub [실시간 PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 정본으로 삼습니다.
+- `exact-HEAD independent approval`은 코드 오류가 아니라 사람 승인 부재로 실패하던 잡이었습니다. 소유자 지시에 따라 일반 PR에서는 더 이상 실행되지 않으며, 에이전트는 [문서상 리뷰 절차](docs/PR_WORKFLOW.md)를 따릅니다. 이번 한시적 병합 승인과 **실제 타인 APPROVED는 구별**합니다. 소스·계약·CSV/보안·브라우저·DB CI는 유지합니다.
+- **열린 이슈 28건**은 역할 이슈 5, 자료 요청 1, 추가 기능 13, 기술/보안 7, 후속 정책/UX 2건입니다. 운영 자료의 권리/동의, NCP/HCX 실제 가동 및 사람 평가가 미완료이므로 **`RELEASE_BLOCKED` 유지**.
 
 ![HUFS One AI 시스템 아키텍처: 학생/합성 시연, React 프런트엔드, Fastify API, 추천·학업 코어, PostgreSQL 데이터 경계, 선택적 AI 및 NCP 출시 게이트](docs/images/hufs-one-ai-architecture.svg)
 
@@ -43,7 +50,7 @@ HUFS One AI는 학생이 직접 확인해야 할 근거를 연결합니다.
 
 | 기능 | 학생에게 보이는 가치 | 현재 구현 경계 |
 |---|---|---|
-| **맞춤 기회 탐색** | 관심사와 이수 조건에 맞는 비교과·장학·진로/채용 정보 | 고정 합성 공고 40건·공지 10건 기반 시연 및 관련 코어 |
+| **맞춤 기회 탐색** | 관심사와 이수 조건에 맞는 비교과·장학·진로/채용 정보 | 합성 시연, 허가된 공고 카탈로그 인증 API/서명 커서/웹 연결 (#417). 운영 승인 source/SQL/권리 인수 미연결 |
 | **공지·마감 캘린더** | 확정 마감, 변경된 공지와 확인할 일정 파악 | `SourceRevision` 및 `asOf` 기준; 모든 실시간 공고 수집 아님 |
 | **학점·졸업·What-if** | 취득·수강·계획 학점을 나누고 전공 선택 시나리오 비교 | `RulePack`·합성 원장 기반, 공식 졸업 사정 아님 |
 | **경험·역량·커리어** | 경험 초안 → AI 역량 후보 → 학생 승인·철회 → 추천 활용 | 본인 권한·현재 작업 결과의 일치성 검증; 실데이터 인수 별도 |
