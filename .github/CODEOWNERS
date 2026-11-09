@@ -1,13 +1,16 @@
 # HUFS One AI — reviewer owners. All five accounts have repository write access
 # (verified 2026-11-09). The PR author cannot approve their own PR.
-# This is a REVIEW REQUEST MAP, not server-side merge enforcement by itself.
-# An administrator must enable main branch rules requiring:
-#  - at least one independent approval;
-#  - CODEOWNERS review;
-#  - stale approvals dismissed on new commits;
-#  - unresolved review conversations resolved;
-#  - mandatory CI and no administrator bypass.
-#
-# Keep multiple reviewers in the default rule: any eligible co-owner can
-# review even when ot4562-glitch authored the implementation.
+# This is a REVIEW REQUEST MAP, not server-side merge enforcement.
+# As of 2026-11-09 the owner explicitly removed the mandatory
+# "exact-HEAD independent approval" CI check (#425). Cross-review by
+# another human remains recommended, never falsely recorded as APPROVED.
+# Do not configure automatic peer APPROVED/CODEOWNERS requirements as
+# mandatory merge gates without a separate updated owner instruction.
+# Functional/contract, security, dependency, browser, PostgreSQL and
+# protected CSV checks are unaffected; real data rights and release
+# acceptance remain separate.
+# GitHub administrator branch settings must be verified independently;
+# the CODEOWNERS file alone does not enable any server-side protection.
+# Keep multiple reviewers in the default rule: a non-author team member
+# can review any PR, including those authored by ot4562-glitch.
 * @ot4562-glitch @taewangim-alt @uisang2004-maker @lhh42001 @qamarrchae
