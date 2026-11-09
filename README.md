@@ -188,6 +188,8 @@ HUFS-One-AI/
 
 GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위한 것이며 프로덕션 API/학교 계정 로그인과 다릅니다. 자동 배포 구성은 [Pages 워크플로](.github/workflows/pages-synthetic-preview.yml), 실제 서비스 구성 기준은 [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md)에서 확인하세요.
 
+**2026-11-09 PR·이슈 정리:** [#386 NCS↔경험 의미 매칭 후보](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386)는 코드 검토·독립 교차리뷰와 HEAD 5개 CI 성공 후 `e8d3c9c`로 병합했습니다. 다만 실제 학교/NCS 자료·학생 원장·UI/API/사람 Gold는 여전히 미연결·미인수이므로 [기능 #347](https://github.com/ot4562-glitch/HUFS-One-AI/issues/347)은 OPEN입니다. [#361 FAQ](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361)은 부정 서술어 검증, [#372 OCR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372)는 기관명 동일성 검증의 추가 결함으로 `REQUEST_CHANGES`·병합 보류 상태입니다. **열린 이슈 26건, 출시 `RELEASE_BLOCKED` 유지.** 상세 근거는 [11/09 PR·이슈 감사](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md) 및 [STATUS](STATUS.md)에서 확인하세요.
+
 **2026-11-08 코드·이슈 정리:** 최근 [#391–#396 PR 6건](docs/REVIEW_AND_ISSUE_AUDIT_20261108.md)을 HEAD CI·오너 COMMENT 리뷰 후 main에 병합했습니다. 영수증 TTL·인코딩된 상세 URL·통계 ID 충돌·폐기 안내 체크리스트·일시 503 사용자 재확인·npm 감사·CampusAssist 포트 조립을 수정했습니다. 단, 운영 출처/권리·실학생 UI/실제 학교 계정·NCP/HCX 과금 및 독립 사람 Gold는 **NOT_RUN/NOT_CONNECTED**이며 **RELEASE_BLOCKED**입니다. [현재 열린 버그·변경 요청 PR·완료 이슈](STATUS.md)를 기준으로 후속 인수를 관리합니다.
 
 ## 새 에이전트·협업자: 이슈 생성 1분 가이드
