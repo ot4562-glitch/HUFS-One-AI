@@ -62,6 +62,28 @@ export async function proveSourceImagePg(admin:Pool,reader:Pool):Promise<void>{
   expect((await admin.query('SELECT status FROM source_effective_revisions_vnext WHERE revision_id=$1',[sourceRevisionId])).rows[0]?.status)
     .toBe('NEEDS_REVIEW');
 
+  // #381: prove the immutable original INSERT guard on an isolated temporary
+  // synthetic table. No real source, OCR endpoint or production data is read.
+  // A dedicated connection preserves the temp-table/session boundary.
+  const guardConn=await admin.connect();
+  try{
+    await guardConn.query('CREATE TEMP TABLE synthetic_ocr_id_guard (image_evidence jsonb)');
+    await guardConn.query(`CREATE TRIGGER synthetic_ocr_id_guard_insert BEFORE INSERT
+      ON synthetic_ocr_id_guard FOR EACH ROW
+      EXECUTE FUNCTION public.guard_source_image_ocr_field_ids()`);
+    const ok={ocrFields:[{id:'SYN-OCR-1',text:'synthetic'},{id:'SYN-OCR-2',text:'synthetic'}]};
+    await expect(guardConn.query('INSERT INTO synthetic_ocr_id_guard(image_evidence) VALUES($1::jsonb)',
+      [JSON.stringify(ok)])).resolves.toBeDefined();
+    const duplicateSame={ocrFields:[{id:'SYN-OCR-1',text:'x'},{id:'SYN-OCR-1',text:'x'}]};
+    const duplicateDifferent={ocrFields:[{id:'SYN-OCR-1',text:'x'},{id:'SYN-OCR-1',text:'y'}]};
+    const missingId={ocrFields:[{id:'SYN-OCR-1'},{text:'x'}]};
+    const invalidList={ocrFields:'not-a-list'};
+    for(const bad of [duplicateSame,duplicateDifferent,missingId,invalidList]){
+      await expect(guardConn.query('INSERT INTO synthetic_ocr_id_guard(image_evidence) VALUES($1::jsonb)',
+        [JSON.stringify(bad)])).rejects.toThrow(/(?:duplicate or invalid|invalid OCR field ID list)/);
+    }
+  }finally{guardConn.release();}
+
   // A direct SQL caller cannot attest a different bbox/OCR bundle hash.
   await expect(admin.query(`INSERT INTO source_review_attestations_vnext(
     review_id,revision_id,reviewer_id,decision,checked_at,original_sha256,content_sha256,permission_policy_version,image_evidence_sha256)
