@@ -46,7 +46,9 @@ export function registerOwnerV2CatalogRoutes(input:{
     if(!Number.isFinite(nowMs)||!Number.isFinite(asOfMs)
       ||asOfMs>nowMs||nowMs-asOfMs>15*60_000)
       throw new ApiFailure('INVALID_INPUT');
-    if(!source){
+    if(!source||!signer||!quota){
+      // Startup rejects any partially supplied trio. This zero-config branch
+      // simultaneously narrows all three trusted ports for TypeScript.
       await betaRecheck(req,session,actor);
       return V.OwnerV2CatalogResponseSchema.parse({state:'NOT_CONNECTED',asOf});
     }
