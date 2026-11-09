@@ -22,6 +22,7 @@ import type {CampusAssistPort} from './features/campus-assist/ownerPort.js';
 import type {OwnerCourseEvidencePort} from './features/owner-academics/OwnerExperienceCoursePanel.js';
 import type {OwnerV2CatalogPort} from './features/owner-catalog/OwnerV2CatalogPanel.js';
 import type {OwnerInsightsPort} from './features/owner-insights/OwnerInsightsPanel.js';
+import type {OwnerPreparationPort} from './features/owner-preparation/OwnerPreparationPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
@@ -82,6 +83,7 @@ export interface AppServices {
   /** #366/#348: authenticated, consent-bound full v2 catalog search and signed cursor. */
   readonly ownerV2Catalog?:OwnerV2CatalogPort;
   readonly ownerInsights?:OwnerInsightsPort;
+  readonly ownerPreparation?:OwnerPreparationPort;
   /** Synthetic-only per-subject experience stores; never shared with BETA owner ports. */
   readonly experienceForSubject?: (subject: SubjectAlias) => ExperienceSkillPort;
   /** Current BETA owner's own portfolio, independent of the demo selector. */
@@ -119,7 +121,8 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const state = useDemo(controller);
   const [path, navigate] = useRoute(historyPort);
   const sandbox = useSandbox(controller, state, services.sandbox);
-  const independent = path==='/activities'||path==='/exchange'||path==='/faq'||path==='/owner-academics/experience-courses'
+  const independent = path==='/activities'||path==='/exchange'||path==='/faq'
+    || path==='/owner-scholarships'||path==='/owner-badges'||path==='/owner-academics/experience-courses'
     || (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
     || (!!services.ownerExperience && path === '/experience')
     || path === '/career' || path.startsWith('/owner-opportunities/')

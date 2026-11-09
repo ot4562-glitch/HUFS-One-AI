@@ -65,7 +65,7 @@
 | #347 의미 후보 (이의상) | skills-semantic.ts: proposeSkillMatches, compareSkillsWithCandidates — 요건 문장↔승인 경험 설명의 역량 개념 사전+글자 bigram 점수, 입력 digest 결속 SemanticProposal. 규칙 결과 위에 후보만 추가, 근거 없는 행은 NEEDS_REVIEW로만 전환, 보호 특성 요건(문맥 꼴) 제외, 같은 ID의 요건·경험 판본 충돌은 전부 격리, digest에 경험 승인 판본 포함. 모델 호출 없음. node:crypto를 쓰므로 **브라우저 공용 barrel에서 export하지 않고** 서버 코드가 경로로 직접 import | 입력: JobRequirement, ExperienceEvidence, 서버가 준 정제 경험 텍스트 / 출력: reviewSkillMatchProposals 통과 후보 |
 | #347 직무 | skills-v2.ts: compareSkillsV2, reviewSkillMatchProposals — 공식 NCS 코드↔정본 24 TopicCode 교차표, 미매핑/기록없음 구분 | JobRequirementSchema, TopicCrosswalkSchema / SkillRowV2Schema |
 | #348 공고 | catalog-v2.ts: searchApprovedCatalogV2 — **허가된 전체 스냅샷 내** 검색/필터/안정 정렬/커서. 실DB SQL·서버 서명은 API 담당 | OpportunityCatalogItemSchema, OpportunityQuerySchema / SignedCatalogPageV2Schema |
-| #349 배지 | badges-v2.ts: prepareBadgeV2 — 발급 기준 ALL/ANY·서로 다른 승인경험·기간·발급 분리 | BadgeDefinitionSchema / BadgePreparationV2Schema |
+| #349 배지 | badges-v2.ts: prepareBadgeV2 — 발급 기준 ALL/ANY·서로 다른 승인경험(그룹 안 #380, 그룹 사이 #349)·기간·발급 분리 | BadgeDefinitionSchema / BadgePreparationV2Schema |
 | #350 튜터링 | learning-v2.ts: recommendLearningV2 — 학습목표/관심과목, 학기·캠퍼스·정원·선수과목(검증값만), AI 후보검증 | LearningProgramSchema / LearningRankingV2Schema |
 | #351 취업통계 | employment-v2.ts: evaluatePublishedStat, comparePublishedStats, validateEmploymentStatements — 표본 공개 억제·분자/분모·AI 수치 근거 검산 | EmploymentAggregateSchema / EmploymentValueV2Schema |
 | #352 국제학생 | international-v2.ts: resolveInternationalGuide, reconcileGuideChecklist — 학기/캠퍼스·대상, 사람 승인 KO/EN/ZH 및 한국어 대체·체크리스트 버전 | InternationalGuideSchema / GuideResolutionV2Schema |

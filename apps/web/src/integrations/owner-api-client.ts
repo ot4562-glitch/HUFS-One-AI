@@ -420,6 +420,10 @@ export class HufsOwnerApiClient {
       activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
     }),{signal});
   }
+  /** #343/#349: current owner-only read, never browser-created sources. */
+  getOwnerPreparation(signal?:AbortSignal){
+    return this.request('/api/owner/features/v2/preparation',V.OwnerPreparationResponseSchema,{signal});
+  }
   /** #366: closed feature kind, never browser-supplied source records. */
   async getOwnerInsights(kind:V.OwnerInsightsKind,signal?:AbortSignal){
     const name=clientInput(V.OwnerInsightsKindSchema,kind);

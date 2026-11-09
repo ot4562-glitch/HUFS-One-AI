@@ -170,6 +170,33 @@ describe('#381 duplicate OCR line ids in a trusted image original (synthetic onl
     const lines=[...image.ocrLines,{id:'line-3',text:'심사',pageIndex:1,bboxNorm:[0.3,0.3,0.6,0.4] as const}];
     expect(verifyRetrievalForAi(scenario(imageSpan,[dup(lines)]))).toBeNull();
   });
+  it('rejects two versions of the same trusted image even if both have individually unique line IDs',()=>{
+    const fork:TrustedImageOrigin={...image,ocrLines:[
+      {...image.ocrLines[0]!,text:'지원 불가'},
+      ...image.ocrLines.slice(1),
+    ]};
+    for(const originals of [[image,fork],[fork,image],[image,{...image}]])
+      expect(verifyRetrievalForAi(scenario(imageSpan,originals))).toBeNull();
+  });
+  it('rejects duplicate trusted TEXT paragraph identity rather than selecting a convenient quote',()=>{
+    const alternate:TrustedTextOrigin={...text,text:'서로 다른 문서 내용'};
+    for(const originals of [[text,alternate],[alternate,text],[text,{...text}]])
+      expect(verifyRetrievalForAi(scenario(textSpan,originals))).toBeNull();
+  });
+  it('one ambiguous IMAGE citation rejects the entire mixed TEXT+IMAGE retrieval',()=>{
+    const mixed=scenario(imageSpan,[text,image]);
+    mixed.retrieval={...envelope(imageSpan),evidence:[textSpan,imageSpan]};
+    expect(verifyRetrievalForAi(mixed)?.retrievalState).toBe('READY');
+    for(const originals of [
+      [text,image,{...image}], [{...image},text,image],
+    ])expect(verifyRetrievalForAi({...mixed,trustedOriginals:originals})).toBeNull();
+  });
+  it('accepts different trusted assets and different paragraph IDs in the same source revision',()=>{
+    const distinctImage:TrustedImageOrigin={...image,assetId:'poster-2'};
+    const distinctText:TrustedTextOrigin={...text,paragraphId:'p2',text:'다른 문단'};
+    expect(verifyRetrievalForAi(scenario(imageSpan,[image,distinctImage,text,distinctText]))
+      ?.retrievalState).toBe('READY');
+  });
   it('control: unique ids still verify',()=>{
     expect(verifyRetrievalForAi(scenario(imageSpan,[image]))?.retrievalState).toBe('READY');
   });
