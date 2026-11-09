@@ -11,9 +11,10 @@ const course={courseId:'SYN-COURSE',courseCode:'SYN101',title:'Synthetic course'
     permissionRef:'SYN-PERMISSION',status:'SYNTHETIC'}};
 function fixture(){
   let consent=true,current=true,policy=true,payload:unknown=course,driverDates=false;
+  let projectionCount=1,refsPerProjection=1,proofMode:'NORMAL'|'MISSING'|'DUPLICATE'='NORMAL';
   let projectionActor=actorId;
   let hash=canonicalProjectionHash(payload),sourceStatus='ACTIVE';
-  const calls:string[]=[];
+  const calls:string[]=[],proofInputs:unknown[][]=[];
   const source={revision_id:'SYN-REV',source_id:'SYN-SOURCE',permission_ref:'SYN-PERMISSION',
     status:'ACTIVE',change_kind:'NEW',source_class:'SYNTHETIC',provenance:'SYNTHETIC',
     fetched_at:now,last_verified_at:now,valid_from:null,valid_until:null,
@@ -23,10 +24,22 @@ function fixture(){
     review_checked_at:now,rights_expires_at:'2026-12-01T00:00:00Z',scope_campuses:['SEOUL'],scope_majors:null,
     scope_colleges:null,scope_major_roles:null,scope_admission_types:null,
     scope_enrollment_states:null,scope_graduation_terms:null,cohort_min:null,cohort_max:null};
-  const pool:ReviewerSqlPool={connect:async()=>({query:async(sql)=>{
+  const pool:ReviewerSqlPool={connect:async()=>({query:async(sql,params)=>{
     calls.push(sql);
     if(sql.includes('FROM api_self_consents'))return {rows:consent?[{version:'1',
       choices_json:{personalStorage:true},updated_at:now}]:[]};
+    if(sql.includes('FROM api_owner_approved_projections')
+      &&(projectionCount!==1||refsPerProjection!==1))return {rows:current?
+      Array.from({length:projectionCount},(_,index)=>{
+        const value={...course,courseId:'SYN-COURSE-'+index};
+        return {projection_id:'SYN-PROJECTION-'+index,actor_id:projectionActor,kind:'COURSE',
+          entity_id:'SYN-COURSE-'+index,version:'SYN-CATALOG-1',payload_json:value,
+          payload_sha256:canonicalProjectionHash(value),
+          sources_json:Array.from({length:refsPerProjection},()=>({
+            sourceId:'SYN-SOURCE',revisionId:'SYN-REV',permissionRef:'SYN-PERMISSION'})),
+          reviewed_by:'SYN-INDEPENDENT',reviewed_at:now,as_of:now,starts_at:now,
+          expires_at:'2026-12-01T00:00:00Z'};
+      }):[]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:current?[{
       projection_id:'SYN-PROJECTION',actor_id:projectionActor,kind:'COURSE',entity_id:'SYN-COURSE',
       version:'SYN-CATALOG-1',payload_json:payload,payload_sha256:hash,
@@ -35,13 +48,20 @@ function fixture(){
       reviewed_at:driverDates?new Date(now):now,as_of:driverDates?new Date(now):now,
       starts_at:driverDates?new Date(now):now,
       expires_at:driverDates?new Date('2026-12-01T00:00:00Z'):'2026-12-01T00:00:00Z'}]:[]};
-    if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:[{...source,
-      ...(driverDates?{fetched_at:new Date(now),last_verified_at:new Date(now),
-        review_checked_at:new Date(now)}:{}),status:sourceStatus}]};
+    if(sql.includes('FROM jsonb_to_recordset(')){
+      proofInputs.push(params?[...params]:[]);
+      const row={...source,
+        ...(driverDates?{fetched_at:new Date(now),last_verified_at:new Date(now),
+          review_checked_at:new Date(now)}:{}),status:sourceStatus};
+      return {rows:proofMode==='MISSING'?[]:proofMode==='DUPLICATE'?[row,row]:[row]};
+    }
     return {rows:[]};
   },release:()=>{}})};
   const catalog=new PostgresTrustedOwnerCatalog(pool,{resolve:async()=>policy?grants:null},()=>now);
-  return {catalog,calls,source,setConsent:(value:boolean)=>{consent=value;},
+  return {catalog,calls,proofInputs,source,
+    setBatch:(count:number,perProjection:number)=>{projectionCount=count;refsPerProjection=perProjection;},
+    setProofMode:(mode:'NORMAL'|'MISSING'|'DUPLICATE')=>{proofMode=mode;},
+    setConsent:(value:boolean)=>{consent=value;},
     setActor:(value:string)=>{projectionActor=value;},
     setCurrent:(value:boolean)=>{current=value;},setPolicy:(value:boolean)=>{policy=value;},
     setPayload:(value:unknown,rehashed=false)=>{payload=value;if(rehashed)hash=canonicalProjectionHash(value);},
@@ -116,6 +136,31 @@ describe('approved owner PostgreSQL catalog (SQL protocol tests)',()=>{
     await expect(h.catalog.listCourses(query)).rejects.toThrow();
     const wrong=fixture();wrong.setPayload({...course,source:{...course.source,revisionId:'SYN-OTHER'}},true);
     await expect(wrong.catalog.listCourses(query)).rejects.toThrow();
+  });
+  it('runs one distinct-source SQL proof lookup for 500 projections with 100 repeated refs each',async()=>{
+    const h=fixture();h.setBatch(500,100);
+    const read=await h.catalog.reader.read({actorId,kind:'COURSE',asOf:now},now);
+    expect(read?.rows).toHaveLength(500);
+    expect(h.calls.filter(sql=>sql.includes('FROM jsonb_to_recordset('))).toHaveLength(1);
+    expect(h.proofInputs).toHaveLength(1);
+    expect(JSON.parse(String(h.proofInputs[0]![0]))).toEqual([{
+      source_id:'SYN-SOURCE',revision_id:'SYN-REV',permission_ref:'SYN-PERMISSION',
+    }]);
+    expect(h.calls.some(sql=>sql.includes('REPEATABLE READ READ ONLY'))).toBe(true);
+  });
+  it('fails closed if requested proofs are missing or SQL joins yield duplicate matches',async()=>{
+    for(const mode of ['MISSING','DUPLICATE'] as const){
+      const h=fixture();h.setProofMode(mode);
+      expect(await h.catalog.reader.read({actorId,kind:'COURSE',asOf:now},now)).toBeNull();
+      expect(h.calls.some(sql=>sql.includes('FROM jsonb_to_recordset('))).toBe(true);
+    }
+  });
+  it('deduplicates 100 source references within a single projection before its SQL lookup',async()=>{
+    const h=fixture();h.setBatch(1,100);
+    const read=await h.catalog.reader.read({actorId,kind:'COURSE',asOf:now},now);
+    expect(read?.rows).toHaveLength(1);
+    expect(h.calls.filter(sql=>sql.includes('FROM jsonb_to_recordset('))).toHaveLength(1);
+    expect(JSON.parse(String(h.proofInputs[0]![0]))).toHaveLength(1);
   });
   it('invalidates a read receipt after owner consent, source policy or current projection withdrawal',async()=>{
     for(const mutate of [
