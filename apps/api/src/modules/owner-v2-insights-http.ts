@@ -121,7 +121,10 @@ export function registerOwnerInsightsRoutes(input:{
         case 'RECOGNITION':
           if(!unique(snapshot.cases.map(c=>c.activity)))throw new Error('duplicate activity');
           report={kind,reports:snapshot.cases.map(c=>V.RecognitionReportV2Schema.parse(
-            prepareRecognitionV2({rule:c.rule,activity:c.activity,proofs:c.proofs,asOf,mode:'LIVE'})))};
+            prepareRecognitionV2({rule:c.rule,
+              activity:{id:c.activity.id,kind:c.activity.kind,
+                ...(c.activity.endedAt?{endedAt:c.activity.endedAt}:{})},
+              proofs:c.proofs,asOf,mode:'LIVE'})))};
           break;
         case 'SKILLS':
           if(!unique(snapshot.requirements)||!unique(snapshot.experiences)
