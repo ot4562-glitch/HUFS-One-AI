@@ -44,7 +44,7 @@ const KIND_WORDS:Readonly<Record<ProofKind,readonly [string,number][]>>={
 const NON_PROOF=['영수증','재학증명서','성적증명서','졸업증명서','주민등록','가족관계','통장사본','receipt','invoice'];
 const PERSONAL=/성명|이름|생년월일|주민등록번호|학번|연락처|전화|휴대폰|e-?mail|이메일|\d{6}\s*-\s*[1-4]\d{6}|01[016789][-\s.]?\d{3,4}[-\s.]?\d{4}|[\w.+-]+@[\w-]+\.[\w.-]+|\b\d{7,}\b|\bname\s*:|date of birth|(?:위|상기)\s*(?:사람|학생|자|인)\s*[가-힣]{2,4}(?:은|는|이|군|양|님)?(?=[\s,.]|$)/i;
 const AWARD_TITLE=/최우수상|우수상|장려상|금상|은상|동상|입상|특별상|대상(?=\s*(?:을|수상|$))|grand prize|first prize|excellence award/i;
-const ORG=/대학교|대학|재단|협회|센터|위원회|학회|연구원|연구소|교육원|공사|공단|주식회사|\(주\)|㈜|복지관|도서관|박물관|수련관|협의회|연합회|본부|구청|시청|군청|도청|은행|university|foundation|association|center|centre|institute|council|society|company|inc\.?|corp\.?|ltd\.?/i;
+const ORG=/대학교|대학|재단|협회|센터|위원회|학회|연구원|연구소|교육원|공사|공단|주식회사|\(주\)|㈜|복지관|복지원|도서관|박물관|수련관|협의회|연합회|본부|구청|시청|군청|도청|은행|university|foundation|association|center|centre|institute|council|society|company|inc\.?|corp\.?|ltd\.?/i;
 const ROLES=['대표이사','이사장','센터장','위원장','총장','관장','회장','원장','학장','소장','청장','대표','장','president','director','ceo'];
 const ISSUER_CUE=/발급\s*기관|발행\s*기관|주관|주최|기관명|issued\s*by/i;
 const PERIOD_CUE=/기간|일시|일정|period|duration/i;
