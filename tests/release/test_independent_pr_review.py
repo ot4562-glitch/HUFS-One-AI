@@ -7,6 +7,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 from urllib.parse import urlsplit, parse_qs
+from urllib.error import HTTPError
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github/workflows/independent-pr-review.yml"
@@ -30,7 +31,8 @@ def submitted(login, state, sha=HEAD, number=1):
     }
 
 
-def run_gate(reviews, permissions=None, author="ot4562-glitch", heads=None):
+def run_gate(reviews, permissions=None, author="ot4562-glitch", heads=None,
+             draft=False, base="main"):
     script = embedded_script()
     statuses = list(heads or [HEAD, HEAD])
     permissions = permissions or {"lhh42001": "write", "qamarrchae": "write"}
@@ -42,13 +44,15 @@ def run_gate(reviews, permissions=None, author="ot4562-glitch", heads=None):
         requests.append(path)
         if path.endswith("/pulls/42"):
             sha = statuses.pop(0) if statuses else HEAD
-            result = {"state":"open", "draft":False, "base":{"ref":"main"},
+            result = {"state":"open", "draft":draft, "base":{"ref":base},
                       "head":{"sha":sha}, "user":{"login":author}}
         elif path.endswith("/pulls/42/reviews"):
             page = int(parse_qs(url.query).get("page", ["1"])[0])
             result = reviews if page == 1 else []
         elif "/collaborators/" in path and path.endswith("/permission"):
             login = path.split("/collaborators/")[1].split("/")[0]
+            if permissions.get(login) == "HTTP_403":
+                raise HTTPError(request.full_url, 403, "forbidden", None, None)
             result = {"permission": permissions.get(login, "read")}
         else:
             raise AssertionError("Unexpected URL: " + url.geturl())
@@ -103,6 +107,58 @@ class IndependentCollaboratorReviewTests(unittest.TestCase):
         ok, _, _ = run_gate([submitted("lhh42001", "APPROVED")],
                             heads=[HEAD, STALE])
         self.assertFalse(ok)
+
+    def test_draft_denies_even_with_valid_current_approval(self):
+        ok, msg, _ = run_gate([submitted("lhh42001", "APPROVED")], draft=True)
+        self.assertFalse(ok)
+        self.assertIn("only open ready PRs", msg)
+
+    def test_stacked_pr_base_retargets_fail_closed(self):
+        # A skipped required job can count as success. The job must instead
+        # execute and explicitly deny a non-main branch even with peer approval.
+        ok, msg, _ = run_gate([submitted("lhh42001", "APPROVED")], base="feature-stack")
+        self.assertFalse(ok)
+        self.assertIn("into main", msg)
+
+    def test_dismissed_approval_is_not_accepted(self):
+        reviews = [submitted("lhh42001", "APPROVED", number=1),
+                   submitted("lhh42001", "DISMISSED", number=2)]
+        ok, _, _ = run_gate(reviews)
+        self.assertFalse(ok)
+
+    def test_dismissed_change_request_no_longer_blocks_another_peer(self):
+        reviews = [submitted("qamarrchae", "CHANGES_REQUESTED", number=1),
+                   submitted("qamarrchae", "DISMISSED", number=2),
+                   submitted("lhh42001", "APPROVED", number=3)]
+        ok, msg, _ = run_gate(reviews)
+        self.assertTrue(ok, msg)
+
+    def test_comment_never_clears_existing_change_request(self):
+        reviews = [submitted("qamarrchae", "CHANGES_REQUESTED", number=1),
+                   submitted("qamarrchae", "COMMENTED", number=2),
+                   submitted("lhh42001", "APPROVED", number=3)]
+        ok, _, _ = run_gate(reviews)
+        self.assertFalse(ok)
+
+    def test_bot_never_counts_as_independent_collaborator(self):
+        ok, _, _ = run_gate([submitted("dependabot[bot]", "APPROVED")],
+                            {"dependabot[bot]": "write"})
+        self.assertFalse(ok)
+
+    def test_permission_403_fails_closed(self):
+        with self.assertRaises(HTTPError) as captured:
+            run_gate([submitted("lhh42001", "APPROVED")],
+                     {"lhh42001": "HTTP_403"})
+        self.assertEqual(captured.exception.code, 403)
+
+    def test_base_edited_event_reruns_non_skipped_required_job(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("edited", text)
+        self.assertIn("converted_to_draft", text)
+        header = text.split("\n  independent-approval:\n", 1)[1].split("\n    steps:", 1)[0]
+        self.assertNotIn("    if:", header)
+        # No fallback to skipped=true or manual approval bypass.
+        self.assertIn("only open ready PRs into main", embedded_script())
 
     def test_no_student_original_checkout_or_target_event(self):
         body = WORKFLOW.read_text(encoding="utf-8")
