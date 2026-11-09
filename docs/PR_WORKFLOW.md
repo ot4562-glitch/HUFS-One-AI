@@ -2,26 +2,25 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
-## 병합 필수 조건 — 2026-11-09 사용자 직접 지시 (이전 예외 규정 폐기)
+## PR 협업 검토 운영 지침 — 2026-11-09 사용자 지시로 자동 승인 강제 제거
 
-**모든 PR은 작성자가 아닌 저장소 협업자의 실제 `APPROVED` 리뷰가 적어도 1건 있어야만 병합합니다.** CI 통과, 작성자의 `COMMENT`, 봇의 리뷰/코멘트, 작성자 자신의 검토, 사용자가 '검토/병합'을 일괄 요청했다는 사실, 오래된 다른 커밋의 승인 어느 것도 이를 대체할 수 없습니다. 정책상 **예외가 없습니다**. 작성자가 `ot4562-glitch`이면 반드시 `taewangim-alt`, `uisang2004-maker`, `lhh42001`, `qamarrchae` 등 write 이상 권한이 확인된 *다른 사람*의 승인만 인정합니다. AI/웹/데이터/보안 등 영향을 받는 책임 분야의 리뷰어를 지정하고, 권한/권리 또는 운영 승인이 추가로 필요할 경우 각각 별도 인수합니다.
+**GitHub Actions가 외부 협업자 `APPROVED` 또는 exact-HEAD 리뷰 유무 때문에 실패하도록 하지 않습니다.** 자동 차단 워크플로 `.github/workflows/independent-pr-review.yml`과 이에 종속된 테스트를 제거하고, 사람 리뷰 원칙은 문서 가이드로 유지합니다. 승인 미수신을 코드·보안 테스트 실패로 표시하지 않습니다.
 
-병합 직전에는 현재 PR HEAD SHA와 각 `APPROVED`의 `commit_id`를 대조합니다. 새 커밋이나 base 충돌 수정으로 HEAD가 바뀌면 **새 HEAD에 대해 다시 승인**을 받아야 합니다. 유효한 `CHANGES_REQUESTED`/미해결 리뷰 스레드가 있거나, 필수 CI가 실패·대기·누락되었으면 병합 금지입니다. `DRAFT`도 병합하지 않습니다. CODEOWNERS에 작성자 자신이 올라 있더라도 본인이 승인하는 것은 인정하지 않습니다. 에이전트와 담당자는 GitHub의 리뷰 승인 권한을 대신 행사하지 않습니다. **승인 없는 PR을 에이전트가 독단적으로 병합하거나 직접 main에 push하지 않습니다.**
+- 작성자 외 담당자의 교차 리뷰는 **권장 운영 원칙**입니다. CODEOWNERS는 담당자 안내이며 승인 없는 PR을 사람 승인 완료로 기록하지 않습니다. 에이전트/작성자 COMMENT를 타인 `APPROVED`로 주장하지 않습니다.
+- 에이전트는 PR diff·계약·개인정보·현재 HEAD의 기능/보안 CI·충돌·검토 의견을 검증하고 실제 버그나 실패한 필수 테스트를 먼저 수정해야 합니다. 테스트하지 않은 영역을 `PASS`로 꾸미지 않고, 팀원이 지적한 위험과 미해결 인수를 남깁니다.
+- 사람의 `CHANGES_REQUESTED`와 리뷰 스레드는 결함인지 검토하고 수정·답변하되, 그 상태 자체를 별도 자동 승인 체크로 병합 차단하지 않습니다. GitHub 리뷰 `APPROVED`를 에이전트가 사람 대신 조작하지 않습니다.
+- **이번 2026-11-09의 일괄 PR 수정·병합은 사용자 명시적 허용**에 따릅니다. 향후에도 자동 승인 강제 CI 없이 직접 검수하고, 출시·학교 원본 사용·유료 AI/NCP 운영 등 고위험 변경에는 별도 사람/권리자의 실제 승인이 필요합니다.
+- GitHub 저장소 관리자 Settings의 required status checks/branch protection은 이 파일 수정만으로 자동 해제되지 않습니다. 저장소 Ruleset API는 빈 목록이나 Branch protection 조회는 제한되어, 이 이름이 서버에서 필수 지정됐는지 확인할 수 없으면 관리자가 확인해야 합니다.
 
-### GitHub의 강제 설정 (코드 변경만으로 자동 활성화되지 않음)
-
-저장소 **Settings → Rules → Rulesets** 또는 **Settings → Branches**에서 `main` 대상 보호 규칙을 관리자 권한으로 **Active** 상태로 설정해야 합니다. PR 필수, **승인 1명 이상**, **Code Owners 리뷰 필수**, 새 커밋 시 오래된 승인 무효화, 리뷰 스레드 해결 필수, 필수 CI 통과, 관리자·봇·이슈 관리자의 bypass 허용 안 함, 직접 push/force push 금지가 필요합니다. [CODEOWNERS](../.github/CODEOWNERS)는 리뷰 요청 대상만 정하며, 보호 규칙이 실제 켜졌다는 뜻이 아닙니다. 저장소 UI에서 규칙·해당 PR의 병합 차단 메시지를 직접 재검증하기 전에는 **`REVIEW_PROTECTION_NOT_VERIFIED`** 입니다.
+**PR 병합과 정식 출시를 혼동하지 않습니다.** 공식 출처·개인정보 동의·인적 Gold·운영 DB·NCP/HCX 실제 실행이 검증되지 않았다면 `RELEASE_BLOCKED`를 유지합니다.
 
 ### 사후 검토 부채
 
 2026-11-09에 다른 팀원의 `APPROVED` 없이 `#399/#400/#401/#411`이 병합된 것을 리뷰 API로 확인했습니다. 이는 **이 정책을 충족하지 않은 병합**입니다. 이미 병합된 Git 기록에 사후 검토를 붙여도 '병합 전 승인'으로 소급 인정하지 않으며, 서명/기록을 소급 조작하지 않습니다. 각 SHA의 코드·보안/자료 영향을 다른 사람에게 재검토받고 필요하면 **별도 수정 또는 되돌리기 PR을 독립 승인 후** 처리합니다. 확인 없이 main을 무단 force push하거나 기존 원본을 편집하지 않습니다. 이 문제를 새 PR 검토의 예외 선례로 삼지 않습니다.
 
-### CI 구현 제안 [#415] — 서버측 보호 설정과 구분
+### 과거 승인 강제 검사 [#415] — 2026-11-09 제거
 
-- `.github/workflows/independent-pr-review.yml`은 `pull_request` 및 `pull_request_review` 이벤트에 대해 현재 PR HEAD를 재조회하고, GitHub REST의 실제 review commit·해당 계정 협업 쓰기권한을 검증합니다. 작성자·봇·`COMMENTED`·stale approval·미해결 `CHANGES_REQUESTED`는 승인으로 세지 않습니다.
-- 학생 자료·원본 코드 checkout 없이 read-only GitHub API만 사용합니다. `tests/release/test_independent_pr_review.py`는 승인·반려·동시 HEAD 변경·권한 실패를 합성 REST로 검증하며 `TASK-00` allowlist에 검사 대상 workflow만 추가합니다.
-- **주의:** 리뷰가 아직 없으면 workflow의 `exact-HEAD independent approval` 체크 실패가 정상입니다. 이 check를 Ruleset required status check로 지정할 때는 실제 GitHub 관리자가 워크플로 이벤트와 브랜치 우회 정책을 함께 검증해야 합니다. `CODEOWNERS`는 [#413](https://github.com/ot4562-glitch/HUFS-One-AI/pull/413)에서 독립 승인 후 병합한 5인 리뷰어 지도를 그대로 유지합니다. 기존 승인된 정책과 중복·상충하는 추가 CODEOWNERS/AGENTS 교체는 하지 않습니다.
-- 본 기능은 [PR #415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415)의 제안이며 해당 PR이 **타 협업자의 최신 HEAD APPROVED/CI를 거쳐 병합되기 전에는 적용 완료 상태가 아닙니다.** 관리자 Ruleset 활성화도 [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416)의 별도 인수입니다.
+PR #415로 도입된 `exact-HEAD independent approval` 자동 검사는 사용자 지시로 제거되었습니다. 과거 해당 작업의 실패는 대개 미승인으로 인한 것이지 제품 코드 테스트 실패가 아니었습니다. 검사의 역사적 실행 결과와 팀원 리뷰 기록은 보존하지만 **현재 필수 병합 조건이 아닙니다.** GitHub Settings에서 해당 검사 이름을 Required check로 지정했다면 관리자가 별도로 해제해야 합니다. 관련 [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416)은 변경된 운영 정책을 기준으로 재검토합니다.
 
 ## 2026-11-09 최신 검수 결과
 
