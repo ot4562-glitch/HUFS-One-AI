@@ -38,7 +38,7 @@ function setup(enabled=true){
         term:'2026-2',audienceCodes:['INTERNATIONAL_STUDENT']}}]},
   };
   const source:TrustedOwnerInsightsSource={
-    read:vi.fn(async ({kind})=>({...cases[kind],receipt})),
+    read:vi.fn(async ({kind}:{kind:V.OwnerInsightsKind})=>({...cases[kind],receipt})),
     revalidate:vi.fn(async ({actorId:who,receipt:stamp})=>
       rights&&who===actorId&&stamp.consentVersion===consent
       &&stamp.rightsVersion===head),
