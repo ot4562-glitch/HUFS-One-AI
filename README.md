@@ -28,7 +28,7 @@
 - 이번 작업의 코드/의존성 15건·리뷰 정책 #425·최종 문서 #419를 합쳐 **실제 병합 17건** (GitHub OPEN PR 0건): 먼저 병합된 #424/#420/#402/#403/#404/#409/#407/#408/#422 **9건**과, 직접 수정 또는 재검토 후 GitHub 병합이 확인된 **#361/#372/#405/#406/#410/#421 6건**입니다. 개별 병합 SHA는 [STATUS](STATUS.md)와 [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)을 참고하세요.
 - **정책 PR [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)**도 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)에 실제 병합되었습니다. 승인 검사용 GitHub Actions 및 그 전용 테스트·CI 참조를 완전히 제거하고 리뷰 기준을 AGENTS/PR_WORKFLOW 문서에 남겼습니다. **마지막 문서 PR [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)**도 최신 HEAD 일반 CI 11/11 성공 후 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)으로 병합 완료했습니다. 이제 [OPEN PR 0건](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)이며 기존 과거 시점의 대기 기록은 역사적 스냅샷입니다. GitHub [실시간 PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 정본으로 삼습니다.
 - `exact-HEAD independent approval`은 코드 오류가 아니라 사람 승인 부재로 실패하던 잡이었습니다. 소유자 지시에 따라 #425에서 관련 자동 워크플로를 삭제하고, 에이전트는 [문서상 리뷰 절차](docs/PR_WORKFLOW.md)를 따릅니다. 이번 한시적 병합 승인과 **실제 타인 APPROVED는 구별**합니다. 소스·계약·CSV/보안·브라우저·DB CI는 유지합니다.
-- **열린 이슈 28건**은 역할 이슈 5, 자료 요청 1, 추가 기능 13, 기술/보안 7, 후속 정책/UX 2건입니다. 운영 자료의 권리/동의, NCP/HCX 실제 가동 및 사람 평가가 미완료이므로 **`RELEASE_BLOCKED` 유지**.
+- **코드 감사 1차 활성 이슈 #427/#429/#430/#433 4건**을 포함한 2026-11-09 기준 열린 이슈는 **32건**(변경 금지 역할 5건 포함)입니다. [최신 상태](STATUS.md)·[코드 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md). 실제 출처 권리·NCP/HCX·사람 인수 미완으로 **`RELEASE_BLOCKED` 유지**.
 
 ![HUFS One AI 시스템 아키텍처: 학생/합성 시연, React 프런트엔드, Fastify API, 추천·학업 코어, PostgreSQL 데이터 경계, 선택적 AI 및 NCP 출시 게이트](docs/images/hufs-one-ai-architecture.svg)
 
@@ -251,100 +251,9 @@ GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위�
 | **[대규모 실제 자료 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)** | 김채윤 및 AI/웹 개발팀 — 13개 기능 공식 데이터/포스터·권리·Gold 요구 |
 | **[PR·리뷰 기준](docs/PR_WORKFLOW.md)** | 개발자 — CI·독립 리뷰·병합 절차 |
 
-<details>
-<summary><b>모든 개발·검증·운영 문서 링크 펼치기</b></summary>
+특정 영역의 상세 설계·실행 지침은 필요한 경우에만 확인하세요: [웹](apps/web/README.md) · [API](apps/api/README.md) · [팀 책임](docs/WORKSTREAMS.md) · [정식 운영](docs/PRODUCTION_RUNTIME.md) · [독립 평가](docs/INDEPENDENT_EVALUATION.md) · [NCP 운영](infra/ncp/README.md) · [코드 감사·이슈 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md). 코드 수정 시 해당 폴더의 `AGENTS.md`가 우선합니다.
 
-### 프로젝트 소개·상태·설계
-
-- [AGENTS.md](AGENTS.md) — 전체 개발 규칙·소유권·검증 원칙.
-- [APPLICATION.md](APPLICATION.md) — 공모전 제출과 사실 확인.
-- [Architecture.md](Architecture.md) — A00–A19 기술·데이터·권한 계약.
-- [CLOUD.md](CLOUD.md) — 실제 클라우드 구성·인증·접근 통제.
-- [PROJECT.md](PROJECT.md) — 문제 정의와 제품 범위.
-- [Proposal.md](Proposal.md) — 팀원용 서비스 제안과 계획.
-- [README.md](README.md) — 기획·차이점·AI 활용·구현·기대효과.
-- [REPORT.md](REPORT.md) — 테스트와 사람/실환경 결과 보고.
-- [STATUS.md](STATUS.md) — 현재 구현·구성·검증.
-- [TEAM_SURVEY.md](TEAM_SURVEY.md) — 학생 원본 입력·내용 확인.
-
-### 서비스·시연·협업
-
-- [AUTHORIZATION](docs/AUTHORIZATION.md) — 소유자가 확인한 승인 완료와 실제 검증 구분.
-- [PRODUCTION_RUNTIME](docs/PRODUCTION_RUNTIME.md) — production 구성·진입점·실행 명령.
-- [CONTRACT_BOUNDARIES](docs/CONTRACT_BOUNDARIES.md) — 공통 계약과 소비자 범위.
-- [DATA_GOVERNANCE](docs/DATA_GOVERNANCE.md) — 승인된 데이터 처리·사용자별 보호.
-- [DEMO_MANUAL](docs/DEMO_MANUAL.md) — 합성 시연 실행.
-- [EMPTY_DEMO_RUNBOOK](docs/EMPTY_DEMO_RUNBOOK.md) — 빈 계정·가상 동아리 시연.
-- [GENERATED_CLUB_POSTER](docs/GENERATED_CLUB_POSTER_20261105.md) — 합성 이미지 명세와 근거.
-- [HUFSABILITY_UI_COMPONENT_ATLAS](docs/HUFSABILITY_UI_COMPONENT_ATLAS.md) — 학생 화면 76개의 텍스트 UI 조사.
-- [HUMAN_ACCEPTANCE_GATE](docs/HUMAN_ACCEPTANCE_GATE_20261104.md) — 실제 기능·환경·품질 검증표.
-- [INDEPENDENT_EVALUATION](docs/INDEPENDENT_EVALUATION.md) — 추천/미디어/시간의 독립 평가.
-- [LAYA_CPU_SPIKE_PROTECTION](docs/LAYA_CPU_SPIKE_PROTECTION.md) — 선택 worker의 자원·중단 정책.
-- [NCP_OPERATIONS](docs/NCP_OPERATIONS_2026.md) — NCP 계정·비용·운영 담당.
-- [본선 전 운영·권리·비용 사전 계획](docs/PREFINAL_OPERATIONS_PLAN.md) — #12/#261 요구사항·견적·설정/인수 양식.
-- [PR_WORKFLOW](docs/PR_WORKFLOW.md) — 최신 HEAD 리뷰·CI·병합.
-- [PRODUCT_ACTIVATION_RUNBOOK](docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md) — 실제 구성·실행 순서.
-- [REMAINING_IMPLEMENTATION](docs/REMAINING_IMPLEMENTATION_20261104.md) — 잔여 코드와 실제 검증 구분.
-- [REVIEWER_ACCESS](docs/REVIEWER_ACCESS.md) — 심사자 초대·합성 접근 범위.
-- [SERVICE_DELIVERY_PLAN](docs/SERVICE_DELIVERY_PLAN.md) — 서비스 운영·유지보수 조건.
-- [TEAM_GUIDE](docs/TEAM_GUIDE.md) — 팀원 설명·시연 안내.
-- [TEAM_PROGRESS](docs/TEAM_PROGRESS.md) — 담당별 실제 검증 현황.
-- [TRUSTED_RAG_MEDIA_VERSIONING](docs/TRUSTED_RAG_MEDIA_VERSIONING.md) — SourceRevision/미디어/시점·인용 계약.
-- [UI_MENU_COVERAGE](docs/UI_MENU_COVERAGE.md) — 실제 메뉴와 지원 범위.
-- [WORKSTREAMS](docs/WORKSTREAMS.md) — 협업자별 책임.
-
-### 웹·API·자산
-
-- [API AGENTS](apps/api/AGENTS.md) — 서버/SQL/AI 코드 규칙.
-- [API README](apps/api/README.md) — API 모듈·실행·검증.
-- [웹 AGENTS](apps/web/AGENTS.md) — UI·모바일/접근성 규칙.
-- [웹 README](apps/web/README.md) — 화면 경로와 테스트.
-- [웹 배너 자산](apps/web/src/shell/assets/README.md) — 이미지 provenance·접근성.
-- [자산 AGENTS](assets/AGENTS.md) — 이미지 검증·배포 범위.
-
-### AI·계약·코어
-
-- [AI AGENTS](packages/ai/AGENTS.md) — OCR/HCX/Laya 개발 책임.
-- [AI README](packages/ai/README.md) — 네 가지 AI 작업·공급자 계약.
-- [계약 AGENTS](packages/contracts/AGENTS.md) — Zod/타입 변경 절차.
-- [계약 README](packages/contracts/README.md) — 공통 DTO·버전.
-- [학업 AGENTS](packages/core/src/academics/AGENTS.md) — 원장·졸업·What-if 규칙.
-- [전망 AGENTS](packages/core/src/forecast/AGENTS.md) — 개설·시점/불확실성.
-- [정규화 AGENTS](packages/core/src/normalization/AGENTS.md) — TopicCode/공고 입력.
-- [공지 AGENTS](packages/core/src/notices/AGENTS.md) — 적용 조건과 날짜.
-- [추천 AGENTS](packages/core/src/opportunities/AGENTS.md) — 순위·자격·근거.
-- [추천 README](packages/core/src/opportunities/README.md) — 순수 코어 호출 전 계약.
-- [개인정보 정책 AGENTS](packages/core/src/privacy/AGENTS.md) — 현재 사용자 권한·삭제/철회.
-- [fixture AGENTS](packages/fixtures/AGENTS.md) — 합성 회귀 데이터.
-- [공용 UI AGENTS](packages/ui/AGENTS.md) — UI 컴포넌트·접근성.
-
-### 인프라·배포
-
-- [인프라 AGENTS](infra/AGENTS.md) — IaC/OS·worker·CI 책임.
-- [PDF_RUNTIME](infra/ai/PDF_RUNTIME.md) — PDF 페이지 렌더/OCR 근거.
-- [NCP 에이전트 매뉴얼](infra/ncp/AGENT_DEPLOYMENT_MANUAL.md) — 실제 배포 절차.
-- [NCP 인계 양식](infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md) — 설정·비용·복구 결과.
-- [NCP QUICKSTART](infra/ncp/QUICKSTART.md) — 계획과 비공개 preview.
-- [NCP README](infra/ncp/README.md) — 네트워크/호스트·복구 코드.
-- [Terraform host](infra/ncp/terraform/host/README.md) — host 구성.
-- [Terraform network](infra/ncp/terraform/network/README.md) — VPC/방화벽 계획.
-
-### 참고 자료·심사자
-
-- [자료 사용 범위](reference/hufsability/DATA_PERMISSION_GATE.md) — 학교·학생 자료 처리 구분.
-- [학교 기능 INVENTORY](reference/hufsability/INVENTORY.md) — 공개 기능·관찰 범위·출처.
-- [NCP 비용·구조](reference/ncp/COST_AND_ARCHITECTURE.md) — 실제 비용 항목/구성 후보.
-- [NCP 서비스 목록](reference/ncp/SERVICE_CATALOG.md) — 서비스 선택 범위.
-- [심사자 초대 PDF](reference/reviewer/ReviewerInvitation.TEMPLATE.pdf) — 비활성 예시 양식.
-
-### 검증·도구
-
-- [작업 이슈 양식](.github/ISSUE_TEMPLATE/agent-task.md) — 범위·완료·증거.
-- [PR 양식](.github/PULL_REQUEST_TEMPLATE.md) — 변경/검증·롤백.
-- [테스트 AGENTS](tests/AGENTS.md) — 자동검증과 실제 인수 구분.
-- [tools README](tools/README.md) — 계약·의존성·산출물 감사.
-
-</details>
+> 과거 팀 진척·제품 계획의 중복 문서 5종은 삭제하고 Git 커밋 이력에 보존했습니다. 과거 이력/PR별 검토 증거는 [2026-11-08 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261108.md)과 [보존 상태](docs/archive/STATUS_20261107.md)에서 확인합니다. 실제 권한·자료 삭제/공개 승인 문서는 삭제 대상이 아닙니다.
 
 ---
 
