@@ -53,6 +53,7 @@ export interface OperatorPostgresInputs {
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
   ownerCounseling?:PostgresApplicationConfig['ownerCounseling'];
+  ownerPreparation?:PostgresApplicationConfig['ownerPreparation'];
   /** Requires current purpose-granted academic source. */
   ownerExperienceCourse?:PostgresApplicationConfig['ownerExperienceCourse'];
   /** Explicit operator source+secret signer; never inferred from synthetic catalogs. */
@@ -114,6 +115,11 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
   if(input.ownerCounseling&&(typeof input.ownerCounseling.read!=='function'
     ||typeof input.ownerCounseling.revalidate!=='function'))
     throw new Error('Counseling requires current official operator source and rights');
+  if(input.ownerPreparation&&(
+    typeof input.ownerPreparation.source?.read!=='function'||
+    typeof input.ownerPreparation.source?.revalidate!=='function'||
+    typeof input.ownerPreparation.quota?.consume!=='function'))
+    throw new Error('Owner preparation requires current rights source and durable quota');
   if(input.ownerExperienceCourse&&(typeof input.ownerExperienceCourse.read!=='function'
     ||typeof input.ownerExperienceCourse.revalidate!=='function'))
     throw new Error('Owner experience/course requires reviewed source and current grant');
@@ -184,6 +190,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
       ...(input.ownerCounseling?{ownerCounseling:input.ownerCounseling}:{}),
+      ...(input.ownerPreparation?{ownerPreparation:input.ownerPreparation}:{}),
       ...(input.ownerExperienceCourse?{ownerExperienceCourse:input.ownerExperienceCourse}:{}),
       ...(input.ownerV2Catalog?{ownerV2Catalog:input.ownerV2Catalog}:{}),
       ...(ai?{ai}:{}),

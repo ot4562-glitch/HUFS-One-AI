@@ -19,6 +19,7 @@ import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-wha
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
 import {registerOwnerCounselingRoutes,type TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
+import {registerOwnerPreparationRoutes,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
 import {registerOwnerExperienceCourseRoutes,type TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
 import {registerOwnerV2CatalogRoutes,type TrustedOwnerV2CatalogSource,type TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
 import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
@@ -52,6 +53,7 @@ interface SharedDependencies {
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
   ownerCounseling?:TrustedOwnerCounselingSource;
+  ownerPreparation?:OwnerPreparationServices;
   ownerExperienceCourse?:TrustedExperienceCourseSource;
   /** Operator-only current-source scope and HMAC signer, never a browser/route-supplied key. */
   ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
@@ -134,6 +136,8 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
   registerOwnerCounselingRoutes({app,session:ownerSession,allowedOrigin:deps.allowedOrigin,
     ...(deps.ownerCounseling?{source:deps.ownerCounseling}:{})});
+  registerOwnerPreparationRoutes({app,session:ownerSession,
+    ...(deps.ownerPreparation?{services:deps.ownerPreparation}:{})});
   registerOwnerExperienceCourseRoutes({app,session:ownerSession,
     ...(deps.ownerExperienceCourse?{source:deps.ownerExperienceCourse}:{})});
   registerOwnerV2CatalogRoutes({app,session:ownerSession,...(deps.ownerV2Catalog??{})});

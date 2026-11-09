@@ -420,6 +420,10 @@ export class HufsOwnerApiClient {
       activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
     }),{signal});
   }
+  /** #343/#349: current owner-only read, never browser-created sources. */
+  getOwnerPreparation(signal?:AbortSignal){
+    return this.request('/api/owner/features/v2/preparation',V.OwnerPreparationResponseSchema,{signal});
+  }
   /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
   async searchApprovedV2Catalog(query:z.input<typeof V.OwnerV2CatalogQuerySchema>={},signal?:AbortSignal){
     const input=clientInput(V.OwnerV2CatalogQuerySchema,query);

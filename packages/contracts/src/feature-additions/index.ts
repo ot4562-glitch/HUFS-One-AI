@@ -254,3 +254,4 @@ export * from './results.js';
 export {OfficialHttpsUrlSchema} from './official-url.js';
 
 export * from './owner-v2-catalog.js';
+export * from './owner-preparation.js';

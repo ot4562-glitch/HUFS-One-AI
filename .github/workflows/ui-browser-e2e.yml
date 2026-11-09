@@ -20,7 +20,7 @@ jobs:
       NO_PROXY: 127.0.0.1,localhost
     steps:
       - name: Checkout allowlisted synthetic UI only
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4 pinned
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1 reviewed commit
         with:
           persist-credentials: false
           sparse-checkout-cone-mode: false
@@ -69,7 +69,7 @@ jobs:
         run: npm run test:e2e:web -- --reporter=list
       - name: Preserve synthetic viewport screenshots for visual review
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4 pinned
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2 full commit pin
         with:
           name: synthetic-viewport-screenshots
           path: dist/playwright-results/**/*.png
