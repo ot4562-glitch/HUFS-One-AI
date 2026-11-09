@@ -17,9 +17,23 @@
 | 동아리 모집 | `/clubs` | 교과/비교과 `curricular` | — |
 | 학사 공지 | `/notices` | 커뮤니티 `community` | — |
 
-역량관리·현직자멘토링·통합상담·취업조사·교수지원(학생)·오픈배지·취업통계에는 이번 시연의 HUFS One AI 화면이 없다. 각 대분류 페이지는 그 사실과 원래 메뉴 이름을 **미지원 텍스트**(링크·포커스 없음)로 보여 준다. 대분류 목록은 `apps/web/src/shell/areas.ts`.
+역량관리·취업조사·교수지원(학생)의 원래 HUFSAbility 기능은 이 제품에서 여전히 **미지원 텍스트**(링크·포커스 없음)로만 표시합니다. 반면 현직자멘토링·통합상담·오픈배지·취업통계 대분류에는 아래에 설명하는 **HUFS One AI 자체 BETA 화면**이 추가됐습니다. 이는 학교 원본 기능 구현·실운영 연동을 의미하지 않습니다. 원래 학교 메뉴는 `observed`로서 계속 미지원이며, 앱 자체 화면 링크 목록은 `apps/web/src/shell/areas.ts`의 `ours`가 현재 정본입니다.
 
 `/menu`는 전체 목록, `/settings`는 사용자 설정이다. 시연용 별도 `/demo-profile`, 합성 ADMIN, REVIEWER 화면은 일반 학생 메뉴의 공식 서비스라고 오인시키지 않는다.
+
+## 2026-11-09 최신 HUFS One AI 화면 확장 (코드 병합과 실사용 구분)
+
+아래 경로는 `apps/web/src/shell/areas.ts`의 `ours`, `apps/web/src/pages/index.ts`의 page renderer와 BETA owner 포트 조립을 확인한 **앱 자체 화면**입니다. 기존 HUFSAbility의 같은 이름 기능을 구현·인증한 것이 아닙니다.
+
+| 영역 | HUFS One AI 자체 화면 경로 | 연결 상태·제한 |
+| --- | --- | --- |
+| 캠퍼스 활동·교환·FAQ | `/activities`, `/exchange`, `/faq` | CampusAssist 코드와 FAQ 근거 가드 #361 병합. 실제 공식 학과/국제교류 자료·HCX 권리/비용 미연결 |
+| 교과·경험·장학·배지 | `/owner-academics/experience-courses`, `/owner-scholarships`, `/owner-badges` | 본인 BETA owner 인증 API/UI 경계와 미연결 상태 제공; 공식 학점/배지 원장·발급권은 별도 인수 |
+| 검색·멘토·NCS | `/owner-opportunities/v2-catalog`, `/owner-insights/MENTORS`, `/owner-insights/SKILLS` | 허가된 공고/멘토/승인 경험 입력에만 근거. 실제 공고권·NCS 검증 및 커서 UX 결함 #418 별도 OPEN |
+| 인정 준비·학습 | `/owner-insights/RECOGNITION`, `/owner-insights/LEARNING` | OCR/학습 추천 후보·준비 단계이며 공식 인정·등록이 아님 |
+| 상담·국제학생·통계 | `/counseling`, `/owner-insights/INTERNATIONAL`, `/owner-insights/EMPLOYMENT` | #410 상담 source→API/UI 및 #422 owner insights 연결. 공식 상담예약·학교 학칙·공개 통계 승인 아님 |
+
+현재 등록된 앱 라우트/페이지와 실제 운영 기관의 원장·동의·권리/비용·독립 사람 인수는 별도 검증 단계입니다. `RELEASE_BLOCKED` 및 `NOT_CONNECTED` 상태를 숨기지 않습니다. 상세 구현 현황은 [STATUS](../STATUS.md), [#360 데이터 인수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360), [#366 운영 연결](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366)을 따릅니다.
 
 ## 기존 HUFSAbility 참고 메뉴
 
@@ -38,7 +52,7 @@
 
 **이서연**([#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357))은 기존 웹사이트에 기능을 실제 배치하고 김채윤이 준비한 허가된 포스터·공고를 화면 디자인에 활용한다. **박준영**([#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356))은 AI 제품 QA, **이의상**([#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355))은 AI 교차 검증, **김채윤**([#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358))은 가벼운 사용자 시연, **심민성**([#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359))은 전체 코드/품질/통합 검수를 수행한다.
 
-**고정 역할 #355–#359에는 더 이상 수정·댓글·담당 변경 등 어떤 쓰기도 수행하지 않는다.** 화면의 현재 실제 구현 여부는 각 feature PR의 병합 상태와 UI/API 실제 동작을 확인한 뒤 갱신하며, PR #342/#353의 미병합 합성 화면을 운영 완료로 표시하지 않는다. [업무 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md) · [팀 운영](WORKSTREAMS.md).
+**고정 역할 #355–#359에는 더 이상 수정·댓글·담당 변경 등 어떤 쓰기도 수행하지 않는다.** 화면의 실제 구현 여부는 각 기능 PR의 병합 상태와 앱의 `AREAS.ours`/page renderer·BETA 포트 연결을 확인해 판단합니다. PR #342/#353 및 이후 #361/#372/#410/#420/#422/#417 등의 코드는 이미 main에 병합됐지만, **합성 또는 미연결 BETA 화면을 학교 공식 시스템·운영 서비스 완료로 표시하지 않습니다.** [업무 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md) · [팀 운영](WORKSTREAMS.md).
 
 ## 현재 인수 상태
 
