@@ -41,7 +41,9 @@
 
 ---
 
-## 1. 1차 당시 PR 검토·병합 — 2026-11-09
+## 1. 1차 당시 PR 검토·병합 — 2026-11-09 (역사적 스냅샷)
+
+> **이 절의 `OPEN/미병합/REQUEST_CHANGES`는 1차 리뷰 당시 기록입니다.** 이후 #361의 부정 극성 결함과 #372의 OCR 기관명 오인 문제가 수정·재검증되어 각각 [`569e938`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/569e9382dd15b536e95ab3fde055442529e7fecc)·[`4e1a962`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/4e1a962049d1a4c24475b0d69d542a35869e2411)로 **병합 완료**되었습니다. #386도 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 병합되었습니다. 상단 최신 스냅샷과 실제 GitHub가 현행 기준입니다.
 
 | PR | 최신 검토 SHA / 내용 | HEAD 검증 | 최종 처리 |
 | --- | --- | --- | --- |
@@ -51,21 +53,23 @@
 
 #386의 AI 순수 코드·합성 테스트만 병합됐습니다. 실제 NCS 원장·인적 Gold·웹/API 통합은 `NOT_RUN/NOT_CONNECTED`이며 기능 #347은 완료가 아닙니다. #361/#372는 수정된 HEAD 반례·신규 CI·재리뷰 전까지 병합하지 않습니다. **병합 후 새로운 main SHA의 CI/실운영 통과를 이 표에서 주장하지 않습니다.** [11/09 검토 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md) · [11/08 병합/수정 이력](docs/REVIEW_AND_ISSUE_AUDIT_20261108.md).
 
-## 2. 1차 당시 변경 요청 2건 (현재도 OPEN)
+## 2. 1차 당시 변경 요청 2건 (이후 수정·병합 완료)
+
+> 아래는 최초 결함과 당시 수정 요청의 감사 이력입니다. 현재 두 PR 모두 병합되었으며, **실서비스 자료·권리·사람 인수**가 완료된 것은 아닙니다. 해당 기능 이슈 #341/#346은 계속 OPEN입니다.
 
 | PR | 남은 차단 결함 | 다음 행동 |
 | --- | --- | --- |
 | [#361 FAQ](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | `없(?!이)` 정규식이 `없는`을 부정으로 잘못 인식, 근거와 반대되는 학사 답변을 통과시킬 위험 | 인용·서술어 극성 검증 및 합성 반례 추가 후 재리뷰 |
 | [#372 OCR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | 비슷하지만 다른 기관의 문자 유사도를 `SAME`으로 확정 | 유사 오타는 `ISSUER_UNCERTAIN`으로 보류, 별도 기관 구분 회귀 후 재리뷰 |
 
-## 3. 1차 당시 열린 이슈 — 코드 결함과 실증 인수 분리
+## 3. 1차 당시 열린 이슈 — 코드 결함과 실증 인수 분리 (과거 진단)
 
 1차 감사 당시 **OPEN 26건**: 고정 역할 **5건(#355–#359, 변경 금지)**, 공식자료 요청 **1건(#360)**, 추가 기능 **13건(#339–#341, #343–#352)**, 미해결 기술/보안 결함 **7건**으로 구분합니다. 날짜/버전이 바뀌면 GitHub를 다시 검색해야 합니다.
 
 | 미해결 이슈 | 다음 검증 / 담당 경계 |
 | --- | --- |
 | [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362) | 공개 저장소에 추적 중인 기존 CSV 5개: 게시 동의·재식별·권리/포크 범위 비공개 평가. 원본 변경·삭제·히스토리 강제 재작성 금지 |
-| [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366) | 장학/멘토/상담/NCS/배지/학습/통계/국제학생 10개 순수 엔진과 서명 커서: 실제 owner API·DB·UI 소비자 없음 |
+| [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366) | 당시 owner API/DB/UI 소비자 미연결. **이후** #417/#420/#422/#410으로 인증 BETA API·웹 소비자 코드가 병합됐으나 운영 source/권리·실계정·DB 인수는 미완료 |
 | [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367) | #396 포트 조립은 구현, 실제 승인 출처/rights·revocation/FAQ 모델 비용, 미연결 UI, BETA E2E 미구현 |
 | [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373) | #389 활동 출처 충돌 격리는 해결, FAQ 문서 간 권리/동일 판본 충돌 검증은 남음 |
 | [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375) | 경험↔교과 identity 코어의 실제 API·DB·UI/현재 동의·이수 원장 연결·철회 미구현 |

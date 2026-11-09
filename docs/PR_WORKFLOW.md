@@ -28,7 +28,7 @@
 
 PR #415로 도입된 `exact-HEAD independent approval` 자동 검사는 사용자 지시로 제거되었습니다. 과거 해당 작업의 실패는 대개 미승인으로 인한 것이지 제품 코드 테스트 실패가 아니었습니다. 검사의 역사적 실행 결과와 팀원 리뷰 기록은 보존하지만 **현재 필수 병합 조건이 아닙니다.** GitHub Settings에서 해당 검사 이름을 Required check로 지정했다면 관리자가 별도로 해제해야 합니다. 관련 [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416)은 변경된 운영 정책을 기준으로 재검토합니다.
 
-## 2026-11-09 최신 검수 결과
+## 2026-11-09 1차 당시 검수 결과 (현행 병합 현황은 최상단)
 
 - [PR #386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) (HEAD `0fdb638`): 중복 요건/경험 ID 격리와 순서 반전 회귀 확인, 다른 계정의 AI QA APPROVED 및 오너 [APPROVED](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386#pullrequestreview-5820570040). HEAD 5종 Actions SUCCESS, 과거 차단 스레드 2건 해결 후 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 **squash MERGED**. #347은 AI 코드 일부 완료이며 API/UI·실원장·사람 Gold 미완으로 OPEN.
 - [PR #361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) (HEAD `72fc402`): [REQUEST_CHANGES](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361#pullrequestreview-5820574395). `없는`을 서술어 부정으로 인식해 근거와 반대인 답변을 통과시키는 결함; 인용문-서술어 극성 회귀/수정 필요.
@@ -51,7 +51,7 @@ PR #415로 도입된 `exact-HEAD independent approval` 자동 검사는 사용�
 
 정확한 PR HEAD에서 TASK-00/Chrome/NCP(해당하는 경우 Pages 및 #394 자체 npm audit) 모두 SUCCESS였습니다. **병합 후 새 main SHA의 자동 테스트·독립 사람/실운영 수락은 별개**입니다. 특히 #396은 operator source 포트 조립만 완료되어 #367 OPEN, #394는 SCA 코드만 완료되어 Dependabot/CodeQL 설정 확인 전 #378 OPEN입니다.
 
-**남은 PR 3건은 변경 요청 상태:** [#361 FAQ citation/부정 의미](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361), [#372 OCR 다중기간/기관 오인/개인정보](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372), [#386 중복 ID·폐기 근거 의미 연결](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386). 앞선 COMMENT와 별개로 공식 `CHANGES_REQUESTED`가 유효하므로 새 코드·회귀·HEAD CI가 없으면 병합하지 않습니다.
+**2026-11-08 당시 변경 요청 상태였던 3건 — 현재 모두 수정·병합 완료:** [#361 FAQ](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) → [`569e938`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/569e9382dd15b536e95ab3fde055442529e7fecc), [#372 OCR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) → [`4e1a962`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/4e1a962049d1a4c24475b0d69d542a35869e2411), [#386 NCS](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) → [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9). 당시 `CHANGES_REQUESTED`는 사실이나 지금 열린 PR로 해석하지 않습니다. 수정 코드를 반영했다고 공식 자료·운영/사람 인수까지 완료한 것은 아닙니다.
 
 [PR별 head/review/merge와 이슈 정리 전체 원장](REVIEW_AND_ISSUE_AUDIT_20261108.md) · [최신 상태](../STATUS.md).
 

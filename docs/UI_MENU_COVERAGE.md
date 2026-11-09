@@ -44,9 +44,9 @@
 
 ## 현재 병합된 홈·기회 탐색
 
-[PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)로 홈의 기존 요약을 바탕으로 한 3단계 선택 패널 및 `/opportunities`의 **현재 표시된 허가 공고만** 검색/7일 내 확정 마감·자격 상태 필터/마감 정렬을 연결했습니다. 기존 데스크톱 11대분류·모바일 5탭 정보구조를 대체하지 않습니다. 현재 날짜가 아닌 자료의 `asOf`에 따른 마감·D-day이고 실제 학생 로그인/실원본 전체 검색이 아닙니다. PR HEAD CI 4/4 통과와 사람/실기기 인수는 구별합니다. #318 전체 UX/날짜 안내, #280 실제 UI 인수는 계속 OPEN입니다.
+[PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307)로 홈의 기존 요약을 바탕으로 한 3단계 선택 패널 및 `/opportunities`의 **현재 표시된 허가 공고만** 검색/7일 내 확정 마감·자격 상태 필터/마감 정렬을 연결했습니다. 기존 데스크톱 11대분류·모바일 5탭 정보구조를 대체하지 않습니다. 현재 날짜가 아닌 자료의 `asOf`에 따른 마감·D-day이고 실제 학생 로그인/실원본 전체 검색이 아닙니다. PR HEAD CI 4/4 통과와 사람/실기기 인수는 구별합니다. #318/#280은 당시의 인수 이력입니다. 현행 웹 개발은 #357, 승인 검색의 TTL/429/KST UX 결함은 #418, 공식자료·운영 인수는 #360/#366에서 각각 추적합니다.
 
-## 현재 메뉴 구현·추가기능 협업 상태 (2026-11-08)
+## 현재 메뉴 구현·추가기능 협업 상태 (2026-11-09)
 
 신규 `[추가 기능]` 이슈는 **심민성이 최초 assignee**로 구조/일반 코드를 가능한 범위까지 구현하며, 추천/랭킹·규칙/코드 기반 AI·LLM/OCR 등은 **박준영 또는 이의상에게 실제 구현을 인계**한다. [#339–#352](https://github.com/ot4562-glitch/HUFS-One-AI/issues/339) 중 13개 기능의 AI 개발 담당은 박준영 6개·이의상 7개이고, **김채윤은 모두 데이터 공동 assignee**다. 실제 데이터 요청은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)이며, 새 자료 요청은 별도 `[데이터 요청]` 이슈로 만든다.
 
@@ -57,7 +57,7 @@
 ## 현재 인수 상태
 
 - React/Vite·합성 Chrome E2E는 상단/모바일 메뉴·키보드/닫힘/focus·미지원 상태/320–1440px 범위 검증 코드가 있습니다.
-- **실제 스크린리더·사람 웹 검수는 이서연 [#318](https://github.com/ot4562-glitch/HUFS-One-AI/issues/318), 실사용 시연/AI 결과는 김채윤 [#324](https://github.com/ot4562-glitch/HUFS-One-AI/issues/324), 실 NCP 서버·비용은 이서연 [#323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323), 실 로그인/개별 권리·DB는 심민성 [#325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325)에서 미인수 상태로 추적합니다.** 이전 #252는 완료/이관 이력입니다.
+- **현행 인수 담당:** 웹·모바일·스크린리더 사람 검수와 UI 연결은 이서연 [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357), 자료·게시권/시연·독립 Gold는 김채윤 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360), API/DB/NCP 코드·운영 통합은 심민성 [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366)/[#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367), 인증 공고 검색의 사용자 오류 안내·날짜 회귀는 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418)에 남아 있습니다. 과거 #318/#323/#324/#325는 **현재의 열린 담당 이슈가 아니며** 실계정·실서버/비용·권리·실기기 사람 인수 증거는 별도입니다.
 - 특정 메뉴가 데이터/권리/운영 포트 없이 비활성이라면 `미지원`, `NOT_SHARED`, `UNKNOWN`을 명시하고 임의 응답/실지원 완료를 표시하지 않습니다.
 
 [UI 기술 및 토큰](../Architecture.md#a11-ui모바일디자인접근성) · [#9 UI](https://github.com/ot4562-glitch/HUFS-One-AI/issues/9) · [#119 종단](https://github.com/ot4562-glitch/HUFS-One-AI/issues/119) · [#252 실기기](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).
