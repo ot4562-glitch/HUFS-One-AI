@@ -30,6 +30,30 @@ function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>,now:()=>str
     revoke:()=>{rights=false;},switchActor:()=>{sameActor=false;}};
 }
 describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=>{
+  it('#367 discloses only whether trusted source ports are configured, even when absent',async()=>{
+    const h=fixture();
+    const present=await h.app.inject({url:'/api/owner/campus-assist/capabilities'});
+    expect(present.statusCode).toBe(200);
+    expect(present.json()).toEqual({activities:true,exchange:true,faq:true,hcx007:false});
+    expect(present.headers['cache-control']).toBe('no-store');
+    h.logout();
+    const revoked=await h.app.inject({url:'/api/owner/campus-assist/capabilities'});
+    expect(revoked.statusCode).toBe(401);
+    const absent=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
+      auth:{verifySession:async()=>actor,revokeSession:async()=>{}}});
+    apps.push(absent);
+    const unconfigured=await absent.inject({url:'/api/owner/campus-assist/capabilities'});
+    expect(unconfigured.statusCode).toBe(200);
+    expect(unconfigured.json()).toEqual({activities:false,exchange:false,faq:false,hcx007:false});
+    // The global owner-route deny handler returns 403 for unregistered owner paths.
+    expect((await absent.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(403);
+  });
+  it('#367 requires the existing verified BETA role for source capability discovery',async()=>{
+    const app=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
+      auth:{verifySession:async()=>({...actor,role:'ADMIN' as const}),revokeSession:async()=>{}}});
+    apps.push(app);
+    expect((await app.inject({url:'/api/owner/campus-assist/capabilities'})).statusCode).toBe(403);
+  });
   it('aborts HCX execution if data rights are revoked while budget admission is in flight',async()=>{
     let revokeRights=()=>{};
     const provider:NonNullable<CampusAssistServices['hcx007']>={
