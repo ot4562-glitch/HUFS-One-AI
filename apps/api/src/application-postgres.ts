@@ -13,7 +13,7 @@ import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
-import type {TrustedOwnerV2CatalogSource} from './modules/owner-v2-catalog-http.js';
+import type {TrustedOwnerV2CatalogSource,TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
 import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 
 export type ApprovedCampusSources=Pick<CampusAssistServices,'activities'|'exchange'|'faq'>;
@@ -37,7 +37,7 @@ export interface PostgresApplicationConfig {
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
   /** Current-approved bounded catalog + server-only HMAC keyset, not a client source. */
-  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner};
+  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   platform:Omit<PostgresPlatformConfig,'now'>;
   /** Explicit operator-supplied restricted 4-owner CSV/registry loaders; no auto import or demo fallback. */
   ownerIntake?:Omit<Parameters<typeof createRestrictedOwnerDirectory>[0],'now'>;
@@ -77,8 +77,9 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     typeof config.ownerV2Catalog.source?.read!=='function'||
     typeof config.ownerV2Catalog.source?.revalidate!=='function'||
     typeof config.ownerV2Catalog.signer?.sign!=='function'||
-    typeof config.ownerV2Catalog.signer?.verify!=='function'))
-    throw new Error('V2 catalog requires current rights/scope and server-only cursor signer');
+    typeof config.ownerV2Catalog.signer?.verify!=='function'||
+    typeof config.ownerV2Catalog.quota?.consume!=='function'))
+    throw new Error('V2 catalog requires current rights/scope, signer, and durable rate-limit quota');
   const googleAuth=createPostgresGoogleAuth(config.auth);
   const clock=config.auth.google.now??(()=>new Date());
   const now=()=>clock().toISOString();
