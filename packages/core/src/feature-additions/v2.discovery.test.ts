@@ -216,4 +216,36 @@ describe('#351 — safe public employment statistics and grounded explanation',(
     expect(r[0]?.outcome).toBe('ACCEPTED');
     expect(r[1]?.reason).toBe('DUPLICATE_STATEMENT');
   });
+  it('#376 quarantines all conflicting stat IDs, independent of input order',()=>{
+    const baseline=stat('dup-stat');
+    const variants=[
+      stat('dup-stat',{numerator:70}),
+      stat('dup-stat',{publicApproved:false}),
+      stat('dup-stat',{source:{...source(),rights:'BLOCKED'}}),
+      stat('dup-stat',{numerator:1}),
+      {...baseline},
+    ];
+    for(const changed of variants){
+      for(const rows of [[baseline,changed],[changed,baseline]]){
+        const compared=comparePublishedStats(rows,FIXED_NOW);
+        expect(compared.comparable).toBe(false);
+        expect(compared.reason).toBe('UNPUBLISHABLE');
+        expect(compared.rows.every(r=>r.status==='UNVERIFIED'
+          && r.numerator===undefined && r.denominator===undefined && r.percent===undefined)).toBe(true);
+        const claims=[60,70].map((numerator,i)=>({id:'claim-'+i,statId:'dup-stat',
+          year:2026,numerator,denominator:100,percentage:numerator}));
+        expect(validateEmploymentStatements(rows,claims,FIXED_NOW).map(x=>x.reason))
+          .toEqual(['AMBIGUOUS_SOURCE_ID','AMBIGUOUS_SOURCE_ID']);
+        expect(validateEmploymentStatements(rows,claims,FIXED_NOW).every(x=>x.safeText===undefined))
+          .toBe(true);
+      }
+    }
+  });
+  it('#376 allows uniquely identified approved aggregates to remain comparable',()=>{
+    const rows=[stat('a'),stat('b',{numerator:70})];
+    expect(comparePublishedStats(rows,FIXED_NOW).reason).toBe('COMPATIBLE');
+    expect(validateEmploymentStatements(rows,[{id:'claim',statId:'a',year:2026,
+      numerator:60,denominator:100,percentage:60}],FIXED_NOW)[0]?.outcome).toBe('ACCEPTED');
+  });
+
 });

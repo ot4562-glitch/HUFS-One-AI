@@ -9,7 +9,7 @@ const actor={role:'BETA' as const,actorId:'SYN-OWNER',sessionIdHash:'H'.repeat(3
   betaAllowed:true,sessionExpiresAt:'2026-12-01T00:00:00Z',schoolMailProofExpiresAt:'2026-12-01T00:00:00Z'};
 const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
 afterEach(async()=>{await Promise.all(apps.splice(0).map(a=>a.close()));});
-function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>){
+function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>,now:()=>string=()=>NOW){
   let enabled=true,rights=true,sameActor=true;
   const receipt={actorId:actor.actorId,sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'};
   const activities={read:vi.fn(async()=>({items:SYNTHETIC_ACTIVITIES,receipt})),
@@ -19,7 +19,7 @@ function fixture(hcx007?:NonNullable<CampusAssistServices['hcx007']>){
   const faq={read:vi.fn(async()=>({items:SYNTHETIC_FAQ_DOCUMENTS,receipt})),
     revalidate:vi.fn(async()=>rights)};
   const app=createIntegratedApi({
-    allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
+    allowedOrigin:ORIGIN,repository:closedRepository,now,
     auth:{verifySession:async()=>enabled?(sameActor?actor:{...actor,actorId:'SYN-OTHER'}):null,
       revokeSession:async()=>{}},campusAssist:{activities,exchange,faq,...(hcx007?{hcx007}:{})},
   });
@@ -89,4 +89,99 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect((await app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(403);
     expect((await app.inject({method:'POST',url:'/api/owner/faq/ask',payload:{asOf:NOW,question:'질문'}})).statusCode).toBe(403);
   });
+  it('#365 partner list and evaluation agree at KST day boundaries',async()=>{
+    const h=fixture();
+    const base=SYNTHETIC_PARTNERS[0]!;
+    const policy={...base,publishedAt:'2026-11-01T00:00:00Z',verifiedAt:'2026-11-01T00:00:00Z',
+      effectiveFrom:'2026-11-08',effectiveUntil:'2026-11-07'};
+    const check=async(rule:Omit<typeof policy,'effectiveUntil'>&{effectiveUntil?:string},asOf:string)=>{
+      h.exchange.read.mockResolvedValue({items:[rule],receipt:{actorId:actor.actorId,
+        sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+      const list=await h.app.inject({url:'/api/owner/exchange/partners?asOf='+encodeURIComponent(asOf)});
+      const listed=(list.json().partners as {partnerId:string}[]).some(p=>p.partnerId===rule.partnerId);
+      const evaluated=(await h.post('/api/owner/exchange/evaluate',{asOf,partnerId:rule.partnerId,
+        applicant:{duration:1,track:rule.track,status:'ENROLLED',completedSemesters:3,gpa:3.2,
+          transfer:false,previousCancellation:'CLEAR'}})).json();
+      const inEffect=evaluated.checks.find((c:{code:string})=>c.code==='TRACK').status==='PASS';
+      return [listed,inEffect];
+    };
+    const {effectiveUntil:_openEnded,...starts}=policy;
+    // Issue example 1: KST 00:30 on the start day -> both see the policy.
+    expect(await check(starts,'2026-11-08T00:30:00+09:00')).toEqual([true,true]);
+    expect(await check(starts,'2026-11-07T23:30:00+09:00')).toEqual([false,false]);
+    // Issue example 2: KST 00:30 after the (inclusive) end day -> neither sees it.
+    const ends={...policy,effectiveFrom:'2026-11-01'};
+    expect(await check(ends,'2026-11-08T00:30:00+09:00')).toEqual([false,false]);
+    expect(await check(ends,'2026-11-07T23:30:00+09:00')).toEqual([true,true]);
+    // The same instants written in UTC must give the same answers (the list used
+    // to compare the request string's own calendar date).
+    expect(await check(starts,'2026-11-07T15:30:00Z')).toEqual([true,true]);
+    expect(await check(ends,'2026-11-07T15:30:00Z')).toEqual([false,false]);
+    expect(await check(ends,'2026-11-07T14:30:00Z')).toEqual([true,true]);
+  });
+  it('#379 historical editions no longer hide the current exchange policy',async()=>{
+    const h=fixture();
+    const base=SYNTHETIC_PARTNERS[0]!;
+    const old={...base,sourceRevision:'syn-old',effectiveFrom:'2025-01-01',effectiveUntil:'2025-12-31'};
+    const neu={...base,sourceRevision:'syn-new',effectiveFrom:'2026-01-01',effectiveUntil:'2026-12-31'};
+    h.exchange.read.mockResolvedValue({items:[old,neu],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const asOf='2026-09-01T00:00:00+09:00';
+    const list=(await h.app.inject({url:'/api/owner/exchange/partners?asOf='+encodeURIComponent(asOf)})).json();
+    const row=(list.partners as {partnerId:string;sourceRevision:string}[]).find(p=>p.partnerId===base.partnerId);
+    expect(row?.sourceRevision).toBe('syn-new');
+    const evaluated=(await h.post('/api/owner/exchange/evaluate',{asOf,partnerId:base.partnerId,
+      applicant:{duration:1,track:base.track,status:'ENROLLED',completedSemesters:3,gpa:3.2,
+        transfer:false,previousCancellation:'CLEAR'}})).json();
+    expect(evaluated.policyRevision).toBe('syn-new');
+  });
+  it.each([
+    ['invalid', 'not-a-date'],
+    ['timezone missing', '2026-12-01T00:00:00'],
+    ['empty', ''],
+    ['expired', '2026-11-07T23:59:59Z'],
+    ['exact expiry boundary', NOW],
+  ])('#363 rejects %s receipt timestamps for activity, exchange and FAQ ports',
+    async(_case,expiresAt)=>{
+      const h=fixture();
+      const receipt={actorId:actor.actorId,sourceVersion:'SYN-REV-1',expiresAt};
+      h.activities.read.mockResolvedValue({items:SYNTHETIC_ACTIVITIES,receipt});
+      h.exchange.read.mockResolvedValue({items:SYNTHETIC_PARTNERS,receipt});
+      h.faq.read.mockResolvedValue({items:SYNTHETIC_FAQ_DOCUMENTS,receipt});
+      const activities=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
+      const exchange=await h.app.inject({url:'/api/owner/exchange/partners?asOf='+encodeURIComponent(NOW)});
+      const faq=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학'});
+      expect([activities.statusCode,exchange.statusCode,faq.statusCode]).toEqual([503,503,503]);
+      expect(h.activities.revalidate).not.toHaveBeenCalled();
+      expect(h.exchange.revalidate).not.toHaveBeenCalled();
+      expect(h.faq.revalidate).not.toHaveBeenCalled();
+    });
+
+  it('#363 invalid server clock is denied by the outer authentication gate',async()=>{
+    const h=fixture(undefined,()=> 'not-a-date');
+    const r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
+    // Outer authentication rejects this clock first; no source is consulted.
+    expect(r.statusCode).toBe(401);
+    expect(h.activities.read).not.toHaveBeenCalled();
+  });
+  it('#363 rechecks receipt TTL after async rights revalidation',async()=>{
+    let clock=NOW;
+    const h=fixture(undefined,()=>clock);
+    h.activities.revalidate.mockImplementation(async()=>{
+      clock='2026-12-01T00:00:00Z';
+      return true;
+    });
+    const r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
+    expect(r.statusCode).toBe(503);
+    expect(h.activities.revalidate).toHaveBeenCalledOnce();
+    expect(r.body).not.toContain('SYN-ECON');
+  });
+  it('#363 valid future receipt still succeeds and an invalid source version is refused',async()=>{
+    const h=fixture();
+    expect((await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(200);
+    h.activities.read.mockResolvedValue({items:SYNTHETIC_ACTIVITIES,
+      receipt:{actorId:actor.actorId,sourceVersion:'   ',expiresAt:'2026-12-01T00:00:00Z'}});
+    expect((await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(503);
+  });
+
 });

@@ -2,14 +2,58 @@ import {ExchangeApplicantSchema,ExchangePolicySchema,ExchangeResultSchema,
   type ExchangeApplicant,type ExchangePolicy,type ExchangeResult,type ExchangeCheck} from '@hufs-one/contracts';
 type Status=ExchangeCheck['status'];
 const DISCLAIMER='제시된 기준에 대한 참고 결과이며 공식 지원 자격·선발 결과가 아닙니다.' as const;
+/**
+ * School exchange policy dates (`YYYY-MM-DD`) are calendar days in the school's
+ * administrative time zone, Asia/Seoul (UTC+09:00, no daylight saving).
+ * `effectiveFrom` applies from 00:00 KST of that day; `effectiveUntil` is
+ * inclusive through the end of that KST day. `asOf` may carry any offset; the
+ * comparison is on the absolute instant (#365). Use this single helper for both
+ * the partner list and the evaluation so they never disagree at a day boundary.
+ */
+export const EXCHANGE_POLICY_TIME_ZONE='Asia/Seoul' as const;
+export function exchangePolicyInEffect(
+  policy:{effectiveFrom:string;effectiveUntil?:string|undefined},asOf:string,
+):boolean{
+  const at=Date.parse(asOf);
+  if(!Number.isFinite(at))throw new RangeError('Invalid asOf');
+  const start=Date.parse(policy.effectiveFrom+'T00:00:00+09:00');
+  const endExclusive=policy.effectiveUntil
+    ?Date.parse(policy.effectiveUntil+'T00:00:00+09:00')+86400000:Infinity;
+  if(!Number.isFinite(start)||Number.isNaN(endExclusive))return false;
+  return start<=at&&at<endExclusive;
+}
+export type ExchangePolicyResolution={
+  policy:ExchangePolicy|null;
+  reason:'CURRENT'|'NONE_IN_EFFECT'|'REVOKED_OR_BLOCKED_IN_EFFECT'|'CONFLICTING_IN_EFFECT';
+};
+/**
+ * The one policy row that governs `partnerId`+`track` at `asOf` (#379).
+ * Rows not yet published or verified at `asOf` are ignored; among the rows in
+ * effect at `asOf` (KST day rule above): any REVOKED/BLOCKED row quarantines
+ * the pair (a revocation never falls back to an older approval), two or more
+ * approved rows are a conflict, and exactly one approved row is current.
+ * Old and new editions with non-overlapping windows therefore no longer hide
+ * each other. The partner list and the evaluation must both use this.
+ */
+export function resolveExchangePolicy(
+  rules:readonly ExchangePolicy[],partnerId:string,track:ExchangePolicy['track'],asOf:string,
+):ExchangePolicyResolution{
+  const at=Date.parse(asOf);
+  if(!Number.isFinite(at))throw new RangeError('Invalid asOf');
+  const inEffect=rules.filter(r=>r.partnerId===partnerId&&r.track===track
+    &&Date.parse(r.publishedAt)<=at&&Date.parse(r.verifiedAt)<=at&&exchangePolicyInEffect(r,asOf));
+  if(!inEffect.length)return {policy:null,reason:'NONE_IN_EFFECT'};
+  if(inEffect.some(r=>r.rights!=='APPROVED'))return {policy:null,reason:'REVOKED_OR_BLOCKED_IN_EFFECT'};
+  if(inEffect.length>1)return {policy:null,reason:'CONFLICTING_IN_EFFECT'};
+  return {policy:inEffect[0]!,reason:'CURRENT'};
+}
 export function evaluateExchange(rawApplicant:ExchangeApplicant,rawPolicy:ExchangePolicy|null,asOf:string):ExchangeResult{
   const applicant=ExchangeApplicantSchema.parse(rawApplicant);
   const clock=Date.parse(asOf);
   if(!Number.isFinite(clock))throw new RangeError('Invalid asOf');
   const policy=rawPolicy?ExchangePolicySchema.parse(rawPolicy):null;
   const valid=!!policy&&policy.rights==='APPROVED'&&Date.parse(policy.publishedAt)<=clock
-    &&Date.parse(policy.verifiedAt)<=clock&&Date.parse(policy.effectiveFrom+'T00:00:00Z')<=clock
-    &&(!policy.effectiveUntil||Date.parse(policy.effectiveUntil+'T23:59:59Z')>=clock);
+    &&Date.parse(policy.verifiedAt)<=clock&&exchangePolicyInEffect(policy,asOf);
   const checks:ExchangeCheck[]=[];
   const add=(code:ExchangeCheck['code'],status:Status,explanation:string)=>{
     checks.push({code,status,explanation,...(valid&&policy?{sourceRevision:policy.sourceRevision}:{})});

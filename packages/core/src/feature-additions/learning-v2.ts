@@ -1,6 +1,6 @@
 /** #350 — learning-program relevance without inventing admission eligibility. */
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {jaccard,safeIntersection,verifySemanticProposals,verifySource,
+import {conflictingIds,jaccard,safeIntersection,verifySemanticProposals,verifySource,
   parseAsOf,type FeatureMode} from './source-policy.js';
 export type LearningMatch={
   programId:string;sourceRevisionId:string;
@@ -21,12 +21,12 @@ export function recommendLearningV2(input:{
 }):LearningRanking {
   const at=parseAsOf(input.preference.asOf),p=input.preference;
   let excludedCount=0;
-  const seen=new Set<string>();
+  // Quarantine every copy of a repeated program ID (order-independent).
+  const conflicts=conflictingIds(input.programs);
   const denominator=(p.goalTags.length?0.45:0)+(p.courseCodes.length?0.35:0)
     +(p.topicCodes.length?0.20:0);
   const ranked=input.programs.flatMap(program=>{
-    if (seen.has(program.id)) {excludedCount++;return [];}
-    seen.add(program.id);
+    if (conflicts.has(program.id)) {excludedCount++;return [];}
     if(!verifySource(program.source,p.asOf,input.mode).usable || !program.active) {
       excludedCount++;return [];
     }

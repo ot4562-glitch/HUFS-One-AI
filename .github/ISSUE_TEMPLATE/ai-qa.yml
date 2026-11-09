@@ -1,0 +1,34 @@
+name: "AI 기술 QA·재시험"
+description: "AI 정확도, 독립 Gold, 실패사례, 수정 후 재시험 — 박준영에게 배정"
+title: "[AI QA] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        에이전트: 제목 맨 앞 표준 접두어를 변경하지 마세요. 저장소 AGENTS.md와 docs/ISSUE_ASSIGNMENT_PLAYBOOK.md를 먼저 확인하세요.
+        우선순위 P0/P1/P2/P3는 제목에, 강도 S/M/L은 검토 후 effort:S/M/L 라벨로 표시하세요.
+        P0·보안/개인정보 위험은 자동 담당 배정하지 않고 사람이 검토합니다. 실제 취약점 상세는 공개 이슈에 적지 마세요.
+        기존 고정 역할 이슈 #355-#359는 어떤 내용도 변경/댓글 추가하지 않습니다.
+        실학생 정보, csv/ 원본, 비밀키 및 미확인 학교 원문을 본문에 포함하지 않습니다.
+        이 이슈는 AI 기술 QA 담당 박준영에게 배정되며, 구현 이슈와 분리해 근거를 남깁니다.
+  - type: input
+    id: linked-implementation
+    attributes:
+      label: "관련 AI 구현 이슈/PR"
+      placeholder: "#이슈, PR 또는 commit SHA"
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: "검증 대상과 발견된 실패·반례"
+      placeholder: "재현 단계, 정답/실제, 신뢰/권리 경계"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "재시험·수락 기준"
+      placeholder: "독립 Gold 여부, 측정값, 환경/SHA, PASS/FAIL/NOT_RUN"
+    validations:
+      required: true

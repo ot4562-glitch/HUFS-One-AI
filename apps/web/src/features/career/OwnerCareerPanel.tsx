@@ -1,4 +1,5 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
+import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import {TOPIC_CODES,type TopicCode} from '@hufs-one/contracts';
 import type {ExperiencePortfolio,OpportunityCatalogDetail,OpportunityExplanationResponse,OwnerFeedResponse,OwnerWorkspaceRecord,OwnerWorkspaceValue,SelfProfile,SelfConsent,BookmarkStage,BookmarkOutcome} from '@hufs-one/contracts';
 import {buildCareerRoadmap,buildCareerTimeline} from '../../../../../packages/core/src/career/roadmap.js';
@@ -250,7 +251,7 @@ export function OwnerCareerPanel({port,navigate,experienceReview}:{
       :port.create({itemId:'career-'+crypto.randomUUID().replaceAll('-',''),value},signal));
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">본인 계정과 동의를 확인하고 있습니다.</p>;
-  if(session.status!=='READY')return <p role="alert">현재 사용자 세션을 확인할 수 없습니다. 이전 프로필과 타임라인은 표시하지 않습니다.</p>;
+  if(session.status!=='READY')return <OwnerSessionFailure controller={port.session}>현재 사용자 세션을 확인할 수 없습니다. 이전 프로필과 타임라인은 표시하지 않습니다.</OwnerSessionFailure>;
   if(!screen)return error
     ? <section role="alert"><p>{error}</p><button type="button" onClick={()=>setRev(n=>n+1)}>다시 조회</button></section>
     : <p aria-busy="true">본인 비공개 진로 자료를 불러오는 중입니다.</p>;
