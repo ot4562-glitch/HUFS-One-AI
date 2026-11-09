@@ -28,6 +28,8 @@ class HistoricalCsvAuditTests(unittest.TestCase):
         self.assertEqual(result["distinct_csv_blob_versions"], 2)
         self.assertEqual(result["max_csv_files_in_one_commit"], 2)
         self.assertEqual(result["owner_publication_rights_and_consent"], "NOT_VERIFIED")
+        self.assertEqual(result["path_coverage"], "CSV_DIRECTORY_ONLY")
+        self.assertEqual(result["csv_outside_directory_or_historical_moves"], "UNKNOWN")
         self.assertEqual(result["external_forks_and_unfetched_refs"], "UNKNOWN")
         self.assertNotIn("synthetic-first", str(result))
         self.assertTrue(all(args[0] in ("rev-parse", "rev-list", "ls-tree") for args in calls))

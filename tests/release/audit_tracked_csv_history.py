@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import subprocess
 from pathlib import Path
 from typing import Callable
@@ -60,6 +61,8 @@ def inspect_history(run: Callable[[tuple[str, ...]], bytes]) -> dict[str, object
             objects.update(found)
     return {
         "scope": "FETCHED_LOCAL_GIT_REFS_ONLY",
+        "path_coverage": "CSV_DIRECTORY_ONLY",
+        "csv_outside_directory_or_historical_moves": "UNKNOWN",
         "state": "HISTORICAL_CSV_METADATA_OBSERVED" if affected_commits else "NO_CSV_IN_FETCHED_LOCAL_REFS",
         "commits_scanned": len(revisions),
         "commits_containing_csv": affected_commits,
@@ -87,7 +90,7 @@ def local_git(root: Path, args: tuple[str, ...]) -> bytes:
 
 def main() -> int:
     # No command arguments are accepted: don't risk printing a user-provided path.
-    if len(os.sys.argv) != 1:
+    if len(sys.argv) != 1:
         print(json.dumps({"state": "AUDIT_UNAVAILABLE", "reason": "NO_ARGUMENTS_ACCEPTED"}))
         return 2
     root = Path(__file__).resolve().parents[2]
