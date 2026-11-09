@@ -1,6 +1,6 @@
 # HUFS One AI — PR·이슈 현황 감사 (2026-11-09)
 
-> **1차 검토 시각:** 2026-11-09 (Asia/Seoul). 1–3절은 당시 기록, 아래 6절이 최신 실제 병합 검수입니다. 4–5절은 중간 스냅샷입니다. GitHub의 당시 OPEN PR·Issue와 실제 PR HEAD diff, review/threads, Actions 결과를 검토한 기록. 이후 변경은 [PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)·[Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 재확인해야 합니다. 전날 병합 이력은 [2026-11-08 감사](REVIEW_AND_ISSUE_AUDIT_20261108.md)에 보존합니다.
+> **1차 검토 시각:** 2026-11-09 (Asia/Seoul). 1–3절은 당시 기록, 아래 7절이 최신 실제 병합 검수입니다. 4–5절은 중간 스냅샷입니다. GitHub의 당시 OPEN PR·Issue와 실제 PR HEAD diff, review/threads, Actions 결과를 검토한 기록. 이후 변경은 [PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)·[Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 재확인해야 합니다. 전날 병합 이력은 [2026-11-08 감사](REVIEW_AND_ISSUE_AUDIT_20261108.md)에 보존합니다.
 
 ## 1. 이번 PR 처리 결과
 
@@ -124,3 +124,11 @@
 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 소유자 지시로 `exact-HEAD independent approval` 자동 검사를 **완전히 삭제**하고 `.github/workflows/task00-contracts.yml`, `tests/release/test_ci_workflow.py`의 참조를 함께 정리합니다. `AGENTS.md`·PR_WORKFLOW에는 실제 diff·보안·CI 검토와 미승인 상태 기록을 문서 수칙으로 남깁니다. [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 그 변경을 보존하며 본 README·STATUS·감사 원장 정리를 수행합니다. 두 PR 모두 병합 후 이번 점검의 열린 PR은 0입니다.
 
 **이슈는 총 28건 OPEN**(고정 역할 이슈 #355–#359 5건 읽기 전용). 실제 학교/학생 게시권·개인정보 공개 이력·NCP/HCX 운영·사람 Gold 인수는 PR 병합으로 해결된 것이 아닙니다. 특히 #421은 로컬 `csv/` 경로의 메타데이터 집계일 뿐이고 공개 권리·동의를 판정하지 않습니다. `RELEASE_BLOCKED` 유지.
+
+
+## 7. 2026-11-09 승인 검사 자동 차단 제거 실제 병합 및 최종 문서
+
+- [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)의 GitHub 실병합 SHA **[88b7814](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)**. 정확한 PR HEAD `a0487b05b`에 대해 CodeQL·합성 contracts·Chrome·실제 격리 PostgreSQL·npm lockfile 감사·CSV 보호·NCP 오프라인·issue-routing 테스트 등 **13개 Checks SUCCESS** 확인. `independent-pr-review.yml`과 전용 테스트를 삭제하고 `task00-contracts.yml`/CI 검사 계약의 관련 참조를 함께 제거. 학생 CSV 원본/Git history 변경 없음.
+- 비작성자 `APPROVED` 없는 경우 이를 승인했다고 기록하지 않으며, 실제 코드·CI/변경 요청 검토는 [AGENTS](../AGENTS.md)와 [PR_WORKFLOW](PR_WORKFLOW.md) 지침에 남겼습니다. 관리자 Branch protection required check 설정은 별도 관리자가 확인해야 합니다.
+- [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 16개 선행 병합을 반영한 **마지막 문서 PR**입니다. 해당 문서 PR이 병합되면 이번 대상 `OPEN PR=0`입니다. 1–6절의 구 OPEN 수·차단 이력은 해당 시점의 역사적 감사 기록이지 최신 상태가 아닙니다.
+- **28개 OPEN 이슈**는 기능별 미인수/권리/사람 QA를 의미하며 자동 종결할 수 없습니다. 고정 역할 #355–#359는 어떤 쓰기도 하지 않았으며, 원본 CSV 5개 변경·공식 서비스 출시 승인도 하지 않았습니다. **`RELEASE_BLOCKED`** 유지.

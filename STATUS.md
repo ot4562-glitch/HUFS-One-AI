@@ -6,7 +6,7 @@
 
 ## 0. 전수 수정·병합 최신 스냅샷 (2026-11-09)
 
-**실제 병합 15 PR(앞선 9 + 추가 6)**, 추가된 정책 정리 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)와 문서 정리 [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) 2개가 진행 중인 시점의 기록입니다. 두 PR 병합 시 이번 대상 OPEN PR 0. 확인된 이전 병합 9건은 #424/#420/#402/#403/#404/#409/#407/#408/#422, 직전 main SHA `6062230`입니다.
+**실제 병합 16 PR(앞선 9 + 추가 코드 6 + 정책 #425 1)**. 정책 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)로 병합되었고 문서 정리 [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) **1개만 남은 시점의 기록**입니다. #419 병합 후 이번 대상 OPEN PR 0. 확인된 이전 병합 9건은 #424/#420/#402/#403/#404/#409/#407/#408/#422, 직전 main SHA `6062230`입니다.
 
 ### 추가 병합 확인 6건
 
@@ -23,7 +23,7 @@
 
 ### PR 리뷰 자동 검사 정책
 
-소유자가 2026-11-09 `exact-HEAD independent approval`의 **PR 자동 실패형 검사를 제거**하도록 지시했습니다. [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)에서 `.github/workflows/independent-pr-review.yml`, 그 전용 합성 테스트 및 TASK-00 sparse checkout 참조를 삭제하고, `AGENTS.md`와 [PR_WORKFLOW](docs/PR_WORKFLOW.md)에 사람/에이전트의 수동 검수 절차를 남깁니다. 담당자 실제 `APPROVED`가 없으면 있다고 기록하지 않습니다. **일반 코드·보안·CSV/권리 경계·브라우저·PG CI는 유지**하며, 미해결 코드 결함은 승인 CI 삭제와 관계없이 수정합니다. 서버 강제 규칙은 Ruleset 조회 0건 및 보호 상세 API 403으로 별도 확인하지 못했습니다.
+소유자가 2026-11-09 `exact-HEAD independent approval`의 **PR 자동 실패형 검사를 제거**하도록 지시했습니다. 실제 병합한 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)에서 `.github/workflows/independent-pr-review.yml`, 그 전용 합성 테스트 및 TASK-00 sparse checkout 참조를 삭제하고, `AGENTS.md`와 [PR_WORKFLOW](docs/PR_WORKFLOW.md)에 사람/에이전트의 수동 검수 절차를 남깁니다. 담당자 실제 `APPROVED`가 없으면 있다고 기록하지 않습니다. **일반 코드·보안·CSV/권리 경계·브라우저·PG CI는 유지**하며, 미해결 코드 결함은 승인 CI 삭제와 관계없이 수정합니다. 서버 강제 규칙은 Ruleset 조회 0건 및 보호 상세 API 403으로 별도 확인하지 못했습니다.
 
 ### 열린 이슈 및 실제 운영 인수
 
