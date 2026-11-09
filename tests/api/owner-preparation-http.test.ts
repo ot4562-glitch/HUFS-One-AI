@@ -129,6 +129,48 @@ describe('#366/#343/#349 BETA scholarship and badge preparation source-to-API',(
       expect(r.body).not.toContain('fictional-scholarship');
     }
   });
+  it('accepts historical observations for the same academic term and uses the latest authorized fact',async()=>{
+    const h=fixture();
+    h.snapshot.facts.unshift(fact(1.8,{observedAt:'2026-10-10T00:00:00+09:00'}));
+    const r=await h.get();
+    expect(r.statusCode).toBe(200);
+    expect(r.json().scholarships[0]).toMatchObject({overall:'MET',groups:[{
+      state:'MET',conditions:[{factKey:'gpa',state:'MET',reason:'VERIFIED_MATCH'}],
+    }]});
+    expect(h.source.revalidate).toHaveBeenCalledOnce();
+  });
+  it('quarantines conflicting newest facts instead of arbitrarily choosing one or returning 503',async()=>{
+    const h=fixture();
+    h.snapshot.facts.push(fact(1.8)); // same term and observedAt, contradictory verified GPA
+    const r=await h.get();
+    expect(r.statusCode).toBe(200);
+    expect(r.json().scholarships[0]).toMatchObject({overall:'UNKNOWN',groups:[{
+      conditions:[{factKey:'gpa',state:'UNKNOWN',reason:'CONFLICTING_FACTS'}],
+    }]});
+    expect(h.source.revalidate).toHaveBeenCalledOnce();
+  });
+  it('keeps term and revision boundaries when other-term or unapproved observations are newer',async()=>{
+    const h=fixture();
+    h.snapshot.facts.push(
+      fact(1.0,{academicTerm:'2025-2',observedAt:'2026-11-07T00:00:00+09:00'}),
+      fact(1.0,{sourceRevisionId:'SYN-UNAUTHORIZED',observedAt:'2026-11-06T00:00:00+09:00'}),
+    );
+    const r=await h.get();
+    expect(r.statusCode).toBe(200);
+    expect(r.json().scholarships[0]).toMatchObject({overall:'MET',groups:[{
+      conditions:[{state:'MET',reason:'VERIFIED_MATCH'}],
+    }]});
+    expect(h.source.revalidate).toHaveBeenCalledOnce();
+  });
+  it('does not treat revoked current owner rights as valid even when fact history is well-formed',async()=>{
+    const h=fixture();
+    h.snapshot.facts.push(fact(1.0,{observedAt:'2026-10-01T00:00:00+09:00'}));
+    h.revoke();
+    const r=await h.get();
+    expect(r.statusCode).toBe(403);
+    expect(h.source.read).toHaveBeenCalledOnce();
+    expect(h.source.revalidate).toHaveBeenCalledOnce();
+  });
   it('does not treat synthetic source rules as official verified live source',async()=>{
     const h=fixture();
     h.snapshot.scholarships[0]!.source.status='SYNTHETIC';
