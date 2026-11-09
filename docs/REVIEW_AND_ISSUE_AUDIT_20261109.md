@@ -1,6 +1,6 @@
 # HUFS One AI — PR·이슈 현황 감사 (2026-11-09)
 
-> **1차 검토 시각:** 2026-11-09 (Asia/Seoul). 1–3절은 당시 기록, 아래 4절이 최신 3차 검수입니다. GitHub의 당시 OPEN PR·Issue와 실제 PR HEAD diff, review/threads, Actions 결과를 검토한 기록. 이후 변경은 [PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)·[Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 재확인해야 합니다. 전날 병합 이력은 [2026-11-08 감사](REVIEW_AND_ISSUE_AUDIT_20261108.md)에 보존합니다.
+> **1차 검토 시각:** 2026-11-09 (Asia/Seoul). 1–3절은 당시 기록, 아래 5절이 최신 추가 수정 검수입니다. 4절은 직전 스냅샷입니다. GitHub의 당시 OPEN PR·Issue와 실제 PR HEAD diff, review/threads, Actions 결과를 검토한 기록. 이후 변경은 [PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)·[Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 재확인해야 합니다. 전날 병합 이력은 [2026-11-08 감사](REVIEW_AND_ISSUE_AUDIT_20261108.md)에 보존합니다.
 
 ## 1. 이번 PR 처리 결과
 
@@ -67,15 +67,15 @@
 
 | PR | 실제 미완 검증/조치 |
 | --- | --- |
-| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV Git 메타데이터 프라이버시 감사; 동료 리뷰 대기 |
+| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV Git 메타데이터 경로 한계 명시 HEAD fb7ea01; 데이터/권리 담당자 리뷰·최신 CI 필요 |
 | [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) | 현재 상태/이슈/PR 감사 문서; 새 HEAD 독립 승인/CI 확인 필요 |
-| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 source→API/UI 통합. #422와 재합성 HEAD e925ada, CI·동료 승인 대기 |
+| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 source→API/UI: 코어 랭킹 전 검증 기관 필터·중복 ID 격리 HEAD 39edd5c; 일반 CI SUCCESS, 동료 승인 필요 |
 | [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | TypeScript 7 호환성 교정 HEAD 3282c42: 일반 CI 성공, 과거 변경 요청/독립 승인 미해결 |
-| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | github-script v9: issue 이벤트 실제 workflow 실행·독립 승인 전 보류 |
-| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 기관 동일성 허위확정 CHANGES_REQUESTED, 충돌 해결·재리뷰 전 보류 |
-| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 인용 극성 반전 CHANGES_REQUESTED 및 미해결 스레드 |
+| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | github-script v9: Node24 합성 opened/edited/manual dry_run 회귀 HEAD eca9ff5, Node24 CI test SUCCESS; 실제 workflow_dispatch·독립 승인 미확인 |
+| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 기관 오인 수정·기능 회귀 및 #422 이후 main 병합 충돌 해결 HEAD 5769a35; 새 CI/독립 재리뷰 필요 |
+| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 인용 서술어 극성 비교 수정·합성 회귀 HEAD 1bf77d4; 일반 CI SUCCESS, 구 CHANGES_REQUESTED 정리·동료 최신 승인 필요 |
 
-#406 이전 HEAD의 TypeScript 7 AST JS API 불일치로 TASK-00 11개 실패를 재현했고, 새 HEAD 3282c42에서 TypeScript 5.9.3 AST 감사만 alias로 고립하고 typecheck/빌드는 TS7 CLI를 사용합니다. **새 HEAD 일반 CI 성공**, 그러나 이전 CHANGES_REQUESTED 및 사람 독립 승인 조건 미완. #410 상담은 #422 병합 뒤 재충돌을 해결한 **HEAD e925ada**의 CI·동료 승인 필요. #361 FAQ 부정 극성/인용 부조화, #372 OCR 서로 다른 발급기관 SAME 오판과 미해결 스레드가 남아 있으므로 병합 금지.
+#406 이전 HEAD의 TypeScript 7 AST JS API 불일치로 TASK-00 11개 실패를 재현했고, 새 HEAD 3282c42에서 TypeScript 5.9.3 AST 감사만 alias로 고립하고 typecheck/빌드는 TS7 CLI를 사용합니다. **새 HEAD 일반 CI 성공**, 그러나 이전 CHANGES_REQUESTED 및 사람 독립 승인 조건 미완. #410 상담 코어 결함을 **HEAD 39edd5c**에서 추가 수정했고 일반 CI SUCCESS. #361 **HEAD 1bf77d4**의 인용 서술어 극성 회귀와 #372 **HEAD 5769a35**의 유사 기관명 격리/충돌 해결 커밋이 제출됐습니다. 새 HEAD의 전체 CI·오래된 변경 요청 처리·독립 사람 승인 전 병합은 금지합니다.
 
 ### 이슈 28건 전체 검토
 
@@ -89,3 +89,20 @@
 **최종 운영 경계:** GitHub CODEOWNERS/독립 리뷰 CI는 main의 실제 Ruleset 강제를 대체하지 않으며, 현재 보호 활성화 미확인(REVIEW_PROTECTION_NOT_VERIFIED). 원본 CSV 다섯 파일·Git 역사 불변. 실학교·학생 원본/동의·RLS·공고 권리, NCP/HCX 유료 실행, 사람 QA/독립 Gold는 NOT_CONNECTED/NOT_RUN/CONFIGURATION_REQUIRED; **RELEASE_BLOCKED**.
 
 [현행 STATUS](../STATUS.md) · [PR 규칙](PR_WORKFLOW.md) · [팀 협업](WORKSTREAMS.md).
+
+
+## 5. 2026-11-09 추가 수정 — 구 리뷰 결함 직접 수리 후 미병합 검수
+
+이 절은 4절 이후 실제 GitHub 브랜치에 기록된 수정 커밋을 추적합니다. **병합은 별도 사실이며, 여기 나열한 커밋은 main 병합 SHA가 아닙니다.**
+
+| PR | 최신 확인한 수리 HEAD | 증거/남은 조건 |
+| --- | --- | --- |
+| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | `1bf77d497` | 형용사 `없는`과 동작 `신청할 수 없습니다`의 부정 극성 분리·여러 합성 회귀 추가. CI 일반 잡 모두 SUCCESS, 독립 exact-HEAD 승인 검사 실패(아직 승인 없음); 과거 CHANGES_REQUESTED와 리뷰 스레드 재확인 필요 |
+| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | `5769a3571` | 문자열 유사 기관명을 `SAME`으로 간주하지 않음. 기관명 접미어 순서 반전 회귀, 기존 main의 skills-semantic과 OCR export 동시 보존 2-parent merge. HEAD CI·독립 재승인 확인 필요 |
+| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | `eca9ff5a6` | Node24 합성 `issues.opened/edited`, 고정 역할 쓰기 차단, 수동 `dry_run` inline script 테스트. Node24 CI `test` SUCCESS; 실제 운영 `workflow_dispatch`는 도구 권한으로 실행하지 못해 **NOT_RUN**, 승인 미완 |
+| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | `39edd5c66` | 상위 3개 slicing 이전 verifiedName/span 검증 및 중복 서비스 ID 격리. 재현 2개 회귀; 일반 HEAD CI 모두 SUCCESS, 독립 승인 미완 |
+| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | `fb7ea01d3` | 조사 대상은 로컬 `csv/`만이라는 점과 경로 외 과거 CSV/포크/refs `UNKNOWN`, 모드 실패 `AUDIT_UNAVAILABLE` 명시. 실제 개인 데이터 내용·파일명·원본 변경 없음. 사람의 자료 권리 확인 별도 |
+| [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | `3282c4259` | TypeScript 7 CLI와 별도 TS5 AST 호환 경계; 일반 CI 성공. 이전 CHANGES_REQUESTED/신규 독립 승인 미완 |
+| [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) | 이 문서 수정 커밋 후 재검토 필요 | 앞선 팀원 코멘트의 #410 알려진 결함 누락을 최신 수정과 함께 반영. 역사적 1차 검토 기록은 지우지 않음 |
+
+**이슈 28 OPEN(고정 역할 5 포함) / 미병합 PR 7 / 9건 이전 실제 병합** 상태를 기준으로 문서를 작성했습니다. 사람·학교 원본의 권리/동의/운영 NCP·HCX/독립 Gold 미인수, `REVIEW_PROTECTION_NOT_VERIFIED` 및 `RELEASE_BLOCKED`를 유지합니다.

@@ -26,13 +26,13 @@
 
 | PR | 다음 단계 |
 | --- | --- |
-| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV Git 메타데이터 프라이버시 감사; 동료 리뷰 대기 |
+| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV Git 메타데이터 경로 한계 명시 HEAD fb7ea01; 데이터/권리 담당자 리뷰·최신 CI 필요 |
 | [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) | 현재 상태/이슈/PR 감사 문서; 새 HEAD 독립 승인/CI 확인 필요 |
-| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 source→API/UI 통합. #422와 재합성 HEAD e925ada, CI·동료 승인 대기 |
+| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 source→API/UI: 코어 랭킹 전 검증 기관 필터·중복 ID 격리 HEAD 39edd5c; 일반 CI SUCCESS, 동료 승인 필요 |
 | [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | TypeScript 7 호환성 교정 HEAD 3282c42: 일반 CI 성공, 과거 변경 요청/독립 승인 미해결 |
-| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | github-script v9: issue 이벤트 실제 workflow 실행·독립 승인 전 보류 |
-| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 기관 동일성 허위확정 CHANGES_REQUESTED, 충돌 해결·재리뷰 전 보류 |
-| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 인용 극성 반전 CHANGES_REQUESTED 및 미해결 스레드 |
+| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | github-script v9: Node24 합성 opened/edited/manual dry_run 회귀 HEAD eca9ff5, Node24 CI test SUCCESS; 실제 workflow_dispatch·독립 승인 미확인 |
+| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 기관 오인 수정·기능 회귀 및 #422 이후 main 병합 충돌 해결 HEAD 5769a35; 새 CI/독립 재리뷰 필요 |
+| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 인용 서술어 극성 비교 수정·합성 회귀 HEAD 1bf77d4; 일반 CI SUCCESS, 구 CHANGES_REQUESTED 정리·동료 최신 승인 필요 |
 
 [#415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415) 독립 리뷰 자동 검사 이미 main merge SHA [6cef538](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6cef53869d828bd99952dcf7bd26f0df192a2e7c). GitHub main Ruleset GET 결과 빈 배열/branch protection 상세 403이므로 **REVIEW_PROTECTION_NOT_VERIFIED**. 과거 #399/#400/#401/#411 동료 사후 감사와 관리자 실제 강제 보호 별도(#416).
 
