@@ -13,6 +13,7 @@ import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
+import {validateOwnerInsightsServices,type OwnerInsightsServices} from './modules/owner-v2-insights-http.js';
 import type {TrustedOwnerV2CatalogSource,TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
 import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 
@@ -36,6 +37,8 @@ export interface PostgresApplicationConfig {
   /** Optional operator-owned, current rights/revision guarded source ports.
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
+  /** Explicitly authorized six-kind source + durable admission quota. */
+  ownerInsights?:OwnerInsightsServices;
   /** Current-approved bounded catalog + server-only HMAC keyset, not a client source. */
   ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   platform:Omit<PostgresPlatformConfig,'now'>;
@@ -73,6 +76,7 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     name=>typeof config.ownerIntake?.[name as keyof typeof config.ownerIntake]!=='function'))
     throw new Error('Restricted owner intake requires all three verified operator loaders');
   if(config.campusAssist)validateCampusSources(config.campusAssist);
+  if(config.ownerInsights)validateOwnerInsightsServices(config.ownerInsights);
   if(config.ownerV2Catalog&&(
     typeof config.ownerV2Catalog.source?.read!=='function'||
     typeof config.ownerV2Catalog.source?.revalidate!=='function'||
@@ -87,6 +91,7 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
     ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
+    ...(config.ownerInsights?{ownerInsights:config.ownerInsights}:{}),
     ...(config.ownerV2Catalog?{ownerV2Catalog:config.ownerV2Catalog}:{}),
     ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),
