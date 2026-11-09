@@ -16,13 +16,13 @@ describe('FAQ retrieval and citations (#341)',()=>{
     expect(evidence).toHaveLength(1);
     const candidate={
       answer:'가상 예시에서 평점 기준은 3.0 이상입니다. 실제 학교 규정이 아닙니다.',
-      citations:[{citationId:'faq-a-v1:p1',quote:'평점 기준은 3.0 이상입니다.'}],
+      citations:[{citationId:'faq-a:faq-a-v1:p1',quote:'평점 기준은 3.0 이상입니다.'}],
       needsHumanConfirmation:true,suggestedLinks:['/exchange' as const],
     };
     expect(validateFaqCandidate(candidate,evidence)).toEqual(candidate);
     expect(()=>validateFaqCandidate({...candidate,answer:'최소 4.0 이상입니다.'},evidence)).toThrow();
     expect(()=>validateFaqCandidate({...candidate,citations:[{citationId:'fake:p1',quote:'평점'}]},evidence)).toThrow();
-    expect(()=>validateFaqCandidate({...candidate,citations:[{citationId:'faq-a-v1:p1',quote:'없는 문장'}]},evidence)).toThrow();
+    expect(()=>validateFaqCandidate({...candidate,citations:[{citationId:'faq-a:faq-a-v1:p1',quote:'없는 문장'}]},evidence)).toThrow();
   });
   it('revocation quarantines an older matching revision and cannot be bypassed by old asOf',()=>{
     const revoked={...doc,revisionId:'faq-a-v2',rights:'REVOKED' as const,
@@ -37,7 +37,7 @@ describe('FAQ retrieval and citations (#341)',()=>{
   });
   it('does not accept an invented URL or a citation from another tenant/source',()=>{
     const evidence=retrieveFaqEvidence('교환학생 평점',[doc],NOW);
-    const result={answer:'https://evil.example/a',citations:[{citationId:'faq-a-v1:p1',quote:'평점 기준은 3.0'}],needsHumanConfirmation:true,suggestedLinks:[]};
+    const result={answer:'https://evil.example/a',citations:[{citationId:'faq-a:faq-a-v1:p1',quote:'평점 기준은 3.0'}],needsHumanConfirmation:true,suggestedLinks:[]};
     expect(()=>validateFaqCandidate(result,evidence)).toThrow();
   });
 });
