@@ -201,6 +201,9 @@ export function matchesImageSpan(
     ||original.originalSha256!==span.originalSha256
     ||original.transformVersion!==span.transformVersion
     ||span.pageIndex>=original.pageCount)return false;
+  // #381: a trusted original must have unique line IDs across *all* lines, even
+  // those not cited. Map last-wins would otherwise approve an order-dependent quote.
+  if(new Set(original.ocrLines.map(line=>line.id)).size!==original.ocrLines.length)return false;
   const lines=new Map(original.ocrLines.map(line=>[line.id,line.text]));
   if(!span.ocrLineIds.every(id=>lines.has(id)))return false;
   const quoted=span.ocrLineIds.map(id=>lines.get(id)!).join(' ');
