@@ -7,7 +7,9 @@ import { execFileSync } from 'node:child_process';
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import ts from 'typescript';
+// TS 7's native compiler package no longer exports the JS compiler AST API.
+// Keep read-only static analysis on pinned TS 5's parser; typechecking uses native TS 7.
+import ts from 'typescript-legacy';
 
 const UNKNOWN = Symbol('unknown');
 const FASTIFY = Symbol('fastify');

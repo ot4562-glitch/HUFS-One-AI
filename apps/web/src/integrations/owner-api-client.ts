@@ -449,6 +449,20 @@ export class HufsOwnerApiClient {
       requireMatchingReceipt(Date.parse(result.page.at)===Date.parse(input.asOf));
     return result;
   }
+  /** #366: caller chooses only purpose filters; official offices and rights come from the server. */
+  findCounseling(change:{purposes:string[];campus?:string;language?:string},signal?:AbortSignal){
+    const params=clientInput(z.strictObject({
+      purposes:z.array(z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/)).min(1).max(5),
+      campus:z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).optional(),
+      language:z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).optional(),
+    }),change);
+    const response=z.discriminatedUnion('state',[
+      z.strictObject({state:z.literal('NOT_CONNECTED'),asOf:Iso}),
+      z.strictObject({state:z.literal('READY'),asOf:Iso,sourceVersion:z.string().min(1).max(128),
+        guide:V.CounselingGuideV2Schema}),
+    ]);
+    return this.mutate('/api/owner/counseling/routes',response,'POST',params,signal);
+  }
   /** #339: the server owns the rights-gated source data. Never accept browser source payloads. */
   listCampusActivities(query:{asOf:string;organizationId?:string;year?:number;query?:string},signal?:AbortSignal){
     const checked=clientInput(z.strictObject({asOf:Iso,organizationId:CampusToken.optional(),

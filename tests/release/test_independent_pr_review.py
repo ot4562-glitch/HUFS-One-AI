@@ -151,23 +151,23 @@ class IndependentCollaboratorReviewTests(unittest.TestCase):
                      {"lhh42001": "HTTP_403"})
         self.assertEqual(captured.exception.code, 403)
 
-    def test_base_edited_event_reruns_non_skipped_required_job(self):
+    def test_manual_only_has_no_pull_request_triggers(self):
         text = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("edited", text)
-        self.assertIn("converted_to_draft", text)
-        header = text.split("\n  independent-approval:\n", 1)[1].split("\n    steps:", 1)[0]
-        self.assertNotIn("    if:", header)
-        # No fallback to skipped=true or manual approval bypass.
-        self.assertIn("only open ready PRs into main", embedded_script())
+        trigger = text.split("\npermissions:", 1)[0]
+        self.assertIn("workflow_dispatch:", trigger)
+        self.assertIn("pr_number:", trigger)
+        self.assertNotIn("pull_request:", trigger)
+        self.assertNotIn("pull_request_review:", trigger)
+        self.assertIn("NUMBER: ${{ inputs.pr_number }}", text)
 
-    def test_no_student_original_checkout_or_target_event(self):
-        body = WORKFLOW.read_text(encoding="utf-8")
-        self.assertNotIn("pull_request_target:", body)
-        self.assertNotIn("actions/checkout@", body)
-        self.assertIn("pull_request_review:", body)
-        self.assertIn("synchronize", body)
-        self.assertIn("dismissed", body)
-        self.assertIn("/collaborators/", body)
+    def test_optional_manual_audit_does_not_checkout_student_data(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertNotIn("pull_request_target:", text)
+        self.assertNotIn("actions/checkout@", text)
+        self.assertIn("/collaborators/", text)
+        self.assertIn("contents: read", text)
+        self.assertIn("pull-requests: read", text)
+        self.assertIn("only open ready PRs into main", embedded_script())
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ import type {DemoProfilePort} from './modules/profiles/demo-profile.js';
 import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
+import {registerOwnerCounselingRoutes,type TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
 import {registerOwnerInsightsRoutes,type OwnerInsightsServices} from './modules/owner-v2-insights-http.js';
 import {registerOwnerPreparationRoutes,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
 import {registerOwnerExperienceCourseRoutes,type TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
@@ -52,6 +53,7 @@ interface SharedDependencies {
   runtime?:RuntimeMode;
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
+  ownerCounseling?:TrustedOwnerCounselingSource;
   ownerInsights?:OwnerInsightsServices;
   ownerPreparation?:OwnerPreparationServices;
   ownerExperienceCourse?:TrustedExperienceCourseSource;
@@ -134,6 +136,8 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerMajorWhatIfRoutes({...deps.majorWhatIf,app,session:ownerSession});
   registerOpportunityExplanationRoutes({...deps.opportunityExplanation,app,session:ownerSession});
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
+  registerOwnerCounselingRoutes({app,session:ownerSession,allowedOrigin:deps.allowedOrigin,
+    ...(deps.ownerCounseling?{source:deps.ownerCounseling}:{})});
   registerOwnerInsightsRoutes({app,session:ownerSession,...(deps.ownerInsights?{services:deps.ownerInsights}:{})});
   registerOwnerPreparationRoutes({app,session:ownerSession,
     ...(deps.ownerPreparation?{services:deps.ownerPreparation}:{})});

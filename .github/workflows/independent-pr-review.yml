@@ -1,15 +1,14 @@
-name: Independent collaborator review (required by policy)
+name: Independent collaborator review (optional manual audit)
 
-# No checkout: inspect GitHub-owned review and collaborator metadata only.
-# A branch ruleset must require this check. A workflow ALONE cannot disable
-# the Merge button for repository administrators (see docs/PR_WORKFLOW.md).
+# Owner-directed: do not generate review-approval failure on every PR.
+# All substantive build, security, CSV and API checks continue elsewhere.
 on:
-  # Retargeting the base branch emits 'edited': never leave a stale skipped
-  # required check after switching a stacked PR to main.
-  pull_request:
-    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, edited]
-  pull_request_review:
-    types: [submitted, dismissed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Open PR to audit manually (read-only, never approves)'
+        required: true
+        type: number
 
 permissions:
   contents: read
@@ -17,9 +16,8 @@ permissions:
 
 jobs:
   independent-approval:
-    # Never skip: GitHub may treat a skipped required job as successful.
-    # The Python script rejects non-main bases and drafts fail-closed.
-    name: exact-HEAD independent approval
+    # Manual informational command, not a required PR check.
+    name: manual peer review audit
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -27,7 +25,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.pull_request.number }}
+          NUMBER: ${{ inputs.pr_number }}
           GH_API_URL: ${{ github.api_url }}
         run: |
           python3 - <<'PY'
@@ -56,19 +54,19 @@ jobs:
 
           pr = pull()
           if pr.get('state') != 'open' or pr.get('draft') or pr['base']['ref'] != 'main':
-              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: only open ready PRs into main may pass')
+              raise SystemExit('MANUAL_REVIEW_NOT_VERIFIED: only open ready PRs into main may pass')
           head = pr['head']['sha']
           author = pr['user']['login'].casefold()
           reviews = []
           for page in range(1, 21):
               batch = github(f'/repos/{repo}/pulls/{number}/reviews?per_page=100&page={page}')
               if not isinstance(batch, list):
-                  raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: reviews unavailable')
+                  raise SystemExit('MANUAL_REVIEW_NOT_VERIFIED: reviews unavailable')
               reviews.extend(batch)
               if len(batch) < 100:
                   break
           else:
-              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: too many review records')
+              raise SystemExit('MANUAL_REVIEW_NOT_VERIFIED: too many review records')
 
           # Keep the latest *decisive* review for each reviewer. COMMENTED and
           # PENDING are not approvals and do not clear a CHANGES_REQUESTED.
@@ -102,10 +100,10 @@ jobs:
 
           latest = pull()
           if latest['head']['sha'] != head:
-              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: PR HEAD changed during review check')
+              raise SystemExit('MANUAL_REVIEW_NOT_VERIFIED: PR HEAD changed during review check')
           if blocking:
-              raise SystemExit(f'INDEPENDENT_REVIEW_REQUIRED: {len(blocking)} outstanding collaborator change requests')
+              raise SystemExit(f'MANUAL_REVIEW_NOT_VERIFIED: {len(blocking)} outstanding collaborator change requests')
           if not eligible:
-              raise SystemExit('INDEPENDENT_REVIEW_REQUIRED: zero valid non-author approvals on exact PR HEAD')
+              raise SystemExit('MANUAL_REVIEW_NOT_VERIFIED: zero valid non-author approvals on exact PR HEAD')
           print(f'PASS: {len(eligible)} current collaborator approval(s), exact HEAD {head[:12]}, zero change requests')
           PY

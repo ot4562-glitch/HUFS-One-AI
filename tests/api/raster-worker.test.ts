@@ -2,7 +2,7 @@ import {createHash} from 'node:crypto';
 import {mkdir,mkdtemp,readFile,writeFile,copyFile,rm,realpath,lstat,stat} from 'node:fs/promises';
 import {join,sep} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
-import ts from 'typescript';
+import {stripTypeScriptTypes} from 'node:module';
 import {PNG} from 'pngjs';
 import jpeg from 'jpeg-js';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
@@ -18,10 +18,13 @@ beforeAll(async()=>{
   await mkdir(local,{recursive:true});fixture=await mkdtemp(join(local,'raster-worker-test-'));
   await writeFile(join(fixture,'package.json'),'{"type":"module"}');
   await mkdir(join(fixture,'dist/packages/ai/src'),{recursive:true});await mkdir(join(fixture,'infra/ai'),{recursive:true});
+  // TS 7 ships a native compiler but no JS compiler API. Node 24's pinned
+  // syntax transformer keeps these synthetic worker fixtures independent of ts.transpileModule.
+  // This is not a production build path or a compiler type-check bypass.
   const code=await readFile(join(root,'packages/ai/src/raster.ts'),'utf8');
-  await writeFile(join(fixture,'dist/packages/ai/src/raster.js'),ts.transpileModule(code,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText);
+  await writeFile(join(fixture,'dist/packages/ai/src/raster.js'),stripTypeScriptTypes(code,{mode:'transform'}));
   const wrapper=await readFile(join(root,'packages/ai/src/raster-worker.ts'),'utf8');
-  await writeFile(join(fixture,'dist/packages/ai/src/raster-worker.js'),ts.transpileModule(wrapper,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText);
+  await writeFile(join(fixture,'dist/packages/ai/src/raster-worker.js'),stripTypeScriptTypes(wrapper,{mode:'transform'}));
   await copyFile(join(root,'infra/ai/raster-worker.mjs'),join(fixture,'infra/ai/raster-worker.mjs'));
   entry=pathToFileURL(join(fixture,'infra/ai/raster-worker.mjs'));
 });

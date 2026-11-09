@@ -23,14 +23,6 @@
 > [!IMPORTANT]
 > **현재 공개 가능한 범위는 합성 데이터 기반 시연 및 자동 검증된 코드입니다.** 실서비스 출시는 `RELEASE_BLOCKED`이며, 학교 공식 인증·졸업 판정·실학생 데이터 사용·실 NCP/AI 유료 호출의 완료를 뜻하지 않습니다. 프로젝트 소유자의 `OWNER_CONFIRMED_APPROVED`와 실제 환경 구성·권리·검증은 별개입니다. [현재 상태](STATUS.md) · [데이터 승인·권리](docs/AUTHORIZATION.md)
 
-## 2026-11-09 현행 개발·검수 상태 (갱신 스냅샷)
-
-- **본 검수 중 실제 병합 9건:** [#424](https://github.com/ot4562-glitch/HUFS-One-AI/pull/424) · [#420](https://github.com/ot4562-glitch/HUFS-One-AI/pull/420) · [#402](https://github.com/ot4562-glitch/HUFS-One-AI/pull/402) · [#403](https://github.com/ot4562-glitch/HUFS-One-AI/pull/403) · [#404](https://github.com/ot4562-glitch/HUFS-One-AI/pull/404) · [#409](https://github.com/ot4562-glitch/HUFS-One-AI/pull/409) · [#407](https://github.com/ot4562-glitch/HUFS-One-AI/pull/407) · [#408](https://github.com/ot4562-glitch/HUFS-One-AI/pull/408) · [#422](https://github.com/ot4562-glitch/HUFS-One-AI/pull/422). #422는 새 HEAD 6379472에 대한 다른 협업자 APPROVED·합성/DB/브라우저/보안 CI·exact HEAD 승인 검사 SUCCESS를 확인한 뒤 [6062230](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6062230952035e364fe54fdaf65ab56d7eca83c7)으로 병합했습니다. #424는 동료 작성 PR, #420은 동료 승인된 owner PR, 봇 6개는 올바른 최신 HEAD 코드 검수/사람 승인 후 병합.
-- **현재 OPEN PR 7건:** [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) · [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) · [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) · [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) · [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) · [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) · [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361). #410 상담 기능은 HEAD 39edd5c에서 검증되지 않은 상위 3개 기관이 정상 추천을 가리는 문제를 회귀와 함께 고쳤고 해당 HEAD 일반 CI는 성공했습니다. 최신 독립 리뷰 승인 전 미병합. #406의 TypeScript 7 호환성 오류는 새 HEAD에서 전체 코드 CI 성공했지만 공식 과거 CHANGES_REQUESTED와 독립 승인 미해결.
-- **재검토 수정 5개 PR:** #361 FAQ 인용·긍부정 가드 `1bf77d4`, #372 OCR 기관 동일성 및 main 충돌 `5769a35`, #405 Node24 이슈 라우터 합성 이벤트 `eca9ff5`, #410 상담 랭킹 `39edd5c`, #421 CSV 감사 범위 명시 `fb7ea01`. #406 TS7 일반 CI 통과. 어느 수정도 사람의 최신 HEAD 독립 APPROVED를 대체하지 않으며, 미병합 7개를 완료로 표시하지 않습니다.
-- **OPEN Issue 28건:** 고정 역할 5(#355–#359, 쓰기 금지), 데이터 #360 1, 기능 13, 기술/보안 7, 후속 정책/UX 2. 본인 배정 8건 중 고정 역할 #359 제외 7개는 운영 자료·권리·사람 수락까지 완결되지 않아 OPEN 유지. 수정 가능한 23개 이슈 본문에 개별 진척·미충족 조건을 반영했습니다.
-- [#415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415) 독립 승인 CI는 병합됐으나 GitHub main Ruleset API상 0건, branch protection 상세는 403으로 서버 보호 활성화 미확인(#416). 합성 테스트와 운영은 별개이며 **RELEASE_BLOCKED**. [STATUS](STATUS.md) 및 [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)을 우선 확인하세요.
-
 ![HUFS One AI 시스템 아키텍처: 학생/합성 시연, React 프런트엔드, Fastify API, 추천·학업 코어, PostgreSQL 데이터 경계, 선택적 AI 및 NCP 출시 게이트](docs/images/hufs-one-ai-architecture.svg)
 
 *아키텍처 이미지는 저장소 구현을 이해하기 쉽게 정리한 논리도입니다. 배포 완료 화면이나 실제 운영망을 뜻하지 않습니다.*
@@ -51,7 +43,7 @@ HUFS One AI는 학생이 직접 확인해야 할 근거를 연결합니다.
 
 | 기능 | 학생에게 보이는 가치 | 현재 구현 경계 |
 |---|---|---|
-| **맞춤 기회 탐색** | 관심사와 이수 조건에 맞는 비교과·장학·진로/채용 정보 | 합성 시연, 허가된 공고 카탈로그 인증 API/서명 커서/웹 연결 (#417). 운영 승인 source/SQL/권리 인수 미연결 |
+| **맞춤 기회 탐색** | 관심사와 이수 조건에 맞는 비교과·장학·진로/채용 정보 | 고정 합성 공고 40건·공지 10건 기반 시연 및 관련 코어 |
 | **공지·마감 캘린더** | 확정 마감, 변경된 공지와 확인할 일정 파악 | `SourceRevision` 및 `asOf` 기준; 모든 실시간 공고 수집 아님 |
 | **학점·졸업·What-if** | 취득·수강·계획 학점을 나누고 전공 선택 시나리오 비교 | `RulePack`·합성 원장 기반, 공식 졸업 사정 아님 |
 | **경험·역량·커리어** | 경험 초안 → AI 역량 후보 → 학생 승인·철회 → 추천 활용 | 본인 권한·현재 작업 결과의 일치성 검증; 실데이터 인수 별도 |

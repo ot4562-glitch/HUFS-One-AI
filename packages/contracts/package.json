@@ -42,7 +42,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json"
+    "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.build.json"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts"
