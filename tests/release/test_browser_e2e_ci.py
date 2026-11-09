@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 WORKFLOW=Path(__file__).resolve().parents[2]/".github/workflows/ui-browser-e2e.yml"
-CHECKOUT="actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+CHECKOUT="actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 SETUP="actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
 UPLOAD="actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
 ALLOWED={
