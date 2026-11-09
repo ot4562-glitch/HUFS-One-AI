@@ -49,6 +49,8 @@ export type MentorRankingV2=z.infer<typeof MentorRankingV2Schema>;
 export const CounselingGuideV2Schema=z.strictObject({
   matches:z.array(z.strictObject({
     serviceId:Id,score:z.number().finite().nonnegative(),
+    /** The operator's current human-reviewed official name, never a generated label. */
+    serviceName:z.string().trim().min(2).max(160).optional(),
     exactPurposes:Ids,relatedPurposes:Ids,
     audienceState:z.enum(['CONFIRMED','UNKNOWN']),
     campusState:z.enum(['CONFIRMED','UNKNOWN']),
