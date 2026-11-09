@@ -112,8 +112,9 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     typeof input.ownerV2Catalog.source?.read!=='function'||
     typeof input.ownerV2Catalog.source?.revalidate!=='function'||
     typeof input.ownerV2Catalog.signer?.sign!=='function'||
-    typeof input.ownerV2Catalog.signer?.verify!=='function'))
-    throw new Error('V2 catalog requires explicit source rights and HMAC cursor configuration');
+    typeof input.ownerV2Catalog.signer?.verify!=='function'||
+    typeof input.ownerV2Catalog.quota?.consume!=='function'))
+    throw new Error('V2 catalog requires explicit source rights, HMAC signer and durable request quota');
   if(input.managedAi){
     const value=input.managedAi;
     if(value.operation!=='HCX_007'||!value.roles
