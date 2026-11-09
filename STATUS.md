@@ -4,17 +4,29 @@
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. 팀 고정 역할 이슈 #355–#359는 읽기 전용입니다.
 
-## 최신 코드 감사 진행 및 문서 정리 — 2026-11-09
+## 담당 이슈 후속 수정·검증 (2026-11-09 최신 병합 확인)
 
-- **현재 기준 커밋:** [`76792d1`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/76792d1a3d50826adf2b64644219f4efdc149f9b). 추적 Git blob **1,299개**, Markdown **87개**, `.ts` **749개**·`.tsx` **105개** 및 SQL 39개 등 전체 경로 목록을 확보. 이것은 **파일 인벤토리**이지 1,299개 파일의 모든 실행 경로를 독립적으로 검증 완료했다는 뜻이 아닙니다.
+- **현재 `main`:** [`8210eaf`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/8210eaffd049324295549a365a41338d9aeec743). GitHub 재조회: **OPEN Issues 31건**, **OPEN PR #431 1건**. 심민성 담당 OPEN 이슈는 [#359 본선 진출 이후](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359)를 제외하면 **9건**이며, 코드 적용과 실운영·권리·사람 인수를 동일한 완료로 보지 않습니다.
+- **장학 정책 #429 — CLOSED:** [PR #434](https://github.com/ot4562-glitch/HUFS-One-AI/pull/434), main [`4af8383`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/4af838386d210243b72020caa49f7f19d2b35b6d). 동일 학기 과거 관측이력 허용, 최신 상충 검증 시 `UNKNOWN` 보류; 정확한 HEAD CI 12/12 성공.
+- **승인 원장 SQL 병목 #430 — 코드 해결, 운영 인수 OPEN:** [PR #436](https://github.com/ot4562-glitch/HUFS-One-AI/pull/436) main `515b3c6`에서 source proof 조회를 1회로 배치하고, [#438](https://github.com/ot4562-glitch/HUFS-One-AI/pull/438) main `de4d3ea`에서 disposable 실제 PG(1/100/500 projections × 중복 100 refs) 측정. [#440](https://github.com/ot4562-glitch/HUFS-One-AI/pull/440) main `8210eaf`에서 중복된 **검증 source proof 지문 직렬화**를 제거하고 전체 ref 다중성·순서는 계속 바인딩. **500×100 단일 합성 PG CI 실측:** 이전 3132.18 ms / 관측 힙 +166.8 MB → 후속 708.28 ms / +34.5 MB. 단일 CI 런너 간 비통제 비교로 운영 SLA·성능 개선율 확정 아님. SQL EXPLAIN(ANALYZE) 0.441 / 0.217 ms; 실운영 인덱스·권리·부하 검증은 미완.
+- **상담 과다요청 #433 — 분산 DB 코드·실 PG 검증, 운영 인수 OPEN:** [PR #435](https://github.com/ot4562-glitch/HUFS-One-AI/pull/435) main `bbded7a`에서 원장 read 전 원자적 per-actor quota/429/503 및 PostgreSQL HMAC digest 마이그레이션을 추가하고, [#438](https://github.com/ot4562-glitch/HUFS-One-AI/pull/438) real synthetic PG에서 두 인스턴스 동시 50건 **30 허용/20 거부**, 다른 actor 독립 허용 및 테이블 직접 접근 금지 확인. 실제 운영 마이그레이션·최소 권한·시크릿/WAF 비용 인수는 별도.
+- **OCR 근거 #381 — 영구 저장 보강, 실원본 인수 OPEN:** [PR #437](https://github.com/ot4562-glitch/HUFS-One-AI/pull/437) main `010b716`. 동일·상충 field ID 중복을 IMAGE immutable INSERT 단계에서도 거부, 실제 disposable PostgreSQL에서 이미지/별도 PDF 경로와 함께 통과. 실 CLOVA/기관 원본/데이터 권리·사용자 인수는 수행하지 않음.
+- **CSV 개인정보 #362 — metadata-only CI 강화, 권리 검증 OPEN:** [PR #439](https://github.com/ot4562-glitch/HUFS-One-AI/pull/439) main `e527023`. 기존 `csv/` 경로 외 **동일한 원본 Git blob 복사본**도 PR 경로와 blob SHA 메타데이터로 차단, 3,000파일 API 잘림은 실패 처리. 원본 5개 파일·내용·경로·기존 Git history **불변**. 가공/부분 복사·과거 공개·fork 및 모든 당사자 공개 동의는 이 검사로 증명할 수 없음.
+- **사후 감사 #416 / 보안 운영 #378 / 실소스 통합 #366·#367·#375:** 4개 과거 PR #399/#400/#401/#411의 코드 변경·한계를 자체 재검토하고 #411 후속 방어를 병합했으나 **동료 독립 승인 기록을 조작하지 않음**. GitHub 비공개 보안 alerts, 실학교 원장·현재 권리/동의, 운영 RLS·HCX/NCP/실계정 E2E와 관리자 정책은 미검증. 소유자 지시에 따라 독립 승인 **자동 실패 게이트는 재도입하지 않음**.
+
+**공통 수락 경계:** 위 코드/합성/일회용 PG 검증은 **실제 운영 구성·학교 데이터 제공 권리·동의·사람 Gold/검수**의 완료가 아닙니다. 제품 `RELEASE_BLOCKED` 유지. [본선 진출 이후] 고정 역할 이슈 #355–#359는 수정하지 않았습니다.
+
+## 1차 코드 감사 및 문서 정리 — 2026-11-09 (당시 스냅샷)
+
+- **당시 분석 기준 커밋:** [`76792d1`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/76792d1a3d50826adf2b64644219f4efdc149f9b). 추적 Git blob **1,299개**, Markdown **87개**, `.ts` **749개**·`.tsx` **105개** 및 SQL 39개 등 전체 경로 목록을 확보. 이것은 **파일 인벤토리**이지 1,299개 파일의 모든 실행 경로를 독립적으로 검증 완료했다는 뜻이 아닙니다.
 - **확인된 신규 이슈 4건(각 독립 등록):** [#427 상담 검색 변경 중 이전 응답](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427), [#433 상담 원장 읽기 전 요청 제한 부재](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433), [#429 장학 사실 이력 과잉 중복 거부](https://github.com/ot4562-glitch/HUFS-One-AI/issues/429), [#430 승인 projection N+1 SQL](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430). 기존 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418), [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) 등과 분리했습니다.
-- **열린 이슈 32건:** 이전 28건 + 유효한 신규 #427/#429/#430/#433 4건. 최초 의심이었던 [#428](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428)은 공식 IANA IPv4 레지스트리 대조에서 차단 누락을 확인할 수 없어 **오탐 CLOSED/NOT_PLANNED**, 취약점 집계 제외. 역할 #355–#359는 쓰기 금지, **실제 검증 없이 완료 상태로 바꾼 이슈 없음**. 코드·계약·SQL·웹·외부 수집 경계를 대상으로 한 정적 1차 감사이며 브라우저 재현, 실제 PostgreSQL 벤치, NCP/실학생/권리 검증은 `NOT_RUN`.
+- **당시 열린 이슈 32건:** 이전 28건 + 유효한 신규 #427/#429/#430/#433 4건. 최초 의심이었던 [#428](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428)은 공식 IANA IPv4 레지스트리 대조에서 차단 누락을 확인할 수 없어 **오탐 CLOSED/NOT_PLANNED**, 취약점 집계 제외. 역할 #355–#359는 쓰기 금지, **실제 검증 없이 완료 상태로 바꾼 이슈 없음**. 코드·계약·SQL·웹·외부 수집 경계를 대상으로 한 정적 1차 감사이며 브라우저 재현, 실제 PostgreSQL 벤치, NCP/실학생/권리 검증은 `NOT_RUN`.
 - **문서 최소화:** 중복 과거 문서 5개를 Git 커밋 이력에 보존한 채 현행 트리에서 제거하고, README의 전체 링크 나열을 간소화. 정본은 README, 이 STATUS, AGENTS/WORKSTREAMS/PR_WORKFLOW, [2026-11-09 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md), 보안·권리/운영 필수 문서입니다.
 - **제품 상태:** `RELEASE_BLOCKED`; 이번 정적 코딩 감사·문서 정리는 실서비스/실학생 데이터·원본 CSV 권리 승인, 사람 리뷰, 실제 서버/모델 실행이 아닙니다.
 
-## 0. 전수 수정·병합 최신 스냅샷 (2026-11-09)
+## 0. 앞선 전수 수정·병합 기록 (2026-11-09 당시)
 
-**이번 전수 작업 PR 총 17건 실제 병합(코드·의존성 15 + 승인 검사 제거 #425 + 문서 #419), OPEN PR 0건.** [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 13/13 HEAD 검사 성공 뒤 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465), [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 11/11 HEAD 검사 성공 뒤 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)로 병합 확인했습니다. 역할 고정 이슈 5개를 제외한 23개 이슈도 최종 현재 단계·남은 인수를 기록했으며 전체 28개 이슈는 아직 운영 DoD 미충족으로 OPEN입니다.
+**당시 전수 작업 PR 총 17건 실제 병합(코드·의존성 15 + 승인 검사 제거 #425 + 문서 #419), 당시 OPEN PR 0건.** [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 13/13 HEAD 검사 성공 뒤 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465), [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 11/11 HEAD 검사 성공 뒤 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)로 병합 확인했습니다. 역할 고정 이슈 5개를 제외한 23개 이슈도 최종 현재 단계·남은 인수를 기록했으며 전체 28개 이슈는 아직 운영 DoD 미충족으로 OPEN입니다.
 
 ### 추가 병합 확인 6건
 
