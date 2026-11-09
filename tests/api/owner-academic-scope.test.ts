@@ -41,6 +41,8 @@ function pg(){
     calls.push({sql,params});
     if(sql.includes('FROM api_self_consents'))return {rows:[{version:'1',choices_json:{personalStorage:true},updated_at:at}]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:[projection]};
+    if(sql.includes('FROM source_effective_revisions_vnext'))
+      return {rows:sources.has(String(params[0]))?[sources.get(String(params[0]))!]:[]};
     if(sql.includes('FROM jsonb_to_recordset(')){
       const refs=JSON.parse(String(params[0])) as Array<{source_id:string}>;
       return {rows:refs.flatMap(ref=>{

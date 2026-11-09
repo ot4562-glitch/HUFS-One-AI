@@ -21,7 +21,7 @@ function fixture(){
     calls.push(sql);
     if(sql.includes('FROM api_self_consents'))return {rows:consent?[{version:'1',choices_json:{personalStorage:true},updated_at:at}]:[]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:active?[projection]:[]};
-    if(sql.includes('FROM jsonb_to_recordset('))return {rows:[source]};
+    if(sql.includes('FROM jsonb_to_recordset(')||sql.includes('FROM source_effective_revisions_vnext'))return {rows:[source]};
     return {rows:[]};
   },release(){}})};
   const grants={permissionRefs:new Set(['SYN-PERM']),sourceIds:new Set(['SYN-SOURCE']),policyVersion:'SYN-RIGHTS-1',sourceHeadVersion:'SYN-REV',
