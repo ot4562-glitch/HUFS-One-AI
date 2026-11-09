@@ -1,7 +1,15 @@
 # HUFS One AI — PR 리뷰·검증·병합
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
-## 2026-11-08 최신 리뷰·병합·이슈 대조
+## 2026-11-09 최신 검수 결과
+
+- [PR #386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) (HEAD `0fdb638`): 중복 요건/경험 ID 격리와 순서 반전 회귀 확인, 다른 계정의 AI QA APPROVED 및 오너 [APPROVED](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386#pullrequestreview-5820570040). HEAD 5종 Actions SUCCESS, 과거 차단 스레드 2건 해결 후 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 **squash MERGED**. #347은 AI 코드 일부 완료이며 API/UI·실원장·사람 Gold 미완으로 OPEN.
+- [PR #361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) (HEAD `72fc402`): [REQUEST_CHANGES](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361#pullrequestreview-5820574395). `없는`을 서술어 부정으로 인식해 근거와 반대인 답변을 통과시키는 결함; 인용문-서술어 극성 회귀/수정 필요.
+- [PR #372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) (HEAD `1798c55`): [REQUEST_CHANGES](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372#pullrequestreview-5820574572). 문자열 유사도가 높은 서로 다른 기관명도 `SAME` 판정; `ISSUER_UNCERTAIN` 보류 경계/회귀 필요.
+- **이슈 26건 OPEN**: 읽기 전용 역할 #355–#359(5), 자료 #360(1), 신규 기능 13, 남은 기술/보안 결함 #362/#366/#367/#373/#375/#378/#381(7). 이번 검토에서는 전체 DoD가 충족된 신규 이슈가 없어 추가 강제 종결 없음. #341/#346/#347에 진행 기록 댓글만 추가.
+- 운영/사람 인수, 유료 HCX/OCR, 실제 학교·학생 데이터 권리, 독립 Gold는 합성 CI와 별도입니다. **`RELEASE_BLOCKED` 유지.** [11/09 감사 원장](REVIEW_AND_ISSUE_AUDIT_20261109.md) · [현행 STATUS](../STATUS.md).
+
+## 2026-11-08 검토 당시 리뷰·병합·이슈 대조 (역사적 기록)
 
 새로 작성된 PR **#391–#396 총 6건**은 각각 최신 HEAD의 실제 diff/부정시험/권한·자료·운영 영향을 검토한 뒤 GitHub **COMMENT** 리뷰를 제출하고, 사용자 지시에 따라 exact `expected_head_sha`를 확인해 main에 squash 병합했습니다. 이 6건은 동일한 오너 계정 `ot4562-glitch`이 작성했으므로 GitHub의 **작성자 본인 APPROVE 금지**를 우회하거나 COMMENT를 독립 사람 승인으로 기록하지 않습니다.
 
