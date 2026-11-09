@@ -79,7 +79,7 @@
 1. PR은 담당 소유권/변경 대상 계약·실제 결함/반례와 인가·자료/AI·migration·lockfile·출시 영향 범위를 명시합니다.
 2. 비교 대상은 **최신 HEAD SHA**와 main diff. 접근권/데이터 범위·race/취소/철회·로그/자산/시점·다중탭/SQL role·fail-closed/rollback 위험을 검토합니다.
 3. 같은 HEAD의 GitHub Actions **합성계약·실제 일회용 PG·Chrome·NCP IaC(mock)** 중 영향을 받는 필수 워크플로를 확인합니다. FAIL/SKIP/NOT_RUN은 그대로 보고하고, 실패를 성공 재실행만 골라 숨기지 않습니다.
-4. 일반 규칙: 작성자가 아닌 실제 리뷰어의 `APPROVED`와 미해결 `CHANGES_REQUESTED`/스레드 해소, 필요한 CI SUCCESS, mergeable/base/HEAD를 모두 확인한 후 병합합니다. 자동 에이전트 COMMENT는 사람 APPROVED가 아닙니다. 사용자가 특정 PR에 직접 병합을 지시한 예외는 **그 PR에만** 적용하고 사실대로 기록합니다.
+4. **필수 규칙(2026-11-09 개정):** 작성자가 아닌 실제 `write` 이상 협업자 1명 이상의 **현재 HEAD `APPROVED`**, 미해결 `CHANGES_REQUESTED`/스레드 없음, 필요한 CI SUCCESS, mergeable/base/HEAD를 모두 확인한 후에만 병합합니다. 작성자·AI 에이전트 COMMENT, 소유자 지시 또는 기존 기록의 예외로 이 의무를 우회할 수 없습니다.
 5. merge 후 동일 SHA의 main Actions·영향 받은 API/화면을 재확인합니다. 프로덕션/실계정/원본/유료 AI/NCP apply·RELEASE_BLOCKED 해제는 **PR 병합과 별도 승인**입니다.
 
 ## 2026-11-06 코드 리뷰·병합 근거
