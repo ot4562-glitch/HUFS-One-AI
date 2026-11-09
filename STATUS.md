@@ -4,7 +4,44 @@
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. 팀 고정 역할 이슈 #355–#359는 읽기 전용입니다.
 
-## 1. 이번 PR 검토·병합 — 2026-11-09
+## 0. 전수 수정·병합 최신 스냅샷 (2026-11-09)
+
+**실제 병합 16 PR(앞선 9 + 추가 코드 6 + 정책 #425 1)**. 정책 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)로 병합되었고 문서 정리 [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) **1개만 남은 시점의 기록**입니다. #419 병합 후 이번 대상 OPEN PR 0. 확인된 이전 병합 9건은 #424/#420/#402/#403/#404/#409/#407/#408/#422, 직전 main SHA `6062230`입니다.
+
+### 추가 병합 확인 6건
+
+| PR | 검증·변경 범위 | GitHub 병합 SHA |
+| --- | --- | --- |
+| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 인용/긍·부정 극성 | [`569e9382d`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/569e9382dd15b536e95ab3fde055442529e7fecc) |
+| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 기관명 보수적 대조 | [`4e1a96204`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/4e1a962049d1a4c24475b0d69d542a35869e2411) |
+| [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) | Node24 이슈 라우터 합성 검증 | [`c4628abe4`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/c4628abe485b9e19dcbf4c9de01e6411cd43ad1c) |
+| [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) | TypeScript 7 호환성 | [`4bc5968af`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/4bc5968af4ef765a161ce500a796e64b9ba44d6d) |
+| [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 인증 source→API/UI | [`6354b2d62`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6354b2d62f48ad493eb86838c4e1cc8e530f2dbd) |
+| [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV 과거 Git 메타데이터 진단 | [`ff0d31714`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/ff0d31714fc5ebce32a7bece2a0d3369579410bb) |
+
+#361의 FAQ 긍·부정 서술어 검증, #372의 OCR 기관명 유사도 보수 처리, #410의 이름 없는 상담기관이 정상 상위 후보를 가리는 문제는 수정 커밋과 합성 회귀가 병합됐습니다. #372의 최종 HEAD는 `7655f8b`로 중간 수리 HEAD `5769a35`와 다릅니다. 과거 리뷰/CI와 최신 SHA를 구별해야 합니다.
+
+### PR 리뷰 자동 검사 정책
+
+소유자가 2026-11-09 `exact-HEAD independent approval`의 **PR 자동 실패형 검사를 제거**하도록 지시했습니다. 실제 병합한 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)에서 `.github/workflows/independent-pr-review.yml`, 그 전용 합성 테스트 및 TASK-00 sparse checkout 참조를 삭제하고, `AGENTS.md`와 [PR_WORKFLOW](docs/PR_WORKFLOW.md)에 사람/에이전트의 수동 검수 절차를 남깁니다. 담당자 실제 `APPROVED`가 없으면 있다고 기록하지 않습니다. **일반 코드·보안·CSV/권리 경계·브라우저·PG CI는 유지**하며, 미해결 코드 결함은 승인 CI 삭제와 관계없이 수정합니다. 서버 강제 규칙은 Ruleset 조회 0건 및 보호 상세 API 403으로 별도 확인하지 못했습니다.
+
+### 열린 이슈 및 실제 운영 인수
+
+- **OPEN 28건:** 변경 금지 역할 #355–#359 (5), 공식자료 #360 (1), 기능 #339–#341 및 #343–#352 (13), 기술/보안 #362/#366/#367/#373/#375/#378/#381 (7), 검토 절차 #416과 사용자 UX #418 (2).
+- **#341:** FAQ 검색/인용 가드 코드 병합. 실제 공식 FAQ·HCX·독립 Gold 미인수.
+- **#345/#366:** 상담 인증 source→API/UI와 추천 순위 수정 병합. 실제 기관 명칭/권리/실DB 원장은 미연결.
+- **#346:** OCR 후보 추출·유사 기관명 격리·기본 가림 병합. 실제 CLOVA 및 실학생 자료·사람 검토는 미실행.
+- **#362:** `csv/` 로컬 과거 메타데이터 진단 도구만 병합. **실자료 파일·Git 기록 불변**, 포크/과거 다른 경로/게시 동의는 UNKNOWN/NOT_VERIFIED.
+- **#378:** TypeScript 7·github-script v9와 Node24 합성 이벤트 시험 병합. 실제 GitHub 라우팅 웹훅/Dependabot alerts 운영 인수 별도.
+- **#416:** 리뷰 CI를 소유자 지시로 수동 감사로 조정. 과거 #399/#400/#401/#411의 사후 교차 검토 부채는 여전히 별도.
+- 본인 배정 8건에서 고정 역할 #359 제외한 7건은 완전한 권리/실계정/운영 DoD 미충족으로 OPEN. 고정 역할 이슈 #355–#359에 어떤 쓰기도 하지 않았습니다.
+
+**`OWNER_CONFIRMED_APPROVED`는 코드 작업 승인이지 실서비스 인수가 아닙니다. `RELEASE_BLOCKED` 유지.**
+
+
+---
+
+## 1. 1차 당시 PR 검토·병합 — 2026-11-09
 
 | PR | 최신 검토 SHA / 내용 | HEAD 검증 | 최종 처리 |
 | --- | --- | --- | --- |
@@ -14,16 +51,16 @@
 
 #386의 AI 순수 코드·합성 테스트만 병합됐습니다. 실제 NCS 원장·인적 Gold·웹/API 통합은 `NOT_RUN/NOT_CONNECTED`이며 기능 #347은 완료가 아닙니다. #361/#372는 수정된 HEAD 반례·신규 CI·재리뷰 전까지 병합하지 않습니다. **병합 후 새로운 main SHA의 CI/실운영 통과를 이 표에서 주장하지 않습니다.** [11/09 검토 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md) · [11/08 병합/수정 이력](docs/REVIEW_AND_ISSUE_AUDIT_20261108.md).
 
-## 2. 열린 PR: 변경 요청 2건
+## 2. 1차 당시 변경 요청 2건 (현재도 OPEN)
 
 | PR | 남은 차단 결함 | 다음 행동 |
 | --- | --- | --- |
 | [#361 FAQ](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | `없(?!이)` 정규식이 `없는`을 부정으로 잘못 인식, 근거와 반대되는 학사 답변을 통과시킬 위험 | 인용·서술어 극성 검증 및 합성 반례 추가 후 재리뷰 |
 | [#372 OCR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | 비슷하지만 다른 기관의 문자 유사도를 `SAME`으로 확정 | 유사 오타는 `ISSUER_UNCERTAIN`으로 보류, 별도 기관 구분 회귀 후 재리뷰 |
 
-## 3. 열린 이슈 — 코드 결함과 실증 인수 분리
+## 3. 1차 당시 열린 이슈 — 코드 결함과 실증 인수 분리
 
-동일 날짜의 완료 정리 이후 **OPEN 26건**: 고정 역할 **5건(#355–#359, 변경 금지)**, 공식자료 요청 **1건(#360)**, 추가 기능 **13건(#339–#341, #343–#352)**, 미해결 기술/보안 결함 **7건**으로 구분합니다. 날짜/버전이 바뀌면 GitHub를 다시 검색해야 합니다.
+1차 감사 당시 **OPEN 26건**: 고정 역할 **5건(#355–#359, 변경 금지)**, 공식자료 요청 **1건(#360)**, 추가 기능 **13건(#339–#341, #343–#352)**, 미해결 기술/보안 결함 **7건**으로 구분합니다. 날짜/버전이 바뀌면 GitHub를 다시 검색해야 합니다.
 
 | 미해결 이슈 | 다음 검증 / 담당 경계 |
 | --- | --- |
@@ -52,7 +89,7 @@
 ## 5. 다음 우선순위
 
 1. 보안: #362 원본 공개 동의/게시권 비공개 조사 및 Git 기록 노출 평가, #381 OCR 공통 근거 충돌 해결, #373 FAQ 판본/권리 충돌 차단.
-2. 코드/사용성: #361·#372·#386의 REQUEST_CHANGES 해결 및 독립 AI 교차 QA; #366·#367·#375 API/DB/화면의 실제 소비자 경로 구현.
+2. 코드/사용성: #361 FAQ·#372 OCR·#386 AI 코어 병합 이후 공식 원장/실계정/사람 QA·#366/#367/#375 UI-API-DB 소비자 경로의 운영 인수와 #418 UX 회귀 확인.
 3. 자료/실증: #360 공식 문서·포스터·rights·독립 Gold 확보, 실제 OIDC/메일/BETA 2명 이상·운영 PostgreSQL/NCP·비용·복구/백업·사람 수락 별도 기록. 승인이 있어도 자동 실행/출시 승인으로 해석하지 않습니다.
 
 **현행 담당 정본:** [AGENTS.md](AGENTS.md) · [팀 역할](docs/WORKSTREAMS.md) · [이슈 배정](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 #355–#359에 댓글/본문/상태 등 어떤 쓰기도 하지 않습니다. [보관된 이전 상태](docs/archive/STATUS_20261107.md).

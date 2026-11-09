@@ -2,6 +2,12 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
+## 2026-11-09 최신 PR 병합·리뷰 정책 적용 스냅샷
+
+- 이전 검수의 9건(#424/#420/#402/#403/#404/#409/#407/#408/#422)과 후속 6건(#361/#372/#405/#406/#410/#421), **15개 코드·의존성 PR이 실제 병합됐습니다.** 추가로 정책 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)가 [88b7814](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)로 병합돼 이번 이력에서 총 **16건 병합**을 확인했습니다. [현행 STATUS](../STATUS.md)에 추가 6건의 정확한 main 병합 SHA가 있습니다.
+- 사용자가 승인 검사용 `exact-HEAD independent approval`의 자동 실패를 중단하도록 명시했고, 실제 병합된 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 워크플로·그 전용 테스트·CI checkout 참조를 제거했습니다. **일반 기능/보안 CI는 유지**하며 담당 에이전트는 이 문서의 diff·안전성·CI 검토를 실제로 수행하고 불확실성/미승인을 정직하게 표시합니다.
+- [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 최종 README/STATUS/감사 문서에 위 변경을 반영하는 PR입니다. 이미 #425가 병합됐고 #419까지 병합되면 이번 전수 점검 대상 **OPEN PR 0**입니다. 과거 시점의 7개 OPEN 기록은 역사로만 읽으세요.
+
 ## PR 협업 검토 운영 지침 — 2026-11-09 사용자 지시로 자동 승인 강제 제거
 
 **GitHub Actions가 외부 협업자 `APPROVED` 또는 exact-HEAD 리뷰 유무 때문에 실패하도록 하지 않습니다.** 자동 차단 워크플로 `.github/workflows/independent-pr-review.yml`과 이에 종속된 테스트를 제거하고, 사람 리뷰 원칙은 문서 가이드로 유지합니다. 승인 미수신을 코드·보안 테스트 실패로 표시하지 않습니다.
