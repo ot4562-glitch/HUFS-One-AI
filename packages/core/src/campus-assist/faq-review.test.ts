@@ -87,6 +87,33 @@ describe('#361 review: negation polarity is compared sentence by sentence',()=>{
   });
 });
 
+describe('#361 review: incidental adjective negation cannot reverse the main assertion',()=>{
+  const doc=make('SYN-LEAVE-POL','가상 휴학 상시 접수',
+    '가상 휴학은 기간 제한 없는 상시 접수로 포털에서 신청할 수 있습니다. 단 접수 완료 후 취소할 수 없습니다.');
+  const ev=retrieveFaqEvidence('휴학 상시 접수 포털',[doc],NOW);
+  const cand=(answer:string,quote:string):FaqCandidate=>({answer,
+    citations:[{citationId:ev[0]!.citationId,quote}],
+    needsHumanConfirmation:true,suggestedLinks:[]});
+  it('rejects an inverted application permission despite the adjective "없는"',()=>{
+    expect(checkFaqCandidate(cand('가상 휴학은 포털에서 신청할 수 없습니다.',
+      '포털에서 신청할 수 있습니다.'),ev)).toContain('NEGATION_NOT_IN_SOURCE');
+  });
+  it('accepts the positive permission while preserving "제한 없는"',()=>{
+    expect(checkFaqCandidate(cand('가상 휴학은 기간 제한 없는 상시 접수로 포털에서 신청할 수 있습니다.',
+      '기간 제한 없는 상시 접수로 포털에서 신청할 수 있습니다.'),ev)).toEqual([]);
+  });
+  it('does not confuse the negative cancellation clause with the positive application clause',()=>{
+    expect(checkFaqCandidate(cand('포털에서 신청할 수 없습니다.',
+      '포털에서 신청할 수 있습니다.'),ev)).toContain('NEGATION_NOT_IN_SOURCE');
+    expect(checkFaqCandidate(cand('접수 완료 후 취소할 수 없습니다.',
+      '접수 완료 후 취소할 수 없습니다.'),ev)).toEqual([]);
+  });
+  it('also rejects a positive reversal of the explicitly negative cancellation claim',()=>{
+    expect(checkFaqCandidate(cand('접수 완료 후 취소할 수 있습니다.',
+      '접수 완료 후 취소할 수 없습니다.'),ev)).toContain('NEGATION_DROPPED');
+  });
+});
+
 describe('#361 review: spelled-out Korean counts must be quoted',()=>{
   const doc=make('SYN-TERM','가상 교환학생 학기','가상 교환학생 지원자는 총평점평균 3.0 이상이어야 하며 4개 학기 이상을 마쳐야 합니다.');
   const ev=retrieveFaqEvidence('교환학생 학기',[doc],NOW);
