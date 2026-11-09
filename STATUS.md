@@ -2,14 +2,14 @@
 
 > **현행 상태: 2026-11-09 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
-**제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. 팀 고정 역할 이슈 #355–#359는 읽기 전용입니다.
+**제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
 
 ## 2026-11-09 본선 전 심민성 담당 이슈 정산 (최신)
 
 - **기준 main:** [`6c27fdc`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6c27fdc281a1d3c632eb39d9ada4322540493069). GitHub 확인: **전체 열린 이슈 22건**, **열린 PR #431 1건**, 심민성에게 배정된 열린 이슈는 [본선 이후 역할 #359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) 한 건뿐입니다.
 - **본선 전 담당 9건 완료·이관 후 CLOSED/completed:** [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362), [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366), [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367), [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375), [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381), [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416), [#430](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430), [#433](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433). 각 이슈 댓글에 실제 PR/CI/일회용 PG 검수와 이관 근거를 기록했습니다.
 - **공식자료·개인정보/출처 권리 → 김채윤 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360) OPEN:** HUFS 학사/행사/FAQ/장학/상담 공식 원장, 학수번호, 목적별 웹·OCR·HCX/보관 권리, 공개 추적 CSV 5개 **각 원본의 게시권·동의/재식별 및 과거 공개 복제본 심사**. 코드 검수만으로 권리 승인이 성립하지 않습니다.
-- **운영 DB·보안/실계정 E2E → 심민성 [#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) OPEN:** **NCP 서버 생성 이후** SQL migration, RLS/최소권한, 요청 제한/키·보존, 실제 NCP 부하와 인덱스, GitHub/서버 보안 설정, 인가된 실원본 기반 UI→API→DB→코어 E2E 및 비용/릴리스 검증. 소유자가 #359 원래 역할 본문을 유지하며 이관 체크리스트를 **명시 허가하여 추가**했고 다른 고정 역할 #355–#358은 변경하지 않았습니다.
+- **운영 DB·보안/실계정 E2E → 심민성 [#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) OPEN:** **NCP 서버 생성 이후** SQL migration, RLS/최소권한, 요청 제한/키·보존, 실제 NCP 부하와 인덱스, GitHub/서버 보안 설정, 인가된 실원본 기반 UI→API→DB→코어 E2E 및 비용/릴리스 검증. **이관 체크리스트를 본문에 직접 추가한 것은 규정 위반**이라 2026-11-09 원래 본문을 정확히 복원하고 [#359 댓글](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359#issuecomment-6739957305)로 이전했습니다. #355–#358의 본문/메타데이터는 변경하지 않았습니다.
 - **개발 코드 검수:** 소유자가 ChatGPT의 코드 diff·반례·정확한 HEAD CI 검수를 본선 전 검수로 수락. 별도 사람 `APPROVED`를 허위로 기록하지 않았고 과거 독립 승인 기록도 소급 생성하지 않습니다.
 - **정확한 의미:** 9건의 종료는 *본선 전 개발 단계의 코드/검수 완료 및 책임 이관*이며, 기존 공개 CSV의 권리 문제 해결·운영 자료 사용 승인·NCP 배포·실계정 검증/실사용 출시 인수가 아닙니다. `RELEASE_BLOCKED` 유지. 원본 CSV 5개·기존 Git 히스토리 미변경.
 
@@ -23,7 +23,7 @@
 - **CSV 개인정보 #362 — metadata-only CI 강화, 권리 검증 OPEN:** [PR #439](https://github.com/ot4562-glitch/HUFS-One-AI/pull/439) main `e527023`. 기존 `csv/` 경로 외 **동일한 원본 Git blob 복사본**도 PR 경로와 blob SHA 메타데이터로 차단, 3,000파일 API 잘림은 실패 처리. 원본 5개 파일·내용·경로·기존 Git history **불변**. 가공/부분 복사·과거 공개·fork 및 모든 당사자 공개 동의는 이 검사로 증명할 수 없음.
 - **사후 감사 #416 / 보안 운영 #378 / 실소스 통합 #366·#367·#375:** 4개 과거 PR #399/#400/#401/#411의 코드 변경·한계를 자체 재검토하고 #411 후속 방어를 병합했으나 **동료 독립 승인 기록을 조작하지 않음**. GitHub 비공개 보안 alerts, 실학교 원장·현재 권리/동의, 운영 RLS·HCX/NCP/실계정 E2E와 관리자 정책은 미검증. 소유자 지시에 따라 독립 승인 **자동 실패 게이트는 재도입하지 않음**.
 
-**공통 수락 경계:** 위 코드/합성/일회용 PG 검증은 **실제 운영 구성·학교 데이터 제공 권리·동의·사람 Gold/검수**의 완료가 아닙니다. 제품 `RELEASE_BLOCKED` 유지. [본선 진출 이후] 고정 역할 이슈 #355–#359는 수정하지 않았습니다.
+**공통 수락 경계:** 위 코드/합성/일회용 PG 검증은 **실제 운영 구성·학교 데이터 제공 권리·동의·사람 Gold/검수**의 완료가 아닙니다. 제품 `RELEASE_BLOCKED` 유지. **이 문서는 코드 검수 당시 스냅샷**이고, 이후 #359 본문을 실수로 변경했다가 정확히 복구하고 진행 내용만 댓글로 옮겼습니다.
 
 ## 1차 코드 감사 및 문서 정리 — 2026-11-09 (당시 스냅샷)
 
@@ -125,4 +125,4 @@
 2. 코드/사용성: #361 FAQ·#372 OCR·#386 AI 코어 병합 이후 공식 원장/실계정/사람 QA·#366/#367/#375 UI-API-DB 소비자 경로의 운영 인수와 #418 UX 회귀 확인.
 3. 자료/실증: #360 공식 문서·포스터·rights·독립 Gold 확보, 실제 OIDC/메일/BETA 2명 이상·운영 PostgreSQL/NCP·비용·복구/백업·사람 수락 별도 기록. 승인이 있어도 자동 실행/출시 승인으로 해석하지 않습니다.
 
-**현행 담당 정본:** [AGENTS.md](AGENTS.md) · [팀 역할](docs/WORKSTREAMS.md) · [이슈 배정](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 #355–#359에 댓글/본문/상태 등 어떤 쓰기도 하지 않습니다. [보관된 이전 상태](docs/archive/STATUS_20261107.md).
+**현행 담당 정본:** [AGENTS.md](AGENTS.md) · [팀 역할](docs/WORKSTREAMS.md) · [이슈 배정](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 #355–#359는 **본문·제목·메타데이터 수정 절대 금지, 진행은 새 댓글만 허용**합니다. [보관된 이전 상태](docs/archive/STATUS_20261107.md).
