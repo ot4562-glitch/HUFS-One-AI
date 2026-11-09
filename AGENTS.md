@@ -59,5 +59,5 @@
 - 실제 학생 원본/학교 문서·비밀·모델 입력은 현행 actor/세션·RLS·CSRF·출처 권리·동의/철회·최소권한·승인된 사용목적을 적용한다. 결과에 근거가 부족하면 `UNKNOWN/NEEDS_REVIEW`를 유지한다. 합성/실측/캐시·실학생·학교 공식 판정을 혼동하지 않는다.
 - **`csv/` 원본 5개(Google Forms 1개 + 학생별 수강 CSV 4개)는 읽기 전용으로 보존**한다. 삭제·이동·재인코딩·변경·Git 해제/배포 이미지·공개 웹 번들 포함 등을 방지한다. 저장소의 검증 경계 `tools/verify_release_boundary.py`를 준수하고 법적 삭제·철회 요청은 별도 처리한다.
 - 다른 사람의 dirty worktree/브랜치·핵심 코드를 초기화·강제 push하지 않는다. 공통 계약/DB/lockfile은 소비자들과 교차 검토한다.
-- 현재 HEAD 테스트·CI·코드 diff·독립 사람 리뷰 및 실제 환경 실행 결과를 구분한다. **PR 병합/릴리스는 관련 게이트와 사용자 권한을 확인**한 뒤 수행한다. 합성 PASS로 실 운영·인적 Gold·모델 사용 성공을 주장하지 않는다.
+- 현재 HEAD 테스트·CI·코드 diff·독립 사람 리뷰 및 실제 환경 실행 결과를 구분한다. **모든 PR은 예외 없이 작성자 외 write 이상 협업자의 최신 HEAD `APPROVED`가 1건 이상 있어야 병합한다.** 작성자의 COMMENT, 에이전트 검토, CI 성공, 일괄 병합 지시는 이를 대체하지 않는다. 미해결 CHANGES_REQUESTED/리뷰 스레드 또는 실패·대기 CI가 있으면 금지한다. main 직접 push/강제 push로 우회하지 않는다. [병합 필수 규칙](docs/PR_WORKFLOW.md)을 적용한다. 합성 PASS로 실 운영·인적 Gold·모델 사용 성공을 주장하지 않는다.
 - 수정 전에 현재 코드, 관련 기능 이슈, 폴더별 `AGENTS.md`, [STATUS](STATUS.md), [Architecture](Architecture.md), [PR workflow](docs/PR_WORKFLOW.md)를 읽고 정확한 변경 내용과 남은 미검증을 보고한다.
