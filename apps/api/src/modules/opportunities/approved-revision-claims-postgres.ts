@@ -42,7 +42,13 @@ const Box=z.tuple([z.number().min(0).max(1),z.number().min(0).max(1),z.number().
   .refine(b=>b[0]<b[2]&&b[1]<b[3]);
 const ImagePayload=z.strictObject({assetId:Id,originalSha256:Sha,transformVersion:Id,
   pageCount:z.number().int().min(1).max(100),width:z.number().int().min(1).max(100000),height:z.number().int().min(1).max(100000),
-  ocrLines:z.array(z.strictObject({id:Id,text:z.string().min(1).max(20000),pageIndex:z.number().int().min(0).max(99),bboxNorm:Box})).min(1).max(2000)});
+  ocrLines:z.array(z.strictObject({id:Id,text:z.string().min(1).max(20000),pageIndex:z.number().int().min(0).max(99),bboxNorm:Box})).min(1).max(2000)})
+  .superRefine((value,ctx)=>{
+    // #381: reject duplicate IDs at the trusted DB projection boundary, not only
+    // downstream in matchesImageSpan. Different pages/boxes still conflict.
+    if(new Set(value.ocrLines.map(line=>line.id)).size!==value.ocrLines.length)
+      ctx.addIssue({code:'custom',path:['ocrLines'],message:'Duplicate OCR line id'});
+  });
 const Image=z.object({evidence_id:Id,revision_id:Id,payload_json:ImagePayload,payload_sha256:Sha,
   reviewed_by:Actor,reviewed_at:Time,review_ref:Id,revoked_at:Time.nullable()});
 const at=(value:unknown)=>Date.parse(Time.parse(value));
