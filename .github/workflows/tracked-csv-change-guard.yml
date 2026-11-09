@@ -13,12 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Inspect PR filenames through GitHub API (never checkout student/Forms originals)
+      - name: Inspect PR paths and blob identities via GitHub API (no original checkout)
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           NUMBER: ${{ github.event.pull_request.number }}
           GH_API_URL: ${{ github.api_url }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           python3 - <<'PY'
           import json
@@ -28,33 +29,81 @@ jobs:
           endpoint = os.environ["GH_API_URL"].rstrip("/")
           repo = os.environ["REPO"]
           number = int(os.environ["NUMBER"])
+          import re
+          base_sha = os.environ["BASE_SHA"]
           token = os.environ["GH_TOKEN"]
-          protected = []
-          for page in range(1, 32):
+          if not re.fullmatch(r"[0-9a-f]{40}", base_sha):
+              raise RuntimeError("PR base SHA unavailable")
+
+          headers = {
+              "Authorization": f"Bearer {token}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+          def api_json(uri):
+              with urlopen(Request(uri, headers=headers), timeout=20) as response:
+                  return json.load(response)
+
+          # Git *tree metadata* only; no files, blobs, original names or contents
+          # are printed, fetched or checked out. Fail closed on partial trees.
+          tree = api_json(f"{endpoint}/repos/{repo}/git/trees/{base_sha}?recursive=1")
+          if not isinstance(tree, dict) or tree.get("truncated") is not False or not isinstance(tree.get("tree"), list):
+              raise RuntimeError("Protected baseline tree metadata incomplete")
+          originals = {
+              entry["sha"] for entry in tree["tree"]
+              if isinstance(entry, dict) and entry.get("type") == "blob"
+              and isinstance(entry.get("path"), str) and entry["path"].startswith("csv/")
+              and isinstance(entry.get("sha"), str)
+          }
+          if len(originals) != 5:
+              raise RuntimeError("Expected protected baseline count unavailable; private review required")
+
+          def forbidden(entry):
+              for field in ("filename", "previous_filename"):
+                  path = entry.get(field)
+                  # Include casing tricks for newly created paths. The historical
+                  # lowercase directory remains untouched.
+                  if isinstance(path, str) and (path.lower() == "csv" or path.lower().startswith("csv/")):
+                      return True
+              # The API reports the new blob SHA even for renames/copies to a
+              # completely different path. This catches byte-for-byte replicas,
+              # NOT edited/transformed copies or new sensitive material.
+              return (entry.get("status") != "removed" and
+                      isinstance(entry.get("sha"), str) and entry["sha"] in originals)
+
+          # Synthetic invariant checks run without touching originals.
+          sample = "1" * 40
+          assert forbidden({"filename": "CSV/alias.csv", "status": "added"})
+          assert not forbidden({"filename": "assets/example.txt", "sha": sample, "status": "added"})
+          assert ({"sha": sample}["sha"] == sample)
+
+          protected = 0
+          seen = 0
+          for page in range(1, 31):  # GitHub caps PR file lists at 3,000.
               uri = f"{endpoint}/repos/{repo}/pulls/{number}/files?per_page=100&page={page}"
-              req = Request(uri, headers={
-                  "Authorization": f"Bearer {token}",
-                  "Accept": "application/vnd.github+json",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              })
-              with urlopen(req, timeout=20) as response:
-                  batch = json.load(response)
+              batch = api_json(uri)
               if not isinstance(batch, list):
                   raise RuntimeError("GitHub diff metadata unavailable")
               for entry in batch:
-                  for field in ("filename", "previous_filename"):
-                      path = entry.get(field)
-                      if isinstance(path, str) and (path == "csv" or path.startswith("csv/")):
-                          protected.append((entry.get("status", "unknown"), field))
+                  if not isinstance(entry, dict):
+                      raise RuntimeError("Invalid PR file metadata")
+                  seen += 1
+                  if entry.get("status") != "removed" and not isinstance(entry.get("sha"), str):
+                      raise RuntimeError("Changed blob SHA unavailable; private review required")
+                  if forbidden(entry):
+                      protected += 1
+              if len(batch) == 100 and page == 30:
+                  raise RuntimeError("PR files may be truncated at 3,000; manual review required")
               if len(batch) < 100:
                   break
           else:
-              raise RuntimeError("Pull request file listing exceeds API limit; manual review required")
+              raise RuntimeError("Pull request file metadata incomplete")
+          # Metadata only: GitHub may omit contextual/private fields; do not print
+          # filenames, actor data or opaque original SHA fingerprints on failure.
           if protected:
-              # Do not print original filenames or contents, even in error logs.
               raise SystemExit(
-                  f"PROTECTED_CSV_CHANGE: {len(protected)} changed original-path entries. "
+                  f"PROTECTED_CSV_CHANGE: {protected} forbidden original-path or identical-blob changes. "
                   "Read AGENTS.md and issue #362; private human approval required."
               )
-          print("PASS: no changed paths under tracked csv/; no original files checked out")
+          print(f"PASS: {seen} PR file entries checked by path and known protected blob SHA; originals not read")
           PY
