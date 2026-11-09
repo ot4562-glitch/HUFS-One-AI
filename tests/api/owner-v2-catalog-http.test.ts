@@ -15,6 +15,7 @@ const key=Uint8Array.from(Array.from({length:32},(_,i)=>i+1)); // synthetic fixt
 const signer=createCatalogCursorSigner({activeKeyId:'test-key',keys:new Map([['test-key',key]]),ttlMs:60_000});
 function setup(enabled=true){
   let identity=actor.actorId,consent='consent-1',rights=true,revision='catalog-r1';
+  let quotaAllowed=true,quotaUnavailable=false;
   const records=[opportunity('item-1',{title:'Economics mentoring'}),
     opportunity('item-2',{title:'Economics research'}),
     opportunity('item-3',{title:'Restricted item',permitted:false})];
@@ -24,13 +25,18 @@ function setup(enabled=true){
         expiresAt:'2026-11-30T00:00:00Z'}})),
     revalidate:vi.fn(async()=>rights),
   };
+  const quota={consume:vi.fn(async(input:{actorId:string;now:string;operation:'V2_CATALOG_SEARCH'})=>{
+    if(quotaUnavailable)throw new Error('synthetic quota unavailable');
+    return quotaAllowed && input.actorId===identity && input.operation==='V2_CATALOG_SEARCH';
+  })};
   const app=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,now:()=>FIXED_NOW,
     auth:{verifySession:async()=>({...actor,actorId:identity}),revokeSession:async()=>{}},
-    ...(enabled?{ownerV2Catalog:{source,signer}}:{})});
+    ...(enabled?{ownerV2Catalog:{source,signer,quota}}:{})});
   apps.push(app);
   const get=(query='pageSize=1&sort=TITLE')=>app.inject({
     url:'/api/owner/features/v2/catalog?'+query});
-  return {app,source,get,revoked:()=>{rights=false;},
+  return {app,source,quota,get,revoked:()=>{rights=false;},
+    exhaustQuota:()=>{quotaAllowed=false;},failQuota:()=>{quotaUnavailable=true;},
     switchActor:()=>{identity='SYN-OWNER-2';},changeConsent:()=>{consent='consent-2';},
     changeRevision:()=>{revision='catalog-r2';}};
 }
@@ -50,6 +56,7 @@ describe('#366/#348 BETA verified catalog API and server-signed continuation',()
     expect(second.statusCode).toBe(200);
     expect(second.json().page.items.map((x:{id:string})=>x.id)).toEqual(['item-2']);
     expect(second.json().page.nextCursor).toBeNull();
+    expect(h.quota.consume).toHaveBeenCalledTimes(2);
     expect(h.source.read).toHaveBeenCalledTimes(2);
     expect(h.source.revalidate).toHaveBeenCalledTimes(2);
     expect(JSON.stringify(second.json())).not.toContain('SYN-OWNER-1');
@@ -85,6 +92,28 @@ describe('#366/#348 BETA verified catalog API and server-signed continuation',()
     // In this fixture the operator changes its actor-bound snapshot as well,
     // but the signed cursor still binds the old actor and is rejected.
     expect((await h.get(next(first))).statusCode).toBe(409);
+  });
+  it('refuses expensive catalog reads before source access when durable quota is exhausted',async()=>{
+    const h=setup();h.exhaustQuota();
+    const blocked=await h.get();
+    expect(blocked.statusCode).toBe(429);
+    expect(blocked.json().code).toBe('RATE_LIMITED');
+    expect(h.source.read).not.toHaveBeenCalled();
+    expect(h.source.revalidate).not.toHaveBeenCalled();
+    expect(h.quota.consume).toHaveBeenCalledOnce();
+  });
+  it('fails closed when the durable quota backend is unavailable',async()=>{
+    const h=setup();h.failQuota();
+    const blocked=await h.get();
+    expect(blocked.statusCode).toBe(503);
+    expect(blocked.json().code).toBe('PROVIDER_UNAVAILABLE');
+    expect(h.source.read).not.toHaveBeenCalled();
+  });
+  it('rejects partial production catalog activation without a trusted quota',async()=>{
+    const source=setup().source;
+    expect(()=>createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,now:()=>FIXED_NOW,
+      auth:{verifySession:async()=>actor,revokeSession:async()=>{}},
+      ownerV2Catalog:{source,signer,quota:undefined as never}})).toThrow(/quota/);
   });
   it('denies unauthenticated and non-BETA callers even when source ports are absent',async()=>{
     const guest=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,
