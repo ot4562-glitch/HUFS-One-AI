@@ -58,7 +58,7 @@ jobs:
           if len(originals) != 5:
               raise RuntimeError("Expected protected baseline count unavailable; private review required")
 
-          def forbidden(entry):
+          def forbidden(entry, known_blobs=originals):
               for field in ("filename", "previous_filename"):
                   path = entry.get(field)
                   # Include casing tricks for newly created paths. The historical
@@ -69,13 +69,16 @@ jobs:
               # completely different path. This catches byte-for-byte replicas,
               # NOT edited/transformed copies or new sensitive material.
               return (entry.get("status") != "removed" and
-                      isinstance(entry.get("sha"), str) and entry["sha"] in originals)
+                      isinstance(entry.get("sha"), str) and entry["sha"] in known_blobs)
 
           # Synthetic invariant checks run without touching originals.
           sample = "1" * 40
           assert forbidden({"filename": "CSV/alias.csv", "status": "added"})
-          assert not forbidden({"filename": "assets/example.txt", "sha": sample, "status": "added"})
-          assert ({"sha": sample}["sha"] == sample)
+          assert forbidden({"filename": "assets/alias.txt", "sha": sample, "status": "added"}, {sample})
+          assert not forbidden({"filename": "assets/synthetic.txt", "sha": "2" * 40,
+                                "status": "added"}, {sample})
+          assert not forbidden({"filename": "assets/example.txt", "sha": sample,
+                                "status": "removed"}, {sample})
 
           protected = 0
           seen = 0
