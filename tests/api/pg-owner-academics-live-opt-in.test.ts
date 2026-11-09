@@ -1,7 +1,7 @@
 /** Actual local PostgreSQL proof, synthetic only. Requires a fresh empty database;
  * never resets/drops a database or changes application/production resources. */
 import {readFileSync} from 'node:fs';
-import {createHash,randomBytes} from 'node:crypto';
+import {createHash,createHmac,randomBytes} from 'node:crypto';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {Pool} from 'pg';
@@ -11,7 +11,8 @@ import {createPostgresOwnerDoubleMajorServices} from '../../apps/api/src/modules
 import {PostgresOwnerStudyPlanSnapshotLoader} from '../../apps/api/src/modules/academics/owner-study-plan-postgres.js';
 import {createTrustedOwnerStudyPlanSource} from '../../apps/api/src/modules/academics/owner-study-plan-source.js';
 import {PostgresEvidenceRightsResolver} from '../../apps/api/src/modules/opportunities/rights-postgres.js';
-import {canonicalProjectionHash} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
+import {canonicalProjectionHash,PostgresApprovedOwnerReader} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
+import {PostgresOwnerCounselingQuota} from '../../apps/api/src/modules/owner-counseling-quota-postgres.js';
 import type {OwnerCatalogAuthority} from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import {proveOwnerStudyPlanPg} from './owner-study-plan-live-slice.js';
@@ -26,11 +27,13 @@ import type {VerifiedActor} from '../../apps/api/src/types.js';
 const RUN=process.env.HUFS_PG_OWNER_ACADEMICS_LIVE==='1';
 const pools:Pool[]=[];
 const password=randomBytes(24).toString('hex');
-let admin:Pool,reader:Pool,writer:Pool;
+let admin:Pool,reader:Pool,writer:Pool,quotaReader:Pool;
 const now=()=>new Date().toISOString();
-const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql','20261105_source_pdf_evidence.sql',
+const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql',
+  '20261109_source_image_ocr_unique.sql','20261105_source_pdf_evidence.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
-  '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql','20261101_owner_approved_catalog.sql'];
+  '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql',
+  '20261101_owner_approved_catalog.sql','20261109_owner_counseling_quota.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{
   const client=await pool.connect();return {query:async(sql,params=[])=>({rows:(await client.query(sql,[...params])).rows}),release:()=>client.release()};
 }});
@@ -76,6 +79,13 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
       GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_profiles,api_self_workspace_records,api_experience_tag_approvals TO hufs_test_owner_recommendation_writer;
       GRANT INSERT ON api_self_consent_events,api_self_workspace_events,api_experience_tag_events TO hufs_test_owner_recommendation_writer;`);
     writer=pool(url,'hufs_test_owner_recommendation_writer');
+    // Disposable synthetic role: only EXECUTE, never access to quota rows or actor digests.
+    await admin.query(`CREATE ROLE hufs_test_owner_counseling_quota LOGIN PASSWORD '${password}'
+      NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
+      GRANT USAGE ON SCHEMA public TO hufs_test_owner_counseling_quota;
+      GRANT EXECUTE ON FUNCTION public.consume_owner_counseling_quota(char(64))
+        TO hufs_test_owner_counseling_quota`);
+    quotaReader=pool(url,'hufs_test_owner_counseling_quota');
   },30000);
   afterAll(async()=>{await Promise.all(pools.map(value=>value.end()));},10000);
 
@@ -110,16 +120,105 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
       binding.pack.validationReport.checkedAt=before;binding.pack.validationReport.sourceDocumentSha256=sha;binding.trustedOriginal.sourceDocumentSha256=sha;
     }
     for(const link of payload.evidenceLinks)link.verifiedAt=before;
-    const insert=async(kind:string,entity:string,value:unknown,id:string)=>{
+    const insert=async(kind:string,entity:string,value:unknown,id:string,sourceRefs:readonly typeof source[]=[source])=>{
       await admin.query(`INSERT INTO api_owner_approved_projections(projection_id,actor_id,kind,entity_id,version,payload_json,payload_sha256,sources_json,
         reviewed_by,reviewed_at,as_of,starts_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,'SYN-INDEPENDENT-OPERATOR',$9,$9,$9,$10)`,
-      [id,actorId,kind,entity,id+'-V1',value,canonicalProjectionHash(value),JSON.stringify([source]),before,expires]);
+      [id,actorId,kind,entity,id+'-V1',value,canonicalProjectionHash(value),JSON.stringify(sourceRefs),before,expires]);
       await admin.query('INSERT INTO api_owner_approved_heads(actor_id,kind,entity_id,projection_id) VALUES($1,$2,$3,$4)',[actorId,kind,entity,id]);
     };
     await insert('PLAN_INPUT','CURRENT_DOUBLE_MAJOR',payload,actorId+'-INPUT');
     return {actorId,sourceId,revisionId,permissionRef,before,expires,authority,insert,
       services:createPostgresOwnerDoubleMajorServices({pool:adapter(reader),authority})};
   }
+  it('benchmarks actual PostgreSQL owner batch proofs for 1/100/500 projections with 100 shared refs',async()=>{
+    const f=await seed('BATCH'),ref={sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef};
+    const refs=Array.from({length:100},()=>({...ref}));
+    let existing=0,proofReads=0,explain=false;
+    let explainPlan:Record<string,unknown>|null=null;
+    const counted:ReviewerSqlPool={connect:async()=>{
+      const c=await reader.connect();
+      return {query:async(sql,params=[])=>{
+        if(sql.includes('FROM jsonb_to_recordset(')){
+          proofReads++;
+          if(explain){
+            const p=await c.query('EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) '+sql,[...params]);
+            explainPlan=(p.rows[0]?.['QUERY PLAN'] as Array<Record<string,unknown>>|undefined)?.[0]??null;
+          }
+        }
+        return {rows:(await c.query(sql,[...params])).rows};
+      },release:()=>c.release()};
+    }};
+    const loader=new PostgresApprovedOwnerReader(counted,f.authority);
+    for(const count of [1,100,500]){
+      while(existing<count){
+        const id='SYN-BATCH-COURSE-'+existing;
+        await f.insert('COURSE',id,{courseId:id,source:ref},'SYN-BATCH-PROJECTION-'+existing,refs);
+        existing++;
+      }
+      proofReads=0;explain=count===500;explainPlan=null;
+      const start=performance.now(),heapStart=process.memoryUsage().heapUsed;
+      const at=now();
+      const found=await loader.read({actorId:f.actorId,kind:'COURSE',asOf:at},at);
+      const wallMs=performance.now()-start,heapDelta=process.memoryUsage().heapUsed-heapStart;
+      expect(found?.rows).toHaveLength(count);
+      expect(proofReads).toBe(1); // 500x100 repeated refs => ONE DB proof SELECT.
+      if(explain){
+        expect(explainPlan?.['Execution Time']).toEqual(expect.any(Number));
+        expect(explainPlan?.['Plan']).toBeDefined();
+      }
+      // Real disposable PostgreSQL observations, not synthetic mock timing or a production SLA.
+      console.info('SYN-PG #430',JSON.stringify({projections:count,refsPerProjection:100,
+        distinctSourceRefs:1,proofSelectCount:proofReads,wallMs:Number(wallMs.toFixed(2)),
+        heapDeltaBytes:heapDelta,
+        ...(explainPlan?{explainExecutionMs:explainPlan['Execution Time']}:{}),
+      }));
+    }
+    // Latest source-rights withdrawal must invalidate the batch as a whole.
+    await admin.query(`INSERT INTO source_rights_revocations
+      (receipt_id,revoked_by,revoked_at,reason_ref)
+      VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-TEST-BATCH-WITHDRAW')`,
+    [f.actorId+'-RIGHTS']);
+    const at=now();
+    expect(await loader.read({actorId:f.actorId,kind:'COURSE',asOf:at},at)).toBeNull();
+  },90000);
+
+  it('enforces counseling quota atomically across actual PostgreSQL API replicas and hides actor digests',async()=>{
+    const key=Buffer.alloc(32,13),poolAdapter=adapter(quotaReader);
+    const replica1=new PostgresOwnerCounselingQuota(poolAdapter,key);
+    const replica2=new PostgresOwnerCounselingQuota(poolAdapter,Buffer.from(key));
+    const a='SYN-OWNER-COUNSEL-QUOTA-A',b='SYN-OWNER-COUNSEL-QUOTA-B';
+    const request=(actorId:string)=>({actorId,operation:'V2_OWNER_COUNSELING' as const,now:now()});
+    const responses=await Promise.all(Array.from({length:50},(_,i)=>
+      (i%2?replica1:replica2).consume(request(a))));
+    const secondActor=await replica2.consume(request(b));
+    expect(secondActor).toBe(true); // Another actor remains authorized.
+    const digest=(actorId:string)=>createHmac('sha256',key)
+      .update('hufs-one:owner-counseling:actor:v1\0').update(actorId,'utf8').digest('hex');
+    const receipts=await admin.query(`SELECT identity_digest,window_start,uses
+      FROM public.owner_counseling_quota_windows WHERE identity_digest=$1 ORDER BY window_start`,
+    [digest(a)]);
+    expect(receipts.rows.length).toBeGreaterThanOrEqual(1);
+    expect(receipts.rows.every(row=>Number(row.uses)>=1&&Number(row.uses)<=30)).toBe(true);
+    expect(receipts.rows.reduce((sum,row)=>sum+Number(row.uses),0))
+      .toBe(responses.filter(Boolean).length);
+    if(receipts.rows.length===1){
+      expect(responses.filter(Boolean)).toHaveLength(30);
+      expect(responses.filter(x=>!x)).toHaveLength(20);
+    }
+    const other=await admin.query('SELECT uses FROM public.owner_counseling_quota_windows WHERE identity_digest=$1',
+      [digest(b)]);
+    expect(other.rows).toHaveLength(1);
+    expect(Number(other.rows[0]!.uses)).toBe(1);
+    await expect(quotaReader.query('SELECT identity_digest FROM public.owner_counseling_quota_windows'))
+      .rejects.toMatchObject({code:'42501'});
+    await expect(quotaReader.query('UPDATE public.owner_counseling_quota_windows SET uses=1'))
+      .rejects.toMatchObject({code:'42501'});
+    console.info('SYN-PG #433',JSON.stringify({requests:responses.length,
+      admitted:responses.filter(Boolean).length,denied:responses.filter(x=>!x).length,
+      dbWindows:receipts.rows.length,otherActorAdmitted:secondActor,
+    }));
+  },60000);
+
   it('runs the actual two-pack reader/rights SQL under a non-owner read-only RLS role',async()=>{
     const f=await seed('READ'),input={actorId:f.actorId,now:now()};
     expect(await f.services.rights.mayInspect(input)).toBe(true);
