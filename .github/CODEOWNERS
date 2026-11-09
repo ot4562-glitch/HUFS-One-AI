@@ -1,2 +1,13 @@
-# Integration owner until teammates' GitHub IDs are confirmed. Enforcement depends on repo plan.
-* @ot4562-glitch
+# HUFS One AI — reviewer owners. All five accounts have repository write access
+# (verified 2026-11-09). The PR author cannot approve their own PR.
+# This is a REVIEW REQUEST MAP, not server-side merge enforcement by itself.
+# An administrator must enable main branch rules requiring:
+#  - at least one independent approval;
+#  - CODEOWNERS review;
+#  - stale approvals dismissed on new commits;
+#  - unresolved review conversations resolved;
+#  - mandatory CI and no administrator bypass.
+#
+# Keep multiple reviewers in the default rule: any eligible co-owner can
+# review even when ot4562-glitch authored the implementation.
+* @ot4562-glitch @taewangim-alt @uisang2004-maker @lhh42001 @qamarrchae
