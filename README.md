@@ -26,8 +26,8 @@
 ## 개발·검수 현황 — 2026-11-09 전수 PR 정리
 
 - 이번 작업의 코드/의존성 **실제 병합 15건**: 먼저 병합된 #424/#420/#402/#403/#404/#409/#407/#408/#422 **9건**과, 직접 수정 또는 재검토 후 GitHub 병합이 확인된 **#361/#372/#405/#406/#410/#421 6건**입니다. 개별 병합 SHA는 [STATUS](STATUS.md)와 [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)을 참고하세요.
-- **마지막 열린 PR [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)**은 문서 정리 및 독립 리뷰 자동 CI를 선택적 수동 감사로 변경합니다. **이 PR까지 병합되면 이번 전수검토의 열린 PR이 0건**이 됩니다. GitHub [실시간 PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 정본으로 삼습니다.
-- `exact-HEAD independent approval`은 코드 오류가 아니라 사람 승인 부재로 실패하던 잡이었습니다. 소유자 지시에 따라 일반 PR에서는 더 이상 실행되지 않으며, 에이전트는 [문서상 리뷰 절차](docs/PR_WORKFLOW.md)를 따릅니다. 이번 한시적 병합 승인과 **실제 타인 APPROVED는 구별**합니다. 소스·계약·CSV/보안·브라우저·DB CI는 유지합니다.
+- **정책 PR [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)**는 승인 검사용 GitHub Actions 및 그 전용 테스트·CI 참조를 완전히 제거하고 리뷰 기준을 AGENTS/PR_WORKFLOW 문서에 남깁니다. **마지막 문서 PR [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)**도 병합되면 이 전수 점검의 열린 PR은 0건이 됩니다. GitHub [실시간 PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 정본으로 삼습니다.
+- `exact-HEAD independent approval`은 코드 오류가 아니라 사람 승인 부재로 실패하던 잡이었습니다. 소유자 지시에 따라 #425에서 관련 자동 워크플로를 삭제하고, 에이전트는 [문서상 리뷰 절차](docs/PR_WORKFLOW.md)를 따릅니다. 이번 한시적 병합 승인과 **실제 타인 APPROVED는 구별**합니다. 소스·계약·CSV/보안·브라우저·DB CI는 유지합니다.
 - **열린 이슈 28건**은 역할 이슈 5, 자료 요청 1, 추가 기능 13, 기술/보안 7, 후속 정책/UX 2건입니다. 운영 자료의 권리/동의, NCP/HCX 실제 가동 및 사람 평가가 미완료이므로 **`RELEASE_BLOCKED` 유지**.
 
 ![HUFS One AI 시스템 아키텍처: 학생/합성 시연, React 프런트엔드, Fastify API, 추천·학업 코어, PostgreSQL 데이터 경계, 선택적 AI 및 NCP 출시 게이트](docs/images/hufs-one-ai-architecture.svg)

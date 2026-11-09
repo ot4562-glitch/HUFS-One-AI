@@ -121,6 +121,6 @@
 | [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) | 상담 인증 source→API/UI | [`6354b2d62`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6354b2d62f48ad493eb86838c4e1cc8e530f2dbd) |
 | [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) | CSV 과거 Git 메타데이터 진단 | [`ff0d31714`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/ff0d31714fc5ebce32a7bece2a0d3369579410bb) |
 
-[#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 본 문서를 포함해 `AGENTS.md`, `docs/PR_WORKFLOW.md`, `README.md`, `STATUS.md`, `.github/workflows/independent-pr-review.yml`, 수동 감사 테스트를 갱신합니다. 소유자의 지시로 **`pull_request`/리뷰 이벤트의 자동 승인 실패 잡은 제거**하며 `workflow_dispatch` 수동 읽기 전용 감사만 유지합니다. 이 PR이 병합되면 본 전수 점검의 마지막 열린 PR도 완료됩니다.
+[#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 소유자 지시로 `exact-HEAD independent approval` 자동 검사를 **완전히 삭제**하고 `.github/workflows/task00-contracts.yml`, `tests/release/test_ci_workflow.py`의 참조를 함께 정리합니다. `AGENTS.md`·PR_WORKFLOW에는 실제 diff·보안·CI 검토와 미승인 상태 기록을 문서 수칙으로 남깁니다. [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 그 변경을 보존하며 본 README·STATUS·감사 원장 정리를 수행합니다. 두 PR 모두 병합 후 이번 점검의 열린 PR은 0입니다.
 
 **이슈는 총 28건 OPEN**(고정 역할 이슈 #355–#359 5건 읽기 전용). 실제 학교/학생 게시권·개인정보 공개 이력·NCP/HCX 운영·사람 Gold 인수는 PR 병합으로 해결된 것이 아닙니다. 특히 #421은 로컬 `csv/` 경로의 메타데이터 집계일 뿐이고 공개 권리·동의를 판정하지 않습니다. `RELEASE_BLOCKED` 유지.

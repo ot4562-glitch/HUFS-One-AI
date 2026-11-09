@@ -2,34 +2,33 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
-## 현행 리뷰·병합 절차 — 2026-11-09 사용자 정책 변경
+## 2026-11-09 최신 PR 병합·리뷰 정책 적용 스냅샷
 
-**비작성자 독립 승인 여부를 검증하여 모든 PR의 CI를 실패시키는 자동 잡은 중단합니다.** `exact-HEAD independent approval`의 실패는 코드 오류가 아니라 `APPROVED` 부재를 의미했습니다. `independent-pr-review.yml`은 `workflow_dispatch(pr_number)`로 직접 실행할 때만 참고용 감사를 수행하고, `pull_request`와 `pull_request_review`에 자동 실행하지 않습니다. 일반 빌드·계약·보안·CSV guard·브라우저·DB CI는 계속 유지합니다.
+- 이전 검수의 9건(#424/#420/#402/#403/#404/#409/#407/#408/#422)과 후속 6건(#361/#372/#405/#406/#410/#421), **총 15개 코드·의존성 PR이 실제 병합**됐습니다. [현행 STATUS](../STATUS.md)에 추가 6건의 정확한 main 병합 SHA가 있습니다.
+- 사용자가 승인 검사용 `exact-HEAD independent approval`의 자동 실패를 중단하도록 명시했고, [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 워크플로·그 전용 테스트·CI checkout 참조를 제거합니다. **일반 기능/보안 CI는 유지**하며 담당 에이전트는 이 문서의 diff·안전성·CI 검토를 실제로 수행하고 불확실성/미승인을 정직하게 표시합니다.
+- [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 최종 README/STATUS/감사 문서에 위 변경을 반영하는 PR입니다. #425와 #419가 모두 병합되면 이번 전수 점검 대상 **OPEN PR 0**입니다. 과거 시점의 7개 OPEN 기록은 역사로만 읽으세요.
 
-**에이전트와 팀의 문서상 리뷰 규칙:** 실제 PR HEAD/변경 diff/충돌/권한·개인정보·근거의 실패 사례를 검토하고, 유효한 `CHANGES_REQUESTED`와 리뷰 스레드 원인을 코드·회귀로 해소합니다. 새 HEAD CI 실행 결과를 확인하고, 원본 데이터·실자료 권리를 침해하지 않습니다. 비작성자 동료 교차 검토를 기본 요청하지만 팀원 `APPROVED`가 없다면 그 사실을 **`NOT_APPROVED`**로 명시합니다. 작성자 COMMENT, 에이전트 자체 리뷰, CI PASS를 사람의 독립 승인으로 기록해서는 안 됩니다.
+## PR 협업 검토 운영 지침 — 2026-11-09 사용자 지시로 자동 승인 강제 제거
 
-**이번 단 한 번의 예외:** 소유자가 2026-11-09 모든 열린 PR에 대한 직접 수정·재검토·병합을 명시 허용했습니다. 유지보수자는 실제 코드 테스트/안전성 검토 근거와 미인수 범위를 남기고, 그 작업에 한해서 사람 독립 승인 게이트 없이 병합할 수 있습니다. 이후의 일반 PR에 무조건 병합 권한을 부여하지 않습니다. 실제 NCP/HCX 가동, 학생 데이터 게시권, 독립 Gold, 공식 학교 판정과 `RELEASE_BLOCKED`는 이번 예외의 대상이 아닙니다.
+**GitHub Actions가 외부 협업자 `APPROVED` 또는 exact-HEAD 리뷰 유무 때문에 실패하도록 하지 않습니다.** 자동 차단 워크플로 `.github/workflows/independent-pr-review.yml`과 이에 종속된 테스트를 제거하고, 사람 리뷰 원칙은 문서 가이드로 유지합니다. 승인 미수신을 코드·보안 테스트 실패로 표시하지 않습니다.
 
-### GitHub 권한/보호 실상
+- 작성자 외 담당자의 교차 리뷰는 **권장 운영 원칙**입니다. CODEOWNERS는 담당자 안내이며 승인 없는 PR을 사람 승인 완료로 기록하지 않습니다. 에이전트/작성자 COMMENT를 타인 `APPROVED`로 주장하지 않습니다.
+- 에이전트는 PR diff·계약·개인정보·현재 HEAD의 기능/보안 CI·충돌·검토 의견을 검증하고 실제 버그나 실패한 필수 테스트를 먼저 수정해야 합니다. 테스트하지 않은 영역을 `PASS`로 꾸미지 않고, 팀원이 지적한 위험과 미해결 인수를 남깁니다.
+- 사람의 `CHANGES_REQUESTED`와 리뷰 스레드는 결함인지 검토하고 수정·답변하되, 그 상태 자체를 별도 자동 승인 체크로 병합 차단하지 않습니다. GitHub 리뷰 `APPROVED`를 에이전트가 사람 대신 조작하지 않습니다.
+- **이번 2026-11-09의 일괄 PR 수정·병합은 사용자 명시적 허용**에 따릅니다. 향후에도 자동 승인 강제 CI 없이 직접 검수하고, 출시·학교 원본 사용·유료 AI/NCP 운영 등 고위험 변경에는 별도 사람/권리자의 실제 승인이 필요합니다.
+- GitHub 저장소 관리자 Settings의 required status checks/branch protection은 이 파일 수정만으로 자동 해제되지 않습니다. 저장소 Ruleset API는 빈 목록이나 Branch protection 조회는 제한되어, 이 이름이 서버에서 필수 지정됐는지 확인할 수 없으면 관리자가 확인해야 합니다.
 
-확인된 활성 Ruleset은 0건, branch-protection 세부 API는 403으로 실제 강제 여부가 별도로 미검증입니다. **현재 소유자 지시상 자동 독립 승인 체크를 required status에 추가하지 않습니다.** `CODEOWNERS`는 담당 리뷰 요청 지도이며 실제 강제 보호 설정이 아닙니다. 별도 서버측 보호를 다시 활성화하려면 소유자의 새로운 지시와 설정 검증이 필요합니다.
+**PR 병합과 정식 출시를 혼동하지 않습니다.** 공식 출처·개인정보 동의·인적 Gold·운영 DB·NCP/HCX 실제 실행이 검증되지 않았다면 `RELEASE_BLOCKED`를 유지합니다.
 
 ### 사후 검토 부채
 
-2026-11-09에 다른 팀원의 `APPROVED` 없이 `#399/#400/#401/#411`이 병합된 것을 리뷰 API로 확인했습니다. 이는 **이 정책을 충족하지 않은 병합**입니다. 이미 병합된 Git 기록에 사후 검토를 붙여도 '병합 전 승인'으로 소급 인정하지 않으며, 서명/기록을 소급 조작하지 않습니다. 각 SHA의 코드·보안/자료 영향을 다른 사람에게 재검토받고 필요하면 **별도 수정 또는 되돌리기 PR을 독립 승인 후** 처리합니다. 확인 없이 main을 무단 force push하거나 기존 원본을 편집하지 않습니다. 이 문제를 새 PR 검토의 예외 선례로 삼지 않습니다.
+2026-11-09에 다른 팀원의 `APPROVED` 없이 `#399/#400/#401/#411`이 병합된 사실을 당시 리뷰 API로 확인했습니다. **당시 강제 정책 기준에서는 미준수였지만, 이제 자동 승인 의무 규칙은 사용자 지시로 폐기되었습니다.** 과거 기록에 실제 없었던 승인이나 사람이 하지 않은 평가를 소급 생성하지 않습니다. 각 SHA의 코드·보안/자료 영향을 교차 검토해 필요하면 **별도 수정 또는 되돌리기 PR을 실제 CI·코드 확인 후** 처리하고, 실서비스 권리/보안 수락은 따로 남깁니다. 원본 파일/기록 force push로 감추지 않습니다.
 
-### #415 자동 검사 구현 이력과 현재 전환
+### 과거 승인 강제 검사 [#415] — 2026-11-09 제거
 
-[#415](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415)는 이전에 독립 승인 여부를 자동으로 확인하던 검사입니다. 소유자의 정책 변경으로 **자동 PR 트리거를 제거하여 수동 감사로만 전환**했습니다. 기존 Python 검증 로직과 `tests/release/test_independent_pr_review.py` 합성 테스트를 보존하며, 테스트에는 `workflow_dispatch` 전용이고 PR 이벤트를 받지 않는다는 회귀를 추가했습니다. 이전 검사 실패는 버그 통과/보안 위반을 의미하지 않습니다.
+PR #415로 도입된 `exact-HEAD independent approval` 자동 검사는 사용자 지시로 제거되었습니다. 과거 해당 작업의 실패는 대개 미승인으로 인한 것이지 제품 코드 테스트 실패가 아니었습니다. 검사의 역사적 실행 결과와 팀원 리뷰 기록은 보존하지만 **현재 필수 병합 조건이 아닙니다.** GitHub Settings에서 해당 검사 이름을 Required check로 지정했다면 관리자가 별도로 해제해야 합니다. 관련 [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416)은 변경된 운영 정책을 기준으로 재검토합니다.
 
-## 2026-11-09 현재 검수 요약 (이하 1차 기록보다 우선)
-
-- **병합 9건:** [#424](https://github.com/ot4562-glitch/HUFS-One-AI/pull/424) · [#420](https://github.com/ot4562-glitch/HUFS-One-AI/pull/420) · [#402](https://github.com/ot4562-glitch/HUFS-One-AI/pull/402) · [#403](https://github.com/ot4562-glitch/HUFS-One-AI/pull/403) · [#404](https://github.com/ot4562-glitch/HUFS-One-AI/pull/404) · [#409](https://github.com/ot4562-glitch/HUFS-One-AI/pull/409) · [#407](https://github.com/ot4562-glitch/HUFS-One-AI/pull/407) · [#408](https://github.com/ot4562-glitch/HUFS-One-AI/pull/408) · [#422](https://github.com/ot4562-glitch/HUFS-One-AI/pull/422). #422는 타 협업자 최신 HEAD APPROVED 및 independent approval 성공/모든 실제 필수 CI 성공·스레드 0건 확인 뒤 squash 병합; #424 독립 타인 코드 검토, #420 팀원 승인, 봇 6건 각각 최신 HEAD 정식 리뷰 및 gate 성공 후 병합.
-- **이번 추가 수정 5개 PR:** #361 `1bf77d4` FAQ 서술어 극성, #372 `5769a35` OCR 기관 오인/최신 main 충돌, #405 `eca9ff5` Node24 합성 라우터 이벤트, #410 `39edd5c` 검증 기관 우선 랭킹, #421 `fb7ea01` 로컬 CSV 디렉터리 범위 명시. #361/#410의 일반 HEAD CI PASS, #405 Node24 테스트 PASS; 나머지 잡/실 Actions 수동 시연·외부 승인은 결과 확인 별도. 5개 모두 아직 미병합이며 이전 CHANGE_REQUESTED 해소 판정과 타인 독립 승인은 각 PR 최신 HEAD 기준으로 확인해야 합니다.
-- **미병합 7건:** [#421](https://github.com/ot4562-glitch/HUFS-One-AI/pull/421) · [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) · [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410) · [#406](https://github.com/ot4562-glitch/HUFS-One-AI/pull/406) · [#405](https://github.com/ot4562-glitch/HUFS-One-AI/pull/405) · [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) · [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361). #406은 TS7 호환성 고쳤고 일반 CI 전체 성공하나 과거 owner CHANGES_REQUESTED 및 독립 동료 리뷰 미충족. #410은 #422 보존 재합성 HEAD e925ada의 새 CI·팀원 승인 미확인. #419 문서 PR도 최신 HEAD 팀 승인 전에 병합 금지. #361/#372 공식 변경 요청은 유지.
-- #415 정확한 HEAD 리뷰 검사 병합과 main의 branch-protection Ruleset 활성화는 별개. Ruleset GET 빈 배열/branch protection 상세 403, 관리자 강제 보호 **미검증**(#416). 과거 무승인 #399/#400/#401/#411 사후 동료 검수는 별도로 관리. **RELEASE_BLOCKED**.
-
-## 2026-11-09 1차 검수 결과 (역사적 기록)
+## 2026-11-09 최신 검수 결과
 
 - [PR #386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) (HEAD `0fdb638`): 중복 요건/경험 ID 격리와 순서 반전 회귀 확인, 다른 계정의 AI QA APPROVED 및 오너 [APPROVED](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386#pullrequestreview-5820570040). HEAD 5종 Actions SUCCESS, 과거 차단 스레드 2건 해결 후 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 **squash MERGED**. #347은 AI 코드 일부 완료이며 API/UI·실원장·사람 Gold 미완으로 OPEN.
 - [PR #361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) (HEAD `72fc402`): [REQUEST_CHANGES](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361#pullrequestreview-5820574395). `없는`을 서술어 부정으로 인식해 근거와 반대인 답변을 통과시키는 결함; 인용문-서술어 극성 회귀/수정 필요.
@@ -96,7 +95,7 @@
 1. PR은 담당 소유권/변경 대상 계약·실제 결함/반례와 인가·자료/AI·migration·lockfile·출시 영향 범위를 명시합니다.
 2. 비교 대상은 **최신 HEAD SHA**와 main diff. 접근권/데이터 범위·race/취소/철회·로그/자산/시점·다중탭/SQL role·fail-closed/rollback 위험을 검토합니다.
 3. 같은 HEAD의 GitHub Actions **합성계약·실제 일회용 PG·Chrome·NCP IaC(mock)** 중 영향을 받는 필수 워크플로를 확인합니다. FAIL/SKIP/NOT_RUN은 그대로 보고하고, 실패를 성공 재실행만 골라 숨기지 않습니다.
-4. **현행 수동 리뷰 절차:** 비작성자 교차 검토를 기본 요청하며, 승인 없는 상태·해결되지 않은 문제를 정확히 기록합니다. 이번 소유자 승인에 의한 2026-11-09 일회성 전수 병합은 코드·보안 검토 근거를 남긴 뒤 허용되지만, 사람 승인으로 주장하지 않고 일반화하지 않습니다.
+4. **당시 운영 기록(2026-11-06, 현재 폐기된 승인 강제):** 당시는 비작성자의 HEAD `APPROVED`를 필수로 적어 뒀습니다. **현재는 문서 최상단의 2026-11-09 사용자 지시를 우선 적용**합니다. 새 HEAD의 변경·결함·보안·필수 CI와 사람 의견은 반드시 직접 검토하되, 자동 외부 승인 검사 실패는 병합 차단 근거로 사용하지 않습니다.
 5. merge 후 동일 SHA의 main Actions·영향 받은 API/화면을 재확인합니다. 프로덕션/실계정/원본/유료 AI/NCP apply·RELEASE_BLOCKED 해제는 **PR 병합과 별도 승인**입니다.
 
 ## 2026-11-06 코드 리뷰·병합 근거
