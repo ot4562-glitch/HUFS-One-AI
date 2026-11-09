@@ -1,5 +1,6 @@
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 export interface CampusAssistPort {
+  capabilities:HufsOwnerApiClient['getCampusAssistCapabilities'];
   activities:HufsOwnerApiClient['listCampusActivities'];
   forecast:HufsOwnerApiClient['getCampusActivityForecast'];
   partners:HufsOwnerApiClient['listExchangePartners'];
