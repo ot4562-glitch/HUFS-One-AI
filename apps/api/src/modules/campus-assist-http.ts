@@ -80,6 +80,14 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
     // Rights validation may be asynchronous. Recheck the TTL after it returns.
     validReceipt(snapshot.receipt,fresh,session.now());
   };
+  // Configuration discovery is not proof of current source permission. The
+  // actual read routes still check the source receipt and current actor twice.
+  // This one BETA-only endpoint is registered even with no operator source ports.
+  app.get('/api/owner/campus-assist/capabilities',async req=>{
+    await verify(req);
+    return {activities:!!services.activities,exchange:!!services.exchange,faq:!!services.faq,
+      hcx007:!!services.faq&&!!services.hcx007};
+  });
   if(services.activities){
     const port=services.activities;
     app.get('/api/owner/activities',async req=>{
