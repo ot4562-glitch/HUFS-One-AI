@@ -54,6 +54,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
   const ownerSession = new OwnerSessionController(api);
   return {
     campusAssist:ownerCampusAssistPort(api.owner),
+    ownerV2Catalog:{session:ownerSession,search:(query,signal)=>api.owner.searchApprovedV2Catalog(query,signal)},
     ownerExperience: {session: ownerSession, skills: ownerExperienceSkillPort(api.owner)},
     ownerCareer: {
       session:ownerSession,
