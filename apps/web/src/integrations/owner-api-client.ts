@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {OwnerExperienceCourseResponseSchema} from '@hufs-one/contracts';
 import {
   SelfProfileSchema,SelfProfilePatchSchema,SelfConsentSchema,SelfConsentPutSchema,
   OwnerWorkspaceRecordSchema,OwnerWorkspaceCreateSchema,OwnerWorkspaceUpdateSchema,
@@ -269,6 +270,10 @@ export class HufsOwnerApiClient {
     requireMatchingReceipt(result.item.value.kind==='EXPERIENCE'&&result.item.value.state==='DRAFT'
       &&result.item.value.summary===''&&result.item.value.sourceOpportunityId===input.opportunityId);
     return result;
+  }
+  /** #375: only current, purpose-granted owner links, never a browser-supplied transcript or course map. */
+  getExperienceCourseEvidence(signal?:AbortSignal){
+    return this.request('/api/owner/academics/experience-courses',OwnerExperienceCourseResponseSchema,{signal});
   }
   async getTranscript(signal?:AbortSignal){
     const result=await this.request('/api/academics/transcript',z.strictObject({transcript:OwnerTranscriptSchema}),{signal});
