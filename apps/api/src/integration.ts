@@ -113,7 +113,9 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
     ...(deps.personalState?{personalState:deps.personalState}:{}),
   };
   const app=createApi(options),ownerSession={verify:auth.verifySession,now:deps.now??(()=>new Date().toISOString())};
-  if(deps.campusAssist)registerCampusAssistRoutes(app,deps.campusAssist,{...ownerSession,allowedOrigin:deps.allowedOrigin});
+  // #367: BETA needs an authenticated capability handshake even when no
+  // operator-approved source ports exist. No synthetic fallback or paid model.
+  registerCampusAssistRoutes(app,deps.campusAssist??{},{...ownerSession,allowedOrigin:deps.allowedOrigin});
   registerSourceJobControlRoutes({app,session:ownerSession,...(deps.sourceIngestionControl?{control:deps.sourceIngestionControl}:{})});
   registerRestrictedOwnerIntakeRoute({app,session:ownerSession,...(deps.restrictedOwnerDirectory?{directory:deps.restrictedOwnerDirectory}:{})});
   registerHufsAbilityCapabilitiesRoute(app,ownerSession);

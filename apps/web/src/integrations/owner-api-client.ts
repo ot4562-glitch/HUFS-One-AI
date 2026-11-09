@@ -409,6 +409,12 @@ export class HufsOwnerApiClient {
   }
 
 
+  /** #367: configured source ports only. Rights and data freshness are checked on actual reads. */
+  getCampusAssistCapabilities(signal?:AbortSignal){
+    return this.request('/api/owner/campus-assist/capabilities',z.strictObject({
+      activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
+    }),{signal});
+  }
   /** #366: caller chooses only purpose filters; official offices and rights come from the server. */
   findCounseling(change:{purposes:string[];campus?:string;language?:string},signal?:AbortSignal){
     const params=clientInput(z.strictObject({
