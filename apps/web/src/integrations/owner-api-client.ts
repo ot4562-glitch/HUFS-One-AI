@@ -408,6 +408,12 @@ export class HufsOwnerApiClient {
   }
 
 
+  /** #367: configured source ports only. Rights and data freshness are checked on actual reads. */
+  getCampusAssistCapabilities(signal?:AbortSignal){
+    return this.request('/api/owner/campus-assist/capabilities',z.strictObject({
+      activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
+    }),{signal});
+  }
   /** #339: the server owns the rights-gated source data. Never accept browser source payloads. */
   listCampusActivities(query:{asOf:string;organizationId?:string;year?:number;query?:string},signal?:AbortSignal){
     const checked=clientInput(z.strictObject({asOf:Iso,organizationId:CampusToken.optional(),
