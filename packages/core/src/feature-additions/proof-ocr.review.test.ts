@@ -39,10 +39,27 @@ describe('#372 review: issuer comparison never matches on a fragment',()=>{
     expect(value(r,'ISSUER')).toBe('가상대학교 학생지원센터');
     expect(r.flags).toContain('ISSUER_UNCERTAIN');
   });
-  it.each(['가상대학교 학생지원센터','가상대학교학생지원센터','가상대학교 학생지원센타'])('%s → same issuer',(org)=>{
+  it.each(['가상대학교 학생지원센터','가상대학교학생지원센터'])('%s → same issuer',(org)=>{
     const r=extractProofCandidate(lines,{organization:org});
     expect(r.flags).not.toContain('ISSUER_UNCERTAIN');
     expect(r.flags).not.toContain('ISSUER_MISMATCH');
+  });
+  it.each(['가상대학교 학생지원센타','가상대학교 학생지원센터들'])(
+    '%s is not silently treated as identical to the issuer',(org)=>{
+    const r=extractProofCandidate(lines,{organization:org});
+    expect(r.flags).toContain('ISSUER_UNCERTAIN');
+  });
+  it.each([
+    ['가상외국어대학교','가상외국어대학원'],
+    ['가상외국어대학원','가상외국어대학교'],
+    ['가상봉사센터','가상봉사재단'],
+    ['가상봉사재단','가상봉사센터'],
+    ['가상행복복지관','가상행복복지원'],
+    ['가상행복복지원','가상행복복지관'],
+  ])('different legal suffixes never count as SAME: %s vs %s',(issuer,claimed)=>{
+    const r=extractProofCandidate(doc([['참여확인서',0.07],
+      ['참여기간: 2026.09.01 ~ 2026.09.02',0.36],[issuer,0.82]]),{organization:claimed});
+    expect(r.flags.some(f=>f==='ISSUER_UNCERTAIN'||f==='ISSUER_MISMATCH')).toBe(true);
   });
   it('an unrelated organization is a mismatch',()=>{
     expect(extractProofCandidate(lines,{organization:'가상행복복지관'}).flags).toContain('ISSUER_MISMATCH');

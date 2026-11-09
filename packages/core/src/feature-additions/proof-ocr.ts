@@ -110,8 +110,9 @@ function issuerOf(text:string):string|null{
   }
   return cleaned;
 }
-/** SAME only for the same name after legal-form/spacing cleanup or a one-letter OCR slip. A fragment
- * ("센터"), a parent ("가상대학교") or a prefixed other body ("다른 가상대학교 …") is UNCERTAIN: a person decides. */
+/** SAME only for exact normalized identity. OCR typo similarity is not proof of the same
+ * legal entity: 기관 접미어(대학교/대학원, 센터/재단 등)가 다른 기관도 매우 유사합니다.
+ * Fragments, parents, typographical variants and near-matches require human review. */
 function compareOrganization(a:string,b:string):'SAME'|'UNCERTAIN'|'DIFFERENT'{
   const norm=(s:string)=>compact(s).replace(/주식회사|\(주\)|㈜|재단법인|사단법인|[^\p{L}\p{N}]/gu,'');
   const x=norm(a),y=norm(b);
@@ -120,7 +121,7 @@ function compareOrganization(a:string,b:string):'SAME'|'UNCERTAIN'|'DIFFERENT'{
   const grams=(s:string)=>new Set([...s].slice(1).map((c,i)=>s[i]+c));
   const gx=grams(x),gy=grams(y);
   const dice=2*[...gx].filter(g=>gy.has(g)).length/Math.max(gx.size+gy.size,1);
-  if(dice>=0.85&&Math.abs(x.length-y.length)<=1&&!x.includes(y)&&!y.includes(x))return 'SAME';
+  // Fuzzy similarity is never a positive identity verdict: send it to a reviewer.
   return x.includes(y)||y.includes(x)||dice>=0.5?'UNCERTAIN':'DIFFERENT';
 }
 /** A title line carrying nothing but kind keywords ("봉 사 활 동 확 인 서") is safe to show unmasked. */
