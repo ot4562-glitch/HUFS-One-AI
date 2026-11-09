@@ -86,4 +86,15 @@ describe('#366/#348 BETA verified catalog API and server-signed continuation',()
     // but the signed cursor still binds the old actor and is rejected.
     expect((await h.get(next(first))).statusCode).toBe(409);
   });
+  it('denies unauthenticated and non-BETA callers even when source ports are absent',async()=>{
+    const guest=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,
+      now:()=>FIXED_NOW,auth:{verifySession:async()=>null,revokeSession:async()=>{}}});
+    const admin=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,
+      now:()=>FIXED_NOW,auth:{verifySession:async()=>({...actor,role:'ADMIN' as const}),
+        revokeSession:async()=>{}}});
+    apps.push(guest,admin);
+    const url='/api/owner/features/v2/catalog';
+    expect((await guest.inject({url})).statusCode).toBe(401);
+    expect((await admin.inject({url})).statusCode).toBe(403);
+  });
 });
