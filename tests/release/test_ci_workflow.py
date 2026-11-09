@@ -201,7 +201,7 @@ def audit_ci_boundary(text: str) -> list[str]:
             "/tools/verify_browser_release_surface.py",
             "/tools/verify_release_boundary.py",
             "/.github/workflows/release-readiness.yml",
-                }.issubset(sparse[0]):
+        }.issubset(sparse[0]):
             issues.append("synthetic job omits release policy tests or workflow")
         if any("/infra/sql/" not in paths or "/tests/api/" not in paths for paths in sparse[1:]):
             issues.append("disposable PostgreSQL checkout lacks tests/migrations")
