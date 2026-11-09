@@ -1,4 +1,6 @@
 import {z} from 'zod';
+import {OwnerExperienceCourseResponseSchema} from '@hufs-one/contracts';
+import {FeatureAdditions as V} from '@hufs-one/contracts';
 import {
   SelfProfileSchema,SelfProfilePatchSchema,SelfConsentSchema,SelfConsentPutSchema,
   OwnerWorkspaceRecordSchema,OwnerWorkspaceCreateSchema,OwnerWorkspaceUpdateSchema,
@@ -270,6 +272,10 @@ export class HufsOwnerApiClient {
       &&result.item.value.summary===''&&result.item.value.sourceOpportunityId===input.opportunityId);
     return result;
   }
+  /** #375 current purpose-granted links only, no browser-supplied transcript. */
+  getExperienceCourseEvidence(signal?:AbortSignal){
+    return this.request('/api/owner/academics/experience-courses',OwnerExperienceCourseResponseSchema,{signal});
+  }
   async getTranscript(signal?:AbortSignal){
     const result=await this.request('/api/academics/transcript',z.strictObject({transcript:OwnerTranscriptSchema}),{signal});
     if(Date.parse(result.transcript.reviewedAt)>Date.parse(result.transcript.asOf))unavailable();
@@ -408,6 +414,41 @@ export class HufsOwnerApiClient {
   }
 
 
+  /** #367: configured source ports only. Rights and data freshness are checked on actual reads. */
+  getCampusAssistCapabilities(signal?:AbortSignal){
+    return this.request('/api/owner/campus-assist/capabilities',z.strictObject({
+      activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
+    }),{signal});
+  }
+  /** #343/#349: current owner-only read, never browser-created sources. */
+  getOwnerPreparation(signal?:AbortSignal){
+    return this.request('/api/owner/features/v2/preparation',V.OwnerPreparationResponseSchema,{signal});
+  }
+  /** #366: closed feature kind, never browser-supplied source records. */
+  async getOwnerInsights(kind:V.OwnerInsightsKind,signal?:AbortSignal){
+    const name=clientInput(V.OwnerInsightsKindSchema,kind);
+    const result=await this.request('/api/owner/features/v2/insights/'+name,V.OwnerInsightsResponseSchema,{signal});
+    requireMatchingReceipt(result.state==='NOT_CONNECTED'?result.kind===name:result.result.kind===name);
+    return result;
+  }
+  /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
+  async searchApprovedV2Catalog(query:z.input<typeof V.OwnerV2CatalogQuerySchema>={},signal?:AbortSignal){
+    const input=clientInput(V.OwnerV2CatalogQuerySchema,query);
+    const path=queryPath('/api/owner/features/v2/catalog',{
+      ...(input.q!==undefined?{q:input.q}:{}),
+      ...(input.category?{category:input.category}:{}),
+      ...(input.campus?{campus:input.campus}:{}),
+      ...(input.eligibility?{eligibility:input.eligibility}:{}),
+      ...(input.deadlineBefore?{deadlineBefore:input.deadlineBefore}:{}),
+      ...(input.includeClosed!==undefined?{includeClosed:String(input.includeClosed)}:{}),
+      sort:input.sort,pageSize:input.pageSize,
+      ...(input.asOf?{asOf:input.asOf}:{}),...(input.cursor?{cursor:input.cursor}:{}),
+    });
+    const result=await this.request(path,V.OwnerV2CatalogResponseSchema,{signal});
+    if(input.asOf&&result.state==='READY')
+      requireMatchingReceipt(Date.parse(result.page.at)===Date.parse(input.asOf));
+    return result;
+  }
   /** #339: the server owns the rights-gated source data. Never accept browser source payloads. */
   listCampusActivities(query:{asOf:string;organizationId?:string;year?:number;query?:string},signal?:AbortSignal){
     const checked=clientInput(z.strictObject({asOf:Iso,organizationId:CampusToken.optional(),

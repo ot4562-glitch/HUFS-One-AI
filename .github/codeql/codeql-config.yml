@@ -1,0 +1,16 @@
+name: "HUFS One AI sparse CodeQL source"
+# Do not index student originals, Forms, research copies or generated/binary files.
+paths:
+  - apps
+  - packages
+  - tools
+  - tests
+  - infra
+paths-ignore:
+  - csv
+  - reference
+  - assets
+  - docs
+  - "**/node_modules"
+  - "**/dist"
+  - "**/coverage"

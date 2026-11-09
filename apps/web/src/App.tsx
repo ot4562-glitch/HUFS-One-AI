@@ -19,6 +19,10 @@ import type {OwnerAcademicsPort} from './features/owner-academics/OwnerAcademics
 import type {OwnerPrivateIntakePort} from './features/owner-intake/OwnerPrivateIntakePanel.js';
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {CampusAssistPort} from './features/campus-assist/ownerPort.js';
+import type {OwnerCourseEvidencePort} from './features/owner-academics/OwnerExperienceCoursePanel.js';
+import type {OwnerV2CatalogPort} from './features/owner-catalog/OwnerV2CatalogPanel.js';
+import type {OwnerInsightsPort} from './features/owner-insights/OwnerInsightsPanel.js';
+import type {OwnerPreparationPort} from './features/owner-preparation/OwnerPreparationPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
@@ -74,6 +78,12 @@ export interface AppServices {
   readonly ownerProvider?: OwnerProviderPort;
   /** Current BETA only: authorized campus assistance and HCX FAQ service, never a demoSubject. */
   readonly campusAssist?:CampusAssistPort;
+  /** Only current purpose-granted academic evidence, not school graduation. */
+  readonly ownerCourseEvidence?:OwnerCourseEvidencePort;
+  /** #366/#348: authenticated, consent-bound full v2 catalog search and signed cursor. */
+  readonly ownerV2Catalog?:OwnerV2CatalogPort;
+  readonly ownerInsights?:OwnerInsightsPort;
+  readonly ownerPreparation?:OwnerPreparationPort;
   /** Synthetic-only per-subject experience stores; never shared with BETA owner ports. */
   readonly experienceForSubject?: (subject: SubjectAlias) => ExperienceSkillPort;
   /** Current BETA owner's own portfolio, independent of the demo selector. */
@@ -112,9 +122,11 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const [path, navigate] = useRoute(historyPort);
   const sandbox = useSandbox(controller, state, services.sandbox);
   const independent = path==='/activities'||path==='/exchange'||path==='/faq'
+    || path==='/owner-scholarships'||path==='/owner-badges'||path==='/owner-academics/experience-courses'
     || (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
     || (!!services.ownerExperience && path === '/experience')
     || path === '/career' || path.startsWith('/owner-opportunities/')
+    || path.startsWith('/owner-insights/')
     || path === '/demo-profile' || path === '/owner-ai' || path === '/owner-academics'
     || path === '/clubs/admin' || (!!services.ownerClubs && (path === '/clubs' || path.startsWith('/clubs/')));
   const ctx: PageContext = {path, state, controller, navigate, services, sandbox};

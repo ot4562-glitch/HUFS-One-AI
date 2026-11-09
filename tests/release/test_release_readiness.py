@@ -14,7 +14,7 @@ from tools.release_readiness_gate import EXTERNAL_UNVERIFIED, OFFLINE, evaluate_
 ROOT = Path(__file__).resolve().parents[2]
 MANUAL_WORKFLOW = ROOT / ".github/workflows/release-readiness.yml"
 GATE = ROOT / "tools/release_readiness_gate.py"
-PINNED_CHECKOUT = "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+PINNED_CHECKOUT = "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1"
 
 
 def manual_release_workflow_problems(source: str) -> list[str]:

@@ -1,31 +1,25 @@
 # HUFS One AI — 현재 구현·검증·후속 인수
 
-> **현행 상태: 2026-11-08 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
+> **현행 상태: 2026-11-09 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. 팀 고정 역할 이슈 #355–#359는 읽기 전용입니다.
 
-## 1. 이번 코드 리뷰와 병합 — 2026-11-08
+## 1. 이번 PR 검토·병합 — 2026-11-09
 
-| PR | 코드 변경/이슈 | main squash SHA | 검증 및 수락 범위 |
+| PR | 최신 검토 SHA / 내용 | HEAD 검증 | 최종 처리 |
 | --- | --- | --- | --- |
-| [#391](https://github.com/ot4562-glitch/HUFS-One-AI/pull/391) | #363 CampusAssist receipt TTL/NaN·비동기 만료 | [`3fa8f3c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3fa8f3ce6a819382c5e349d768ce0837e0396be9) | HEAD TASK-00/Chrome/NCP SUCCESS; 코드 버그 수정 |
-| [#392](https://github.com/ot4562-glitch/HUFS-One-AI/pull/392) | #369 percent-encoded 공고/공지 ID·잘못된 경로 방어 | [`736a129`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/736a1294371a5fc983ba55be96bb01bda9b3eaba) | HEAD TASK-00/Chrome/NCP/Pages SUCCESS; 추가 browser-history 회귀는 이번 문서 정리 PR에서 검증 |
-| [#393](https://github.com/ot4562-glitch/HUFS-One-AI/pull/393) | #376 중복 취업통계 행 격리; #377 철회·만료 국제학생 안내 체크리스트 보류 | [`307ad29`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/307ad29b5422a664405cf698e95526859cacc1cd) | HEAD TASK-00/Chrome/NCP/Pages SUCCESS; 순수 코어 |
-| [#394](https://github.com/ot4562-glitch/HUFS-One-AI/pull/394) | #378 npm read-only 취약점 감사 CI | [`85de975`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/85de975d5102ba7f95d2b598c8e518ee5d5c92db) | HEAD 신규 audit+TASK-00/Chrome/NCP SUCCESS; 실제 해당 lockfile High/Critical 0건 |
-| [#395](https://github.com/ot4562-glitch/HUFS-One-AI/pull/395) | #374 일시적 503 사용자 수동 재인증·기존 쓰기 재실행 금지 | [`234d072`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/234d072ac8c292316851f5f653faa1a2ca23033b) | HEAD TASK-00/Chrome/NCP/Pages SUCCESS; 실제 다중 탭 사람 QA 별도 |
-| [#396](https://github.com/ot4562-glitch/HUFS-One-AI/pull/396) | #367 명시적 CampusAssist 운영 소스 포트 주입(첫 단계) | [`be2e856`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/be2e8566fd64717753e32441f75f3a8de8fa6d29) | HEAD TASK-00/Chrome/NCP SUCCESS; 실제 소스/운영 구현은 `NOT_CONNECTED`, #367 OPEN |
+| [#386 NCS/경험 의미 후보](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) | `0fdb638` · 중복 requirement/experience ID 격리, 버전 digest 및 순서 반전 테스트 | TASK-00·Chrome·NCP·Pages·npm audit **5/5 SUCCESS**, 박준영 APPROVED·오너 재리뷰 APPROVED | **squash 병합** [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9); #347 기능 전체 OPEN |
+| [#361 FAQ 검색/답변 가드](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | `72fc402` · 형용사 `없는`을 서술어 부정과 혼동하는 긍·부정 뒤집기 우회 | HEAD **5/5 SUCCESS**이나 해당 반례 미해결 | [`REQUEST_CHANGES`](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361#pullrequestreview-5820574395), **OPEN/미병합** |
+| [#372 OCR 증빙 후보](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | `1798c55` · 서로 다른 발급처 이름을 유사도만으로 `SAME` 판단 | HEAD **5/5 SUCCESS**이나 해당 반례 미해결 | [`REQUEST_CHANGES`](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372#pullrequestreview-5820574572), **OPEN/미병합** |
 
-6건은 **작성자 본인 계정 `ot4562-glitch`의 GitHub COMMENT 리뷰** 및 사용자의 명시적 병합 지시로 통합했습니다. 이 COMMENT는 독립 사람 `APPROVED`가 아닙니다. 병합 직후 main SHA의 별도 운영/사람 인수 성공을 주장하지 않습니다. [전체 검토 기록](docs/REVIEW_AND_ISSUE_AUDIT_20261108.md) · [PR 규칙](docs/PR_WORKFLOW.md).
+#386의 AI 순수 코드·합성 테스트만 병합됐습니다. 실제 NCS 원장·인적 Gold·웹/API 통합은 `NOT_RUN/NOT_CONNECTED`이며 기능 #347은 완료가 아닙니다. #361/#372는 수정된 HEAD 반례·신규 CI·재리뷰 전까지 병합하지 않습니다. **병합 후 새로운 main SHA의 CI/실운영 통과를 이 표에서 주장하지 않습니다.** [11/09 검토 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md) · [11/08 병합/수정 이력](docs/REVIEW_AND_ISSUE_AUDIT_20261108.md).
 
-같은 날 이미 병합됐던 원인 수정: [#383](https://github.com/ot4562-glitch/HUFS-One-AI/pull/383) (#364), [#385](https://github.com/ot4562-glitch/HUFS-One-AI/pull/385) (#365), [#384](https://github.com/ot4562-glitch/HUFS-One-AI/pull/384) (#370/#371), [#387](https://github.com/ot4562-glitch/HUFS-One-AI/pull/387) (#380), [#388](https://github.com/ot4562-glitch/HUFS-One-AI/pull/388) (#379), [#389](https://github.com/ot4562-glitch/HUFS-One-AI/pull/389) (#373 활동만), [#390](https://github.com/ot4562-glitch/HUFS-One-AI/pull/390) (#381 API 경계만). 각각의 코드 범위와 남은 부문 인수를 분리합니다.
+## 2. 열린 PR: 변경 요청 2건
 
-## 2. 열린 PR: 변경 요청 3건
-
-| PR | 차단 결함 (최신 HEAD 미수정) | 결과 |
+| PR | 남은 차단 결함 | 다음 행동 |
 | --- | --- | --- |
-| [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | FAQ 문서 간 citationId 충돌, 답/근거 문장 부정 극성 혼동 | `CHANGES_REQUESTED` 유지, 병합 보류 |
-| [#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | OCR 한 줄 다중 기간 무시, 발급처 부분문자열 오인, PII 마스킹 결함 | `CHANGES_REQUESTED` 유지, 병합 보류 |
-| [#386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) | 중복 requirement/experience ID로 폐기된 출처가 후보에 결속, 보호 특성 오탐 | `CHANGES_REQUESTED` 유지, 병합 보류 |
+| [#361 FAQ](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) | `없(?!이)` 정규식이 `없는`을 부정으로 잘못 인식, 근거와 반대되는 학사 답변을 통과시킬 위험 | 인용·서술어 극성 검증 및 합성 반례 추가 후 재리뷰 |
+| [#372 OCR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372) | 비슷하지만 다른 기관의 문자 유사도를 `SAME`으로 확정 | 유사 오타는 `ISSUER_UNCERTAIN`으로 보류, 별도 기관 구분 회귀 후 재리뷰 |
 
 ## 3. 열린 이슈 — 코드 결함과 실증 인수 분리
 

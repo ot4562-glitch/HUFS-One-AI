@@ -13,6 +13,11 @@ import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
+import {validateOwnerInsightsServices,type OwnerInsightsServices} from './modules/owner-v2-insights-http.js';
+import {validateOwnerPreparationServices,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
+import type {TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
+import type {TrustedOwnerV2CatalogSource,TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
+import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 
 export type ApprovedCampusSources=Pick<CampusAssistServices,'activities'|'exchange'|'faq'>;
 export function validateCampusSources(sources:ApprovedCampusSources):void{
@@ -34,6 +39,12 @@ export interface PostgresApplicationConfig {
   /** Optional operator-owned, current rights/revision guarded source ports.
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
+  ownerInsights?:OwnerInsightsServices;
+  ownerPreparation?:OwnerPreparationServices;
+  /** Purpose-specific official canonical course and owner-link source. */
+  ownerExperienceCourse?:TrustedExperienceCourseSource;
+  /** Current-approved bounded catalog + server-only HMAC keyset, not a client source. */
+  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   platform:Omit<PostgresPlatformConfig,'now'>;
   /** Explicit operator-supplied restricted 4-owner CSV/registry loaders; no auto import or demo fallback. */
   ownerIntake?:Omit<Parameters<typeof createRestrictedOwnerDirectory>[0],'now'>;
@@ -69,6 +80,18 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     name=>typeof config.ownerIntake?.[name as keyof typeof config.ownerIntake]!=='function'))
     throw new Error('Restricted owner intake requires all three verified operator loaders');
   if(config.campusAssist)validateCampusSources(config.campusAssist);
+  if(config.ownerInsights)validateOwnerInsightsServices(config.ownerInsights);
+  if(config.ownerPreparation)validateOwnerPreparationServices(config.ownerPreparation);
+  if(config.ownerExperienceCourse&&(typeof config.ownerExperienceCourse.read!=='function'
+    ||typeof config.ownerExperienceCourse.revalidate!=='function'))
+    throw new Error('Experience-course source needs current owner grant and revalidation');
+  if(config.ownerV2Catalog&&(
+    typeof config.ownerV2Catalog.source?.read!=='function'||
+    typeof config.ownerV2Catalog.source?.revalidate!=='function'||
+    typeof config.ownerV2Catalog.signer?.sign!=='function'||
+    typeof config.ownerV2Catalog.signer?.verify!=='function'||
+    typeof config.ownerV2Catalog.quota?.consume!=='function'))
+    throw new Error('V2 catalog requires current rights/scope, signer, and durable rate-limit quota');
   const googleAuth=createPostgresGoogleAuth(config.auth);
   const clock=config.auth.google.now??(()=>new Date());
   const now=()=>clock().toISOString();
@@ -76,6 +99,10 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
     ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
+    ...(config.ownerInsights?{ownerInsights:config.ownerInsights}:{}),
+    ...(config.ownerPreparation?{ownerPreparation:config.ownerPreparation}:{}),
+    ...(config.ownerExperienceCourse?{ownerExperienceCourse:config.ownerExperienceCourse}:{}),
+    ...(config.ownerV2Catalog?{ownerV2Catalog:config.ownerV2Catalog}:{}),
     ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),
     ...(config.ai?{realAi:config.ai.runtime,approvedAiInputs:config.ai.inputs,
