@@ -10,7 +10,7 @@ from pathlib import Path
 WORKFLOW=Path(__file__).resolve().parents[2]/".github/workflows/ui-browser-e2e.yml"
 CHECKOUT="actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
 SETUP="actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"
-UPLOAD="actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+UPLOAD="actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"  # v7.0.2 independently verified tag
 ALLOWED={
     "/package.json","/package-lock.json","/tsconfig.json",
     "/packages/contracts/","/packages/ai/src/","/packages/fixtures/synthetic/","/packages/core/","/packages/ui/","/apps/api/","/apps/web/",
@@ -137,7 +137,8 @@ class BrowserE2EWorkflowTests(unittest.TestCase):
     def test_screenshot_upload_rejects_unsafe_paths_actions_and_inputs(self):
         for original,replacement in (
             (UPLOAD,"actions/upload-artifact@v4"),
-            (UPLOAD,"unreviewed/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"),
+            (UPLOAD,"unreviewed/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"),
+            (UPLOAD,"actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"),
             ("path: dist/playwright-results/**/*.png","path: ."),
             ("path: dist/playwright-results/**/*.png","path: csv/**"),
             ("path: dist/playwright-results/**/*.png","path: dist/**"),
