@@ -41,7 +41,15 @@ function pg(){
     calls.push({sql,params});
     if(sql.includes('FROM api_self_consents'))return {rows:[{version:'1',choices_json:{personalStorage:true},updated_at:at}]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:[projection]};
-    if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:sources.has(String(params[0]))?[sources.get(String(params[0]))!]:[]};
+    if(sql.includes('FROM source_effective_revisions_vnext'))
+      return {rows:sources.has(String(params[0]))?[sources.get(String(params[0]))!]:[]};
+    if(sql.includes('FROM jsonb_to_recordset(')){
+      const refs=JSON.parse(String(params[0])) as Array<{source_id:string}>;
+      return {rows:refs.flatMap(ref=>{
+        const candidate=sources.get(ref.source_id);
+        return candidate?[candidate]:[];
+      })};
+    }
     return {rows:[]};
   },release(){}})};
   const grants:CurrentEvidenceGrants={permissionRefs:new Set([a.permissionRef,b.permissionRef]),sourceIds:new Set([a.sourceId,b.sourceId]),
@@ -94,7 +102,10 @@ describe('#133 current owner scope and every reviewed original',()=>{
   });
   it('reads both exact source identities and rejects changed or revoked second-document evidence',async()=>{
     const h=pg();expect(await h.load()).not.toBeNull();
-    expect(h.calls.some(c=>c.sql.includes('original_sha256')&&c.params[0]===b.sourceId)).toBe(true);
+    expect(h.calls.some(c=>c.sql.includes('original_sha256')
+      &&c.sql.includes('jsonb_to_recordset(')
+      &&(JSON.parse(String(c.params[0])) as Array<{source_id:string}>)
+        .some(ref=>ref.source_id===b.sourceId))).toBe(true);
     const hash=pg(),second=hash.sources.get(b.sourceId)!;
     second.original_sha256=second.stored_original_sha256=second.review_original_sha256='d'.repeat(64);
     await expect(hash.load()).rejects.toThrow();

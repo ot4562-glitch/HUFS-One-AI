@@ -39,7 +39,7 @@ function fixture(){
     calls.push({sql,params});
     if(sql.includes('FROM api_self_consents'))return {rows:consent?[{version:'1',choices_json:{personalStorage:true}}]:[]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:current?[projection]:[]};
-    if(sql.includes('FROM source_effective_revisions_vnext'))return {rows:[source]};
+    if(sql.includes('FROM jsonb_to_recordset('))return {rows:[source]};
     if(sql.includes('FROM api_self_workspace_records'))return {rows:structuredClone(rows)};
     return {rows:[]};
   },release:()=>{}})};
