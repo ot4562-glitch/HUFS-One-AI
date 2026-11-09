@@ -93,6 +93,17 @@ export class OwnerSessionController {
     const epoch=this.invalidate('CHECKING');
     if(await this.checkIdentity(epoch)&&this.still(epoch))this.emit('READY');
   }
+  /**
+   * Explicit user-triggered recovery from a transient service outage or
+   * version conflict. Never retries an existing mutation or private read.
+   * SIGNED_OUT/FORBIDDEN are terminal until a fresh login and controller.
+   */
+  async retry():Promise<void>{
+    if(this.disposed||this.closed||
+      (this.state.status!=='UNAVAILABLE'&&this.state.status!=='CONFLICT'))return;
+    const epoch=this.invalidate('CHECKING');
+    if(await this.checkIdentity(epoch)&&this.still(epoch))this.emit('READY');
+  }
   async runLatest<T>(key:string,perform:(signal:AbortSignal)=>Promise<T>):Promise<T|null>{
     if(!key||key.length>120||this.disposed||this.closed||this.state.status!=='READY'
       ||this.mutation)return null;

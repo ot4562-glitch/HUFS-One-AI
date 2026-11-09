@@ -5,6 +5,7 @@ import {SyntheticExampleGallery} from '../features/illustrations/SyntheticExampl
 import {RevisionComparison} from '../features/revisions/RevisionComparison.js';
 import {buildNoticeList} from '../features/notices/noticeView.js';
 import {InAppLink} from '../shell/AppShell.js';
+import {decodeDetailId} from '../shell/router.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
 import {HomeJourney} from './HomeJourney.js';
@@ -137,7 +138,7 @@ export const opportunityDetailPage: PageRenderer = ({path, state, navigate, sand
   if (!m) return null;
   const view = screenViewOf(state);
   if (!view) return {title: '공고', body: <NoSnapshot state={state} />};
-  const id = decodeURIComponent(m[1]!);
+  const id = decodeDetailId(m[1]!);
   const card = view.feed.kind === 'SHOW' ? [...view.feed.data.featured, ...view.feed.data.compact, ...(view.feed.data.ineligible??[])].find(c => c.opportunityId === id) : undefined;
   // A card from a different subject/snapshot is never looked up elsewhere.
   if (!card) return {title: '공고를 찾을 수 없습니다', body: <p className="muted">지금 시연 대상의 화면에 없는 공고입니다.</p>};
@@ -183,7 +184,7 @@ export const noticeDetailPage: PageRenderer = ({path, state, navigate, sandbox})
   if (!m) return null;
   const view = screenViewOf(state);
   if (!view) return {title: '공지', body: <NoSnapshot state={state} />};
-  const id = decodeURIComponent(m[1]!);
+  const id = decodeDetailId(m[1]!);
   const item = view.notices.kind === 'SHOW' ? buildNoticeList(view.notices.data).find(n => n.noticeId === id) : undefined;
   if (!item) return {title: '공지를 찾을 수 없습니다', body: <p className="muted">지금 시연 대상의 화면에 없는 공지입니다.</p>};
   return {

@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import type {ExchangeApplicant,ExchangePolicy} from '@hufs-one/contracts';
-import {evaluateExchange} from './exchange.js';
+import {evaluateExchange,exchangePolicyInEffect,resolveExchangePolicy} from './exchange.js';
 const NOW='2026-06-01T00:00:00Z';
 const policy:ExchangePolicy={
   ruleId:'SYN-OIA',sourceRevision:'SYN-POLICY-1',sourceUrl:'https://example.org/synthetic-exchange',
@@ -69,5 +69,74 @@ describe('deterministic exchange checks (#340)',()=>{
       expect(r.result).toBe('UNKNOWN');
       expect(r.checks.every(c=>c.status==='UNKNOWN')).toBe(true);
     }
+  });
+});
+
+describe('#365 policy dates are Asia/Seoul calendar days',()=>{
+  const window={effectiveFrom:'2026-11-08',effectiveUntil:'2026-11-30'};
+  it.each([
+    ['2026-11-07T23:59:59.999+09:00',false,'one ms before KST start'],
+    ['2026-11-08T00:00:00+09:00',true,'KST start'],
+    ['2026-11-08T00:30:00+09:00',true,'issue example: KST 00:30 on the start day'],
+    ['2026-11-07T15:00:00Z',true,'same instant as KST start, written in UTC'],
+    ['2026-11-07T14:59:59Z',false,'UTC instant just before KST start'],
+    ['2026-11-30T23:59:59.999+09:00',true,'last ms of the inclusive end day'],
+    ['2026-12-01T00:00:00+09:00',false,'KST start of the next day'],
+    ['2026-12-01T00:30:00+09:00',false,'issue example: KST 00:30 after the end day'],
+    ['2026-11-30T15:00:00Z',false,'UTC form of KST 12-01 00:00'],
+    ['2026-11-30T09:00:00-05:00',true,'another offset, still 11-30 23:00 KST'],
+  ])('%s -> %s (%s)',(asOf,expected)=>{
+    expect(exchangePolicyInEffect(window,asOf)).toBe(expected);
+  });
+  it('open-ended policies have no end',()=>{
+    expect(exchangePolicyInEffect({effectiveFrom:'2026-11-08'},'2099-01-01T00:00:00+09:00')).toBe(true);
+  });
+  it('evaluateExchange uses the same boundary',()=>{
+    const p={...policy,publishedAt:'2026-11-01T00:00:00Z',verifiedAt:'2026-11-01T00:00:00Z',...window};
+    const inside=evaluateExchange(applicant,p,'2026-11-08T00:30:00+09:00');
+    expect(inside.checks.find(c=>c.code==='TRACK')?.status).toBe('PASS');
+    const after=evaluateExchange(applicant,p,'2026-12-01T00:30:00+09:00');
+    expect(after.checks.every(c=>c.status==='UNKNOWN')).toBe(true);
+  });
+  it('rejects an invalid asOf',()=>{
+    expect(()=>exchangePolicyInEffect(window,'not-a-date')).toThrow(RangeError);
+  });
+});
+
+describe('#379 one current policy per partner+track',()=>{
+  const ed=(rev:string,from:string,until:string|undefined,extra:Partial<ExchangePolicy>={}):ExchangePolicy=>({
+    ...policy,sourceRevision:rev,publishedAt:'2025-01-01T00:00:00Z',verifiedAt:'2025-01-02T00:00:00Z',
+    effectiveFrom:from,...(until?{effectiveUntil:until}:{}),...extra});
+  const old=ed('OLD','2025-01-01','2025-12-31'),neu=ed('NEW','2026-01-01','2026-12-31');
+  const AT='2026-09-01T00:00:00+09:00';
+  const pick=(rules:ExchangePolicy[],asOf=AT)=>resolveExchangePolicy(rules,'SYN-UNI-A','OIA',asOf);
+  it('issue example: non-overlapping old and new editions -> the new one, in any order',()=>{
+    for(const rules of [[old,neu],[neu,old]])
+      expect(pick(rules)).toMatchObject({reason:'CURRENT',policy:{sourceRevision:'NEW'}});
+    expect(pick([old,neu],'2025-06-01T00:00:00+09:00').policy?.sourceRevision).toBe('OLD');
+  });
+  it('a revoked old edition does not block the approved new one',()=>{
+    expect(pick([ed('OLD','2025-01-01','2025-12-31',{rights:'REVOKED'}),neu]).policy?.sourceRevision).toBe('NEW');
+  });
+  it('a revoked edition in effect never falls back to an older open-ended approval',()=>{
+    const openOld=ed('OLD','2025-01-01',undefined);
+    expect(pick([openOld,ed('NEW','2026-01-01','2026-12-31',{rights:'REVOKED'})]))
+      .toEqual({policy:null,reason:'REVOKED_OR_BLOCKED_IN_EFFECT'});
+  });
+  it('two approved editions in effect at once are a conflict',()=>{
+    expect(pick([ed('A','2026-01-01',undefined),ed('B','2026-06-01','2026-12-31')]))
+      .toEqual({policy:null,reason:'CONFLICTING_IN_EFFECT'});
+  });
+  it('same revision republished with conflicting rights is quarantined',()=>{
+    expect(pick([neu,{...neu,rights:'BLOCKED'}]).reason).toBe('REVOKED_OR_BLOCKED_IN_EFFECT');
+  });
+  it('rows published or verified after asOf are ignored, not used',()=>{
+    const later=ed('LATER','2026-01-01','2026-12-31',{publishedAt:'2026-10-01T00:00:00Z'});
+    expect(pick([later])).toEqual({policy:null,reason:'NONE_IN_EFFECT'});
+    expect(pick([neu,{...later,rights:'REVOKED'}]).policy?.sourceRevision).toBe('NEW');
+  });
+  it('KST day boundary from #365 decides which edition is current',()=>{
+    expect(pick([old,neu],'2025-12-31T23:59:59+09:00').policy?.sourceRevision).toBe('OLD');
+    expect(pick([old,neu],'2025-12-31T15:00:00Z').policy?.sourceRevision).toBe('NEW');
   });
 });

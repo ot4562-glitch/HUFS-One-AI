@@ -2,7 +2,7 @@ import {networkInterfaces} from 'node:os';
 import {isIP} from 'node:net';
 import {createPostgresDataPool} from './db/pg-pool.js';
 import type {DataPoolSettings,ManagedDataPool} from './db/pg-pool.js';
-import {createPostgresApplication} from './application-postgres.js';
+import {createPostgresApplication,validateCampusSources} from './application-postgres.js';
 import type {PostgresApplicationConfig} from './application-postgres.js';
 import type {PostgresGoogleAuthConfig} from './auth-postgres.js';
 import type {PostgresPlatformConfig} from './platform-postgres.js';
@@ -49,6 +49,9 @@ export interface OperatorPostgresInputs {
   google:PostgresGoogleAuthConfig['google'];
   attemptDigestKey:Buffer;
   evidenceRights:PostgresPlatformConfig['evidenceRights'];
+  /** Root-owned, explicitly authorized source/revision and rights-reading ports.
+   * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
+  campusAssist?:PostgresApplicationConfig['campusAssist'];
   /** Non-SQL options only. Pool-bearing services use extensions below. */
   platform?:Omit<PostgresPlatformConfig,'pools'|'evidenceRights'|'reviewerSandbox'|'adminUsage'>;
   extensions?:OperatorExtensions;
@@ -102,6 +105,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     ||input.demo.digestKey.equals(input.attemptDigestKey)))
     throw new Error('Demo profile quota needs an independent digest key');
   if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
+  if(input.campusAssist)validateCampusSources(input.campusAssist);
   if(input.managedAi){
     const value=input.managedAi;
     if(value.operation!=='HCX_007'||!value.roles
@@ -160,6 +164,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
           input.managedAi.now??(()=>new Date().toISOString()))}:undefined;
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
+      ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
       ...(ai?{ai}:{}),
       ...(input.trustedProxyAddresses!==undefined?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),
       auth:{pools:{sessions,admission,attempts},attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},
@@ -233,6 +238,7 @@ export async function startOperatorPostgres(input:{
   for(const role of ['projections','calendar','personal','evidence'] as const)
     if(platform.pools?.[role]!==prepared.pools[role])
       throw new Error('Operator platform SQL pools must use verified role settings');
+  if(prepared.application.campusAssist)validateCampusSources(prepared.application.campusAssist);
   if(Boolean(prepared.application.ai)!==Boolean(prepared.managedAiBinding)
     ||prepared.managedAiBinding&&(
       prepared.application.ai!==prepared.managedAiBinding.ai

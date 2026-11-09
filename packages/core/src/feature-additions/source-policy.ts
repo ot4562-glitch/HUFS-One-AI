@@ -51,6 +51,17 @@ export function safeIntersection(lhs: readonly string[], rhs: readonly string[])
   const right=new Set(rhs);
   return [...new Set(lhs)].filter(x=>right.has(x)).sort((a,b)=>a.localeCompare(b,'en'));
 }
+/**
+ * IDs that occur more than once in one input batch. A repeated ID may carry
+ * conflicting revisions or a revocation, and the input order is not a trusted
+ * revision order, so callers quarantine *every* copy (same policy as the
+ * catalog search) instead of keeping whichever copy came first.
+ */
+export function conflictingIds(items: readonly {id: string}[]): ReadonlySet<string> {
+  const counts=new Map<string,number>();
+  for (const item of items) counts.set(item.id,(counts.get(item.id)??0)+1);
+  return new Set([...counts].filter(([,n])=>n>1).map(([id])=>id));
+}
 export function jaccard(lhs: readonly string[], rhs: readonly string[]): number {
   const l=new Set(lhs), r=new Set(rhs);
   if (!l.size || !r.size) return 0;

@@ -5,7 +5,7 @@ import {ActivityRecordSchema,ExchangeApplicantSchema,ExchangePolicySchema,
 import type {VerifiedActor,VerifySession} from '../types.js';
 import {ApiFailure,authorizeSession,requireStateChangeProof} from './auth/gates.js';
 import {archiveActivities,forecastActivity} from '../../../../packages/core/src/campus-assist/activities.js';
-import {evaluateExchange} from '../../../../packages/core/src/campus-assist/exchange.js';
+import {evaluateExchange,resolveExchangePolicy} from '../../../../packages/core/src/campus-assist/exchange.js';
 import {retrieveFaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
 import {buildFaqHcx007Request,parseFaqHcx007Response} from '../../../../packages/ai/src/faq-hcx007.js';
 
@@ -40,8 +40,22 @@ const Exchange=z.strictObject({asOf:Iso,partnerId:Id,applicant:ExchangeApplicant
 const Ask=z.strictObject({asOf:Iso,question:z.string().trim().min(2).max(500)});
 /** Only explicitly injected, currently revalidated BETA routes. No public or synthetic backdoor. */
 export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAssistServices,session:Session):void{
+  // Invalid or timezone-less timestamps must never pass a NaN comparison.
+  const strictTime=(value:string):number=>{
+    if(!Iso.safeParse(value).success)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    const time=Date.parse(value);
+    if(!Number.isFinite(time))throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    return time;
+  };
+  const validReceipt=(receipt:Receipt,actor:VerifiedActor,now:string):void=>{
+    if(receipt.actorId!==actor.actorId||!receipt.sourceVersion?.trim()
+      ||strictTime(receipt.expiresAt)<=strictTime(now))
+      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+  };
   const verify=async(request:Parameters<VerifySession>[0]):Promise<VerifiedActor>=>{
-    const actor=authorizeSession(await session.verify(request),session.now());
+    const now=session.now();
+    strictTime(now);
+    const actor=authorizeSession(await session.verify(request),now);
     if(actor.role!=='BETA')throw new ApiFailure('FORBIDDEN');
     return actor;
   };
@@ -52,17 +66,19 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
     return fresh;
   };
   const read=async<T>(port:SourcePort<T>,actor:VerifiedActor,asOf:string):Promise<Snapshot<T>>=>{
-    if(Date.parse(asOf)>Date.parse(session.now()))throw new ApiFailure('FORBIDDEN');
+    if(strictTime(asOf)>strictTime(session.now()))throw new ApiFailure('FORBIDDEN');
     const snapshot=await port.read({actor,asOf});
-    if(!snapshot||snapshot.receipt.actorId!==actor.actorId||!snapshot.receipt.sourceVersion
-      ||Date.parse(snapshot.receipt.expiresAt)<=Date.parse(session.now()))
-      throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    if(!snapshot?.receipt)throw new ApiFailure('PROVIDER_UNAVAILABLE');
+    validReceipt(snapshot.receipt,actor,session.now());
     return snapshot;
   };
   const current=async<T>(request:Parameters<VerifySession>[0],actor:VerifiedActor,port:SourcePort<T>,snapshot:Snapshot<T>)=>{
     const fresh=await same(request,actor);
+    validReceipt(snapshot.receipt,fresh,session.now());
     if(!await port.revalidate({actor:fresh,receipt:snapshot.receipt,now:session.now()}))
       throw new ApiFailure('FORBIDDEN');
+    // Rights validation may be asynchronous. Recheck the TTL after it returns.
+    validReceipt(snapshot.receipt,fresh,session.now());
   };
   if(services.activities){
     const port=services.activities;
@@ -92,17 +108,13 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const args=z.strictObject({asOf:Iso}).parse(req.query);
       const snapshot=await read(port,actor,args.asOf);
       const rules=ExchangePolicySchema.array().max(500).parse(snapshot.items);
-      const grouped=new Map<string,ExchangePolicy[]>();
-      for(const rule of rules){
-        const key=rule.partnerId+':'+rule.track;
-        const group=grouped.get(key)||[];
-        group.push(rule);grouped.set(key,group);
-      }
-      const partners=[...grouped.values()].filter(group=>group.length===1).map(group=>group[0]!)
-        .filter(r=>r.rights==='APPROVED'&&Date.parse(r.publishedAt)<=Date.parse(args.asOf)
-          &&Date.parse(r.verifiedAt)<=Date.parse(args.asOf)
-          &&r.effectiveFrom<=args.asOf.slice(0,10)
-          &&(!r.effectiveUntil||r.effectiveUntil>=args.asOf.slice(0,10)))
+      // One current policy per partner+track at asOf, chosen by the same resolver
+      // as the evaluation (#379): historical editions no longer hide the current one.
+      const pairs=new Map<string,Pick<ExchangePolicy,'partnerId'|'track'>>();
+      for(const rule of rules)pairs.set(rule.partnerId+':'+rule.track,{partnerId:rule.partnerId,track:rule.track});
+      const partners=[...pairs.values()]
+        .map(p=>resolveExchangePolicy(rules,p.partnerId,p.track,args.asOf).policy)
+        .filter((r):r is ExchangePolicy=>r!==null)
         .sort((a,b)=>a.partnerId.localeCompare(b.partnerId)).slice(0,50)
         .map(r=>({partnerId:r.partnerId,track:r.track,minimumGpa:r.minimumGpa,
           ...(r.partnerMinimumGpa!==undefined?{partnerMinimumGpa:r.partnerMinimumGpa}:{}),
@@ -117,9 +129,9 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const args=Exchange.parse(req.body);
       const snapshot=await read(port,actor,args.asOf);
       const rules=ExchangePolicySchema.array().max(500).parse(snapshot.items);
-      const matches=rules.filter(r=>r.partnerId===args.partnerId&&r.track===args.applicant.track);
-      // An unresolved revision conflict is not a license to pick a convenient policy.
-      const policy=matches.length===1?matches[0]!:null;
+      // An unresolved revision conflict is not a license to pick a convenient policy;
+      // resolveExchangePolicy quarantines conflicts and in-effect revocations (#379).
+      const policy=resolveExchangePolicy(rules,args.partnerId,args.applicant.track,args.asOf).policy;
       const result=evaluateExchange(args.applicant,policy,args.asOf);
       await current(req,actor,port,snapshot);
       return result;

@@ -1,0 +1,41 @@
+name: "실증 인수 · 실제 환경/사람 검증"
+description: "실계정·실서버·공식 자료·사람 QA 등 코드 CI와 분리된 실제 증거 인수"
+title: "[실증 인수] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **인수는 자동화하지 않습니다.** P0 수준의 긴급 상황은 인수 이슈만 만들고 방치하지 말고 관리자에게 비공개/직접 즉시 알립니다. 이 이슈에는 type:acceptance / triage:needs-review가 표시됩니다.
+        담당자, 승인자, 검증 환경, 비용, 근거·접근권을 사람이 정하고 확인한 뒤에만 완료 판단합니다.
+        기존 기능/코드 PR의 합성 PASS는 실제 학교 계정·자료 권리·HCX/OCR·NCP·사람 검증의 완료가 아닙니다.
+        제목 맨 앞 [실증 인수]를 유지하고, AGENTS.md 및 docs/ISSUE_ASSIGNMENT_PLAYBOOK.md를 읽으세요.
+        개인 학생 원본/CSV/비밀·API 키/운영 호스트 자격증명은 공개 이슈에 올리지 않습니다.
+        고정 역할 이슈 #355~#359는 모든 쓰기 금지.
+  - type: input
+    id: linked-work
+    attributes:
+      label: "관련 구현 이슈 / PR / 정확한 HEAD SHA"
+      placeholder: "#번호 또는 GitHub 링크"
+    validations:
+      required: true
+  - type: textarea
+    id: target
+    attributes:
+      label: "실증 대상과 목적"
+      placeholder: "NCP/PG/HCX-007/CLOVA OCR/학교 계정/Gold/실기기/접근성 등; 실계정 값은 적지 않음"
+    validations:
+      required: true
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: "사전 승인·권리·비용·보안 및 담당 인수자"
+      placeholder: "승인자/실행자, 목적별 이용권, 비용 하한/상한, 권한, 개인정보 최소화"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "검증 단계·결과 증거·미실행 항목"
+      placeholder: "명령/환경/시점/정확한 SHA, PASS/FAIL/HOLD/NOT_RUN, 비공개 증거 참조 및 되돌리기"
+    validations:
+      required: true

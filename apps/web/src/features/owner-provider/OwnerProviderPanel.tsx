@@ -1,4 +1,5 @@
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
+import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import {AI_TASK_PATHS,type AiTaskPath,type ApprovedProviderInput,
   type ProviderAccepted,type ProviderStoredJob,type OwnerProviderReceipt,
   OwnerProviderCancellationResponseSchema} from '@hufs-one/contracts';
@@ -150,9 +151,9 @@ export function OwnerProviderPanel({port}:{port:OwnerProviderPort}){
     }finally{submitLock.current=false;setBusy(false);}
   };
   if(session.status==='IDLE'||session.status==='CHECKING')return <p aria-busy="true">본인 권한 확인 중입니다.</p>;
-  if(session.status!=='READY')return <p role="alert">
+  if(session.status!=='READY')return <OwnerSessionFailure controller={port.session}>
     현재 사용자 권한·동의·서버 연결을 확인하지 못했습니다. 기존 후보와 작업 내역을 표시하지 않습니다.
-  </p>;
+  </OwnerSessionFailure>;
 
   return <section aria-label="승인된 Provider 후보 실행" className="local-account__panel">
     <p role="note">BETA 전용입니다. 서버에서 독립 검토·권리·동의가 확인된 입력만 표시합니다.
