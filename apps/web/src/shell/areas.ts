@@ -25,7 +25,7 @@ export const AREAS: readonly Area[] = [
   {id: 'competency', label: '역량관리', summary: '나의 역량 현황과 진단 정보를 확인하는 영역입니다.',
     ours: [], observed: ['HUFSAbility 역량점수', 'MY 비교과활동 Point', 'HUFSAbility 체계 안내', '핵심역량진단검사', 'MY 핵심역량진단 결과', '대학생활적응검사', 'MY 대학생활적응검사결과']},
   {id: 'curricular', label: '교과/비교과', summary: '학업·졸업 요건과 비교과 활동을 함께 확인합니다.',
-    ours: [{route: '/graduation', label: '졸업지원'}, {route: '/graduation/what-if', label: '전공 가정 분석'}, {route: '/saved', label: '보관함'}, {route: '/clubs', label: '동아리 모집'}, {route: '/exchange', label: '교환학생 조건'}],
+    ours: [{route: '/graduation', label: '졸업지원'}, {route: '/graduation/what-if', label: '전공 가정 분석'}, {route: '/saved', label: '보관함'}, {route: '/clubs', label: '동아리 모집'}, {route: '/exchange', label: '교환학생 조건'}, {route:'/owner-scholarships',label:'장학금 준비 요건'}],
     observed: ['수강교과목', '성적조회', '비교과프로그램', '비교과프로그램 신청 내역', '비교과 관심키워드', 'MY 비교과 장바구니', '외부비교과 활동', '학습공동체', '장학 신청']},
   {id: 'jobs', label: '채용/고용24', summary: '나에게 맞는 공고와 나의 지원 기록을 확인합니다.',
     ours: [{route: '/opportunities', label: '맞춤 기회'}, {route: '/owner-opportunities/v2-catalog', label: '승인된 공고 전체 검색'}, {route: '/applications', label: '지원 현황'}],
@@ -42,7 +42,8 @@ export const AREAS: readonly Area[] = [
     observed: ['시스템문의', '자료실', '설문참여', '사회봉사 활동 경험 사례공유']},
   {id: 'survey', label: '취업조사', summary: '졸업생 취업 조사 영역입니다.', ours: [], observed: ['취업조사']},
   {id: 'faculty', label: '교수지원(학생)', summary: '수업 컨설팅·교과목 개발 참여 영역입니다.', ours: [], observed: ['수업컨설팅', '혁신교과목개발']},
-  {id: 'badge', label: '오픈배지', summary: '오픈배지 안내 영역입니다.', ours: [], observed: ['오픈배지', 'My 오픈배지']},
+  {id: 'badge', label: '오픈배지', summary: '오픈배지 안내 영역입니다.',
+    ours: [{route:'/owner-badges',label:'배지 취득 준비'}], observed: ['오픈배지', 'My 오픈배지']},
   {id: 'stats', label: '취업통계', summary: '졸업생 취업 통계 영역입니다.',
     ours: [], observed: ['산업분류별 현황', '기업유형별 현황', '근무지역별 현황', '초임급여별 현황', '학과계열별 현황']},
 ];
