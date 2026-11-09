@@ -18,7 +18,7 @@ import type {DemoProfilePort} from './modules/profiles/demo-profile.js';
 import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-what-if-http.js';
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
-import {registerOwnerV2CatalogRoutes,type TrustedOwnerV2CatalogSource} from './modules/owner-v2-catalog-http.js';
+import {registerOwnerV2CatalogRoutes,type TrustedOwnerV2CatalogSource,type TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
 import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
@@ -50,7 +50,7 @@ interface SharedDependencies {
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
   /** Operator-only current-source scope and HMAC signer, never a browser/route-supplied key. */
-  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner};
+  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   sourceIngestionControl?:SourceJobControl;
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
   doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
