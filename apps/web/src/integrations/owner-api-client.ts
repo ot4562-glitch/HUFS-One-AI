@@ -424,6 +424,13 @@ export class HufsOwnerApiClient {
   getOwnerPreparation(signal?:AbortSignal){
     return this.request('/api/owner/features/v2/preparation',V.OwnerPreparationResponseSchema,{signal});
   }
+  /** #366: closed feature kind, never browser-supplied source records. */
+  async getOwnerInsights(kind:V.OwnerInsightsKind,signal?:AbortSignal){
+    const name=clientInput(V.OwnerInsightsKindSchema,kind);
+    const result=await this.request('/api/owner/features/v2/insights/'+name,V.OwnerInsightsResponseSchema,{signal});
+    requireMatchingReceipt(result.state==='NOT_CONNECTED'?result.kind===name:result.result.kind===name);
+    return result;
+  }
   /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
   async searchApprovedV2Catalog(query:z.input<typeof V.OwnerV2CatalogQuerySchema>={},signal?:AbortSignal){
     const input=clientInput(V.OwnerV2CatalogQuerySchema,query);

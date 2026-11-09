@@ -16,6 +16,7 @@ import {ownerProviderPage} from './ownerProviderPage.js';
 import {careerPage} from './careerPage.js';
 import {activityArchivePage,exchangePage,faqPage} from './campusAssistPages.js';
 import {ownerV2CatalogPage} from './ownerV2CatalogPage.js';
+import {ownerInsightsPage} from './ownerInsightsPage.js';
 import {ownerPreparationPage} from './ownerPreparationPage.js';
 import {ownerCounselingPage} from './ownerCounselingPage.js';
 
@@ -24,5 +25,5 @@ export const appPages: readonly PageRenderer[] = [
   ownerIntakePage, todayPage, opportunitiesPage, opportunityDetailPage, noticesPage, noticeDetailPage, reviewerInvitePage, graduationPage, whatIfPage, areaPage,
   savedPage, experiencePage, settingsPage, applicationsPage, menuPage, clubsPage, clubDetailPage,
   ownerDemoProfilePage,ownerAcademicsPage,ownerExperienceCoursePage,ownerProviderPage,careerPage,
-  activityArchivePage,exchangePage,faqPage,ownerV2CatalogPage,ownerPreparationPage,ownerCounselingPage,
+  activityArchivePage,exchangePage,faqPage,ownerV2CatalogPage,ownerPreparationPage,ownerInsightsPage,ownerCounselingPage,
 ];

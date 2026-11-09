@@ -53,6 +53,7 @@ export interface OperatorPostgresInputs {
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
   ownerCounseling?:PostgresApplicationConfig['ownerCounseling'];
+  ownerInsights?:PostgresApplicationConfig['ownerInsights'];
   ownerPreparation?:PostgresApplicationConfig['ownerPreparation'];
   /** Requires current purpose-granted academic source. */
   ownerExperienceCourse?:PostgresApplicationConfig['ownerExperienceCourse'];
@@ -115,6 +116,11 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
   if(input.ownerCounseling&&(typeof input.ownerCounseling.read!=='function'
     ||typeof input.ownerCounseling.revalidate!=='function'))
     throw new Error('Counseling requires current official operator source and rights');
+  if(input.ownerInsights&&(
+    typeof input.ownerInsights.source?.read!=='function'||
+    typeof input.ownerInsights.source?.revalidate!=='function'||
+    typeof input.ownerInsights.quota?.consume!=='function'))
+    throw new Error('Owner insights require current rights reader and durable quota');
   if(input.ownerPreparation&&(
     typeof input.ownerPreparation.source?.read!=='function'||
     typeof input.ownerPreparation.source?.revalidate!=='function'||
@@ -190,6 +196,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
       ...(input.ownerCounseling?{ownerCounseling:input.ownerCounseling}:{}),
+      ...(input.ownerInsights?{ownerInsights:input.ownerInsights}:{}),
       ...(input.ownerPreparation?{ownerPreparation:input.ownerPreparation}:{}),
       ...(input.ownerExperienceCourse?{ownerExperienceCourse:input.ownerExperienceCourse}:{}),
       ...(input.ownerV2Catalog?{ownerV2Catalog:input.ownerV2Catalog}:{}),

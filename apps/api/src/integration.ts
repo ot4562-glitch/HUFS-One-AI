@@ -19,6 +19,7 @@ import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-wha
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
 import {registerOwnerCounselingRoutes,type TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
+import {registerOwnerInsightsRoutes,type OwnerInsightsServices} from './modules/owner-v2-insights-http.js';
 import {registerOwnerPreparationRoutes,type OwnerPreparationServices} from './modules/owner-preparation-http.js';
 import {registerOwnerExperienceCourseRoutes,type TrustedExperienceCourseSource} from './modules/owner-experience-course-http.js';
 import {registerOwnerV2CatalogRoutes,type TrustedOwnerV2CatalogSource,type TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
@@ -53,6 +54,7 @@ interface SharedDependencies {
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
   ownerCounseling?:TrustedOwnerCounselingSource;
+  ownerInsights?:OwnerInsightsServices;
   ownerPreparation?:OwnerPreparationServices;
   ownerExperienceCourse?:TrustedExperienceCourseSource;
   /** Operator-only current-source scope and HMAC signer, never a browser/route-supplied key. */
@@ -136,6 +138,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
   registerOwnerCounselingRoutes({app,session:ownerSession,allowedOrigin:deps.allowedOrigin,
     ...(deps.ownerCounseling?{source:deps.ownerCounseling}:{})});
+  registerOwnerInsightsRoutes({app,session:ownerSession,...(deps.ownerInsights?{services:deps.ownerInsights}:{})});
   registerOwnerPreparationRoutes({app,session:ownerSession,
     ...(deps.ownerPreparation?{services:deps.ownerPreparation}:{})});
   registerOwnerExperienceCourseRoutes({app,session:ownerSession,

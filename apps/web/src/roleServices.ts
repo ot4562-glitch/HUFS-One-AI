@@ -57,6 +57,7 @@ export function roleServices(api: RoleApi, session: SessionRole): Partial<AppSer
     ownerCounseling:{session:ownerSession,search:(change,signal)=>api.owner.findCounseling(change,signal)},
     ownerCourseEvidence:{session:ownerSession,read:signal=>api.owner.getExperienceCourseEvidence(signal)},
     ownerV2Catalog:{session:ownerSession,search:(query,signal)=>api.owner.searchApprovedV2Catalog(query,signal)},
+    ownerInsights:{session:ownerSession,read:(kind,signal)=>api.owner.getOwnerInsights(kind,signal)},
     ownerPreparation:{session:ownerSession,read:signal=>api.owner.getOwnerPreparation(signal)},
     ownerExperience: {session: ownerSession, skills: ownerExperienceSkillPort(api.owner)},
     ownerCareer: {
