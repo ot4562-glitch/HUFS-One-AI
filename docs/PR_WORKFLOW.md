@@ -16,7 +16,16 @@
 
 2026-11-09에 다른 팀원의 `APPROVED` 없이 `#399/#400/#401/#411`이 병합된 것을 리뷰 API로 확인했습니다. 이는 **이 정책을 충족하지 않은 병합**입니다. 이미 병합된 Git 기록에 사후 검토를 붙여도 '병합 전 승인'으로 소급 인정하지 않으며, 서명/기록을 소급 조작하지 않습니다. 각 SHA의 코드·보안/자료 영향을 다른 사람에게 재검토받고 필요하면 **별도 수정 또는 되돌리기 PR을 독립 승인 후** 처리합니다. 확인 없이 main을 무단 force push하거나 기존 원본을 편집하지 않습니다. 이 문제를 새 PR 검토의 예외 선례로 삼지 않습니다.
 
-## 2026-11-09 최신 검수 결과
+## 2026-11-09 후속 리뷰 실적 (2차 검수; 정책은 위 내용 우선)
+
+- [#413 정책](https://github.com/ot4562-glitch/HUFS-One-AI/pull/413)은 박준영의 동일 HEAD `9841dc9` `APPROVED`와 CI 통과 뒤 [`dfc79a7`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/dfc79a76a3b634417d6793042ab1730175858b31)로 **병합**. `CODEOWNERS`와 PR 템플릿·AGENTS/본 규칙이 main에 반영됨. **main Ruleset은 관리자가 별도 활성화해야 하며 아직 `REVIEW_PROTECTION_NOT_VERIFIED`.**
+- [#417 승인된 공고 검색](https://github.com/ot4562-glitch/HUFS-One-AI/pull/417)은 다른 협업자의 현재 HEAD `2bc0262` `APPROVED`, PR CI 7/7 SUCCESS, 리뷰 스레드 해소 후 [`35b9ebe`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/35b9ebe33c400e7284f7a1f6951b02f30d11136a)로 **병합**. 별도 실자료·운영 인수 필요(#348/#366), UX #418 OPEN.
+- [#415 리뷰 검사 자동화](https://github.com/ot4562-glitch/HUFS-One-AI/pull/415) (HEAD `7f850b8`)는 이미 승인·병합된 #413의 내용과 충돌하지 않도록 범위를 **추가 workflow/CI sparse allowlist/합성 테스트/연계 문서 5개 파일**로 정리. 독립 승인 검사 실패가 **승인 없는 상태를 정확히 차단**하는 것은 설계대로이며, 이 PR은 아직 **동료 APPROVED 0건, OPEN**. 관리자 Ruleset 설정과 이 CI 자체 병합은 별개의 단계.
+- [#410](https://github.com/ot4562-glitch/HUFS-One-AI/pull/410)·[#412](https://github.com/ot4562-glitch/HUFS-One-AI/pull/412)는 현재 main 병합 충돌과 **다른 사람 APPROVED 0건**, [#361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361)·[#372](https://github.com/ot4562-glitch/HUFS-One-AI/pull/372)는 유효한 `CHANGES_REQUESTED` 상태로 병합하지 않았습니다.
+- Dependabot #402/#403/#406은 **실제 HEAD TASK-00 실패**로 `REQUEST_CHANGES`, #404/#405/#407/#408/#409는 `COMMENT` 검토 후 최신 main/독립 승인 대기로 유지. **CI 성공이나 자기 리뷰 COMMENT만으로 승인 간주하지 않음**.
+- 전체 원장: [2026-11-09 후속 감사](REVIEW_AND_ISSUE_AUDIT_20261109.md) · [STATUS](../STATUS.md) · [관리자 병합 보호 및 과거 리뷰 감사 #416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416).
+
+## 2026-11-09 1차 검수 결과 (후속 변경은 위 내용 우선)
 
 - [PR #386](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386) (HEAD `0fdb638`): 중복 요건/경험 ID 격리와 순서 반전 회귀 확인, 다른 계정의 AI QA APPROVED 및 오너 [APPROVED](https://github.com/ot4562-glitch/HUFS-One-AI/pull/386#pullrequestreview-5820570040). HEAD 5종 Actions SUCCESS, 과거 차단 스레드 2건 해결 후 [`e8d3c9c`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/e8d3c9c73849bec36b7fe686de2c56e6aa71c5b9)로 **squash MERGED**. #347은 AI 코드 일부 완료이며 API/UI·실원장·사람 Gold 미완으로 OPEN.
 - [PR #361](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361) (HEAD `72fc402`): [REQUEST_CHANGES](https://github.com/ot4562-glitch/HUFS-One-AI/pull/361#pullrequestreview-5820574395). `없는`을 서술어 부정으로 인식해 근거와 반대인 답변을 통과시키는 결함; 인용문-서술어 극성 회귀/수정 필요.
