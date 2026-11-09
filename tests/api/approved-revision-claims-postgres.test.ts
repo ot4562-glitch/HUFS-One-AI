@@ -126,6 +126,9 @@ describe('durable independently approved revision claims',()=>{
     for(const mutate of [
       (v:ReturnType<typeof make>)=>{v.payload.ocrLines[0]!.text='다른 안내';},
       (v:ReturnType<typeof make>)=>{v.payload.ocrLines[0]!.pageIndex=1;},
+      (v:ReturnType<typeof make>)=>{v.payload.ocrLines.push({...v.payload.ocrLines[0]!,text:'다른 마감 안내'});},
+      (v:ReturnType<typeof make>)=>{v.payload.ocrLines.push({...v.payload.ocrLines[0]!,bboxNorm:[0.2,0.2,0.8,0.8]});},
+      (v:ReturnType<typeof make>)=>{v.payload.ocrLines.push({...v.payload.ocrLines[0]!});},
       (v:ReturnType<typeof make>)=>{v.span.bboxNorm=[0.2,0.2,0.8,0.8];v.h.rehash(1);},
       (v:ReturnType<typeof make>)=>{v.payload.originalSha256='d'.repeat(64);},
       (v:ReturnType<typeof make>)=>{v.h.images[0]!.reviewed_by=scope.actorId;},
