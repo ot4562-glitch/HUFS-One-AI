@@ -13,6 +13,7 @@ import type {ReviewerDemoRepository} from './modules/auth/reviewer.js';
 import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-candidates-postgres.js';
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
+import type {TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
 
 export type ApprovedCampusSources=Pick<CampusAssistServices,'activities'|'exchange'|'faq'>;
 export function validateCampusSources(sources:ApprovedCampusSources):void{
@@ -34,6 +35,8 @@ export interface PostgresApplicationConfig {
   /** Optional operator-owned, current rights/revision guarded source ports.
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
+  /** Optional operator-managed official counseling catalogue; never a browser/mock source. */
+  ownerCounseling?:TrustedOwnerCounselingSource;
   platform:Omit<PostgresPlatformConfig,'now'>;
   /** Explicit operator-supplied restricted 4-owner CSV/registry loaders; no auto import or demo fallback. */
   ownerIntake?:Omit<Parameters<typeof createRestrictedOwnerDirectory>[0],'now'>;
@@ -69,6 +72,9 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     name=>typeof config.ownerIntake?.[name as keyof typeof config.ownerIntake]!=='function'))
     throw new Error('Restricted owner intake requires all three verified operator loaders');
   if(config.campusAssist)validateCampusSources(config.campusAssist);
+  if(config.ownerCounseling&&(typeof config.ownerCounseling.read!=='function'
+    ||typeof config.ownerCounseling.revalidate!=='function'))
+    throw new Error('Counseling source requires current rights and snapshot revalidation');
   const googleAuth=createPostgresGoogleAuth(config.auth);
   const clock=config.auth.google.now??(()=>new Date());
   const now=()=>clock().toISOString();
@@ -76,6 +82,7 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   return createIntegratedApi({
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
     ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
+    ...(config.ownerCounseling?{ownerCounseling:config.ownerCounseling}:{}),
     ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),
     ...(config.ai?{realAi:config.ai.runtime,approvedAiInputs:config.ai.inputs,
