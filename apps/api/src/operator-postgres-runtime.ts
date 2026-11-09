@@ -52,6 +52,7 @@ export interface OperatorPostgresInputs {
   /** Root-owned, explicitly authorized source/revision and rights-reading ports.
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
+  ownerPreparation?:PostgresApplicationConfig['ownerPreparation'];
   /** Requires current purpose-granted academic source. */
   ownerExperienceCourse?:PostgresApplicationConfig['ownerExperienceCourse'];
   /** Explicit operator source+secret signer; never inferred from synthetic catalogs. */
@@ -110,6 +111,11 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     throw new Error('Demo profile quota needs an independent digest key');
   if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
   if(input.campusAssist)validateCampusSources(input.campusAssist);
+  if(input.ownerPreparation&&(
+    typeof input.ownerPreparation.source?.read!=='function'||
+    typeof input.ownerPreparation.source?.revalidate!=='function'||
+    typeof input.ownerPreparation.quota?.consume!=='function'))
+    throw new Error('Owner preparation requires current rights source and durable quota');
   if(input.ownerExperienceCourse&&(typeof input.ownerExperienceCourse.read!=='function'
     ||typeof input.ownerExperienceCourse.revalidate!=='function'))
     throw new Error('Owner experience/course requires reviewed source and current grant');
@@ -179,6 +185,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
+      ...(input.ownerPreparation?{ownerPreparation:input.ownerPreparation}:{}),
       ...(input.ownerExperienceCourse?{ownerExperienceCourse:input.ownerExperienceCourse}:{}),
       ...(input.ownerV2Catalog?{ownerV2Catalog:input.ownerV2Catalog}:{}),
       ...(ai?{ai}:{}),
