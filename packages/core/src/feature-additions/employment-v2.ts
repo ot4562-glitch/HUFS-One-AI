@@ -1,6 +1,6 @@
 /** #351 — verified aggregate statistics and grounded display facts. */
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {verifySource,type FeatureMode} from './source-policy.js';
+import {conflictingIds,verifySource,type FeatureMode} from './source-policy.js';
 export type EmploymentValue={
   id:string;year:number;metricId:string;groupId:string;populationId:string;
   status:'PERCENT'|'OBSERVED_ZERO'|'NO_DATA'|'SUPPRESSED'|'INVALID'|'UNVERIFIED';
@@ -40,7 +40,14 @@ export function comparePublishedStats(
   records:readonly C.EmploymentAggregate[],asOf:string,mode?:FeatureMode,
 ):EmploymentCompareResult {
   if(!records.length) return {rows:[],comparable:false,reason:'EMPTY'};
-  const rows=records.map(r=>evaluatePublishedStat(r,asOf,mode));
+  // #376: a repeated stat ID can have conflicting rights or numerators.
+  // Quarantine *all* copies; never leak numeric cells in comparison output.
+  const conflicts=conflictingIds(records);
+  const rows=records.map(r=>conflicts.has(r.id)
+    ? {id:r.id,year:r.year,metricId:r.metricId,groupId:r.groupId,
+        populationId:r.populationId,sourceRevisionId:r.source.revisionId,
+        status:'UNVERIFIED' as const}
+    : evaluatePublishedStat(r,asOf,mode));
   if (rows.some(x=>x.status!=='PERCENT'&&x.status!=='OBSERVED_ZERO'))
     return {rows,comparable:false,reason:'UNPUBLISHABLE'};
   const sameSource=records.every(r=>r.source.sourceId===records[0]!.source.sourceId
@@ -63,12 +70,15 @@ export function validateEmploymentStatements(
   rows:readonly C.EmploymentAggregate[],
   claims:readonly EmploymentStatement[],asOf:string,mode?:FeatureMode,
 ):VerifiedStatement[] {
-  const byId=new Map(rows.map(row=>[row.id,evaluatePublishedStat(row,asOf,mode)]));
+  const conflicts=conflictingIds(rows);
+  const byId=new Map(rows.filter(row=>!conflicts.has(row.id))
+    .map(row=>[row.id,evaluatePublishedStat(row,asOf,mode)]));
   const seen=new Set<string>();
   return claims.map(c=>{
     const rejection=(reason:string):VerifiedStatement=>({statementId:c.id,outcome:'REJECTED',reason});
     if(seen.has(c.id)) return rejection('DUPLICATE_STATEMENT');
     seen.add(c.id);
+    if(conflicts.has(c.statId))return rejection('AMBIGUOUS_SOURCE_ID');
     const row=byId.get(c.statId);
     if(!row || (row.status!=='PERCENT'&&row.status!=='OBSERVED_ZERO'))
       return rejection('SOURCE_NOT_PUBLISHABLE');

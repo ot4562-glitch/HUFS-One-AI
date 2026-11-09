@@ -1,4 +1,5 @@
 import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
+import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import {OwnerStudyPlanCheckRequestSchema,type OwnerDoubleMajorAudit,
   type OwnerStudyPlanCheckRequest,type OwnerStudyPlanCheckResponse,
   type OwnerMajorWhatIfRequest,type OwnerMajorWhatIfResponse} from '@hufs-one/contracts';
@@ -55,9 +56,9 @@ export function OwnerAcademicsPanel({port}:{port:OwnerAcademicsPort}){
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p aria-busy="true">현재 BETA 사용자 권한을 확인하고 있습니다.</p>;
-  if(scope.status!=='READY')return <p role="alert">
-    본인 학업 자료의 인증·권한·서버 연결 또는 판본이 달라졌습니다. 이전 결과를 비웠습니다. 다시 로그인하거나 새로고침하세요.
-  </p>;
+  if(scope.status!=='READY')return <OwnerSessionFailure controller={port.session}>
+    본인 학업 자료의 인증·권한·서버 연결 또는 판본이 달라졌습니다. 이전 결과를 비웠습니다.
+  </OwnerSessionFailure>;
   if(!current)return <p aria-busy="true">승인된 본인 학업 자료를 확인하고 있습니다.</p>;
   return <section aria-label="본인 학업 검토" className="local-account__panel">
     <p role="note">{notice}</p>

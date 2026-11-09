@@ -64,15 +64,21 @@ export type ChecklistReconciliation={
 };
 export function reconcileGuideChecklist(
   guide:C.InternationalGuide,saved:GuideChecklist,
-  requestedExpectedVersion:number,
+  requestedExpectedVersion:number,asOf:string,mode?:FeatureMode,
 ):ChecklistReconciliation {
   const base={officialAdministrationComplete:false as const};
   if(saved.expectedVersion!==requestedExpectedVersion)
     return {...base,state:'VERSION_CONFLICT',checkedStepIds:[],invalidatedStepIds:[]};
-  if(saved.guideId!==guide.id||saved.guideRevisionId!==guide.source.revisionId)
+  // The same revision ID can later be revoked, blocked, expired or superseded
+  // by a new source state. A saved checkbox is never proof of current rights.
+  const sourceOk=verifySource(guide.source,asOf,mode).usable;
+  const ids=new Set(guide.steps.map(step=>step.id));
+  const stepsOk=ids.size===guide.steps.length && guide.steps.every(step=>
+    guide.source.evidenceSpanIds.includes(step.sourceSpanId));
+  if(!sourceOk||!stepsOk||saved.guideId!==guide.id
+    ||saved.guideRevisionId!==guide.source.revisionId)
     return {...base,state:'STALE_GUIDE',checkedStepIds:[],
       invalidatedStepIds:[...new Set(saved.ownerCheckedStepIds)].sort()};
-  const ids=new Set(guide.steps.map(step=>step.id));
   return {...base,state:'READY',
     checkedStepIds:[...new Set(saved.ownerCheckedStepIds.filter(s=>ids.has(s)))].sort(),
     invalidatedStepIds:[...new Set(saved.ownerCheckedStepIds.filter(s=>!ids.has(s)))].sort()};

@@ -70,6 +70,8 @@
 | #351 취업통계 | employment-v2.ts: evaluatePublishedStat, comparePublishedStats, validateEmploymentStatements — 표본 공개 억제·분자/분모·AI 수치 근거 검산 | EmploymentAggregateSchema / EmploymentValueV2Schema |
 | #352 국제학생 | international-v2.ts: resolveInternationalGuide, reconcileGuideChecklist — 학기/캠퍼스·대상, 사람 승인 KO/EN/ZH 및 한국어 대체·체크리스트 버전 | InternationalGuideSchema / GuideResolutionV2Schema |
 
+**#376/#377 fail-closed 경계:** 취업 통계 원본에 동일 `statId`가 반복되면 승인 여부와 무관하게 모든 복사본을 비공개 처리하고 AI 설명 근거로 승인하지 않는다. 국제학생 체크리스트 재조정은 `reconcileGuideChecklist(guide,saved,expectedVersion,asOf,mode?)`로 **서버가 신뢰한 asOf** 및 현재 출처·권리·증거판본 검증을 반드시 수행한다. 이 순수 코어는 actor 동의·운영 DB 재검증을 대신하지 않으며 API/UI 소비자 연결은 #366 및 기능별 인수 대상이다.
+
 계약 import: 패키지 @hufs-one/contracts의 FeatureAdditions 네임스페이스를 사용한다. 순수 코어 export: packages/core/src/feature-additions/index.ts. 계약 결과는 실제 core 출력이 Zod 스키마와 정확히 맞는지 tests/contracts/feature-additions-results.test.ts에서 검증한다.
 
 ### 팀이 장착할 때 절대 지켜야 할 경계

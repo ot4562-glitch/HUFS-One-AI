@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState, useSyncExternalStore, type FormEvent} from 'react';
+import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import {
   DemoProfileSaveSchema, TOPIC_CODES, type DemoProfileSave, type DemoProfileReset,
   type DemoProfileResponse, type DemoProfileValue, type TopicCode, type DemoProfileWorkspace, type DemoProfileWorkspaceSave,
@@ -149,7 +150,7 @@ export function OwnerDemoProfile({port}: {port: OwnerDemoProfilePort}) {
     return <p aria-busy="true">현재 사용자 권한을 확인하고 있어요.</p>;
   }
   if (session.status !== 'READY') {
-    return <p role="alert">본인 인증·권한 또는 서버 연결을 확인할 수 없습니다. 다른 학생의 이전 설정은 표시하지 않았어요. 다시 로그인한 후 새로고침해 주세요.</p>;
+    return <OwnerSessionFailure controller={port.session}>본인 인증·권한 또는 서버 연결을 확인할 수 없습니다. 다른 학생의 이전 설정은 표시하지 않았어요.</OwnerSessionFailure>;
   }
   if (!loaded || !draft) return <p aria-busy="true">별도 합성 계정 설정을 불러오는 중이에요.</p>;
   const candidate = toSave(loaded.profile.version, draft);
