@@ -162,6 +162,24 @@ describe('approved owner PostgreSQL catalog (SQL protocol tests)',()=>{
     expect(h.calls.filter(sql=>sql.includes('FROM jsonb_to_recordset('))).toHaveLength(1);
     expect(JSON.parse(String(h.proofInputs[0]![0]))).toHaveLength(1);
   });
+  it('binds a deduplicated source proof to every reviewed ref count and original hash',async()=>{
+    const h=fixture(),q={actorId,kind:'COURSE' as const,asOf:now};
+    h.setBatch(1,100);
+    const first=await h.catalog.reader.read(q,now);
+    expect(first?.rows[0]?.sources_json).toHaveLength(100);
+    h.setBatch(1,99);
+    const fewer=await h.catalog.reader.read(q,now);
+    expect(fewer?.fingerprint).not.toBe(first?.fingerprint);
+    h.setBatch(1,100);
+    const newOriginal='c'.repeat(64);
+    h.source.original_sha256=newOriginal;
+    h.source.stored_original_sha256=newOriginal;
+    h.source.review_original_sha256=newOriginal;
+    const reverified=await h.catalog.reader.read(q,now);
+    expect(reverified).not.toBeNull();
+    expect(reverified?.fingerprint).not.toBe(first?.fingerprint);
+    expect(h.calls.filter(sql=>sql.includes('FROM jsonb_to_recordset('))).toHaveLength(3);
+  });
   it('invalidates a read receipt after owner consent, source policy or current projection withdrawal',async()=>{
     for(const mutate of [
       (h:ReturnType<typeof fixture>)=>h.setConsent(false),

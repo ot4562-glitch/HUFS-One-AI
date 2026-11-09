@@ -88,7 +88,6 @@ export class PostgresApprovedOwnerReader {
       [query.actorId,query.kind,query.entityId??null,query.asOf,now,clock]);
       if(loaded.rows.length>500)throw new Error('Approved owner catalog exceeds read bound');
       const rows=loaded.rows.map(row=>Projection.parse(row));
-      const sourceProofs:unknown[]=[];
       let validUntil='9999-12-31T23:59:59.999Z';
       const bound=(until:unknown)=>{
         const end=timestamp(until);
@@ -170,9 +169,14 @@ export class PostgresApprovedOwnerReader {
             ||s.valid_until&&Date.parse(timestamp(s.valid_until))<=Date.parse(query.asOf)
             ||!matchesEvidenceScope(this.scope(s),grants))return await this.deny(c,()=>{open=false;});
           bound(s.rights_expires_at);
-          sourceProofs.push(s);
         }
       }
+      // Bind the *distinct* validated proofs in deterministic source-key order.
+      // Every projection's full sources_json and its order/multiplicity remain in
+      // 'rows' below; expanding identical SQL rows 50,000 times in the receipt
+      // adds no additional authorization and amplifies CPU/heap usage.
+      const sourceProofs=[...proofsByKey].sort(([left],[right])=>
+        left<right?-1:left>right?1:0).map(([,proof])=>proof);
       const extraValue=extra?await extra(c,rows):undefined;
       const fingerprint=canonicalProjectionHash({query,consentVersion,policy,rows,sourceProofs,
         ...(extraValue===undefined?{}:{extra:extraValue})});
