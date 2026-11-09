@@ -6,7 +6,7 @@
 
 ## 0. 전수 수정·병합 최신 스냅샷 (2026-11-09)
 
-**실제 병합 16 PR(앞선 9 + 추가 코드 6 + 정책 #425 1)**. 정책 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)로 병합되었고 문서 정리 [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419) **1개만 남은 시점의 기록**입니다. #419 병합 후 이번 대상 OPEN PR 0. 확인된 이전 병합 9건은 #424/#420/#402/#403/#404/#409/#407/#408/#422, 직전 main SHA `6062230`입니다.
+**이번 전수 작업 PR 총 17건 실제 병합(코드·의존성 15 + 승인 검사 제거 #425 + 문서 #419), OPEN PR 0건.** [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 13/13 HEAD 검사 성공 뒤 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465), [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 11/11 HEAD 검사 성공 뒤 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)로 병합 확인했습니다. 역할 고정 이슈 5개를 제외한 23개 이슈도 최종 현재 단계·남은 인수를 기록했으며 전체 28개 이슈는 아직 운영 DoD 미충족으로 OPEN입니다.
 
 ### 추가 병합 확인 6건
 
