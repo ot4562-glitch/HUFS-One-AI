@@ -161,13 +161,15 @@
 | 개별 이슈 | 발견 분류·코드 근거 | 현재 판정/다음 검증 |
 | --- | --- | --- |
 | [#427](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427) | P2 웹: 상담 필터 변경 시 오래된 비동기 응답 재표시 | 정적 재현 경로 확인, RTL 지연 응답/세대 테스트 `NOT_RUN` |
-| [#428](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428) | P1 보안: 허용된 수집 IPv4의 비글로벌 특수 목적 대역 분류 불일치 | IANA 정책 대조·네트워크 없는 mock 경계 테스트 필요. 기존 URL/DNS pin/TLS 방어는 유지 |
+| [#433](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433) | P2 API 개선: 상담기관 `source.read` 앞의 분산·원자적 요청 제한 포트 부재 | 다른 v2 API 대비 비용 보호 정책 차이. 운영망 WAF·실제 악용/성능 영향 `NOT_VERIFIED` |
 | [#429](https://github.com/ot4562-glitch/HUFS-One-AI/issues/429) | P2 일반 API: 장학 동일 key+학기 다른 관측시점도 503 중복 거부 | 코어가 최신 허가 관측을 선택하는 계약과 불일치, 합성 HTTP 테스트 `NOT_RUN` |
 | [#430](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430) | P2 최적화: 500 projection×100 source ref까지 직렬 SQL 검증 경로 | 구조적 N+1, **50,000은 상한 계산**이지 실측 쿼리/지연 수치 아님; PG 벤치 `NOT_RUN` |
 
+**오탐 정정:** 최초 등록한 [#428](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428)은 IANA IPv4 Special-Purpose Address Registry의 비글로벌 대역을 코드가 이미 거부하고 있음을 확인한 뒤 `CLOSED / NOT_PLANNED` 처리했습니다. 실제 보안 결함 발견 또는 공격 가능 경로를 주장하지 않습니다. 향후 취약점 통계에 넣지 않습니다. 공식 주소 목록: https://www.iana.org/assignments/iana-ipv4-special-registry .
+
 **중복 방지:** 과거부터 OPEN인 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418) (공고 409/422/429·KST), [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373) (CampusAssist 판본 권리), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) (OCR 원본 ID), [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362) (CSV 공개 권리)는 새로 복제하지 않습니다. **이슈는 하나의 원인/수락 기준에 하나**만 등록하며 코드/웹/SQL 최적화를 실운영 승인으로 승격하지 않습니다.
 
-**이 회차의 현황:** 기존 OPEN **28건 + 신규 #427–#430 4건 = 32건**, 고정 역할 #355–#359 전혀 수정하지 않음. 기존 17건 코드/문서 병합 + [문서 정합성 PR #426](https://github.com/ot4562-glitch/HUFS-One-AI/pull/426)은 종전 이력이고 **이번 문서 간소화 PR**과 별개입니다.
+**이 회차의 현황:** 기존 OPEN **28건 + 유효 신규 #427/#429/#430/#433 4건 = 32건**, 고정 역할 #355–#359 전혀 수정하지 않음. 기존 17건 코드/문서 병합 + [문서 정합성 PR #426](https://github.com/ot4562-glitch/HUFS-One-AI/pull/426)은 종전 이력이고 **이번 문서 간소화 PR**과 별개입니다.
 
 **문서 정리:** 삭제하는 중복 역사형 파일은 `docs/TEAM_GUIDE.md`, `docs/TEAM_PROGRESS.md`, `docs/REMAINING_IMPLEMENTATION_20261104.md`, `docs/SERVICE_DELIVERY_PLAN.md`, `docs/CAREER_HUB_317.md` 다섯 개입니다. 내용은 변경 직전 커밋 [`76792d1`](https://github.com/ot4562-glitch/HUFS-One-AI/tree/76792d1a3d50826adf2b64644219f4efdc149f9b/docs)에서 추적 가능하며 이력 강제 삭제 없음. `README.md`의 방대한 문서 링크 인덱스를 줄이고 `tools/audit_entrypoints.mjs`의 삭제 파일 필수 읽기 경로를 현행 감사 원장으로 전환합니다. `docs/archive/STATUS_20261107.md` 등 중요한 감사 원본·AGENTS·개인정보/권한/NCP 문서는 보존합니다.
 

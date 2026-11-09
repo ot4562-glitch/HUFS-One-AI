@@ -7,8 +7,8 @@
 ## 최신 코드 감사 진행 및 문서 정리 — 2026-11-09
 
 - **현재 기준 커밋:** [`76792d1`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/76792d1a3d50826adf2b64644219f4efdc149f9b). 추적 Git blob **1,299개**, Markdown **87개**, `.ts` **749개**·`.tsx` **105개** 및 SQL 39개 등 전체 경로 목록을 확보. 이것은 **파일 인벤토리**이지 1,299개 파일의 모든 실행 경로를 독립적으로 검증 완료했다는 뜻이 아닙니다.
-- **확인된 신규 이슈 4건(각 독립 등록):** [#427 상담 검색 변경 중 이전 응답](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427), [#428 비글로벌 IPv4 특수 목적 주소 egress 분류](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428), [#429 장학 사실 이력 과잉 중복 거부](https://github.com/ot4562-glitch/HUFS-One-AI/issues/429), [#430 승인 projection N+1 SQL](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430). 기존 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418), [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) 등과 분리했습니다.
-- **열린 이슈 32건:** 이전 28건 + 신규 4건. 역할 #355–#359는 쓰기 금지, **실제 검증 없이 완료 상태로 바꾼 이슈 없음**. 코드·계약·SQL·웹·외부 수집 경계를 대상으로 한 정적 1차 감사이며 브라우저 재현, 실제 PostgreSQL 벤치, NCP/실학생/권리 검증은 `NOT_RUN`.
+- **확인된 신규 이슈 4건(각 독립 등록):** [#427 상담 검색 변경 중 이전 응답](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427), [#433 상담 원장 읽기 전 요청 제한 부재](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433), [#429 장학 사실 이력 과잉 중복 거부](https://github.com/ot4562-glitch/HUFS-One-AI/issues/429), [#430 승인 projection N+1 SQL](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430). 기존 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418), [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) 등과 분리했습니다.
+- **열린 이슈 32건:** 이전 28건 + 유효한 신규 #427/#429/#430/#433 4건. 최초 의심이었던 [#428](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428)은 공식 IANA IPv4 레지스트리 대조에서 차단 누락을 확인할 수 없어 **오탐 CLOSED/NOT_PLANNED**, 취약점 집계 제외. 역할 #355–#359는 쓰기 금지, **실제 검증 없이 완료 상태로 바꾼 이슈 없음**. 코드·계약·SQL·웹·외부 수집 경계를 대상으로 한 정적 1차 감사이며 브라우저 재현, 실제 PostgreSQL 벤치, NCP/실학생/권리 검증은 `NOT_RUN`.
 - **문서 최소화:** 중복 과거 문서 5개를 Git 커밋 이력에 보존한 채 현행 트리에서 제거하고, README의 전체 링크 나열을 간소화. 정본은 README, 이 STATUS, AGENTS/WORKSTREAMS/PR_WORKFLOW, [2026-11-09 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md), 보안·권리/운영 필수 문서입니다.
 - **제품 상태:** `RELEASE_BLOCKED`; 이번 정적 코딩 감사·문서 정리는 실서비스/실학생 데이터·원본 CSV 권리 승인, 사람 리뷰, 실제 서버/모델 실행이 아닙니다.
 
@@ -35,7 +35,7 @@
 
 ### 열린 이슈 및 실제 운영 인수
 
-- **당시 OPEN 28건(2026-11-09 기존 PR 병합 시점의 스냅샷):** 변경 금지 역할 #355–#359 (5), 공식자료 #360 (1), 기능 #339–#341 및 #343–#352 (13), 기술/보안 #362/#366/#367/#373/#375/#378/#381 (7), 검토 절차 #416과 사용자 UX #418 (2). **현재는 상단 감사로 추가된 #427–#430을 포함하여 32건**입니다.
+- **당시 OPEN 28건(2026-11-09 기존 PR 병합 시점의 스냅샷):** 변경 금지 역할 #355–#359 (5), 공식자료 #360 (1), 기능 #339–#341 및 #343–#352 (13), 기술/보안 #362/#366/#367/#373/#375/#378/#381 (7), 검토 절차 #416과 사용자 UX #418 (2). **현재는 상단 감사의 #427/#429/#430/#433 활성 4건을 포함하여 32건**입니다.
 - **#341:** FAQ 검색/인용 가드 코드 병합. 실제 공식 FAQ·HCX·독립 Gold 미인수.
 - **#345/#366:** 상담 인증 source→API/UI와 추천 순위 수정 병합. 실제 기관 명칭/권리/실DB 원장은 미연결.
 - **#346:** OCR 후보 추출·유사 기관명 격리·기본 가림 병합. 실제 CLOVA 및 실학생 자료·사람 검토는 미실행.
