@@ -20,6 +20,8 @@ const purposes=[
 export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
   const scope=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [purpose,setPurpose]=useState<string>('CAREER');
+  const [campus,setCampus]=useState('');
+  const [language,setLanguage]=useState('');
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
   useEffect(()=>{void port.session.initialize();},[port.session]);
@@ -30,7 +32,8 @@ export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
     setResult(null);setBusy(true);
     try{
       const value=await port.session.runLatest('owner-counseling',
-        signal=>port.search({purposes:[purpose]},signal));
+        signal=>port.search({purposes:[purpose],
+          ...(campus?{campus}:{}),...(language?{language}:{})},signal));
       if(value&&port.session.getState().status==='READY')setResult(value);
     }finally{setBusy(false);}
   };
@@ -47,16 +50,24 @@ export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
         onChange={event=>{setPurpose(event.target.value);setResult(null);}}>
         {purposes.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}
       </select>
+      <label htmlFor="counseling-campus">찾을 캠퍼스 (본인 학적 검증 아님)</label>
+      <select id="counseling-campus" value={campus} onChange={e=>{setCampus(e.target.value);setResult(null);}}>
+        <option value="">캠퍼스 선택 안 함</option><option value="SEOUL">서울</option><option value="GLOBAL">글로벌</option>
+      </select>
+      <label htmlFor="counseling-language">상담 언어 (선호 필터)</label>
+      <select id="counseling-language" value={language} onChange={e=>{setLanguage(e.target.value);setResult(null);}}>
+        <option value="">모두 보기</option><option value="ko">한국어</option><option value="en">영어</option><option value="zh">중국어</option>
+      </select>
       <button type="submit" disabled={busy}>{busy?'확인 중':'공식 기관 후보 찾기'}</button>
     </form>
     {result?.state==='NOT_CONNECTED'?<p role="status">NOT_CONNECTED — 현재 승인된 상담기관 원장/권리 포트가 서버에 연결되지 않았습니다. 가상 연락처나 예약 링크로 대체하지 않습니다.</p>
       :result?.state==='READY'?<section aria-live="polite">
-        <p className="muted">출처 판본 {result.sourceVersion} · 확인 기준 {result.asOf.slice(0,10)} · {result.guide.excluded}개 자료 검증 제외</p>
+        <p className="muted">출처 판본 {result.sourceVersion} · 확인 기준 {new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(result.asOf))} · {result.guide.excluded}개 자료 검증 제외</p>
         {result.guide.matches.length===0?<p role="status">현재 목적과 맞는 확인된 상담기관 정보가 없습니다. 학교 공식 홈페이지에서 직접 상담처를 확인하세요.</p>
           :<ul>{result.guide.matches.map(item=><li key={item.serviceId}>
-            <strong>{item.serviceId}</strong>
+            <strong>{item.serviceName??'공식 기관 이름 미확인'}</strong>
             <p>관련 이유: {item.exactPurposes.join(', ')||item.relatedPurposes.join(', ')||'확인 필요'}</p>
-            <p className="muted">대상 {item.audienceState} · 캠퍼스 {item.campusState} · 언어 {item.languageState} · 판본 {item.sourceRevisionId}</p>
+            <p className="muted">학생 유형 {item.audienceState==='CONFIRMED'?'확인됨':'대상 확인 필요'} · 선택 캠퍼스 {item.campusState==='CONFIRMED'?'일치':'미확인'} · 상담 언어 {item.languageState==='CONFIRMED'?'일치':'미확인'} · 판본 {item.sourceRevisionId}</p>
             {item.officialApplicationUrl?<a href={item.officialApplicationUrl} target="_blank" rel="noopener noreferrer">공식 신청·안내 링크</a>
               :<p>검증된 신청 링크 없음 — 공식 기관에서 확인</p>}
           </li>)}</ul>}
