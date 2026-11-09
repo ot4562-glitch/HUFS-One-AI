@@ -45,7 +45,8 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     const unconfigured=await absent.inject({url:'/api/owner/campus-assist/capabilities'});
     expect(unconfigured.statusCode).toBe(200);
     expect(unconfigured.json()).toEqual({activities:false,exchange:false,faq:false,hcx007:false});
-    expect((await absent.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(404);
+    // The global owner-route deny handler returns 403 for unregistered owner paths.
+    expect((await absent.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)})).statusCode).toBe(403);
   });
   it('#367 requires the existing verified BETA role for source capability discovery',async()=>{
     const app=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
