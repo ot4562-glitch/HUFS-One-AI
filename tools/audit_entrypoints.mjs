@@ -3,7 +3,9 @@ import {readFile,lstat,realpath} from 'node:fs/promises';
 import {resolve,join,posix,relative,isAbsolute} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
-import ts from 'typescript';
+// TS 7's native compiler package no longer exports the JS compiler AST API.
+// Keep read-only static analysis on pinned TS 5's parser; typechecking uses native TS 7.
+import ts from 'typescript-legacy';
 
 const DOCS=['README.md','Architecture.md','STATUS.md','docs/WORKSTREAMS.md','docs/TEAM_PROGRESS.md',
   'docs/PR_WORKFLOW.md','docs/DATA_GOVERNANCE.md'];
