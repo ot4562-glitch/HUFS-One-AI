@@ -53,24 +53,34 @@ export function registerOwnerCounselingRoutes(input:{
     let report:z.infer<typeof V.CounselingGuideV2Schema>;
     try{
       guide=V.CounselingServiceSchema.array().max(500).parse(snapshot.items);
+      // #345: reject an unnamed or ungrounded office BEFORE the core's top-three
+      // ranking. Otherwise three invalid higher-scoring offices can hide a valid
+      // fourth match and falsely report NO_MATCH. Quarantine duplicate IDs across
+      // the full unfiltered source, not merely across the remaining named offices.
+      const seen=new Set<string>(),duplicateIds=new Set<string>();
+      for(const service of guide){
+        if(seen.has(service.id))duplicateIds.add(service.id);
+        seen.add(service.id);
+      }
+      const named=guide.filter(service=>{
+        const name=service.verifiedName;
+        return !duplicateIds.has(service.id)&&!!name?.text.trim()
+          &&service.source.evidenceSpanIds.includes(name.sourceSpanId);
+      });
       const core=routeCounselingV2({
-        purposes:query.purposes,services:guide,asOf,
+        purposes:query.purposes,services:named,asOf,
         ...(query.campus?{campus:query.campus}:{}),
         ...(query.language?{language:query.language}:{}),
         // Audience codes must come from current trusted identity; never from browser input.
       });
-      // #345: refuse unnamed/unsourced offices. A raw service ID is not an
-      // intelligible counseling office to a student and must not impersonate one.
-      // The name must be independently reviewed and cite the SAME current source.
-      const byId=new Map(guide.map(service=>[service.id,service]));
+      const byId=new Map(named.map(service=>[service.id,service]));
       const matches=core.matches.flatMap(match=>{
-        const service=byId.get(match.serviceId),name=service?.verifiedName;
-        if(!name||!service?.source.evidenceSpanIds.includes(name.sourceSpanId))return [];
-        return [{...match,serviceName:name.text}];
+        const name=byId.get(match.serviceId)?.verifiedName;
+        return name?[{...match,serviceName:name.text}]:[];
       });
       report=V.CounselingGuideV2Schema.parse({
         ...core,matches,
-        excluded:core.excluded+core.matches.length-matches.length,
+        excluded:core.excluded+guide.length-named.length,
         status:matches.length?'MATCHES':core.status==='NO_PURPOSE'?'NO_PURPOSE':'NO_MATCH',
       });
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}

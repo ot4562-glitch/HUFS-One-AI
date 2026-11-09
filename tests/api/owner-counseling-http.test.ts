@@ -61,6 +61,29 @@ describe('#366 read-only owner counseling consumes only trusted current source',
       expect(r.body).not.toContain('SYN-CAREER-OFFICE');
     }
   });
+  it('ranks verified-name offices before slicing the top three',async()=>{
+    const h=fixture();
+    const ungrounded=['SYN-A','SYN-B','SYN-C'].map(id=>({...service,id,
+      verifiedName:{text:'미검증 상담기관',sourceSpanId:'SYN-UNVERIFIED'}}));
+    h.port.read=vi.fn(async()=>({items:[...ungrounded,service],
+      receipt:{actorId:actor.actorId,sourceVersion:'SYN-REV1',
+        expiresAt:'2026-11-30T00:00:00Z'}}));
+    const r=await h.send({purposes:['CAREER']});
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({state:'READY',guide:{status:'MATCHES',excluded:3,
+      matches:[{serviceId:'SYN-CAREER-OFFICE',serviceName:'합성 진로상담센터'}]}});
+    expect(r.json().guide.matches).toHaveLength(1);
+  });
+  it('quarantines a repeated ID even if only one copy has a verified name',async()=>{
+    const h=fixture();
+    h.port.read=vi.fn(async()=>({items:[service,{...service,
+      verifiedName:{text:'검증되지 않은 중복 기관',sourceSpanId:'SYN-UNVERIFIED'}}],
+      receipt:{actorId:actor.actorId,sourceVersion:'SYN-REV1',
+        expiresAt:'2026-11-30T00:00:00Z'}}));
+    const r=await h.send({purposes:['CAREER']});
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toMatchObject({state:'READY',guide:{status:'NO_MATCH',matches:[],excluded:2}});
+  });
   it('without an approved operator source the route returns NOT_CONNECTED, not guessed offices',async()=>{
     const h=fixture(false),r=await h.send({purposes:['CAREER']});
     expect(r.statusCode).toBe(200);
