@@ -12,6 +12,7 @@ afterEach(async()=>{await Promise.all(apps.splice(0).map(app=>app.close()));});
 const service={id:'SYN-CAREER-OFFICE',active:true,purposeCodes:['CAREER'],relatedPurposeCodes:[],
   campuses:['SEOUL'],audienceCodes:[],languages:['ko'],
   officialUrl:'https://example.org/counseling',
+  verifiedName:{text:'합성 진로상담센터',sourceSpanId:'SYN-S1'},
   source:{sourceId:'SYN-APPROVED-OFFICE',revisionId:'SYN-REV1',status:'VERIFIED' as const,
     rights:'CLEARED' as const,verifiedAt:'2026-01-02T00:00:00Z',
     effectiveFrom:'2026-01-01T00:00:00Z',evidenceSpanIds:['SYN-S1']}};
@@ -38,10 +39,27 @@ describe('#366 read-only owner counseling consumes only trusted current source',
     expect(r.headers['cache-control']).toBe('no-store');
     expect(r.json()).toMatchObject({state:'READY',asOf:NOW,sourceVersion:'SYN-REV1',
       guide:{status:'MATCHES',matches:[{serviceId:'SYN-CAREER-OFFICE',
+        serviceName:'합성 진로상담센터',
         officialApplicationUrl:'https://example.org/counseling'}]}});
     expect(h.port.read).toHaveBeenCalledOnce();
     expect(h.port.revalidate).toHaveBeenCalledOnce();
     expect(r.body).not.toContain(actor.actorId);
+  });
+  it('does not expose an unnamed or unsourced institution as an official office',async()=>{
+    for(const verifiedName of [
+      {text:'불확인 이름',sourceSpanId:'SYN-MISSING-SPAN'},
+      {text:'가상 조작 이름',sourceSpanId:'SYN-OTHER-SPAN'},
+    ]){
+      const h=fixture();
+      h.port.read=vi.fn(async()=>({items:[{...service,verifiedName}],
+        receipt:{actorId:actor.actorId,sourceVersion:'SYN-REV1',
+          expiresAt:'2026-11-30T00:00:00Z'}}));
+      const r=await h.send({purposes:['CAREER']});
+      expect(r.statusCode).toBe(200);
+      expect(r.json()).toMatchObject({state:'READY',guide:{
+        status:'NO_MATCH',matches:[],excluded:1}});
+      expect(r.body).not.toContain('SYN-CAREER-OFFICE');
+    }
   });
   it('without an approved operator source the route returns NOT_CONNECTED, not guessed offices',async()=>{
     const h=fixture(false),r=await h.send({purposes:['CAREER']});
