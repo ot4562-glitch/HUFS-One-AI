@@ -4,8 +4,10 @@ name: Independent collaborator review (required by policy)
 # A branch ruleset must require this check. A workflow ALONE cannot disable
 # the Merge button for repository administrators (see docs/PR_WORKFLOW.md).
 on:
+  # Retargeting the base branch emits 'edited': never leave a stale skipped
+  # required check after switching a stacked PR to main.
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review, converted_to_draft, edited]
   pull_request_review:
     types: [submitted, dismissed]
 
@@ -15,8 +17,9 @@ permissions:
 
 jobs:
   independent-approval:
+    # Never skip: GitHub may treat a skipped required job as successful.
+    # The Python script rejects non-main bases and drafts fail-closed.
     name: exact-HEAD independent approval
-    if: github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
