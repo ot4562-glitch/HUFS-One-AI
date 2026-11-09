@@ -1,4 +1,4 @@
-import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore,type FormEvent} from 'react';
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
@@ -15,27 +15,31 @@ export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
   const [sort,setSort]=useState<'TITLE'|'DEADLINE_ASC'|'PUBLISHED_DESC'>('TITLE');
   const [result,setResult]=useState<SearchResult|null>(null);
   const [busy,setBusy]=useState(false);
+  const generation=useRef(0);
+  useEffect(()=>()=>{generation.current++;},[]);
   useEffect(()=>{void port.session.initialize();},[port.session]);
-  useEffect(()=>{setResult(null);setBusy(false);},[scope.epoch,scope.status]);
+  useEffect(()=>{generation.current++;setResult(null);setBusy(false);},[scope.epoch,scope.status]);
   const search=async(cursor?:string,asOf?:string)=>{
     if(scope.status!=='READY'||busy)return;
+    const ticket=++generation.current;
     setBusy(true);
     if(!cursor)setResult(null);
     try{
       const received=await port.session.runLatest('owner-v2-catalog',signal=>
         port.search({q:term,sort,pageSize:10,...(cursor&&asOf?{cursor,asOf}:{})},signal));
-      if(received&&port.session.getState().status==='READY')setResult(received);
-    }finally{setBusy(false);}
+      if(received&&ticket===generation.current&&port.session.getState().status==='READY')setResult(received);
+    }finally{if(ticket===generation.current)setBusy(false);}
   };
   const submit=(event:FormEvent)=>{
     event.preventDefault();setTerm(draft);
     // Use the same current form value, not the previous React state.
     if(scope.status!=='READY'||busy)return;
+    const ticket=++generation.current;
     setBusy(true);setResult(null);
     void port.session.runLatest('owner-v2-catalog',signal=>
       port.search({q:draft,sort,pageSize:10},signal))
-      .then(received=>{if(received&&port.session.getState().status==='READY')setResult(received);})
-      .finally(()=>setBusy(false));
+      .then(received=>{if(received&&ticket===generation.current&&port.session.getState().status==='READY')setResult(received);})
+      .finally(()=>{if(ticket===generation.current)setBusy(false);});
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p role="status" aria-busy="true">BETA 본인 권한 확인 중입니다.</p>;
@@ -47,10 +51,10 @@ export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
     <form role="search" onSubmit={submit} className="club__filters">
       <label htmlFor="owner-v2-search">승인된 공고에서 검색</label>
       <input id="owner-v2-search" maxLength={100} value={draft}
-        onChange={event=>{setDraft(event.target.value);setResult(null);}}/>
+        onChange={event=>{generation.current++;setBusy(false);setDraft(event.target.value);setResult(null);}}/>
       <label htmlFor="owner-v2-sort">정렬</label>
       <select id="owner-v2-sort" value={sort}
-        onChange={event=>{setSort(event.target.value as typeof sort);setResult(null);}}>
+        onChange={event=>{generation.current++;setBusy(false);setSort(event.target.value as typeof sort);setResult(null);}}>
         <option value="TITLE">이름순</option><option value="DEADLINE_ASC">마감 임박순</option>
         <option value="PUBLISHED_DESC">게시 최신순</option>
       </select>
