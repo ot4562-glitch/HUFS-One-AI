@@ -1,6 +1,6 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
 import {createIntegratedApi} from '../../apps/api/src/integration.js';
-import type {TrustedOwnerCounselingSource} from '../../apps/api/src/modules/owner-counseling-http.js';
+import type {TrustedOwnerCounselingSource,OwnerCounselingServices} from '../../apps/api/src/modules/owner-counseling-http.js';
 import {closedRepository} from '../../apps/api/src/repository.js';
 
 const NOW='2026-11-08T00:00:00Z',ORIGIN='https://synthetic.invalid';
@@ -18,18 +18,27 @@ const service={id:'SYN-CAREER-OFFICE',active:true,purposeCodes:['CAREER'],relate
     effectiveFrom:'2026-01-01T00:00:00Z',evidenceSpanIds:['SYN-S1']}};
 function fixture(withSource=true){
   let allowed=true,role='BETA',id=actor.actorId,sessionActive=true;
+  let quotaAllowed=true,quotaUnavailable=false;
   const port:TrustedOwnerCounselingSource={
     read:vi.fn(async()=>({items:[service],receipt:{actorId:actor.actorId,
       sourceVersion:'SYN-REV1',expiresAt:'2026-11-30T00:00:00Z'}})),
     revalidate:vi.fn(async()=>allowed),
   };
+  const quota:OwnerCounselingServices['quota']={
+    consume:vi.fn(async input=>{
+      if(quotaUnavailable)throw new Error('synthetic quota offline');
+      return quotaAllowed&&input.operation==='V2_OWNER_COUNSELING';
+    }),
+  };
   const app=createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,now:()=>NOW,
     auth:{verifySession:async()=>sessionActive?{...actor,role:role as 'BETA',actorId:id}:null,revokeSession:async()=>{}},
-    ...(withSource?{ownerCounseling:port}:{})});
+    ...(withSource?{ownerCounseling:{source:port,quota}}:{})});
   apps.push(app);
   const send=(body:Record<string,unknown>,csrf=true)=>app.inject({url:'/api/owner/counseling/routes',method:'POST',
     ...(csrf?{headers:{origin:ORIGIN,'x-csrf-token':actor.csrfToken}}:{}),payload:body});
-  return {app,port,send,revoke:()=>{allowed=false;},switchActor:()=>{id='SYN-OTHER';},
+  return {app,port,quota,send,revoke:()=>{allowed=false;},
+    exhaust:()=>{quotaAllowed=false;},failQuota:()=>{quotaUnavailable=true;},
+    switchActor:()=>{id='SYN-OTHER';},
     logout:()=>{sessionActive=false;},setRole:(value:string)=>{role=value;}};
 }
 describe('#366 read-only owner counseling consumes only trusted current source',()=>{
@@ -95,6 +104,36 @@ describe('#366 read-only owner counseling consumes only trusted current source',
     expect((await h.send({purposes:['CAREER']})).statusCode).toBe(403);
     h.switchActor();
     expect((await h.send({purposes:['CAREER']})).statusCode).toBe(503);
+  });
+  it('admits a valid actor with a durable quota before reading current rights',async()=>{
+    const h=fixture(),r=await h.send({purposes:['CAREER']});
+    expect(r.statusCode).toBe(200);
+    expect(h.quota.consume).toHaveBeenCalledWith({actorId:actor.actorId,
+      operation:'V2_OWNER_COUNSELING',now:NOW});
+    expect(h.quota.consume).toHaveBeenCalledOnce();
+    expect(vi.mocked(h.quota.consume).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(h.port.read).mock.invocationCallOrder[0]!);
+  });
+  it('returns 429 without reading the source when quota is exhausted',async()=>{
+    const h=fixture();h.exhaust();
+    const r=await h.send({purposes:['CAREER']});
+    expect(r.statusCode).toBe(429);
+    expect(r.json().code).toBe('RATE_LIMITED');
+    expect(h.port.read).not.toHaveBeenCalled();
+    expect(h.port.revalidate).not.toHaveBeenCalled();
+  });
+  it('fails closed with 503 and no source read when the durable quota is unavailable',async()=>{
+    const h=fixture();h.failQuota();
+    const r=await h.send({purposes:['CAREER']});
+    expect(r.statusCode).toBe(503);
+    expect(h.port.read).not.toHaveBeenCalled();
+  });
+  it('does not admit partial operator configuration without an atomic quota',()=>{
+    const h=fixture();
+    expect(()=>createIntegratedApi({allowedOrigin:ORIGIN,repository:closedRepository,
+      now:()=>NOW,auth:{verifySession:async()=>actor,revokeSession:async()=>{}},
+      ownerCounseling:{source:h.port,quota:undefined as never}}))
+      .toThrow(/durable quota/);
   });
   it('rejects unverified callers, CSRF omission and client-supplied data',async()=>{
     const h=fixture();

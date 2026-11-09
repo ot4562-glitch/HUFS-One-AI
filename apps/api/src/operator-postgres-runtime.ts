@@ -113,9 +113,10 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     throw new Error('Demo profile quota needs an independent digest key');
   if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
   if(input.campusAssist)validateCampusSources(input.campusAssist);
-  if(input.ownerCounseling&&(typeof input.ownerCounseling.read!=='function'
-    ||typeof input.ownerCounseling.revalidate!=='function'))
-    throw new Error('Counseling requires current official operator source and rights');
+  if(input.ownerCounseling&&(typeof input.ownerCounseling.source?.read!=='function'
+    ||typeof input.ownerCounseling.source?.revalidate!=='function'
+    ||typeof input.ownerCounseling.quota?.consume!=='function'))
+    throw new Error('Counseling requires current official operator source and durable quota');
   if(input.ownerInsights&&(
     typeof input.ownerInsights.source?.read!=='function'||
     typeof input.ownerInsights.source?.revalidate!=='function'||

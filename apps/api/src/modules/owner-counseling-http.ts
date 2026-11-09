@@ -20,26 +20,48 @@ export interface TrustedOwnerCounselingSource {
   revalidate(input:{actorId:string;receipt:Receipt;now:string}):Promise<boolean>;
 }
 
+export interface TrustedOwnerCounselingQuota {
+  /** Atomic and durable across replicas. Admit BEFORE the approved source is read. */
+  consume(input:{actorId:string;operation:'V2_OWNER_COUNSELING';now:string}):Promise<boolean>;
+}
+export interface OwnerCounselingServices {
+  source:TrustedOwnerCounselingSource;
+  quota:TrustedOwnerCounselingQuota;
+}
+export function validateOwnerCounselingServices(value:OwnerCounselingServices):void{
+  if(!value||typeof value.source?.read!=='function'
+    ||typeof value.source?.revalidate!=='function'
+    ||typeof value.quota?.consume!=='function')
+    throw new Error('Owner counseling requires current rights source and durable quota');
+}
+
 /** #366: first end-to-end owner consumer of the feature-additions v2 cores.
  * A configured service port never means the student is eligible or a source is current.
  * No source means NOT_CONNECTED rather than fallback to a synthetic catalog. */
 export function registerOwnerCounselingRoutes(input:{
   app:FastifyInstance;session:BetaRouteVerifier;allowedOrigin:string;
-  source?:TrustedOwnerCounselingSource;
+  services?:OwnerCounselingServices;
 }):void{
-  const {app,session,source}=input;
+  const {app,session,services}=input;
+  if(services)validateOwnerCounselingServices(services);
   app.post('/api/owner/counseling/routes',async(req,reply)=>{
     reply.header('Cache-Control','no-store');
     const actor=await betaActor(req,session);
     requireStateChangeProof(req,actor,input.allowedOrigin);
     const query=Input.parse(req.body);
     const asOf=Iso.parse(session.now());
-    if(!source){
+    if(!services){
       await betaRecheck(req,session,actor);
       return {state:'NOT_CONNECTED' as const,asOf};
     }
+    let admitted=false;
+    try{admitted=await services.quota.consume({actorId:actor.actorId,
+      operation:'V2_OWNER_COUNSELING',now:asOf});}
+    catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
+    if(!admitted)throw new ApiFailure('RATE_LIMITED');
+    await betaRecheck(req,session,actor);
     let snapshot:Awaited<ReturnType<TrustedOwnerCounselingSource['read']>>;
-    try{snapshot=await source.read({actorId:actor.actorId,asOf});}
+    try{snapshot=await services.source.read({actorId:actor.actorId,asOf});}
     catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     if(!snapshot)throw new ApiFailure('FORBIDDEN');
     const validReceipt=():boolean=>{
@@ -86,7 +108,7 @@ export function registerOwnerCounselingRoutes(input:{
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
     await betaRecheck(req,session,actor);
     let current=false;
-    try{current=await source.revalidate({actorId:actor.actorId,receipt:snapshot.receipt,now:session.now()})===true;}
+    try{current=await services.source.revalidate({actorId:actor.actorId,receipt:snapshot.receipt,now:session.now()})===true;}
     catch{/* no permission if current source cannot be checked */}
     if(!current)throw new ApiFailure('FORBIDDEN');
     if(!validReceipt())throw new ApiFailure('PROVIDER_UNAVAILABLE');
