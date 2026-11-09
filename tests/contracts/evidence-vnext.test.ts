@@ -117,6 +117,21 @@ describe('TASK-18 Unicode paragraph and original IMAGE bbox references',()=>{
       ],
     })).toBe(true);
   });
+  it('#381 rejects any duplicate trusted OCR line ID, independently of order and citation coverage',()=>{
+    const original={revisionId:'rev-01',assetId:'asset-01',originalSha256:A,pageCount:1,transformVersion:'v1',
+      ocrLines:[{id:'line-1',text:'학생'},{id:'line-2',text:'모집 공고'}]};
+    expect(matchesImageSpan(img,original)).toBe(true);
+    for(const conflicting of [
+      {id:'line-1',text:'허위 승인'}, // unrelated line must not be ignored
+      {id:'line-1',text:'학생'}, // even identical duplicates are ambiguous
+      {id:'line-1',text:'학생',pageIndex:1,bboxNorm:[0,0,1,1]}, // geometry/page conflict
+      {id:'line-2',text:'모집 공고'},
+    ]){
+      const lines=[...original.ocrLines,conflicting];
+      expect(matchesImageSpan(img,{...original,ocrLines:lines})).toBe(false);
+      expect(matchesImageSpan(img,{...original,ocrLines:[...lines].reverse()})).toBe(false);
+    }
+  });
   it('rejects inverted/degenerate and outside image boxes',()=>{
     for(const bboxNorm of [[0.6,0.2,0.4,0.9],[0,0,0,1],[-0.1,0,1,1],[0,0,1,1.1]]){
       expect(SourceSpanVNextSchema.safeParse({...img,bboxNorm}).success).toBe(false);
