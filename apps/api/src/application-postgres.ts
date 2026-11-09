@@ -14,6 +14,8 @@ import type {ExperienceSkillCandidatePort} from './modules/ai/experience-skill-c
 import {createRestrictedOwnerDirectory} from './modules/private-intake/owner-registry.js';
 import type {CampusAssistServices} from './modules/campus-assist-http.js';
 import type {TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
+import type {TrustedOwnerV2CatalogSource,TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
+import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 
 export type ApprovedCampusSources=Pick<CampusAssistServices,'activities'|'exchange'|'faq'>;
 export function validateCampusSources(sources:ApprovedCampusSources):void{
@@ -35,8 +37,10 @@ export interface PostgresApplicationConfig {
   /** Optional operator-owned, current rights/revision guarded source ports.
    * No synthetic fallback and no direct billable provider adapter. */
   campusAssist?:ApprovedCampusSources;
-  /** Optional operator-managed official counseling catalogue; never a browser/mock source. */
+  /** Explicit current official counseling source; never synthetic fallback. */
   ownerCounseling?:TrustedOwnerCounselingSource;
+  /** Current-approved bounded catalog + server-only HMAC keyset, not a client source. */
+  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   platform:Omit<PostgresPlatformConfig,'now'>;
   /** Explicit operator-supplied restricted 4-owner CSV/registry loaders; no auto import or demo fallback. */
   ownerIntake?:Omit<Parameters<typeof createRestrictedOwnerDirectory>[0],'now'>;
@@ -75,6 +79,13 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
   if(config.ownerCounseling&&(typeof config.ownerCounseling.read!=='function'
     ||typeof config.ownerCounseling.revalidate!=='function'))
     throw new Error('Counseling source requires current rights and snapshot revalidation');
+  if(config.ownerV2Catalog&&(
+    typeof config.ownerV2Catalog.source?.read!=='function'||
+    typeof config.ownerV2Catalog.source?.revalidate!=='function'||
+    typeof config.ownerV2Catalog.signer?.sign!=='function'||
+    typeof config.ownerV2Catalog.signer?.verify!=='function'||
+    typeof config.ownerV2Catalog.quota?.consume!=='function'))
+    throw new Error('V2 catalog requires current rights/scope, signer, and durable rate-limit quota');
   const googleAuth=createPostgresGoogleAuth(config.auth);
   const clock=config.auth.google.now??(()=>new Date());
   const now=()=>clock().toISOString();
@@ -83,6 +94,7 @@ export function createPostgresApplication(config:PostgresApplicationConfig){
     googleAuth,...platform,allowedOrigin:config.auth.google.allowedOrigin,now,
     ...(config.campusAssist?{campusAssist:config.campusAssist}:{}),
     ...(config.ownerCounseling?{ownerCounseling:config.ownerCounseling}:{}),
+    ...(config.ownerV2Catalog?{ownerV2Catalog:config.ownerV2Catalog}:{}),
     ...(config.ownerIntake?{restrictedOwnerDirectory:createRestrictedOwnerDirectory({...config.ownerIntake,now})}:{}),
     ...(config.runtime!==undefined?{runtime:config.runtime}:{}),
     ...(config.ai?{realAi:config.ai.runtime,approvedAiInputs:config.ai.inputs,

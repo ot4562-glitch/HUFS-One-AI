@@ -20,6 +20,7 @@ import type {OwnerPrivateIntakePort} from './features/owner-intake/OwnerPrivateI
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {CampusAssistPort} from './features/campus-assist/ownerPort.js';
 import type {OwnerCounselingPort} from './features/counseling/OwnerCounselingPanel.js';
+import type {OwnerV2CatalogPort} from './features/owner-catalog/OwnerV2CatalogPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
@@ -75,8 +76,10 @@ export interface AppServices {
   readonly ownerProvider?: OwnerProviderPort;
   /** Current BETA only: authorized campus assistance and HCX FAQ service, never a demoSubject. */
   readonly campusAssist?:CampusAssistPort;
-  /** #366: owner-only verified counseling service suggestions (not a booking service). */
+  /** Verified BETA counseling routes; never treated as official bookings. */
   readonly ownerCounseling?:OwnerCounselingPort;
+  /** #366/#348: authenticated, consent-bound full v2 catalog search and signed cursor. */
+  readonly ownerV2Catalog?:OwnerV2CatalogPort;
   /** Synthetic-only per-subject experience stores; never shared with BETA owner ports. */
   readonly experienceForSubject?: (subject: SubjectAlias) => ExperienceSkillPort;
   /** Current BETA owner's own portfolio, independent of the demo selector. */

@@ -120,12 +120,14 @@ describe('#124 menu rendering', () => {
     expect(within(gnb).getByRole('link', {name: '채용/고용24'}).getAttribute('aria-current')).toBe('page');
     const ours = screen.getByRole('region', {name: 'ONE AI에서 쓸 수 있는 화면'});
     expect(within(ours).getByRole('link', {name: '지원 현황'}).getAttribute('href')).toBe('/applications');
+    expect(within(ours).getByRole('link', {name: '승인된 공고 전체 검색'}).getAttribute('href'))
+      .toBe('/owner-opportunities/v2-catalog');
     const originals = screen.getByRole('region', {name: '원래 메뉴'});
     expect(within(originals).getByText('외대친화기업(HUFFi)').closest('a, button')).toBeNull();
     expect(within(originals).queryAllByRole('link')).toHaveLength(0);
     // The left menu repeats the same split: our screens are links, originals are text.
     const lnb = screen.getByRole('navigation', {name: '채용/고용24 메뉴'});
-    expect(within(lnb).getAllByRole('link').map(a => a.textContent)).toEqual(['채용/고용24', '맞춤 기회', '지원 현황']);
+    expect(within(lnb).getAllByRole('link').map(a => a.textContent)).toEqual(['채용/고용24', '맞춤 기회', '승인된 공고 전체 검색', '지원 현황']);
     expect(within(lnb).getAllByText('미지원')).toHaveLength(AREAS.find(a => a.id === 'jobs')!.observed.length);
     cleanup();
     await open('/competency-test');

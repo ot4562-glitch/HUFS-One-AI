@@ -52,8 +52,10 @@ export interface OperatorPostgresInputs {
   /** Root-owned, explicitly authorized source/revision and rights-reading ports.
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
-  /** Independent operator source reader; the endpoint remains NOT_CONNECTED without it. */
+  /** Explicit operator-controlled current official counseling source. */
   ownerCounseling?:PostgresApplicationConfig['ownerCounseling'];
+  /** Explicit operator source+secret signer; never inferred from synthetic catalogs. */
+  ownerV2Catalog?:PostgresApplicationConfig['ownerV2Catalog'];
   /** Non-SQL options only. Pool-bearing services use extensions below. */
   platform?:Omit<PostgresPlatformConfig,'pools'|'evidenceRights'|'reviewerSandbox'|'adminUsage'>;
   extensions?:OperatorExtensions;
@@ -111,6 +113,13 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
   if(input.ownerCounseling&&(typeof input.ownerCounseling.read!=='function'
     ||typeof input.ownerCounseling.revalidate!=='function'))
     throw new Error('Counseling requires explicit current operator source and rights');
+  if(input.ownerV2Catalog&&(
+    typeof input.ownerV2Catalog.source?.read!=='function'||
+    typeof input.ownerV2Catalog.source?.revalidate!=='function'||
+    typeof input.ownerV2Catalog.signer?.sign!=='function'||
+    typeof input.ownerV2Catalog.signer?.verify!=='function'||
+    typeof input.ownerV2Catalog.quota?.consume!=='function'))
+    throw new Error('V2 catalog requires explicit source rights, HMAC signer and durable request quota');
   if(input.managedAi){
     const value=input.managedAi;
     if(value.operation!=='HCX_007'||!value.roles
@@ -171,6 +180,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
       ...(input.ownerCounseling?{ownerCounseling:input.ownerCounseling}:{}),
+      ...(input.ownerV2Catalog?{ownerV2Catalog:input.ownerV2Catalog}:{}),
       ...(ai?{ai}:{}),
       ...(input.trustedProxyAddresses!==undefined?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),
       auth:{pools:{sessions,admission,attempts},attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},

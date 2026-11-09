@@ -19,6 +19,8 @@ import {registerOwnerMajorWhatIfRoutes} from './modules/profiles/owner-major-wha
 import {registerOpportunityExplanationRoutes} from './modules/opportunities/opportunity-explanation-http.js';
 import {registerOwnerFeedRoutes} from './modules/opportunities/owner-feed-http.js';
 import {registerOwnerCounselingRoutes,type TrustedOwnerCounselingSource} from './modules/owner-counseling-http.js';
+import {registerOwnerV2CatalogRoutes,type TrustedOwnerV2CatalogSource,type TrustedOwnerV2SearchQuota} from './modules/owner-v2-catalog-http.js';
+import type {CatalogCursorSigner} from '../../../packages/core/src/feature-additions/server-cursor.js';
 import {registerOpportunityRevisionComparisonRoutes} from './modules/opportunities/opportunity-revision-comparison-http.js';
 import type {OwnerWorkspacePort} from './modules/profiles/self-workspace-postgres.js';
 import {registerExperienceApprovalRoutes} from './modules/profiles/experience-approval-http.js';
@@ -49,6 +51,8 @@ interface SharedDependencies {
   campusAssist?:CampusAssistServices;
   ownerFeed?:Omit<Parameters<typeof registerOwnerFeedRoutes>[0],'app'|'session'>;
   ownerCounseling?:TrustedOwnerCounselingSource;
+  /** Operator-only current-source scope and HMAC signer, never a browser/route-supplied key. */
+  ownerV2Catalog?:{source:TrustedOwnerV2CatalogSource;signer:CatalogCursorSigner;quota:TrustedOwnerV2SearchQuota};
   sourceIngestionControl?:SourceJobControl;
   studyPlanCheck?:Omit<Parameters<typeof registerOwnerStudyPlanCheckRoutes>[0],'app'|'session'>;
   doubleMajor?:Omit<Parameters<typeof registerOwnerDoubleMajorRoutes>[0],'app'|'session'>;
@@ -128,6 +132,7 @@ export function createIntegratedApi(deps:IntegrationDependencies) {
   registerOwnerFeedRoutes({...deps.ownerFeed,app,session:ownerSession});
   registerOwnerCounselingRoutes({app,session:ownerSession,allowedOrigin:deps.allowedOrigin,
     ...(deps.ownerCounseling?{source:deps.ownerCounseling}:{})});
+  registerOwnerV2CatalogRoutes({app,session:ownerSession,...(deps.ownerV2Catalog??{})});
   registerOpportunityRevisionComparisonRoutes({...deps.revisionComparison,app,session:ownerSession});
   if(deps.experienceApproval)registerExperienceApprovalRoutes(app,deps.experienceApproval,ownerSession);
   if(deps.experienceCandidates)registerExperienceSkillCandidateRoute(app,deps.experienceCandidates,ownerSession);

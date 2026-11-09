@@ -28,7 +28,7 @@ export const AREAS: readonly Area[] = [
     ours: [{route: '/graduation', label: '졸업지원'}, {route: '/graduation/what-if', label: '전공 가정 분석'}, {route: '/saved', label: '보관함'}, {route: '/clubs', label: '동아리 모집'}, {route: '/exchange', label: '교환학생 조건'}],
     observed: ['수강교과목', '성적조회', '비교과프로그램', '비교과프로그램 신청 내역', '비교과 관심키워드', 'MY 비교과 장바구니', '외부비교과 활동', '학습공동체', '장학 신청']},
   {id: 'jobs', label: '채용/고용24', summary: '나에게 맞는 공고와 나의 지원 기록을 확인합니다.',
-    ours: [{route: '/opportunities', label: '맞춤 기회'}, {route: '/applications', label: '지원 현황'}],
+    ours: [{route: '/opportunities', label: '맞춤 기회'}, {route: '/owner-opportunities/v2-catalog', label: '승인된 공고 전체 검색'}, {route: '/applications', label: '지원 현황'}],
     observed: ['추천신청이력', '아르바이트', '교내외채용행사', '대외활동', '채용정보(고용24)', '직업탐색', '청년인턴/강소기업', '외대친화기업(HUFFi)']},
   {id: 'mentoring', label: '현직자멘토링', summary: '현직자 멘토링 소식을 확인하는 영역입니다.',
     ours: [], observed: ['멘토링 후기', '멘토링 공지']},

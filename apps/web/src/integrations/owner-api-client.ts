@@ -415,6 +415,24 @@ export class HufsOwnerApiClient {
       activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
     }),{signal});
   }
+  /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
+  async searchApprovedV2Catalog(query:z.input<typeof V.OwnerV2CatalogQuerySchema>={},signal?:AbortSignal){
+    const input=clientInput(V.OwnerV2CatalogQuerySchema,query);
+    const path=queryPath('/api/owner/features/v2/catalog',{
+      ...(input.q!==undefined?{q:input.q}:{}),
+      ...(input.category?{category:input.category}:{}),
+      ...(input.campus?{campus:input.campus}:{}),
+      ...(input.eligibility?{eligibility:input.eligibility}:{}),
+      ...(input.deadlineBefore?{deadlineBefore:input.deadlineBefore}:{}),
+      ...(input.includeClosed!==undefined?{includeClosed:String(input.includeClosed)}:{}),
+      sort:input.sort,pageSize:input.pageSize,
+      ...(input.asOf?{asOf:input.asOf}:{}),...(input.cursor?{cursor:input.cursor}:{}),
+    });
+    const result=await this.request(path,V.OwnerV2CatalogResponseSchema,{signal});
+    if(input.asOf&&result.state==='READY')
+      requireMatchingReceipt(Date.parse(result.page.at)===Date.parse(input.asOf));
+    return result;
+  }
   /** #366: caller chooses only purpose filters; official offices and rights come from the server. */
   findCounseling(change:{purposes:string[];campus?:string;language?:string},signal?:AbortSignal){
     const params=clientInput(z.strictObject({
