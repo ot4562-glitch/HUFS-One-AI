@@ -20,6 +20,7 @@ import type {OwnerPrivateIntakePort} from './features/owner-intake/OwnerPrivateI
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {CampusAssistPort} from './features/campus-assist/ownerPort.js';
 import type {OwnerV2CatalogPort} from './features/owner-catalog/OwnerV2CatalogPanel.js';
+import type {OwnerPreparationPort} from './features/owner-preparation/OwnerPreparationPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
@@ -77,6 +78,8 @@ export interface AppServices {
   readonly campusAssist?:CampusAssistPort;
   /** #366/#348: authenticated, consent-bound full v2 catalog search and signed cursor. */
   readonly ownerV2Catalog?:OwnerV2CatalogPort;
+  /** #343/#349: actor-bound scholarship and badge preparation; no awards. */
+  readonly ownerPreparation?:OwnerPreparationPort;
   /** Synthetic-only per-subject experience stores; never shared with BETA owner ports. */
   readonly experienceForSubject?: (subject: SubjectAlias) => ExperienceSkillPort;
   /** Current BETA owner's own portfolio, independent of the demo selector. */
@@ -115,6 +118,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const [path, navigate] = useRoute(historyPort);
   const sandbox = useSandbox(controller, state, services.sandbox);
   const independent = path==='/activities'||path==='/exchange'||path==='/faq'
+    || path==='/owner-scholarships'||path==='/owner-badges'
     || (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
     || (!!services.ownerExperience && path === '/experience')
     || path === '/career' || path.startsWith('/owner-opportunities/')
