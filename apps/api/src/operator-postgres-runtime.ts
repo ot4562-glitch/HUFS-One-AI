@@ -52,6 +52,8 @@ export interface OperatorPostgresInputs {
   /** Root-owned, explicitly authorized source/revision and rights-reading ports.
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
+  /** Independent operator source reader; the endpoint remains NOT_CONNECTED without it. */
+  ownerCounseling?:PostgresApplicationConfig['ownerCounseling'];
   /** Non-SQL options only. Pool-bearing services use extensions below. */
   platform?:Omit<PostgresPlatformConfig,'pools'|'evidenceRights'|'reviewerSandbox'|'adminUsage'>;
   extensions?:OperatorExtensions;
@@ -106,6 +108,9 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     throw new Error('Demo profile quota needs an independent digest key');
   if(input.ai)throw new Error('AI provider must use managed SQL authority, budget and results roles');
   if(input.campusAssist)validateCampusSources(input.campusAssist);
+  if(input.ownerCounseling&&(typeof input.ownerCounseling.read!=='function'
+    ||typeof input.ownerCounseling.revalidate!=='function'))
+    throw new Error('Counseling requires explicit current operator source and rights');
   if(input.managedAi){
     const value=input.managedAi;
     if(value.operation!=='HCX_007'||!value.roles
@@ -165,6 +170,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     const application:PostgresApplicationConfig={
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
+      ...(input.ownerCounseling?{ownerCounseling:input.ownerCounseling}:{}),
       ...(ai?{ai}:{}),
       ...(input.trustedProxyAddresses!==undefined?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),
       auth:{pools:{sessions,admission,attempts},attemptDigestKey:Buffer.from(input.attemptDigestKey),google:input.google},
