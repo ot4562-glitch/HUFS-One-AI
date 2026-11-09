@@ -1,6 +1,6 @@
 # HUFS One AI — PR·이슈 현황 감사 (2026-11-09)
 
-> **1차 검토 시각:** 2026-11-09 (Asia/Seoul). 1–3절은 당시 기록, 아래 8절이 가장 최신 실제 병합 검수입니다. 4–7절은 당시의 중간 스냅샷입니다. GitHub의 당시 OPEN PR·Issue와 실제 PR HEAD diff, review/threads, Actions 결과를 검토한 기록. 이후 변경은 [PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)·[Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 재확인해야 합니다. 전날 병합 이력은 [2026-11-08 감사](REVIEW_AND_ISSUE_AUDIT_20261108.md)에 보존합니다.
+> **1차 검토 시각:** 2026-11-09 (Asia/Seoul). 1–3절은 당시 기록, 8절은 당시 실제 병합 검수이며, 맨 아래 10절이 최신 코드 감사·문서 정리 기록입니다. 4–7절은 당시의 중간 스냅샷입니다. GitHub의 당시 OPEN PR·Issue와 실제 PR HEAD diff, review/threads, Actions 결과를 검토한 기록. 이후 변경은 [PR](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)·[Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues)에서 재확인해야 합니다. 전날 병합 이력은 [2026-11-08 감사](REVIEW_AND_ISSUE_AUDIT_20261108.md)에 보존합니다.
 
 ## 1. 이번 PR 처리 결과
 
@@ -151,5 +151,24 @@
 - 이슈는 **고정 역할 #355–#359 5건(쓰기 금지)**, 데이터 #360 1건, 추가 기능 #339–#341·#343–#352 13건, 기술·보안 #362/#366/#367/#373/#375/#378/#381 7건, 사후 검토 #416 및 웹 UX 결함 #418 2건입니다. **비고정 23건 모두 전체 수락 조건 중 미완료가 있어 이번 문서 정정만으로 닫지 않습니다.** `CLOSED/COMPLETED` 여부는 병합 여부가 아닌 각 이슈의 실제 DoD로 판단합니다.
 - **현재 결함 #418:** 인증 BETA 공고 검색의 cursor/asOf 만료 및 409/422·429 사용자 안내, UTC/KST 일자 표현, 사용자·탭 바뀜 회귀가 미해결입니다. #417 API/UI 코드가 병합됐어도 정상 사용자 동선 완료로 표시하지 않습니다.
 - **보안·권리/사후 감사:** #362 원본 공개 게시권/개인동의·외부 포크 이력, #381 실OCR/영구 저장 E2E, #373 FAQ 권리 충돌, #378 GitHub 보안 알림 운영, #416 과거 #399/#400/#401/#411 사람 교차검토가 남습니다. #425에서 자동 독립 `APPROVED` 체크는 **의도적으로 제거**, 실제 사람 승인을 소급 생성하거나 CI PASS를 사람/실환경 승인으로 바꾸지 않습니다.
-- **문서 수리 범위:** [웹 README](../apps/web/README.md)의 폐기된 #323 NCP 책임을 현재 담당 #357/#359로 정정, [UI 구현·인수](UI_MENU_COVERAGE.md)의 폐기된 #318/#323/#324/#325 현재형 링크 교체, [팀 가이드](TEAM_GUIDE.md)·[팀 진척](TEAM_PROGRESS.md)의 감사 원장을 2026-11-09로 갱신, [PR_WORKFLOW](PR_WORKFLOW.md)·[STATUS](../STATUS.md)의 #361/#372 `OPEN` 기록을 과거 시점으로 명시합니다. 다른 날짜별 PR/테스트 이력은 보존합니다.
+- **문서 수리 범위:** [웹 README](../apps/web/README.md)의 폐기된 #323 NCP 책임을 현재 담당 #357/#359로 정정, [UI 구현·인수](UI_MENU_COVERAGE.md)의 폐기된 #318/#323/#324/#325 현재형 링크 교체, 당시 [팀 가이드](https://github.com/ot4562-glitch/HUFS-One-AI/blob/76792d1a3d50826adf2b64644219f4efdc149f9b/docs/TEAM_GUIDE.md)·[팀 진척](https://github.com/ot4562-glitch/HUFS-One-AI/blob/76792d1a3d50826adf2b64644219f4efdc149f9b/docs/TEAM_PROGRESS.md)의 감사 원장을 2026-11-09로 갱신, [PR_WORKFLOW](PR_WORKFLOW.md)·[STATUS](../STATUS.md)의 #361/#372 `OPEN` 기록을 과거 시점으로 명시합니다. 다른 날짜별 PR/테스트 이력은 보존합니다.
 - **실행하지 않은 사항:** 원본 `csv/` 5개 내용/경로·Git 이력, 고정 역할 이슈의 상태/댓글/배정, 실제 개인/학교 계정·HCX/OCR 유료 모델·NCP 운영 환경·자료 공개권은 이 문서 작업에 포함되지 않습니다. **`RELEASE_BLOCKED` 유지**. 신규 실증이나 후속 코드 PR이 생기면 실제 HEAD Actions/권리/사람 검증 뒤 최신 문서와 관련 이슈에 별도 증거를 남깁니다.
+
+## 10. 코드 전수조사 1차 이슈 원장·문서 최소화 (2026-11-09)
+
+> **분모와 실제 검사 구분:** 기준 커밋 [`76792d1a3`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/76792d1a3d50826adf2b64644219f4efdc149f9b)의 재귀 Git tree 조회가 `truncated=false`: 경로 1,454개(파일 1,299개), `.ts` 749, `.tsx` 105, SQL 39, Python 29, MJS 51, Markdown 87개. 전체 추적 경로·코드 진입점/모듈 구성을 **목록화**했으며 이 숫자를 모든 파일의 시맨틱 검사·부정시험 통과율로 오인하지 마세요. 이 회차는 주요 API·인증·수집/egress·웹 세션·카탈로그·학사/추천의 **정적 코드 경로 1차 검토**입니다. 나머지 심층 검토와 실제 실행 검증은 `NOT_RUN`으로 표시합니다.
+
+| 개별 이슈 | 발견 분류·코드 근거 | 현재 판정/다음 검증 |
+| --- | --- | --- |
+| [#427](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427) | P2 웹: 상담 필터 변경 시 오래된 비동기 응답 재표시 | 정적 재현 경로 확인, RTL 지연 응답/세대 테스트 `NOT_RUN` |
+| [#428](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428) | P1 보안: 허용된 수집 IPv4의 비글로벌 특수 목적 대역 분류 불일치 | IANA 정책 대조·네트워크 없는 mock 경계 테스트 필요. 기존 URL/DNS pin/TLS 방어는 유지 |
+| [#429](https://github.com/ot4562-glitch/HUFS-One-AI/issues/429) | P2 일반 API: 장학 동일 key+학기 다른 관측시점도 503 중복 거부 | 코어가 최신 허가 관측을 선택하는 계약과 불일치, 합성 HTTP 테스트 `NOT_RUN` |
+| [#430](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430) | P2 최적화: 500 projection×100 source ref까지 직렬 SQL 검증 경로 | 구조적 N+1, **50,000은 상한 계산**이지 실측 쿼리/지연 수치 아님; PG 벤치 `NOT_RUN` |
+
+**중복 방지:** 과거부터 OPEN인 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418) (공고 409/422/429·KST), [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373) (CampusAssist 판본 권리), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) (OCR 원본 ID), [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362) (CSV 공개 권리)는 새로 복제하지 않습니다. **이슈는 하나의 원인/수락 기준에 하나**만 등록하며 코드/웹/SQL 최적화를 실운영 승인으로 승격하지 않습니다.
+
+**이 회차의 현황:** 기존 OPEN **28건 + 신규 #427–#430 4건 = 32건**, 고정 역할 #355–#359 전혀 수정하지 않음. 기존 17건 코드/문서 병합 + [문서 정합성 PR #426](https://github.com/ot4562-glitch/HUFS-One-AI/pull/426)은 종전 이력이고 **이번 문서 간소화 PR**과 별개입니다.
+
+**문서 정리:** 삭제하는 중복 역사형 파일은 `docs/TEAM_GUIDE.md`, `docs/TEAM_PROGRESS.md`, `docs/REMAINING_IMPLEMENTATION_20261104.md`, `docs/SERVICE_DELIVERY_PLAN.md`, `docs/CAREER_HUB_317.md` 다섯 개입니다. 내용은 변경 직전 커밋 [`76792d1`](https://github.com/ot4562-glitch/HUFS-One-AI/tree/76792d1a3d50826adf2b64644219f4efdc149f9b/docs)에서 추적 가능하며 이력 강제 삭제 없음. `README.md`의 방대한 문서 링크 인덱스를 줄이고 `tools/audit_entrypoints.mjs`의 삭제 파일 필수 읽기 경로를 현행 감사 원장으로 전환합니다. `docs/archive/STATUS_20261107.md` 등 중요한 감사 원본·AGENTS·개인정보/권한/NCP 문서는 보존합니다.
+
+**제한 및 품질 기준:** CodexPro 로컬/OCI 작업공간 접근이 실패하여 이 세션에서 전체 저장소를 로컬 빌드·풀스위트 재생/프로파일링하지 못했습니다. GitHub PR HEAD CI/CodeQL/DB/브라우저/원본 CSV 보호 검사를 결과별로 기록합니다. 분모 1,299에 대해 100% 실질 코드 검토·취약점 무존재를 주장하지 않습니다. 실학생 CSV 원본·비밀·실출처·운영 인프라는 읽거나 변경하지 않았고 `RELEASE_BLOCKED` 유지.

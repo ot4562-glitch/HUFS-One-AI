@@ -4,6 +4,14 @@
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. 팀 고정 역할 이슈 #355–#359는 읽기 전용입니다.
 
+## 최신 코드 감사 진행 및 문서 정리 — 2026-11-09
+
+- **현재 기준 커밋:** [`76792d1`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/76792d1a3d50826adf2b64644219f4efdc149f9b). 추적 Git blob **1,299개**, Markdown **87개**, `.ts` **749개**·`.tsx` **105개** 및 SQL 39개 등 전체 경로 목록을 확보. 이것은 **파일 인벤토리**이지 1,299개 파일의 모든 실행 경로를 독립적으로 검증 완료했다는 뜻이 아닙니다.
+- **확인된 신규 이슈 4건(각 독립 등록):** [#427 상담 검색 변경 중 이전 응답](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427), [#428 비글로벌 IPv4 특수 목적 주소 egress 분류](https://github.com/ot4562-glitch/HUFS-One-AI/issues/428), [#429 장학 사실 이력 과잉 중복 거부](https://github.com/ot4562-glitch/HUFS-One-AI/issues/429), [#430 승인 projection N+1 SQL](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430). 기존 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418), [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381) 등과 분리했습니다.
+- **열린 이슈 32건:** 이전 28건 + 신규 4건. 역할 #355–#359는 쓰기 금지, **실제 검증 없이 완료 상태로 바꾼 이슈 없음**. 코드·계약·SQL·웹·외부 수집 경계를 대상으로 한 정적 1차 감사이며 브라우저 재현, 실제 PostgreSQL 벤치, NCP/실학생/권리 검증은 `NOT_RUN`.
+- **문서 최소화:** 중복 과거 문서 5개를 Git 커밋 이력에 보존한 채 현행 트리에서 제거하고, README의 전체 링크 나열을 간소화. 정본은 README, 이 STATUS, AGENTS/WORKSTREAMS/PR_WORKFLOW, [2026-11-09 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md), 보안·권리/운영 필수 문서입니다.
+- **제품 상태:** `RELEASE_BLOCKED`; 이번 정적 코딩 감사·문서 정리는 실서비스/실학생 데이터·원본 CSV 권리 승인, 사람 리뷰, 실제 서버/모델 실행이 아닙니다.
+
 ## 0. 전수 수정·병합 최신 스냅샷 (2026-11-09)
 
 **이번 전수 작업 PR 총 17건 실제 병합(코드·의존성 15 + 승인 검사 제거 #425 + 문서 #419), OPEN PR 0건.** [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 13/13 HEAD 검사 성공 뒤 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465), [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 11/11 HEAD 검사 성공 뒤 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)로 병합 확인했습니다. 역할 고정 이슈 5개를 제외한 23개 이슈도 최종 현재 단계·남은 인수를 기록했으며 전체 28개 이슈는 아직 운영 DoD 미충족으로 OPEN입니다.
@@ -27,7 +35,7 @@
 
 ### 열린 이슈 및 실제 운영 인수
 
-- **OPEN 28건:** 변경 금지 역할 #355–#359 (5), 공식자료 #360 (1), 기능 #339–#341 및 #343–#352 (13), 기술/보안 #362/#366/#367/#373/#375/#378/#381 (7), 검토 절차 #416과 사용자 UX #418 (2).
+- **당시 OPEN 28건(2026-11-09 기존 PR 병합 시점의 스냅샷):** 변경 금지 역할 #355–#359 (5), 공식자료 #360 (1), 기능 #339–#341 및 #343–#352 (13), 기술/보안 #362/#366/#367/#373/#375/#378/#381 (7), 검토 절차 #416과 사용자 UX #418 (2). **현재는 상단 감사로 추가된 #427–#430을 포함하여 32건**입니다.
 - **#341:** FAQ 검색/인용 가드 코드 병합. 실제 공식 FAQ·HCX·독립 Gold 미인수.
 - **#345/#366:** 상담 인증 source→API/UI와 추천 순위 수정 병합. 실제 기관 명칭/권리/실DB 원장은 미연결.
 - **#346:** OCR 후보 추출·유사 기관명 격리·기본 가림 병합. 실제 CLOVA 및 실학생 자료·사람 검토는 미실행.

@@ -7,7 +7,7 @@ import {pathToFileURL} from 'node:url';
 // Keep read-only static analysis on pinned TS 5's parser; typechecking uses native TS 7.
 import ts from 'typescript-legacy';
 
-const DOCS=['README.md','Architecture.md','STATUS.md','docs/WORKSTREAMS.md','docs/TEAM_PROGRESS.md',
+const DOCS=['README.md','Architecture.md','STATUS.md','docs/WORKSTREAMS.md','docs/REVIEW_AND_ISSUE_AUDIT_20261109.md',
   'docs/PR_WORKFLOW.md','docs/DATA_GOVERNANCE.md'];
 const ROOTS=['package.json','vitest.config.ts','apps','packages','tools','tests','infra','.github/workflows',...DOCS];
 const SOURCE=/\.(?:[cm]?js|tsx?|json|ya?ml|sql|py|ps1|sh|service|template)$/;
