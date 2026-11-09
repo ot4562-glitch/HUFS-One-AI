@@ -19,6 +19,7 @@ import type {OwnerAcademicsPort} from './features/owner-academics/OwnerAcademics
 import type {OwnerPrivateIntakePort} from './features/owner-intake/OwnerPrivateIntakePanel.js';
 import type {OwnerProviderPort} from './features/owner-provider/OwnerProviderPanel.js';
 import type {CampusAssistPort} from './features/campus-assist/ownerPort.js';
+import type {OwnerCourseEvidencePort} from './features/owner-academics/OwnerExperienceCoursePanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
@@ -74,6 +75,8 @@ export interface AppServices {
   readonly ownerProvider?: OwnerProviderPort;
   /** Current BETA only: authorized campus assistance and HCX FAQ service, never a demoSubject. */
   readonly campusAssist?:CampusAssistPort;
+  /** Purpose-bound current academic evidence, not a school graduation decision. */
+  readonly ownerCourseEvidence?:OwnerCourseEvidencePort;
   /** Synthetic-only per-subject experience stores; never shared with BETA owner ports. */
   readonly experienceForSubject?: (subject: SubjectAlias) => ExperienceSkillPort;
   /** Current BETA owner's own portfolio, independent of the demo selector. */
@@ -111,7 +114,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
   const state = useDemo(controller);
   const [path, navigate] = useRoute(historyPort);
   const sandbox = useSandbox(controller, state, services.sandbox);
-  const independent = path==='/activities'||path==='/exchange'||path==='/faq'
+  const independent = path==='/activities'||path==='/exchange'||path==='/faq'||path==='/owner-academics/experience-courses'
     || (!!services.ownerIntake && (path === '/' || path === '/owner-intake'))
     || (!!services.ownerExperience && path === '/experience')
     || path === '/career' || path.startsWith('/owner-opportunities/')
