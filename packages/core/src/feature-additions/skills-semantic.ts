@@ -8,8 +8,12 @@ import {compareSkillsV2,reviewSkillMatchProposals,type RequirementEvidenceRow} f
 import {verifySource,type FeatureMode} from './source-policy.js';
 
 export const SKILL_MATCH_MODEL_VERSION='skill-lexicon-bigram-v1';
-/** Protected traits never take part in matching: such a requirement is excluded, such words are removed. */
-const PROTECTED=/성별|남성|여성|남녀|나이|연령|국적|장애|학력|출신|종교|혼인|결혼|임신|외모/g;
+/** Protected traits never take part in matching: such a requirement is excluded, such words are removed.
+ * Context forms only, so "서버 장애 대응" (an outage) and "나이키" (a brand) are not traits. */
+const PROTECTED=/성별|남성|여성|남녀|나이\s*(?:제한|무관|이하|이상|미만|초과|우대)|연령|만\s*\d{1,2}\s*세|국적|장애인|장애\s*(?:여부|유무|등급|우대)|학력|출신|종교|혼인|결혼|임신|외모/g;
+/** What may follow a two-letter Korean term: a particle, a light verb, or a role/team suffix.
+ * "예산 집행 경험" and "개발자" count; "학생회 집행부" and "방송 편성표" do not. */
+const TERM_FOLLOW=/^(?:$|[^\p{L}\p{N}]|은|는|이|가|을|를|에|의|도|와|과|로|으로|및|하|한|할|했|해|됨|된|등|업무|경험|능력|역량|활동|안|서|자|진|팀|생)/u;
 /** Skill concepts; a requirement is covered by the share of its concepts the experience also shows. */
 const CONCEPTS:Readonly<Record<string,readonly string[]>>={
   DATA:['데이터','통계','엑셀','excel','파이썬','python','태블로','tableau','조회수','매출'],
@@ -48,10 +52,22 @@ const CONCEPTS:Readonly<Record<string,readonly string[]>>={
 };
 const LATIN=/^[a-z0-9.\s]+$/;
 const norm=(s:string)=>s.normalize('NFKC').toLocaleLowerCase('ko').replace(PROTECTED,' ').replace(/\s+/g,' ').trim();
+const ALL_TERMS=Object.values(CONCEPTS).flat().filter(t=>!LATIN.test(t)&&t.length>=2);
+/** A two-letter Korean term must start a word (or follow another lexicon term, "데이터분석") and end at
+ * TERM_FOLLOW; longer Korean terms are specific enough to match inside a word. */
+function hasKoreanTerm(t:string,term:string):boolean{
+  if(term.length>2)return t.includes(term);
+  for(let at=t.indexOf(term);at>=0;at=t.indexOf(term,at+1)){
+    const before=t.slice(0,at);
+    const starts=at===0||/[^\p{L}\p{N}]$/u.test(before)||ALL_TERMS.some(w=>w!==term&&before.endsWith(w));
+    if(starts&&TERM_FOLLOW.test(t.slice(at+term.length)))return true;
+  }
+  return false;
+}
 function conceptsOf(text:string):Set<string>{
   const t=norm(text),out=new Set<string>();
   for(const [concept,terms] of Object.entries(CONCEPTS))
-    if(terms.some(term=>LATIN.test(term)?new RegExp('(^|[^a-z])'+term.replace('.','\\.')+'([^a-z]|$)').test(t):t.includes(term)))
+    if(terms.some(term=>LATIN.test(term)?new RegExp('(^|[^a-z])'+term.replace('.','\\.')+'([^a-z]|$)').test(t):hasKoreanTerm(t,term)))
       out.add(concept);
   return out;
 }
@@ -76,25 +92,40 @@ export function scoreSkillMatch(requirement:string,experience:string):{score:num
   const score=rc.size?0.8*shared.length/rc.size+0.2*cos:cos;
   return {score:Math.round(score*1000)/1000,sharedConcepts:shared};
 }
-/** Binds proposals to exactly these requirement and experience texts and this scorer version. */
+/** Binds proposals to exactly these requirement and experience texts, the experiences' approved
+ * versions and this scorer version: re-approving the same text as a new version changes the digest. */
 export function skillMatchInputDigest(requirements:readonly {id:string;label:string}[],
-  experiences:readonly {id:string;text:string}[]):string{
+  experiences:readonly {id:string;text:string}[],
+  versions:readonly {id:string;version:string;approved:boolean}[]=[]):string{
   const canonical=JSON.stringify([SKILL_MATCH_MODEL_VERSION,
-    [...requirements].map(r=>[r.id,r.label]).sort(),[...experiences].map(e=>[e.id,e.text]).sort()]);
+    [...requirements].map(r=>[r.id,r.label]).sort(),[...experiences].map(e=>[e.id,e.text]).sort(),
+    [...versions].map(v=>[v.id,v.version,v.approved]).sort()]);
   return createHash('sha256').update(canonical).digest('hex');
+}
+/** IDs used by more than one row. Two editions under one ID (e.g. approved + revoked) are never
+ * resolved by order: every row with that ID leaves the semantic path, as in #383. */
+function repeatedIds(rows:readonly {id:string}[]):Set<string>{
+  const seen=new Set<string>(),twice=new Set<string>();
+  for(const r of rows)(seen.has(r.id)?twice:seen).add(r.id);
+  return twice;
 }
 export interface SkillMatchOptions{minScore?:number;maxPerRequirement?:number;}
 export function proposeSkillMatches(input:{
   requirements:readonly C.JobRequirement[];
   /** Approved experiences only, with their server-side sanitized description. */
   experiences:readonly C.ExperienceEvidence[];texts:readonly {id:string;text:string}[];
-}&SkillMatchOptions):{proposals:C.SemanticProposal[];inputDigest:string;scores:SkillMatchScore[];excludedRequirementIds:string[]}{
+}&SkillMatchOptions):{proposals:C.SemanticProposal[];inputDigest:string;scores:SkillMatchScore[];
+  excludedRequirementIds:string[];excludedExperienceIds:string[]}{
   const {minScore=0.55,maxPerRequirement=3}=input;
-  const approved=new Set(input.experiences.filter(e=>e.approved).map(e=>e.id));
+  const reqTwice=repeatedIds(input.requirements);
+  const expTwice=new Set([...repeatedIds(input.experiences),...repeatedIds(input.texts)]);
+  const usable=input.experiences.filter(e=>e.approved&&!expTwice.has(e.id));
+  const approved=new Set(usable.map(e=>e.id));
   const texts=input.texts.filter(t=>approved.has(t.id));
-  const inputDigest=skillMatchInputDigest(input.requirements,texts);
-  const excludedRequirementIds:string[]=[],proposals:C.SemanticProposal[]=[],scores:SkillMatchScore[]=[];
-  for(const req of input.requirements){
+  const requirements=input.requirements.filter(r=>!reqTwice.has(r.id));
+  const inputDigest=skillMatchInputDigest(requirements,texts,usable);
+  const excludedRequirementIds:string[]=[...reqTwice].sort(),proposals:C.SemanticProposal[]=[],scores:SkillMatchScore[]=[];
+  for(const req of requirements){
     if(new RegExp(PROTECTED.source).test(req.label)){excludedRequirementIds.push(req.id);continue;}
     const ranked=texts.map(t=>({requirementId:req.id,experienceId:t.id,...scoreSkillMatch(req.label,t.text)}))
       .filter(s=>s.score>=minScore&&s.sharedConcepts.length>0)
@@ -103,7 +134,7 @@ export function proposeSkillMatches(input:{
     if(ranked.length)proposals.push({candidateId:req.id,score:ranked[0]!.score,modelVersion:SKILL_MATCH_MODEL_VERSION,
       inputDigest,evidenceCodes:ranked.map(s=>req.id+'::'+s.experienceId)});
   }
-  return {proposals,inputDigest,scores,excludedRequirementIds};
+  return {proposals,inputDigest,scores,excludedRequirementIds,excludedExperienceIds:[...expTwice].sort()};
 }
 export type SkillGapCandidateRow=RequirementEvidenceRow&{
   /** Code-proposed links awaiting the owner's review; never counted as evidence. */
@@ -121,14 +152,21 @@ export function compareSkillsWithCandidates(input:{
   // A requirement whose official source or span fails verification gets no candidates either.
   const verified=input.requirements.filter(r=>verifySource(r.source,input.asOf,input.mode).usable
     &&r.source.evidenceSpanIds.includes(r.sourceSpanId));
-  const proposed=proposeSkillMatches({...input,requirements:verified});
-  const reviewed=reviewSkillMatchProposals({requirements:verified,experiences:input.experiences,
+  // Repeated IDs are judged on the whole input: a revoked twin of a verified row still quarantines the ID.
+  const reqTwice=repeatedIds(input.requirements);
+  const proposed=proposeSkillMatches({...input,requirements:verified.filter(r=>!reqTwice.has(r.id))});
+  const blocked=new Set(proposed.excludedExperienceIds);
+  const reviewed=reviewSkillMatchProposals({requirements:verified.filter(r=>!reqTwice.has(r.id)),
+    experiences:input.experiences.filter(e=>!blocked.has(e.id)),
     proposals:proposed.proposals,inputDigest:proposed.inputDigest});
   const rows=rules.map(row=>{
-    const ids=[...new Set(reviewed.filter(r=>r.requirementId===row.requirementId).map(r=>r.experienceId))]
+    if(reqTwice.has(row.requirementId))return {...row,candidateExperienceIds:[]};
+    const ids=[...new Set(reviewed.filter(r=>r.requirementId===row.requirementId&&!blocked.has(r.experienceId))
+      .map(r=>r.experienceId))]
       .filter(id=>!row.ownerEvidenceIds.includes(id)).sort();
     const reopen=ids.length&&(row.status==='EVIDENCE_MISSING'||row.status==='UNMAPPED');
     return {...row,candidateExperienceIds:ids,...(reopen?{status:'NEEDS_REVIEW' as const,interpretation:'UNKNOWN' as const}:{})};
   });
-  return {rows,rankingMode:'AI_ASSISTED',excludedRequirementIds:proposed.excludedRequirementIds};
+  return {rows,rankingMode:'AI_ASSISTED',
+    excludedRequirementIds:[...new Set([...reqTwice,...proposed.excludedRequirementIds])].sort()};
 }

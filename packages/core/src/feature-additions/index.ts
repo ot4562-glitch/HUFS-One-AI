@@ -10,8 +10,7 @@ export * from './mentors-v2.js';
 export * from './counseling-v2.js';
 export * from './recognition-v2.js';
 export * from './skills-v2.js';
-// #347 code-based requirement↔experience link candidates (no model call).
-export * from './skills-semantic.js';
+// #347 skills-semantic.ts uses node:crypto (input digest): server-only, import it by path like server-cursor.ts.
 export * from './catalog-v2.js';
 export * from './badges-v2.js';
 export * from './learning-v2.js';
