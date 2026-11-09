@@ -136,33 +136,51 @@ const cells = (row:string, tag:'td'|'th'):string[] =>
  * Cut every script block or HTML comment out of the saved page before its text is read as table
  * rows. This is not an HTML sanitizer (nothing here is rendered as HTML); it keeps script source
  * and commented-out markup from being parsed as rows. Matching is case-insensitive, a closing tag
- * may carry spaces or attributes (`</script >`), and an unclosed block runs to the end of the page
- * as a browser would treat it. After each cut the search resumes at the same place, so pieces that
- * meet after a cut ("<scr" + "ipt") are cut as well.
+ * may carry spaces or attributes (`</script >`), and in script mode a "<script" inside an HTML
+ * comment is left alone with its comment. A "<script" or "<!--" with no closing tag after it is kept
+ * as it is, as the earlier regex did: it may be plain text or an attribute value
+ * (`title="<script"`), and cutting to the end of the page would drop the table that follows. After
+ * each cut the search resumes at the same place, so pieces that meet after a cut ("<scr" + "ipt")
+ * are cut as well.
  */
 export function withoutBlocks(html:string, kind:'script'|'comment'):string {
+  // Only A-Z are lowered, so every index in `lower` is the same index in `out`
+  // (String#toLowerCase can change the length, e.g. "İ" becomes two code units).
+  const lowerAscii = (s:string) => s.replace(/[A-Z]+/g, letters => letters.toLowerCase());
   let out = html;
   let from = 0;
+  // Text before `floor` is a comment kept in script mode; never search back into it.
+  let floor = 0;
   for (;;) {
-    const lower = out.toLowerCase();
+    const lower = lowerAscii(out);
     let start:number;
     let end:number;
     if (kind === 'comment') {
       start = lower.indexOf('<!--', from);
       if (start < 0) return out;
       const close = lower.indexOf('-->', start + 4);
-      end = close < 0 ? out.length : close + 3;
+      if (close < 0) return out;
+      end = close + 3;
     } else {
       start = lower.indexOf('<script', from);
       if (start < 0) return out;
+      // A "<script" written inside an HTML comment is not a tag: keep the comment, skip past it.
+      const comment = lower.indexOf('<!--', from);
+      if (comment >= 0 && comment < start) {
+        const close = lower.indexOf('-->', comment + 4);
+        if (close < 0) return out;
+        from = floor = close + 3;
+        continue;
+      }
       if (/[a-z0-9_-]/.test(lower.charAt(start + 7))) { from = start + 1; continue; }
       let close = lower.indexOf('</script', start + 7);
       while (close >= 0 && /[a-z0-9_-]/.test(lower.charAt(close + 8))) close = lower.indexOf('</script', close + 1);
       const gt = close < 0 ? -1 : lower.indexOf('>', close + 8);
-      end = gt < 0 ? out.length : gt + 1;
+      if (gt < 0) return out;
+      end = gt + 1;
     }
     out = out.slice(0, start) + out.slice(end);
-    from = Math.max(0, start - 8);
+    from = Math.max(floor, start - 8);
   }
 }
 

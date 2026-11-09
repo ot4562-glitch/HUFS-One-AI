@@ -292,14 +292,44 @@ describe('script and comment blocks are cut before rows are read (CodeQL #1-#6)'
     expect(withoutBlocks('a<SCRIPT type="t">x</Script >b', 'script')).toBe('ab');
     expect(withoutBlocks('a<!<!-- x -->-- y -->b', 'comment')).toBe('ab');
   });
-  it('an unclosed block runs to the end, as a browser treats it', () => {
-    expect(withoutBlocks('keep<script>var x = 1;', 'script')).toBe('keep');
-    expect(withoutBlocks('keep<!-- open', 'comment')).toBe('keep');
+  it('an opening "<script" or "<!--" with no closing tag is kept, as the earlier regex did', () => {
+    expect(withoutBlocks('keep<script>var x = 1;', 'script')).toBe('keep<script>var x = 1;');
+    expect(withoutBlocks('keep<!-- open', 'comment')).toBe('keep<!-- open');
+    // a closed block before an unclosed one is still cut
+    expect(withoutBlocks('a<script>x</script>b<script>y', 'script')).toBe('ab<script>y');
+    // an attribute value that spells "<script" does not eat the table after it
+    const table = '<table><tr><td>OK</td></tr></table>';
+    expect(withoutBlocks(`<div title="<script">x</div>${table}`, 'script')).toBe(`<div title="<script">x</div>${table}`);
+    const html = page(ROWS).replace('<table>', '<div title="<script">x</div><table>');
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
   });
   it('leaves look-alike tags and plain text alone', () => {
     expect(withoutBlocks('<scripture>t</scripture><noscript>n</noscript>', 'script'))
       .toBe('<scripture>t</scripture><noscript>n</noscript>');
     expect(withoutBlocks('no blocks here', 'comment')).toBe('no blocks here');
     expect(withoutBlocks('<script>a</scripts>b</script>c', 'script')).toBe('c');
+  });
+  // PR #431 review (심민성): two counterexamples to the first version of withoutBlocks.
+  it('a "<script" written inside an HTML comment is not a tag and does not eat the table', () => {
+    const table = '<table><tr><td>OK</td></tr></table>';
+    expect(withoutBlocks(`<!-- Example: <script src='example.js'> -->\n${table}`, 'script'))
+      .toBe(`<!-- Example: <script src='example.js'> -->\n${table}`);
+    // a real script after the comment is still cut; the comment stays
+    expect(withoutBlocks(`<!-- <script> -->a<script>x</script>b`, 'script')).toBe('<!-- <script> -->ab');
+    // an unclosed comment keeps everything after it as comment text
+    expect(withoutBlocks('a<!-- <script>x', 'script')).toBe('a<!-- <script>x');
+    // the whole import keeps its rows when such a comment sits before the table
+    const html = page(ROWS).replace('<table>', `<!-- Example: <script src='example.js'> --><table>`);
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
+  });
+  it('cut positions stay right when text before or after a block changes length when lowercased', () => {
+    // "İ" (U+0130) lowercases to two code units; only A-Z may be lowered for the search.
+    const table = '<table><tr><td>OK</td></tr></table>';
+    expect(withoutBlocks(`İİİİİİ<script>var x=1</script>${table}`, 'script')).toBe(`İİİİİİ${table}`);
+    expect(withoutBlocks(`İİİ<!--note-->${table}`, 'comment')).toBe(`İİİ${table}`);
+    expect(withoutBlocks(`<SCRIPT>İ</SCRIPT>İ${table}`, 'script')).toBe(`İ${table}`);
+    expect(withoutBlocks(`<!--İİ-->İ<!--x-->${table}`, 'comment')).toBe(`İ${table}`);
+    const html = page(ROWS).replace('<script>', 'İİİİ<script>');
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
   });
 });
