@@ -52,8 +52,9 @@ export interface OperatorPostgresInputs {
   /** Root-owned, explicitly authorized source/revision and rights-reading ports.
    * Only these exact ports are exposed; billable HCX requires a separate managed gate. */
   campusAssist?:PostgresApplicationConfig['campusAssist'];
-  /** Scoped current source/actor/consent and multi-replica quota, absent by default. */
   ownerInsights?:PostgresApplicationConfig['ownerInsights'];
+  /** Requires current purpose-granted academic source. */
+  ownerExperienceCourse?:PostgresApplicationConfig['ownerExperienceCourse'];
   /** Explicit operator source+secret signer; never inferred from synthetic catalogs. */
   ownerV2Catalog?:PostgresApplicationConfig['ownerV2Catalog'];
   /** Non-SQL options only. Pool-bearing services use extensions below. */
@@ -114,7 +115,10 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
     typeof input.ownerInsights.source?.read!=='function'||
     typeof input.ownerInsights.source?.revalidate!=='function'||
     typeof input.ownerInsights.quota?.consume!=='function'))
-    throw new Error('Owner insights require a current rights reader and durable quota');
+    throw new Error('Owner insights require current rights reader and durable quota');
+  if(input.ownerExperienceCourse&&(typeof input.ownerExperienceCourse.read!=='function'
+    ||typeof input.ownerExperienceCourse.revalidate!=='function'))
+    throw new Error('Owner experience/course requires reviewed source and current grant');
   if(input.ownerV2Catalog&&(
     typeof input.ownerV2Catalog.source?.read!=='function'||
     typeof input.ownerV2Catalog.source?.revalidate!=='function'||
@@ -182,6 +186,7 @@ export function prepareOperatorPostgres(input:OperatorPostgresInputs):PreparedOp
       ...(input.runtime?{runtime:input.runtime}:{}),
       ...(input.campusAssist?{campusAssist:input.campusAssist}:{}),
       ...(input.ownerInsights?{ownerInsights:input.ownerInsights}:{}),
+      ...(input.ownerExperienceCourse?{ownerExperienceCourse:input.ownerExperienceCourse}:{}),
       ...(input.ownerV2Catalog?{ownerV2Catalog:input.ownerV2Catalog}:{}),
       ...(ai?{ai}:{}),
       ...(input.trustedProxyAddresses!==undefined?{trustedProxyAddresses:[...input.trustedProxyAddresses]}:{}),

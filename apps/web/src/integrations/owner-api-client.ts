@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {OwnerExperienceCourseResponseSchema} from '@hufs-one/contracts';
 import {FeatureAdditions as V} from '@hufs-one/contracts';
 import {
   SelfProfileSchema,SelfProfilePatchSchema,SelfConsentSchema,SelfConsentPutSchema,
@@ -271,6 +272,10 @@ export class HufsOwnerApiClient {
       &&result.item.value.summary===''&&result.item.value.sourceOpportunityId===input.opportunityId);
     return result;
   }
+  /** #375 current purpose-granted links only, no browser-supplied transcript. */
+  getExperienceCourseEvidence(signal?:AbortSignal){
+    return this.request('/api/owner/academics/experience-courses',OwnerExperienceCourseResponseSchema,{signal});
+  }
   async getTranscript(signal?:AbortSignal){
     const result=await this.request('/api/academics/transcript',z.strictObject({transcript:OwnerTranscriptSchema}),{signal});
     if(Date.parse(result.transcript.reviewedAt)>Date.parse(result.transcript.asOf))unavailable();
@@ -415,13 +420,11 @@ export class HufsOwnerApiClient {
       activities:z.boolean(),exchange:z.boolean(),faq:z.boolean(),hcx007:z.boolean(),
     }),{signal});
   }
-  /** #366: kind is a closed enum; never accept caller-created source or evidence payloads. */
+  /** #366: closed feature kind, never browser-supplied source records. */
   async getOwnerInsights(kind:V.OwnerInsightsKind,signal?:AbortSignal){
     const name=clientInput(V.OwnerInsightsKindSchema,kind);
-    const result=await this.request('/api/owner/features/v2/insights/'+name,
-      V.OwnerInsightsResponseSchema,{signal});
-    requireMatchingReceipt(result.state==='NOT_CONNECTED'
-      ?result.kind===name:result.result.kind===name);
+    const result=await this.request('/api/owner/features/v2/insights/'+name,V.OwnerInsightsResponseSchema,{signal});
+    requireMatchingReceipt(result.state==='NOT_CONNECTED'?result.kind===name:result.result.kind===name);
     return result;
   }
   /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */
