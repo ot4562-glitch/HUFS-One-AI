@@ -418,7 +418,7 @@ export class HufsOwnerApiClient {
     }),change);
     const response=z.discriminatedUnion('state',[
       z.strictObject({state:z.literal('NOT_CONNECTED'),asOf:Iso}),
-      z.strictObject({state:z.literal('READY'),asOf:Iso,sourceVersion:CatalogId,
+      z.strictObject({state:z.literal('READY'),asOf:Iso,sourceVersion:z.string().min(1).max(128),
         guide:V.CounselingGuideV2Schema}),
     ]);
     return this.mutate('/api/owner/counseling/routes',response,'POST',params,signal);
