@@ -5,7 +5,7 @@
  * paragraph identifiers; no network, AI or locale-dependent date parsing.
  */
 const REF=/^[A-Za-z0-9_.:@-]{1,128}$/;
-const DEADLINE=/(?:신청|접수|지원)?\s*마감(?:일|일자|시간|시각)?\s*[:：]?\s*(20\d{2})\s*(?:[.\/-]|년)\s*(\d{1,2})\s*(?:[.\/-]|월)\s*(\d{1,2})(?:\s*일)?\s*(\d{1,2}):(\d{2})?/gu;
+const DEADLINE=/(?:신청|접수|지원)?\s*마감(?:일|일자|시간|시각)?\s*[:：]?\s*(20\d{2})\s*(?:[.\/-]|년)\s*(\d{1,2})\s*(?:[.\/-]|월)\s*(\d{1,2})(?:\s*일)?(?:\s*\.?\s*(\d{1,2}):(\d{2}))?/gu;
 function asDate(year,month,day,hour,min){
   const y=Number(year),m=Number(month),d=Number(day);
   const parsed=new Date(Date.UTC(y,m-1,d));
