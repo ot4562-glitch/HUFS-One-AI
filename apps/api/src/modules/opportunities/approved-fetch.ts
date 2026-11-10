@@ -126,7 +126,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
       const checkedAt=now.toISOString();
       const latest=options.ledger.latest(options.policy.sourceId);
       if(!request)throw new SourceIngestionError();
-      const headers:Record<string,string>={Accept:'text/plain, text/html;q=0.9, application/rss+xml;q=0.8'};
+      const headers:Record<string,string>={Accept:'text/plain, text/html;q=0.9, application/rss+xml;q=0.8, application/atom+xml;q=0.8, application/xml;q=0.7, text/xml;q=0.7'};
       if(latest&&etag)headers['If-None-Match']=etag;
       if(latest&&modified)headers['If-Modified-Since']=modified;
       let response:Response|undefined;
@@ -153,7 +153,7 @@ export function createApprovedSourceFetcher(options:SourceFetchConfig){
         }
         if(response.status!==200)throw new SourceIngestionError();
         const contentType=response.headers.get('content-type')??'';
-        const supported=/^(text\/plain|text\/html|application\/rss\+xml)(;|$)/i.test(contentType);
+        const supported=/^(text\/plain|text\/html|application\/rss\+xml|application\/atom\+xml|application\/xml|text\/xml)(;|$)/i.test(contentType);
         if(!supported)throw new SourceIngestionError();
         const bytes=await readApprovedSourceBody(response);
         if(!bytes.length)throw new SourceIngestionError();

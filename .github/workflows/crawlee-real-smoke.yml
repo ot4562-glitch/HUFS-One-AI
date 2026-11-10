@@ -1,0 +1,43 @@
+name: Crawlee 3.18.2 real API synthetic smoke
+
+on:
+  pull_request:
+    paths:
+      - 'tools/ingestion/**'
+      - '.github/workflows/crawlee-real-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/ingestion/**'
+      - '.github/workflows/crawlee-real-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-crawlee-synthetic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/ingestion/
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Reproducibly install locked worker and exercise real Crawlee/Cheerio APIs
+        shell: bash
+        env:
+          APIFY_TOKEN: ''
+          CRAWLEE_STORAGE_DIR: ${{ runner.temp }}/hufs-crawlee-storage
+        run: |
+          set -euo pipefail
+          test ! -d csv
+          test ! -d local_only
+          npm ci --prefix tools/ingestion/worker --ignore-scripts --no-audit --no-fund
+          node tools/ingestion/worker/synthetic-smoke.mjs
+          node --test tools/ingestion/crawlee-approved-dispatch.node.test.mjs tools/ingestion/approved-link-candidates.node.test.mjs tools/ingestion/notice-field-candidates.node.test.mjs

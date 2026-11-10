@@ -10,4 +10,11 @@ it('accepts the ordinary HTML5 doctype without enabling XML entities or external
   await expect(parse('<!DOCTYPE html SYSTEM "https://example.test/a.dtd"><p>text</p>')).rejects.toThrow('forbidden');
   await expect(parse('<!ENTITY x SYSTEM "file:///private"><p>&x;</p>')).rejects.toThrow('forbidden');
   await expect(parse('<!DOCTYPE html><rss/>','application/rss+xml')).rejects.toThrow('forbidden');
+  expect(await parse('<urlset><url><loc>https://synthetic.example/notices/1</loc></url></urlset>',
+    'application/xml')).toEqual([{id:'p1',text:'https://synthetic.example/notices/1'}]);
+  expect(await parse('<urlset><url><loc>https://synthetic.example/notices/2</loc></url></urlset>',
+    'text/xml')).toEqual([{id:'p1',text:'https://synthetic.example/notices/2'}]);
+  await expect(parse('<!DOCTYPE urlset SYSTEM "file:///etc/passwd"><urlset/>',
+    'application/xml')).rejects.toThrow('forbidden');
+
 });

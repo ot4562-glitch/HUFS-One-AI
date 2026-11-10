@@ -16,7 +16,8 @@ import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence
 import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
-  'application/atom+xml','application/pdf','image/png','image/jpeg']);
+  'application/atom+xml','application/xml','text/xml',
+  'application/pdf','image/png','image/jpeg']);
 const SHA=(v:Uint8Array)=>createHash('sha256').update(v).digest('hex');
 const SAFE_HTTP_VALIDATOR=/^[\x20-\x7e]{1,200}$/;
 function safeValidator(value:string|null):string|null{
@@ -135,7 +136,7 @@ export function createApprovedDurableSourceExecutor(options:{
           throw new Error('Source rights changed before HTTP');
       }},options.egress);
       const headers:Record<string,string>={
-        Accept:'text/plain,text/html,application/rss+xml,application/atom+xml,application/pdf,image/png,image/jpeg',
+        Accept:'text/plain,text/html,application/rss+xml,application/atom+xml,application/xml,text/xml,application/pdf,image/png,image/jpeg',
       };
       if(head?.etag)headers['If-None-Match']=head.etag;
       if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
