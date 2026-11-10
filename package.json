@@ -38,7 +38,7 @@
     "start:api:local": "npm run build:api && node dist/apps/api/src/main.js",
     "start:api:synthetic-empty-demo": "npm run build:api && node dist/apps/api/src/dev/empty-demo-main.js --synthetic",
     "test:e2e:empty-demo": "npm run build:api && node tools/check_empty_demo_browser.mjs --start-servers",
-    "assets:check": "node tools/generate_demo_assets.mjs --check && node tools/check_synthetic_artwork.mjs && node tools/real-data/verify-seeds.mjs",
+    "assets:check": "node tools/generate_demo_assets.mjs --check && node tools/check_synthetic_artwork.mjs && node tools/real-data/verify-seeds.mjs && npm run test:real-source-registry",
     "build:evaluation": "node node_modules/typescript/bin/tsc -p tools/evaluation/tsconfig.json",
     "eval:review": "node tools/evaluation/run.mjs",
     "test:evaluation:cli": "node --test tools/evaluation/tests/cli.node.mjs tools/evaluation/tests/review-html.node.mjs",
