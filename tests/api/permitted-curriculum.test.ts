@@ -66,6 +66,26 @@ describe('permitted official curriculum collection (synthetic transport)',()=>{
     }
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it('allows registered public catalog HTTP collection when robots file is absent but terms are allowed',async()=>{
+    const fetcher=vi.fn(async()=>new Response(csv,{headers:{'content-type':'text/csv'}}));
+    const result=await collectCurriculum({sourceUrl:policy.sourceUrl,
+      authority:{resolve:async()=>({...policy,robots:'NOT_FOUND' as const})},fetcher,now:()=>now});
+    expect(result.courses).toHaveLength(1);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it('does not let a robots Disallow silently grant HTTP access, but accepts a documented site exception',async()=>{
+    const fetcher=vi.fn(async()=>new Response(csv,{headers:{'content-type':'text/csv'}}));
+    const restricted={...policy,robots:'DISALLOWED' as const};
+    await expect(collectCurriculum({sourceUrl:policy.sourceUrl,
+      authority:{resolve:async()=>restricted},fetcher,now:()=>now}))
+      .rejects.toThrow('SOURCE_NOT_PERMITTED');
+    expect(fetcher).not.toHaveBeenCalled();
+    const authorized={...restricted,robotsExceptionRef:'SITE-PERMISSION-2026'};
+    const result=await collectCurriculum({sourceUrl:policy.sourceUrl,
+      authority:{resolve:async()=>authorized},fetcher,now:()=>now});
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(result.courses[0]?.courseCode).toBe('SYN101');
+  });
   it('deduplicates exact course rows, preserves semesters, and leaves offering/rule checks unknown',()=>{
     const result=normalizeCurriculum([csv,line,line.replace('2026-2','2027-1')].join('\n'),policy,now);
     expect(result.courses).toHaveLength(2);
