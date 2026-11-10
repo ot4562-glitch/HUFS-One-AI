@@ -182,6 +182,12 @@ HUFS-One-AI/
 └── tools/                  # 검사·평가·감사 도구
 ```
 
+## 실데이터 전환 작업 — 2026-11-10 착수
+
+서비스에 필요한 **모든 공식·교외 정보**(학사·수업·졸업요건·장학·비교과·국제교류·취업·생활·동아리·FAQ/규정·통계 등)를 발견·구조화하는 공통 파이프라인을 추진합니다. [전 기능 전환 기준](docs/REAL_DATA_MIGRATION.md) · [공식 공개 소스 등록부](tools/real-data/source-seeds.json) · [전환 이슈 #447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447) · [수집기 #445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445).
+
+**현재 저장한 출발 URL은 실제 원문 수집 완료가 아닙니다.** 운영 화면/API의 합성 자료를 아직 교체하지 않았으며, 초기 소스는 `DISCOVERY_SEED_ONLY`입니다. 출처·권리·실자료 정규화/DB 연동·독립 인수 후 기능별 전환하고 실제 모드에는 가상 fallback을 사용하지 않습니다. 기존 합성 Pages/테스트는 별도 유지합니다.
+
 ## 현재 상태와 출시 조건
 
 | 항목 | 상태 |
