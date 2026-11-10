@@ -31,7 +31,12 @@ export function collectCandidatesFromApprovedBytes({
   let text;
   try{text=new TextDecoder('utf-8',{fatal:true}).decode(content);}
   catch{fail();}
-  if(/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(text))fail();
+  // Ordinary HTML5 uses <!doctype html>. Only that exact prologue is safe;
+  // external DTD declarations, additional doctypes and XML entities stay blocked.
+  const markup=kind==='HTML'
+    ?text.replace(/^\uFEFF?\s*<!doctype html\s*>/i,'')
+    :text;
+  if(/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(markup))fail();
   const $=load(text,{xmlMode:kind!=='HTML'});
   return extractReviewedLinkCandidates({
     $,canonicalUrl,approvedOrigin,allowPathPrefixes,kind,
