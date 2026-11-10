@@ -33,6 +33,10 @@ describe('#445 Korean notice candidate facts are human review only',()=>{
       value:'2026-11-10',sourceSpanIds:['p-2']});
     assert.equal(v.fields.deadline.state,'UNKNOWN');
   });
+  it('does not treat a whitespace-only labelled title as verified',()=>{
+    const v=parse([{id:'p-1',text:'제목:       '}]);
+    assert.deepEqual(v.fields.title,{state:'UNKNOWN',reason:'NO_EXPLICIT_TITLE'});
+  });
   it('does not invent a title or publication date from unlabelled prose',()=>{
     const v=parse([{id:'p-1',text:'2026년 장학 신청 안내 2026. 11. 10.'}]);
     assert.equal(v.fields.title.state,'UNKNOWN');

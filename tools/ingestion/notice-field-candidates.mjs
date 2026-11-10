@@ -41,7 +41,8 @@ export function extractNoticeFieldCandidates({sourceId,revisionId,paragraphs}){
       ||paragraph.text.length<1||paragraph.text.length>20000)
       throw new Error('NOTICE_CANDIDATES_REQUIRE_REVIEW');
     const title=TITLE.exec(paragraph.text.trim());
-    if(title)titles.push({value:title[1].trim(),paragraphId:paragraph.id});
+    const titleValue=title?.[1]?.normalize('NFC').trim();
+    if(titleValue)titles.push({value:titleValue,paragraphId:paragraph.id});
     for(const m of paragraph.text.matchAll(PUBLISHED)){
       const publication=asDate(m[1],m[2],m[3]);
       if(publication)publications.push({value:publication.date,paragraphId:paragraph.id});
