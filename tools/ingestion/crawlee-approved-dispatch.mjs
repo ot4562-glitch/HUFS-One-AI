@@ -30,7 +30,7 @@ export async function dispatchApprovedCrawleeQueue({
   }));
   const expected=new Map(seeds.map(seed=>[seed.uniqueKey,seed.url]));
   const seen=new Set();
-  let idle=false,processed=0,failures=0;
+  let idle=false,halted=false,processed=0,failures=0;
 
   const crawler=new BasicCrawler({
     requestQueue,
@@ -38,23 +38,28 @@ export async function dispatchApprovedCrawleeQueue({
     maxRequestRetries:0,maxSessionRotations:0,useSessionPool:false,
     requestHandlerTimeoutSecs:120,
     async requestHandler({request}){
-      const key=request?.uniqueKey;
-      if(typeof key!=='string'||!expected.has(key)
-        ||request.url!==expected.get(key)||seen.has(key))deny();
-      seen.add(key);
-      if(idle)return; // No further DB calls after the first unavailable lease.
-      const result=await queue.runOne();
-      if(!result||typeof result.state!=='string')deny();
-      if(result.state==='IDLE'){
-        idle=true;return;
+      if(halted)return; // A previous failed tick must never dispatch another SQL job.
+      try{
+        const key=request?.uniqueKey;
+        if(typeof key!=='string'||!expected.has(key)
+          ||request.url!==expected.get(key)||seen.has(key))deny();
+        seen.add(key);
+        if(idle)return; // No further DB calls after an unavailable lease.
+        const result=await queue.runOne();
+        if(!result||typeof result.state!=='string')deny();
+        if(result.state==='IDLE'){
+          idle=true;return;
+        }
+        // The durable queue settled denied/uncertain jobs. Never re-run them.
+        if(!COMPLETED.has(result.state)
+          ||typeof result.jobId!=='string'
+          ||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result.jobId))
+          deny();
+        processed++;
+      }catch{
+        halted=true;
+        deny(); // Keep SQL details, source IDs and URLs out of Crawlee logs.
       }
-      // The durable queue itself settles failed/denied jobs to NEEDS_REVIEW or
-      // BLOCKED_RIGHTS. Do not convert them into a successful timer run.
-      if(!COMPLETED.has(result.state)
-        ||typeof result.jobId!=='string'
-        ||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(result.jobId))
-        deny();
-      processed++;
     },
     async failedRequestHandler(){failures++;},
     async onSkippedRequest(){failures++;},
