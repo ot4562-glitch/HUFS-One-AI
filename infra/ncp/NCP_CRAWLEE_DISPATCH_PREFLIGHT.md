@@ -16,7 +16,7 @@ runner to HUFS One AI's **existing**
 3. NCP operator factory imports `BasicCrawler` from `crawlee`, creates a
    **private requestQueue** with NCP-only storage (service-owned `/var/lib/hufs-one-crawler/crawlee` directory), and supplies `authority`
    and `executor` ports already bound to reviewed PostgreSQL data and pinned
-   egress. Import `dispatchApprovedCrawleeSources` from this repo.
+   egress. Import `createApprovedCrawleeRefreshWorker` from this repo (it exposes `runOnce/close` for the existing systemd CLI); provide `closeQueue` for private queue cleanup.
 4. Invoke one bounded batch of at most 16 **operator-supplied sources**. The
    adapter revalidates authority before enqueue, immediately before execution,
    and after the existing executor commits DRAFT/unchanged. **No direct network

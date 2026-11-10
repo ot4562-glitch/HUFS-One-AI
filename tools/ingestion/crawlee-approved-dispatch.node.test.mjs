@@ -1,6 +1,6 @@
 import {describe,it} from 'node:test';
 import assert from 'node:assert/strict';
-import {dispatchApprovedCrawleeSources} from './crawlee-approved-dispatch.mjs';
+import {dispatchApprovedCrawleeSources,createApprovedCrawleeRefreshWorker} from './crawlee-approved-dispatch.mjs';
 
 const source={actorRef:'SYN-OPERATOR',sourceId:'SYN-SOURCE',
   permissionRef:'SYN-PERMISSION',canonicalUrl:'https://example.org/notices/synthetic'};
@@ -75,5 +75,30 @@ describe('#445 approved durable executor with Crawlee BasicCrawler',()=>{
     await assert.rejects(f.run(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
     assert.equal(f.requests.length,1);
     assert.equal(f.calls.some(x=>x[0]==='executor'),false);
+  });
+});
+
+describe('#445 worker interface for the systemd refresh CLI',()=>{
+  it('exposes exactly a one-shot worker with explicit private queue cleanup',async()=>{
+    const f=fixture(),closed=[];
+    const worker=createApprovedCrawleeRefreshWorker({
+      sources:[source],BasicCrawler:class {
+        constructor(opts){this.opts=opts;}
+        async run(seeds){
+          for(const request of seeds)await this.opts.requestHandler({request});
+        }
+      },
+      requestQueue:{addRequest:async()=>{}},
+      authority:{mayProcess:async()=>true},
+      executor:{execute:async()=>({kind:'NEW_DRAFT',revisionId:'SYN-REV'})},
+      closeQueue:async()=>{closed.push('closed');},
+    });
+    assert.deepEqual(await worker.runOnce(),
+      {state:'DRAFT_REFRESH_COMPLETE',handled:1,activeRevisions:0});
+    await assert.rejects(worker.runOnce(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
+    await worker.close();await worker.close();
+    assert.deepEqual(closed,['closed']);
+    await assert.rejects(worker.runOnce(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
+    assert.equal(f.requests.length,0);
   });
 });

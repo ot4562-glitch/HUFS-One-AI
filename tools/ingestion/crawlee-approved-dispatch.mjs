@@ -78,3 +78,24 @@ export async function dispatchApprovedCrawleeSources({
   if(failures.length||completed.size!==entries.length)deny();
   return {state:'DRAFT_REFRESH_COMPLETE',handled:completed.size,activeRevisions:0};
 }
+
+/**
+ * Adapts the approved per-run dispatcher to the existing #445 refresh CLI
+ * worker contract. The private factory still owns SQL pools and the Crawlee
+ * RequestQueue. Calling close twice is safe; no global registry is created.
+ */
+export function createApprovedCrawleeRefreshWorker(config){
+  let state='NEW';
+  return {
+    async runOnce(){
+      if(state!=='NEW')deny();
+      state='USED';
+      return dispatchApprovedCrawleeSources(config);
+    },
+    async close(){
+      if(state==='CLOSED')return;
+      state='CLOSED';
+      if(config&&typeof config.closeQueue==='function')await config.closeQueue();
+    },
+  };
+}
