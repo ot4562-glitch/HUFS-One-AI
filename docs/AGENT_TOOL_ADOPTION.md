@@ -43,7 +43,7 @@
 
 ### 5인 공통 기준: 무엇이 진짜 필수인가
 
-1. 모든 에이전트: \`AGENTS.md\` / Claude의 \`@AGENTS.md\` 지침 공유, 개인 계정·최소권한 GitHub 접근, 현재 HEAD/할당 이슈 확인, 합성 fixture의 테스트 결과, NCP 비공개 원본 외부 반출 금지. **이것이 필수 공통분모**.
+1. 모든 에이전트: `AGENTS.md` / Claude의 `@AGENTS.md` 지침 공유, 개인 계정·최소권한 GitHub 접근, 현재 HEAD/할당 이슈 확인, 합성 fixture의 테스트 결과, NCP 비공개 원본 외부 반출 금지. **이것이 필수 공통분모**.
 2. 개발·리뷰 담당(심민성/박준영/이의상/이서연): [Superpowers — obra, MIT](https://github.com/obra/superpowers)를 **우선 실험**. 브레인스토밍→명세→계획→TDD·디버깅→코드 리뷰 순서. 복잡한 기능에만 적용하고, 단순 버그까지 매번 긴 계획·수십 개 중복 검사를 강제하는 경우 제외. **Anthropic 제작이 아닌 제3자 플러그인이 공식 Claude 마켓에 등재**된 것.
 3. 데이터 운영·검수 담당 김채윤: Superpowers 전체 코딩 워크플로 **기본 강제 대상 아님**. GitHub 읽기와 검수 체크리스트/원본 권리 경계가 우선. 코드 작성이 실제로 할당될 때 별도 시험.
 4. 정확한 팀원 계정의 Claude/Codex 설치 상태, 플러그인 설치 권한 및 요금은 아직 확인하지 않았습니다. 라이브 환경에 대한 사전 권한 승인은 별개입니다.
@@ -54,35 +54,35 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 
 | 우선 | 명령 또는 공식 출처 | 목적/주의 |
 |---|---|---|
-| 우선 시험 | \`/plugin install superpowers@claude-plugins-official\` | 개발자의 명세·계획·TDD·디버깅 기본 흐름, 기존 CI/AGENTS와 중복 주의 |
-| 공통 | \`/plugin install github@claude-plugins-official\` | 공식 GitHub MCP, 기본 읽기 권한·개인 write 개별 승인 |
-| 필요 시 | \`/plugin install context7@claude-plugins-official\` | Upstash 호스팅 *제3자* 버전별 문서 조회; 외부 문서 MCP이므로 기밀 코드/원문 전송 금지 |
-| 코드 담당 | \`code-review\` **또는** \`code-simplifier\` | 둘 다 상시 중복 강제 X; 수동 리뷰·실행된 CI 대체 아님 |
-| 이서연 필수 시험 | \`/plugin install frontend-design@claude-plugins-official\` | Anthropic 제작 UI 시각품질 지침 |
-| 이서연 필수 시험 | \`/plugin install figma@claude-plugins-official\` | **Figma 제공** 공식 MCP·스킬; 이서연 본인 Figma 인증/좌석·요금 조건 확인 |
-| 이서연 선택 | \`/plugin install playwright@claude-plugins-official\` | Microsoft 제작 Playwright MCP, 합성 브라우저만 |
-| 문제 발생 시 | \`Chrome DevTools\`, \`TypeScript LSP\`, \`Serena (Oraios)\` | 각각 성능·TS 심볼·LSP 탐색용. 기존 개발 도구가 충분하면 보류 |
+| 우선 시험 | `/plugin install superpowers@claude-plugins-official` | 개발자의 명세·계획·TDD·디버깅 기본 흐름, 기존 CI/AGENTS와 중복 주의 |
+| 공통 | `/plugin install github@claude-plugins-official` | 공식 GitHub MCP, 기본 읽기 권한·개인 write 개별 승인 |
+| 필요 시 | `/plugin install context7@claude-plugins-official` | Upstash 호스팅 *제3자* 버전별 문서 조회; 외부 문서 MCP이므로 기밀 코드/원문 전송 금지 |
+| 코드 담당 | `code-review` **또는** `code-simplifier` | 둘 다 상시 중복 강제 X; 수동 리뷰·실행된 CI 대체 아님 |
+| 이서연 필수 시험 | `/plugin install frontend-design@claude-plugins-official` | Anthropic 제작 UI 시각품질 지침 |
+| 이서연 필수 시험 | `/plugin install figma@claude-plugins-official` | **Figma 제공** 공식 MCP·스킬; 이서연 본인 Figma 인증/좌석·요금 조건 확인 |
+| 이서연 선택 | `/plugin install playwright@claude-plugins-official` | Microsoft 제작 Playwright MCP, 합성 브라우저만 |
+| 문제 발생 시 | `Chrome DevTools`, `TypeScript LSP`, `Serena (Oraios)` | 각각 성능·TS 심볼·LSP 탐색용. 기존 개발 도구가 충분하면 보류 |
 
-**Superpowers 텔레메트리:** 저장소가 optional visual companion에 대한 익명 버전 이미지 호출 가능성을 밝힘. 내부 작업용 에이전트에는 \`SUPERPOWERS_DISABLE_TELEMETRY=1\` 또는 관련 호스트의 비필수 트래픽 차단을 검토합니다. [공식 Superpowers 설치/README](https://github.com/obra/superpowers).
+**Superpowers 텔레메트리:** 저장소가 optional visual companion에 대한 익명 버전 이미지 호출 가능성을 밝힘. 내부 작업용 에이전트에는 `SUPERPOWERS_DISABLE_TELEMETRY=1` 또는 관련 호스트의 비필수 트래픽 차단을 검토합니다. [공식 Superpowers 설치/README](https://github.com/obra/superpowers).
 
 ### GPT / Codex — Claude 명령과 별개
 
-- **Superpowers:** Codex 앱의 Plugins → Superpowers 또는 Codex CLI \`/plugins\` → \`superpowers\` 검색 → 설치. Claude의 \`/plugin install\`을 Codex 명령이라고 가정하지 않는다. [obra/superpowers 공식 안내](https://github.com/obra/superpowers).
-- **OpenAI 공식 Plugins:** [\`openai/plugins\`](https://github.com/openai/plugins)의 \`figma\`, \`build-web-apps\` 후보와 GitHub 연결. \`figma\`는 **Figma Developer Terms**, 개인별 Figma 인증이 필요. \`build-web-apps\`의 Stripe/결제/Supabase는 HUFS One AI에 불필요하므로 해당 부분 설치·연결하지 않는다.
-- **Vercel 공식 에이전트 스킬:** [\`vercel-labs/agent-skills\`](https://github.com/vercel-labs/agent-skills)에서 \`web-design-guidelines\`, \`react-best-practices\`/React composition 규칙은 이서연이 기존 React 19·Vite에 필요한 부분만. 자동 코드 변경 대신 diff 검수.
-- **Google Labs Stitch:** [\`google-labs-code/stitch-skills\`](https://github.com/google-labs-code/stitch-skills) 는 Claude/Codex 양쪽 지원, \`code-to-design\`·\`generate-design\`·\`react-components\` 후보. **Google 공식 보증 제품이 아닌 Labs 커뮤니티 저장소**라고 명시됨. Stitch 서비스와 별도 계정·MCP 연결 필요, UI/HTML 업로드 경로 주의.
-- GPT/Codex의 \`AGENTS.md\`가 공통 정책이며 각 플러그인에 동일 규칙·전권한을 복제하지 않는다.
+- **Superpowers:** Codex 앱의 Plugins → Superpowers 또는 Codex CLI `/plugins` → `superpowers` 검색 → 설치. Claude의 `/plugin install`을 Codex 명령이라고 가정하지 않는다. [obra/superpowers 공식 안내](https://github.com/obra/superpowers).
+- **OpenAI 공식 Plugins:** [`openai/plugins`](https://github.com/openai/plugins)의 `figma`, `build-web-apps` 후보와 GitHub 연결. `figma`는 **Figma Developer Terms**, 개인별 Figma 인증이 필요. `build-web-apps`의 Stripe/결제/Supabase는 HUFS One AI에 불필요하므로 해당 부분 설치·연결하지 않는다.
+- **Vercel 공식 에이전트 스킬:** [`vercel-labs/agent-skills`](https://github.com/vercel-labs/agent-skills)에서 `web-design-guidelines`, `react-best-practices`/React composition 규칙은 이서연이 기존 React 19·Vite에 필요한 부분만. 자동 코드 변경 대신 diff 검수.
+- **Google Labs Stitch:** [`google-labs-code/stitch-skills`](https://github.com/google-labs-code/stitch-skills) 는 Claude/Codex 양쪽 지원, `code-to-design`·`generate-design`·`react-components` 후보. **Google 공식 보증 제품이 아닌 Labs 커뮤니티 저장소**라고 명시됨. Stitch 서비스와 별도 계정·MCP 연결 필요, UI/HTML 업로드 경로 주의.
+- GPT/Codex의 `AGENTS.md`가 공통 정책이며 각 플러그인에 동일 규칙·전권한을 복제하지 않는다.
 
 ### 이서연: 디자인 선택지는 '생성 1개 + 검수 1개 + 실제 UI 컴포넌트 0~1개'
 
 | 종류 | 후보 | 결정 기준 |
 |---|---|---|
-| 디자인 방향 | Anthropic \`frontend-design\` | 새 랜딩/대시보드 시각 방향 1순위 |
-| 생성 결과 다듬기 | [Impeccable — pbakaus, Apache-2.0](https://github.com/pbakaus/impeccable) | \`npx impeccable install\` (Claude/Codex 지원); 사용자 승인 후 프로젝트 범위·hook 실행 확인 |
+| 디자인 방향 | Anthropic `frontend-design` | 새 랜딩/대시보드 시각 방향 1순위 |
+| 생성 결과 다듬기 | [Impeccable — pbakaus, Apache-2.0](https://github.com/pbakaus/impeccable) | `npx impeccable install` (Claude/Codex 지원); 사용자 승인 후 프로젝트 범위·hook 실행 확인 |
 | 디자인 참고 DB | [UI UX Pro Max — nextlevelbuilder, MIT](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 색·폰트·스타일·접근성/차트; CLI/Python 실행 요구 확인 |
 | 실제 디자인 정본 | [Figma MCP 공식 문서](https://developers.figma.com/docs/figma-mcp-server/) | 기존 디자인 컴포넌트/변수/Code Connect 읽기·편집. 서비스는 **오픈소스 아님** |
 | 디자인→코드/코드→디자인 | OpenAI Codex Figma Plugin, Google Labs Stitch skills | 하나만 작은 합성 화면에 시험; 부가적인 외부 업로드·요금/좌석 확인 |
-| 디자인 품질 감사 | Vercel \`web-design-guidelines\` | 시맨틱 HTML·키보드·초점·\`prefers-reduced-motion\` 감사 |
+| 디자인 품질 감사 | Vercel `web-design-guidelines` | 시맨틱 HTML·키보드·초점·`prefers-reduced-motion` 감사 |
 | 브라우저 검증 | Microsoft [Playwright MCP](https://github.com/microsoft/playwright-mcp), Google [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp) | 기능 확인 vs 렌더/네트워크·성능 추적, 실제 학생 세션 연결 금지 |
 | 컴포넌트 선택 | Meta [Astryx](https://github.com/meta/astryx) (**beta, React 19+**), Adobe [React Aria](https://github.com/adobe/react-spectrum), Microsoft [Fluent UI](https://github.com/microsoft/fluentui) | 모두 깔지 않고 현행 UI와 후보 하나만 카드/폼/검색 화면 비교 |
 | 아이콘/스타일 | Google [Material Symbols](https://github.com/google/material-design-icons), Meta [StyleX](https://github.com/facebook/stylex) | 기존 아이콘/CSS를 교체할 확실한 사유가 없으면 보류. Google npm 패키지 배포 주체는 별도 확인 |
@@ -90,7 +90,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 
 ### 역할별 추가 핵심 후보 (기존 이슈 #450~#454 참조)
 
-- 심민성: Superpowers + GitHub MCP, \`code-simplifier\`, Google Chrome DevTools, [Google OSV-Scanner](https://github.com/google/osv-scanner). **Microsoft AutoGen은 2026년 보관/관리 중단** 상태이므로 신규 도입 제외; 필요하다면 [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)만 별도 조사.
+- 심민성: Superpowers + GitHub MCP, `code-simplifier`, Google Chrome DevTools, [Google OSV-Scanner](https://github.com/google/osv-scanner). **Microsoft AutoGen은 2026년 보관/관리 중단** 상태이므로 신규 도입 제외; 필요하다면 [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)만 별도 조사.
 - 박준영: OpenAI 계열 [Promptfoo](https://github.com/promptfoo/promptfoo) (2026-03 OpenAI 인수 발표, MIT/다중 모델 평가) + [OpenAI Evals](https://github.com/openai/evals) 지표/포맷, Google LangExtract. *HCX 전용 adapter가 없는 상황에서 외부 모델 API 호출 시험 금지*.
 - 이의상: Google [LangExtract](https://github.com/google/langextract), Microsoft [MarkItDown](https://github.com/microsoft/markitdown), Meta [FAISS](https://github.com/facebookresearch/faiss), Microsoft [GraphRAG](https://github.com/microsoft/graphrag). 기존 PG/HCX와 비교해 비용/원문 위치 정확도 우위가 없으면 보류.
 - 김채윤: Apify [Crawlee](https://github.com/apify/crawlee) NCP 내부 운영 UI, MarkItDown/구조화 출력에 대한 **사람 검수**, [Presidio](https://github.com/microsoft/presidio) **현재 커뮤니티 주도** 개인정보 탐지 결과 검토. 모든 자동 검수는 민감정보 미탐 가능성을 전제로 운영. 수집기 직접 개발 책임 부여 X.
@@ -98,7 +98,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 ### 도입 실험/완료 판단
 
 - [ ] 심민성/박준영/이의상/이서연: Superpowers 유무로 **서로 다른 실제 합성 코드 이슈 1건씩** 완결. 작업 시간·계획 길이·실제 결함 검출·불필요 테스트 수·권한/호스트 hook·비용 기록. 단순 수정은 기존 작업방식 유지 선택 가능.
-- [ ] 이서연: \`frontend-design\`+Figma, Impeccable, UI UX Pro Max 중 **최소 2개 대안**으로 동일 1개 합성 모바일 검색/장학 화면 비교. 복잡도·접근성·LCP/INP/CLS·디자인 정본 충실도·수정 시간·라이선스·서비스 가격 기록.
+- [ ] 이서연: `frontend-design`+Figma, Impeccable, UI UX Pro Max 중 **최소 2개 대안**으로 동일 1개 합성 모바일 검색/장학 화면 비교. 복잡도·접근성·LCP/INP/CLS·디자인 정본 충실도·수정 시간·라이선스·서비스 가격 기록.
 - [ ] Claude/GPT 각각 tool listing 및 최소 권한 확인. 실제 연결 여부를 알 수 없으면 **NOT_INSTALLED/NOT_VERIFIED**.
-- [ ] 5명 모두 공통 \`AGENTS.md\`, 업무 책임자, RAG/NCP 자료 외부 송신 금지·공개 CI 합성 데이터 사용 검증.
+- [ ] 5명 모두 공통 `AGENTS.md`, 업무 책임자, RAG/NCP 자료 외부 송신 금지·공개 CI 합성 데이터 사용 검증.
 - [ ] 각자 1~2개만 채택/보류·제외 결론. 실제 설치/설정 파일·새 의존성은 개별 PR/사용자 승인을 거친다.
