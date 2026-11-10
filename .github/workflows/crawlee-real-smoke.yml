@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
-      - name: Run real BasicCrawler against a synthetic in-memory SQL stub only
+      - name: Reproducibly install locked worker and exercise real Crawlee/Cheerio APIs
         shell: bash
         env:
           APIFY_TOKEN: ''
@@ -38,16 +38,6 @@ jobs:
           set -euo pipefail
           test ! -d csv
           test ! -d local_only
-          mkdir -p "$RUNNER_TEMP/crawlee-api-smoke"
-          cp tools/ingestion/crawlee-approved-dispatch.mjs tools/ingestion/crawlee-real-smoke.mjs tools/ingestion/approved-link-candidates.mjs "$RUNNER_TEMP/crawlee-api-smoke/"
-          cd "$RUNNER_TEMP/crawlee-api-smoke"
-          npm install --no-save --ignore-scripts --package-lock=false --no-audit --no-fund crawlee@3.18.2 cheerio@1.2.0
-          node crawlee-real-smoke.mjs
-      - name: Build the isolated worker's exact dependency lock manifest
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd tools/ingestion/worker
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          node -e "const fs=require('fs'); const b=fs.readFileSync('package-lock.json').toString('base64').match(/.{1,1800}/g);b.forEach((line,i)=>console.log('LOCK_PART_'+i+' '+line));console.log('LOCK_PART_COUNT '+b.length)"
-
+          npm ci --prefix tools/ingestion/worker --ignore-scripts --no-audit --no-fund
+          node tools/ingestion/worker/synthetic-smoke.mjs
+          node --test tools/ingestion/crawlee-approved-dispatch.node.test.mjs tools/ingestion/approved-link-candidates.node.test.mjs tools/ingestion/notice-field-candidates.node.test.mjs

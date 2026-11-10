@@ -21,6 +21,6 @@ not new jobs or approved publications. This code deliberately cannot
 create a production rights registry, migration approval, backup or live NCP
 credential.
 
-Run tests against this exact npm package in CI. NCP server installation,
+Run `npm ci --ignore-scripts --no-audit --no-fund` from this folder and execute `node synthetic-smoke.mjs`. CI always uses this committed dependency lockfile, not temporary `npm install`. NCP server installation,
 private operator factory, credentials, rights and live source approval remain
 NOT_CONNECTED/NOT_RUN.

@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {BasicCrawler,RequestQueue} from 'crawlee';
 import {load} from 'cheerio';
-import {extractReviewedLinkCandidates} from './approved-link-candidates.mjs';
-import {dispatchApprovedCrawleeQueue} from './crawlee-approved-dispatch.mjs';
+import {extractReviewedLinkCandidates} from '../approved-link-candidates.mjs';
+import {dispatchApprovedCrawleeQueue} from '../crawlee-approved-dispatch.mjs';
+import {collectCandidatesFromApprovedBytes,createNativeApprovedQueueWorker} from './native-worker.mjs';
 
 const queue=await RequestQueue.open('hufs-synthetic-'+randomUUID());
 let calls=0;
@@ -54,6 +55,22 @@ try{
   assert.deepEqual(extractReviewedLinkCandidates({$:parsedSitemap,...candidateOptions,kind:'SITEMAP'}).candidates,[
     {url:'https://example.org/notices/3',type:'DOCUMENT'},
   ]);
+  const encoded=new TextEncoder().encode('<div><a href="/notices/9">New</a><a href="https://outside.example/">No</a></div>');
+  const fromWorker=collectCandidatesFromApprovedBytes({
+    content:encoded,kind:'HTML',...candidateOptions,
+  });
+  assert.equal(fromWorker.state,'REVIEW_REQUIRED');
+  assert.deepEqual(fromWorker.candidates,[{
+    url:'https://example.org/notices/9',type:'DOCUMENT',label:'New',
+  }]);
+  for(const content of [
+    new Uint8Array(),new TextEncoder().encode('<!DOCTYPE note [<!ENTITY x SYSTEM "file:///etc/passwd">]><note/>'),
+  ]){
+    assert.throws(()=>collectCandidatesFromApprovedBytes({content,kind:'HTML',...candidateOptions}),
+      /CONFIGURATION_REQUIRED/);
+  }
+  await assert.rejects(createNativeApprovedQueueWorker({queue:{runOne:async()=>({state:'IDLE'})}}),
+    /CONFIGURATION_REQUIRED/);
   process.stdout.write('CRAWLEE_REAL_API_SYNTHETIC_PASS\n');
 }finally{
   await queue.drop();
