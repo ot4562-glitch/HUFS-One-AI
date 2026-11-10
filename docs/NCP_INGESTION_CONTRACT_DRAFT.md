@@ -21,3 +21,7 @@
 - `NormalizedEvidenceRecordDraftSchema`는 `KNOWN / UNKNOWN / NOT_APPLICABLE`을 구분합니다. VERIFIED/KNOWN 필드는 같은 source revision의 실제 paragraphId에 연결되어야 하고, 누락/비적용 필드는 이유만 가지며 임의 값을 추측해 채우지 않습니다.
 - `SourceChangeDraftSchema`는 새 판본이 **어느 과거 판본을 CORRECTED/REPLACED/CANCELLED 했는지**와 새 판본 근거를 기록합니다. URL 변경만으로 자동 취소하지 않으며 운영에서 사람이 권한·근거를 검토해야 합니다.
 - 두 계약은 합성 데이터 타입/반례 시험을 위한 **초안**입니다. 문단 ID 실제 존재, 정정 시간 순서, PostgreSQL 활성화/검색 캐시 철회는 NCP DB 트랜잭션이 따로 검증해야 하므로 미완료로 남깁니다.
+
+## 웹 후보·robots·terms 검토 계약 (합성 전용)
+
+`CrawlScopeDraftSchema`는 출처별 허용 후보 경로와 robots/약관 검토 상태를 `UNKNOWN / REVIEWED_PERMITTED / RESTRICTED`로 구분해 기록합니다. `DiscoveryCandidateDraftSchema`는 같은 출처 origin에서 발견한 링크를 `REVIEW_REQUIRED`로 인계하고 **발견 자체가 자동 수집·권리 허가가 아님**을 보장합니다. 실제 robots/약관 판독·독립 확인·수집 요청 상한·운영 원장의 적용과 승인 여부는 NCP에서만 최종 결정합니다.

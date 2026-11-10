@@ -30,6 +30,44 @@ export const SourceRegistrationDraftSchema=z.strictObject({
 });
 export type SourceRegistrationDraft=z.infer<typeof SourceRegistrationDraftSchema>;
 
+/** Operator-entered candidate discovery scope. Shape only, not a grant to
+ * crawl or bypass the site's current robots/terms or reviewed source rights.
+ */
+const PathPrefix=z.string().min(1).max(200).regex(/^\\/[A-Za-z0-9/_~.%-]*$/)
+  .refine(value=>!value.includes('..')&&!/%(?:2e|2f|5c)/i.test(value)
+    &&!value.includes('//'));
+export const CrawlScopeDraftSchema=z.strictObject({
+  sourceId:Id,
+  approvedOrigin:OfficialHttpsUrlSchema,
+  pathPrefixes:z.array(PathPrefix).min(1).max(12),
+  robotsStatus:z.enum(['UNKNOWN','REVIEWED_PERMITTED','RESTRICTED']),
+  termsStatus:z.enum(['UNKNOWN','REVIEWED_PERMITTED','RESTRICTED']),
+  policyRef:Id,observedAt:Iso,
+}).superRefine((value,ctx)=>{
+  const url=new URL(value.approvedOrigin);
+  if(url.pathname!=='/'||url.search||url.hash||url.port)
+    ctx.addIssue({code:'custom',path:['approvedOrigin'],message:'scope origin must be a public HTTPS root'});
+  if(new Set(value.pathPrefixes).size!==value.pathPrefixes.length)
+    ctx.addIssue({code:'custom',path:['pathPrefixes'],message:'duplicated approved paths'});
+});
+export type CrawlScopeDraft=z.infer<typeof CrawlScopeDraftSchema>;
+
+/** A link from already-approved fetched bytes enters independent human review.
+ * A link is NOT a newly registered approved source just because it was found.
+ */
+export const DiscoveryCandidateDraftSchema=z.strictObject({
+  sourceId:Id,discoveredFromRevisionId:Id,
+  sourceCanonicalUrl:OfficialHttpsUrlSchema,
+  proposedUrl:OfficialHttpsUrlSchema,
+  kind:z.enum(['DOCUMENT','ATTACHMENT']),
+  seenAt:Iso,reviewState:z.literal('REVIEW_REQUIRED'),
+}).superRefine((item,ctx)=>{
+  const base=new URL(item.sourceCanonicalUrl),proposed=new URL(item.proposedUrl);
+  if(base.origin!==proposed.origin)
+    ctx.addIssue({code:'custom',path:['proposedUrl'],message:'cross-origin candidate needs new independent source policy'});
+});
+export type DiscoveryCandidateDraft=z.infer<typeof DiscoveryCandidateDraftSchema>;
+
 export const SourceRevisionDraftSchema=z.strictObject({
   schemaVersion:z.literal(1),
   sourceId:Id,revisionId:Id,permissionRef:Id,

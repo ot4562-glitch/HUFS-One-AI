@@ -91,6 +91,33 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
       ...change,reasonEvidence:[],
     }).success).toBe(false);
   });
+  it('validates scoped public discovery policies without granting crawl rights',()=>{
+    const scope={sourceId:'SYN-SOURCE',approvedOrigin:'https://example.org/',
+      pathPrefixes:['/notices','/files'],robotsStatus:'UNKNOWN' as const,
+      termsStatus:'UNKNOWN' as const,policyRef:'SYN-POLICY',observedAt:'2026-11-11T00:00:00Z'};
+    expect(D.CrawlScopeDraftSchema.parse(scope).robotsStatus).toBe('UNKNOWN');
+    for(const changed of [
+      {...scope,approvedOrigin:'https://example.org/notices'},
+      {...scope,approvedOrigin:'https://127.0.0.1/'},
+      {...scope,pathPrefixes:['/notices/../secret']},
+      {...scope,pathPrefixes:['/notices/%2e%2e']},
+      {...scope,pathPrefixes:['/notices','/notices']},
+    ]) expect(D.CrawlScopeDraftSchema.safeParse(changed).success).toBe(false);
+  });
+  it('keeps a discovered document proposal in REVIEW_REQUIRED and bound to its origin',()=>{
+    const candidate={sourceId:'SYN-SOURCE',discoveredFromRevisionId:'SYN-REV-1',
+      sourceCanonicalUrl:'https://example.org/notices/index',
+      proposedUrl:'https://example.org/notices/2',
+      kind:'DOCUMENT' as const,seenAt:'2026-11-11T00:00:00Z',
+      reviewState:'REVIEW_REQUIRED' as const};
+    expect(D.DiscoveryCandidateDraftSchema.parse(candidate).kind).toBe('DOCUMENT');
+    for(const changed of [
+      {...candidate,reviewState:'APPROVED'},
+      {...candidate,proposedUrl:'https://evil.example.net/notices/2'},
+      {...candidate,proposedUrl:'http://example.org/notices/2'},
+      {...candidate,secret:'private-data'},
+    ]) expect(D.DiscoveryCandidateDraftSchema.safeParse(changed).success).toBe(false);
+  });
   it('detects incompatible schema versions before deployment',()=>{
     const v={gitSha:'f'.repeat(40),buildSha:shaA,migrationVersion:'migration-1',
       adapterVersion:'adapter-1',datasetRevision:'data-1',schemaVersion:1};
