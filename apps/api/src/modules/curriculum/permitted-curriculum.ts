@@ -23,19 +23,19 @@ const PermissionBase=z.strictObject({
   collection:z.literal('ALLOWED'),retention:z.literal('ALLOWED'),terms:z.literal('ALLOWED'),revoked:z.literal(false),
 });
 /** Robots metadata is not an access grant. Under a DISALLOWED rule the operator
- * must record a specific site-issued permission for the proposed automated
- * collection. This avoids treating Disallow as an eternal data-exclusion while
- * preventing a blanket REP override. A missing robots file is not a grant:
- * collection/retention/terms permission still comes from the trusted authority.
+ * must record a source-specific review of publicly accessible content,
+ * applicable terms and collection impacts. This does not certify REP
+ * compliance or bypass authentication/HTTP denial. A missing robots file
+ * likewise does not grant content-reuse rights.
  */
 const HttpPermission=PermissionBase.extend({
   robots:z.enum(['ALLOWED','NOT_FOUND','DISALLOWED']),
   acquisitionMethod:z.literal('HTTP').optional(),
-  robotsExceptionRef:Ref.optional(),
+  robotsReviewRef:Ref.optional(),
 }).superRefine((v,ctx)=>{
-  if(v.robots==='DISALLOWED'&&!v.robotsExceptionRef){
-    ctx.addIssue({code:'custom',path:['robotsExceptionRef'],
-      message:'Site-specific permission required for robots-disallowed HTTP collection'});
+  if(v.robots==='DISALLOWED'&&!v.robotsReviewRef){
+    ctx.addIssue({code:'custom',path:['robotsReviewRef'],
+      message:'Operator review required for robots-disallowed HTTP collection'});
   }
 });
 const SavedPermission=PermissionBase.extend({acquisitionMethod:z.literal('OPERATOR_SAVED'),
@@ -46,7 +46,7 @@ export const CurriculumPermissionSchema=z.union([HttpPermission,SavedPermission]
 export type CurriculumPermission=z.infer<typeof CurriculumPermissionSchema>;
 export interface CurriculumAuthority{
   /** Trusted operator evidence, not page assertions. Check exact URL, allowed
-   * reuse/retention, current robots/terms and any site-specific robots exception,
+   * reuse/retention, current robots/terms and operator review of robots restrictions,
    * review expiry and revocations. */
   resolve(sourceUrl:string,now:string):Promise<unknown|null>;
 }
