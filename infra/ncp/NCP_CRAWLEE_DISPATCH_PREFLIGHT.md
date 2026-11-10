@@ -1,40 +1,41 @@
-# #445 — Crawlee BasicCrawler + approved durable executor (pre-NCP)
+# #445 — Crawlee + PostgreSQL durable job queue (pre-NCP)
 
-This adapter does **not** replace Crawlee, implement HTTP fetching, start a browser,
-or bypass a source's robots.txt/terms. It connects the official Crawlee
-[BasicCrawler](https://crawlee.dev/js/api/basic-crawler/class/BasicCrawler) task
-runner to HUFS One AI's **existing**
-`PostgresSourceIngestionQueue` / `createApprovedDurableSourceExecutor`.
+**Corrected architecture:** Crawlee's `BasicCrawler` only schedules bounded, synthetic
+**virtual ticks**. It does not call `createApprovedDurableSourceExecutor` directly.
+For each tick it invokes the existing `PostgresSourceIngestionQueue.runOne()`,
+which owns global PostgreSQL advisory locks, 30-second leases, permission
+rechecks, DRAFT/unchanged outcomes, quarantine on ambiguous failures and durable
+idempotence. The old source/URL-dispatch path was removed because it bypassed
+`source_ingest_jobs` and could repeat external work.
 
-## NCP-only operator assembly (still required)
+NCP's private operator factory must:
+1. Install a tested, locked stable version of [Crawlee](https://github.com/apify/crawlee)
+   (candidate 3.18.2; v4 beta/RC not yet adopted), without copying actual source
+   registry or credentials into the public repo or CI.
+2. Build the existing `createOperatorApprovedSource` from NCP-private
+   rights-scoped source policies, independent read/write SQL pools, reviewed
+   `ApprovedPinnedEgress` and `SourceContentExtractor`.
+3. Create `PostgresSourceIngestionQueue` using the restricted queue pool,
+   returned operator `authority` and `executor` from that composition.
+4. Open a **fresh empty NCP-private Crawlee RequestQueue for each run**.
+   Set `CRAWLEE_STORAGE_DIR=/var/lib/hufs-one-crawler/crawlee`.
+5. Return `createApprovedCrawleeRefreshWorker({BasicCrawler,requestQueue,
+   queue,maxJobs,closeQueue})` from `createRefreshWorker` for
+   `tools/ingestion/refresh-cli.mjs`.
+6. Use the existing operator-only HTTP/queue controls for job enqueue,
+   **not** URL discovery by Crawlee. Jobs are matched and rights checked by
+   the durable queue. `IDLE` can mean another worker owns its global lock, not
+   that the backlog is empty; timer runs remain bounded.
 
-1. NCP-private registry reviews *exact* canonical HTTPS URLs and current
-   purpose-scoped rights; only trusted operator jobs are accepted.
-2. Install a reproducibly pinned and audited **Crawlee 3.18.x stable** package
-   in the future NCP worker build (do **not** use the unstable v4 beta).
-   The repository intentionally does not add an unverified npm lockfile here.
-3. NCP operator factory imports `BasicCrawler` from `crawlee`, creates a
-   **private requestQueue** with NCP-only storage (service-owned `/var/lib/hufs-one-crawler/crawlee` directory), and supplies `authority`
-   and `executor` ports already bound to reviewed PostgreSQL data and pinned
-   egress. Import `createApprovedCrawleeRefreshWorker` from this repo (it exposes `runOnce/close` for the existing systemd CLI); provide `closeQueue` for private queue cleanup.
-4. Invoke one bounded batch of at most 16 **operator-supplied sources**. The
-   adapter revalidates authority before enqueue, immediately before execution,
-   and after the existing executor commits DRAFT/unchanged. **No direct network
-   call is performed by BasicCrawler**: transport lives exclusively in the
-   approved durable executor.
-5. Crawlee retries are set to zero so the PostgreSQL job ledger owns
-   idempotency, recovery, and ambiguous outcome decisions. Any failed/skipped
-   request blocks the whole success report. No DRAFT is silently activated.
+The adapter never issues HTTP requests, accesses real source URLs, renders pages,
+automatically requeues a job, or marks a DRAFT as ACTIVE. The service exits
+nonzero on blocked/ambiguous/skipped work and does not leak original text/IDs
+in stdout. A private factory, real pinned Crawlee dependency, operator source
+registry, rights/robots validation and NCP SQL credentials are still missing.
 
-## What is not complete
+**Verification:** `node --test tools/ingestion/refresh-cli.node.test.mjs
+tools/ingestion/crawlee-approved-dispatch.node.test.mjs` runs with fake Crawlee
+and fake queue. This is an **offline interface test, not a real Crawlee npm
+integration or an NCP deployment**. No network or actual data is used.
 
-- Crawlee package + pinned dependency lockfile, NCP-private queue and factory,
-  installing the service, operator job scheduling from Postgres, domain-level
-  robots/source rights, HTML/attachments/PDF/HWPX parsers, real data collection,
-  review promotion, NCP storage, replay/recovery, source-specific TTL/quotas.
-- A real source identifier or URL must not be placed in GitHub or a public CI.
-- This **offline, fake-Crawlee** adapter test validates interface expectations,
-  **not** integration against the genuine Crawlee npm package.
-
-Offline command: `node --test tools/ingestion/crawlee-approved-dispatch.node.test.mjs`.
-Refs #445, #449, #447.
+Refs #445, #447, #449.

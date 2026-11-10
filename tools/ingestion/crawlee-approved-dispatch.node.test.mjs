@@ -1,104 +1,98 @@
 import {describe,it} from 'node:test';
 import assert from 'node:assert/strict';
-import {dispatchApprovedCrawleeSources,createApprovedCrawleeRefreshWorker} from './crawlee-approved-dispatch.mjs';
+import {dispatchApprovedCrawleeQueue,createApprovedCrawleeRefreshWorker}
+  from './crawlee-approved-dispatch.mjs';
 
-const source={actorRef:'SYN-OPERATOR',sourceId:'SYN-SOURCE',
-  permissionRef:'SYN-PERMISSION',canonicalUrl:'https://example.org/notices/synthetic'};
-function fixture(){
-  let rights=true,forceFailure=false;
-  const requests=[],calls=[];
-  let settings;
-  class BasicCrawler {
-    constructor(options){settings=options;}
+const jobId='00000000-0000-4000-8000-000000000001';
+function fixture(outcomes=[{state:'NEW_DRAFT',jobId},{state:'IDLE'}]){
+  let options,queued=[],called=0,mutate=null,skip=false;
+  class BasicCrawler{
+    constructor(value){options=value;}
     async run(seeds){
-      for(const s of seeds){
-        requests.push(s);
-        try{
-          await settings.requestHandler({request:forceFailure?{...s,url:'https://evil.example.org/'}:s});
-        }catch(error){await settings.failedRequestHandler({request:s},error);}
+      for(const seed of seeds){
+        const request=mutate?mutate(seed):seed;
+        queued.push(request);
+        if(skip){await options.onSkippedRequest({request});continue;}
+        try{await options.requestHandler({request});}
+        catch{await options.failedRequestHandler({request});}
       }
-      return {};
     }
   }
+  const queue={runOne:async()=>{const result=outcomes[called]??{state:'IDLE'};called++;return result;}};
   const requestQueue={addRequest:async()=>{}};
-  const authority={mayProcess:async input=>(calls.push(['rights',input.sourceId]),rights)};
-  const executor={execute:async input=>(calls.push(['executor',input.sourceId]),
-    {kind:'NEW_DRAFT',revisionId:'SYN-REVISION'})};
-  const run=(sources=[source])=>dispatchApprovedCrawleeSources({
-    sources,BasicCrawler,requestQueue,authority,executor,
-    now:()=> '2026-11-10T10:00:00Z',
-  });
-  return {run,requests,calls,get settings(){return settings;},
-    block:()=>{rights=false;},fail:()=>{forceFailure=true;}};
+  const params={BasicCrawler,requestQueue,queue,maxJobs:3};
+  return {params,queued,get called(){return called;},get options(){return options;},
+    mutate:fn=>{mutate=fn;},skip:()=>{skip=true;}};
 }
-describe('#445 approved durable executor with Crawlee BasicCrawler',()=>{
-  it('delegates only approved requests to existing durable executor',async()=>{
-    const f=fixture();
-    assert.deepEqual(await f.run(),{state:'DRAFT_REFRESH_COMPLETE',handled:1,activeRevisions:0});
-    assert.deepEqual(f.calls.map(x=>x[0]),['rights','rights','executor','rights']);
-    assert.deepEqual(f.requests,[{url:source.canonicalUrl,
-      uniqueKey:JSON.stringify([source.sourceId,source.permissionRef,source.actorRef])}]);
-    assert.equal(f.settings.requestQueue.addRequest instanceof Function,true);
-    assert.equal(f.settings.maxConcurrency,1);
-    assert.equal(f.settings.maxRequestRetries,0);
-    assert.equal(f.settings.useSessionPool,false);
+describe('#445 Crawlee ticks use the durable PostgreSQL queue, never raw executor',()=>{
+  it('runs capped unique virtual ticks; PostgreSQL owns DRAFT and locks',async()=>{
+    const f=fixture([{state:'NEW_DRAFT',jobId},{state:'UNCHANGED',jobId},{state:'IDLE'}]);
+    const result=await dispatchApprovedCrawleeQueue(f.params);
+    assert.deepEqual(result,{state:'BATCH_COMPLETE',processed:2,
+      idleObserved:true,activeRevisions:0});
+    assert.equal(f.called,3);
+    assert.equal(f.options.maxConcurrency,1);
+    assert.equal(f.options.maxRequestRetries,0);
+    assert.equal(f.options.useSessionPool,false);
+    assert.equal(f.options.maxRequestsPerCrawl,3);
+    assert.equal(new Set(f.queued.map(r=>r.uniqueKey)).size,3);
+    assert.ok(f.queued.every(r=>r.url.startsWith('https://queue.invalid/')
+      &&!r.url.includes('SYN-SOURCE')));
   });
-  it('blocks absent source rights before Crawlee starts',async()=>{
-    const f=fixture();f.block();
-    await assert.rejects(f.run(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
-    assert.equal(f.settings,undefined);assert.equal(f.requests.length,0);
+  it('does not poll the durable queue again after IDLE (also a busy lease)',async()=>{
+    const f=fixture([{state:'IDLE'}]);
+    assert.deepEqual(await dispatchApprovedCrawleeQueue(f.params),
+      {state:'BATCH_COMPLETE',processed:0,idleObserved:true,activeRevisions:0});
+    assert.equal(f.called,1);
   });
-  it('never dispatches a changed queued URL',async()=>{
-    const f=fixture();f.fail();
-    await assert.rejects(f.run(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
-    assert.equal(f.calls.some(x=>x[0]==='executor'),false);
+  it('fails closed on changed or stale virtual tick before any durable call',async()=>{
+    const f=fixture();f.mutate(seed=>({...seed,url:'https://evil.example.org/source'}));
+    await assert.rejects(dispatchApprovedCrawleeQueue(f.params),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
+    assert.equal(f.called,0);
   });
-  it('refuses duplicate registry identities, URLs, and unsafe authority',async()=>{
-    for(const entries of [
-      [source,source],
-      [source,{...source,sourceId:'SYN-OTHER'}],
-      [{...source,canonicalUrl:'http://example.org/path'}],
-      [{...source,canonicalUrl:'https://127.0.0.1/admin'}],
-      [{...source,canonicalUrl:'https://example.internal/private'}],
-      [{...source,canonicalUrl:'https://foo.example.org/?redirect=evil'}],
-      [{...source,canonicalUrl:'https://admin:pw@example.org/'}],
-      [],
-    ]) {
+  it('a denied or uncertain durable job never counts as successful',async()=>{
+    for(const state of ['BLOCKED_RIGHTS','NEEDS_REVIEW','CORRUPT']){
+      const f=fixture([{state,jobId}]);
+      await assert.rejects(dispatchApprovedCrawleeQueue(f.params),
+        /APPROVED_SOURCE_DISPATCH_BLOCKED/);
+      assert.equal(f.called,1);
+    }
+    const f=fixture([{state:'NEW_DRAFT',jobId:'bogus'}]);
+    await assert.rejects(dispatchApprovedCrawleeQueue(f.params),
+      /APPROVED_SOURCE_DISPATCH_BLOCKED/);
+  });
+  it('failed, skipped or incomplete Crawlee processing is not a successful refresh',async()=>{
+    const f=fixture();f.skip();
+    await assert.rejects(dispatchApprovedCrawleeQueue(f.params),
+      /APPROVED_SOURCE_DISPATCH_BLOCKED/);
+    assert.equal(f.called,0);
+    const incomplete=fixture();
+    incomplete.params.BasicCrawler=class {async run(){/* processed no requests */}};
+    await assert.rejects(dispatchApprovedCrawleeQueue(incomplete.params),
+      /APPROVED_SOURCE_DISPATCH_BLOCKED/);
+  });
+  it('requires bounded work, an explicit private queue and a durable runOne',async()=>{
+    for(const fields of [
+      {maxJobs:0},{maxJobs:17},{queue:{}},{requestQueue:{}},{BasicCrawler:null},
+    ]){
       const f=fixture();
-      await assert.rejects(f.run(entries),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
-      assert.equal(f.settings,undefined);
+      await assert.rejects(dispatchApprovedCrawleeQueue({...f.params,...fields}),
+        /APPROVED_SOURCE_DISPATCH_BLOCKED/);
+      assert.equal(f.called,0);
     }
   });
-  it('rejects an unknown source in an existing queue without fetching it',async()=>{
-    const f=fixture();
-    f.fail();
-    await assert.rejects(f.run(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
-    assert.equal(f.requests.length,1);
-    assert.equal(f.calls.some(x=>x[0]==='executor'),false);
-  });
-});
-
-describe('#445 worker interface for the systemd refresh CLI',()=>{
-  it('exposes exactly a one-shot worker with explicit private queue cleanup',async()=>{
+  it('one-shot worker closes private queue exactly once',async()=>{
     const f=fixture(),closed=[];
-    const worker=createApprovedCrawleeRefreshWorker({
-      sources:[source],BasicCrawler:class {
-        constructor(opts){this.opts=opts;}
-        async run(seeds){
-          for(const request of seeds)await this.opts.requestHandler({request});
-        }
-      },
-      requestQueue:{addRequest:async()=>{}},
-      authority:{mayProcess:async()=>true},
-      executor:{execute:async()=>({kind:'NEW_DRAFT',revisionId:'SYN-REV'})},
-      closeQueue:async()=>{closed.push('closed');},
+    const worker=createApprovedCrawleeRefreshWorker({...f.params,maxJobs:1,
+      closeQueue:async()=>{closed.push('closed');}});
+    assert.deepEqual(await worker.runOnce(),{
+      state:'BATCH_COMPLETE',processed:1,idleObserved:false,activeRevisions:0,
     });
-    assert.deepEqual(await worker.runOnce(),
-      {state:'DRAFT_REFRESH_COMPLETE',handled:1,activeRevisions:0});
     await assert.rejects(worker.runOnce(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
     await worker.close();await worker.close();
     assert.deepEqual(closed,['closed']);
     await assert.rejects(worker.runOnce(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
-    assert.equal(f.requests.length,0);
+    assert.throws(()=>createApprovedCrawleeRefreshWorker(f.params),
+      /APPROVED_SOURCE_DISPATCH_BLOCKED/);
   });
 });
