@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodic HUFS One AI NCP data refresh trigger (not a code deployment)
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=10m
+AccuracySec=5m
+Unit=hufs-one-ai-data-refresh.service
+
+[Install]
+WantedBy=timers.target
