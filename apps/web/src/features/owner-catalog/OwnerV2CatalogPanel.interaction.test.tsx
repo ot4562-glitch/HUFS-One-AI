@@ -33,7 +33,7 @@ function fixture(){
     if(!connected)return C.OwnerV2CatalogResponseSchema.parse({
       state:'NOT_CONNECTED',asOf:AT,
     });
-    return query.cursor?ready(['SYN-OP-2'],null):ready(['SYN-OP-1'],cursor);
+    return query?.cursor?ready(['SYN-OP-2'],null):ready(['SYN-OP-1'],cursor);
   });
   const port:OwnerV2CatalogPort={session,search};
   return {port,search,session,changeIdentity:(v:string)=>{actor=v;},
