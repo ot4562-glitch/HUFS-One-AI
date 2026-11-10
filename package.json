@@ -38,7 +38,7 @@
     "start:api:local": "npm run build:api && node dist/apps/api/src/main.js",
     "start:api:synthetic-empty-demo": "npm run build:api && node dist/apps/api/src/dev/empty-demo-main.js --synthetic",
     "test:e2e:empty-demo": "npm run build:api && node tools/check_empty_demo_browser.mjs --start-servers",
-    "assets:check": "node tools/generate_demo_assets.mjs --check && node tools/check_synthetic_artwork.mjs",
+    "assets:check": "node tools/generate_demo_assets.mjs --check && node tools/check_synthetic_artwork.mjs && node tools/real-data/verify-seeds.mjs",
     "build:evaluation": "node node_modules/typescript/bin/tsc -p tools/evaluation/tsconfig.json",
     "eval:review": "node tools/evaluation/run.mjs",
     "test:evaluation:cli": "node --test tools/evaluation/tests/cli.node.mjs tools/evaluation/tests/review-html.node.mjs",
@@ -51,7 +51,8 @@
     "dev:web": "npm run build:contracts && vite --config apps/web/vite.config.ts",
     "build:web": "npm run build:contracts && vite build --config apps/web/vite.config.ts",
     "test:e2e:web": "npm run build:contracts && playwright test -c apps/web/playwright.config.ts",
-    "bench:normalization": "npm run build:contracts && node node_modules/typescript/bin/tsc -p tsconfig.bench.json && node tools/bench_normalization.mjs"
+    "bench:normalization": "npm run build:contracts && node node_modules/typescript/bin/tsc -p tsconfig.bench.json && node tools/bench_normalization.mjs",
+    "test:real-source-registry": "node --test tools/real-data/verify-seeds.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
