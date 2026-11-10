@@ -25,7 +25,7 @@ export function buildCatalogSearchQuery(
     ...(f.category?{category:f.category}:{}),
     ...(f.campus?{campus:f.campus}:{}),
     ...(f.eligibility?{eligibility:f.eligibility}:{}),
-    ...(f.deadlineDate?{deadlineBefore:f.deadlineDate+'T23:59:59+09:00'}:{}),
+    ...(f.deadlineDate?{deadlineBefore:f.deadlineDate+'T23:59:59.999+09:00'}:{}),
     ...(cursor&&asOf?{cursor,asOf}:{}),
   };
 }

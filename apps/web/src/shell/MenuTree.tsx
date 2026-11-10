@@ -7,6 +7,9 @@ function Item({item, path, navigate}: {item: MenuItem; path: string; navigate: (
       <li>
         <InAppLink to={item.route} navigate={navigate} className="menu__item" current={path === item.route}>
           <span>{item.label}</span>
+          {item.requiresApprovedSource&&<span className="menu__tag">
+            본인 인증·승인 자료 필요
+          </span>}
         </InAppLink>
       </li>
     );

@@ -54,7 +54,7 @@ describe('#447 full approved catalog filter continuity',()=>{
     expect(buildCatalogSearchQuery(f)).toEqual({
       q:'장학',sort:'DEADLINE_ASC',pageSize:10,category:'SCHOLARSHIP',
       campus:'SEOUL',eligibility:'UNKNOWN',
-      deadlineBefore:'2026-12-31T23:59:59+09:00',includeClosed:true,
+      deadlineBefore:'2026-12-31T23:59:59.999+09:00',includeClosed:true,
     });
   });
   it('preserves every filter and binds the same asOf to the cursor',()=>{

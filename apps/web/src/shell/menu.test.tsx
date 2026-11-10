@@ -60,6 +60,17 @@ describe('#124 menu catalog', () => {
     expect(MENU_GROUPS[0]!.items.map(i => i.route)).toEqual(expect.arrayContaining(['/opportunities', '/notices']));
   });
 
+  it('links existing owner-only modules without misrepresenting the original menu as implemented',()=>{
+    const owners=MENU_GROUPS.find(g=>g.id==='owner-independent')!.items;
+    expect(owners).toHaveLength(12);
+    expect(owners.every(x=>x.kind==='EXTENSION'&&x.requiresApprovedSource)).toBe(true);
+    expect(owners.map(x=>x.route)).toEqual(expect.arrayContaining([
+      '/owner-opportunities/v2-catalog','/owner-scholarships','/owner-badges',
+      '/owner-insights/MENTORS','/owner-insights/EMPLOYMENT','/counseling',
+    ]));
+    expect(MENU_GROUPS.filter(g=>g.origin==='HUFSABILITY')
+      .flatMap(g=>g.items).some(x=>x.route)).toBe(false);
+  });
   it('every clickable route opens a real demo screen (no placeholder, no not-found)', async () => {
     const routes = [...new Set(MENU_GROUPS.flatMap(g => g.items).flatMap(i => i.route ? [i.route] : []))];
     for (const route of routes) {
