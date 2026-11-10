@@ -117,6 +117,13 @@ describe('versioned feature contracts preserve source and actor-independent wire
     ]) expect(S.OpportunityCatalogItemSchema.safeParse({...original,sourceUrl}).success)
       .toBe(false);
     expect(S.OpportunityCatalogItemSchema.parse(original).sourceUrl).toBeUndefined();
+    for(const changed of [
+      {...approved,permitted:false},
+      {...approved,source:{...original.source,status:'NEEDS_REVIEW'}},
+      {...approved,source:{...original.source,status:'REVOKED'}},
+      {...approved,source:{...original.source,rights:'BLOCKED'}},
+      {...approved,source:{...original.source,rights:'UNKNOWN'}},
+    ]) expect(S.OpportunityCatalogItemSchema.safeParse(changed).success).toBe(false);
   });
   it('rejects unbounded page sizes and arbitrary search keys',()=>{
     expect(S.OpportunityQuerySchema.safeParse(query({pageSize:500})).success).toBe(false);
