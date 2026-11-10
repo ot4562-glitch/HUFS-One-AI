@@ -63,8 +63,16 @@ try{
   assert.deepEqual(fromWorker.candidates,[{
     url:'https://example.org/notices/9',type:'DOCUMENT',label:'New',
   }]);
+  const html5=new TextEncoder().encode('<!DOCTYPE html><main><a href="/notices/10">HTML5 notice</a></main>');
+  assert.deepEqual(collectCandidatesFromApprovedBytes({
+    content:html5,kind:'HTML',...candidateOptions,
+  }).candidates,[{
+    url:'https://example.org/notices/10',type:'DOCUMENT',label:'HTML5 notice',
+  }]);
   for(const content of [
-    new Uint8Array(),new TextEncoder().encode('<!DOCTYPE note [<!ENTITY x SYSTEM "file:///etc/passwd">]><note/>'),
+    new Uint8Array(),
+    new TextEncoder().encode('<!DOCTYPE html SYSTEM "https://untrusted.example/dtd"><a href="/notices/11"/>'),
+    new TextEncoder().encode('<!DOCTYPE note [<!ENTITY x SYSTEM "file:///etc/passwd">]><note/>'),
   ]){
     assert.throws(()=>collectCandidatesFromApprovedBytes({content,kind:'HTML',...candidateOptions}),
       /CONFIGURATION_REQUIRED/);
