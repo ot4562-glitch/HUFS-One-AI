@@ -1,5 +1,6 @@
 import {useEffect,useRef,useState,useSyncExternalStore,type FormEvent} from 'react';
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
+import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 
@@ -8,6 +9,22 @@ export interface OwnerV2CatalogPort {
   search:HufsOwnerApiClient['searchApprovedV2Catalog'];
 }
 type SearchResult=Awaited<ReturnType<OwnerV2CatalogPort['search']>>;
+
+/** The URL is a source citation only; students must follow official instructions to apply. */
+export function OwnerV2CatalogListItem({item}:{item:C.OpportunityCatalogItem}){
+  return <li>
+    <strong>{item.title}</strong> · {item.category} · {item.campus??'캠퍼스 미확인'}
+    {item.summary&&<p>{item.summary}</p>}
+    <p className="muted">
+      마감 {item.deadlineAt?.slice(0,10)??'미확인'} · 자격 {item.eligibility}
+      {' · '}검증 판본 {item.source.revisionId}
+      {item.source.verifiedAt&&<> · 검증 {item.source.verifiedAt.slice(0,10)}</>}
+    </p>
+    {item.sourceUrl&&item.source.status==='VERIFIED'&&item.source.rights==='CLEARED'&&
+      <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
+        aria-label={item.title+' 원문 보기 (새 탭)'}>원문 확인</a>}
+  </li>;
+}
 
 export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
   const scope=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
@@ -64,11 +81,7 @@ export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
     {result?.state==='READY'&&<section aria-live="polite">
       <p className="muted">승인된 검색 범위 {result.page.totalInAuthorizedScope}건 · 조회 판본 {result.sourceVersion} · 기준 {result.page.at.slice(0,10)}</p>
       {result.page.items.length===0?<p>현재 검색조건과 승인된 출처에 맞는 공고가 없습니다.</p>:
-        <ul>{result.page.items.map(item=><li key={item.id}>
-          <strong>{item.title}</strong> · {item.category} · {item.campus}
-          <p>{item.summary}</p>
-          <p className="muted">마감 {item.deadlineAt?.slice(0,10)??'미확인'} · 자격 {item.eligibility} · 검증 판본 {item.source.revisionId}</p>
-        </li>)}</ul>}
+        <ul>{result.page.items.map(item=><OwnerV2CatalogListItem key={item.id} item={item}/>)}</ul>}
       {result.page.nextCursor&&<button disabled={busy} onClick={()=>void search(result.page.nextCursor!,result.page.at)}>
         {busy?'권한 확인 중':'다음 승인 페이지'}
       </button>}

@@ -106,6 +106,18 @@ describe('versioned feature contracts preserve source and actor-independent wire
     expect(S.OpportunityCatalogItemSchema.parse(opportunity('op-1')).permitted).toBe(true);
     expect(S.OpportunityQuerySchema.parse(query()).pageSize).toBe(20);
   });
+  it('accepts a public HTTPS original-source link but rejects unsafe or internal URLs',()=>{
+    const original=opportunity('op-1');
+    const approved={...original,sourceUrl:'https://example.org/notice/123?view=1'};
+    expect(S.OpportunityCatalogItemSchema.parse(approved).sourceUrl).toBe(approved.sourceUrl);
+    for(const sourceUrl of [
+      'http://example.org/notice', 'javascript:alert(1)', 'https://localhost/a',
+      'https://127.0.0.1/a', 'https://user:pass@example.org/notice',
+      'https://example.invalid/a', 'https://internal.local/a',
+    ]) expect(S.OpportunityCatalogItemSchema.safeParse({...original,sourceUrl}).success)
+      .toBe(false);
+    expect(S.OpportunityCatalogItemSchema.parse(original).sourceUrl).toBeUndefined();
+  });
   it('rejects unbounded page sizes and arbitrary search keys',()=>{
     expect(S.OpportunityQuerySchema.safeParse(query({pageSize:500})).success).toBe(false);
     expect(S.OpportunityQuerySchema.safeParse({...query(),studentPhone:'private'}).success).toBe(false);
