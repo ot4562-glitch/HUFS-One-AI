@@ -2,7 +2,8 @@ import type {RevisionParagraph} from './revision-ledger.js';
 import type {SourceContentExtractor} from './approved-fetch.js';
 
 const ENC=new TextDecoder('utf-8',{fatal:true});
-const ALLOWED=new Set(['text/plain','text/html','application/rss+xml','application/atom+xml']);
+const ALLOWED=new Set(['text/plain','text/html','application/rss+xml','application/atom+xml',
+  'application/xml','text/xml']);
 const MAX_TEXT=256*1024;
 function decodeEntity(entity:string):string{
   switch(entity){case '&amp;':return '&';case '&lt;':return '<';
