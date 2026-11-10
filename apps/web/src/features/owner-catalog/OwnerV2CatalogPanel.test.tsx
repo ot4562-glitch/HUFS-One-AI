@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {OwnerV2CatalogListItem} from './OwnerV2CatalogPanel.js';
+import {OwnerV2CatalogListItem,buildCatalogSearchQuery} from './OwnerV2CatalogPanel.js';
 
 const item:C.OpportunityCatalogItem={
   id:'SYN-OPPORTUNITY-1',title:'가상 장학 안내',summary:'합성 검증 데이터',
@@ -43,5 +43,28 @@ describe('#447 approved source traceability in the v2 catalog',()=>{
       expect(html).not.toContain('href=');
       expect(html).not.toContain('검증 2026-11-01');
     }
+  });
+});
+
+describe('#447 full approved catalog filter continuity',()=>{
+  const f={q:'장학',sort:'DEADLINE_ASC' as const,category:'SCHOLARSHIP',
+    campus:'SEOUL',eligibility:'UNKNOWN' as const,deadlineDate:'2026-12-31',
+    includeClosed:true};
+  it('submits all server-supported filters with the correct KST deadline',()=>{
+    expect(buildCatalogSearchQuery(f)).toEqual({
+      q:'장학',sort:'DEADLINE_ASC',pageSize:10,category:'SCHOLARSHIP',
+      campus:'SEOUL',eligibility:'UNKNOWN',
+      deadlineBefore:'2026-12-31T23:59:59+09:00',includeClosed:true,
+    });
+  });
+  it('preserves every filter and binds the same asOf to the cursor',()=>{
+    const base=buildCatalogSearchQuery(f);
+    expect(buildCatalogSearchQuery(f,'SYN-CURSOR','2026-11-10T00:00:00Z'))
+      .toEqual({...base,cursor:'SYN-CURSOR',asOf:'2026-11-10T00:00:00Z'});
+  });
+  it('omits blank optional filters and never forges a continuation without an asOf',()=>{
+    expect(buildCatalogSearchQuery({...f,q:'',category:'',campus:'',
+      eligibility:'',deadlineDate:'',includeClosed:false},'SYN-CURSOR'))
+      .toEqual({q:'',sort:'DEADLINE_ASC',pageSize:10,includeClosed:false});
   });
 });
