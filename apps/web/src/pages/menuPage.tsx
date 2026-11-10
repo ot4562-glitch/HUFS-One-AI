@@ -8,7 +8,7 @@ export const menuPage: PageRenderer = ({path, navigate}) => {
     title: '전체 메뉴',
     body: (
       <>
-        <p className="muted">HUFSAbility 원래 메뉴는 이름과 순서만 보존하고 모두 🚫로 표시했어요. 이번 시연에서 동작하는 화면은 ‘HUFS One AI 확장’에 있으며, 가상 데이터로 보여 주는 데모입니다.</p>
+        <p className="muted">학교 HUFSAbility 원래 메뉴는 명칭·순서만 보존하며 🚫는 미지원입니다. HUFS One AI의 자체 기능 화면은 별도로 연결되어 있습니다. ‘본인 인증·승인 자료 필요’ 항목은 메뉴에서 열 수 있어도 실제 권한·자료가 없으면 이용할 수 없고, 합성 자료를 공식 정보로 대신 표시하지 않습니다.</p>
         <MenuTree path={path} navigate={navigate} variant="page" />
       </>
     ),

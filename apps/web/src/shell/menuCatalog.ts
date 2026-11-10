@@ -27,6 +27,8 @@ export interface MenuItem {
   readonly officialUrl?: string;
   /** Manifest wording, e.g. "🚫 미지원"; absent only for working screens. */
   readonly disabledText?: string;
+  /** Our independent screen has a route, but real data requires BETA + approved source. */
+  readonly requiresApprovedSource?: boolean;
 }
 
 export interface MenuGroup {
@@ -55,7 +57,10 @@ const original = (i: ManifestItem): MenuItem => ({
   ...(i.state === 'OFFICIAL_LINK_ONLY' && i.officialUrl ? {officialUrl: i.officialUrl} : {}),
   ...(i.disabledText ? {disabledText: i.disabledText} : {}),
 });
-const ext = (id: string, label: string, route: string): MenuItem => ({id, label, kind: 'EXTENSION', status: 'DEMO_AVAILABLE', route});
+const ext = (id: string, label: string, route: string,
+  requiresApprovedSource = false): MenuItem => ({id, label, kind: 'EXTENSION',
+  status: 'DEMO_AVAILABLE', route,
+  ...(requiresApprovedSource?{requiresApprovedSource:true}:{})});
 
 export const MENU_GROUPS: readonly MenuGroup[] = [
   {id: 'hufs-one-ai', label: 'HUFS One AI 확장', origin: 'HUFS_ONE_AI', items: [
@@ -71,6 +76,21 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     ext('ext-exchange', '교환학생 조건 확인', '/exchange'),
     ext('ext-faq', 'FAQ·질문하기', '/faq'),
   ]},
+  {id:'owner-independent', label:'HUFS One AI 독립 기능 · 본인 인증·자료 확인 필요',
+    origin:'HUFS_ONE_AI', items:[
+      ext('owner-full-catalog','검증된 공고 전체 검색','/owner-opportunities/v2-catalog',true),
+      ext('owner-scholarship-rules','장학금 요건 준비','/owner-scholarships',true),
+      ext('owner-badge-rules','오픈배지 취득 준비','/owner-badges',true),
+      ext('owner-course-evidence','교과·경험 연결 근거','/owner-academics/experience-courses',true),
+      ext('owner-academic-check','내 학업·이중전공 사전 검토','/owner-academics',true),
+      ext('owner-mentors','멘토 후보 비교','/owner-insights/MENTORS',true),
+      ext('owner-recognition','교외활동 증빙 준비','/owner-insights/RECOGNITION',true),
+      ext('owner-job-skill','NCS 요구조건·경험 근거 비교','/owner-insights/SKILLS',true),
+      ext('owner-learning','학습공동체·튜터링 후보','/owner-insights/LEARNING',true),
+      ext('owner-employment','검증된 취업통계','/owner-insights/EMPLOYMENT',true),
+      ext('owner-international','국제학생 안내','/owner-insights/INTERNATIONAL',true),
+      ext('owner-counseling','공식 상담기관 찾기','/counseling',true),
+    ]},
   ...manifest.categories.map((c): MenuGroup => ({id: c.id, label: c.label, origin: 'HUFSABILITY', items: c.items.map(original)})),
   {id: 'public', label: '공개 안내', origin: 'HUFSABILITY_PUBLIC', items: manifest.publicEntries.map(original)},
 ];

@@ -144,9 +144,19 @@ export const OpportunityCatalogItemSchema = z.strictObject({
   id: Id, title: Text, summary: z.string().max(5000).default(''),
   category: Id, campus: Id.optional(), topicCodes: ApprovedTopicCodes,
   publishedAt: Iso.optional(), deadlineAt: Iso.optional(),
+  /** Operator-approved canonical source page, not an application or SSO route.
+   * This shape guard does not replace current source-rights verification. */
+  sourceUrl: OfficialHttpsUrlSchema.optional(),
   eligibility: z.enum(['MET','NOT_MET','UNKNOWN']),
   source: FeatureSourceSchema,
   permitted: z.boolean(),
+}).superRefine((value,ctx)=>{
+  // A link may be shown only when the same item has a current reviewed
+  // source. A valid HTTPS address by itself is not permission to publish.
+  if(value.sourceUrl&&(value.source.status!=='VERIFIED'
+    ||value.source.rights!=='CLEARED'||!value.permitted))
+    ctx.addIssue({code:'custom',path:['sourceUrl'],
+      message:'original source URL requires a cleared verified item'});
 });
 export type OpportunityCatalogItem = z.infer<typeof OpportunityCatalogItemSchema>;
 export const OpportunityQuerySchema = z.strictObject({
