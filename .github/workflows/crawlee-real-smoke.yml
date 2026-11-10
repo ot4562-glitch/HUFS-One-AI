@@ -43,3 +43,11 @@ jobs:
           cd "$RUNNER_TEMP/crawlee-api-smoke"
           npm install --no-save --ignore-scripts --package-lock=false --no-audit --no-fund crawlee@3.18.2 cheerio@1.2.0
           node crawlee-real-smoke.mjs
+      - name: Build the isolated worker's exact dependency lock manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd tools/ingestion/worker
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e "const fs=require('fs'); const b=fs.readFileSync('package-lock.json').toString('base64').match(/.{1,1800}/g);b.forEach((line,i)=>console.log('LOCK_PART_'+i+' '+line));console.log('LOCK_PART_COUNT '+b.length)"
+
