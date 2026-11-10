@@ -33,8 +33,10 @@ export type SourceRegistrationDraft=z.infer<typeof SourceRegistrationDraftSchema
 /** Operator-entered candidate discovery scope. Shape only, not a grant to
  * crawl or bypass the site's current robots/terms or reviewed source rights.
  */
-const PathPrefix=z.string().min(1).max(200).regex(/^\\/[A-Za-z0-9/_~.%-]*$/)
-  .refine(value=>!value.includes('..')&&!/%(?:2e|2f|5c)/i.test(value)
+const PathPrefix=z.string().min(1).max(200)
+  .refine(value=>value.startsWith('/')
+    &&new RegExp('^/[A-Za-z0-9/_~.%-]*$').test(value)
+    &&!value.includes('..')&&!/%(?:2e|2f|5c)/i.test(value)
     &&!value.includes('//'));
 export const CrawlScopeDraftSchema=z.strictObject({
   sourceId:Id,
