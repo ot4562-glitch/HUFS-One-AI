@@ -70,6 +70,74 @@ export const DiscoveryCandidateDraftSchema=z.strictObject({
 });
 export type DiscoveryCandidateDraft=z.infer<typeof DiscoveryCandidateDraftSchema>;
 
+
+
+/** Candidate-only boundary between Crawlee's already-parsed link proposals and
+ * the draft contract. Scope membership does NOT grant COLLECT/STORE/SEARCH.
+ * Current robots, terms, source permissions and actor rights still require
+ * independent operator checks inside NCP before any network request.
+ */
+export function isDiscoveryCandidateInScopeForReview(
+  candidate:unknown,scope:unknown,
+):boolean{
+  const c=DiscoveryCandidateDraftSchema.safeParse(candidate);
+  const s=CrawlScopeDraftSchema.safeParse(scope);
+  if(!c.success||!s.success||c.data.sourceId!==s.data.sourceId)return false;
+  const origin=new URL(s.data.approvedOrigin).origin;
+  const base=new URL(c.data.sourceCanonicalUrl);
+  const proposed=new URL(c.data.proposedUrl);
+  if(base.origin!==origin||proposed.origin!==origin)return false;
+  // Reject encoded separators/dots and double-encoding before prefix matching.
+  const pathname=proposed.pathname;
+  if(/%(?:00|25|2e|2f|5c)/i.test(pathname))return false;
+  return s.data.pathPrefixes.some(prefix=>prefix==='/'||pathname===prefix
+    ||pathname.startsWith(prefix.endsWith('/')?prefix:prefix+'/'));
+}
+
+/** Convert a bounded set of parsed *offline* link candidates into NCP-private
+ * review drafts; never fetch, enqueue, approve or activate a discovered URL.
+ * Invalid or out-of-scope links are deliberately omitted, not auto-approved.
+ */
+export const DiscoveredLinkBatchDraftSchema=z.strictObject({
+  state:z.literal('REVIEW_REQUIRED'),
+  sourceUrl:OfficialHttpsUrlSchema,
+  kind:z.enum(['HTML','RSS','ATOM','SITEMAP']),
+  scanned:z.number().int().min(0).max(500),
+  candidates:z.array(z.strictObject({
+    url:OfficialHttpsUrlSchema,
+    type:z.enum(['DOCUMENT','ATTACHMENT']),
+    label:z.string().min(1).max(200).optional(),
+  })).max(100),
+});
+export type DiscoveredLinkBatchDraft=z.infer<typeof DiscoveredLinkBatchDraftSchema>;
+export function prepareDiscoveryReviewDrafts(input:{
+  sourceId:string;revisionId:string;seenAt:string;
+  scope:unknown;discovered:unknown;
+}):DiscoveryCandidateDraft[]{
+  const sourceId=Id.parse(input.sourceId);
+  const revisionId=Id.parse(input.revisionId);
+  const seenAt=Iso.parse(input.seenAt);
+  const scope=CrawlScopeDraftSchema.parse(input.scope);
+  const batch=DiscoveredLinkBatchDraftSchema.parse(input.discovered);
+  if(sourceId!==scope.sourceId
+    ||new URL(batch.sourceUrl).origin!==new URL(scope.approvedOrigin).origin)
+    throw new Error('Discovery scope does not match the source');
+  const seen=new Set<string>();
+  const records:DiscoveryCandidateDraft[]=[];
+  for(const link of batch.candidates){
+    const draft={
+      sourceId,discoveredFromRevisionId:revisionId,
+      sourceCanonicalUrl:batch.sourceUrl,proposedUrl:link.url,
+      kind:link.type,seenAt,reviewState:'REVIEW_REQUIRED' as const,
+    };
+    if(seen.has(link.url)||!isDiscoveryCandidateInScopeForReview(draft,scope))
+      continue;
+    seen.add(link.url);
+    records.push(DiscoveryCandidateDraftSchema.parse(draft));
+  }
+  return records;
+}
+
 export const SourceRevisionDraftSchema=z.strictObject({
   schemaVersion:z.literal(1),
   sourceId:Id,revisionId:Id,permissionRef:Id,
