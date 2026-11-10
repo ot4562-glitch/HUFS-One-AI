@@ -39,7 +39,7 @@ jobs:
           test ! -d csv
           test ! -d local_only
           mkdir -p "$RUNNER_TEMP/crawlee-api-smoke"
-          cp tools/ingestion/crawlee-approved-dispatch.mjs tools/ingestion/crawlee-real-smoke.mjs "$RUNNER_TEMP/crawlee-api-smoke/"
+          cp tools/ingestion/crawlee-approved-dispatch.mjs tools/ingestion/crawlee-real-smoke.mjs tools/ingestion/approved-link-candidates.mjs "$RUNNER_TEMP/crawlee-api-smoke/"
           cd "$RUNNER_TEMP/crawlee-api-smoke"
-          npm install --no-save --ignore-scripts --package-lock=false --no-audit --no-fund crawlee@3.18.2
+          npm install --no-save --ignore-scripts --package-lock=false --no-audit --no-fund crawlee@3.18.2 cheerio@1.2.0
           node crawlee-real-smoke.mjs

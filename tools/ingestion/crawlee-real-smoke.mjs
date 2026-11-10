@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {BasicCrawler,RequestQueue} from 'crawlee';
+import {load} from 'cheerio';
+import {extractReviewedLinkCandidates} from './approved-link-candidates.mjs';
 import {dispatchApprovedCrawleeQueue} from './crawlee-approved-dispatch.mjs';
 
 const queue=await RequestQueue.open('hufs-synthetic-'+randomUUID());
@@ -35,6 +37,23 @@ try{
   }finally{
     await failQueue.drop();
   }
+  const candidateOptions={
+    canonicalUrl:'https://example.org/notices/1',
+    approvedOrigin:'https://example.org/',
+    allowPathPrefixes:['/notices','/files'],
+  };
+  const parsedHtml=load('<main><a href="/notices/2">두 번째 공고</a><a href="https://blocked.example.org/">외부</a></main>');
+  assert.deepEqual(extractReviewedLinkCandidates({$:parsedHtml,...candidateOptions}).candidates,[
+    {url:'https://example.org/notices/2',type:'DOCUMENT',label:'두 번째 공고'},
+  ]);
+  const parsedRss=load('<rss><channel><item><link>https://example.org/files/a.pdf</link></item></channel></rss>',{xmlMode:true});
+  assert.deepEqual(extractReviewedLinkCandidates({$:parsedRss,...candidateOptions,kind:'RSS'}).candidates,[
+    {url:'https://example.org/files/a.pdf',type:'ATTACHMENT'},
+  ]);
+  const parsedSitemap=load('<urlset><url><loc>https://example.org/notices/3</loc></url></urlset>',{xmlMode:true});
+  assert.deepEqual(extractReviewedLinkCandidates({$:parsedSitemap,...candidateOptions,kind:'SITEMAP'}).candidates,[
+    {url:'https://example.org/notices/3',type:'DOCUMENT'},
+  ]);
   process.stdout.write('CRAWLEE_REAL_API_SYNTHETIC_PASS\n');
 }finally{
   await queue.drop();
