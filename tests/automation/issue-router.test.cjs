@@ -1,7 +1,7 @@
 'use strict';
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {classify, effortPoints, chooseAssignee, isProtected, routeIssue} = require('../../.github/scripts/issue-router.cjs');
+const {classify, chooseAssignee, isProtected, routeIssue} = require('../../.github/scripts/issue-router.cjs');
 
 function ticket(number, title, extra = {}) {
   return {number, title, labels: [], assignees: [], body: '', ...extra};
@@ -48,7 +48,7 @@ test('new feature starts with owner and never guesses AI handoff from prose', as
   const result = await routeIssue({...env});
   assert.equal(result.assignee, 'ot4562-glitch');
   assert.ok(env.calls.added.includes('area:integration'));
-  assert.ok(env.calls.added.includes('effort:unestimated'));
+  assert.ok(env.calls.added.every(label => !label.startsWith('effort:')));
 });
 
 test('data request goes to data owner, web task to UI owner', async () => {
@@ -62,28 +62,27 @@ test('data request goes to data owner, web task to UI owner', async () => {
   }
 });
 
-test('AI candidate with lower weighted backlog is assigned, excluding frozen roles', async () => {
-  const issue = ticket(430, '[AI \uad6c\ud604] OCR');
+test('AI candidate with fewer open issues is assigned, excluding frozen roles', async () => {
+  const issue = ticket(430, '[AI 구현] OCR');
   const env = mock(issue, [
     ticket(355, 'frozen', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:L']}),
-    ticket(401, 'active', {assignees: [{login: 'taewangim-alt'}], labels: ['effort:L']}),
-    ticket(402, 'active', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:S']}),
-    {...ticket(499, 'PR', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:L']}), pull_request: {url: 'pr'}}
+    ticket(401, 'active', {assignees: [{login: 'taewangim-alt'}], labels: ['effort:S']}),
+    ticket(403, 'active', {assignees: [{login: 'taewangim-alt'}]}),
+    ticket(402, 'active', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:L']}),
+    {...ticket(499, 'PR', {assignees: [{login: 'uisang2004-maker'}]}), pull_request: {url: 'pr'}}
   ]);
   assert.equal((await routeIssue({...env})).assignee, 'uisang2004-maker');
   assert.deepEqual(env.calls.assigned, ['uisang2004-maker']);
 });
 
-test('AI load is weighted not issue-count and does not count own ticket', () => {
+test('AI load counts open issues, ignores legacy effort labels and excludes own ticket', () => {
   const issues = [
-    ticket(510, 'first', {assignees: [{login: 'taewangim-alt'}], labels: ['effort:L']}),
-    ticket(511, 'small', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:S']}),
-    ticket(512, 'small', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:S']}),
-    ticket(513, 'small', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:S']}),
-    ticket(500, 'current', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:L']})
+    ticket(510, 'first', {assignees: [{login: 'taewangim-alt'}], labels: ['effort:S']}),
+    ticket(511, 'second', {assignees: [{login: 'taewangim-alt'}]}),
+    ticket(512, 'other', {assignees: [{login: 'uisang2004-maker'}], labels: ['effort:L']}),
+    ticket(500, 'current', {assignees: [{login: 'uisang2004-maker'}]})
   ];
   assert.equal(chooseAssignee('ai', issues, 500), 'uisang2004-maker');
-  assert.equal(effortPoints(ticket(500, 'x')), 3);
 });
 
 test('human assignee is preserved even when editing title', async () => {
@@ -120,13 +119,15 @@ test('dry run never changes labels or assignees', async () => {
   assert.deepEqual(env.calls, {added: [], removed: [], assigned: [], created: []});
 });
 
-test('priority and effort are marked, removing temporary unestimated label', async () => {
-  const issue = ticket(490, '[UI \ubc84\uadf8 P1] React screen', {labels: ['effort:L', 'effort:unestimated']});
+test('priority is kept and every legacy effort label is removed rather than re-added', async () => {
+  const issue = ticket(490, '[UI 버그 P1] React screen',
+    {labels: ['effort:S', 'effort:M', 'effort:L', 'effort:unestimated']});
   const env = mock(issue);
   await routeIssue({...env});
   assert.ok(env.calls.added.includes('priority:P1'));
-  assert.ok(env.calls.removed.includes('effort:unestimated'));
-  assert.equal(effortPoints(issue), 8);
+  assert.ok(env.calls.added.every(label => !label.startsWith('effort:')));
+  assert.deepEqual(env.calls.removed.filter(label => label.startsWith('effort:')).sort(),
+    ['effort:L', 'effort:M', 'effort:S', 'effort:unestimated'].sort());
 });
 
 
@@ -167,7 +168,7 @@ test('explicit area label conflicting with a canonical prefix requires human rev
   assert.equal(env.calls.assigned.length, 0);
 });
 
-test('AI QA prefix assigns dedicated technical QA owner irrespective of AI development load', async () => {
+test('AI QA prefix assigns dedicated technical QA owner irrespective of existing issue count', async () => {
   const issue = ticket(542, '[AI QA] recommendation regression');
   const env = mock(issue, [
     ticket(543, 'active', {assignees: [{login: 'taewangim-alt'}], labels: ['effort:L']})

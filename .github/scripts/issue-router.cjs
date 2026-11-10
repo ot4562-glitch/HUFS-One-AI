@@ -3,7 +3,6 @@
 const settings = require('../issue-routing.json');
 const AREA_KEYS = Object.keys(settings.areas);
 const AREA_LABELS = AREA_KEYS.map(area => 'area:' + area);
-const EFFORT_LABELS = Object.keys(settings.effortPoints).map(size => 'effort:' + size);
 const LABELS = {
   'area:integration': ['1f6feb', 'Core, API, security, CI and integration'],
   'area:ai': ['8250df', 'AI, OCR, RAG, ranking and AI QA'],
@@ -13,10 +12,6 @@ const LABELS = {
   'priority:P1': ['b60205', 'High priority'],
   'priority:P2': ['d93f0b', 'Medium priority'],
   'priority:P3': ['c2e0c6', 'Low priority'],
-  'effort:S': ['d4c5f9', 'Estimated workload: 1 point'],
-  'effort:M': ['d4c5f9', 'Estimated workload: 3 points'],
-  'effort:L': ['d4c5f9', 'Estimated workload: 8 points'],
-  'effort:unestimated': ['ededed', 'Needs a human workload estimate; counts as M until estimated'],
   'triage:needs-review': ['f9d0c4', 'Routing unclear or cannot assign; human review needed'],
   'routing:hold': ['ffffff', 'Human override: do not auto-assign this issue'],
   'type:bug': ['d73a4a', 'Reproducible defect requiring investigation'],
@@ -86,28 +81,19 @@ function classify(issue) {
   return {area: null, reason: 'Unclear or cross-functional; manual triage required'};
 }
 
-function effortPoints(issue) {
-  const labels = new Set(getNames(issue));
-  for (const [size, points] of Object.entries(settings.effortPoints)) {
-    if (labels.has('effort:' + size)) return points;
-  }
-  return settings.defaultEffortPoints;
-}
-
 function chooseAssignee(area, openIssues, ownNumber) {
   const candidates = settings.areas[area].members;
-  const loads = new Map(candidates.map(member => [member.login, {points: 0, count: 0, capacity: member.capacity}]));
+  const loads = new Map(candidates.map(member => [member.login, {count: 0, capacity: member.capacity}]));
   for (const issue of openIssues) {
     if (issue.number === ownNumber || issue.pull_request || isProtected(issue)) continue;
-    const points = effortPoints(issue);
     for (const user of issue.assignees || []) {
       const entry = loads.get(user.login);
-      if (entry) { entry.points += points; entry.count += 1; }
+      if (entry) entry.count += 1;
     }
   }
   return [...candidates].sort((a, b) => {
     const x = loads.get(a.login), y = loads.get(b.login);
-    return x.points / x.capacity - y.points / y.capacity || x.count - y.count || a.login.localeCompare(b.login);
+    return x.count / x.capacity - y.count / y.capacity || a.login.localeCompare(b.login);
   })[0]?.login || null;
 }
 
@@ -172,8 +158,8 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   if (priority !== undefined && ![...current].some(label => /^priority:P[0123]$/.test(label))) {
     add.push('priority:P' + priority);
   }
-  if (![...current].some(label => EFFORT_LABELS.includes(label))) add.push('effort:unestimated');
-  else remove.push('effort:unestimated');
+  // Remove obsolete effort labels on normal routing events; never create new ones.
+  remove.push(...[...current].filter(label => label.startsWith('effort:')));
   if (prefix?.typeLabel) add.push(prefix.typeLabel);
   if (title.includes('[\ucf54\ub4dc \uc804\uc218\uc870\uc0ac]')) add.push('source:code-audit');
   if (title.startsWith('[\ub370\uc774\ud130 \uc694\uccad][\uc815\uc815]')) add.push('type:data-correction');
@@ -237,4 +223,4 @@ async function routeIssue({github, context, core, issue, dryRun = false}) {
   }
 }
 
-module.exports = {classify, effortPoints, chooseAssignee, isProtected, humanGateReason, isSensitiveIssue, routeIssue};
+module.exports = {classify, chooseAssignee, isProtected, humanGateReason, isSensitiveIssue, routeIssue};

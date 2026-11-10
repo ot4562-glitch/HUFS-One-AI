@@ -44,12 +44,6 @@
       ]
     }
   },
-  "effortPoints": {
-    "S": 1,
-    "M": 3,
-    "L": 8
-  },
-  "defaultEffortPoints": 3,
   "prefixes": [
     {
       "title": "[추가 기능]",
