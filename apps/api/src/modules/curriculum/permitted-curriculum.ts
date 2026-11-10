@@ -22,7 +22,22 @@ const PermissionBase=z.strictObject({
   verifiedAt:Utc,expiresAt:Utc,edition:Ref,sourceKind:z.enum(['CURRICULUM','OFFERINGS']),
   collection:z.literal('ALLOWED'),retention:z.literal('ALLOWED'),terms:z.literal('ALLOWED'),revoked:z.literal(false),
 });
-const HttpPermission=PermissionBase.extend({robots:z.literal('ALLOWED'),acquisitionMethod:z.literal('HTTP').optional()});
+/** Robots metadata is not an access grant. Under a DISALLOWED rule the operator
+ * must record a specific site-issued permission for the proposed automated
+ * collection. This avoids treating Disallow as an eternal data-exclusion while
+ * preventing a blanket REP override. A missing robots file is not a grant:
+ * collection/retention/terms permission still comes from the trusted authority.
+ */
+const HttpPermission=PermissionBase.extend({
+  robots:z.enum(['ALLOWED','NOT_FOUND','DISALLOWED']),
+  acquisitionMethod:z.literal('HTTP').optional(),
+  robotsExceptionRef:Ref.optional(),
+}).superRefine((v,ctx)=>{
+  if(v.robots==='DISALLOWED'&&!v.robotsExceptionRef){
+    ctx.addIssue({code:'custom',path:['robotsExceptionRef'],
+      message:'Site-specific permission required for robots-disallowed HTTP collection'});
+  }
+});
 const SavedPermission=PermissionBase.extend({acquisitionMethod:z.literal('OPERATOR_SAVED'),
   robots:z.literal('NOT_APPLICABLE'),savedArtifactSha256:Sha,normalizedCsvSha256:Sha,
   capturedAt:Utc,term:SavedCurriculumCaptureSchema.shape.term,campus:ScopeLabel,scope:ScopeLabel,converterVersion:Ref,
@@ -31,7 +46,8 @@ export const CurriculumPermissionSchema=z.union([HttpPermission,SavedPermission]
 export type CurriculumPermission=z.infer<typeof CurriculumPermissionSchema>;
 export interface CurriculumAuthority{
   /** Trusted operator evidence, not page assertions. Check exact URL, allowed
-   * reuse/retention, current robots/terms, review expiry and revocations. */
+   * reuse/retention, current robots/terms and any site-specific robots exception,
+   * review expiry and revocations. */
   resolve(sourceUrl:string,now:string):Promise<unknown|null>;
 }
 export const courseCsvHeaders=['courseCode','courseName','credits','category','major','semester','campus','cohort'] as const;
