@@ -21,6 +21,33 @@ describe('#445 Korean notice candidate facts are human review only',()=>{
       state:'UNKNOWN',reason:'STUDENT_FACTS_AND_REVIEW_REQUIRED',
     });
   });
+  it('extracts only explicit title and posting date from paragraph evidence',()=>{
+    const v=parse([
+      {id:'p-1',text:'공고명: 2026년 가상 장학 모집'},
+      {id:'p-2',text:'게시일: 2026. 11. 10.'},
+      {id:'p-3',text:'이 장학은 가상 데이터입니다.'},
+    ]);
+    assert.deepEqual(v.fields.title,{state:'KNOWN',
+      value:'2026년 가상 장학 모집',sourceSpanIds:['p-1']});
+    assert.deepEqual(v.fields.publishedDate,{state:'KNOWN',
+      value:'2026-11-10',sourceSpanIds:['p-2']});
+    assert.equal(v.fields.deadline.state,'UNKNOWN');
+  });
+  it('does not invent a title or publication date from unlabelled prose',()=>{
+    const v=parse([{id:'p-1',text:'2026년 장학 신청 안내 2026. 11. 10.'}]);
+    assert.equal(v.fields.title.state,'UNKNOWN');
+    assert.equal(v.fields.publishedDate.state,'UNKNOWN');
+  });
+  it('quarantines conflicting titles and publication dates instead of choosing the first',()=>{
+    const v=parse([
+      {id:'p-1',text:'제목: 가상 A'},
+      {id:'p-2',text:'제목: 가상 B'},
+      {id:'p-3',text:'게시일: 2026-11-10'},
+      {id:'p-4',text:'공지일: 2026-11-11'},
+    ]);
+    assert.equal(v.fields.title.state,'UNKNOWN');
+    assert.equal(v.fields.publishedDate.state,'UNKNOWN');
+  });
   it('never guesses time from a date-only announcement',()=>{
     const v=parse([{id:'p-1',text:'접수마감 2026년 11월 30일'}]);
     assert.deepEqual(v.fields.deadline.value,{date:'2026-11-30',
