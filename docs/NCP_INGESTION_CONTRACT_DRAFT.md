@@ -15,3 +15,9 @@
 **미설계로 유지:** 고위험 분야별 검수 비율/자동승격 허용 여부, RPO/RTO, 실제 NCP SKU/스토리지·IAM, 유지기간·삭제/철회 SLA, HWP/HWPX 파서, 사이트별 주기·예산, 검색 인덱스/캐시 원자적 교체, 운영 migration 파괴적 변경 승인. 이슈 #449의 체크리스트를 본 PR만으로 완료 처리하지 않습니다.
 
 관련 [#445 수집·갱신](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) · [#446 독립 검수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446) · [#447 서비스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447).
+
+## 필드 수준 미지수와 정정·취소 증거
+
+- `NormalizedEvidenceRecordDraftSchema`는 `KNOWN / UNKNOWN / NOT_APPLICABLE`을 구분합니다. VERIFIED/KNOWN 필드는 같은 source revision의 실제 paragraphId에 연결되어야 하고, 누락/비적용 필드는 이유만 가지며 임의 값을 추측해 채우지 않습니다.
+- `SourceChangeDraftSchema`는 새 판본이 **어느 과거 판본을 CORRECTED/REPLACED/CANCELLED 했는지**와 새 판본 근거를 기록합니다. URL 변경만으로 자동 취소하지 않으며 운영에서 사람이 권한·근거를 검토해야 합니다.
+- 두 계약은 합성 데이터 타입/반례 시험을 위한 **초안**입니다. 문단 ID 실제 존재, 정정 시간 순서, PostgreSQL 활성화/검색 캐시 철회는 NCP DB 트랜잭션이 따로 검증해야 하므로 미완료로 남깁니다.

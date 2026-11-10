@@ -69,6 +69,70 @@ export const SourceRevisionDraftSchema=z.strictObject({
 });
 export type SourceRevisionDraft=z.infer<typeof SourceRevisionDraftSchema>;
 
+/**
+ * Exact evidence for a normalized field, never a model-generated attribution.
+ * A value without a paragraph span cannot be considered source-verified.
+ */
+export const FieldEvidenceDraftSchema=z.strictObject({
+  sourceId:Id,revisionId:Id,paragraphId:Id,
+});
+const Evidence=z.array(FieldEvidenceDraftSchema).min(1).max(20);
+const FactValue=z.union([z.string().min(1).max(2000),z.number().finite(),z.boolean()]);
+export const NormalizedFieldDraftSchema=z.discriminatedUnion('state',[
+  z.strictObject({
+    state:z.literal('KNOWN'),value:FactValue,
+    provenance:z.literal('SOURCE_VERIFIED'),evidence:Evidence,
+    observedAt:Iso,
+  }),
+  z.strictObject({
+    state:z.literal('UNKNOWN'),reason:z.string().min(1).max(220),
+  }),
+  z.strictObject({
+    state:z.literal('NOT_APPLICABLE'),reason:z.string().min(1).max(220),
+  }),
+]);
+export type NormalizedFieldDraft=z.infer<typeof NormalizedFieldDraftSchema>;
+
+/** Corrections and revocations are explicit links, not inferred from URLs.
+ * A detected deletion does not automatically revoke the last approved version.
+ */
+export const SourceChangeDraftSchema=z.strictObject({
+  sourceId:Id,
+  revisionId:Id,
+  previousRevisionId:Id,
+  kind:z.enum(['CORRECTED','REPLACED','CANCELLED']),
+  observedAt:Iso,
+  reasonEvidence:Evidence,
+}).superRefine((item,ctx)=>{
+  if(item.revisionId===item.previousRevisionId)
+    ctx.addIssue({code:'custom',path:['previousRevisionId'],
+      message:'a change cannot point to itself'});
+  if(item.reasonEvidence.some(x=>x.sourceId!==item.sourceId
+    ||x.revisionId!==item.revisionId))
+    ctx.addIssue({code:'custom',path:['reasonEvidence'],
+      message:'change evidence must bind the new source revision'});
+});
+export type SourceChangeDraft=z.infer<typeof SourceChangeDraftSchema>;
+
+/** A draft normalizer may only claim a verified value from its own revision.
+ * This is not an actual persistence or official eligibility decision.
+ */
+export const NormalizedEvidenceRecordDraftSchema=z.strictObject({
+  sourceId:Id,revisionId:Id,
+  fields:z.record(Id,NormalizedFieldDraftSchema),
+}).superRefine((item,ctx)=>{
+  const entries=Object.entries(item.fields);
+  if(entries.length<1||entries.length>80)
+    ctx.addIssue({code:'custom',path:['fields'],message:'field count out of bounds'});
+  for(const [key,value] of entries){
+    if(value.state==='KNOWN'&&value.evidence.some(x=>x.sourceId!==item.sourceId
+      ||x.revisionId!==item.revisionId))
+      ctx.addIssue({code:'custom',path:['fields',key,'evidence'],
+        message:'field evidence is not in the claimed source revision'});
+  }
+});
+export type NormalizedEvidenceRecordDraft=z.infer<typeof NormalizedEvidenceRecordDraftSchema>;
+
 /** Offline version comparison only; it cannot authorize a DB migration or activation. */
 export const VersionHandshakeDraftSchema=z.strictObject({
   gitSha:z.string().regex(/^[a-f0-9]{40}$/),
