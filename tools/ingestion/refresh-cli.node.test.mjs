@@ -36,6 +36,7 @@ describe('NCP-only refresh service static and process gates (#445)',()=>{
     const timer=readFileSync(resolve(base,'../../infra/ncp/hufs-one-ai-data-refresh.timer'),'utf8');
     assert.match(service,/^User=hufs-crawler$/m);
     assert.match(service,/^Group=hufs-crawler$/m);
+    assert.match(service,/^Environment=CRAWLEE_STORAGE_DIR=\/var\/lib\/hufs-one-crawler\/crawlee$/m);
     assert.match(service,/ExecStart=\/usr\/bin\/flock -n .*refresh-cli\.mjs --apply/);
     assert.doesNotMatch(service,/^User=root$/m);
     assert.match(timer,/^Unit=hufs-one-ai-data-refresh\.service$/m);

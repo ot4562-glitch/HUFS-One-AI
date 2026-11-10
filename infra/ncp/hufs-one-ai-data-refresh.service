@@ -11,6 +11,7 @@ Group=hufs-crawler
 WorkingDirectory=/opt/hufs-one/current
 Environment=NODE_ENV=production
 Environment=HUFS_NCP_REFRESH_FACTORY=/etc/hufs-one/private/refresh-factory.mjs
+Environment=CRAWLEE_STORAGE_DIR=/var/lib/hufs-one-crawler/crawlee
 RuntimeDirectory=hufs-one-crawler
 RuntimeDirectoryMode=0700
 StateDirectory=hufs-one-crawler

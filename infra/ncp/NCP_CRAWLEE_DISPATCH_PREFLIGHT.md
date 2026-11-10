@@ -14,7 +14,7 @@ runner to HUFS One AI's **existing**
    in the future NCP worker build (do **not** use the unstable v4 beta).
    The repository intentionally does not add an unverified npm lockfile here.
 3. NCP operator factory imports `BasicCrawler` from `crawlee`, creates a
-   **private requestQueue** with NCP-only storage, and supplies `authority`
+   **private requestQueue** with NCP-only storage (service-owned `/var/lib/hufs-one-crawler/crawlee` directory), and supplies `authority`
    and `executor` ports already bound to reviewed PostgreSQL data and pinned
    egress. Import `dispatchApprovedCrawleeSources` from this repo.
 4. Invoke one bounded batch of at most 16 **operator-supplied sources**. The
