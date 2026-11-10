@@ -8,6 +8,20 @@ export interface OwnerV2CatalogPort {
   session:OwnerSessionController;
   search:HufsOwnerApiClient['searchApprovedV2Catalog'];
 }
+/** An ISO offset can belong to the next calendar day in Asia/Seoul. */
+const KST_DATE=new Intl.DateTimeFormat('en-US',{
+  timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',
+});
+export function formatKstDate(value?:string):string{
+  if(!value)return '미확인';
+  const date=new Date(value);
+  if(!Number.isFinite(date.getTime()))return '미확인';
+  const parts=KST_DATE.formatToParts(date);
+  const part=(type:typeof parts[number]['type'])=>parts.find(p=>p.type===type)?.value;
+  const year=part('year'),month=part('month'),day=part('day');
+  return year&&month&&day?`${year}-${month}-${day}`:'미확인';
+}
+
 type SearchResult=Awaited<ReturnType<OwnerV2CatalogPort['search']>>;
 type EligibilityFilter=''|'MET'|'NOT_MET'|'UNKNOWN';
 type Sort='TITLE'|'DEADLINE_ASC'|'PUBLISHED_DESC';
@@ -38,9 +52,9 @@ export function OwnerV2CatalogListItem({item}:{item:C.OpportunityCatalogItem}){
     <strong>{item.title}</strong> · {item.category} · {item.campus??'캠퍼스 미확인'}
     {item.summary&&<p>{item.summary}</p>}
     <p className="muted">
-      마감 {item.deadlineAt?.slice(0,10)??'미확인'} · 자격 {item.eligibility}
+      마감 {formatKstDate(item.deadlineAt)} · 자격 {item.eligibility}
       {' · '}검증 판본 {item.source.revisionId}
-      {verified&&item.source.verifiedAt&&<> · 검증 {item.source.verifiedAt.slice(0,10)}</>}
+      {verified&&item.source.verifiedAt&&<> · 검증 {formatKstDate(item.source.verifiedAt)}</>}
     </p>
     {item.sourceUrl&&verified&&
       <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
@@ -143,7 +157,7 @@ export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
     </form>
     {result?.state==='NOT_CONNECTED'&&<p role="status">NOT_CONNECTED — 현재 권한 검증된 공고 데이터와 서명 커서가 운영 서버에 설정되지 않았습니다. 합성/추정 결과로 대체하지 않습니다.</p>}
     {result?.state==='READY'&&<section aria-live="polite">
-      <p className="muted">승인된 검색 범위 {result.page.totalInAuthorizedScope}건 · 조회 판본 {result.sourceVersion} · 기준 {result.page.at.slice(0,10)}</p>
+      <p className="muted">승인된 검색 범위 {result.page.totalInAuthorizedScope}건 · 조회 판본 {result.sourceVersion} · 기준 {formatKstDate(result.page.at)}</p>
       {result.page.items.length===0?<p>현재 검색조건과 승인된 출처에 맞는 공고가 없습니다.</p>:
         <ul>{result.page.items.map(item=><OwnerV2CatalogListItem key={item.id} item={item}/>)}</ul>}
       {result.page.nextCursor&&<button disabled={busy} onClick={()=>void search(result.page.nextCursor!,result.page.at)}>
