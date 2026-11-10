@@ -27,6 +27,11 @@ describe('#447 approved source traceability in the v2 catalog',()=>{
     expect(html).toContain('캠퍼스 미확인');
     expect(html).not.toContain('href="javascript:');
   });
+  it('never shows the original source link for a non-permitted catalog item',()=>{
+    const html=show({...item,permitted:false});
+    expect(html).not.toContain('href=');
+    expect(html).not.toContain('검증 2026-11-01');
+  });
   it('does not fabricate a source link when none is provided',()=>{
     const html=show({...item,sourceUrl:undefined});
     expect(html).not.toContain('href=');

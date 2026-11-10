@@ -33,7 +33,7 @@ export function buildCatalogSearchQuery(
 
 /** The URL is a source citation only; students must follow official instructions to apply. */
 export function OwnerV2CatalogListItem({item}:{item:C.OpportunityCatalogItem}){
-  const verified=item.source.status==='VERIFIED'&&item.source.rights==='CLEARED';
+  const verified=item.permitted&&item.source.status==='VERIFIED'&&item.source.rights==='CLEARED';
   return <li>
     <strong>{item.title}</strong> · {item.category} · {item.campus??'캠퍼스 미확인'}
     {item.summary&&<p>{item.summary}</p>}
