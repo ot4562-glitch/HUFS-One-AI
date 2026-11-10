@@ -17,7 +17,7 @@ export function formatKstDate(value?:string):string{
   const date=new Date(value);
   if(!Number.isFinite(date.getTime()))return '미확인';
   const parts=KST_DATE.formatToParts(date);
-  const part=(type:typeof parts[number]['type'])=>parts.find(p=>p.type===type)?.value;
+  const part=(type:string)=>parts.find(p=>p.type===type)?.value;
   const year=part('year'),month=part('month'),day=part('day');
   return year&&month&&day?`${year}-${month}-${day}`:'미확인';
 }
