@@ -1,0 +1,730 @@
+{
+  "schemaVersion": 1,
+  "createdOn": "2026-11-10",
+  "project": "HUFS-One-AI",
+  "purpose": "Discovery seed inventory for full-service real-data migration; not a crawl result, permission grant, verified extraction, or production data.",
+  "dataAcquisitionState": "NOT_COLLECTED",
+  "scope": "HUFS_AND_EXTERNAL_OPPORTUNITIES",
+  "sources": [
+    {
+      "id": "HUFSPORTAL",
+      "url": "https://www.hufs.ac.kr/sites/hufs/index.do",
+      "kind": "PORTAL",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "ACADEMIC_CALENDAR",
+      "url": "https://academic.hufs.ac.kr/academic/index.do",
+      "kind": "CALENDAR",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "HAKSA_CENTER",
+      "url": "https://haksa.hufs.ac.kr/haksa/index.do",
+      "kind": "PORTAL",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "SCHOLARSHIP_BOARD",
+      "url": "https://student.hufs.ac.kr/student/12767/subview.do",
+      "kind": "BOARD",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "STUDENT_AFFAIRS",
+      "url": "https://student.hufs.ac.kr/student/index.do",
+      "kind": "PORTAL",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "STUDENT_ACTIVITIES",
+      "url": "https://student.hufs.ac.kr/student/12751/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "STUDENT_SUPPORT",
+      "url": "https://student.hufs.ac.kr/student/12758/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "STUDENT_FORMS",
+      "url": "https://student.hufs.ac.kr/student/12776/subview.do",
+      "kind": "BOARD",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "STUDENT_FAQ",
+      "url": "https://student.hufs.ac.kr/hufs/11289/subview.do",
+      "kind": "FAQ",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "NATIONAL_SCHOLARSHIP",
+      "url": "https://student.hufs.ac.kr/hufs/11394/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "MAJOR_CURRICULUM",
+      "url": "https://www.hufs.ac.kr/hufs/11371/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "EICC_GRADUATION",
+      "url": "https://dep.hufs.ac.kr/eicc/4002/subview.do",
+      "kind": "DEPARTMENT_SAMPLE",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "FINAI_GRADUATION",
+      "url": "https://dep.hufs.ac.kr/aifinance/m03_s02.do",
+      "kind": "DEPARTMENT_SAMPLE",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "OIA_HOME",
+      "url": "https://www.hufs.ac.kr/sites/oia/index.do",
+      "kind": "PORTAL",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "OIA_NOTICE",
+      "url": "https://www.hufs.ac.kr/oia/19688/subview.do",
+      "kind": "BOARD",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "OIA_EXCHANGE",
+      "url": "https://www.hufs.ac.kr/oia/19673/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "OIA_SITEMAP",
+      "url": "https://www.hufs.ac.kr/oia/sitemap.do",
+      "kind": "SITEMAP",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "JOB_CENTER",
+      "url": "https://job.hufs.ac.kr/job/html/center02.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "STARTUP_PROGRAMS",
+      "url": "https://startup.hufs.ac.kr/startup/12613/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "ACCESSIBILITY_SUPPORT",
+      "url": "https://support.hufs.ac.kr/support/16413/subview.do",
+      "kind": "INFORMATION",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    },
+    {
+      "id": "LIFE_GUIDE_2026",
+      "url": "https://e-book.hufs.ac.kr/src/viewer/download.php?host=main&no=1&site=studentlifeguide2026",
+      "kind": "DOCUMENT",
+      "discoveryEvidence": "OFFICIAL_SITE_SEARCH_RESULT",
+      "accessClass": "PUBLIC_ANONYMOUS_CANDIDATE",
+      "robots": "UNVERIFIED",
+      "terms": "UNVERIFIED",
+      "contentAcquired": false,
+      "sourceRevisionId": null
+    }
+  ],
+  "domains": [
+    {
+      "id": "academic_notices",
+      "label": "학사 공지",
+      "sourceIds": [
+        "HUFSPORTAL",
+        "HAKSA_CENTER"
+      ],
+      "consumers": [
+        "notices",
+        "calendar"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "academic_calendar",
+      "label": "학사 일정",
+      "sourceIds": [
+        "ACADEMIC_CALENDAR",
+        "HAKSA_CENTER"
+      ],
+      "consumers": [
+        "calendar",
+        "study-plan"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "course_catalog",
+      "label": "교과·과목·학과 교육과정",
+      "sourceIds": [
+        "MAJOR_CURRICULUM"
+      ],
+      "consumers": [
+        "academics",
+        "course-discovery"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "course_offerings",
+      "label": "학기별 개설 강좌·강의시간표",
+      "sourceIds": [],
+      "consumers": [
+        "academics",
+        "forecast"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "course_syllabus",
+      "label": "강의계획서·교수·강의실",
+      "sourceIds": [],
+      "consumers": [
+        "academics"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "graduation_requirements",
+      "label": "학과·학번별 졸업/이수요건",
+      "sourceIds": [
+        "MAJOR_CURRICULUM",
+        "EICC_GRADUATION",
+        "FINAI_GRADUATION"
+      ],
+      "consumers": [
+        "degree",
+        "what-if"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "major_minors",
+      "label": "전공/이중전공/부전공/마이크로전공",
+      "sourceIds": [
+        "MAJOR_CURRICULUM",
+        "HAKSA_CENTER"
+      ],
+      "consumers": [
+        "academics",
+        "degree"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "scholarships",
+      "label": "교내·교외·국가 장학",
+      "sourceIds": [
+        "SCHOLARSHIP_BOARD",
+        "NATIONAL_SCHOLARSHIP"
+      ],
+      "consumers": [
+        "opportunities",
+        "eligibility"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "tuition_and_loans",
+      "label": "등록금·학자금대출·국가근로",
+      "sourceIds": [
+        "STUDENT_AFFAIRS",
+        "NATIONAL_SCHOLARSHIP"
+      ],
+      "consumers": [
+        "financial-aid"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "exchange_programs",
+      "label": "교환·7+1·연수·학점인정",
+      "sourceIds": [
+        "OIA_HOME",
+        "OIA_NOTICE",
+        "OIA_EXCHANGE",
+        "OIA_SITEMAP"
+      ],
+      "consumers": [
+        "exchange",
+        "academics"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "international_students",
+      "label": "국제학생 안내·체류·행정 절차",
+      "sourceIds": [
+        "OIA_HOME",
+        "OIA_SITEMAP"
+      ],
+      "consumers": [
+        "international-guide"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "career_and_jobs",
+      "label": "진로·취업·채용",
+      "sourceIds": [
+        "JOB_CENTER",
+        "STUDENT_AFFAIRS"
+      ],
+      "consumers": [
+        "opportunities",
+        "career"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "internships",
+      "label": "현장실습·인턴십",
+      "sourceIds": [
+        "JOB_CENTER",
+        "OIA_HOME"
+      ],
+      "consumers": [
+        "opportunities",
+        "experience"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "external_competitions",
+      "label": "공모전·대외활동",
+      "sourceIds": [
+        "STUDENT_AFFAIRS",
+        "STUDENT_ACTIVITIES"
+      ],
+      "consumers": [
+        "opportunities",
+        "experience"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "campus_programs",
+      "label": "비교과·학생 프로그램",
+      "sourceIds": [
+        "STUDENT_AFFAIRS",
+        "STARTUP_PROGRAMS"
+      ],
+      "consumers": [
+        "opportunities",
+        "learning"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "student_clubs",
+      "label": "동아리·학생회·자치활동",
+      "sourceIds": [
+        "STUDENT_ACTIVITIES",
+        "STUDENT_AFFAIRS"
+      ],
+      "consumers": [
+        "campus",
+        "experience"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "campus_events",
+      "label": "학술제·학생 행사·특강",
+      "sourceIds": [
+        "STUDENT_ACTIVITIES",
+        "STUDENT_AFFAIRS"
+      ],
+      "consumers": [
+        "campus",
+        "calendar"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "volunteering",
+      "label": "봉사·사회공헌·멘토링 기회",
+      "sourceIds": [
+        "STUDENT_AFFAIRS"
+      ],
+      "consumers": [
+        "opportunities",
+        "experience"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "startup_support",
+      "label": "창업교육·경진대회·지원",
+      "sourceIds": [
+        "STARTUP_PROGRAMS"
+      ],
+      "consumers": [
+        "opportunities",
+        "career"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "mentoring",
+      "label": "현직자 멘토·멘토링 제도",
+      "sourceIds": [],
+      "consumers": [
+        "career",
+        "mentoring"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "tutoring",
+      "label": "튜터링·학습공동체",
+      "sourceIds": [
+        "ACCESSIBILITY_SUPPORT"
+      ],
+      "consumers": [
+        "learning"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "counseling",
+      "label": "교내 상담·복지 기관",
+      "sourceIds": [
+        "STUDENT_SUPPORT",
+        "STUDENT_AFFAIRS"
+      ],
+      "consumers": [
+        "counseling"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "accessibility_support",
+      "label": "장애학생 지원",
+      "sourceIds": [
+        "ACCESSIBILITY_SUPPORT"
+      ],
+      "consumers": [
+        "support"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "student_welfare",
+      "label": "학생 생활·지원 제도",
+      "sourceIds": [
+        "STUDENT_SUPPORT",
+        "LIFE_GUIDE_2026"
+      ],
+      "consumers": [
+        "campus",
+        "support"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "dormitory_food_facilities",
+      "label": "기숙사·식당·시설·도서관",
+      "sourceIds": [
+        "LIFE_GUIDE_2026"
+      ],
+      "consumers": [
+        "campus"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "forms_certificates",
+      "label": "양식·제증명 안내",
+      "sourceIds": [
+        "STUDENT_FORMS",
+        "STUDENT_FAQ"
+      ],
+      "consumers": [
+        "administration"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "regulations_and_faq",
+      "label": "학칙·규정·FAQ",
+      "sourceIds": [
+        "STUDENT_FAQ",
+        "MAJOR_CURRICULUM",
+        "OIA_SITEMAP"
+      ],
+      "consumers": [
+        "rag",
+        "academics"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "badges_and_credentials",
+      "label": "배지·자격·인증요건",
+      "sourceIds": [],
+      "consumers": [
+        "badges"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "industry_ncs",
+      "label": "공개 직무역량/NCS",
+      "sourceIds": [],
+      "consumers": [
+        "career",
+        "skills"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "employment_statistics",
+      "label": "취업 통계·공공 집계",
+      "sourceIds": [],
+      "consumers": [
+        "career",
+        "statistics"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "external_organizations",
+      "label": "교외기관·파트너십·지원조직",
+      "sourceIds": [
+        "OIA_SITEMAP",
+        "JOB_CENTER"
+      ],
+      "consumers": [
+        "opportunities",
+        "mentoring"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "department_directory",
+      "label": "학과·부서·연락처",
+      "sourceIds": [
+        "HUFSPORTAL",
+        "STUDENT_AFFAIRS"
+      ],
+      "consumers": [
+        "campus",
+        "support"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "DISCOVERY_SEED_ONLY",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "research_opportunities",
+      "label": "학부 연구·연구실·공모지원",
+      "sourceIds": [],
+      "consumers": [
+        "opportunities",
+        "experience"
+      ],
+      "dataClass": "PUBLIC_OR_STUDENT_COMMON",
+      "readiness": "SOURCE_GAP",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "student_owned_academic",
+      "label": "본인 수강/성적/학적·학점원장",
+      "sourceIds": [],
+      "consumers": [
+        "degree",
+        "what-if"
+      ],
+      "dataClass": "PRIVATE_OPT_IN",
+      "readiness": "PRIVATE_INTAKE_REQUIRED",
+      "realRecordsInThisRegistry": 0
+    },
+    {
+      "id": "student_owned_profile",
+      "label": "본인 경험/포트폴리오·지원 기록",
+      "sourceIds": [],
+      "consumers": [
+        "experience",
+        "bookmarks"
+      ],
+      "dataClass": "PRIVATE_OPT_IN",
+      "readiness": "PRIVATE_INTAKE_REQUIRED",
+      "realRecordsInThisRegistry": 0
+    }
+  ]
+}
