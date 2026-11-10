@@ -39,3 +39,12 @@ and fake queue. This is an **offline interface test, not a real Crawlee npm
 integration or an NCP deployment**. No network or actual data is used.
 
 Refs #445, #447, #449.
+
+## Real package smoke (without NCP)
+
+The separate GitHub Actions workflow `.github/workflows/crawlee-real-smoke.yml`
+installs an exact `crawlee@3.18.2` into a disposable runner directory
+(no repository lockfile or browser download) and executes a BasicCrawler and
+RequestQueue against a synthetic `runOne()` stub. This checks actual library
+API compatibility **only**. Production installation still requires a reviewed
+lockfile, operator-provided NCP storage and a current rights registry.
