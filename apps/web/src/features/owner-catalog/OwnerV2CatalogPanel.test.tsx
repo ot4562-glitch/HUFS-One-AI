@@ -38,6 +38,10 @@ describe('#447 approved source traceability in the v2 catalog',()=>{
       {...item.source,status:'REVOKED' as const},
       {...item.source,status:'SYNTHETIC' as const},
       {...item.source,rights:'BLOCKED' as const},
-    ]) expect(show({...item,source})).not.toContain('href=');
+    ]) {
+      const html=show({...item,source});
+      expect(html).not.toContain('href=');
+      expect(html).not.toContain('검증 2026-11-01');
+    }
   });
 });

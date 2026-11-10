@@ -12,15 +12,16 @@ type SearchResult=Awaited<ReturnType<OwnerV2CatalogPort['search']>>;
 
 /** The URL is a source citation only; students must follow official instructions to apply. */
 export function OwnerV2CatalogListItem({item}:{item:C.OpportunityCatalogItem}){
+  const verified=item.source.status==='VERIFIED'&&item.source.rights==='CLEARED';
   return <li>
     <strong>{item.title}</strong> · {item.category} · {item.campus??'캠퍼스 미확인'}
     {item.summary&&<p>{item.summary}</p>}
     <p className="muted">
       마감 {item.deadlineAt?.slice(0,10)??'미확인'} · 자격 {item.eligibility}
       {' · '}검증 판본 {item.source.revisionId}
-      {item.source.verifiedAt&&<> · 검증 {item.source.verifiedAt.slice(0,10)}</>}
+      {verified&&item.source.verifiedAt&&<> · 검증 {item.source.verifiedAt.slice(0,10)}</>}
     </p>
-    {item.sourceUrl&&item.source.status==='VERIFIED'&&item.source.rights==='CLEARED'&&
+    {item.sourceUrl&&verified&&
       <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
         aria-label={item.title+' 원문 보기 (새 탭)'}>원문 확인</a>}
   </li>;
