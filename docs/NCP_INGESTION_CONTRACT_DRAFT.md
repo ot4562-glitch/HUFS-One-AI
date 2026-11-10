@@ -25,3 +25,7 @@
 ## 웹 후보·robots·terms 검토 계약 (합성 전용)
 
 `CrawlScopeDraftSchema`는 출처별 허용 후보 경로와 robots/약관 검토 상태를 `UNKNOWN / REVIEWED_PERMITTED / RESTRICTED`로 구분해 기록합니다. `DiscoveryCandidateDraftSchema`는 같은 출처 origin에서 발견한 링크를 `REVIEW_REQUIRED`로 인계하고 **발견 자체가 자동 수집·권리 허가가 아님**을 보장합니다. 실제 robots/약관 판독·독립 확인·수집 요청 상한·운영 원장의 적용과 승인 여부는 NCP에서만 최종 결정합니다.
+
+## 수집 후보 → 인적 검토 DTO 연결 (NCP 설치 전)
+
+`prepareDiscoveryReviewDrafts`는 Crawlee/Cheerio가 **이미 허가받아 읽은 바이트**에서 뽑은 최대 100개 링크 제안을 `DiscoveryCandidateDraft`로 변환하고, 현재 입력된 동일 출처 origin·경로 prefix 범위 밖 URL과 중복을 제외합니다. 반환 항목은 오직 `REVIEW_REQUIRED`이며 자동 enqueue·수집·권리 확인·ACTIVE 승격은 없습니다. 예제는 합성 도메인만 사용하고 실제 소스/운영 registry는 NCP 비공개 원장에만 보관합니다. `UNKNOWN` robots/terms도 검토할 후보는 만들 수 있지만, 실제 수집 권한을 뜻하지는 않습니다.
