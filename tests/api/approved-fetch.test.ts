@@ -71,6 +71,16 @@ describe('TASK-19 approved-source ingestion, fail-closed HTTP and immutable draf
     expect(h.ledger.size()).toBe(1);
     expect(h.ledger.latest(POLICY.sourceId)?.revision.status).toBe('NEEDS_REVIEW');
   });
+  it('accepts bounded XML sitemap and Atom only as independent review drafts',async()=>{
+    for(const media of ['application/xml','text/xml','application/atom+xml']){
+      const h=harness([reply('<urlset><url><loc>https://official.example.edu/notice/approved</loc></url></urlset>',
+        200,{'content-type':media})]);
+      const result=await h.fetcher.check();
+      expect(result.kind).toBe('NEW_DRAFT');
+      expect(h.ledger.latest(POLICY.sourceId)?.revision.status).toBe('NEEDS_REVIEW');
+      expect(h.calls).toHaveLength(1);
+    }
+  });
   it('honors ETag/304 without changing human-verified timestamp or creating a revision',async()=>{
     const h=harness([
       reply('가상 최초 공고',200,{etag:'"v1"'}),
