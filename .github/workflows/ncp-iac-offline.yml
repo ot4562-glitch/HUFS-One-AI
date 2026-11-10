@@ -68,7 +68,7 @@ jobs:
           test ! -d local_only
           bash -n infra/ncp/setup/02-install-host.sh
           bash -n infra/ncp/bootstrap-ubuntu.sh
-          node --test tools/ingestion/refresh-cli.node.test.mjs
+          node --test tools/ingestion/refresh-cli.node.test.mjs tools/ingestion/crawlee-approved-dispatch.node.test.mjs
           sudo python3 -m unittest discover -s tests/release -p test_ncp_operator_workflow.py -v
 
   network-mock:
