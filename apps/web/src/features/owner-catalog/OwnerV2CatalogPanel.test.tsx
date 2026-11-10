@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {OwnerV2CatalogListItem,buildCatalogSearchQuery} from './OwnerV2CatalogPanel.js';
+import {OwnerV2CatalogListItem,buildCatalogSearchQuery,formatKstDate} from './OwnerV2CatalogPanel.js';
 
 const item:C.OpportunityCatalogItem={
   id:'SYN-OPPORTUNITY-1',title:'가상 장학 안내',summary:'합성 검증 데이터',
@@ -26,6 +26,15 @@ describe('#447 approved source traceability in the v2 catalog',()=>{
     expect(html).toContain('2026-11-01');
     expect(html).toContain('캠퍼스 미확인');
     expect(html).not.toContain('href="javascript:');
+  });
+  it('displays deadlines, source verification, and snapshot date in Korea time',()=>{
+    expect(formatKstDate('2026-11-30T15:00:00Z')).toBe('2026-12-01');
+    expect(formatKstDate('2026-11-30T23:59:59+09:00')).toBe('2026-11-30');
+    expect(formatKstDate()).toBe('미확인');
+    const html=show({...item,deadlineAt:'2026-11-30T15:00:00Z',
+      source:{...item.source,verifiedAt:'2026-11-01T15:01:00Z'}});
+    expect(html).toContain('마감 2026-12-01');
+    expect(html).toContain('검증 2026-11-02');
   });
   it('never shows the original source link for a non-permitted catalog item',()=>{
     const html=show({...item,permitted:false});
