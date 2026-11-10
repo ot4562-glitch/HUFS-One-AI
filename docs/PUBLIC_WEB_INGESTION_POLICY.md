@@ -1,6 +1,6 @@
 # HUFS One AI — 공개 웹·학생 공통 자료 수집 정책 (2026-11-10 제안)
 
-> **상태: POLICY PROPOSAL, NOT YET IMPLEMENTED.** 본 문서는 기존 정책을 완화하는 설계 기준이다. 이 문서를 추가했다고 네트워크 크롤러, 학교 인증, 공개 재게시권 또는 실서비스 연결이 구현·승인된 것은 아니다. 실제 권리와 품질 검증은 별도다.
+> **상태: POLICY PROPOSAL, PARTIALLY IMPLEMENTED.** 본 문서는 기존 정책을 완화하는 설계 기준이다. 이 문서를 추가했다고 네트워크 크롤러, 학교 인증, 공개 재게시권 또는 실서비스 연결이 구현·승인된 것은 아니다. 실제 권리와 품질 검증은 별도다.
 
 ## 1. 원칙: 먼저 발견하고, 수집·저장·공개·AI 이용은 분리한다
 
@@ -42,7 +42,7 @@ HUFS One AI는 학사 공지, 교과정보, 장학, 비교과, 취업, 교환학
 
 ## 5. 기술 구현 백로그 (미구현 사항)
 
-현재 `source-ingestion-durable.ts`는 **사전 정확 URL 등록/출처 권리 확인**만 허용하고 자동 발견/스케줄러가 없다. `permitted-curriculum.ts`의 HTTP 계약도 `robots:'ALLOWED'`만 허용한다. `tools/collect_missing_references.py`는 참고문헌 일회성 수집기이며 `ROBOTS_DISALLOW`를 거부한다. **이 상태를 범용 자동 수집 완료로 주장하지 않는다.**
+현재 `source-ingestion-durable.ts`는 **사전 정확 URL 등록/출처 권리 확인**만 허용하고 자동 발견/스케줄러가 없다. 이 정책 PR에서는 `permitted-curriculum.ts`의 **한정된 HTTP 교과자료 수집**에 `robots:'NOT_FOUND'`와 사이트별 명시적 권한의 `robots:'DISALLOWED'` 예외를 추가했다. 이는 광범위한 robots 무시 또는 범용 크롤러가 아니다. `tools/collect_missing_references.py`는 참고문헌 일회성 수집기이며 `ROBOTS_DISALLOW`를 거부한다. **이 상태를 범용 자동 수집 완료로 주장하지 않는다.**
 
 구현은 별도 PR/회귀 테스트로 진행한다.
 
