@@ -25,7 +25,7 @@ HUFS One AI는 학사 공지, 교과정보, 장학, 비교과, 취업, 교환학
 
 - **자료의 발견/후보 등록은 robots Disallow만으로 영구 배제하지 않는다.** 해당 URL·접근 계층·원인·처리 방법을 원장에 남긴다.
 - 자동 수집 가능할 때는 HTTP/RSS/sitemap/공식 데이터 제공을 먼저 사용하고 필요하면 허용된 범위에서 Playwright/Crawlee 브라우저 수집을 사용한다.
-- `ROBOTS_DISALLOW`인 URL은 무인 크롤링으로 자동 우회하지 않는다. 공식 API·제공자 허용·자료 제공 요청·사용자가 브라우저에서 적법하게 저장한 HTML/PDF/HWPX 가져오기 등으로 **수집 진행 경로를 유지**한다. 사이트별로 별도의 명시적 자동 접근 허가가 확인되면 그 허가 범위를 원장에 기록하고 허용된 접근 방식을 적용한다.
+- `ROBOTS_DISALLOW`인 URL을 무조건 폐기하지 않는다. 기본은 운영자 검토 큐로 보내며, **비로그인 일반 공개 접근성·이용 조건·요청량 및 사용자 영향·관련 법령**을 확인하고 해당 출처의 검토 기록(`robotsReviewRef`)을 남긴 경우 HTTP 취득을 선택할 수 있다. 이 선택이 RFC 9309 준수를 뜻하지는 않으며, 사이트 규칙을 따르지 않는 것의 위험과 필요성을 운영자가 책임지고 판단한다. 검토가 어렵거나 실제 차단되는 경우 공식 API·제공자 허가·자료 요청·적법한 사용자 브라우저 저장본 등으로 취득 경로를 유지한다.
 - 401/403, CAPTCHA, 차단 페이지, 속도 제한, 인증·권한 장벽은 단순한 robots 표시와 다르다. 우회 자동화, 가짜 학생 계정, 은닉 프록시/IP 회전으로 강행하지 않는다. 해당 소스는 `ACCESS_RESTRICTED`와 대체 취득 경로를 기록한다.
 - 사이트별 요청량 상한, 백오프, `Retry-After`, 연락/중지 요청, 네트워크 비용을 준수한다. `Disallow` 자체를 법률상 금지 또는 무조건 허용과 동치로 해석하지 않는다.
 
@@ -42,7 +42,7 @@ HUFS One AI는 학사 공지, 교과정보, 장학, 비교과, 취업, 교환학
 
 ## 5. 기술 구현 백로그 (미구현 사항)
 
-현재 `source-ingestion-durable.ts`는 **사전 정확 URL 등록/출처 권리 확인**만 허용하고 자동 발견/스케줄러가 없다. 이 정책 PR에서는 `permitted-curriculum.ts`의 **한정된 HTTP 교과자료 수집**에 `robots:'NOT_FOUND'`와 사이트별 명시적 권한의 `robots:'DISALLOWED'` 예외를 추가했다. 이는 광범위한 robots 무시 또는 범용 크롤러가 아니다. `tools/collect_missing_references.py`는 참고문헌 일회성 수집기이며 `ROBOTS_DISALLOW`를 거부한다. **이 상태를 범용 자동 수집 완료로 주장하지 않는다.**
+현재 `source-ingestion-durable.ts`는 **사전 정확 URL 등록/출처 권리 확인**만 허용하고 자동 발견/스케줄러가 없다. 이 정책 PR에서는 `permitted-curriculum.ts`의 **한정된 HTTP 교과자료 수집**에 `robots:'NOT_FOUND'`와 신뢰된 운영자 검토 기록(`robotsReviewRef`)을 요구하는 `robots:'DISALLOWED'` 경로를 추가했다. 이는 범용 크롤러나 무조건적 robots 무시가 아니다. `tools/collect_missing_references.py`는 참고문헌 일회성 수집기이며 `ROBOTS_DISALLOW`를 거부한다. **이 상태를 범용 자동 수집 완료로 주장하지 않는다.**
 
 구현은 별도 PR/회귀 테스트로 진행한다.
 
