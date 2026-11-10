@@ -102,3 +102,14 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 - [ ] Claude/GPT 각각 tool listing 및 최소 권한 확인. 실제 연결 여부를 알 수 없으면 **NOT_INSTALLED/NOT_VERIFIED**.
 - [ ] 5명 모두 공통 `AGENTS.md`, 업무 책임자, RAG/NCP 자료 외부 송신 금지·공개 CI 합성 데이터 사용 검증.
 - [ ] 각자 1~2개만 채택/보류·제외 결론. 실제 설치/설정 파일·새 의존성은 개별 PR/사용자 승인을 거친다.
+
+### Superpowers와 비슷한 개발 방법론 — 대안 3종, 동시에 설치 금지
+
+| 도구/출처 | Claude·Codex 지원/활용 | HUFS One AI 판단 |
+|---|---|---|
+| [Superpowers — obra](https://github.com/obra/superpowers) (MIT, 제3자) | 양쪽 공식 마켓플레이스, 명세·계획·TDD·디버깅·리뷰 | **최초 기준선**: 복잡한 기능 한 건에 적용하고 기존 PR·리뷰 규칙과 중복 측정 |
+| [GitHub Spec Kit — github/spec-kit](https://github.com/github/spec-kit) (GitHub 공식) | Claude/Codex 포함 다양한 에이전트에 Spec → Plan → Tasks → Implement 및 버그 수정 워크플로 | **2차 비교 후보**: #449처럼 미설계 범위가 크고 여러 모듈 협의가 필요한 작업에만; 산출물 과다 생성 금지 |
+| [BMad Method — bmad-code-org](https://github.com/bmad-code-org/BMAD-METHOD) (MIT, 제3자) | Claude/Codex 마켓플레이스 또는 CLI, 다중 역할/아키텍처/테스트 계획 | **보류**: 5인 실협업과 GitHub 업무 분장이 이미 존재해 중복 agent/문서/토큰 비용 큼 |
+| [GSD Core](https://github.com/open-gsd/gsd-core) (커뮤니티) | 기존 Get Shit Done 저장소는 이전되어 현재 정본·변경 내역 검증 필요 | **보류**: 기존 gsd-build/get-shit-done에서 곧바로 설치하지 않음 |
+
+**결정 규칙:** 첫 실험은 Superpowers로 하고, 설계가 특히 복잡한 경우 **GitHub Spec Kit만 대조 실험**. Superpowers + Spec Kit + BMad + 기존 팀 이슈 봇을 한꺼번에 강제하지 않습니다. #450이 실험 결과를 모아 공통 지침에 반영하도록 합니다.
