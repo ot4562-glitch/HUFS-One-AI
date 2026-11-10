@@ -2,7 +2,6 @@
 Description=HUFS One AI NCP-only approved Crawlee refresh (non-root)
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/etc/hufs-one/private/refresh-factory.mjs
 
 [Service]
 Type=oneshot

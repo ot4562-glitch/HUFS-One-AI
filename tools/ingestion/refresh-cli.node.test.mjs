@@ -39,6 +39,9 @@ describe('NCP-only refresh service static and process gates (#445)',()=>{
     assert.match(service,/^Environment=CRAWLEE_STORAGE_DIR=\/var\/lib\/hufs-one-crawler\/crawlee$/m);
     assert.match(service,/ExecStart=\/usr\/bin\/flock -n .*refresh-cli\.mjs --apply/);
     assert.doesNotMatch(service,/^User=root$/m);
+    // ConditionPathExists makes missing private configuration silently 'skipped'.
+    // A requested refresh must instead fail visibly and never report success.
+    assert.doesNotMatch(service,/^ConditionPathExists=/m);
     assert.match(timer,/^Unit=hufs-one-ai-data-refresh\.service$/m);
     assert.match(timer,/^Persistent=true$/m);
     assert.doesNotMatch(timer,/ExecStart=/);

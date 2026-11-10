@@ -118,6 +118,48 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
       {...candidate,secret:'private-data'},
     ]) expect(D.DiscoveryCandidateDraftSchema.safeParse(changed).success).toBe(false);
   });
+
+  it('maps Crawlee review-only candidates into scoped draft records without approval',()=>{
+    const scope={sourceId:'SYN-SOURCE',approvedOrigin:'https://example.org/',
+      pathPrefixes:['/notices','/files'],robotsStatus:'UNKNOWN' as const,
+      termsStatus:'UNKNOWN' as const,policyRef:'SYN-POLICY',
+      observedAt:'2026-11-11T00:00:00Z'};
+    const discovered={state:'REVIEW_REQUIRED',kind:'SITEMAP',scanned:6,
+      sourceUrl:'https://example.org/notices/index',
+      candidates:[
+        {url:'https://example.org/notices/2',type:'DOCUMENT'},
+        {url:'https://example.org/notices/2',type:'DOCUMENT'},
+        {url:'https://example.org/files/a.pdf',type:'ATTACHMENT'},
+        {url:'https://example.org/notices-old/3',type:'DOCUMENT'},
+        {url:'https://example.org/private/4',type:'DOCUMENT'},
+        {url:'https://example.org/notices/%252e%252e/admin',type:'DOCUMENT'},
+      ]};
+    const drafts=D.prepareDiscoveryReviewDrafts({
+      sourceId:'SYN-SOURCE',revisionId:'SYN-REV-1',
+      seenAt:'2026-11-11T02:00:00Z',scope,discovered,
+    });
+    expect(drafts).toHaveLength(2);
+    expect(drafts.map(x=>x.proposedUrl)).toEqual([
+      'https://example.org/notices/2','https://example.org/files/a.pdf',
+    ]);
+    expect(drafts.every(x=>x.reviewState==='REVIEW_REQUIRED')).toBe(true);
+    const item=drafts[0]!;
+    expect(D.isDiscoveryCandidateInScopeForReview(item,scope)).toBe(true);
+    expect(D.isDiscoveryCandidateInScopeForReview(item,{...scope,sourceId:'OTHER'})).toBe(false);
+    expect(D.isDiscoveryCandidateInScopeForReview({
+      ...item,proposedUrl:'https://example.org/notices-old/3'},scope)).toBe(false);
+    expect(D.isDiscoveryCandidateInScopeForReview({
+      ...item,proposedUrl:'https://example.org/notices/%2fadmin'},scope)).toBe(false);
+    expect(()=>D.prepareDiscoveryReviewDrafts({
+      sourceId:'OTHER',revisionId:'SYN-REV-1',seenAt:'2026-11-11T02:00:00Z',
+      scope,discovered,
+    })).toThrow();
+    expect(()=>D.prepareDiscoveryReviewDrafts({
+      sourceId:'SYN-SOURCE',revisionId:'SYN-REV-1',seenAt:'2026-11-11T02:00:00Z',
+      scope,discovered:{...discovered,state:'ACTIVE'},
+    })).toThrow();
+  });
+
   it('detects incompatible schema versions before deployment',()=>{
     const v={gitSha:'f'.repeat(40),buildSha:shaA,migrationVersion:'migration-1',
       adapterVersion:'adapter-1',datasetRevision:'data-1',schemaVersion:1};
