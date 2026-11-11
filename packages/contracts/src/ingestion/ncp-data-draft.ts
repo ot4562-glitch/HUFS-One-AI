@@ -164,7 +164,34 @@ export const SourceRefreshPreflightDraftSchema=z.strictObject({
   remainingRequests:z.number().int().min(0).max(100_000),
   remainingBytes:z.number().int().min(0).max(1_000_000_000),
   retryAfter:Iso.optional(),
+  // The private durable queue supplies actual counts and the last HTTP
+  // response status. No auto-retry decision is made from a page's text.
+  attemptsForUrl:z.number().int().min(0).max(10),
+  maxAttempts:z.number().int().min(1).max(3),
+  lastHttpStatus:z.number().int().min(100).max(599).optional(),
+  retryAfterHeader:z.string().min(1).max(128).optional(),
 });
+/** Strict RFC 9110 Retry-After delay-seconds or IMF-fixdate candidate.
+ * A missing/malformed/oversized header is NOT permission to retry.
+ * This is not a network client, clock authority or durable scheduler.
+ */
+export function parseReviewedRetryAfter(value:unknown,now:unknown):string|null{
+  if(typeof value!=='string'||value.length>128||value!==value.trim()
+    ||typeof now!=='string'||!Iso.safeParse(now).success)return null;
+  const at=Date.parse(now),max=86_400_000;
+  let until:number;
+  if(/^\\d{1,5}$/.test(value)){
+    const seconds=Number(value);
+    if(!Number.isSafeInteger(seconds)||seconds>86400)return null;
+    until=at+seconds*1000;
+  }else{
+    // Accept the HTTP-date grammar produced by Date#toUTCString, not
+    // locale-dependent Date.parse variants or embedded input.
+    until=Date.parse(value);
+    if(!Number.isFinite(until)||new Date(until).toUTCString()!==value)return null;
+  }
+  return until<at||until-at>max?null:new Date(until).toISOString();
+}
 export type SourceRefreshPreflightDraft=z.infer<typeof SourceRefreshPreflightDraftSchema>;
 export type SourceRefreshPreflightResult={
   state:'BLOCKED'|'READY_FOR_OPERATOR_RECHECK';
@@ -173,7 +200,8 @@ export type SourceRefreshPreflightResult={
 export function evaluateSourceRefreshPreflight(input:unknown):SourceRefreshPreflightResult{
   const parsed=SourceRefreshPreflightDraftSchema.safeParse(input);
   if(!parsed.success)return {state:'BLOCKED',reasons:['INVALID_CONFIGURATION']};
-  const {registration,scope,pageUrl,now,remainingRequests,remainingBytes,retryAfter}=parsed.data;
+  const {registration,scope,pageUrl,now,remainingRequests,remainingBytes,retryAfter,
+    attemptsForUrl,maxAttempts,lastHttpStatus,retryAfterHeader}=parsed.data;
   const reasons:string[]=[];
   if(registration.sourceId!==scope.sourceId
     ||new URL(registration.canonicalUrl).origin!==new URL(scope.approvedOrigin).origin
@@ -193,6 +221,17 @@ export function evaluateSourceRefreshPreflight(input:unknown):SourceRefreshPrefl
       ||pathname.startsWith(prefix.endsWith('/')?prefix:prefix+'/')))
     reasons.push('PATH_NOT_APPROVED');
   if(remainingRequests<1||remainingBytes<1)reasons.push('BUDGET_EXHAUSTED');
+  if(attemptsForUrl>=maxAttempts)reasons.push('ATTEMPT_LIMIT');
+  if(lastHttpStatus===401||lastHttpStatus===403)
+    reasons.push('ACCESS_CONTROLLED_NO_RETRY');
+  else if(lastHttpStatus!==undefined&&lastHttpStatus>=400
+    &&lastHttpStatus!==429&&lastHttpStatus!==503)
+    reasons.push('HTTP_ERROR_REVIEW_REQUIRED');
+  if(lastHttpStatus===429||lastHttpStatus===503){
+    const due=parseReviewedRetryAfter(retryAfterHeader,now);
+    if(!due)reasons.push('THROTTLED_OPERATOR_REVIEW');
+    else if(Date.parse(due)>Date.parse(now))reasons.push('RETRY_AFTER');
+  }
   if(retryAfter&&Date.parse(retryAfter)>Date.parse(now))reasons.push('RETRY_AFTER');
   return reasons.length?{state:'BLOCKED',reasons}:
     {state:'READY_FOR_OPERATOR_RECHECK',reasons:[]};
