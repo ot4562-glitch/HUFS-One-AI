@@ -10,7 +10,7 @@ export type MentorMetrics={
   ndcgAtK:number|null;recallAtK:number|null;mrrAtK:number|null;
 };
 const gain=(grade:0|1|2)=>Math.pow(2,grade)-1;
-const dcg=(relevance:readonly (0|1|2)[])=>relevance.reduce((total,g,i)=>
+const dcg=(relevance:readonly (0|1|2)[])=>relevance.reduce<number>((total,g,i)=>
   total+gain(g)/Math.log2(i+2),0);
 export function evaluateMentorRankingAtK(input:{
   rankedIds:readonly string[];
