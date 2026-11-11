@@ -65,8 +65,8 @@ describe('#339 filtered owner activity UI uses current authorized results only',
   });
   it('ignores an old filter response after the next campus selection',async()=>{
     const f=fixture();
-    const stale=deferred<Awaited<ReturnType<CampusAssistPort['activities']>>>();
-    const latest=deferred<Awaited<ReturnType<CampusAssistPort['activities']>>>();
+    const stale=deferred<Awaited<ReturnType<typeof f.activities>>>();
+    const latest=deferred<Awaited<ReturnType<typeof f.activities>>>();
     f.activities.mockImplementation(async()=>stale.promise);
     const view=render(<OwnerActivityPanel port={f.port} navigate={vi.fn()}/>);
     await waitFor(()=>expect(f.activities).toHaveBeenCalledTimes(1));
