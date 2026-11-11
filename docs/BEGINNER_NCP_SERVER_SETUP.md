@@ -1,6 +1,9 @@
 # NCP 서버 개설·초기 보안 가이드 — 처음 시작하는 사람용
 
-> 기준일: 2026-11-06 · 대상: Naver Cloud Platform(NCP) **한국 리전 / VPC / Ubuntu Server 22.04 또는 24.04 LTS / amd64**. 이 문서는 **설치 설명서**이며 NCP 서버를 실제 생성했다는 증거가 아니다. 프로젝트 소유자의 전체 개발·운영 승인은 `OWNER_CONFIRMED_APPROVED`이지만, 현재 서버·계정·요금·비밀키·사용자별 데이터 권리는 작업 대상별로 확인해야 한다. [운영 통합 이슈 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 완료 전 실서비스는 `RELEASE_BLOCKED`다.
+> **현행 2026-11-11 참고:** 아래 2026-11-06 예시는 실제 서버/요금/SKU 생성 완료 증거가 아닙니다. 이전 #276은 **보관·이관 완료** 이슈이며, 현행 개발은 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), 미확정 운영자 정책은 [#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)에서 관리합니다. 5명은 NCP 개별 Sub Account/SSH 키·최소권한으로 접근하고 운영 원본/권리·Gold/DB/키는 NCP 안에만 저장합니다. GitHub의 [전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md) 및 [운영 상태](NCP_OPERATIONS_2026.md)를 확인하세요. `CONFIGURATION_REQUIRED / NOT_RUN / RELEASE_BLOCKED` 유지.
+
+
+> 기준일: 2026-11-06 · 대상: Naver Cloud Platform(NCP) **한국 리전 / VPC / Ubuntu Server 22.04 또는 24.04 LTS / amd64**. 이 문서는 **설치 설명서**이며 NCP 서버를 실제 생성했다는 증거가 아니다. 프로젝트 소유자의 전체 개발·운영 승인은 `OWNER_CONFIRMED_APPROVED`이지만, 현재 서버·계정·요금·비밀키·사용자별 데이터 권리는 작업 대상별로 확인해야 한다. [현재 수집·운영 #445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) 및 [설계 #449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449) 실제 인수 전 실서비스는 `RELEASE_BLOCKED`다.
 
 **읽는 순서:** 이 문서(서버 만들기) → [제품·에이전트 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) → [제품 원리](BEGINNER_PRODUCT_ARCHITECTURE.md). 개발자용 세부 근거는 [NCP README](../infra/ncp/README.md), [NCP QUICKSTART](../infra/ncp/QUICKSTART.md), [운영 인계 양식](../infra/ncp/OPERATIONS_HANDOFF_TEMPLATE.md)에서 확인한다.
 
