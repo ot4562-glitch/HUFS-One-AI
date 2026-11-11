@@ -137,9 +137,16 @@ describe('#452 eligibility misjudgment rates',()=>{
     expect(r.unsupportedEligible).toEqual({num:1,den:5,value:0.2});
     expect(r.total).toEqual({num:2,den:5,value:0.4});
     expect(r.missingPredictions).toEqual(['e']);
+    expect(r.unlabelledPredictions).toEqual([]);
   });
   it('fails closed on labels outside ELIGIBLE / INELIGIBLE / UNKNOWN',()=>{
     expect(()=>eligibilityMisjudgment({a:'MAYBE' as never},{a:'ELIGIBLE'})).toThrow(RangeError);
     expect(()=>eligibilityMisjudgment({a:'ELIGIBLE'},{a:'MAYBE' as never})).toThrow(RangeError);
+    // Unlabelled predictions do not enter any denominator, but their
+    // invalid classes must not be silently suppressed.
+    expect(()=>eligibilityMisjudgment({a:'INVENTED' as never},{b:'UNKNOWN'})).toThrow(RangeError);
+    const report=eligibilityMisjudgment({a:'ELIGIBLE'},{b:'UNKNOWN'});
+    expect(report.unlabelledPredictions).toEqual(['a']);
+    expect(report.total).toEqual({num:0,den:1,value:0});
   });
 });
