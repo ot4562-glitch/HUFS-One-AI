@@ -43,3 +43,7 @@ export function collectCandidatesFromApprovedBytes({
     ...(limit===undefined?{}:{limit}),
   });
 }
+
+// Offline public listing layout adapters. Only review proposals; never HTTP.
+export {parseApprovedBoardCandidates,reconcileReviewedBoardPages}
+  from './site-adapters.mjs';
