@@ -6,7 +6,7 @@ export const LocalSourceRevisionSchema=z.strictObject({
   revisionId:z.string().min(1),
   sourceId:z.string().min(1),
   supersedes:z.string().min(1).optional(),
-  mediaKind:z.enum(['HTML','IMAGE','PDF','TEXT']),
+  mediaKind:z.enum(['HTML','IMAGE','PDF','TEXT','HWP','HWPX']),
   contentSha256:z.string().regex(/^[0-9a-f]{64}$/),
   fetchedAt:Time,
   publishedAt:Time.optional(),

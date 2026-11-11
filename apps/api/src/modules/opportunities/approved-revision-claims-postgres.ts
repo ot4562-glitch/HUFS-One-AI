@@ -27,7 +27,7 @@ const Revision=z.object({revision_id:Id,source_id:Id,permission_ref:Id,supersede
   status:z.enum(['ACTIVE','NEEDS_REVIEW','STALE','RETRACTED','BLOCKED_RIGHTS']),
   change_kind:z.enum(['NEW','CORRECTED','EXTENDED','CANCELLED','UNKNOWN']),
   source_class:z.enum(['SYNTHETIC','LICENSED_EXTERNAL','PERSONAL_CONSENTED','RESEARCH_REFERENCE_ONLY']),
-  provenance:z.enum(['SYNTHETIC','REAL_APPROVED','RESEARCH_ONLY']),media_kind:z.enum(['TEXT','HTML','IMAGE','PDF']),
+  provenance:z.enum(['SYNTHETIC','REAL_APPROVED','RESEARCH_ONLY']),media_kind:z.enum(['TEXT','HTML','IMAGE','PDF','HWP','HWPX']),
   original_sha256:Sha,content_sha256:Sha,fetched_at:Time,last_checked_at:Time,last_verified_at:Time.nullable(),
   published_at:Time.nullable(),valid_from:Time.nullable(),valid_until:Time.nullable(),
   stored_original_sha256:Sha.nullable(),review_original_sha256:Sha.nullable(),review_content_sha256:Sha.nullable(),
