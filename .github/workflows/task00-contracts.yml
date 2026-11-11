@@ -61,6 +61,7 @@ jobs:
             /tools/strip_build_sourcemaps.mjs
             /tools/prune_merged_branches.mjs
             /tools/tests/prune-merged-branches.node.mjs
+            /tools/ci/
             /tools/audit_entrypoints.mjs
             /tools/entrypoints.json
             /tools/tests/entrypoint-inventory.node.mjs
@@ -91,6 +92,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify merged branch cleanup fails closed without any GitHub token
         run: node --test tools/tests/prune-merged-branches.node.mjs
+      - name: Prove independent peer review gate rejects self, bot and stale HEAD
+        run: node --test tools/ci/check-independent-review.node.test.mjs
       - name: TypeScript, four-track contracts and synthetic API/React E2E regressions
         run: npm run check
       - name: Compile independent evaluation tools and validate signed synthetic review fixtures
