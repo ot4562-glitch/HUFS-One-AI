@@ -58,8 +58,18 @@ describe('same-revision copies cannot decide evidence by input order (#373)',()=
       {...doc,sourceUrl:'https://example.org/synthetic-faq-other'},
       {...doc,effectiveUntil:'2026-12-31'},
       {...doc,verifiedAt:'2026-01-03T00:00:00Z'},
+      // A forged later publication timestamp must NOT turn the SAME
+      // revision ID into a newer approved revision.
+      {...doc,publishedAt:'2026-02-01T00:00:00Z'},
+      {...doc,publishedAt:'2026-02-01T00:00:00Z',rights:'REVOKED'},
     ];
     for(const copy of altered)expect(count([doc,copy])).toEqual([0,0]);
+  });
+  it('a conflicting old revision does not poison an independently published newer revision',()=>{
+    const v1Copied={...doc,publishedAt:'2026-02-01T00:00:00Z'};
+    const v2={...doc,revisionId:'faq-a-v2',publishedAt:'2026-04-01T00:00:00Z',
+      verifiedAt:'2026-04-02T00:00:00Z'};
+    expect(count([doc,v1Copied,v2]).every(n=>n===1)).toBe(true);
   });
   it('collapses identical copies, including a different key order, to one source',()=>{
     const reordered=Object.fromEntries(Object.entries(doc).reverse()) as FaqDocument;
