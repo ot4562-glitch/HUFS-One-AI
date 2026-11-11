@@ -48,7 +48,9 @@ Every **single complete scan** now holds a read-only PostgreSQL
 identifier **before the first query of every keyset page transaction**.
 Thus the HEAD and rights row visibility cannot drift between pages even when a
 publisher commits concurrently; the exporter is rolled back and its connection
-released after the scan, including failure paths. The response gate starts
+released after the scan, including failure paths. The exporter is additionally
+subject to a PostgreSQL 30-second `idle_in_transaction_session_timeout`;
+slow/stalled scans fail closed rather than retain an open MVCC transaction. The response gate starts
 an entirely **fresh** exported snapshot and compares all verified page hashes
 and current rights again before returning a result. A snapshot never serves as
 an authorization grant.
