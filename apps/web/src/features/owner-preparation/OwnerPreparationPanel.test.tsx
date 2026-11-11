@@ -87,7 +87,8 @@ describe('#343 NCP-free scholarship checklist and actor/session isolation',()=>{
   });
   it('leaves a missing-current-policy checklist blank rather than asserting MET',async()=>{
     const f=fixture();f.read.mockResolvedValueOnce({
-      ...ready(),scholarships:[{...scholarship,mode:'NOT_AVAILABLE',overall:'UNKNOWN',
+      state:'READY',asOf:AS_OF,sourceVersion:'SYN-REV',badges:[],
+      scholarships:[{...scholarship,mode:'NOT_AVAILABLE',overall:'UNKNOWN',
         groups:[],missingFactKeys:['gpa']}],
     });
     render(<OwnerPreparationPanel port={f.port} kind="SCHOLARSHIP"/>);
