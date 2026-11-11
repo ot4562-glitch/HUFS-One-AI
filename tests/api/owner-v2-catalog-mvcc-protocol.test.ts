@@ -50,6 +50,7 @@ describe('#447 PostgreSQL snapshot import protocol and cleanup (offline)',()=>{
     expect(result).toBe('COMPLETE');
     expect(f.exporter[0]).toContain('BEGIN TRANSACTION');
     expect(f.exporter.some(s=>s.includes('SELECT pg_export_snapshot()'))).toBe(true);
+    expect(f.exporter.some(s=>s.includes("idle_in_transaction_session_timeout='30s'"))).toBe(true);
     expect(f.importer[0]).toContain('BEGIN TRANSACTION');
     expect(f.importer[1]).toBe("SET TRANSACTION SNAPSHOT '"+goodSnapshot+"'");
     expect(f.importer[2]).toContain('statement_timeout');
