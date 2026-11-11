@@ -48,3 +48,7 @@ export function collectCandidatesFromApprovedBytes({
 // does NOT perform HTTP, source approval or model/OCR inference.
 export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
   from './notice-html-extractor.mjs';
+
+// Offline public listing layout adapters. Only review proposals; never HTTP.
+export {parseApprovedBoardCandidates,reconcileReviewedBoardPages}
+  from './site-adapters.mjs';
