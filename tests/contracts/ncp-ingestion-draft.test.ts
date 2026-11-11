@@ -45,7 +45,8 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
   });
   it('refuses URLs/parent traversal as private object keys and invalid effective ranges',()=>{
     for(const rawObjectKey of ['https://example.org/file','../secret','/private/secret',
-      'a\\b','s/../secret'])
+      'a\\b','s/../secret','s/%2e%2e/secret','s/%252f/secret',
+      's//secret','s?key=1','s#fragment','s/./%2f'])
       expect(D.SourceRevisionDraftSchema.safeParse({...revision,rawObjectKey}).success).toBe(false);
     expect(D.SourceRevisionDraftSchema.safeParse({...revision,
       effectiveFrom:'2026-11-05T00:00:00Z',effectiveUntil:'2026-11-01T00:00:00Z'}).success).toBe(false);
