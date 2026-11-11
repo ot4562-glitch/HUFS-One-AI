@@ -27,7 +27,7 @@ export async function requireCurrentSourceRefreshPreflight(
     if(typeof preflight?.loadCurrent!=='function')denied();
     const raw=await preflight.loadCurrent(input);
     const parsed=NcpIngestionDraft.SourceRefreshPreflightDraftSchema.safeParse(raw);
-    if(!parsed.success)denied();
+    if(!parsed.success||parsed.data===undefined)return denied();
     const value=parsed.data;
     if(value.registration.sourceId!==input.sourceId
       ||value.scope.sourceId!==input.sourceId
