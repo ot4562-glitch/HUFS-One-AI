@@ -91,7 +91,11 @@ export function createApprovedCheerioAcquisition(){
           handled=true;
         },failedRequestHandler:async(_ctx,error)=>{failed=true;diagnostic('CRAWLER_FAILED_'+category(error));},
       },config);
-      await crawler.run([{url,uniqueKey:randomUUID(),method:'GET'}]);
+      // With an explicitly scoped RequestQueue, Crawlee.run(requests)
+      // can choose a default request manager and leave the private queue
+      // empty. Seed ONLY this private queue and run it directly.
+      await queue.addRequest({url,uniqueKey:randomUUID(),method:'GET'});
+      await crawler.run();
       if(failed||!handled||calls!==1){diagnostic('INCOMPLETE_'+Number(calls)+'_'+Number(handled)+'_'+Number(failed));fail();}
     }catch(error){diagnostic('OUTER_CATCH_'+category(error));fail();}
     finally{
