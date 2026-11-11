@@ -64,8 +64,10 @@ describe('#339 offline approved activity archive HTTP filters and coverage',()=>
     expect(h.activities.read).not.toHaveBeenCalled();
   });
   it('groups undated New-Year notices by their KST year without inventing eventDate',async()=>{
-    const h=fixture([row(1,{publishedAt:'2026-12-31T15:00:00Z',
-      verifiedAt:'2026-12-31T15:00:00Z',eventDate:undefined})]);
+    const undated=row(1,{publishedAt:'2026-12-31T15:00:00Z',
+      verifiedAt:'2026-12-31T15:00:00Z'});
+    delete undated.eventDate;
+    const h=fixture([undated]);
     const old=await h.app.inject({url:url('&year=2026')});
     const current=await h.app.inject({url:url('&year=2027')});
     expect(old.json().items).toHaveLength(0);
