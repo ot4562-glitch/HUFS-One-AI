@@ -33,7 +33,8 @@ const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql',
   '20261109_source_image_ocr_unique.sql','20261105_source_pdf_evidence.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
   '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql',
-  '20261101_owner_approved_catalog.sql','20261109_owner_counseling_quota.sql'];
+  '20261101_owner_approved_catalog.sql','20261109_owner_counseling_quota.sql',
+  '20261111_owner_v2_projection_kind.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{
   const client=await pool.connect();return {query:async(sql,params=[])=>({rows:(await client.query(sql,[...params])).rows}),release:()=>client.release()};
 }});
@@ -130,6 +131,42 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     return {actorId,sourceId,revisionId,permissionRef,before,expires,authority,insert,
       services:createPostgresOwnerDoubleMajorServices({pool:adapter(reader),authority})};
   }
+  it('applies reviewed V2_CATALOG kind to real disposable PostgreSQL without weakening RLS',async()=>{
+    const c=await admin.connect();
+    try{
+      await c.query('BEGIN');
+      const kind=await c.query(`SELECT pg_get_constraintdef(oid) AS definition
+        FROM pg_constraint WHERE conrelid='public.api_owner_approved_projections'::regclass
+          AND conname='api_owner_approved_projections_kind_check'`);
+      expect(kind.rows).toHaveLength(1);
+      expect(kind.rows[0]?.definition).toContain('V2_CATALOG');
+      const value=await c.query(`INSERT INTO public.api_owner_approved_projections
+        (projection_id,actor_id,kind,entity_id,version,payload_json,payload_sha256,
+          sources_json,reviewed_by,reviewed_at,as_of,starts_at,expires_at)
+        VALUES('SYN-V2-P','SYN-V2-OWNER','V2_CATALOG','SYN-V2-OP','v1',$1::jsonb,$2,
+          $3::jsonb,'SYN-REVIEWER','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',
+          '2026-01-01T00:00:00Z','2027-01-01T00:00:00Z')
+        RETURNING kind`,[
+        JSON.stringify({id:'SYN-V2-OP'}),
+        'a'.repeat(64),
+        JSON.stringify([{sourceId:'SYN-S',revisionId:'SYN-R',permissionRef:'SYN-P'}]),
+      ]);
+      expect(value.rows[0]?.kind).toBe('V2_CATALOG');
+      const security=await c.query(`SELECT relrowsecurity,relforcerowsecurity
+        FROM pg_class WHERE oid='public.api_owner_approved_projections'::regclass`);
+      expect(security.rows[0]).toMatchObject({
+        relrowsecurity:true,relforcerowsecurity:true,
+      });
+    }finally{
+      await c.query('ROLLBACK');
+      c.release();
+    }
+    // No synthetic source, actor or V2 projection survives this contract test.
+    const remaining=await admin.query(`SELECT count(*)::integer AS n
+      FROM public.api_owner_approved_projections WHERE kind='V2_CATALOG'`);
+    expect(remaining.rows[0]?.n).toBe(0);
+  });
+
   it('benchmarks actual PostgreSQL owner batch proofs for 1/100/500 projections with 100 shared refs',async()=>{
     const f=await seed('BATCH'),ref={sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef};
     const refs=Array.from({length:100},()=>({...ref}));
