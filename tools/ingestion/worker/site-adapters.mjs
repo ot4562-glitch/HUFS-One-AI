@@ -14,8 +14,8 @@ const VALID_QUERY=/^[A-Za-z0-9_.-]{1,80}$/;
 const MAX_ROWS=300,MAX_POSTS=100,MAX_PAGES=40,MAX_ATTACHMENTS=8;
 const SAFE_EXT=/\.(?:hwp|hwpx|pdf|docx?|xlsx?|txt)$/i;
 const FAMILIES=Object.freeze({
-  TABLE_BOARD_V1:{item:'table tbody tr',title:'td a',date:'td time',
-    attachment:'td a',pagination:'nav a'},
+  TABLE_BOARD_V1:{item:'table tbody tr',title:'.title a',date:'time',
+    attachment:'.files a',pagination:'nav a'},
   CARD_BOARD_V1:{item:'ul li',title:'h3 a',date:'time',
     attachment:'.attachments a',pagination:'nav a'},
 });
