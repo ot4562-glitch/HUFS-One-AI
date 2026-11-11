@@ -1,4 +1,4 @@
-import {useEffect,useState,useSyncExternalStore,type FormEvent} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore,type FormEvent} from 'react';
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
@@ -24,18 +24,34 @@ export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
   const [language,setLanguage]=useState('');
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
+  // #427: a filter edit invalidates an in-flight result even without a new submit.
+  // The session controller owns access control, while this generation guards UI intent.
+  const requestVersion=useRef(0);
+  const invalidateResults=()=>{
+    requestVersion.current++;
+    setResult(null);setBusy(false);
+  };
   useEffect(()=>{void port.session.initialize();},[port.session]);
-  useEffect(()=>{setResult(null);setBusy(false);},[scope.epoch,scope.status]);
+  useEffect(()=>{
+    requestVersion.current++;
+    setResult(null);setBusy(false);
+    return ()=>{requestVersion.current++;};
+  },[port.session,scope.epoch,scope.status]);
   const submit=async(event:FormEvent)=>{
     event.preventDefault();
     if(scope.status!=='READY'||busy)return;
+    const version=++requestVersion.current;
     setResult(null);setBusy(true);
     try{
       const value=await port.session.runLatest('owner-counseling',
         signal=>port.search({purposes:[purpose],
           ...(campus?{campus}:{}),...(language?{language}:{})},signal));
-      if(value&&port.session.getState().status==='READY')setResult(value);
-    }finally{setBusy(false);}
+      if(version===requestVersion.current&&value&&port.session.getState().status==='READY')
+        setResult(value);
+    }finally{
+      // A stale read must never clear the spinner for the new filters/request.
+      if(version===requestVersion.current)setBusy(false);
+    }
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p role="status" aria-busy="true">인증된 본인 세션을 확인 중입니다.</p>;
@@ -47,15 +63,15 @@ export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
     <form onSubmit={event=>void submit(event)} className="club__filters">
       <label htmlFor="counseling-purpose">상담 목적</label>
       <select id="counseling-purpose" value={purpose}
-        onChange={event=>{setPurpose(event.target.value);setResult(null);}}>
+        onChange={event=>{setPurpose(event.target.value);invalidateResults();}}>
         {purposes.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}
       </select>
       <label htmlFor="counseling-campus">찾을 캠퍼스 (본인 학적 검증 아님)</label>
-      <select id="counseling-campus" value={campus} onChange={e=>{setCampus(e.target.value);setResult(null);}}>
+      <select id="counseling-campus" value={campus} onChange={e=>{setCampus(e.target.value);invalidateResults();}}>
         <option value="">캠퍼스 선택 안 함</option><option value="SEOUL">서울</option><option value="GLOBAL">글로벌</option>
       </select>
       <label htmlFor="counseling-language">상담 언어 (선호 필터)</label>
-      <select id="counseling-language" value={language} onChange={e=>{setLanguage(e.target.value);setResult(null);}}>
+      <select id="counseling-language" value={language} onChange={e=>{setLanguage(e.target.value);invalidateResults();}}>
         <option value="">모두 보기</option><option value="ko">한국어</option><option value="en">영어</option><option value="zh">중국어</option>
       </select>
       <button type="submit" disabled={busy}>{busy?'확인 중':'공식 기관 후보 찾기'}</button>
