@@ -40,10 +40,14 @@ Legacy HWP 5 is a **different OLE2/CFB format**. The HWP5 section-record
 decoder in the same module accepts FileHeader and BodyText/SectionN streams
 provided by an independently reviewed CFB reader. It supports uncompressed
 and raw-deflated records, rejects encryption/distribution-only flags and
-unrecognized embedded control text. **This does NOT yet parse a raw .hwp
-container end-to-end.** A bounded audited OLE/CFB stream reader (including
-MiniFAT, sector-chain cycle checks and signature validation), more binary
-controls/tables, and independent real-file Gold review are pending.
+unrecognized embedded control text. **Raw .hwp container parsing is now implemented as a bounded offline
+CFB/OLE2 reader** in `hwp-cfb.mjs` including FAT, MiniFAT, explicit directory
+parenting, sector-chain cycle/alias detection and generic errors. The bytes
+flow through `parseApprovedLegacyHwpDraft` for the existing HWP5 text-record
+decoder. This is **text-only draft parsing**, not a claim of full real-world
+HWP compatibility. Rich binary controls/tables, encrypted/distribution-only
+formats, actual user documents and independent human Gold remain unsupported.
+The raw CFB parser has synthetic sector corruption and mini-stream tests only.
 
 Tests construct only fictional in-memory HWPX ZIP and HWP record fixtures.
 No personal data, actual NCP source inventory, real web fetching, file writes,
