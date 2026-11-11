@@ -16,7 +16,7 @@ describe('#445 private operator source preflight wired to actual acquisition',()
     expect(f.loadCurrent).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
+  const invalidCases:Array<[string,(x:ReturnType<typeof syntheticPreflightDraft>)=>unknown]>=[
     ['foreign source',x=>({...x,registration:{...x.registration,sourceId:'SYN-OTHER'}})],
     ['foreign permission',x=>({...x,registration:{...x.registration,permissionRef:'SYN-OTHER'}})],
     ['replaced URL',x=>({...x,pageUrl:'https://example.org/another'})],
@@ -30,7 +30,8 @@ describe('#445 private operator source preflight wired to actual acquisition',()
     ['access controlled',x=>({...x,lastHttpStatus:403})],
     ['unbound request time',x=>({...x,now:'2026-11-10T00:00:00Z'})],
     ['path not reviewed',x=>({...x,scope:{...x.scope,pathPrefixes:['/other']}})],
-  ] as const)('rejects %s before source fetch',async (_label,transform)=>{
+  ];
+  it.each(invalidCases)('rejects %s before source fetch',async (_label,transform)=>{
     const f=create(transform);
     await expect(requireCurrentSourceRefreshPreflight(f,input))
       .rejects.toThrow('Approved source preflight blocked');
