@@ -44,9 +44,7 @@ describe('#348/#418 recoverable signed cursor/limit errors are not session revoc
     ['expired or malformed signed cursor',new HufsApiError('INVALID_INPUT',422)],
   ])('preserves owner identity after %s and requires a new first-page query',async(_name,error)=>{
     const f=fixture();
-    f.search.mockRejectedValueOnce(error); // first invocation, when prompted below
     // First page must succeed, then the continuation is rejected.
-    f.search.mockReset();
     f.search.mockImplementationOnce(async()=>ready(['FIRST'],CURSOR))
       .mockRejectedValueOnce(error)
       .mockImplementationOnce(async()=>ready(['FRESH'],null));
