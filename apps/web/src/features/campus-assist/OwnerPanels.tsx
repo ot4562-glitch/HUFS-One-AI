@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {ActivityForecast,ActivityRecord,ExchangeApplicant,ExchangeResult,FaqAskResponse} from '@hufs-one/contracts';
 import type {CampusAssistPort} from './ownerPort.js';
+import {prepareExchangeApplication} from '../../../../../packages/core/src/campus-assist/exchange-preparation.js';
 import {InAppLink} from '../../shell/AppShell.js';
 
 const unavailable='승인된 공식 자료/서버 기능이 연결되지 않았습니다. 실제 학교 자료를 추정하지 않고 표시를 보류합니다.';
@@ -214,13 +215,34 @@ export function OwnerExchangePanel({port,navigate}:{port:CampusAssistPort;naviga
       </form>
       {result&&<section aria-live="polite" aria-label="파견대학별 비교 결과">
         <h2 className="section__title">{result.length}개 파견대학 비교 (공식 선발 판정 아님)</h2>
-        <ul>{result.map(({partner:p,evaluation})=><li key={exchangePartnerKey(p)}>
-          <h3>{p.partnerId} · {p.track} — 참고 결과: {statusLabel[evaluation.result]}</h3>
-          <p>{evaluation.disclaimer}</p>
-          <ul>{evaluation.checks.map(c=><li key={c.code}>{c.code}: {statusLabel[c.status]} · {c.explanation}</li>)}</ul>
-          <p>적용 규정 판본: {evaluation.policyRevision} ·
-            <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">파견대학 요건 출처 확인</a></p>
-        </li>)}</ul>
+        <ul>{result.map(({partner:p,evaluation})=>{
+          const plan=prepareExchangeApplication({partner:p,result:evaluation,
+            expectedAsOf:evaluation.asOf});
+          return <li key={exchangePartnerKey(p)}>
+            <h3>{p.partnerId} · {p.track} — 참고 결과: {statusLabel[evaluation.result]}</h3>
+            <p>{evaluation.disclaimer}</p>
+            <ul>{evaluation.checks.map(c=><li key={c.code}>{c.code}: {statusLabel[c.status]} · {c.explanation}</li>)}</ul>
+            <p>적용 규정 판본: {evaluation.policyRevision} ·
+              <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">파견대학 요건 출처 확인</a></p>
+            <section aria-label={p.partnerId+' 지원 준비 체크리스트'}>
+              <h4>지원 준비 체크리스트 (공식 지원서 아님)</h4>
+              <p role="note">학생 입력값은 자기신고이며, 모든 기준 충족 표시도 공식 적격·합격이나 제출 완료를 뜻하지 않습니다.</p>
+              {plan.state==='STALE_POLICY'?<p role="alert">현재 규정 판본과 조회 시점이 맞지 않아 준비 안내를 보류합니다. 공식 원문을 다시 확인해 주세요.</p>:<>
+                <p>준비 상태: {plan.state==='HAS_BLOCKERS'?'조건상 불일치 항목 있음'
+                  :plan.state==='NEEDS_EVIDENCE'?'확인 또는 추가 입력 필요':'공식 서류 확인 단계'}</p>
+                <ul>{plan.steps.map(step=><li key={step.code}>
+                  {step.code} — {step.state==='CONDITION_BLOCKER'?'불일치'
+                    :step.state==='NEEDS_EVIDENCE'?'확인 필요'
+                    :step.state==='NOT_APPLICABLE'?'해당 없음':'자기 입력 기준 확인'}
+                  {step.dataStatus==='SELF_REPORTED'?' (학생 자기신고 자료)':''}
+                  : {step.action}
+                </li>)}</ul>
+                <p className="muted">정식 지원 마감일·신청 일정은 현재 승인 요약에 없어 생성하지 않습니다.
+                  파견대학별 공식 모집공고를 직접 확인하세요. 자동 신청은 지원하지 않습니다.</p>
+              </>}
+            </section>
+          </li>;
+        })}</ul>
       </section>}
     </>}
     <p><InAppLink to="/faq" navigate={navigate}>학사 FAQ</InAppLink></p>
