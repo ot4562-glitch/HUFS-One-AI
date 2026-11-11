@@ -29,7 +29,7 @@ type ReadPage=NonNullable<Parameters<PostgresApprovedOwnerReader['readV2KeysetPa
 function fixture(count=1250){
   let version='SYN-HEAD-1',consentVersion='SYN-CONSENT-1';
   let revoked=false,canonicalUrl=URL,wrongScope=false,flipDuringRecheck=false;
-  let reads=0;
+  let reads=0,conflictingReceipts=false;
   const items=Array.from({length:count},(_,i)=>opportunity(
     'SYN-OP-'+String(i).padStart(5,'0'),{
       title:(i%4===0?'경제 분석':i%4===1?'가상 지원':'Economics research')+' '+i,
@@ -53,7 +53,9 @@ function fixture(count=1250){
     expect(text).toContain('source_rights_receipts');
     expect(text).toContain('source_rights_revocations');
     expect(text).toContain("'SEARCH'=ANY(r.purposes)");
-    if(revoked)return {rows:[]};
+    expect(text).toContain('GROUP BY r.source_id,r.permission_ref');
+    expect(text).toContain('HAVING COUNT(DISTINCT r.canonical_url)=1');
+    if(revoked||conflictingReceipts)return {rows:[]};
     return {rows:[{source_id:ref.sourceId,permission_ref:ref.permissionRef,
       canonical_url:canonicalUrl}]};
   });
@@ -83,6 +85,7 @@ function fixture(count=1250){
   const source=new PostgresOwnerV2StableKeysetSource(reader,()=>FIXED_NOW);
   return {items,source,readV2KeysetPage,sql,
     revoke:()=>{revoked=true;},
+    conflictReceipts:()=>{conflictingReceipts=true;},
     changeHead:()=>{version='SYN-HEAD-2';},
     changeConsent:()=>{consentVersion='SYN-CONSENT-2';},
     changeCanonical:()=>{canonicalUrl='https://example.org/notices/other';},
@@ -106,6 +109,17 @@ const next=(page:{at:string;nextCursor:string|null},sort='TITLE',includeClosed=t
   params(sort,includeClosed)+'&cursor='+encodeURIComponent(page.nextCursor!);
 
 describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',()=>{
+  it('accepts agreeing overlapping receipts but denies conflicting current URLs',async()=>{
+    const f=fixture(125);
+    const initial=await f.source.read({actorId:ACTOR,asOf:FIXED_NOW});
+    expect(initial?.items).toHaveLength(125);
+    // The reviewed SQL GROUP BY/HAVING collapses equal URLs to one pair.
+    expect(f.sql.mock.calls[0]?.[0]).toContain('HAVING COUNT(DISTINCT r.canonical_url)=1');
+    // Conflicting valid URLs for one pair produce no grouped row and deny all.
+    f.conflictReceipts();
+    await expect(f.source.read({actorId:ACTOR,asOf:FIXED_NOW}))
+      .rejects.toThrow('V2_CATALOG_EPOCH_UNAVAILABLE');
+  });
   it('globally pins 1,250 rows across multiple signed pages and counts by core filters',async()=>{
     const f=setup();
     const first=await f.get(params());
