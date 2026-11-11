@@ -6,7 +6,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
 export const HUFS_COLLABORATOR_REVIEWERS=Object.freeze([
-  'taewangim-alt','uisang2004-maker','lhh42001','qamarrchae',
+  'ot4562-glitch','taewangim-alt','uisang2004-maker','lhh42001','qamarrchae',
 ]);
 const allow=new Set(HUFS_COLLABORATOR_REVIEWERS);
 const stateOf=review=>String(review?.state??'').toUpperCase();
