@@ -102,8 +102,7 @@ function fixture(count=1250){
     const pinned:Pinned={rows:rows(),version,consentVersion};
     return consume((page,extra)=>readV2KeysetPage({...input,...page},now,extra,pinned));
   });
-  const reader={readV2KeysetPage,withV2KeysetSnapshot}
-    as unknown as PostgresApprovedOwnerReader;
+  const reader={readV2KeysetPage,withV2KeysetSnapshot} as unknown as PostgresApprovedOwnerReader;
   const source=new PostgresOwnerV2StableKeysetSource(reader,()=>FIXED_NOW);
   return {items,source,readV2KeysetPage,sql,
     revoke:()=>{revoked=true;},
