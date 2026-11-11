@@ -15,11 +15,15 @@ const payload=Buffer.from(paragraph,'utf16le');
 const count=Buffer.alloc(4);count.writeUInt32LE(paragraph.length);
 const section=Buffer.concat([record(0x42,count),record(0x43,payload)]);
 const source={sourceId:'SYN-SOURCE',revisionId:'SYN-REV'};
-function syntheticHwp(){
-  const header=Buffer.alloc(512,0);
+function syntheticHwp({sectorShift=9,largeSection=false}={}){
+  const sectorSize=2**sectorShift;
+  const sectionBytes=largeSection?Buffer.concat([section,
+    ...Array.from({length:90},()=>record(0x50,Buffer.alloc(60)))]):section;
+  const directCount=largeSection?Math.ceil(sectionBytes.length/sectorSize):0;
+  const header=Buffer.alloc(sectorSize,0);
   Buffer.from('d0cf11e0a1b11ae1','hex').copy(header,0);
-  header.writeUInt16LE(0x3e,24);header.writeUInt16LE(3,26);
-  header.writeUInt16LE(0xfffe,28);header.writeUInt16LE(9,30);
+  header.writeUInt16LE(0x3e,24);header.writeUInt16LE(sectorShift===9?3:4,26);
+  header.writeUInt16LE(0xfffe,28);header.writeUInt16LE(sectorShift,30);
   header.writeUInt16LE(6,32);
   header.writeUInt32LE(1,44); // 1 FAT sector
   header.writeUInt32LE(0,48); // directory first sector
@@ -29,7 +33,7 @@ function syntheticHwp(){
   header.writeUInt32LE(END,68);
   for(let p=76;p<512;p+=4)header.writeUInt32LE(FREE,p);
   header.writeUInt32LE(1,76); // FAT SID
-  const directory=Buffer.alloc(512);
+  const directory=Buffer.alloc(sectorSize);
   const entry=(id,{name,type,left=FREE,right=FREE,child=FREE,start=END,size=0})=>{
     const at=id*128,utf16=Buffer.from(name+'\0','utf16le');
     utf16.copy(directory,at);
@@ -41,12 +45,12 @@ function syntheticHwp(){
     directory.writeUInt32LE(start,at+116);
     directory.writeUInt32LE(size,at+120);
   };
-  entry(0,{name:'Root Entry',type:5,child:1,start:3,size:320});
+  entry(0,{name:'Root Entry',type:5,child:1,start:3,size:largeSection?256:320});
   entry(1,{name:'FileHeader',type:2,right:2,start:0,size:256});
   entry(2,{name:'BodyText',type:1,child:3});
-  entry(3,{name:'Section0',type:2,start:4,size:section.length});
-  const fat=Buffer.alloc(512),miniFAT=Buffer.alloc(512);
-  for(let p=0;p<512;p+=4){
+  entry(3,{name:'Section0',type:2,start:4,size:sectionBytes.length});
+  const fat=Buffer.alloc(sectorSize),miniFAT=Buffer.alloc(sectorSize);
+  for(let p=0;p<sectorSize;p+=4){
     fat.writeUInt32LE(FREE,p);
     miniFAT.writeUInt32LE(FREE,p);
   }
@@ -58,13 +62,17 @@ function syntheticHwp(){
   miniFAT.writeUInt32LE(2,4);
   miniFAT.writeUInt32LE(3,8);
   miniFAT.writeUInt32LE(END,12);
-  miniFAT.writeUInt32LE(END,16);
-  const miniStream=Buffer.alloc(512);
+  miniFAT.writeUInt32LE(largeSection?FREE:END,16);
+  for(let i=0;i<directCount;i++)
+    fat.writeUInt32LE(i+1===directCount?END:5+i,(4+i)*4);
+  const miniStream=Buffer.alloc(sectorSize);
   const fileHeader=Buffer.alloc(256);
   fileHeader.write('HWP Document File','ascii');
   fileHeader.copy(miniStream,0);
-  section.copy(miniStream,256);
-  return Buffer.concat([header,directory,fat,miniFAT,miniStream]);
+  if(!largeSection)sectionBytes.copy(miniStream,256);
+  const regular=largeSection?Buffer.concat([sectionBytes,
+    Buffer.alloc(directCount*sectorSize-sectionBytes.length)]):Buffer.alloc(0);
+  return Buffer.concat([header,directory,fat,miniFAT,miniStream,regular]);
 }
 describe('#445 complete in-memory HWP5 OLE CFB FAT / MiniFAT reader',()=>{
   it('reads actual synthetic .hwp container bytes without an external converter',async()=>{
@@ -85,6 +93,21 @@ describe('#445 complete in-memory HWP5 OLE CFB FAT / MiniFAT reader',()=>{
     await assert.rejects(port.extract({
       content:bytes,contentType:'application/pdf',
     }),/KOREAN_DOCUMENT_REQUIRES_REVIEW/);
+  });
+  it('handles 4096-byte CFB v4 sectors and regular >4096 HWP body streams',()=>{
+    const v4=readBoundedHwpCfbStreams(syntheticHwp({sectorShift:12}));
+    assert.deepEqual(v4.sectionStreams[0],section);
+    const large=syntheticHwp({largeSection:true});
+    const decoded=readBoundedHwpCfbStreams(large);
+    assert.ok(decoded.sectionStreams[0].length>4096);
+    assert.equal(decoded.sectionStreams[0].subarray(0,section.length).toString('hex'),
+      section.toString('hex'));
+    const parsed=parseApprovedLegacyHwpDraft({...source,content:large});
+    assert.deepEqual(parsed.paragraphs,[{id:'s0p1',text:'가상 HWP 원문'}]);
+    const cyclic=Buffer.from(large);
+    // Regular Section sector 4 points to itself instead of sector 5.
+    cyclic.writeUInt32LE(4,512+512+4*4);
+    assert.throws(()=>readBoundedHwpCfbStreams(cyclic),/KOREAN_DOCUMENT_REQUIRES_REVIEW/);
   });
   it('fails closed on OLE header forgery, invalid FAT/mini chains and directory graph cycles',()=>{
     const cases=[
