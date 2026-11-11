@@ -222,10 +222,28 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
       WHERE schemaname='public' AND indexname='api_owner_v2_heads_keyset_idx'`);
     expect(idx.rows).toHaveLength(1);
     expect(idx.rows[0]?.indexdef).toContain('COLLATE "C"');
+    const analyze=await reader.connect();
+    let plan:Record<string,unknown>|undefined;
+    try{
+      await analyze.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      await analyze.query("SELECT set_config('hufs.self_actor',$1,true)",[f.actorId]);
+      const details=await analyze.query(`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+        SELECT h.entity_id FROM api_owner_approved_heads h
+        WHERE h.actor_id=$1 AND h.kind='V2_CATALOG'
+          AND h.entity_id COLLATE "C" > ($2::text COLLATE "C")
+        ORDER BY h.entity_id COLLATE "C" LIMIT 51`,
+      [f.actorId,'SYN-PAGE-01199']);
+      plan=(details.rows[0]?.['QUERY PLAN'] as Record<string,unknown>[]|undefined)?.[0];
+      expect(plan?.['Execution Time']).toEqual(expect.any(Number));
+    }finally{
+      await analyze.query('ROLLBACK');
+      analyze.release();
+    }
     const elapsedMs=Number((performance.now()-wallStart).toFixed(2));
     console.info('SYN-PG KEYSET #447',JSON.stringify({
       rows:seen.length,pages:iterations,pageSize:50,
       wallMs:elapsedMs,heapDeltaBytes:process.memoryUsage().heapUsed-heapStart,
+      sqlIndexProbeMs:plan?.['Execution Time'],planNode:(plan?.Plan as {['Node Type']?:string}|undefined)?.['Node Type'],
       strategy:'repeatable-read authorized SQL lookahead, per-page',
     }));
     // Fresh source withdrawal invalidates all later pages rather than
