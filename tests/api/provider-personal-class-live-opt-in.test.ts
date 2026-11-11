@@ -41,7 +41,10 @@ describe.skipIf(!RUN)('REAL disposable PostgreSQL: approved personal input class
   afterAll(async()=>{
     await db?.end();
     if(admin){
-      if(created)await admin.query(`DROP DATABASE ${database} WITH (FORCE)`);
+      // All clients are deliberately closed above. FORCE would terminate
+      // a still-live connection and emit an unhandled pg 57P01 error from an
+      // otherwise passing parallel CI suite; fail explicitly on leaked clients.
+      if(created)await admin.query(`DROP DATABASE ${database}`);
       if(roleCreated)await admin.query(`DROP ROLE ${role}`);
       await admin.end();
     }

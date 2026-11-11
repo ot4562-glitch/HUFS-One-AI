@@ -36,6 +36,28 @@ describe('collaborator reviews gate exact HEAD; no author or bot shortcut',()=>{
     assert.equal(evaluate([review('taewangim-alt','APPROVED',h,1),
       review('taewangim-alt','CHANGES_REQUESTED',h,2)]).approved,false);
   });
+  it('allows the repository owner to independently review another team member',()=>{
+    const otherAuthor={author:'taewangim-alt'};
+    assert.deepEqual(evaluate([review('ot4562-glitch')],otherAuthor),{
+      approved:true,approvedBy:['ot4562-glitch'],reason:'APPROVED',
+    });
+    const blocked=evaluate([
+      review('ot4562-glitch','CHANGES_REQUESTED',h,1),
+      review('lhh42001','APPROVED',h,2),
+    ],otherAuthor);
+    assert.equal(blocked.approved,false);
+    assert.equal(blocked.reason,'OUTSTANDING_CHANGES_REQUESTED');
+    // Being the PR author still never counts as an independent approval.
+    assert.equal(evaluate([review('ot4562-glitch')]).approved,false);
+  });
+  it('uses submission time, not response enumeration order, for each reviewer',()=>{
+    const later=review('ot4562-glitch','CHANGES_REQUESTED',h,9);
+    const earlier=review('ot4562-glitch','APPROVED',h,3);
+    const options={author:'taewangim-alt'};
+    const conflicting=[later,earlier,review('lhh42001','APPROVED',h,4)];
+    assert.equal(evaluate(conflicting,options).reason,'OUTSTANDING_CHANGES_REQUESTED');
+    assert.equal(evaluate([...conflicting].reverse(),options).approved,false);
+  });
   it('requires the current author and actual SHA shape',()=>{
     assert.equal(evaluate([review('taewangim-alt')],{headSha:'invalid'}).approved,false);
     assert.equal(evaluate([review('taewangim-alt')],{author:'taewangim-alt'}).approved,false);
