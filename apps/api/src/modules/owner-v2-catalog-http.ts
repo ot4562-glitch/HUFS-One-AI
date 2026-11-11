@@ -4,6 +4,7 @@ import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {searchApprovedCatalogV2} from '../../../../packages/core/src/feature-additions/catalog-v2.js';
 import type {CatalogCursorSigner,CursorRequestContext} from '../../../../packages/core/src/feature-additions/server-cursor.js';
 import {ApiFailure} from './auth/gates.js';
+import {MAX_VERIFIED_V2_CATALOG_ROWS} from './owner-v2-catalog-limits.js';
 import {betaActor,betaRecheck,type BetaRouteVerifier} from './profiles/self-account-http.js';
 
 type Receipt={actorId:string;sourceVersion:string;expiresAt:string};
@@ -90,7 +91,8 @@ export function registerOwnerV2CatalogRoutes(input:{
     try{
       // Strict upper bound shared with the stable PostgreSQL keyset source.
       // 5,001st item is a full deny, never a misleading partial total/count.
-      const items=V.OpportunityCatalogItemSchema.array().max(5000).parse(snapshot.items);
+      const items=V.OpportunityCatalogItemSchema.array()
+        .max(MAX_VERIFIED_V2_CATALOG_ROWS).parse(snapshot.items);
       page=searchApprovedCatalogV2({items,query,scopeKey:snapshot.scopeKey,
         catalogRevision:snapshot.catalogRevision,...(cursor?{cursor}:{})});
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
