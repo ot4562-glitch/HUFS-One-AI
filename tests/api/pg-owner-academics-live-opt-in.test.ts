@@ -33,7 +33,8 @@ const migrations=['20261031_temporal_evidence.sql','20261101_source_review.sql',
   '20261109_source_image_ocr_unique.sql','20261105_source_pdf_evidence.sql',
   '20261101_verified_source_rights.sql','20261101_self_account.sql','20261101_self_workspace.sql',
   '20261101_self_workspace_tombstones.sql','20261101_experience_tag_approval.sql',
-  '20261101_owner_approved_catalog.sql','20261109_owner_counseling_quota.sql'];
+  '20261101_owner_approved_catalog.sql','20261109_owner_counseling_quota.sql',
+  '20261111_owner_v2_projection_kind.sql'];
 const adapter=(pool:Pool):ReviewerSqlPool=>({connect:async()=>{
   const client=await pool.connect();return {query:async(sql,params=[])=>({rows:(await client.query(sql,[...params])).rows}),release:()=>client.release()};
 }});
@@ -130,6 +131,171 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     return {actorId,sourceId,revisionId,permissionRef,before,expires,authority,insert,
       services:createPostgresOwnerDoubleMajorServices({pool:adapter(reader),authority})};
   }
+  it('applies reviewed V2_CATALOG kind to real disposable PostgreSQL without weakening RLS',async()=>{
+    const c=await admin.connect();
+    try{
+      await c.query('BEGIN');
+      const kind=await c.query(`SELECT pg_get_constraintdef(oid) AS definition
+        FROM pg_constraint WHERE conrelid='public.api_owner_approved_projections'::regclass
+          AND conname='api_owner_approved_projections_kind_check'`);
+      expect(kind.rows).toHaveLength(1);
+      expect(kind.rows[0]?.definition).toContain('V2_CATALOG');
+      const value=await c.query(`INSERT INTO public.api_owner_approved_projections
+        (projection_id,actor_id,kind,entity_id,version,payload_json,payload_sha256,
+          sources_json,reviewed_by,reviewed_at,as_of,starts_at,expires_at)
+        VALUES('SYN-V2-P','SYN-V2-OWNER','V2_CATALOG','SYN-V2-OP','v1',$1::jsonb,$2,
+          $3::jsonb,'SYN-REVIEWER','2026-01-01T00:00:00Z','2026-01-02T00:00:00Z',
+          '2026-01-01T00:00:00Z','2027-01-01T00:00:00Z')
+        RETURNING kind`,[
+        JSON.stringify({id:'SYN-V2-OP'}),
+        'a'.repeat(64),
+        JSON.stringify([{sourceId:'SYN-S',revisionId:'SYN-R',permissionRef:'SYN-P'}]),
+      ]);
+      expect(value.rows[0]?.kind).toBe('V2_CATALOG');
+      const security=await c.query(`SELECT relrowsecurity,relforcerowsecurity
+        FROM pg_class WHERE oid='public.api_owner_approved_projections'::regclass`);
+      expect(security.rows[0]).toMatchObject({
+        relrowsecurity:true,relforcerowsecurity:true,
+      });
+    }finally{
+      await c.query('ROLLBACK');
+      c.release();
+    }
+    // No synthetic source, actor or V2 projection survives this contract test.
+    const remaining=await admin.query(`SELECT count(*)::integer AS n
+      FROM public.api_owner_approved_projections WHERE kind='V2_CATALOG'`);
+    expect(remaining.rows[0]?.n).toBe(0);
+  });
+
+  it('pins all V2 SQL keyset pages to one exported MVCC snapshot despite concurrent HEAD insert',async()=>{
+    const f=await seed('MVCC'),ref={
+      sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
+    };
+    const create=async (suffix:string)=>{
+      const id='SYN-MVCC-'+suffix;
+      await f.insert('V2_CATALOG',id,{id,title:'Synthetic snapshot '+suffix,
+        source:ref},id+'-PROJECTION');
+    };
+    await create('A');await create('Z');
+    const loader=new PostgresApprovedOwnerReader(adapter(reader),f.authority);
+    const at=now();
+    const pinned=await loader.withV2KeysetSnapshot({actorId:f.actorId,asOf:at},at,
+      async readPage=>{
+        const first=await readPage({pageSize:1});
+        expect(first?.rows.map(row=>row.entity_id)).toEqual(['SYN-MVCC-A']);
+        expect(first?.hasMore).toBe(true);
+        // Different SQL transaction and pool: the current export remains alive
+        // while an independent publisher commits this new approved HEAD.
+        await create('M');
+        const second=await readPage({pageSize:1,afterEntityId:'SYN-MVCC-A'});
+        expect(second?.rows.map(row=>row.entity_id)).toEqual(['SYN-MVCC-Z']);
+        expect(second?.hasMore).toBe(false);
+        return [first!.rows[0]!.entity_id,second!.rows[0]!.entity_id];
+      });
+    expect(pinned).toEqual(['SYN-MVCC-A','SYN-MVCC-Z']);
+    const fresh=await loader.withV2KeysetSnapshot({actorId:f.actorId,asOf:at},now(),
+      async readPage=>{
+        const first=await readPage({pageSize:1});
+        const second=await readPage({pageSize:1,afterEntityId:first!.rows[0]!.entity_id});
+        const third=await readPage({pageSize:1,afterEntityId:second!.rows[0]!.entity_id});
+        expect(third?.hasMore).toBe(false);
+        return [first!.rows[0]!.entity_id,second!.rows[0]!.entity_id,
+          third!.rows[0]!.entity_id];
+      });
+    expect(fresh).toEqual(['SYN-MVCC-A','SYN-MVCC-M','SYN-MVCC-Z']);
+  },30000);
+
+  it('pages 1,250 PostgreSQL V2 approved heads with bounded SQL keysets and RLS',async()=>{
+    const f=await seed('KEYSET'),ref={
+      sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
+    };
+    const entries=Array.from({length:1250},(_,i)=>{
+      const entity='SYN-PAGE-'+String(i).padStart(5,'0');
+      const payload={id:entity,source:ref,permitted:true,title:'Synthetic V2 row'};
+      return {entity_id:entity,projection_id:'SYN-V2-KEY-'+String(i).padStart(5,'0'),
+        payload_json:payload,payload_sha256:canonicalProjectionHash(payload)};
+    });
+    // Batch insert into a disposable DB only: no fixture or real source seed.
+    await admin.query(`INSERT INTO api_owner_approved_projections(
+      projection_id,actor_id,kind,entity_id,version,payload_json,payload_sha256,
+      sources_json,reviewed_by,reviewed_at,as_of,starts_at,expires_at)
+      SELECT r.projection_id,$2,'V2_CATALOG',r.entity_id,'SYN-REVIEW-V1',
+        r.payload_json,r.payload_sha256,$3::jsonb,'SYN-INDEPENDENT-OPERATOR',
+        $4::timestamptz,$4::timestamptz,$4::timestamptz,$5::timestamptz
+      FROM jsonb_to_recordset($1::jsonb) AS r(
+        entity_id text,projection_id text,payload_json jsonb,payload_sha256 text)`,
+    [JSON.stringify(entries),f.actorId,JSON.stringify([ref]),f.before,f.expires]);
+    await admin.query(`INSERT INTO api_owner_approved_heads(
+      actor_id,kind,entity_id,projection_id)
+      SELECT $2,'V2_CATALOG',r.entity_id,r.projection_id
+      FROM jsonb_to_recordset($1::jsonb) AS r(entity_id text,projection_id text)`,
+    [JSON.stringify(entries.map(({entity_id,projection_id})=>({entity_id,projection_id}))),
+      f.actorId]);
+    const loader=new PostgresApprovedOwnerReader(adapter(reader),f.authority);
+    let afterId:string|undefined,iterations=0;
+    const seen:string[]=[];
+    const wallStart=performance.now(),heapStart=process.memoryUsage().heapUsed;
+    const at=now();
+    while(iterations++<30){
+      const result=await loader.readV2KeysetPage({
+        actorId:f.actorId,asOf:at,pageSize:50,...(afterId?{afterEntityId:afterId}:{}),
+      },at);
+      expect(result).not.toBeNull();
+      expect(result!.rows.length).toBeGreaterThan(0);
+      expect(result!.rows.length).toBeLessThanOrEqual(50);
+      seen.push(...result!.rows.map(x=>x.entity_id));
+      if(!result!.hasMore){
+        expect(result!.nextAfterEntityId).toBeNull();
+        break;
+      }
+      expect(result!.nextAfterEntityId).toBe(result!.rows.at(-1)?.entity_id);
+      afterId=result!.nextAfterEntityId!;
+    }
+    expect(iterations).toBe(25);
+    expect(seen).toEqual(entries.map(x=>x.entity_id));
+    expect(new Set(seen).size).toBe(1250);
+    // Query the actual index metadata; no requirement to force an index
+    // through the PostgreSQL planner when its choice may be faster.
+    const idx=await admin.query(`SELECT indexdef FROM pg_indexes
+      WHERE schemaname='public' AND indexname='api_owner_v2_heads_keyset_idx'`);
+    expect(idx.rows).toHaveLength(1);
+    expect(idx.rows[0]?.indexdef).toContain('COLLATE "C"');
+    const analyze=await reader.connect();
+    let plan:Record<string,unknown>|undefined;
+    try{
+      await analyze.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      await analyze.query("SELECT set_config('hufs.self_actor',$1,true)",[f.actorId]);
+      const details=await analyze.query(`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+        SELECT h.entity_id FROM api_owner_approved_heads h
+        WHERE h.actor_id=$1 AND h.kind='V2_CATALOG'
+          AND h.entity_id COLLATE "C" > ($2::text COLLATE "C")
+        ORDER BY h.entity_id COLLATE "C" LIMIT 51`,
+      [f.actorId,'SYN-PAGE-01199']);
+      plan=(details.rows[0]?.['QUERY PLAN'] as Record<string,unknown>[]|undefined)?.[0];
+      expect(plan?.['Execution Time']).toEqual(expect.any(Number));
+    }finally{
+      await analyze.query('ROLLBACK');
+      analyze.release();
+    }
+    const elapsedMs=Number((performance.now()-wallStart).toFixed(2));
+    console.info('SYN-PG KEYSET #447',JSON.stringify({
+      rows:seen.length,pages:iterations,pageSize:50,
+      wallMs:elapsedMs,heapDeltaBytes:process.memoryUsage().heapUsed-heapStart,
+      sqlIndexProbeMs:plan?.['Execution Time'],planNode:(plan?.Plan as {['Node Type']?:string}|undefined)?.['Node Type'],
+      strategy:'repeatable-read authorized SQL lookahead, per-page',
+    }));
+    // Fresh source withdrawal invalidates all later pages rather than
+    // returning a cached identity/source-policy success.
+    await admin.query(`INSERT INTO source_rights_revocations(
+      receipt_id,revoked_by,revoked_at,reason_ref)
+      VALUES($1,'SYN-OPERATOR',clock_timestamp(),'SYN-KEYSET-REVOKE')`,
+    [f.actorId+'-RIGHTS']);
+    const blocked=await loader.readV2KeysetPage({
+      actorId:f.actorId,asOf:at,pageSize:50,
+    },now());
+    expect(blocked).toBeNull();
+  },90000);
+
   it('benchmarks actual PostgreSQL owner batch proofs for 1/100/500 projections with 100 shared refs',async()=>{
     const f=await seed('BATCH'),ref={sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef};
     const refs=Array.from({length:100},()=>({...ref}));
