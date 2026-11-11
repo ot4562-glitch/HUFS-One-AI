@@ -29,6 +29,7 @@ type ReadPage=NonNullable<Parameters<PostgresApprovedOwnerReader['readV2KeysetPa
 function fixture(count=1250){
   let version='SYN-HEAD-1',consentVersion='SYN-CONSENT-1';
   let revoked=false,canonicalUrl=URL,wrongScope=false,flipDuringRecheck=false;
+  let mutateMidScan=false;
   let reads=0;
   const items=Array.from({length:count},(_,i)=>opportunity(
     'SYN-OP-'+String(i).padStart(5,'0'),{
@@ -58,13 +59,14 @@ function fixture(count=1250){
       canonical_url:canonicalUrl}]};
   });
   const connection={query:sql,release:()=>{}} as unknown as ReviewerSqlConnection;
+  type Pinned={rows:ApprovedOwnerProjection[];version:string;consentVersion:string};
   const readV2KeysetPage=vi.fn(async(input:{
     actorId:string;asOf:string;pageSize:number;afterEntityId?:string;
-  },now:string,extra?:ReadPage)=>{
+  },now:string,extra?:ReadPage,pinned?:Pinned)=>{
     expect(input.actorId).toBe(ACTOR);expect(input.pageSize).toBe(50);
     expect(now).toBe(FIXED_NOW);
     if(revoked)return null;
-    const sourceRows=rows(),start=input.afterEntityId?
+    const sourceRows=pinned?.rows??rows(),start=input.afterEntityId?
       sourceRows.findIndex(row=>row.entity_id===input.afterEntityId)+1:0;
     if(start<0||input.afterEntityId&&start===0)
       throw new Error('INVALID_SQL_KEYSET_ANCHOR');
@@ -72,14 +74,36 @@ function fixture(count=1250){
     const hasMore=start+window.length<sourceRows.length;
     const proof=extra?await extra(connection,window):undefined;
     reads++;
-    if(flipDuringRecheck&&reads===Math.ceil(count/50)+1)version='SYN-HEAD-2';
+    // Model a publisher modifying a HEAD midway through a long keyset pass.
+    // The currently exported MVCC view MUST remain unchanged.
+    if(mutateMidScan&&reads===1){
+      const extraItem=opportunity('SYN-OP-00074Z',{
+        title:'가상 새 공고',sourceUrl:URL,
+      });
+      items.splice(75,0,extraItem);
+      version='SYN-HEAD-2';
+    }
+    // A change after first scan and before the second fresh snapshot is denied.
+    if(flipDuringRecheck&&reads===Math.ceil(count/50))version='SYN-HEAD-2';
     return {rows:wrongScope?window.map(row=>({...row,actor_id:'SYN-OTHER'})):window,
       fingerprint:canonicalProjectionHash({kind:'V2_PAGE',input,
-        rows:window,proof,version,consentVersion}),
-      consentVersion,validUntil:'2026-12-01T00:00:00Z',hasMore,
+        rows:window,proof,version:pinned?.version??version,
+        consentVersion:pinned?.consentVersion??consentVersion}),
+      consentVersion:pinned?.consentVersion??consentVersion,
+      validUntil:'2026-12-01T00:00:00Z',hasMore,
       nextAfterEntityId:hasMore?window.at(-1)!.entity_id:null,extra:proof};
   });
-  const reader={readV2KeysetPage} as unknown as PostgresApprovedOwnerReader;
+  const withV2KeysetSnapshot=vi.fn(async <T>(
+    input:{actorId:string;asOf:string},now:string,
+    consume:(readPage:(page:{pageSize:number;afterEntityId?:string},
+      extra?:ReadPage)=>Promise<Awaited<ReturnType<typeof readV2KeysetPage>>>)=>Promise<T>,
+  ):Promise<T>=>{
+    // Each separate full scan gets its own isolated PostgreSQL-like view.
+    const pinned:Pinned={rows:rows(),version,consentVersion};
+    return consume((page,extra)=>readV2KeysetPage({...input,...page},now,extra,pinned));
+  });
+  const reader={readV2KeysetPage,withV2KeysetSnapshot}
+    as unknown as PostgresApprovedOwnerReader;
   const source=new PostgresOwnerV2StableKeysetSource(reader,()=>FIXED_NOW);
   return {items,source,readV2KeysetPage,sql,
     revoke:()=>{revoked=true;},
@@ -88,6 +112,7 @@ function fixture(count=1250){
     changeCanonical:()=>{canonicalUrl='https://example.org/notices/other';},
     wrongActor:()=>{wrongScope=true;},
     changeDuringRecheck:()=>{flipDuringRecheck=true;},
+    changeMidScan:()=>{mutateMidScan=true;},
     calls:()=>reads,
   };
 }
@@ -197,6 +222,20 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
     expect(response.body).not.toContain('totalInAuthorizedScope');
   });
 
+  it('pins all pages to one snapshot and rejects a head inserted mid-scan',async()=>{
+    const f=fixture(125);
+    f.changeMidScan();
+    const first=await f.source.read({actorId:ACTOR,asOf:FIXED_NOW});
+    expect(first).not.toBeNull();
+    expect(first?.items).toHaveLength(125);
+    expect(first?.items.some(x=>x.id==='SYN-OP-00074Z')).toBe(false);
+    expect(f.calls()).toBe(3); // original 125 rows, no mixed new HEAD
+    const valid=await f.source.revalidate({
+      actorId:ACTOR,receipt:first!.receipt,now:FIXED_NOW,
+    });
+    expect(valid).toBe(false);
+    expect(f.calls()).toBe(6); // later fresh snapshot sees 126 rows
+  });
   it('denies a changing epoch during the second full authorization sweep',async()=>{
     const f=setup(125);
     f.changeDuringRecheck();
