@@ -43,3 +43,8 @@ export function collectCandidatesFromApprovedBytes({
     ...(limit===undefined?{}:{limit}),
   });
 }
+
+// Optional operator-selected, previously fetched HTML detail extractor. This
+// does NOT perform HTTP, source approval or model/OCR inference.
+export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
+  from './notice-html-extractor.mjs';
