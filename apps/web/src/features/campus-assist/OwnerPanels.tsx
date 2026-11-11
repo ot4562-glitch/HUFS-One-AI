@@ -165,29 +165,57 @@ export function OwnerFaqPanel({port,navigate}:{port:CampusAssistPort;navigate:(p
   const [question,setQuestion]=useState(''),[answer,setAnswer]=useState<FaqAskResponse|null>(null);
   const [busy,setBusy]=useState(false),[failure,setFailure]=useState(false);
   const active=useRef<AbortController|null>(null);
-  useEffect(()=>()=>active.current?.abort(),[]);
+  const requestVersion=useRef(0);
+  const invalidate=()=>{
+    requestVersion.current++;active.current?.abort();active.current=null;
+    setBusy(false);setFailure(false);setAnswer(null);
+  };
+  useEffect(()=>{
+    // Switched owner ports may represent a different actor, access scope or
+    // rights epoch. Never keep the previous actor's answer on screen.
+    invalidate();
+    return ()=>{requestVersion.current++;active.current?.abort();active.current=null;};
+  },[port]);
   const submit=(e:FormEvent<HTMLFormElement>)=>{
     e.preventDefault();
-    active.current?.abort();const controller=new AbortController();active.current=controller;
+    active.current?.abort();
+    const controller=new AbortController();active.current=controller;
+    const ticket=++requestVersion.current;
     setBusy(true);setFailure(false);setAnswer(null);
     void port.ask({question,asOf:new Date().toISOString()},controller.signal)
-      .then(value=>{if(!controller.signal.aborted)setAnswer(value);})
-      .catch(()=>{if(!controller.signal.aborted)setFailure(true);})
-      .finally(()=>{if(!controller.signal.aborted)setBusy(false);});
+      .then(value=>{
+        if(!controller.signal.aborted&&ticket===requestVersion.current)setAnswer(value);
+      })
+      .catch(()=>{
+        if(!controller.signal.aborted&&ticket===requestVersion.current)setFailure(true);
+      })
+      .finally(()=>{
+        if(!controller.signal.aborted&&ticket===requestVersion.current)setBusy(false);
+      });
   };
   return <section className="section">
     <p className="muted" role="note">학교 공식 상담이 아닙니다. 출처·판본이 검증된 문서만 검색하고, HCX-007 응답은 항상 사람이 확인할 후보로 표시합니다.</p>
     <form onSubmit={submit} role="search">
       <label htmlFor="owner-faq-query">질문</label>
       <input id="owner-faq-query" minLength={2} maxLength={500} required value={question}
-        onChange={e=>setQuestion(e.target.value)} placeholder="예: 교환학생 어학 성적 유효기간"/>
+        onChange={e=>{setQuestion(e.target.value);invalidate();}}
+        placeholder="예: 교환학생 어학 성적 유효기간"/>
       <button type="submit" disabled={busy}>{busy?'검증 중':'질문 전송'}</button>
     </form>
     {failure&&<p role="alert">{unavailable}</p>}
     <div aria-live="polite">{answer?.status==='NOT_FOUND'
       ?<p>검증된 출처가 없어 답변할 수 없습니다.</p>
       :answer?.status==='CONFIGURATION_REQUIRED'
-      ?<p>승인된 HCX-007 모델 실행·과금·입력 전송 권한이 구성되지 않았습니다. 질문을 외부 모델에 보내지 않았습니다.</p>
+      ?<section aria-label="모델 미연결 FAQ 공식 출처">
+        <p>승인된 HCX-007 모델 실행·과금·입력 전송 권한이 구성되지 않았습니다. 질문을 외부 모델에 보내지 않았으며, AI 답변도 생성하지 않았습니다.</p>
+        {answer.sourceLinks?.length?<><h2 className="section__title">현재 확인 가능한 출처 원문</h2>
+          <p role="note" className="muted">제목과 검증된 링크만 제공합니다. 개인 자격·신청 마감·학교의 공식 상담 결과가 아닙니다.</p>
+          <ul>{answer.sourceLinks.map(link=><li key={link.documentId+':'+link.revisionId}>
+            <a href={link.sourceUrl} target="_blank" rel="noopener noreferrer">{link.title}</a>
+            {' · 판본 '+link.revisionId+' · 검증 '+link.verifiedAt.slice(0,10)}
+          </li>)}</ul>
+        </>:<p>표시 가능한 공식 원문 링크가 아직 없습니다.</p>}
+      </section>
       :answer?.status==='NEEDS_REVIEW'
       ?<article>
         <h2 className="section__title">AI 답변 후보 (사람 검증 전)</h2><p>{answer.answer.answer}</p>
