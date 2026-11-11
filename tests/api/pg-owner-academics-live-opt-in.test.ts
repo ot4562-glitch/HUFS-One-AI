@@ -167,6 +167,44 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     expect(remaining.rows[0]?.n).toBe(0);
   });
 
+  it('pins all V2 SQL keyset pages to one exported MVCC snapshot despite concurrent HEAD insert',async()=>{
+    const f=await seed('MVCC'),ref={
+      sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
+    };
+    const create=async (suffix:string)=>{
+      const id='SYN-MVCC-'+suffix;
+      await f.insert('V2_CATALOG',id,{id,title:'Synthetic snapshot '+suffix,
+        source:ref},id+'-PROJECTION');
+    };
+    await create('A');await create('Z');
+    const loader=new PostgresApprovedOwnerReader(adapter(reader),f.authority);
+    const at=now();
+    const pinned=await loader.withV2KeysetSnapshot({actorId:f.actorId,asOf:at},at,
+      async readPage=>{
+        const first=await readPage({pageSize:1});
+        expect(first?.rows.map(row=>row.entity_id)).toEqual(['SYN-MVCC-A']);
+        expect(first?.hasMore).toBe(true);
+        // Different SQL transaction and pool: the current export remains alive
+        // while an independent publisher commits this new approved HEAD.
+        await create('M');
+        const second=await readPage({pageSize:1,afterEntityId:'SYN-MVCC-A'});
+        expect(second?.rows.map(row=>row.entity_id)).toEqual(['SYN-MVCC-Z']);
+        expect(second?.hasMore).toBe(false);
+        return [first!.rows[0]!.entity_id,second!.rows[0]!.entity_id];
+      });
+    expect(pinned).toEqual(['SYN-MVCC-A','SYN-MVCC-Z']);
+    const fresh=await loader.withV2KeysetSnapshot({actorId:f.actorId,asOf:at},now(),
+      async readPage=>{
+        const first=await readPage({pageSize:1});
+        const second=await readPage({pageSize:1,afterEntityId:first!.rows[0]!.entity_id});
+        const third=await readPage({pageSize:1,afterEntityId:second!.rows[0]!.entity_id});
+        expect(third?.hasMore).toBe(false);
+        return [first!.rows[0]!.entity_id,second!.rows[0]!.entity_id,
+          third!.rows[0]!.entity_id];
+      });
+    expect(fresh).toEqual(['SYN-MVCC-A','SYN-MVCC-M','SYN-MVCC-Z']);
+  },30000);
+
   it('pages 1,250 PostgreSQL V2 approved heads with bounded SQL keysets and RLS',async()=>{
     const f=await seed('KEYSET'),ref={
       sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
