@@ -1,11 +1,12 @@
 /**
  * #445: bounded, offline HWPX ZIP/XML extraction and HWP 5 section-record decoder.
  * Neither API is authority to collect, store, search, OCR or publish a document.
- * A raw HWP CFB file still requires a separately reviewed OLE stream reader.
+ * Raw HWP 5 CFB stream decoding is available but remains review-only.
  */
 import {createHash} from 'node:crypto';
 import {inflateRawSync} from 'node:zlib';
 import {load} from 'cheerio';
+import {readBoundedHwpCfbStreams} from './hwp-cfb.mjs';
 
 const MAX_ARCHIVE=8*1024*1024;
 const MAX_EXPANDED=16*1024*1024;
@@ -230,4 +231,28 @@ export function parseLegacyHwpSectionDraft({fileHeader,sectionStreams,sourceId,r
   return Object.freeze({state:'NEEDS_REVIEW',format:'HWP5_SECTION_STREAMS',
     sourceId,revisionId,completeness:'CFB_BINDING_AND_LAYOUT_NEED_REVIEW',
     paragraphs:Object.freeze(paragraphs)});
+}
+
+/** Parses complete in-memory .hwp (OLE2 CFB) bytes without filesystem/network
+ * access. Only approved FileHeader + sequential BodyText sections are read.
+ * This is not a completeness certificate: controls/tables/objects and all
+ * extracted dates still require independent source-rights + human review.
+ */
+export function parseApprovedLegacyHwpDraft({content,sourceId,revisionId}){
+  if(!ref.test(sourceId)||!ref.test(revisionId)
+    ||!(content instanceof Uint8Array))denied();
+  const {fileHeader,sectionStreams}=readBoundedHwpCfbStreams(content);
+  const result=parseLegacyHwpSectionDraft({
+    fileHeader,sectionStreams,sourceId,revisionId,
+  });
+  return Object.freeze({...result,format:'HWP5_CFB',
+    originalSha256:hash(content),
+    completeness:'TEXT_RECORDS_ONLY_CONTROLS_AND_LAYOUT_NEED_REVIEW'});
+}
+export function createApprovedLegacyHwpExtractor({sourceId,revisionId}){
+  if(!ref.test(sourceId)||!ref.test(revisionId))denied();
+  return {async extract({content,contentType}){
+    if(!/^(?:application\/x-hwp|application\/vnd\.hancom\.hwp|application\/haansofthwp)(?:;|$)/i.test(contentType))denied();
+    return parseApprovedLegacyHwpDraft({content,sourceId,revisionId}).paragraphs;
+  }};
 }
