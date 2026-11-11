@@ -114,6 +114,50 @@ describe('#361 review: incidental adjective negation cannot reverse the main ass
   });
 });
 
+describe('#341 follow-up: "못하다" and "안 되다" flip polarity too (박준영 review on main 4e1a962)',()=>{
+  const doc=make('SYN-LEAVE-NEG','가상 휴학 상시 접수',
+    '가상 휴학은 기간 제한 없는 상시 접수로 포털에서 신청할 수 있습니다. 결과는 문자로 안내됩니다.');
+  const ev=retrieveFaqEvidence('휴학 상시 접수 포털',[doc],NOW);
+  const cand=(answer:string,quote:string):FaqCandidate=>({answer,
+    citations:[{citationId:ev[0]!.citationId,quote}],
+    needsHumanConfirmation:true,suggestedLinks:[]});
+  it.each([
+    '가상 휴학은 포털에서 신청하지 못합니다.',
+    '가상 휴학은 포털에서 신청하지 못해요.',
+    '가상 휴학은 포털에서 신청하지 못했습니다.',
+    '가상 휴학은 포털에서 신청이 안 됩니다.',
+    '가상 휴학은 포털에서 신청이 안돼요.',
+    '가상 휴학은 포털에서 신청이 안 됨.',
+  ])('rejects the reversed permission: %s',(answer)=>{
+    expect(checkFaqCandidate(cand(answer,'포털에서 신청할 수 있습니다.'),ev)).toContain('NEGATION_NOT_IN_SOURCE');
+  });
+  it('keeps "안내" and other words that merely contain 안/못 as positive statements',()=>{
+    expect(checkFaqCandidate(cand('가상 휴학은 기간 제한 없는 상시 접수로 포털에서 신청할 수 있습니다. 결과는 문자로 안내됩니다.',
+      '기간 제한 없는 상시 접수로 포털에서 신청할 수 있습니다. 결과는 문자로 안내됩니다.'),ev)).toEqual([]);
+  });
+  it('accepts "못합니다" as a faithful paraphrase of a source "할 수 없습니다"',()=>{
+    const no=make('SYN-CANCEL-2','가상 휴학 취소','가상 휴학은 접수 완료 후 취소할 수 없습니다.');
+    const e2=retrieveFaqEvidence('휴학 취소',[no],NOW);
+    expect(checkFaqCandidate({answer:'가상 휴학은 접수 완료 후 취소하지 못합니다.',
+      citations:[{citationId:e2[0]!.citationId,quote:'접수 완료 후 취소할 수 없습니다.'}],
+      needsHumanConfirmation:true,suggestedLinks:[]},e2)).toEqual([]);
+  });
+  it('does not read a word ending in 안 ("제안됩니다") as "안 됩니다"',()=>{
+    const plan=make('SYN-PLAN','가상 상담 일정','가상 상담 일정은 학기 초에 담당자가 새로 제안합니다.');
+    const e2=retrieveFaqEvidence('상담 일정',[plan],NOW);
+    expect(checkFaqCandidate({answer:'가상 상담 일정은 학기 초에 담당자가 새로 제안됩니다.',
+      citations:[{citationId:e2[0]!.citationId,quote:'학기 초에 담당자가 새로 제안합니다.'}],
+      needsHumanConfirmation:true,suggestedLinks:[]},e2)).not.toContain('NEGATION_NOT_IN_SOURCE');
+  });
+  it('still rejects dropping a source "안 됩니다"',()=>{
+    const no=make('SYN-NO-2','가상 휴학 대리 신청','가상 휴학은 대리인이 신청하면 안 됩니다.');
+    const e2=retrieveFaqEvidence('휴학 대리 신청',[no],NOW);
+    expect(checkFaqCandidate({answer:'가상 휴학은 대리인이 신청하면 됩니다.',
+      citations:[{citationId:e2[0]!.citationId,quote:'대리인이 신청하면 안 됩니다.'}],
+      needsHumanConfirmation:true,suggestedLinks:[]},e2)).toContain('NEGATION_DROPPED');
+  });
+});
+
 describe('#361 review: spelled-out Korean counts must be quoted',()=>{
   const doc=make('SYN-TERM','가상 교환학생 학기','가상 교환학생 지원자는 총평점평균 3.0 이상이어야 하며 4개 학기 이상을 마쳐야 합니다.');
   const ev=retrieveFaqEvidence('교환학생 학기',[doc],NOW);
