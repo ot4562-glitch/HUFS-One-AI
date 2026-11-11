@@ -95,9 +95,32 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     const h=fixture(),r=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학'});
     expect(r.statusCode).toBe(200);
     expect(r.json().status).toBe('CONFIGURATION_REQUIRED');
+    expect(r.json().evidence).toEqual([]);
     expect(r.body).not.toContain('가상 파견대학의 어학 점수는');
+    const links=r.json().sourceLinks as {documentId:string;revisionId:string;
+      title:string;sourceUrl:string;verifiedAt:string}[];
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every(x=>x.sourceUrl.startsWith('https://example.org/synthetic/'))).toBe(true);
+    expect(links.every(x=>!('text' in x)&&!('answer' in x))).toBe(true);
+    expect(new Set(links.map(x=>x.documentId+':'+x.revisionId)).size).toBe(links.length);
+    expect(h.faq.revalidate).toHaveBeenCalledOnce();
     const none=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'양자악어비행선'});
     expect(none.json().status).toBe('NOT_FOUND');
+    expect(none.json().sourceLinks).toBeUndefined();
+  });
+  it('#341 never reveals source links after actor switch or rights revocation',async()=>{
+    const h=fixture();
+    h.switchActor();
+    const crossActor=await h.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    expect(crossActor.statusCode).toBe(503);
+    expect(crossActor.body).not.toContain('https://example.org/synthetic/faq/');
+    const other=fixture();
+    other.revoke();
+    const revoked=await other.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    expect(revoked.statusCode).toBe(403);
+    expect(revoked.body).not.toContain('sourceLinks');
   });
   it('revoked rights or logout fail closed for all three features',async()=>{
     const h=fixture();h.revoke();
