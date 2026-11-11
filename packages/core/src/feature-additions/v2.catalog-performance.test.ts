@@ -101,12 +101,13 @@ describe('#447 bounded 25,000-row V2 catalog top-k and keyset equivalence',()=>{
       items:all.map(x=>x.id===anchor?{...x,source:{...x.source,rights:'BLOCKED'}}:x),
       query:q,...scope,cursor:first.nextCursor!,
     })).toThrow('STALE_CURSOR');
+    const filteredQuery=query({sort:'PUBLISHED_DESC',pageSize:10,category:'SCHOLARSHIP'});
+    const filtered=searchApprovedCatalogV2({items:all,query:filteredQuery,...scope});
+    expect(filtered.nextCursor).not.toBeNull();
     expect(()=>searchApprovedCatalogV2({
-      items:all.map(x=>x.id===anchor?{...x,category:
-        x.category==='SCHOLARSHIP'?'INTERNSHIP':'SCHOLARSHIP'}:x),
-      query:query({sort:'PUBLISHED_DESC',pageSize:10,category:
-        all.find(x=>x.id===anchor)?.category}),
-      ...scope,cursor:first.nextCursor!,
+      items:all.map(x=>x.id===filtered.nextCursor!.lastId
+        ?{...x,category:'INTERNSHIP'}:x),
+      query:filteredQuery,...scope,cursor:filtered.nextCursor!,
     })).toThrow('STALE_CURSOR');
     expect(()=>searchApprovedCatalogV2({items:all,query:q,...scope,
       cursor:{...first.nextCursor!,lastSortValue:'tampered'}})).toThrow('STALE_CURSOR');
