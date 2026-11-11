@@ -6,13 +6,13 @@
  * tokens, collected bytes, or any synthetic-as-real fallback.
  */
 import {lstat,realpath} from 'node:fs/promises';
-import {dirname,isAbsolute,resolve} from 'node:path';
+import {dirname,posix,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
 const PRIVATE_ROOT='/etc/hufs-one/private';
 export function refreshFactoryPath(raw){
   if(typeof raw!=='string'||!raw.startsWith(PRIVATE_ROOT+'/')
-    ||!isAbsolute(raw)||resolve(raw)!==raw||!raw.endsWith('.mjs')
+    ||!posix.isAbsolute(raw)||posix.resolve(raw)!==raw||!raw.endsWith('.mjs')
     ||raw.includes('\0')||raw.includes('..'))
     throw new Error('CONFIGURATION_REQUIRED: private refresh factory');
   return raw;

@@ -1,5 +1,17 @@
 # HUFS One AI — 현재 구현·검증·후속 인수
 
+## NCP 연결 전 통합 검증 브랜치 — 2026-11-11
+
+**이 절은 `integration/pre-ncp-review-20261111`의 검증 상태이며 `main` 병합 기록이 아닙니다.** 기준 main은 `a7c84aa`. 열린 #444와 #463–#475의 변경을 새 로컬 브랜치에서 결합했으며 원래 PR·브랜치·원격 main을 보존했습니다. **협업자 최신 HEAD 승인 전 PR 병합 금지**를 유지합니다.
+
+- HTML 상세 파서·게시판 어댑터·HWP/HWPX 어댑터의 공통 worker export, README와 Crawlee CI 충돌을 해결하여 모두 유지했습니다. Windows에서도 Linux 전용 factory 경로의 순수 검증을 실행할 수 있도록 POSIX 경로 해석을 사용하며, 실제 apply의 비root Linux·root 소유·쓰기금지·비심벌릭 경로 검사는 유지합니다.
+- 로컬 합성 검증: 타입 검사, API/웹 빌드, 계약·소비자·관련 API/카탈로그 검사 **627 PASS**, 수집기 **54 PASS**, 독립 승인 판정 **5 PASS**, CI workflow **28 PASS**, 실제 Crawlee API 합성 smoke PASS. 새 브랜치의 실제 PostgreSQL/원격 CI 결과는 PR에서 별도 확인합니다. 웹의 기존 chunk 크기 경고는 남아 있습니다.
+- 최신 배정 #445/#447/#449/#450의 체크 항목 53개를 대조했으나 **전체 완료는 입증되지 않았습니다**. 코드·초안·실환경/사람 인수를 구별합니다. 현재 native worker는 BasicCrawler tick에서 기존 durable queue를 실행하며, 실제 CheerioCrawler/PlaywrightCrawler 페이지 취득·브라우저 대체 경로는 미구현입니다.
+- `evaluateSourceRefreshPreflight`는 현재 순수 초안 검사이며 실제 큐/취득 경로에 연결되지 않았습니다. 출처·도메인별 TTL/예산, 장애 알림 포트, 버전 handshake의 실행 경로 강제는 후속 개발·검증 대상입니다. standalone 파서/사전검사 테스트를 이 기능의 완료 증거로 대신하지 않습니다.
+- NCP 실제 SKU/저장·암호화·보존/삭제·RPO/RTO·크레딧/비용, 운영 registry·출처 이용권·Gold·팀원별 계정·실원본 E2E는 미결/NOT_RUN입니다. #449의 초안 및 합성 PASS가 운영 결정이나 실제 인수를 뜻하지 않으며, 연구/도구 채택 #450의 별도 설치·비용·개인별 연결 동의도 만들어 내지 않습니다. `RELEASE_BLOCKED` 유지.
+
+아래 2026-11-09 기록은 당시 main의 관찰 이력입니다.
+
 > **현행 상태: 2026-11-09 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
