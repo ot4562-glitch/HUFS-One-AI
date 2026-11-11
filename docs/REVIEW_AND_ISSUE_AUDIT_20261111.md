@@ -19,6 +19,14 @@
 - **첫 구현 [#485](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485)** — [#345 상담기관 안내](https://github.com/ot4562-glitch/HUFS-One-AI/issues/345) 및 [#427 필터-비동기 레이스](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427). `OwnerCounselingPanel`에 요청 세대 증가(필터 목적/캠퍼스/언어 수정, 인증 상태 변경, unmount)와 현재 세대만 결과/로딩을 반영하는 guard를 추가하고 합성 JSDOM 회귀 6개를 신설. HEAD `4198d20`, 자동 CI/동료 리뷰 대기. 실제 학생·공식 상담기관·NCP/권리/Gold는 미검증이며 #345/#427 종료 선언 아님.
 - [#485 생성 직후](https://github.com/ot4562-glitch/HUFS-One-AI/pulls) 기존 #475 병합을 반영한 **열린 PR은 24건**, 열린 Issue 31건입니다. 위 최초 22건·이후 #483/#484의 역사적 시점 수치는 보존합니다.
 
+## 2026-11-12 후속 개발/승인 증분 — 최초 감사 표는 역사 스냅샷 유지
+
+- 이번 회차만 `ot4562-glitch`이 기존 13개 `[추가 기능]`의 AI/데이터/웹 assignee를 변경하지 않고 직접 코드를 작성합니다. 상시 인계 정책이 아닙니다.
+- [#485](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485) #345/#427: 현재 HEAD `4198d20` 사람 협업자 승인과 CI 7/7 확인 후 **main [79e8810](https://github.com/ot4562-glitch/HUFS-One-AI/commit/79e8810b49fe7392bf27410b95f3c8596a6e0649)에 squash 병합**.
+- [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486) #348/#418: 409·422 서명 커서 만료 / 429 요청 제한을 인증 철회와 구별, 기존 KST 포맷·신규 합성 회귀 **10건 PASS**. [#487](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487) #340: 같은 asOf에서 1~3개 승인 교환 파트너 비교, 6건 PASS. [#488](https://github.com/ot4562-glitch/HUFS-One-AI/pull/488) #339: KST 게시연도·미기재 행사일/취소일 경계 수정, 5건 PASS. **세 PR 모두 동료 exact HEAD 승인 대기**, Browser/Pages 환경은 GitHub runner `fonts-noto-cjk` apt DNS 실패로 미통과(최초 실패 뒤 1회 재실행도 실패). 인적 Gold/학교 실자료 NCP NOT_RUN.
+- [#482](https://github.com/ot4562-glitch/HUFS-One-AI/pull/482): 리뷰어가 지적한 HTML 스크립트 문자열의 `<!--`로 정상 WIS 표가 지워지는 회귀를 `script → comment` 순서로 고치고 재현 테스트 2개 추가(HEAD `10d412e`). 기존 `CHANGES_REQUESTED`는 리뷰어의 새 HEAD 재승인 전까지 해제됐다고 주장하지 않음. 부모 #431 통합·CI 대기.
+- 타인 exact HEAD `APPROVED`가 뒤늦게 확인된 #463 HEAD `94461c0`, #465 `f8bf33c`, #470 `554c220`, #471 `e39f703`의 승인 상태를 **당시 감사 표와 구별**합니다. #472는 PostgreSQL 요청당 2연결을 사용하며 작은 풀에서 concurrent timeout이 재현돼 수정 전 병합 금지. [#484 문서 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484)도 이러한 새 상태를 갱신하고 본인 외 `APPROVED` 대기.
+
 ## 1. 최초 PR 22건 — 코드·CI·리뷰 점검 결과
 
 | PR | 감사 HEAD | 관찰된 CI | 리뷰 결론/미완료 |
