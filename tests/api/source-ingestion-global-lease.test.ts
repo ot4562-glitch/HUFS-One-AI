@@ -50,6 +50,9 @@ function database(count=2){
             return {rows:jobs.filter(j=>j.state==='LEASED'&&j.lease_until>elapsedMs)
               .map(j=>({job_id:j.job_id})).slice(0,1)};
           }
+          if(sql.includes('SELECT EXISTS(')&&sql.includes("state='PENDING'")){
+            return {rows:[{pending:jobs.some(job=>job.state==='PENDING')}]};
+          }
           if(sql.includes("WHERE state='PENDING'")&&sql.includes('FOR UPDATE')){
             return {rows:jobs.filter(j=>j.state==='PENDING').slice(0,1).map(j=>({
               job_id:j.job_id,actor_ref:j.actor_ref,source_id:j.source_id,
@@ -120,7 +123,7 @@ describe('source queue: one global executor across process instances',()=>{
     const other=await second.runOne();
     resume.resolve();
     await expect(running).rejects.toThrow('Source lease lost');
-    expect(other).toEqual({state:'IDLE'});
+    expect(other).toEqual({state:'LOCK_BUSY'});
     expect(calls).toEqual(['SYN-SOURCE-0']);
     expect(db.jobs[1]?.state).toBe('PENDING');
     // After the first executor exits, recovery quarantines its uncertain
