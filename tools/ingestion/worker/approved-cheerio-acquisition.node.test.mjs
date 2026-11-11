@@ -1,8 +1,6 @@
 import {describe,it} from 'node:test';
 import assert from 'node:assert/strict';
 import * as native from './native-worker.mjs';
-// Synthetic-only CI; diagnostics contain static stage codes, never URLs/data.
-process.env.HUFS_SYNTHETIC_CRAWLEE_DIAG='1';
 
 const canonicalUrl='https://synthetic.example.edu/approved/notice';
 describe('#445 real CheerioCrawler acquisition uses only a supplied exact request',()=>{
