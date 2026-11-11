@@ -61,11 +61,18 @@
 - 이서연은 UI/디자인·연결을 주도한다. 제품 시연 제보는 김채윤, AI 기술 QA는 박준영이 담당하며, 기술 조사가 필요한 이슈의 조사자는 총괄이 배정한다.
 - AI 기본 조합은 **HCX-007 + CLOVA OCR + 규칙/코드 기반 추천**이다. HCX-005 신규 실행 경로 정리는 [PR #354](https://github.com/ot4562-glitch/HUFS-One-AI/pull/354)의 코드/검증 상태를 확인한다. 기존 자료의 변경 없이 운영 적용됐다고 가정하지 않는다.
 
+## 2026-11-11 PR/Issue 감사 및 본선 전 후속 우선순위
+
+- 전수 감사 당시 열린 PR 22건에 코드 diff/현재 HEAD/CI 기반 **공식 GitHub COMMENT 리뷰를 제출**했습니다. [#475](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475)만 동료의 exact HEAD 승인과 CI를 확인하고 main [05d78cd](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)에 병합했습니다. **COMMENT는 독립 APPROVED가 아닙니다**. [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md), [현행 리뷰 절차](docs/PR_WORKFLOW.md)를 따릅니다.
+- 독립 승인 검증기는 [#481 부트스트랩](https://github.com/ot4562-glitch/HUFS-One-AI/pull/481)의 타인 승인·병합 → [#466](https://github.com/ot4562-glitch/HUFS-One-AI/pull/466)의 gate 재실행 순서입니다. 합성 기능 CI 7/9종 성공·승인 gate `BOOTSTRAP_PENDING` 또는 `SKIPPED`를 병합 허가로 오인하거나 검증을 제거하지 않습니다. 보호 규칙은 저장소 관리자가 별도로 확인합니다.
+- 본선 전 담당 9건 과거 이관과 추가로 배정된 [#445 수집·갱신](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능/실데이터](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 NCP 계약](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)을 구분합니다. 열린 Issue 31건은 아직 원본 권리/NCP·Gold/실사용 인수와 미해결 버그가 남아 있어 무증거 자동 종료 금지입니다. 고정 역할 #355–#359는 원본 이슈 변경 금지, 새 댓글로만 인계합니다.
+- 개발·계약·합성 fixture는 GitHub에, 실제 출처 URL 운영 원장·원본 bytes·PostgreSQL·Gold·백업·키/개인정보는 제한된 **NCP 내부 환경**에만 둡니다. 실 운영/사용권/독립 Gold 인수 전 `RELEASE_BLOCKED`를 유지합니다. 역사적 CSV 5개 공개 위험은 #360에서 별도 처리합니다.
+
 ## 안전·검증·협업 기준
 
 - 사용자의 프로젝트 승인 기준은 `OWNER_CONFIRMED_APPROVED`; [승인 정본](docs/AUTHORIZATION.md)을 확인한다. 이 승인은 실제 기관별 자료 이용권·현재 사용자 동의·실 모델 호출·운영 배포가 통과했다는 증거와 구별한다.
 - 실제 학생 원본/학교 문서·비밀·모델 입력은 현행 actor/세션·RLS·CSRF·출처 권리·동의/철회·최소권한·승인된 사용목적을 적용한다. 결과에 근거가 부족하면 `UNKNOWN/NEEDS_REVIEW`를 유지한다. 합성/실측/캐시·실학생·학교 공식 판정을 혼동하지 않는다.
 - **`csv/` 원본 5개(Google Forms 1개 + 학생별 수강 CSV 4개)는 읽기 전용으로 보존**한다. 삭제·이동·재인코딩·변경·Git 해제/배포 이미지·공개 웹 번들 포함 등을 방지한다. 저장소의 검증 경계 `tools/verify_release_boundary.py`를 준수하고 법적 삭제·철회 요청은 별도 처리한다.
 - 다른 사람의 dirty worktree/브랜치·핵심 코드를 초기화·강제 push하지 않는다. 공통 계약/DB/lockfile은 소비자들과 교차 검토한다.
-- 현재 HEAD 테스트·CI·코드 diff·사람 검토 의견 및 실환경 실행 결과를 구분한다. **사람 교차 리뷰를 강하게 권장하지만 특정 계정의 `APPROVED` 또는 정확한 HEAD 독립 승인 검사를 병합의 자동 필수 조건으로 두지 않는다.** 에이전트는 모든 PR의 실제 코드·반례·보안/권한 영향·CI 결과·미해결 의견을 직접 검토하고 수정해야 한다. 실제 차단 결함·실패한 필수 기능/보안 CI·충돌이 있으면 수정 전에는 병합하지 않는다. 담당자 이견과 확인하지 못한 위험은 숨기지 않고 기록한다. 사용자 승인 없는 `main` 직접 push/force push로 검증을 우회하지 않는다. [PR 리뷰 운영 가이드](docs/PR_WORKFLOW.md)를 적용하며, 합성 PASS를 실 운영·인적 Gold·학교 공식 인수로 주장하지 않는다.
+- 현재 HEAD 테스트·CI·코드 diff·사람 검토 의견 및 실환경 실행 결과를 구분한다. **2026-11-11부터 작성자와 다른 팀 협업자의 최신 PR HEAD `APPROVED`가 최소 1건 필요하며, 미해결 `CHANGES_REQUESTED`가 있으면 병합하지 않는다. 이전의 리뷰 선택 규칙은 폐기한다.** 에이전트는 모든 PR의 실제 코드·반례·보안/권한 영향·CI 결과·미해결 의견을 직접 검토하고 수정해야 한다. 실제 차단 결함·실패한 필수 기능/보안 CI·충돌이 있으면 수정 전에는 병합하지 않는다. 담당자 이견과 확인하지 못한 위험은 숨기지 않고 기록한다. 사용자 승인 없는 `main` 직접 push/force push로 검증을 우회하지 않는다. [PR 리뷰 운영 가이드](docs/PR_WORKFLOW.md)를 적용하며, 합성 PASS를 실 운영·인적 Gold·학교 공식 인수로 주장하지 않는다.
 - 수정 전에 현재 코드, 관련 기능 이슈, 폴더별 `AGENTS.md`, [STATUS](STATUS.md), [Architecture](Architecture.md), [PR workflow](docs/PR_WORKFLOW.md)를 읽고 정확한 변경 내용과 남은 미검증을 보고한다.
