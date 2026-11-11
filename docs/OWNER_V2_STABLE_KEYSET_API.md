@@ -43,11 +43,20 @@ This is a correctness baseline, **not high-scale server-side filtered SQL**.
 The 5,000-row cap and up-to-two full verified scans **per HTTP request** are
 intentional and may be costly; they cannot return a partial or misleading
 count when exceeded. The normal unpaged reader's 500-row cap remains.
-The implementation does not guarantee a single MVCC snapshot across SQL page
-transactions or across HTTP requests; double checking the same epoch detects
-changes but is not a substitute for an immutable independently approved global
-catalog revision/authorization epoch. Long scans or concurrent mutations
-may deny service instead of showing inconsistent results.
+Every **single complete scan** now holds a read-only PostgreSQL
+`REPEATABLE READ` exporter transaction and imports its opaque `pg_export_snapshot()`
+identifier **before the first query of every keyset page transaction**.
+Thus the HEAD and rights row visibility cannot drift between pages even when a
+publisher commits concurrently; the exporter is rolled back and its connection
+released after the scan, including failure paths. The response gate starts
+an entirely **fresh** exported snapshot and compares all verified page hashes
+and current rights again before returning a result. A snapshot never serves as
+an authorization grant.
+
+This still does **not** pin one MVCC snapshot **across HTTP requests** or
+provide a durable global catalog publication/authorization epoch. A page
+scan may fail closed if concurrent changes invalidate current grants. Long
+scans remain costly; actual NCP runtime/replica/timeout acceptance is pending.
 
 Next release gate: independent read-only PostgreSQL RLS/role verification,
 source/rights/consent epoch schema and publisher transaction design, a stable
@@ -60,3 +69,7 @@ Run synthetic unit/e2e: `npm run typecheck` and
 `npx vitest run tests/api/owner-v2-catalog-keyset-http.test.ts`.
 Real SQL approved reader keyset 1,250 rows/25 pages, index probe and revocation
 remain under the isolated opt-in PostgreSQL CI in dependent PR #465.
+The new synthetic and **real disposable PostgreSQL** tests additionally prove
+that a concurrent V2 HEAD insertion after page 1 cannot become visible within
+the same exported snapshot, while a freshly exported snapshot sees it.
+No actual institution records or credentials are involved.
