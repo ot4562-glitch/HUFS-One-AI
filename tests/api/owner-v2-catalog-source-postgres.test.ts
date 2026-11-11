@@ -1,9 +1,9 @@
 import {describe,expect,it,vi} from 'vitest';
-import {opportunity} from '../../../packages/core/src/feature-additions/v2.fixtures.js';
-import {PostgresOwnerV2CatalogSource} from '../../api/src/modules/owner-v2-catalog-source-postgres.js';
+import {opportunity} from '../../packages/core/src/feature-additions/v2.fixtures.js';
+import {PostgresOwnerV2CatalogSource} from '../../apps/api/src/modules/owner-v2-catalog-source-postgres.js';
 import type {PostgresApprovedOwnerReader,ApprovedOwnerProjection}
-  from '../../api/src/modules/opportunities/owner-catalog-postgres.js';
-import type {ReviewerSqlConnection} from '../../api/src/modules/auth/reviewer-postgres.js';
+  from '../../apps/api/src/modules/opportunities/owner-catalog-postgres.js';
+import type {ReviewerSqlConnection} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const NOW='2026-11-11T00:00:00Z';
 const sha='b'.repeat(64);
@@ -19,9 +19,10 @@ const projection=(item=original):ApprovedOwnerProjection=>({
   starts_at:NOW,expires_at:'2026-11-12T00:00:00Z',
 });
 function fixture(options:{item?:typeof original;canonicalUrl?:string;revokeOnRecheck?:boolean;
-  fingerprint?:string}={}){
+  fingerprint?:string;entityId?:string}={}){
   let calls=0;
-  const rows=[projection(options.item??original)];
+  const rows=[{...projection(options.item??original),
+    ...(options.entityId?{entity_id:options.entityId}:{})}];
   const query=vi.fn(async()=>({rows:[{
     source_id:original.source.sourceId,permission_ref:'SYN-GRANT',
     canonical_url:options.canonicalUrl??'https://example.org/notices/1',
@@ -72,17 +73,15 @@ describe('#447 pre-NCP approved owner V2 PostgreSQL adapter (synthetic only)',()
       opportunity('SYN-OP',{source:{...original.source,status:'NEEDS_REVIEW'}}),
       opportunity('SYN-OP',{source:{...original.source,rights:'BLOCKED'}}),
       opportunity('SYN-OP',{source:{...original.source,sourceId:'SYN-OTHER'}}),
-      opportunity('SYN-MISMATCH',{sourceUrl:'https://example.org/notices/1'}),
     ]){
       const f=fixture({item:bad});
-      if(bad.id==='SYN-MISMATCH'){
-        // Projection entity_id must not be chosen by browser input; mock
-        // keeps it equal to payload here, so verify by a separate case below.
-        expect((await f.port.read({actorId:'SYN-OWNER',asOf:NOW}))?.items).toHaveLength(1);
-      }else{
-        await expect(f.port.read({actorId:'SYN-OWNER',asOf:NOW})).rejects.toThrow();
-      }
+      await expect(f.port.read({actorId:'SYN-OWNER',asOf:NOW})).rejects.toThrow();
     }
+  });
+
+  it('rejects projection entity ID tampering',async()=>{
+    const f=fixture({entityId:'SYN-WRONG'});
+    await expect(f.port.read({actorId:'SYN-OWNER',asOf:NOW})).rejects.toThrow();
   });
 
   it('fails closed on subsequent revocation, expired receipt or other actor',async()=>{
