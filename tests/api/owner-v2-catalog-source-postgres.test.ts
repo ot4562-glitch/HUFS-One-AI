@@ -23,7 +23,7 @@ function fixture(options:{item?:typeof original;canonicalUrl?:string;revokeOnRec
   let calls=0;
   const rows=[{...projection(options.item??original),
     ...(options.entityId?{entity_id:options.entityId}:{})}];
-  const query=vi.fn(async()=>({rows:[{
+  const query=vi.fn(async(_sql:string,_params?:readonly unknown[])=>({rows:[{
     source_id:original.source.sourceId,permission_ref:'SYN-GRANT',
     canonical_url:options.canonicalUrl??'https://example.org/notices/1',
   }]}));
