@@ -203,7 +203,10 @@ export const SourceRevisionDraftSchema=z.strictObject({
   sourceId:Id,revisionId:Id,permissionRef:Id,
   /** An NCP-private opaque object identifier; never real bytes or signed URLs. */
   rawObjectKey:z.string().min(1).max(512)
-    .refine(v=>!v.includes('://')&&!v.startsWith('/')&&!v.includes('..')&&!/[\\\x00-\x1f]/.test(v)),
+    // Opaque object keys must not be accepted as URLs, encoded filesystem
+    // traversal, absolute paths or percent-decoded alternate names.
+    .regex(/^[A-Za-z0-9][A-Za-z0-9/_.:-]*$/)
+    .refine(v=>!v.includes('//')&&!v.includes('..')&&!v.includes('://')),
   originalSha256:Sha256,normalizedSha256:Sha256,
   extractedFromOriginalSha256:Sha256,
   ingestedBy:Id,fetchedAt:Iso,
