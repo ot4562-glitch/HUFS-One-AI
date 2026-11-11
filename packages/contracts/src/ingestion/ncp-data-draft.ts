@@ -180,7 +180,7 @@ export function parseReviewedRetryAfter(value:unknown,now:unknown):string|null{
     ||typeof now!=='string'||!Iso.safeParse(now).success)return null;
   const at=Date.parse(now),max=86_400_000;
   let until:number;
-  if(/^\\d{1,5}$/.test(value)){
+  if(/^\d{1,5}$/.test(value)){
     const seconds=Number(value);
     if(!Number.isSafeInteger(seconds)||seconds>86400)return null;
     until=at+seconds*1000;
