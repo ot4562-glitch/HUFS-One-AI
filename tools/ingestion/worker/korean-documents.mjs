@@ -204,7 +204,7 @@ export function parseLegacyHwpSectionDraft({fileHeader,sectionStreams,sourceId,r
       if(size>bytes.length-pos||size>MAX_LINE*4||level>64)denied();
       const data=bytes.subarray(pos,pos+size);pos+=size;
       if(tag===0x42){ // PARA_HEADER
-        if(size<4)denied();
+        if(size<4||(current&&current.expected>0))denied();
         current={text:'',expected:u32(data,0)&0x7fffffff};
         if(current.expected>MAX_LINE+1)denied();
         sequence++;
@@ -212,6 +212,7 @@ export function parseLegacyHwpSectionDraft({fileHeader,sectionStreams,sourceId,r
         if(!current||size%2)denied();
         let raw;
         try{raw=utf16.decode(data);}catch{denied();}
+        if(raw.length!==current.expected)denied(); // reject partial HWP text
         // Extended inline controls, object anchors and unknown controls
         // need a richer audited parser; never silently call them source text.
         if(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(raw))denied();
@@ -225,7 +226,7 @@ export function parseLegacyHwpSectionDraft({fileHeader,sectionStreams,sourceId,r
         current=null;
       }
     }
-    if(!sequence)denied();
+    if(!sequence||(current&&current.expected>0))denied();
   }
   if(!paragraphs.length)denied();
   return Object.freeze({state:'NEEDS_REVIEW',format:'HWP5_SECTION_STREAMS',
