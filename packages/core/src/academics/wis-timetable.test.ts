@@ -347,7 +347,7 @@ describe('script and comment blocks are cut before rows are read (CodeQL #1-#6)'
 describe('commented timetable markup is not approved source data (#431 follow-up)', () => {
   it('ignores commented fake course rows and stale syllabus term links', () => {
     const ghost = '<tr><td>4</td><td>잘못된 주석 행</td></tr>'
-      + \" lecture_open('2025','1','A','SYN000000')\";
+      + " lecture_open('2025','1','A','SYN000000')";
     const html = page(ROWS).replace('<table>', `<!-- ${ghost} --><table>`);
     const result = importWisTimetable(request(html));
     expect(result.rows.map(row => row.rawCode)).toEqual(ROWS.map(row => row.code));
