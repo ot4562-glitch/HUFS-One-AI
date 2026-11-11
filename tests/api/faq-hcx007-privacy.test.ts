@@ -15,7 +15,7 @@ describe('#341 HCX pre-admission privacy and rights separation (zero provider ca
   it('builds strictly offline and sends only a masked question and authorized evidence',()=>{
     const wire=buildFaqHcx007Request('제 학번은 2020-12345인데 가상 학사 FAQ 알려줘',[evidence]);
     expect(wire.path).toBe('/v3/chat-completions/HCX-007');
-    const context=wire.body.messages[1].content;
+    const context=wire.body.messages[1]!.content;
     expect(context).not.toContain('2020-12345');
     expect(context).toContain('[학번]');
     expect(context).toContain(evidence.citationId);
