@@ -46,7 +46,8 @@ function fixture(count=1250){
     actor_id:ACTOR,kind:'V2_CATALOG',entity_id:item.id,
     version:'SYN-V1',payload_json:item,
     payload_sha256:canonicalProjectionHash(item),
-    sources_json:maxProofRefs?Array.from({length:100},(_,j)=>j===0?ref:{
+    sources_json:maxProofRefs?Array.from({length:100},(_,j)=>j===0
+      ?{...ref,permissionRef:'SYN-PERM-PRIMARY-'+i}:{
       sourceId:'SYN-SOURCE-'+i+'-'+j,
       revisionId:ref.revisionId,
       permissionRef:'SYN-PERM-'+i+'-'+j,
