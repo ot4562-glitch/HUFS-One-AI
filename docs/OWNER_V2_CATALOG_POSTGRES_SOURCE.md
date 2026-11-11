@@ -36,10 +36,24 @@ Cross-site and same-domain-but-different-page citations are rejected.
    in-process receipts are **only lookup references**, never permission
    grants; unknown/expired tickets deny. Real deployments require session
    affinity or a separately reviewed distributed receipt design.
-5. The inherited bounded reader stops at 500 approved rows per actor and
-   the API enforces an additional 2,000-row ceiling. The 500-row bound is
-   currently an intentional **fail-closed** upper bound, NOT completion of
-   unbounded full-catalog SQL keyset paging.
+5. The inherited **unpaged** reader still stops at 500 approved rows
+   per actor and the current HTTP route has a 2,000-row input ceiling.
+   As a separately callable, non-HTTP operator primitive,
+   `PostgresApprovedOwnerReader.readV2KeysetPage` now pages 1–50
+   `V2_CATALOG` rows at a time by actor/kind/entity_id (C collation)
+   using a partial index. A **lookahead row also goes through all** current
+   consent, projection hash, exact source revision, rights and independent
+   attestation checks before `hasMore` is exposed. The 1,250-row disposable
+   PostgreSQL regression covers 25 pages, duplicate-free order, RLS index
+   metadata and revocation.
+6. These individual page fingerprints are **not** stable whole-catalog
+   versions and are intentionally NOT accepted as cross-page public cursors.
+   A trusted whole-catalog revision/evidence epoch bound to full actor grants,
+   source rights and HEAD changes, plus database-side filters matching the
+   pure search semantics (including Korean normalization), are still needed
+   before changing the actual HTTP `TrustedOwnerV2CatalogSource` activation.
+   Never return unverified total counts or call all actor rows 'approved'
+   merely because page 1 was valid.
 
 Synthetic test: `tests/api/owner-v2-catalog-source-postgres.test.ts`.
 No production PostgreSQL/NCP/real student data migration, independent Gold or
