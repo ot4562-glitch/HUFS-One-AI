@@ -4,6 +4,8 @@
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
 
+> **2026-11-11 후속 재조회:** 최초 22개 PR에 대한 감사 이후 [#483 FAQ 한국어 부정 표현 버그 수정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483)이 추가되었습니다. HEAD `4d8b911` 코드/부정 테스트 검토·GitHub **7/7 Actions SUCCESS**와 공식 COMMENT 리뷰 등록을 확인했으나 **미병합·독립 최신 HEAD APPROVED 없음**. [#484 문서 통합 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484)도 생성되어, #475 병합 이후 최신 열린 PR은 **23건**, 열린 Issue는 **31건**입니다. 변경 시 GitHub 재조회가 우선하며 #341은 실 FAQ/HCX/Gold 인수까지 OPEN입니다.
+
 ## 2026-11-11 현재 PR·Issue 감사 및 본선 전 통합 현황
 
 - **GitHub 감사 시점:** 최초 OPEN PR 22건, OPEN Issue 31건. 22건의 최신 HEAD diff·일반 CI·기존 협업자 리뷰를 확인하고 **전부 공식 COMMENT 코드 리뷰를 GitHub에 작성**했습니다. 각 PR의 상세 상태와 이슈 31건 인수 표는 [11월 11일 전수 감사](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조하세요. 작성자 COMMENT는 독립 협업자 APPROVED가 아닙니다.
