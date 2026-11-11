@@ -40,4 +40,5 @@ jobs:
           test ! -d local_only
           npm ci --prefix tools/ingestion/worker --ignore-scripts --no-audit --no-fund
           node tools/ingestion/worker/synthetic-smoke.mjs
+          node --test tools/ingestion/worker/korean-documents.node.test.mjs
           node --test tools/ingestion/crawlee-approved-dispatch.node.test.mjs tools/ingestion/approved-link-candidates.node.test.mjs tools/ingestion/notice-field-candidates.node.test.mjs
