@@ -1,9 +1,9 @@
 name: Independent collaborator approval (latest HEAD)
 
-# Never execute/check out the pull request's untrusted code with the
-# pull_request_target token. This workflow reads only the trusted base.
+# Never execute/check out untrusted PR code or use privileged target tokens.
+# Read only the trusted base so the status is attached to the PR ref.
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
   pull_request_review:
     types: [submitted, dismissed]
