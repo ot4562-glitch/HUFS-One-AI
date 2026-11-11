@@ -60,7 +60,10 @@ async function canonicalPageProof(connection:ReviewerSqlConnection,
   const result=await connection.query(sql,
     [JSON.stringify([...refs.values()]),actorId,now]);
   if(result.rows.length!==refs.size)deny();
-  const parsed=Canonical.array().max(BATCH_SIZE*101).parse(result.rows);
+  // The SQL reader validates pageSize displayed rows PLUS one lookahead.
+  // Each projection permits up to 100 distinct source references, so a full
+  // page may legitimately carry (50+1)*100 = 5,100 canonical proofs.
+  const parsed=Canonical.array().max((BATCH_SIZE+1)*100).parse(result.rows);
   if(new Set(parsed.map(x=>key(x.source_id,x.permission_ref))).size!==refs.size
     ||parsed.some(x=>!refs.has(key(x.source_id,x.permission_ref))))deny();
   return parsed;
