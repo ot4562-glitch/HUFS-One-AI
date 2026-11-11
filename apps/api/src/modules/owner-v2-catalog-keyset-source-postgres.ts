@@ -14,14 +14,15 @@ import {PostgresApprovedOwnerReader,canonicalProjectionHash}
 import type {ApprovedOwnerProjection} from './opportunities/owner-catalog-postgres.js';
 import type {TrustedOwnerV2CatalogSource,ApprovedV2CatalogSnapshot}
   from './owner-v2-catalog-http.js';
+import {MAX_VERIFIED_V2_CATALOG_ROWS,VERIFIED_V2_KEYSET_PAGE_SIZE}
+  from './owner-v2-catalog-limits.js';
 
 const ISO=z.iso.datetime({offset:true});
 const Id=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
 const Canonical=z.strictObject({source_id:Id,permission_ref:Id,
   canonical_url:z.string().url().max(2048)});
 const SHA=/^[0-9a-f]{64}$/;
-export const MAX_VERIFIED_V2_CATALOG_ROWS=5000;
-const BATCH_SIZE=50;
+const BATCH_SIZE=VERIFIED_V2_KEYSET_PAGE_SIZE;
 type Query={actorId:string;asOf:string};
 type Ticket={actorId:string;asOf:string;fingerprint:string;expires:number};
 const key=(a:string,b:string)=>JSON.stringify([a,b]);
