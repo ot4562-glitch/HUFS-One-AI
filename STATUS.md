@@ -1,10 +1,19 @@
 # HUFS One AI — 현재 구현·검증·후속 인수
 
-> **현행 상태: 2026-11-09 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
+> **현행 상태: 2026-11-11 (Asia/Seoul).** 11월 9일까지의 수치와 완료 기록은 날짜가 명시된 역사적 스냅샷이며, **현재 진행사항은 아래 11월 11일 섹션을 우선** 적용합니다. 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
 
-## 2026-11-09 본선 전 심민성 담당 이슈 정산 (최신)
+## 2026-11-11 현재 PR·Issue 감사 및 본선 전 통합 현황
+
+- **GitHub 감사 시점:** 최초 OPEN PR 22건, OPEN Issue 31건. 22건의 최신 HEAD diff·일반 CI·기존 협업자 리뷰를 확인하고 **전부 공식 COMMENT 코드 리뷰를 GitHub에 작성**했습니다. 각 PR의 상세 상태와 이슈 31건 인수 표는 [11월 11일 전수 감사](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조하세요. 작성자 COMMENT는 독립 협업자 APPROVED가 아닙니다.
+- **실제 병합:** [#475](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475) HEAD `4a0f906`에서 팀 협업자 정확 HEAD APPROVED + 필수 기능 CI 6/6 SUCCESS를 확인, main [`05d78cd`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)로 squash 병합했습니다. 최초 나머지 21건은 **승인/스택 의존성/잔여 검토**로 미병합이며 새 문서 PR은 별도 취급합니다.
+- **승인 검증기:** #466 HEAD `21c0c17`은 동료 APPROVED가 있지만 #481을 신뢰된 main에 먼저 승인·병합해야 합니다. #466과 #476의 independent gate 실패 `BOOTSTRAP_PENDING`은 실제 코드 기능 CI 실패가 아니며 **우회하지 않습니다**. #476 일반 CI 9/9 성공과 정확 HEAD 동료 승인 부재는 별도입니다. #477/#479의 skipped gate도 승인으로 치지 않습니다.
+- **코드 보정 및 스택:** #476에는 51행 lookahead×100 unique rights 증명 5,100개를 기존 상한 5,050개가 거부하던 버그 수정이 있습니다. 시간표 PR #431은 주석 속 가짜 행·학기·캠퍼스가 실제 데이터가 되는 결함을 수리한 #482를 부모 HEAD에 통합한 뒤 재검증해야 합니다. #465→#471→#472, #468→#474, #476→#477→#479 의존 순서를 보존합니다.
+- **이슈 전수 점검:** OPEN 31건 본문·담당·기존 인계 기록을 검토했고, **이번에 근거 없이 완료/종결한 이슈는 0건**입니다. 기존 본선 전 담당 9건의 11월 9일 완료·이관 기록을 유지하면서 새 #445 Crawlee·NCP, #447 전 기능 P0, #449 설계 P1은 미완 상태입니다. #341 FAQ 부정극성 반례, #373 출처 충돌(#478 미병합), #418 공고 검색 KST/세션, #427 상담 async 경합은 별도 OPEN입니다.
+- **운영/권리:** 실제 NCP, 기관 원본 권리·재게시/외부 AI 전송, 원본 CSV 5개 공개 위험, 독립 Gold·팀원 계정/비밀·백업/restore, 실학생 E2E는 코드 CI가 수락하지 않습니다. **OWNER_CONFIRMED_APPROVED(개발 승인) / RELEASE_BLOCKED(실운영 불가)** 유지. 고정 역할 이슈 #355–#359의 원문·상태는 수정하지 않았습니다.
+
+## 2026-11-09 본선 전 심민성 담당 이슈 정산 (역사적 스냅샷)
 
 - **기준 main:** [`6c27fdc`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6c27fdc281a1d3c632eb39d9ada4322540493069). GitHub 확인: **전체 열린 이슈 22건**, **열린 PR #431 1건**, 심민성에게 배정된 열린 이슈는 [본선 이후 역할 #359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) 한 건뿐입니다.
 - **본선 전 담당 9건 완료·이관 후 CLOSED/completed:** [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362), [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366), [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367), [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375), [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381), [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416), [#430](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430), [#433](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433). 각 이슈 댓글에 실제 PR/CI/일회용 PG 검수와 이관 근거를 기록했습니다.
