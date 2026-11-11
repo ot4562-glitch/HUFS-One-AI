@@ -17,7 +17,7 @@ export type ActivityIntakeReview={
   /** Counts are synthetic intake diagnostics, NOT a proof of licensed source collection. */
   acceptedCount:number;
 };
-function registry<T extends { [k:string]:unknown }>(items:readonly T[],id:(r:T)=>string){
+function registry<T extends object>(items:readonly T[],id:(r:T)=>string){
   const byId=new Map<string,T>(),conflicts=new Set<string>();
   for(const row of items){
     const key=id(row);
