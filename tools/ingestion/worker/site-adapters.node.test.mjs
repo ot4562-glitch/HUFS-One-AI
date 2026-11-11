@@ -1,6 +1,6 @@
 import {describe,it} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseApprovedBoardCandidates} from './site-adapters.mjs';
+import {parseApprovedBoardCandidates,reconcileReviewedBoardPages} from './site-adapters.mjs';
 const bytes=value=>new TextEncoder().encode(value);
 const scope={
   family:'TABLE_BOARD_V1',sourceId:'SYN-TABLE',rootSelector:'main',
@@ -54,6 +54,39 @@ describe('#445 independent board layout adapters: no network/no authorization',(
     assert.deepEqual(result.posts[0].attachmentCandidates,[
       'https://example.org/files/application.pdf',
     ]);
+  });
+  it('reconciles a bounded two-page review batch without making requests',()=>{
+    const first=parseApprovedBoardCandidates({content:bytes(table),policy:scope});
+    const nextPolicy={...scope,canonicalUrl:'https://example.org/notices?page=2'};
+    const second=parseApprovedBoardCandidates({
+      content:bytes('<main><table><tbody>'+
+        '<tr><td class="title"><a href="/notices?id=103">가상 세 번째 공고</a></td>'+
+        '<td><time>2026.11.12</time></td></tr>'+
+        '</tbody></table><nav><a href="/notices?page=3">3</a></nav></main>'),
+      policy:nextPolicy,
+    });
+    const result=reconcileReviewedBoardPages({pages:[first,second],policy:scope});
+    assert.equal(result.state,'REVIEW_REQUIRED');
+    assert.equal(result.scannedPages,2);
+    assert.equal(result.posts.length,3);
+    assert.ok(result.posts.every(post=>/^[a-f0-9]{64}$/.test(post.sourcePageSha256)));
+    assert.deepEqual(result.unfetchedPageCandidates,[
+      'https://example.org/notices?page=3',
+    ]);
+    assert.equal('fetch' in result,false);
+    const tampered={...second,posts:[{...second.posts[0],url:first.posts[0].url,
+      title:'원문에 없는 다른 제목'}]};
+    assert.throws(()=>reconcileReviewedBoardPages({
+      pages:[first,tampered],policy:scope,
+    }),/PUBLIC_BOARD_CANDIDATES_NOT_APPROVED/);
+    const duplicatePage={...second,sourceUrl:first.sourceUrl};
+    assert.throws(()=>reconcileReviewedBoardPages({
+      pages:[first,duplicatePage],policy:scope,
+    }),/PUBLIC_BOARD_CANDIDATES_NOT_APPROVED/);
+    const foreign={...second,paginationCandidates:['https://other.example.org/notices']};
+    assert.throws(()=>reconcileReviewedBoardPages({
+      pages:[first,foreign],policy:scope,
+    }),/PUBLIC_BOARD_CANDIDATES_NOT_APPROVED/);
   });
   it('filters unsafe proposed destinations and unapproved query keys',()=>{
     const html=String.raw`<main><table><tbody>
