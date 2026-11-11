@@ -5,7 +5,7 @@ import {mentor,mentorPreference,source} from './v2.fixtures.js';
 
 const majors=['ECON','CS','BUSINESS','POLSCI','HISTORY'];
 const jobs=['ANALYST','ENGINEER','CONSULTANT','DESIGN'];
-const topics=['DATA_ANALYTICS','PUBLIC_POLICY','SERVICE_DESIGN'];
+const topics=['DATA_ANALYTICS','ECONOMIC_RESEARCH','AI_ML'] as const;
 // Entirely fictional approved-code samples; no mentor/person/student records.
 const syntheticCatalog=Array.from({length:20},(_,i)=>mentor(
   'SYN-MENTOR-'+String(i).padStart(2,'0'),{
@@ -88,7 +88,7 @@ describe('#344 30 synthetic queries by 20 fictional mentors (not independent hum
       const m=syntheticCatalog.find(c=>c.id===match.mentorId)!;
       expect(match.reasons.every(r=>r.codes.every(code=>
         m.majorCodes.includes(code)||m.jobCodes.includes(code)
-        ||m.experienceTopics.includes(code)||m.publicEvidenceRefs.includes(code))))
+        ||m.experienceTopics.some(topic=>topic===code)||m.publicEvidenceRefs.includes(code))))
         .toBe(true);
     }
   });
