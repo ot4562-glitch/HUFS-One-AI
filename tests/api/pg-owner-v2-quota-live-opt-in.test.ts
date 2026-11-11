@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {randomBytes} from 'node:crypto';
 import {Pool} from 'pg';
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
-import {PostgresOwnerV2CatalogQuota} from '../../apps/api/src/modules/owner-v2-catalog-quota-postgres.js';
+import {PostgresOwnerV2CatalogQuota,OwnerV2CatalogQuotaUnavailable} from '../../apps/api/src/modules/owner-v2-catalog-quota-postgres.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const RUN=process.env.HUFS_PG_FULL_LIVE==='1';
@@ -57,9 +57,10 @@ describe.skipIf(!RUN)('#447 real PostgreSQL synthetic owner V2 quota',()=>{
       await admin.end();
     }
   },20000);
-  it('is DENIED before an independently entered policy, without leaking actor text',async()=>{
+  it('reports unavailable until independently configured, without leaking actor text',async()=>{
     const port=new PostgresOwnerV2CatalogQuota(adapter(reader!),key);
-    expect(await port.consume(request('SYN-OWNER-A'))).toBe(false);
+    await expect(port.consume(request('SYN-OWNER-A')))
+      .rejects.toBeInstanceOf(OwnerV2CatalogQuotaUnavailable);
     const rows=await db!.query('SELECT count(*)::integer AS n FROM public.owner_v2_catalog_quota_windows');
     expect(rows.rows[0]?.n).toBe(0);
     await expect(reader!.query('SELECT * FROM public.owner_v2_catalog_quota_policy'))
