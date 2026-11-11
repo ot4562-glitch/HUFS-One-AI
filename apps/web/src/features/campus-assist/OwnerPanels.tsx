@@ -221,7 +221,7 @@ export function OwnerExchangePanel({port,navigate}:{port:CampusAssistPort;naviga
           <p>적용 규정 판본: {evaluation.policyRevision} ·
             <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">파견대학 요건 출처 확인</a></p>
         </li>)}</ul>
-      </section>
+      </section>}
     </>}
     <p><InAppLink to="/faq" navigate={navigate}>학사 FAQ</InAppLink></p>
   </section>;
