@@ -45,7 +45,9 @@ describe('#445 guarded source acquisition driver',()=>{
         ...syntheticPreflightDraft(i),
         scope:{...syntheticPreflightDraft(i).scope,robotsStatus:'RESTRICTED'},
       }));
-    await expect(x.service.execute(input)).rejects.toThrow('Approved source preflight blocked');
+    // The private operator check denies the fetch, then the one-use
+    // acquisition boundary intentionally redacts its inner error.
+    await expect(x.service.execute(input)).rejects.toThrow('Approved source acquisition failed');
     expect(x.loadCurrent).toHaveBeenCalledTimes(2);
     expect(x.requestPinned).not.toHaveBeenCalled();
     expect(x.append).not.toHaveBeenCalled();
