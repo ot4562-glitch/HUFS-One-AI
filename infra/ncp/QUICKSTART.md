@@ -1,6 +1,10 @@
 # HUFS One AI — NCP 비공개 합성 프리뷰 준비
 
-**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 인수 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), #253 코드는 분할 PR 병합 후 이관.
+**현재 코드:** NCP VPC/network/host IaC·Windows ZIP/SSH·Ubuntu systemd/복구 스크립트, plan/mock CI. **실 계정/요금·Terraform apply/실 SSH·TLS/PG/Google/유료 AI·학생 원본은 운영자 승인 및 실증 전**이다. `RELEASE_BLOCKED`. 실 운영 인수는 #445/#447/#449에서 추적하며, #276·#253은 이전 분할/이관 기록입니다.
+
+## 2026-11-11 현행 운영 기준
+
+이 문서는 **합성 NCP 설치 계획 및 제한된 프리뷰**의 사용법입니다. 실서비스 자료 수집/권리·Gold/실제 서버 설정/비용을 수락한 것이 아닙니다. 현행 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) 수집기·스케줄, [#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447) 전 기능/실자료, [#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449) 미정 보존·권한·예산 계약과 [전수 감사](../../docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 우선 확인하십시오. 팀원 5인은 개별 IAM/SSH 키/최소권한을 사용하고 실제 원문·출처 운영 registry/Gold·비밀은 NCP 내부에만 저장합니다. 고정 SHA·스키마 확인/비특권 worker·백업·실제 인수 전 `RELEASE_BLOCKED` 유지.
 
 ## 0. 안전한 PLAN (신규 리소스 0)
 
@@ -23,7 +27,7 @@ node --test tests/security/ncp-network-iac.test.mjs
 
 ## 1. 실제 비용 적용 전 게이트
 
-이서연 NCP 비코드 운영 담당이 실제 IAM/한국 리전·Ubuntu amd64 서버 SKU/이미지·CB/공인 IP/요금·VAT/크레딧/quota/관리 공인 IPv4/32·SSH host key 및 반납 책임을 **공식 콘솔**에서 재확인하고, 최종 사용자가 지출/허가/중단 한도를 명시적으로 승인해야 한다. 승인 없으면 실제 키/VM/public IP/`terraform apply`/`-Apply`/모델 다운로드·외부 원본 전송 금지.
+NCP **권한 있는 운영 담당자**가 실제 IAM/한국 리전·Ubuntu amd64 서버 SKU/이미지·CB/공인 IP/요금·VAT/크레딧/quota/관리 공인 IPv4/32·SSH host key 및 반납 책임을 **공식 콘솔**에서 재확인하고, 최종 사용자가 지출/허가/중단 한도를 명시적으로 승인해야 한다. 승인 없으면 실제 키/VM/public IP/`terraform apply`/`-Apply`/모델 다운로드·외부 원본 전송 금지.
 
 ## 2. 승인된 SSH 합성 preview
 
