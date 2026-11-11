@@ -16,7 +16,7 @@ const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,200}$/);
 const Id=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
 const Utc=z.iso.datetime({offset:true});
 const Sources=z.array(z.strictObject({sourceId:Id,revisionId:Id,permissionRef:Id})).min(1).max(100);
-export type ApprovedProjectionKind='TRANSCRIPT'|'COURSE'|'OFFERING'|'OPPORTUNITY'|'PLAN_INPUT';
+export type ApprovedProjectionKind='TRANSCRIPT'|'COURSE'|'OFFERING'|'OPPORTUNITY'|'PLAN_INPUT'|'V2_CATALOG';
 export interface OwnerCatalogAuthority {
   /** Bind an actual verified identity to independently reviewed current facts.
    * No browser facts or derived source-scope union. SQL also verifies exact
