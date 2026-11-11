@@ -24,15 +24,3 @@ credential.
 Run `npm ci --ignore-scripts --no-audit --no-fund` from this folder and execute `node synthetic-smoke.mjs`. CI always uses this committed dependency lockfile, not temporary `npm install`. NCP server installation,
 private operator factory, credentials, rights and live source approval remain
 NOT_CONNECTED/NOT_RUN.
-
-### Durable queue busy vs genuinely empty (#445)
-
-The worker considers `IDLE` a **verified empty** PostgreSQL queue only.
-The SQL adapter returns `LOCK_BUSY` for either a contended execution guard,
-a surviving leased worker or a skipped-locked pending row. `LOCK_BUSY`
-must cause a **failed** one-shot refresh, not `RUN_COMPLETE`, with no extra
-provider attempts or automatic retries. An expired lease is quarantined in
-`NEEDS_REVIEW`; a fresh timer run must not duplicate its external action.
-This contract is tested against synthetic multi-process lock stubs and the
-real pinned Crawlee API. Operational page/notification routing requires
-private NCP configuration and is NOT_CONNECTED.
