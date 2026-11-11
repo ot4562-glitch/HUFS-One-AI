@@ -28,6 +28,7 @@ SAFE_SPARSE_PATHS = frozenset({
     "/tools/check_postgres_migration_plan.mjs",
     "/tools/prune_merged_branches.mjs",
     "/tools/tests/prune-merged-branches.node.mjs",
+    "/tools/ci/",
     "/tools/audit_entrypoints.mjs", "/tools/entrypoints.json",
     "/tools/tests/entrypoint-inventory.node.mjs",
     "/tools/audit_dependency_licenses.mjs", "/tools/dependency_bom.mjs",
