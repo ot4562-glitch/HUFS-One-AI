@@ -102,6 +102,8 @@ export type FaqCandidate = z.infer<typeof FaqCandidateSchema>;
 
 export const ActivityArchiveResponseSchema=z.strictObject({
   asOf:Iso,sourceVersion:Id,items:z.array(ActivityRecordSchema).max(200),
+  /** Optional for older read-only clients; true means only a bounded subset was returned. */
+  hasMore:z.boolean().optional(),
 });
 export const ExchangePartnerSummarySchema=z.strictObject({
   partnerId:Id,track:z.enum(['OIA','DEPARTMENT']),minimumGpa:z.number().min(0).max(4.5),
