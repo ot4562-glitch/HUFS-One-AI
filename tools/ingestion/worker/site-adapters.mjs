@@ -46,7 +46,9 @@ function config(raw){
     ||!base.hostname.includes('.')||base.hostname.endsWith('.')
     ||base.hostname.endsWith('.local')||base.hostname.endsWith('.internal')
     ||base.hostname.endsWith('.invalid')||base.hostname.endsWith('.test'))invalid();
-  return {base,origin,prefixes,selectors,...raw};
+  const policy={...raw,base,origin,prefixes,selectors};
+  if(approvedUrl(base.href,policy)!==base.href)invalid();
+  return policy;
 }
 function approvedUrl(raw,policy){
   if(typeof raw!=='string'||!raw||raw.length>2048
