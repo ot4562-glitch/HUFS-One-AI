@@ -12,6 +12,8 @@ export const CampusProvenanceSchema = z.enum(['SYNTHETIC','REAL_APPROVED']);
 
 export const ActivityRecordSchema = z.strictObject({
   entryId:Id, sourceId:Id, revisionId:Id, supersedes:Id.optional(),
+  /** Optional for existing records; required by offline channel-intake verification. */
+  channelId:Id.optional(),
   organizationId:Id, seriesId:Id, title:z.string().trim().min(2).max(240),
   kind:z.enum(['ORIENTATION','ACADEMIC','RECRUITMENT','LECTURE','OTHER']),
   campus:z.enum(['SEOUL','GLOBAL','BOTH']),
@@ -22,6 +24,24 @@ export const ActivityRecordSchema = z.strictObject({
   venue:z.string().max(160).optional(),
 });
 export type ActivityRecord = z.infer<typeof ActivityRecordSchema>;
+/** Pre-NCP, operator-curated channel registry. Nothing in this contract is a
+ * live crawler authorization or an independent rights attestation. */
+export const ActivityOrganizationSchema=z.strictObject({
+  organizationId:Id,displayName:z.string().trim().min(2).max(160),
+  campus:z.enum(['SEOUL','GLOBAL','BOTH']),
+  aliases:z.array(z.string().trim().min(2).max(160)).max(20),
+  verifiedAt:Iso,
+});
+export type ActivityOrganization=z.infer<typeof ActivityOrganizationSchema>;
+export const ActivityChannelSchema=z.strictObject({
+  channelId:Id,organizationId:Id,sourceBaseUrl:Source,
+  verifiedAt:Iso,effectiveFrom:Iso,effectiveUntil:Iso.optional(),
+  rights:CampusRightsSchema,provenance:CampusProvenanceSchema,
+  status:z.enum(['ACTIVE','REMOVED']),
+  reviewRef:Id,
+});
+export type ActivityChannel=z.infer<typeof ActivityChannelSchema>;
+
 export const ActivityForecastSchema = z.strictObject({
   organizationId:Id, seriesId:Id, targetYear:z.number().int().min(2000).max(2200),
   asOf:Iso, state:z.enum(['PREDICTED','CONFIRMED','CANCELLED','INSUFFICIENT_DATA','UNKNOWN']),
