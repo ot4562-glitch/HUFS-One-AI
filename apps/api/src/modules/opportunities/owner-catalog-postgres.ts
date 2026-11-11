@@ -274,6 +274,10 @@ export class PostgresApprovedOwnerReader {
       await exporter.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
       opened=true;
       await exporter.query("SET LOCAL statement_timeout='5s'");
+      // Exporter stays idle while page-read transactions import its MVCC
+      // snapshot. Never hold an idle DB transaction indefinitely if a worker
+      // or upstream HTTP request stalls or its connection stops responding.
+      await exporter.query("SET LOCAL idle_in_transaction_session_timeout='30s'");
       const result=await exporter.query('SELECT pg_export_snapshot() AS snapshot_id');
       if(result.rows.length!==1)throw new Error('V2 snapshot export unavailable');
       const snapshot=PgSnapshotId.parse(result.rows[0]?.snapshot_id);
