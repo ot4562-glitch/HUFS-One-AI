@@ -46,17 +46,34 @@ export async function refreshCli(args,env=process.env){
   catch{throw new Error('CONFIGURATION_REQUIRED: refresh factory not available');}
   if(typeof module.createRefreshWorker!=='function')
     throw new Error('CONFIGURATION_REQUIRED: missing createRefreshWorker');
-  let worker;
+  // Private factory provides the reviewed queue/egress; its outcome must
+  // never be inferred from a resolved Promise alone.
+  const worker=await module.createRefreshWorker();
+  return runApprovedRefreshWorker(worker);
+}
+
+/** Offline-testable one-shot worker lifecycle. No server or source access. */
+export async function runApprovedRefreshWorker(worker){
+  let failed=typeof worker?.runOnce!=='function'||typeof worker?.close!=='function';
   try{
-    worker=await module.createRefreshWorker();
-    if(typeof worker?.runOnce!=='function'||typeof worker?.close!=='function')
-      throw new Error('Invalid refresh worker');
-    // Operator factory must wire Crawlee with approved sources, rights,
-    // pinned egress and the existing durable PostgreSQL review queue.
-    await worker.runOnce();
-  }finally{
-    try{await worker?.close?.();}catch{/* worker failure stays fail-closed */}
+    if(!failed){
+      const outcome=await worker.runOnce();
+      if(outcome?.state!=='BATCH_COMPLETE'
+        ||!Number.isSafeInteger(outcome.processed)
+        ||outcome.processed<0||outcome.processed>16
+        ||typeof outcome.idleObserved!=='boolean'
+        ||(outcome.processed===0&&!outcome.idleObserved)
+        ||outcome.activeRevisions!==0)
+        failed=true;
+    }
+  }catch{failed=true;}
+  finally{
+    // A failed cleanup may leave an untrusted private Crawlee queue. Do not
+    // print underlying source/SQL details or report a successful timer tick.
+    if(typeof worker?.close==='function')
+      try{await worker.close();}catch{failed=true;}
   }
+  if(failed)throw new Error('REFRESH_FAILED');
   return {state:'RUN_COMPLETE',externalDataReturned:false};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
