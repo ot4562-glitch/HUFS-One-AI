@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {describe,it,expect,vi} from 'vitest';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
+import {syntheticPreflightDraft} from './fixtures/source-refresh-preflight.js';
 
 const canonicalUrl='https://synthetic.example.edu/notice';
 const policy={sourceId:'SYN-ACQUIRE',permissionRef:'SYN-RIGHTS',canonicalUrl,
@@ -11,6 +12,7 @@ const text='합성 원본 안내';
 function harness(acquire?:(i:{canonicalUrl:string;request:()=>Promise<Response>})=>Promise<void>,
   response:()=>Response|Promise<Response>=()=>new Response(text,{headers:{'content-type':'text/plain',etag:'"RAW"'}}),conditional=false){
   const acquireFn=acquire?vi.fn(acquire):undefined;
+  const loadCurrent=vi.fn(async(i:Parameters<typeof syntheticPreflightDraft>[0])=>syntheticPreflightDraft(i));
   const requestPinned=vi.fn(async()=>response());
   const append=vi.fn(async(_value:any)=>null),storeHttpValidators=vi.fn(async(_value:any)=>{}),observeUnchanged=vi.fn();
   const service=createApprovedDurableSourceExecutor({policies:new Map([[policy.sourceId,policy]]),
@@ -19,14 +21,46 @@ function harness(acquire?:(i:{canonicalUrl:string;request:()=>Promise<Response>}
     egress:{resolveAddresses:async()=>['8.8.8.8'],requestPinned},
     extractor:{extract:async({content})=>[{id:'p1',text:new TextDecoder().decode(content)}]},
     ...(acquireFn?{acquisition:{acquire:acquireFn}}:{}),
+    ...(acquireFn?{preflight:{loadCurrent}}:{}),
     readerPool:{connect:async()=>({query:async()=>({rows:conditional?[{revision_id:'SYN-OLD',
       original_sha256:'a'.repeat(64),content_sha256:'b'.repeat(64),fetched_at:'2026-11-10T00:00:00Z',
       permission_ref:policy.permissionRef,etag:'"OLD"',last_modified:null,media_kind:'TEXT',has_image_evidence:false,has_pdf_evidence:false}]:[]}),release:()=>{}})},
     writer:{append,storeHttpValidators,observeUnchanged},now:()=> '2026-11-11T00:00:00Z',
   });
-  return {service,acquireFn,requestPinned,append,storeHttpValidators,observeUnchanged};
+  return {service,acquireFn,loadCurrent,requestPinned,append,storeHttpValidators,observeUnchanged};
 }
 describe('#445 guarded source acquisition driver',()=>{
+  it('requires the independent source preflight and checks it twice before pinned HTTP',async()=>{
+    const x=harness(async({request})=>{await request();});
+    await x.service.execute(input);
+    expect(x.loadCurrent).toHaveBeenCalledTimes(2);
+    expect(x.loadCurrent.mock.calls.every(([v])=>v.sourceId===input.sourceId
+      &&v.permissionRef===input.permissionRef&&v.canonicalUrl===canonicalUrl)).toBe(true);
+    expect(x.requestPinned).toHaveBeenCalledTimes(1);
+  });
+  it('refuses newly restricted robots policy between admission and pinned egress',async()=>{
+    const x=harness(async({request})=>{await request();});
+    x.loadCurrent.mockImplementationOnce(async(i)=>syntheticPreflightDraft(i))
+      .mockImplementationOnce(async(i)=>({
+        ...syntheticPreflightDraft(i),
+        scope:{...syntheticPreflightDraft(i).scope,robotsStatus:'RESTRICTED'},
+      }));
+    await expect(x.service.execute(input)).rejects.toThrow('Approved source preflight blocked');
+    expect(x.loadCurrent).toHaveBeenCalledTimes(2);
+    expect(x.requestPinned).not.toHaveBeenCalled();
+    expect(x.append).not.toHaveBeenCalled();
+  });
+  it('denies missing private preflight rather than silently running a crawler',()=>{
+    expect(()=>createApprovedDurableSourceExecutor({
+      policies:new Map([[policy.sourceId,policy]]),
+      rights:{resolve:async()=>null},
+      egress:{resolveAddresses:async()=>[],requestPinned:async()=>new Response('bad')},
+      extractor:{extract:async()=>[]},
+      acquisition:{acquire:async()=>{}},
+      readerPool:{connect:async()=>{throw Error('not reached');}},
+      writer:{append:async()=>null,observeUnchanged:async()=>{},storeHttpValidators:async()=>{}},
+    })).toThrow('Approved source preflight configuration required');
+  });
   it('uses one real guarded request and preserves original bytes/headers independently of parser reads',async()=>{
     const x=harness(async({canonicalUrl:url,request})=>{
       expect(url).toBe(canonicalUrl);const copy=await request();
