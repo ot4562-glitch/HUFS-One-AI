@@ -113,15 +113,29 @@ export type DiscoveredLinkBatchDraft=z.infer<typeof DiscoveredLinkBatchDraftSche
 export function prepareDiscoveryReviewDrafts(input:{
   sourceId:string;revisionId:string;seenAt:string;
   scope:unknown;discovered:unknown;
+  /** Both records come from the operator's existing private source ledger. */
+  registration:unknown;revision:unknown;
 }):DiscoveryCandidateDraft[]{
   const sourceId=Id.parse(input.sourceId);
   const revisionId=Id.parse(input.revisionId);
   const seenAt=Iso.parse(input.seenAt);
   const scope=CrawlScopeDraftSchema.parse(input.scope);
   const batch=DiscoveredLinkBatchDraftSchema.parse(input.discovered);
-  if(sourceId!==scope.sourceId
-    ||new URL(batch.sourceUrl).origin!==new URL(scope.approvedOrigin).origin)
-    throw new Error('Discovery scope does not match the source');
+  const registration=SourceRegistrationDraftSchema.parse(input.registration);
+  const revision=SourceRevisionDraftSchema.parse(input.revision);
+  // Do not accept caller-supplied source/revision IDs without independently
+  // loading and comparing the captured original from the private ledger.
+  if(sourceId!==scope.sourceId||registration.sourceId!==sourceId
+    ||revision.sourceId!==sourceId||revision.revisionId!==revisionId
+    ||registration.permissionRef!==revision.permissionRef
+    ||registration.canonicalUrl!==batch.sourceUrl
+    ||new URL(batch.sourceUrl).origin!==new URL(scope.approvedOrigin).origin
+    ||!registration.rights.collect||!registration.rights.store
+    ||!revision.rights.collect||!revision.rights.store
+    ||!['PARSED','NEEDS_REVIEW','APPROVED','ACTIVE'].includes(revision.stage)
+    ||Date.parse(registration.observedAt)>Date.parse(seenAt)
+    ||Date.parse(revision.fetchedAt)>Date.parse(seenAt))
+    throw new Error('Discovery capture and source revision mismatch');
   const seen=new Set<string>();
   const records:DiscoveryCandidateDraft[]=[];
   for(const link of batch.candidates){
@@ -136,6 +150,52 @@ export function prepareDiscoveryReviewDrafts(input:{
     records.push(DiscoveryCandidateDraftSchema.parse(draft));
   }
   return records;
+}
+
+/** Conservative *offline* source budget/rights/robots gate. A READY result
+ * is NOT authorization to fetch: the private operator MUST independently
+ * recheck fresh rights, robots, terms, DNS/IP, HTTP status and tenant budget
+ * immediately before each request. No implicit network or timers here. */
+export const SourceRefreshPreflightDraftSchema=z.strictObject({
+  registration:SourceRegistrationDraftSchema,
+  scope:CrawlScopeDraftSchema,
+  pageUrl:OfficialHttpsUrlSchema,
+  now:Iso,
+  remainingRequests:z.number().int().min(0).max(100_000),
+  remainingBytes:z.number().int().min(0).max(1_000_000_000),
+  retryAfter:Iso.optional(),
+});
+export type SourceRefreshPreflightDraft=z.infer<typeof SourceRefreshPreflightDraftSchema>;
+export type SourceRefreshPreflightResult={
+  state:'BLOCKED'|'READY_FOR_OPERATOR_RECHECK';
+  reasons:readonly string[];
+};
+export function evaluateSourceRefreshPreflight(input:unknown):SourceRefreshPreflightResult{
+  const parsed=SourceRefreshPreflightDraftSchema.safeParse(input);
+  if(!parsed.success)return {state:'BLOCKED',reasons:['INVALID_CONFIGURATION']};
+  const {registration,scope,pageUrl,now,remainingRequests,remainingBytes,retryAfter}=parsed.data;
+  const reasons:string[]=[];
+  if(registration.sourceId!==scope.sourceId
+    ||new URL(registration.canonicalUrl).origin!==new URL(scope.approvedOrigin).origin
+    ||pageUrl!==registration.canonicalUrl)
+    reasons.push('UNREGISTERED_SOURCE');
+  if(!registration.rights.collect||!registration.rights.store)
+    reasons.push('PURPOSE_RIGHTS_NOT_REVIEWED');
+  if(scope.robotsStatus!=='REVIEWED_PERMITTED')
+    reasons.push('ROBOTS_NOT_PERMITTED');
+  if(scope.termsStatus!=='REVIEWED_PERMITTED')
+    reasons.push('TERMS_NOT_PERMITTED');
+  if(Date.parse(registration.observedAt)>Date.parse(now)
+    ||Date.parse(scope.observedAt)>Date.parse(now))reasons.push('FUTURE_REVIEW');
+  const pathname=new URL(pageUrl).pathname;
+  if(/%(?:00|25|2e|2f|5c)/i.test(pathname)
+    ||!scope.pathPrefixes.some(prefix=>prefix==='/'||pathname===prefix
+      ||pathname.startsWith(prefix.endsWith('/')?prefix:prefix+'/')))
+    reasons.push('PATH_NOT_APPROVED');
+  if(remainingRequests<1||remainingBytes<1)reasons.push('BUDGET_EXHAUSTED');
+  if(retryAfter&&Date.parse(retryAfter)>Date.parse(now))reasons.push('RETRY_AFTER');
+  return reasons.length?{state:'BLOCKED',reasons}:
+    {state:'READY_FOR_OPERATOR_RECHECK',reasons:[]};
 }
 
 export const SourceRevisionDraftSchema=z.strictObject({
