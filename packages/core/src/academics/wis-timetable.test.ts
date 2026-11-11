@@ -303,6 +303,15 @@ describe('script and comment blocks are cut before rows are read (CodeQL #1-#6)'
     const html = page(ROWS).replace('<table>', '<div title="<script">x</div><table>');
     expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
   });
+  it('keeps a table between a fake script in an attribute and a later real closing script', () => {
+    const table = '<table><tr><td>OK</td></tr></table>';
+    const html = '<div title="<script">plain text</div>' + table
+      + '<script>const hidden=1</script>';
+    expect(withoutBlocks(html,'script')).toBe('<div title="<script">plain text</div>' + table);
+    const saved=page(ROWS).replace('<table>','<div data-note="<script">x</div><table>')
+      .replace('</table>','</table><script>var hidden=1;</script>');
+    expect(importWisTimetable(request(saved)).rows.map(r=>r.rawCode)).toEqual(ROWS.map(r=>r.code));
+  });
   it('leaves look-alike tags and plain text alone', () => {
     expect(withoutBlocks('<scripture>t</scripture><noscript>n</noscript>', 'script'))
       .toBe('<scripture>t</scripture><noscript>n</noscript>');
