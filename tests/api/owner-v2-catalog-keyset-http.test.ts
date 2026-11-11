@@ -100,9 +100,10 @@ function setup(count=1250){
   const get=(suffix:string)=>app.inject({url:'/api/owner/features/v2/catalog?'+suffix});
   return {...f,app,get,quota};
 }
-const params=(sort='TITLE')=>'sort='+sort+'&pageSize=25&asOf='+encodeURIComponent(FIXED_NOW);
-const next=(page:{at:string;nextCursor:string|null},sort='TITLE')=>
-  params(sort)+'&cursor='+encodeURIComponent(page.nextCursor!);
+const params=(sort='TITLE',includeClosed=true)=>'sort='+sort+'&pageSize=25&asOf='
+  +encodeURIComponent(FIXED_NOW)+'&includeClosed='+includeClosed;
+const next=(page:{at:string;nextCursor:string|null},sort='TITLE',includeClosed=true)=>
+  params(sort,includeClosed)+'&cursor='+encodeURIComponent(page.nextCursor!);
 
 describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',()=>{
   it('globally pins 1,250 rows across multiple signed pages and counts by core filters',async()=>{
@@ -117,7 +118,7 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
     expect(payload.sourceVersion).toMatch(/^[a-f0-9]{64}$/);
     expect(f.calls()).toBe(50); // 25 DB pages + 25 fresh proof pages
     const expected=searchApprovedCatalogV2({
-      items:f.items,query:query({sort:'TITLE',pageSize:25,asOf:FIXED_NOW}),
+      items:f.items,query:query({sort:'TITLE',pageSize:25,asOf:FIXED_NOW,includeClosed:true}),
       scopeKey:'SYN-SCOPE',catalogRevision:'SYN-REV',
     });
     expect(payload.page.items.map((x:{id:string})=>x.id))
@@ -125,11 +126,11 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
     const second=await f.get(next(payload.page));
     expect(second.statusCode).toBe(200);
     expect(second.json().page.items.map((x:{id:string})=>x.id))
-      .toEqual(f.items.filter(x=>expected.items.some(y=>y.id===x.id)).length===0
-        ?[]:searchApprovedCatalogV2({
-          items:f.items,query:query({sort:'TITLE',pageSize:50,asOf:FIXED_NOW}),
-          scopeKey:'SYN-SCOPE',catalogRevision:'SYN-REV',
-        }).items.slice(25,50).map(x=>x.id));
+      .toEqual(searchApprovedCatalogV2({
+        items:f.items,query:query({
+          sort:'TITLE',pageSize:50,asOf:FIXED_NOW,includeClosed:true,
+        }),scopeKey:'SYN-SCOPE',catalogRevision:'SYN-REV',
+      }).items.slice(25,50).map(x=>x.id));
     expect(second.json().sourceVersion).toBe(payload.sourceVersion);
     expect(second.json().page.totalInAuthorizedScope).toBe(1250);
     expect(f.calls()).toBe(100);
@@ -139,8 +140,8 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
   for(const sort of ['TITLE','DEADLINE_ASC','PUBLISHED_DESC'] as const){
     it('preserves exact Korean/UTC comparator and filtered count for '+sort,async()=>{
       const f=setup(377);
-      const filters='&category=SCHOLARSHIP&campus=SEOUL&includeClosed=false&q='+encodeURIComponent('가상');
-      const res=await f.get(params(sort)+filters);
+      const filters='&category=SCHOLARSHIP&campus=SEOUL&q='+encodeURIComponent('가상');
+      const res=await f.get(params(sort,false)+filters);
       expect(res.statusCode).toBe(200);
       const current=query({sort,pageSize:25,asOf:FIXED_NOW,
         category:'SCHOLARSHIP',campus:'SEOUL',includeClosed:false,q:'가상'});
@@ -153,7 +154,7 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
         .toEqual(reference.items.map(x=>x.id));
       expect(res.json().page.scope).toBe('PERMITTED_APPROVED_SNAPSHOT');
       if(res.json().page.nextCursor){
-        const continuation=await f.get(next(res.json().page,sort)+filters);
+        const continuation=await f.get(next(res.json().page,sort,false)+filters);
         expect(continuation.statusCode).toBe(200);
       }
     });
