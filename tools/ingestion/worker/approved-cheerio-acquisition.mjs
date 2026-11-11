@@ -55,7 +55,7 @@ export function createApprovedCheerioAcquisition(){
     const config=new Configuration({storageClient,persistStorage:false,purgeOnStart:false});
     // A one-element RequestList cannot enqueue discovered links and does
     // not rely on RequestQueue's asynchronous pending scheduling.
-    const requestList=await RequestList.open(null,[{url,method:'GET'}],{config});
+    const requestList=await RequestList.open(null,[{url,method:'GET'}]);
     let calls=0,handled=false,failed=false;
     const httpClient={
       async sendRequest(){fail();},
