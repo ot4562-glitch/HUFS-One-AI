@@ -11,7 +11,7 @@ const record:ActivityRecord={
   organizationId:'SYN-ECON',seriesId:'orientation',
   title:'가상 학과 행사',kind:'ORIENTATION',campus:'SEOUL',
   publishedAt:'2026-12-31T15:00:00Z',verifiedAt:'2026-12-31T15:01:00Z',
-  eventDate:undefined,applicationDeadline:'2027-01-15',
+  applicationDeadline:'2027-01-15',
   sourceUrl:'https://example.org/synthetic/1',
   status:'ANNOUNCED',rights:'APPROVED',provenance:'SYNTHETIC',
 };
@@ -43,8 +43,8 @@ describe('#339 filtered owner activity UI uses current authorized results only',
     expect(screen.getByText(/행사일 미확인/)).toBeTruthy();
     expect(screen.getByText(/신청 마감 2027-01-15/)).toBeTruthy();
     expect(screen.getByText(/전체를 가져온 것이 아니므로/)).toBeTruthy();
-    expect(screen.getByRole('link',{name:'원문 출처 열기'})).toHaveAttribute(
-      'rel','noopener noreferrer');
+    expect(screen.getByRole('link',{name:'원문 출처 열기'}).getAttribute('rel'))
+      .toBe('noopener noreferrer');
     expect(f.forecast).toHaveBeenCalledTimes(1);
   });
   it('pushes campus/kind and an explicitly applied keyword to the authorized API',async()=>{
