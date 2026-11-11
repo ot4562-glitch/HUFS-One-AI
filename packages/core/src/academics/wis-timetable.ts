@@ -143,6 +143,30 @@ const cells = (row:string, tag:'td'|'th'):string[] =>
  * each cut the search resumes at the same place, so pieces that meet after a cut ("<scr" + "ipt")
  * are cut as well.
  */
+/** A <script token inside a quoted HTML attribute is text, not a tag.
+ * Check the raw source (no Unicode-lowercasing of positions) before cutting.
+ * This scanner is not an HTML sanitizer or renderer.
+ */
+function inQuotedTagAttribute(value:string,offset:number):boolean {
+  let inside=false,comment=false,quote:string|null=null;
+  for(let i=0;i<offset;i++){
+    if(comment){
+      if(value.startsWith('-->',i)){comment=false;i+=2;}
+      continue;
+    }
+    if(!inside){
+      if(value.startsWith('<!--',i)){comment=true;i+=3;}
+      else if(value[i]==='<'&&/[a-z/!]/i.test(value[i+1]??''))inside=true;
+    }else if(quote){
+      if(value[i]===quote)quote=null;
+    }else if(value[i]==='"'||value[i]==="'"){
+      quote=value[i]!;
+    }else if(value[i]==='>'){
+      inside=false;
+    }
+  }
+  return inside&&quote!==null;
+}
 export function withoutBlocks(html:string, kind:'script'|'comment'):string {
   // Only A-Z are lowered, so every index in `lower` is the same index in `out`
   // (String#toLowerCase can change the length, e.g. "İ" becomes two code units).
@@ -172,7 +196,10 @@ export function withoutBlocks(html:string, kind:'script'|'comment'):string {
         from = floor = close + 3;
         continue;
       }
-      if (/[a-z0-9_-]/.test(lower.charAt(start + 7))) { from = start + 1; continue; }
+      if (inQuotedTagAttribute(out,start)
+        ||/[a-z0-9_-]/.test(lower.charAt(start + 7))) {
+        from = start + 1; continue;
+      }
       let close = lower.indexOf('</script', start + 7);
       while (close >= 0 && /[a-z0-9_-]/.test(lower.charAt(close + 8))) close = lower.indexOf('</script', close + 1);
       const gt = close < 0 ? -1 : lower.indexOf('>', close + 8);
