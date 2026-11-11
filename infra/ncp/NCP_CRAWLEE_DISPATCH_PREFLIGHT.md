@@ -76,3 +76,16 @@ per-domain budgets and receipt expiry. 401/403/CAPTCHA/SSO cannot be bypassed.
 Contract verification: `tests/contracts/ncp-ingestion-draft.test.ts` with
 synthetic registration/captured revision. Actual NCP source registry, site
 policies, review and real network remain `NOT_RUN / RELEASE_BLOCKED`.
+
+### Rate limiting, Retry-After and no auth-bypass policy (pre-NCP)
+
+The offline preflight requires a durable per-source URL `attemptsForUrl` and
+explicit `maxAttempts` (1–3), plus remaining request/byte budgets. An observed
+401/403 blocks automated access, other 4xx/5xx errors require operator review;
+429/503 require a strict reviewed `Retry-After` candidate (decimal seconds or
+canonical IMF-fixdate, max 24 hours). An invalid/missing header blocks rather
+than allowing a blind retry. Once the observed delay has expired, preflight
+returns only `READY_FOR_OPERATOR_RECHECK`, not an automatic request. Actual
+NCP durable queue must persist attempt counts and perform fresh rights/robots/
+terms and pinned-egress validations at every request. The public repository
+does not schedule or perform a retry on any real website.
