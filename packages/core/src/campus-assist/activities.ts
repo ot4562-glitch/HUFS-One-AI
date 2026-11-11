@@ -9,7 +9,7 @@ function year(day:string):number{return Number(day.slice(0,4));}
 /** Publication instants without an eventDate belong to the Asia/Seoul calendar
  * day, never the raw UTC/foreign-offset text date (#339). This is only a
  * grouping/filtering date: it must not be used as a fabricated eventDate. */
-function publishedDayKst(iso:string):string{
+export function publishedDayKst(iso:string):string{
   return new Date(epoch(iso)+9*60*60*1000).toISOString().slice(0,10);
 }
 function dayOfYear(day:string):number{
@@ -29,8 +29,14 @@ function windowDate(targetYear:number,day:number,marginDays:number):string{
   const clamped=Math.min(Date.UTC(targetYear,11,31),Math.max(Date.UTC(targetYear,0,1),ms));
   return new Date(clamped).toISOString().slice(0,10);
 }
+/** Filtering always uses the event day when officially known, otherwise the
+ * Korean posting day. A posting day must never be displayed as an event day. */
+export function archiveDay(row:ActivityRecord):string{
+  return row.eventDate??publishedDayKst(row.publishedAt);
+}
 export interface ActivityFilter{
-  organizationId?:string; year?:number; campus?:ActivityRecord['campus']; query?:string;
+  organizationId?:string; year?:number; campus?:ActivityRecord['campus'];
+  kind?:ActivityRecord['kind']; query?:string;
 }
 /** Key-order independent comparison form of one record. */
 function canonical(row:ActivityRecord):string{
@@ -83,9 +89,11 @@ export function archiveActivities(raw:readonly ActivityRecord[],asOf:string,filt
   const query=(filter.query||'').trim().toLocaleLowerCase('ko');
   return currentActivityRecords(raw,asOf).filter(row=>
     (!filter.organizationId||row.organizationId===filter.organizationId)
-    &&(!filter.year||year(row.eventDate||publishedDayKst(row.publishedAt))===filter.year)
+    &&(filter.year===undefined||year(archiveDay(row))===filter.year)
     &&(!filter.campus||row.campus===filter.campus||row.campus==='BOTH')
-    &&(!query||(row.title+' '+row.organizationId).toLocaleLowerCase('ko').includes(query)));
+    &&(!filter.kind||row.kind===filter.kind)
+    &&(!query||(row.title+' '+row.organizationId+' '+row.seriesId)
+      .toLocaleLowerCase('ko').includes(query)));
 }
 export function forecastActivity(raw:readonly ActivityRecord[],asOf:string,targetYear:number,
   organizationId:string,seriesId:string):ActivityForecast{
