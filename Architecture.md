@@ -4,6 +4,16 @@
 
 **업무 자동 배정/고정 역할 이슈 변경 금지:** [신규 에이전트 가이드](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md) · [대규모 실제 데이터 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360). 아래 과거 TASK 명칭은 코드 영역을 설명하는 참고이며 현행 사람별 기능 담당은 각 이슈의 최신 assignee/댓글을 따른다.
 
+## 2026-11-11 현행 경계 — NCP-only 실자료와 코드 통합/출시 분리
+
+**현재 운영 원칙:** 본 저장소는 **Crawlee 수집기·HWP/HWPX/HTML 파서·계약·API/DB migration·배포 스크립트와 오프라인/합성 테스트**를 관리합니다. 실제 공식 출처 URL 운영원장, 수집 원문·첨부 bytes, 권리/사람 Gold·독립 검수 원장, 실제 PostgreSQL/백업/비밀/개인자료는 **NCP 비공개 환경**에만 보존하도록 설계합니다. 공개 GitHub 이력의 과거 CSV 5개 권리 문제는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)에서 별도 조사 중이며, 자료 위치 정책만 바꾼다고 기존 노출이 지워지지는 않습니다.
+
+**출처 권리 분리:** 공개 URL 발견(discovery)은 허용된 취득·원본 저장·검색 노출·원문 재게시·OCR/HCX 외부 전송을 자동으로 허가하지 않습니다. robots/terms·현재 목적 권리/원본 hash·출처/판본·폐기/정정·실제 승인자는 분리해 판정하며, 수집 초안 `REVIEW_REQUIRED/NEEDS_REVIEW`는 `ACTIVE/REAL_APPROVED`가 아닙니다. 학생 개인 자료는 공개 크롤링 대상으로 사용하지 않습니다.
+
+**추가 기술 설계·개발:** [#445 Crawlee 기반 NCP 수집·갱신](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능/실자료 전환](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 미확정 데이터/권한/보존·예산 설계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449). 실제 인프라 설정/청구/키·RPO/RTO·권리·복원·수집 성공 지표는 `NOT_DESIGNED/NOT_RUN/CONFIGURATION_REQUIRED`로 추적합니다. 학교 SSO/API 직접 연동은 공모전용 독립 기능의 필수 조건이 아니지만 학교 공식 학적·상담·신청 완료를 주장할 수 없습니다.
+
+**현재 PR 감사:** 2026-11-11 최초 열린 PR 22건·이슈 31건, PR 모두 공식 COMMENT 코드 리뷰. [#475](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475)만 실제 동료 최신 HEAD 승인 후 [main 05d78cd](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939) 병합, 나머지 스택/동료 승인은 대기 중입니다. [전체 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md) · [팀 역할](docs/WORKSTREAMS.md) · [PR 운영 정책](docs/PR_WORKFLOW.md). 이전 #276·2026-11-06 설명은 그 시점 이력으로 읽습니다.
+
 ## A00. 정본·용어·판정
 
 **HUFS One AI**는 기존 HUFSAbility에서 참조 가능한 기능·정보 구조를 이해하기 쉽게 연결하는 독립 학생 프로젝트이다. 학교 공식 운영 시스템/SSO/학사 판정이 아니며, 학교 원본 UI·코드·로고·데이터를 무단 복제하지 않는다.
