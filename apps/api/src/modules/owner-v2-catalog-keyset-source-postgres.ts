@@ -38,8 +38,10 @@ async function canonicalPageProof(connection:ReviewerSqlConnection,
     refs.set(key(ref.sourceId,ref.permissionRef),
       {source_id:ref.sourceId,permission_ref:ref.permissionRef});
   if(!refs.size)return [];
+  // Multiple current receipts are safe only when their canonical URLs
+  // agree; different URLs for one pair must fail closed via HAVING.
   const sql=[
-    'SELECT r.source_id,r.permission_ref,r.canonical_url',
+    'SELECT r.source_id,r.permission_ref,MIN(r.canonical_url) AS canonical_url',
     'FROM jsonb_to_recordset($1::jsonb)',
     'AS x(source_id text,permission_ref text)',
     'JOIN source_rights_receipts r',
@@ -51,7 +53,9 @@ async function canonicalPageProof(connection:ReviewerSqlConnection,
     'AND r.expires_at>GREATEST($3::timestamptz,clock_timestamp())',
     'AND NOT EXISTS (SELECT 1 FROM source_rights_revocations v',
     'WHERE v.receipt_id=r.receipt_id)',
-    'ORDER BY r.source_id,r.permission_ref,r.canonical_url',
+    'GROUP BY r.source_id,r.permission_ref',
+    'HAVING COUNT(DISTINCT r.canonical_url)=1',
+    'ORDER BY r.source_id,r.permission_ref',
   ].join(' ');
   const result=await connection.query(sql,
     [JSON.stringify([...refs.values()]),actorId,now]);
@@ -148,8 +152,15 @@ export class PostgresOwnerV2StableKeysetSource implements TrustedOwnerV2CatalogS
     if(!Number.isSafeInteger(expires)||expires<=current)deny();
     for(const [name,ticket] of this.tickets)
       if(ticket.expires<=current)this.tickets.delete(name);
-    if(this.tickets.size>=128&&!this.tickets.has(result.fingerprint))deny();
-    this.tickets.set(result.fingerprint,{
+    // Per-actor ticket key: the 129th distinct user must not be blocked
+    // because another actor searched in the past 30 seconds.
+    const ticketKey=key(input.actorId,result.fingerprint);
+    this.tickets.delete(ticketKey);
+    if(this.tickets.size>=4096){
+      const oldest=this.tickets.keys().next().value;
+      if(oldest!==undefined)this.tickets.delete(oldest);
+    }
+    this.tickets.set(ticketKey,{
       actorId:input.actorId,asOf:input.asOf,
       fingerprint:result.fingerprint,expires,
     });
@@ -163,7 +174,7 @@ export class PostgresOwnerV2StableKeysetSource implements TrustedOwnerV2CatalogS
   async revalidate(input:Parameters<TrustedOwnerV2CatalogSource['revalidate']>[0]){
     try{
       const now=ISO.parse(input.now),current=Date.parse(ISO.parse(this.clock()));
-      const ticket=this.tickets.get(input.receipt.sourceVersion);
+      const ticket=this.tickets.get(key(input.actorId,input.receipt.sourceVersion));
       if(!ticket||ticket.actorId!==input.actorId
         ||input.receipt.actorId!==input.actorId
         ||ticket.fingerprint!==input.receipt.sourceVersion
