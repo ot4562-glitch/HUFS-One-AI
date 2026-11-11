@@ -6,7 +6,7 @@
     "upstreamCommit": "ff9327791bf046512d6e61c5b6862eb098fa5b34",
     "designSection": "Architecture.md A13.2",
     "taskSection": "Architecture.md A17",
-    "canonicalIssuesSource": "STATUS.md section 5"
+    "canonicalIssuesSource": "tools/audit_api_contracts.mjs CONTRACT_ISSUES; optional STATUS.md historical Canonical issues section"
   },
   "canonicalIssues": [
     8,
@@ -567,6 +567,174 @@
           {
             "path": "apps/api/src/modules/profiles/experience-skill-candidate-http.ts",
             "symbol": "registerExperienceSkillCandidateRoute"
+          }
+        ]
+      }
+    },
+    {
+      "id": "campus-assist",
+      "source": "apps/api/src/modules/campus-assist-http.ts",
+      "registrar": "registerCampusAssistRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Only the capabilities route is unconditional; activity/exchange/FAQ registrations require their explicit source ports. Configuration availability does not attest current rights."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-counseling",
+      "source": "apps/api/src/modules/owner-counseling-http.ts",
+      "registrar": "registerOwnerCounselingRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-experience-course",
+      "source": "apps/api/src/modules/owner-experience-course-http.ts",
+      "registrar": "registerOwnerExperienceCourseRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-preparation",
+      "source": "apps/api/src/modules/owner-preparation-http.ts",
+      "registrar": "registerOwnerPreparationRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-v2-catalog",
+      "source": "apps/api/src/modules/owner-v2-catalog-http.ts",
+      "registrar": "registerOwnerV2CatalogRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "owner-v2-insights",
+      "source": "apps/api/src/modules/owner-v2-insights-http.ts",
+      "registrar": "registerOwnerInsightsRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/integration.ts",
+          "caller": "createIntegratedApi"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
           }
         ]
       }
@@ -2959,6 +3127,259 @@
       ],
       "consumerRefs": [],
       "notes": "Owner/session/grant/version-bound BETA demo-only hypothetical result; not a private transcript or official course offering"
+    },
+    {
+      "id": "get-api-owner-campus-assist-capabilities",
+      "surface": "campus-assist",
+      "method": "GET",
+      "path": "/api/owner/campus-assist/capabilities",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "UNKNOWN",
+        "refs": []
+      },
+      "testRefs": [
+        "tests/api/campus-assist-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-activities",
+      "surface": "campus-assist",
+      "method": "GET",
+      "path": "/api/owner/activities",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "ActivityRecordSchema"
+          },
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "ActivityArchiveResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/campus-assist-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-activities-forecast",
+      "surface": "campus-assist",
+      "method": "GET",
+      "path": "/api/owner/activities/forecast",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "ActivityForecastSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/campus-assist-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-exchange-partners",
+      "surface": "campus-assist",
+      "method": "GET",
+      "path": "/api/owner/exchange/partners",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "ExchangePartnerListSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/campus-assist-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-exchange-evaluate",
+      "surface": "campus-assist",
+      "method": "POST",
+      "path": "/api/owner/exchange/evaluate",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "ExchangeApplicantSchema"
+          },
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "ExchangeResultSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/campus-assist-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-faq-ask",
+      "surface": "campus-assist",
+      "method": "POST",
+      "path": "/api/owner/faq/ask",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/campus-assist/index.ts",
+            "symbol": "FaqAskResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/campus-assist-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-counseling-routes",
+      "surface": "owner-counseling",
+      "method": "POST",
+      "path": "/api/owner/counseling/routes",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/results.ts",
+            "symbol": "CounselingGuideV2Schema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-counseling-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-academics-experience-courses",
+      "surface": "owner-experience-course",
+      "method": "GET",
+      "path": "/api/owner/academics/experience-courses",
+      "primaryIssue": 11,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/academics/owner-experience-courses.ts",
+            "symbol": "OwnerExperienceCourseResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-experience-course-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-features-v2-preparation",
+      "surface": "owner-preparation",
+      "method": "GET",
+      "path": "/api/owner/features/v2/preparation",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/owner-preparation.ts",
+            "symbol": "OwnerPreparationResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-preparation-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-features-v2-catalog",
+      "surface": "owner-v2-catalog",
+      "method": "GET",
+      "path": "/api/owner/features/v2/catalog",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/owner-v2-catalog.ts",
+            "symbol": "OwnerV2CatalogQuerySchema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/owner-v2-catalog.ts",
+            "symbol": "OwnerV2CatalogResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-v2-catalog-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-features-v2-insights-kind",
+      "surface": "owner-v2-insights",
+      "method": "GET",
+      "path": "/api/owner/features/v2/insights/:kind",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/owner-v2-insights.ts",
+            "symbol": "OwnerInsightsKindSchema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/owner-v2-insights.ts",
+            "symbol": "OwnerInsightsResponseSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-v2-insights-http.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
     }
   ],
   "designContracts": [
