@@ -44,3 +44,11 @@ authentication restrictions must be independently reviewed before use.
 `node --test tools/ingestion/worker/site-adapters.node.test.mjs` exercises
 Cheerio with synthetic table/card HTML, same-origin redirects, paging and
 malicious inputs. A real NCP site adapter is NOT_CONNECTED.
+
+`reconcileReviewedBoardPages` additionally joins at most 40 independently
+captured listing page drafts while retaining each page's byte SHA and unique
+listing URL. Duplicate documents with changed titles or attachment lists,
+foreign pagination targets and duplicate page captures fail closed. The returned
+`unfetchedPageCandidates` are **review proposals**, not crawler jobs; rights,
+site-specific robots/terms, NCP original bytes and SourceRevision alignment
+must still be rechecked separately.
