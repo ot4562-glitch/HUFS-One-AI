@@ -41,3 +41,43 @@ describe('FAQ retrieval and citations (#341)',()=>{
     expect(()=>validateFaqCandidate(result,evidence)).toThrow();
   });
 });
+describe('same-revision copies cannot decide evidence by input order (#373)',()=>{
+  const Q='교환학생 평점';
+  const perms=<T,>(xs:readonly T[]):T[][]=>xs.length<=1?[[...xs]]:
+    xs.flatMap((x,i)=>perms([...xs.slice(0,i),...xs.slice(i+1)]).map(rest=>[x,...rest]));
+  const count=(rows:readonly FaqDocument[])=>perms(rows).map(order=>retrieveFaqEvidence(Q,order,NOW).length);
+  it('quarantines a document whose newest revision has APPROVED and REVOKED/BLOCKED copies, in every order',()=>{
+    for(const rights of ['REVOKED','BLOCKED'] as const){
+      expect(count([doc,{...doc,rights}])).toEqual([0,0]);
+      expect(count([doc,{...doc,rights},{...doc}])).toEqual([0,0,0,0,0,0]);
+    }
+  });
+  it('quarantines same-revision copies whose paragraph text, URL or dates differ',()=>{
+    const altered:FaqDocument[]=[
+      {...doc,paragraphs:[{id:'p1',text:'가상 교환학생 지원의 평점 기준은 2.5 이상입니다. 실제 학교 규정이 아닙니다.'}]},
+      {...doc,sourceUrl:'https://example.org/synthetic-faq-other'},
+      {...doc,effectiveUntil:'2026-12-31'},
+      {...doc,verifiedAt:'2026-01-03T00:00:00Z'},
+    ];
+    for(const copy of altered)expect(count([doc,copy])).toEqual([0,0]);
+  });
+  it('collapses identical copies, including a different key order, to one source',()=>{
+    const reordered=Object.fromEntries(Object.entries(doc).reverse()) as FaqDocument;
+    expect(count([doc,{...doc},reordered])).toEqual([1,1,1,1,1,1]);
+    // An explicitly undefined optional field is the same content as an absent one.
+    expect(count([doc,{...doc,effectiveUntil:undefined}])).toEqual([1,1]);
+  });
+  it('does not fall back to an older approved revision when the newest one conflicts',()=>{
+    const v2={...doc,revisionId:'faq-a-v2',publishedAt:'2026-03-01T00:00:00Z',verifiedAt:'2026-03-02T00:00:00Z'};
+    expect(count([doc,v2,{...v2,rights:'REVOKED'}]).every(n=>n===0)).toBe(true);
+    // Before v2 was published, only v1 existed and remains citable.
+    expect(retrieveFaqEvidence(Q,[doc,v2,{...v2,rights:'REVOKED'}],'2026-02-01T00:00:00Z')).toHaveLength(1);
+  });
+  it('keeps unrelated documents when one document is quarantined',()=>{
+    const other:FaqDocument={...doc,documentId:'faq-b',revisionId:'faq-b-v1'};
+    for(const order of perms([doc,{...doc,rights:'REVOKED' as const},other])){
+      const evidence=retrieveFaqEvidence(Q,order,NOW);
+      expect(evidence.map(e=>e.documentId)).toEqual(['faq-b']);
+    }
+  });
+});
