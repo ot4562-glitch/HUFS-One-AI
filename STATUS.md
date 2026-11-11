@@ -8,6 +8,15 @@
 
 > **2026-11-11 이번 회차에 한정된 추가 개발 지시 반영(상시 정책 아님):** 심민성은 기존 AI/데이터 담당자 assignee를 유지하면서 13개 `[추가 기능]` #339–#341·#343–#352에도 병렬 기여합니다. 첫 실제 코드 [#485](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485) (HEAD `4198d20`)는 #345 상담 UI의 #427 구응답 누설 버그를 수정하고 합성 JSDOM 회귀를 추가했습니다. **CI/협업자 실제 최신 HEAD APPROVED 대기, 미병합.** #485 생성 후 열린 PR 24건/Issue 31건(시점 스냅샷). 실 상담기관·NCP/권리·Gold/학생 E2E는 여전히 NOT_RUN, RELEASE_BLOCKED입니다.
 
+## 2026-11-12 이번 구현 회차 현재 통합·리뷰 상태 (이전 스냅샷보다 우선)
+
+- **이번 개발 회차만** 심민성이 `[추가 기능]` 비배정 건의 합성 코드에 직접 기여합니다. 기존 13개 이슈의 박준영·이의상 AI 주담당, 김채윤 원본/Gold, 이서연 웹 담당을 **영구 변경하지 않습니다**.
+- [#485 상담 검색 경합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485): 최신 HEAD `4198d20`의 타인 `APPROVED`, 전체 Actions 7/7 성공을 확인해 **main [79e8810](https://github.com/ot4562-glitch/HUFS-One-AI/commit/79e8810b49fe7392bf27410b95f3c8596a6e0649)에 실제 squash 병합**. #345 전체 실상담/인적 인수와 #427 브라우저 실사용 확인은 별도로 남음.
+- [#486 공고 검색 세션·커서·429](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486): HEAD `31939aa`, 최초 합성 테스트 fixture 누락 수정 후 TASK-00 SUCCESS·신규 UI 회귀 **10건 통과**. [#487 교환학생 1~3개 승인 대학 비교](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487): HEAD `95e3ad5`, JSX 문법 오류 보정 후 TASK-00 SUCCESS·새 테스트 **6건 통과**. [#488 활동 공지/취소 KST 연도](https://github.com/ot4562-glitch/HUFS-One-AI/pull/488): HEAD `981b4f5`, TASK-00 SUCCESS·새 회귀 **5건 통과**. **세 PR 모두 미병합·작성자 아닌 최신 HEAD 승인 미확인**. 이 시점 GitHub-hosted Ubuntu의 Korean fonts `apt` 다운로드 DNS 실패 때문에 Browser E2E/Pages CI에 실패가 있으며 전체 CI 통과라고 주장하지 않습니다. 실제 NCP/기관 자료·권리·Gold/실계정은 별도입니다.
+- **추가 WIS 버그 [#482](https://github.com/ot4562-glitch/HUFS-One-AI/pull/482):** 리뷰어의 기존 `CHANGES_REQUESTED` 원인(스크립트 문자열 `<!--` 때문에 표 전체 삭제)을 재현하고 `script → comment` 제거 순서로 수정, 신규 회귀 2건 추가했습니다. HEAD `10d412e`의 재테스트·리뷰어 재승인/부모 #431 반영 전까지 병합 보류. 승인 요청 자체는 승인 완료가 아닙니다.
+- **동료 exact HEAD 리뷰 최신 정정:** #463 `94461c0`, #465 `f8bf33c`, #470 `554c220`, #471 `e39f703`은 2026-11-11 리뷰에서 각각 협업자 `APPROVED`를 받았습니다(아래 표의 과거 미승인 표시는 당시 기록). 단, CI·충돌·stack/다른 리뷰를 별도 확인해야 병합 가능. [#472](https://github.com/ot4562-glitch/HUFS-One-AI/pull/472)는 DB 연결 2개/요청으로 작은 연결 풀에서 동시 요청 timeout이 재현되어 **구조적 연결 자원 수정·실 PG 부하 재검증 전 통합 금지**.
+- **독립 승인·실서비스 경계:** #481 trusted-main 검증기 부트스트랩 후 #466/#476 gate 재실행, #482→#431 정상 사이트 회귀, 스택 중복 해결. `RELEASE_BLOCKED` 유지. 현행 기술/자료 인수 #445/#447/#449/#360/#446는 합성 코드 완료와 별개입니다.
+
 ## 2026-11-11 현재 PR·Issue 감사 및 본선 전 통합 현황
 
 - **GitHub 감사 시점:** 최초 OPEN PR 22건, OPEN Issue 31건. 22건의 최신 HEAD diff·일반 CI·기존 협업자 리뷰를 확인하고 **전부 공식 COMMENT 코드 리뷰를 GitHub에 작성**했습니다. 각 PR의 상세 상태와 이슈 31건 인수 표는 [11월 11일 전수 감사](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조하세요. 작성자 COMMENT는 독립 협업자 APPROVED가 아닙니다.
