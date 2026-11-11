@@ -95,8 +95,22 @@ describe('#445 complete in-memory HWP5 OLE CFB FAT / MiniFAT reader',()=>{
     }),/KOREAN_DOCUMENT_REQUIRES_REVIEW/);
   });
   it('handles 4096-byte CFB v4 sectors and regular >4096 HWP body streams',()=>{
-    const v4=readBoundedHwpCfbStreams(syntheticHwp({sectorShift:12}));
+    const property=syntheticHwp({sectorShift:12});
+    // Standard HWP OLE files may contain the U+0005-prefixed property stream.
+    const entry=4096+4*128;
+    const name=Buffer.from('\u0005HwpSummaryInformation\0','utf16le');
+    name.copy(property,entry);
+    property.writeUInt16LE(name.length,entry+64);
+    property[entry+66]=2;property[entry+67]=1;
+    for(const offset of [68,72,76])property.writeUInt32LE(FREE,entry+offset);
+    property.writeUInt32LE(END,entry+116);
+    property.writeUInt32LE(4,4096+2*128+72); // BodyText right sibling
+    const v4=readBoundedHwpCfbStreams(property);
     assert.deepEqual(v4.sectionStreams[0],section);
+    const arbitraryControl=Buffer.from(property);
+    arbitraryControl.writeUInt16LE(1,entry);
+    assert.throws(()=>readBoundedHwpCfbStreams(arbitraryControl),
+      /KOREAN_DOCUMENT_REQUIRES_REVIEW/);
     const large=syntheticHwp({largeSection:true});
     const decoded=readBoundedHwpCfbStreams(large);
     assert.ok(decoded.sectionStreams[0].length>4096);
