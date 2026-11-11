@@ -90,6 +90,24 @@ describe('#447 bounded 25,000-row V2 catalog top-k and keyset equivalence',()=>{
     const anchor=first.nextCursor!.lastId;
     expect(()=>searchApprovedCatalogV2({items:all.filter(x=>x.id!==anchor),
       query:q,...scope,cursor:first.nextCursor!})).toThrow('STALE_CURSOR');
+    // A cursor row is never a bearer permission. Even if the row still
+    // appears in the snapshot, it must satisfy the CURRENT authorization and
+    // query filter before it may act as a pagination anchor.
+    expect(()=>searchApprovedCatalogV2({
+      items:all.map(x=>x.id===anchor?{...x,permitted:false}:x),
+      query:q,...scope,cursor:first.nextCursor!,
+    })).toThrow('STALE_CURSOR');
+    expect(()=>searchApprovedCatalogV2({
+      items:all.map(x=>x.id===anchor?{...x,source:{...x.source,rights:'BLOCKED'}}:x),
+      query:q,...scope,cursor:first.nextCursor!,
+    })).toThrow('STALE_CURSOR');
+    expect(()=>searchApprovedCatalogV2({
+      items:all.map(x=>x.id===anchor?{...x,category:
+        x.category==='SCHOLARSHIP'?'INTERNSHIP':'SCHOLARSHIP'}:x),
+      query:query({sort:'PUBLISHED_DESC',pageSize:10,category:
+        all.find(x=>x.id===anchor)?.category}),
+      ...scope,cursor:first.nextCursor!,
+    })).toThrow('STALE_CURSOR');
     expect(()=>searchApprovedCatalogV2({items:all,query:q,...scope,
       cursor:{...first.nextCursor!,lastSortValue:'tampered'}})).toThrow('STALE_CURSOR');
     expect(()=>searchApprovedCatalogV2({items:all,query:q,...scope,
