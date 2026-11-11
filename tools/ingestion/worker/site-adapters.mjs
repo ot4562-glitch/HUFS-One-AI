@@ -128,3 +128,67 @@ export function parseApprovedBoardCandidates({content,policy}){
     posts:Object.freeze(posts),paginationCandidates:Object.freeze(pageLinks),
   });
 }
+
+/**
+ * Reconcile independently captured *review candidates* from multiple listing
+ * pages without launching a crawler. Page byte hashes and distinct origins
+ * must also be checked against private NCP immutable SourceRevision records.
+ * Same URL with conflicting title/attachments is never silently overwritten.
+ */
+export function reconcileReviewedBoardPages({pages,policy}){
+  const p=config(policy);
+  if(!Array.isArray(pages)||pages.length<1||pages.length>MAX_PAGES)invalid();
+  const pageUrls=new Set(),posts=new Map(),suggested=new Set();
+  const sourcePages=[];
+  for(const page of pages){
+    if(!page||page.state!=='REVIEW_REQUIRED'
+      ||page.sourceId!==p.sourceId||page.family!==p.family
+      ||typeof page.sourceUrl!=='string'
+      ||approvedUrl(page.sourceUrl,p)!==page.sourceUrl
+      ||!Array.isArray(page.posts)||page.posts.length>p.limit
+      ||!Array.isArray(page.paginationCandidates)
+      ||page.paginationCandidates.length>MAX_PAGES
+      ||typeof page.originalSha256!=='string'
+      ||!/^[a-f0-9]{64}$/.test(page.originalSha256)
+      ||pageUrls.has(page.sourceUrl))invalid();
+    pageUrls.add(page.sourceUrl);
+    sourcePages.push(Object.freeze({url:page.sourceUrl,sha256:page.originalSha256}));
+    for(const post of page.posts){
+      if(!post||typeof post.url!=='string'
+        ||approvedUrl(post.url,p)!==post.url
+        ||typeof post.title!=='string'||!post.title||post.title.length>200
+        ||post.postedAtCandidate!==null
+          &&(typeof post.postedAtCandidate!=='string'
+            ||post.postedAtCandidate.length>60)
+        ||!Array.isArray(post.attachmentCandidates)
+        ||post.attachmentCandidates.length>MAX_ATTACHMENTS)invalid();
+      const attachments=post.attachmentCandidates;
+      if(attachments.some(att=>typeof att!=='string'
+        ||approvedUrl(att,p)!==att||!SAFE_EXT.test(new URL(att).pathname))
+        ||new Set(attachments).size!==attachments.length)invalid();
+      const previous=posts.get(post.url);
+      if(previous){
+        if(previous.title!==post.title
+          ||previous.postedAtCandidate!==post.postedAtCandidate
+          ||JSON.stringify(previous.attachmentCandidates)!==JSON.stringify(attachments))
+          invalid();
+      }else{
+        if(posts.size>=MAX_PAGES*MAX_POSTS)invalid();
+        posts.set(post.url,Object.freeze({...post,sourcePage:page.sourceUrl,
+          sourcePageSha256:page.originalSha256}));
+      }
+    }
+    for(const candidate of page.paginationCandidates){
+      if(typeof candidate!=='string'||approvedUrl(candidate,p)!==candidate)invalid();
+      suggested.add(candidate);
+    }
+  }
+  // This is an operator-review-only backlog, NEVER a scheduling/fetch queue.
+  const unvisited=[...suggested].filter(url=>!pageUrls.has(url));
+  if(unvisited.length>MAX_PAGES)invalid();
+  return Object.freeze({state:'REVIEW_REQUIRED',family:p.family,sourceId:p.sourceId,
+    scannedPages:sourcePages.length,
+    sourcePages:Object.freeze(sourcePages),
+    posts:Object.freeze([...posts.values()]),
+    unfetchedPageCandidates:Object.freeze(unvisited)});
+}
