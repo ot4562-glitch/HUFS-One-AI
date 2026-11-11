@@ -10,9 +10,13 @@ describe('A04/A05/A07 recommendation/notice wire shape',()=>{
       actualApplicationRoute:'DEMO_DISABLED',conditions:[],roleSteps:[],
       prioritySelection:[],completionRules:[],dataMode:'SYNTHETIC',dataQuality:'COMPLETE'};
     expect(OpportunitySchema.safeParse({...base,organizationHomepage:'https://example.org/'}).success).toBe(true);
-    for(const url of ['https://localhost./','https://example.internal./',
-      'https://example.local./'])
-      expect(OpportunitySchema.safeParse({...base,organizationHomepage:url}).success).toBe(false);
+    for(const url of [
+      'https://localhost./','https://example.internal./','https://example.local./',
+      'https://127.0.0.2/','https://10.0.0.1/','https://192.168.0.10/',
+      'https://169.254.169.254/','https://[::1]/','https://example.test/',
+      'https://example.invalid/','https://internal-host/',
+      'http://example.org/','https://user:secret@example.org/',
+    ])expect(OpportunitySchema.safeParse({...base,organizationHomepage:url}).success).toBe(false);
   });
   it('accepts complete featured/compact feed',()=>{
     expect(FeedResultSchema.safeParse(original.feed).success).toBe(true);
