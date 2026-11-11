@@ -25,6 +25,12 @@
 
 > **추가 열린 PR 반영:** 최초 감사 이후 [#483 FAQ 부정어 회귀 보정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483)이 추가되어 현재 HEAD `4d8b911` 코드 리뷰/CI 7/7 확인·공식 COMMENT 제출(실제 동료 APPROVED·병합 대기). 문서 현행화는 [#484](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484) 리뷰·CI 대기 중입니다. 최신 재조회 결과 **열린 PR 23건·이슈 31건**, 감사 시작 당시 22건과 구분합니다.
 
+## 2026-11-12 이번 회차 기능 구현·리뷰 업데이트
+
+이번 회차 한정 심민성이 기존 팀원 배정과 별개로 `[추가 기능]` 합성 코드를 직접 구현했습니다. **지속적인 담당 변경 규칙은 아닙니다.** [#485 상담기관 검색 필터 경합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485)은 HEAD `4198d20` 동료 승인·전체 CI 7/7 확인 후 **main [79e8810](https://github.com/ot4562-glitch/HUFS-One-AI/commit/79e8810b49fe7392bf27410b95f3c8596a6e0649)에 실제 병합**됐습니다.
+
+추가 작성한 [#486 공고 검색 만료/쿼터 복구](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486) (합성 회귀 10건 통과), [#487 최대 3개 승인 파견교 비교](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487) (6건 통과), [#488 활동 KST 게시연도·취소](https://github.com/ot4562-glitch/HUFS-One-AI/pull/488) (5건 통과)는 **동료 HEAD 승인·Chrome/Pages 전체 CI 미완으로 미병합**입니다. 브라우저 CI의 GitHub runner 한글 폰트 apt DNS 설치 실패를 제품 코드 통과로 오인하지 않습니다. [#482 WIS 댓글/스크립트 처리](https://github.com/ot4562-glitch/HUFS-One-AI/pull/482)도 리뷰어 반례 수정 후 재승인 대기입니다. 기록은 [현행 STATUS](STATUS.md)에 정리합니다.
+
 ## 현행 PR·이슈 전수 검수 — 2026-11-11
 
 - **감사 착수 당시 공개 GitHub OPEN PR 22건·OPEN Issue 31건.** 코드 diff/최신 HEAD/CI·기존 협업자 리뷰와 이슈별 본문·인계 기록을 점검했습니다. [PR·Issue 2026-11-11 전체 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)에 22개 PR과 31개 열린 이슈를 각각 기록했습니다. 이 숫자는 스냅샷이며 실시간 현황은 [PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)과 [Issue 목록](https://github.com/ot4562-glitch/HUFS-One-AI/issues)을 확인하세요.
