@@ -16,7 +16,7 @@ function database(count=2){
   }));
   let elapsedMs=0,sessionOwner:number|null=null,sessionNo=0;
   let activeConnections=0,peakConnections=0;
-  let failClaim=false,failUnlock=false;
+  let failClaim=false,failUnlock=false,skipPending=false;
   const issued:string[]=[],released:Array<{id:number;error?:Error}>=[];
   const pool:ReviewerSqlPool={
     connect:async()=>{
@@ -50,7 +50,11 @@ function database(count=2){
             return {rows:jobs.filter(j=>j.state==='LEASED'&&j.lease_until>elapsedMs)
               .map(j=>({job_id:j.job_id})).slice(0,1)};
           }
+          if(sql.includes('SELECT EXISTS(')&&sql.includes("state='PENDING'")){
+            return {rows:[{pending:jobs.some(job=>job.state==='PENDING')}]};
+          }
           if(sql.includes("WHERE state='PENDING'")&&sql.includes('FOR UPDATE')){
+            if(skipPending){skipPending=false;return {rows:[]};}
             return {rows:jobs.filter(j=>j.state==='PENDING').slice(0,1).map(j=>({
               job_id:j.job_id,actor_ref:j.actor_ref,source_id:j.source_id,
               permission_ref:j.permission_ref,request_key:j.request_key,
@@ -90,6 +94,7 @@ function database(count=2){
     activeConnections:()=>activeConnections,peakConnections:()=>peakConnections,
     advance:(ms:number)=>{elapsedMs+=ms;},
     failNextClaim:()=>{failClaim=true;},
+    skipNextPending:()=>{skipPending=true;},
     failNextUnlock:()=>{failUnlock=true;},
     clock:()=>new Date(Date.parse('2026-11-01T00:00:00Z')+elapsedMs).toISOString()};
 }
@@ -120,7 +125,7 @@ describe('source queue: one global executor across process instances',()=>{
     const other=await second.runOne();
     resume.resolve();
     await expect(running).rejects.toThrow('Source lease lost');
-    expect(other).toEqual({state:'IDLE'});
+    expect(other).toEqual({state:'LOCK_BUSY'});
     expect(calls).toEqual(['SYN-SOURCE-0']);
     expect(db.jobs[1]?.state).toBe('PENDING');
     // After the first executor exits, recovery quarantines its uncertain
@@ -129,6 +134,19 @@ describe('source queue: one global executor across process instances',()=>{
     expect(calls).toEqual(['SYN-SOURCE-0','SYN-SOURCE-1']);
     expect(db.jobs[0]?.state).toBe('NEEDS_REVIEW');
     expect(db.jobs[0]?.attempt_count).toBe(1);
+  });
+  it('does not report empty while a pending job is hidden by SKIP LOCKED',async()=>{
+    const db=database(1),executions:string[]=[];
+    const q=new PostgresSourceIngestionQueue(db.pool,authority,{
+      execute:async()=>{executions.push('called');return {kind:'NEW_DRAFT',revisionId:'SYN'};},
+    },db.clock);
+    db.skipNextPending();
+    expect(await q.runOne()).toEqual({state:'LOCK_BUSY'});
+    expect(executions).toHaveLength(0);
+    expect(db.jobs[0]?.state).toBe('PENDING');
+    expect(db.owner()).toBeNull();
+    expect((await q.runOne()).state).toBe('NEW_DRAFT');
+    expect(executions).toHaveLength(1);
   });
   it('holds a session advisory lock across executor IO, then releases it for the next instance',async()=>{
     const db=database(),calls:string[]=[];
