@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {deflateRawSync} from 'node:zlib';
 import {parseApprovedHwpxDraft,readBoundedHwpxZip,
   createApprovedHwpxExtractor,parseLegacyHwpSectionDraft} from './korean-documents.mjs';
+import * as koreanDocuments from './korean-documents.mjs';
 
 const encode=value=>Buffer.from(value,'utf8');
 function crc32(bytes){
@@ -66,6 +67,20 @@ function record(tag,content,level=0){
   return Buffer.concat([h,content]);
 }
 describe('#445 HWPX actual ZIP/XML parser (synthetic bytes only)',()=>{
+  it('binds the durable document adapter to per-request IDs, original SHA and exact MIME',async()=>{
+    assert.equal(typeof koreanDocuments.createApprovedKoreanDocumentExtractor,'function');
+    const adapter=koreanDocuments.createApprovedKoreanDocumentExtractor();
+    const content=zip(entries);
+    const d=await adapter.extract({...approved,content,contentType:'application/hwp+zip'});
+    assert.equal(d.mediaKind,'HWPX');assert.equal(d.state,'NEEDS_REVIEW');
+    assert.equal(d.completeness,'TEXT_ONLY_REQUIRES_ORIGINAL_REVIEW');
+    assert.equal(d.sourceId,approved.sourceId);assert.equal(d.revisionId,approved.revisionId);
+    assert.deepEqual(d.paragraphs,parseApprovedHwpxDraft({...approved,content}).paragraphs);
+    assert.equal(d.originalSha256,parseApprovedHwpxDraft({...approved,content}).originalSha256);
+    for(const contentType of ['application/octet-stream','application/pdf','application/hwp+zip;evil=1','application/x-hwp'])
+      await assert.rejects(adapter.extract({...approved,content,contentType}));
+    await assert.rejects(adapter.extract({...approved,content,contentType:'application/hwp+zip',revisionId:'../invalid'}));
+  });
   it('reads compressed sections in manifest spine order and excludes enclosing table duplicates',()=>{
     const bytes=zip(entries);
     const d=parseApprovedHwpxDraft({...approved,content:bytes});

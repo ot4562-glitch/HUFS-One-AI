@@ -1,7 +1,7 @@
 import {describe,it} from 'node:test';
 import assert from 'node:assert/strict';
 import {readBoundedHwpCfbStreams} from './hwp-cfb.mjs';
-import {parseApprovedLegacyHwpDraft,createApprovedLegacyHwpExtractor}
+import {parseApprovedLegacyHwpDraft,createApprovedLegacyHwpExtractor,createApprovedKoreanDocumentExtractor}
   from './korean-documents.mjs';
 
 const FREE=0xffffffff,END=0xfffffffe,FAT=0xfffffffd;
@@ -86,6 +86,14 @@ describe('#445 complete in-memory HWP5 OLE CFB FAT / MiniFAT reader',()=>{
     assert.equal(parsed.format,'HWP5_CFB');
     assert.match(parsed.originalSha256,/^[a-f0-9]{64}$/);
     assert.deepEqual(parsed.paragraphs,[{id:'s0p1',text:'가상 HWP 원문'}]);
+    const durable=await createApprovedKoreanDocumentExtractor().extract({
+      ...source,content:bytes,contentType:'application/x-hwp',
+    });
+    assert.equal(durable.mediaKind,'HWP');assert.equal(durable.sourceId,source.sourceId);
+    assert.equal(durable.revisionId,source.revisionId);assert.equal(durable.state,'NEEDS_REVIEW');
+    assert.equal(durable.completeness,'TEXT_ONLY_REQUIRES_ORIGINAL_REVIEW');
+    assert.equal(durable.originalSha256,parsed.originalSha256);
+    assert.deepEqual(durable.paragraphs,parsed.paragraphs);
     const port=createApprovedLegacyHwpExtractor(source);
     assert.deepEqual(await port.extract({
       content:bytes,contentType:'application/x-hwp',

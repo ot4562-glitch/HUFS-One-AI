@@ -256,3 +256,20 @@ export function createApprovedLegacyHwpExtractor({sourceId,revisionId}){
     return parseApprovedLegacyHwpDraft({content,sourceId,revisionId}).paragraphs;
   }};
 }
+
+/** Per-execution SourceDocumentExtractor port for the durable API executor.
+ * The API supplies exact canonical URL/rights and freshly generated IDs.
+ * These parsers only return candidates; full original-file human review is required. */
+export function createApprovedKoreanDocumentExtractor(){
+  const kinds=new Map([
+    ['application/hwp+zip','HWPX'],['application/vnd.hancom.hwpx','HWPX'],
+    ['application/x-hwp','HWP'],['application/vnd.hancom.hwp','HWP'],['application/haansofthwp','HWP'],
+  ]);
+  return {async extract({content,contentType,sourceId,revisionId}){
+    const mediaKind=kinds.get(contentType);
+    if(!mediaKind)denied();
+    const d=mediaKind==='HWPX'?parseApprovedHwpxDraft({content,sourceId,revisionId})
+      :parseApprovedLegacyHwpDraft({content,sourceId,revisionId});
+    return Object.freeze({...d,mediaKind,completeness:'TEXT_ONLY_REQUIRES_ORIGINAL_REVIEW'});
+  }};
+}
