@@ -6,6 +6,12 @@ function epoch(iso:string):number{
   return ms;
 }
 function year(day:string):number{return Number(day.slice(0,4));}
+/** Publication instants without an eventDate belong to the Asia/Seoul calendar
+ * day, never the raw UTC/foreign-offset text date (#339). This is only a
+ * grouping/filtering date: it must not be used as a fabricated eventDate. */
+function publishedDayKst(iso:string):string{
+  return new Date(epoch(iso)+9*60*60*1000).toISOString().slice(0,10);
+}
 function dayOfYear(day:string):number{
   const m=Number(day.slice(5,7)), d=Number(day.slice(8,10));
   // A leap-day occurrence is folded into February 28 for a coarse seasonal window.
@@ -61,7 +67,7 @@ export function currentActivityRecords(raw:readonly ActivityRecord[],asOf:string
   const events=new Map<string,ActivityRecord>();
   const tied=new Set<string>();
   for(const item of latest){
-    const y=item.eventDate?year(item.eventDate):year(item.publishedAt.slice(0,10));
+    const y=item.eventDate?year(item.eventDate):year(publishedDayKst(item.publishedAt));
     const key=item.organizationId+':'+item.seriesId+':'+y;
     const prev=events.get(key);
     const order=!prev?1:epoch(item.publishedAt)-epoch(prev.publishedAt)
@@ -77,7 +83,7 @@ export function archiveActivities(raw:readonly ActivityRecord[],asOf:string,filt
   const query=(filter.query||'').trim().toLocaleLowerCase('ko');
   return currentActivityRecords(raw,asOf).filter(row=>
     (!filter.organizationId||row.organizationId===filter.organizationId)
-    &&(!filter.year||year((row.eventDate||row.publishedAt.slice(0,10)))===filter.year)
+    &&(!filter.year||year(row.eventDate||publishedDayKst(row.publishedAt))===filter.year)
     &&(!filter.campus||row.campus===filter.campus||row.campus==='BOTH')
     &&(!query||(row.title+' '+row.organizationId).toLocaleLowerCase('ko').includes(query)));
 }
@@ -125,7 +131,7 @@ export function forecastActivity(raw:readonly ActivityRecord[],asOf:string,targe
         undefined,undefined,cancel);
       continue;
     }
-    const published=cancel.publishedAt.slice(0,10);
+    const published=publishedDayKst(cancel.publishedAt);
     if((lastHeld===undefined||published>lastHeld)&&targetYear>=year(published))
       return result('UNKNOWN','NONE',
         '날짜가 없는 취소 공지가 있어 어느 회차의 취소인지 확인될 때까지 예측을 보류합니다.',
