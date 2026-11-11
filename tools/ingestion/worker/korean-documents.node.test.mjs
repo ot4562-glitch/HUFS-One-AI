@@ -159,6 +159,16 @@ describe('#445 HWP5 binary section record decoder (requires independently review
     });
     assert.deepEqual(zipped.paragraphs,raw.paragraphs);
   });
+  it('rejects mismatched paragraph counts and dangling nonempty headers',()=>{
+    const tooLong=Buffer.alloc(4);tooLong.writeUInt32LE(text.length+2);
+    for(const bytes of [
+      Buffer.concat([record(0x42,tooLong),record(0x43,payload)]),
+      Buffer.concat([section,record(0x42,count)]),
+      Buffer.concat([record(0x42,count),record(0x42,count),record(0x43,payload)]),
+    ])assert.throws(()=>parseLegacyHwpSectionDraft({
+      fileHeader:header,sectionStreams:[bytes],...approved,
+    }),/KOREAN_DOCUMENT_REQUIRES_REVIEW/);
+  });
   it('refuses encrypted, distribution-only, unsupported controls and bad records',()=>{
     for(const flags of [2,4,6]){
       const h=Buffer.from(header);h.writeUInt32LE(flags,36);
