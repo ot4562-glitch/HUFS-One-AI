@@ -4,6 +4,14 @@
 
 **처리 결과:** 최초 PR 22건 전부에 작성자 계정의 **공식 COMMENT 리뷰**를 실제로 제출했습니다. 그중 #475만 같은 HEAD에 대한 **실제 다른 협업자 APPROVED**와 CI 6/6을 확인하고 main [05d78cd](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)로 병합했습니다. 최초 PR 21건은 대기 중입니다. 모든 열린 이슈 31건을 검토했지만 **이번에 완료 표시/종결한 이슈는 0건**입니다. 실 NCP·학교 원문·Gold·권리 인수가 확인되지 않아 **RELEASE_BLOCKED**를 유지합니다.
 
+## 0. 최초 감사 이후 새로 열린 PR — 재조회 증분
+
+2026-11-11 KST 추가 조회에서 신규 [#483 FAQ 부정 표현 수정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483)과 **이 문서 업데이트 PR [#484](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484)**가 생성되어, #475 병합 이후 **현재 열린 PR 23건**, 열린 이슈 31건을 확인했습니다. 아래 **22건 표는 감사 착수 당시 원본 스냅샷**이므로 없애거나 새 PR을 역사적 수치에 소급 포함하지 않습니다.
+
+- **#483:** 박준영 `taewangim-alt` 작성, HEAD `4d8b911`, `faq-guard.ts`의 붙인 `못하다`와 단독 `안 되다` 부정 검사를 추가. FAQ 긍정 근거를 부정 답으로 뒤집거나 실제 부정 근거를 틀리게 거부하던 반례·회귀 10건. 공식 GitHub Actions **7/7 SUCCESS**, 2026-11-11 코드 diff/테스트를 확인하고 [공식 COMMENT 리뷰](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483) 작성. 어중 `잘못합니다/잘못해도`를 부정으로 보는 오탐 여지는 비차단 제안으로 남겼습니다. **실제 사람 HEAD APPROVED/병합 없음, #341 OPEN 유지**하며 공식 FAQ/HCX/독립 Gold는 별도입니다. [#341 정정 댓글](https://github.com/ot4562-glitch/HUFS-One-AI/issues/341).
+- **#484:** 본 문서·현행 README/STATUS/에이전트·아키텍처·본선/실 NCP 안내 등 **17개 Markdown 정본**을 최신 감사 기준으로 맞추는 비초안 문서 PR. **실제 동료 리뷰 요청** 등록, PR 자신도 CI/새 HEAD 리뷰 후 병합해야 합니다. 기능 코드·실자료·csv 변경 없음.
+- **전체 이슈:** 새 이슈 없음; 31건 OPEN을 유지했습니다. 새 PR 출현으로 #341의 기존 “수정 PR 미확인” 진술은 그 당시 감사 시점에만 적용됩니다.
+
 ## 1. 최초 PR 22건 — 코드·CI·리뷰 점검 결과
 
 | PR | 감사 HEAD | 관찰된 CI | 리뷰 결론/미완료 |
