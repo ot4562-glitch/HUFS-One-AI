@@ -136,4 +136,18 @@ describe('#340 comparative partner criteria via authorized owner API',()=>{
     expect(screen.queryByRole('heading',{name:/1개 파견대학 비교/})).toBeNull();
     expect(second.evaluate).not.toHaveBeenCalled();
   });
+  it('shows evidence-status preparation per partner but never invents a submission deadline',async()=>{
+    const f=fixture();await view(f.port);
+    fireEvent.change(screen.getByLabelText('비교할 두 번째 대학 (선택)'),
+      {target:{value:'SYN-UNI-B|OIA'}});
+    fireEvent.click(screen.getByRole('button',{name:'선택 대학 조건 비교'}));
+    await screen.findByRole('heading',{name:/2개 파견대학 비교/});
+    expect(screen.getByRole('region',{name:'SYN-UNI-A 지원 준비 체크리스트'})).toBeTruthy();
+    expect(screen.getByRole('region',{name:'SYN-UNI-B 지원 준비 체크리스트'})).toBeTruthy();
+    expect(screen.getAllByText(/학생 입력값은 자기신고이며/)).toHaveLength(2);
+    expect(screen.getAllByText(/정식 지원 마감일·신청 일정은 현재 승인 요약에 없어/)).toHaveLength(2);
+    expect(screen.getAllByText(/공식 서류 확인 단계|확인 또는 추가 입력 필요/).length).toBe(2);
+    expect(screen.queryByRole('button',{name:/지원서 제출|자동 신청/})).toBeNull();
+  });
+
 });
