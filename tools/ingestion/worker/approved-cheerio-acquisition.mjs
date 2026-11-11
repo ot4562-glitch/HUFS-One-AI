@@ -1,9 +1,8 @@
 /** Actual Crawlee HTTP acquisition over the API's one-use pinned capability.
  * No default HTTP client, URL discovery, session, proxy or persistent storage. */
-import {randomUUID} from 'node:crypto';
 import {isIP} from 'node:net';
 import {Readable} from 'node:stream';
-import {CheerioCrawler,Configuration,MemoryStorage,RequestQueue,Log,LogLevel} from 'crawlee';
+import {CheerioCrawler,Configuration,MemoryStorage,RequestList,Log,LogLevel} from 'crawlee';
 
 const MAX_BYTES=256*1024;
 const MIME=['text/plain','application/rss+xml','application/atom+xml','application/pdf',
@@ -54,7 +53,9 @@ export function createApprovedCheerioAcquisition(){
     const url=exactUrl(canonicalUrl);if(typeof request!=='function')fail();
     const storageClient=new MemoryStorage({persistStorage:false,writeMetadata:false});
     const config=new Configuration({storageClient,persistStorage:false,purgeOnStart:false});
-    const queue=await RequestQueue.open('hufs-acquisition-'+randomUUID(),{config});
+    // A one-element RequestList cannot enqueue discovered links and does
+    // not rely on RequestQueue's asynchronous pending scheduling.
+    const requestList=await RequestList.open(null,[{url,method:'GET'}],{config});
     let calls=0,handled=false,failed=false;
     const httpClient={
       async sendRequest(){fail();},
@@ -79,7 +80,7 @@ export function createApprovedCheerioAcquisition(){
     };
     let crawler;
     try{
-      crawler=new CheerioCrawler({requestQueue:queue,httpClient,log:new Log({level:LogLevel.OFF}),
+      crawler=new CheerioCrawler({requestList,httpClient,log:new Log({level:LogLevel.OFF}),
         useSessionPool:false,persistCookiesPerSession:false,retryOnBlocked:false,
         maxRequestsPerCrawl:1,maxRequestRetries:0,maxSessionRotations:0,maxConcurrency:1,
         navigationTimeoutSecs:8,requestHandlerTimeoutSecs:5,additionalMimeTypes:MIME,
@@ -91,21 +92,13 @@ export function createApprovedCheerioAcquisition(){
           handled=true;
         },failedRequestHandler:async(_ctx,error)=>{failed=true;diagnostic('CRAWLER_FAILED_'+category(error));},
       },config);
-      // With an explicitly scoped RequestQueue, Crawlee.run(requests)
-      // can choose a default request manager and leave the private queue
-      // empty. Seed ONLY this private queue and run it directly.
-      await queue.addRequest({url,uniqueKey:randomUUID(),method:'GET'});
-      const before=await queue.getInfo();
-      diagnostic('QUEUE_BEFORE_'+String(before?.pendingRequestCount));
       await crawler.run();
-      const after=await queue.getInfo();
-      diagnostic('QUEUE_AFTER_'+String(after?.pendingRequestCount));
       if(failed||!handled||calls!==1){diagnostic('INCOMPLETE_'+Number(calls)+'_'+Number(handled)+'_'+Number(failed));fail();}
     }catch(error){diagnostic('OUTER_CATCH_'+category(error));fail();}
     finally{
       // Storage is per-call memory-only, even when ambient storage env is set.
       // Cleanup failures remain failures; never call a different HTTP client.
-      try{await crawler?.teardown();await queue.drop();}catch{fail();}
+      try{await crawler?.teardown();await requestList.teardown();}catch{fail();}
     }
   }};
 }
