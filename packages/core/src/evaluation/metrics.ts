@@ -237,6 +237,8 @@ export interface MisjudgmentReport {
   total:Rate;
   /** Gold cases without a prediction: not counted as errors, listed so coverage stays visible. */
   missingPredictions:string[];
+  /** Predictions with no gold label: excluded from rates but validated and listed. */
+  unlabelledPredictions:string[];
 }
 const ELIGIBILITY=new Set<GoldEligibility>(['ELIGIBLE','INELIGIBLE','UNKNOWN']);
 export function eligibilityMisjudgment(predicted:Readonly<Record<string,GoldEligibility>>,
@@ -251,6 +253,12 @@ export function eligibilityMisjudgment(predicted:Readonly<Record<string,GoldElig
     if(guess==='ELIGIBLE'&&gold[id]==='INELIGIBLE')falseEligible++;
     if(guess==='ELIGIBLE'&&gold[id]==='UNKNOWN')unsupported++;
   }
+  // Extra predictions cannot silently hide malformed eligibility labels;
+  // they do not contribute to rates without independent gold.
+  const unlabelledPredictions=Object.keys(predicted)
+    .filter(id=>!Object.prototype.hasOwnProperty.call(gold,id)).sort(byCodeUnit);
+  for(const id of unlabelledPredictions)
+    if(!ELIGIBILITY.has(predicted[id]!))throw new RangeError('Unknown eligibility');
   return {falseEligible:rate(falseEligible,ids.length),unsupportedEligible:rate(unsupported,ids.length),
-    total:rate(falseEligible+unsupported,ids.length),missingPredictions};
+    total:rate(falseEligible+unsupported,ids.length),missingPredictions,unlabelledPredictions};
 }
