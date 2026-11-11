@@ -43,3 +43,9 @@ export function collectCandidatesFromApprovedBytes({
     ...(limit===undefined?{}:{limit}),
   });
 }
+
+// Operator-selected, already-authorized document byte decoders. No fetch,
+// credentials, browser, unreviewed source activation or filesystem writes.
+export {createApprovedHwpxExtractor,createApprovedLegacyHwpExtractor,
+  parseApprovedHwpxDraft,parseApprovedLegacyHwpDraft}
+  from './korean-documents.mjs';
