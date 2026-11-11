@@ -207,7 +207,8 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
       termsStatus:'REVIEWED_PERMITTED' as const,policyRef:'SYN-POLICY',
       observedAt:'2026-11-01T00:00:00Z'};
     const good={registration,scope,pageUrl:registration.canonicalUrl,
-      now:'2026-11-11T00:00:00Z',remainingRequests:2,remainingBytes:10000};
+      now:'2026-11-11T00:00:00Z',remainingRequests:2,remainingBytes:10000,
+      attemptsForUrl:0,maxAttempts:2};
     expect(D.evaluateSourceRefreshPreflight(good)).toEqual({
       state:'READY_FOR_OPERATOR_RECHECK',reasons:[],
     });
@@ -218,6 +219,13 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
       [{scope:{...scope,termsStatus:'RESTRICTED'}},'TERMS_NOT_PERMITTED'],
       [{remainingRequests:0},'BUDGET_EXHAUSTED'],
       [{remainingBytes:0},'BUDGET_EXHAUSTED'],
+      [{attemptsForUrl:2},'ATTEMPT_LIMIT'],
+      [{lastHttpStatus:401},'ACCESS_CONTROLLED_NO_RETRY'],
+      [{lastHttpStatus:403},'ACCESS_CONTROLLED_NO_RETRY'],
+      [{lastHttpStatus:500},'HTTP_ERROR_REVIEW_REQUIRED'],
+      [{lastHttpStatus:429},'THROTTLED_OPERATOR_REVIEW'],
+      [{lastHttpStatus:503,retryAfterHeader:'nonsense'},'THROTTLED_OPERATOR_REVIEW'],
+      [{lastHttpStatus:429,retryAfterHeader:'120'},'RETRY_AFTER'],
       [{retryAfter:'2026-11-11T00:05:00Z'},'RETRY_AFTER'],
       [{pageUrl:'https://example.org/notices/other'},'UNREGISTERED_SOURCE'],
       [{scope:{...scope,pathPrefixes:['/files']}},'PATH_NOT_APPROVED'],
@@ -229,6 +237,15 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
       expect(result.state).toBe('BLOCKED');
       expect(result.reasons).toContain(reason);
     }
+    expect(D.parseReviewedRetryAfter('120',good.now))
+      .toBe('2026-11-11T00:02:00.000Z');
+    expect(D.parseReviewedRetryAfter('Wed, 11 Nov 2026 00:05:00 GMT',good.now))
+      .toBe('2026-11-11T00:05:00.000Z');
+    for(const bad of ['nonsense','86401','99999999','-1','Thu, 01 Jan 1970 00:00:00 GMT'])
+      expect(D.parseReviewedRetryAfter(bad,good.now)).toBeNull();
+    expect(D.parseReviewedRetryAfter(null,good.now)).toBeNull();
+    expect(D.evaluateSourceRefreshPreflight({...good,lastHttpStatus:429,
+      retryAfterHeader:'0'}).state).toBe('READY_FOR_OPERATOR_RECHECK');
     expect(D.evaluateSourceRefreshPreflight({...good,remainingRequests:-1})).toEqual({
       state:'BLOCKED',reasons:['INVALID_CONFIGURATION'],
     });
