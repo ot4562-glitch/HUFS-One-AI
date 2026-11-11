@@ -39,10 +39,16 @@ describe('#445 Crawlee ticks use the durable PostgreSQL queue, never raw executo
     assert.ok(f.queued.every(r=>r.url.startsWith('https://queue.invalid/')
       &&!r.url.includes('SYN-SOURCE')));
   });
-  it('does not poll the durable queue again after IDLE (also a busy lease)',async()=>{
+  it('does not poll the durable queue again after verified empty IDLE',async()=>{
     const f=fixture([{state:'IDLE'}]);
     assert.deepEqual(await dispatchApprovedCrawleeQueue(f.params),
       {state:'BATCH_COMPLETE',processed:0,idleObserved:true,activeRevisions:0});
+    assert.equal(f.called,1);
+  });
+  it('fails closed when another worker holds a lock, instead of faking successful refresh',async()=>{
+    const f=fixture([{state:'LOCK_BUSY'}]);
+    await assert.rejects(dispatchApprovedCrawleeQueue(f.params),
+      /APPROVED_SOURCE_DISPATCH_BLOCKED/);
     assert.equal(f.called,1);
   });
   it('fails closed on changed or stale virtual tick before any durable call',async()=>{
