@@ -15,6 +15,11 @@ import type {CurrentEvidenceGrants} from './temporal-gateway.js';
 const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,200}$/);
 const Id=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
 const Utc=z.iso.datetime({offset:true});
+/** PostgreSQL-generated snapshot IDs are opaque transaction identifiers, not
+ * HTTP tokens. Reject unexpected data even though the id comes from the DB. */
+const PgSnapshotId=z.string().min(5).max(128)
+  .regex(/^[0-9A-Fa-f]+-[0-9A-Fa-f]+-[0-9]+$/);
+
 const Sources=z.array(z.strictObject({sourceId:Id,revisionId:Id,permissionRef:Id})).min(1).max(100);
 export type ApprovedProjectionKind='TRANSCRIPT'|'COURSE'|'OFFERING'|'OPPORTUNITY'|'PLAN_INPUT'|'V2_CATALOG';
 export interface OwnerCatalogAuthority {
@@ -63,9 +68,11 @@ export class PostgresApprovedOwnerReader {
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){}
   async read(query:ReadQuery,now:string,extra?:(connection:ReviewerSqlConnection,
-    projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>):
+    projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+    importedSnapshot?:string):
     Promise<(ApprovedOwnerRead&{extra?:unknown})|null>{
     Ref.parse(query.actorId);Utc.parse(query.asOf);Utc.parse(now);
+    if(importedSnapshot!==undefined)PgSnapshotId.parse(importedSnapshot);
     if(query.page&&(query.kind!=='V2_CATALOG'||query.entityId!==undefined
       ||!Number.isSafeInteger(query.page.pageSize)||query.page.pageSize<1
       ||query.page.pageSize>50
@@ -79,6 +86,10 @@ export class PostgresApprovedOwnerReader {
     let open=false,result:(ApprovedOwnerRead&{extra?:unknown})|null=null;
     try{
       await c.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');open=true;
+      // Snapshot import MUST precede any read/SET LOCAL query. The exporter
+      // transaction remains open until the entire keyset pass is complete.
+      if(importedSnapshot!==undefined)
+        await c.query("SET TRANSACTION SNAPSHOT '"+importedSnapshot+"'");
       await c.query("SET LOCAL statement_timeout='5s'");
       await c.query("SELECT set_config('hufs.self_actor',$1,true)",[query.actorId]);
       const consent=await c.query(`SELECT version,choices_json,updated_at FROM api_self_consents
@@ -222,12 +233,13 @@ export class PostgresApprovedOwnerReader {
     afterEntityId?:string},now:string,
     extra?:(connection:ReviewerSqlConnection,
       projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+    importedSnapshot?:string,
   ):Promise<ApprovedOwnerKeysetPage|null>{
     const result=await this.read({
       actorId:input.actorId,kind:'V2_CATALOG',asOf:input.asOf,
       page:{pageSize:input.pageSize,
         ...(input.afterEntityId===undefined?{}:{afterEntityId:input.afterEntityId})},
-    },now,extra);
+    },now,extra,importedSnapshot);
     if(!result)return null;
     const last=result.rows.at(-1)?.entity_id??null;
     if(result.hasMore&&!last)throw new Error('Invalid verified page lookahead');
@@ -235,6 +247,45 @@ export class PostgresApprovedOwnerReader {
       fingerprint:result.fingerprint,validUntil:result.validUntil,
       hasMore:result.hasMore===true,nextAfterEntityId:result.hasMore?last:null,
       ...(result.extra===undefined?{}:{extra:result.extra})};
+  }
+  /**
+   * #447 SQL MVCC epoch fence: every page (including lookahead) imports
+   * the SAME read-only REPEATABLE READ snapshot. A concurrent head insertion,
+   * revocation or source change cannot be mixed into the first scan.
+   *
+   * The exporter is a separate connection kept open until all pages finish.
+   * The consumer callback receives only a scoped readPage closure, never the
+   * snapshot token. All page readers still perform current actor/consent/
+   * purpose/rights/source checks; the HTTP adapter MUST perform a second
+   * FRESH full pass before sending a result (an old snapshot is not a grant).
+   */
+  async withV2KeysetSnapshot<T>(
+    input:{actorId:string;asOf:string},now:string,
+    consume:(readPage:(
+      page:{pageSize:number;afterEntityId?:string},
+      extra?:(connection:ReviewerSqlConnection,
+        projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+    )=>Promise<ApprovedOwnerKeysetPage|null>)=>Promise<T>,
+  ):Promise<T>{
+    Ref.parse(input.actorId);Utc.parse(input.asOf);Utc.parse(now);
+    const exporter=await this.pool.connect();
+    let opened=false;
+    try{
+      await exporter.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      opened=true;
+      await exporter.query("SET LOCAL statement_timeout='5s'");
+      const result=await exporter.query('SELECT pg_export_snapshot() AS snapshot_id');
+      if(result.rows.length!==1)throw new Error('V2 snapshot export unavailable');
+      const snapshot=PgSnapshotId.parse(result.rows[0]?.snapshot_id);
+      // A snapshot is imported by a fresh transaction before its first query.
+      return await consume((page,extra)=>this.readV2KeysetPage({
+        actorId:input.actorId,asOf:input.asOf,pageSize:page.pageSize,
+        ...(page.afterEntityId===undefined?{}:{afterEntityId:page.afterEntityId}),
+      },now,extra,snapshot));
+    }finally{
+      if(opened)try{await exporter.query('ROLLBACK');}catch{/* never reuse an untrusted snapshot */}
+      exporter.release();
+    }
   }
   private async deny(c:ReviewerSqlConnection,done:()=>void):Promise<null>{
     await c.query('COMMIT');done();return null;
