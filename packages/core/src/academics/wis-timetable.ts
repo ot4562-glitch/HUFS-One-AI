@@ -211,11 +211,12 @@ export function withoutBlocks(html:string, kind:'script'|'comment'):string {
   }
 }
 
-/** Strip comments *before* script scanning: commented table rows, syllabus links,
- * campus controls and scripts are never authoritative page data. The original
- * HTML is still used solely to validate browser-saved source provenance. */
+/** Strip scripts before comments: HTML comment delimiters inside script
+ * strings are not DOM comments. The script scanner already skips commented
+ * fake scripts, and the comment pass then drops fake rows and controls. The
+ * raw HTML is used only for browser-saved source provenance. */
 function withoutNonDataBlocks(html:string):string {
-  return withoutBlocks(withoutBlocks(html, 'comment'), 'script');
+  return withoutBlocks(withoutBlocks(html, 'script'), 'comment');
 }
 
 function savedFromUrl(html:string):string {
