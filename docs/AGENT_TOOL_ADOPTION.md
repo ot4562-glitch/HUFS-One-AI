@@ -2,6 +2,12 @@
 
 > 제안된 설정과 후보 목록입니다. 이 파일은 협업자 5인의 계정에 플러그인을 설치하거나 권한을 부여하지 않습니다. 사용 환경의 연결·라이선스·요금·외부 전송 여부는 **각 사용자**가 확인합니다. [팀 업무](WORKSTREAMS.md), [PR 리뷰](PR_WORKFLOW.md), [자료 설계 #449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449).
 
+## 2026-11-11 도입 연구와 PR·Issue 인수의 구분
+
+[#450 개발 도구 연구](https://github.com/ot4562-glitch/HUFS-One-AI/issues/450), [#451 웹 디자인](https://github.com/ot4562-glitch/HUFS-One-AI/issues/451), [#452 AI QA](https://github.com/ot4562-glitch/HUFS-One-AI/issues/452), [#453 RAG](https://github.com/ot4562-glitch/HUFS-One-AI/issues/453), [#454 데이터 검수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/454)는 **모두 조사/선택 단계의 열린 이슈**입니다. [#480 평가 지표 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/480)의 합성 CI 성공은 실제 독립 Gold·외부 프레임워크 설치/모델 사용이 아닙니다. 팀원 개별 플러그인 설치·계정 권한·비용·NCP 접근을 자동 승인하지 않으며 실학교 원문/학생 파일·Gold는 외부 에이전트로 전송하지 않습니다.
+
+2026-11-11 최초 열린 22개 PR에는 실제 GitHub COMMENT 리뷰를 제출했고, #475만 독립 협업자의 정확 HEAD 승인·CI 확인 후 병합했습니다. 새로운 코드를 작성하는 에이전트도 [전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)·[현행 PR 운영](PR_WORKFLOW.md)에서 **작성자 아닌 동료의 현재 HEAD APPROVED**를 확인하고, `BOOTSTRAP_PENDING`·`SKIPPED`를 통과로 처리하지 않습니다. Claude/GPT 도구/브라우저/MCP 자동 merge·prod deploy 설정은 기본 OFF.
+
 ## 모두에게 동일하게 적용할 부분
 
 - Claude Code: 루트 [`CLAUDE.md`](../CLAUDE.md)에서 `@AGENTS.md`로 동일한 정본을 참조합니다. 프롬프트 파일에 서로 다른 의사결정·권한 규칙을 복제하지 않습니다.
