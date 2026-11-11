@@ -63,7 +63,8 @@ describe('NCP-only refresh service static and process gates (#445)',()=>{
         ...(broken==='missing'?{}:{close:async()=>{if(broken==='close')throw Error('PRIVATE_URL');}}),
       }),e=>e instanceof Error&&e.message==='REFRESH_FAILED');
     }
-    assert.equal(calls,3);
+    // Missing close() fails before runOnce() and cannot touch any source.
+    assert.equal(calls,2);
   });
   it('service invokes a non-root worker under flock and timer only triggers service',()=>{
     const service=readFileSync(resolve(base,'../../infra/ncp/hufs-one-ai-data-refresh.service'),'utf8');
