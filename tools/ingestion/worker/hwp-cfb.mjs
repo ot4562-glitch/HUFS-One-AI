@@ -100,7 +100,10 @@ export function readBoundedHwpCfbStreams(content){
       ||directories[at+nameBytes-1]!==0)rejected();
     let name;
     try{name=decode.decode(directories.subarray(at,at+nameBytes-2));}catch{rejected();}
-    if(!name||/[\\/\u0000-\u001f]/u.test(name))rejected();
+    // CFB/HWP stores a standard property stream with a leading U+0005.
+    // Accept only this named container convention; reject arbitrary controls.
+    if(!name||(/[\\/\u0000-\u001f]/u.test(name)
+      &&!/^\u0005(?:HwpSummaryInformation|SummaryInformation|DocumentSummaryInformation)$/u.test(name)))rejected();
     const hi=read32(directories,at+124),lo=read32(directories,at+120);
     const size=hi*0x100000000+lo;
     if((major===3&&hi!==0)||!Number.isSafeInteger(size)||size>MAX_BYTES)rejected();
