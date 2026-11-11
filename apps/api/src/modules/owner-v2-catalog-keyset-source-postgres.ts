@@ -19,6 +19,7 @@ import {MAX_VERIFIED_V2_CATALOG_ROWS,VERIFIED_V2_KEYSET_PAGE_SIZE}
 
 const ISO=z.iso.datetime({offset:true});
 const Id=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
+const ActorId=z.string().regex(/^[A-Za-z0-9_.:@-]{1,200}$/);
 const Canonical=z.strictObject({source_id:Id,permission_ref:Id,
   canonical_url:z.string().url().max(2048)});
 const SHA=/^[0-9a-f]{64}$/;
@@ -88,7 +89,7 @@ export class PostgresOwnerV2StableKeysetSource implements TrustedOwnerV2CatalogS
     private readonly clock:()=>string=()=>new Date().toISOString()){}
 
   private async scan(input:Query,now:string){
-    Id.parse(input.actorId);ISO.parse(input.asOf);ISO.parse(now);
+    ActorId.parse(input.actorId);ISO.parse(input.asOf);ISO.parse(now);
     const items:C.OpportunityCatalogItem[]=[];
     const pageDigests:{first:string|null;last:string|null;fingerprint:string}[]=[];
     let consentVersion:string|null=null,validUntil='9999-12-31T23:59:59.999Z';
