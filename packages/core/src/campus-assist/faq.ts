@@ -28,17 +28,23 @@ function canonical(value:unknown):string{
  * an older approved revision. Identical copies collapse to one.
  */
 function documentHeadsAt(docs:readonly FaqDocument[],time:number):Map<string,FaqDocument>{
-  const newest=new Map<string,FaqDocument[]>();
+  const eligible=new Map<string,FaqDocument[]>();
   for(const doc of docs){
     if(Date.parse(doc.publishedAt)>time||Date.parse(doc.verifiedAt)>time)continue;
-    const current=newest.get(doc.documentId);
-    const order=current?revisionOrder(doc,current[0]!):1;
-    if(order>0)newest.set(doc.documentId,[doc]);
-    else if(order===0)current!.push(doc);
+    const copies=eligible.get(doc.documentId)??[];
+    copies.push(doc);eligible.set(doc.documentId,copies);
   }
   const heads=new Map<string,FaqDocument>();
-  for(const [documentId,copies] of newest)
-    if(new Set(copies.map(canonical)).size===1)heads.set(documentId,copies[0]!);
+  for(const [documentId,rows] of eligible){
+    let head=rows[0]!;
+    for(const doc of rows)if(revisionOrder(doc,head)>0)head=doc;
+    // A revision ID is an identity: two copies with that ID and different
+    // publishedAt are conflicting copies, not a legitimate new revision.
+    // Preserve the former quarantine for colliding numeric-order ties (r1/r01).
+    const copies=rows.filter(doc=>doc.revisionId===head.revisionId
+      ||revisionOrder(doc,head)===0);
+    if(new Set(copies.map(canonical)).size===1)heads.set(documentId,head);
+  }
   return heads;
 }
 /** New revoked, blocked or expired document heads quarantine the whole document.
