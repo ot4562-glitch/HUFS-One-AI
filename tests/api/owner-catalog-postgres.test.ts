@@ -40,8 +40,8 @@ function fixture(){
             sourceId:'SYN-SOURCE',revisionId:'SYN-REV',permissionRef:'SYN-PERMISSION'})),
           reviewed_by:'SYN-INDEPENDENT',reviewed_at:now,as_of:now,starts_at:now,
           expires_at:'2026-12-01T00:00:00Z'};
-      }).filter(row=>typeof params?.[6]!=='string'||row.entity_id>params[6])
-        .slice(0,typeof params?.[7]==='number'?params[7]:501):[]};
+      }).filter(row=>typeof params?.[6]!=='string'||row.entity_id>String(params[6]))
+        .slice(0,typeof params?.[7]==='number'?Number(params[7]):501):[]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:current?[{
       projection_id:'SYN-PROJECTION',actor_id:projectionActor,kind:'COURSE',entity_id:'SYN-COURSE',
       version:'SYN-CATALOG-1',payload_json:payload,payload_sha256:hash,
