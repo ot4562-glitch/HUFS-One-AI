@@ -155,14 +155,27 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const evidence=retrieveFaqEvidence(args.question,docs,args.asOf,6);
       await current(req,actor,port,snapshot);
       if(evidence.length===0)return {status:'NOT_FOUND' as const,evidence:[],asOf:args.asOf};
-      if(!services.hcx007)return {status:'CONFIGURATION_REQUIRED' as const,
-        evidence:[],asOf:args.asOf};
+      if(!services.hcx007){
+        // NCP/HCX is absent: give only distinct current source metadata, not
+        // retrieved text or a pretend LLM answer. Authorization was verified
+        // both before retrieval and after reading the source snapshot.
+        const sources=new Map(evidence.map(e=>[e.documentId+':'+e.revisionId,{
+          documentId:e.documentId,revisionId:e.revisionId,
+          title:e.title,sourceUrl:e.sourceUrl,verifiedAt:e.verifiedAt,
+        }] as const));
+        return {status:'CONFIGURATION_REQUIRED' as const,evidence:[],asOf:args.asOf,
+          sourceLinks:[...sources.values()].slice(0,6)};
+      }
+      // Source and question privacy preflight is done BEFORE budget admission:
+      // untrusted personal data cannot create a charge or leave via HCX-007.
+      let wire:ReturnType<typeof buildFaqHcx007Request>;
+      try{wire=buildFaqHcx007Request(args.question,evidence);}
+      catch{throw new ApiFailure('UNVERIFIED_EVIDENCE');}
       if(!await services.hcx007.admit({actor,sourceVersion:snapshot.receipt.sourceVersion,now:session.now()}))
         throw new ApiFailure('RATE_LIMITED');
       // Admission may involve asynchronous budget/authority work. Revalidate
       // the actor and source revision immediately before a billable model call.
       await current(req,actor,port,snapshot);
-      const wire=buildFaqHcx007Request(args.question,evidence);
       let raw:unknown;
       try{raw=await services.hcx007.execute({actor,wire});}
       catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
