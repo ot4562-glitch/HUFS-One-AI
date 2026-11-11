@@ -24,6 +24,8 @@ export function OwnerActivityPanel({port,navigate}:{port:CampusAssistPort;naviga
   const [campus,setCampus]=useState<'ALL'|'SEOUL'|'GLOBAL'|'BOTH'>('ALL');
   const [kind,setKind]=useState<'ALL'|ActivityRecord['kind']>('ALL');
   const [draft,setDraft]=useState(''),[query,setQuery]=useState('');
+  const seenOrganizations=useRef(new Set<string>());
+  useEffect(()=>{seenOrganizations.current.clear();},[port]);
   // On every filter, port/owner or query change, abort the previous actor-scoped
   // read and every forecast. Never render late results under new filters.
   useEffect(()=>{
@@ -39,6 +41,7 @@ export function OwnerActivityPanel({port,navigate}:{port:CampusAssistPort;naviga
           ...(query?{query}:{})
         },abort.signal);
         if(abort.signal.aborted)return;
+        for(const row of snapshot.items)seenOrganizations.current.add(row.organizationId);
         setItems(snapshot.items);setHasMore(snapshot.hasMore??null);
         const distinct=[...new Map(snapshot.items.map(row=>[row.organizationId+':'+row.seriesId,
           {organizationId:row.organizationId,seriesId:row.seriesId}])).values()].slice(0,12);
@@ -51,7 +54,9 @@ export function OwnerActivityPanel({port,navigate}:{port:CampusAssistPort;naviga
     })();
     return ()=>abort.abort();
   },[port,org,year,campus,kind,query]);
-  const organizations=[...new Set(items?.map(i=>i.organizationId)||[])].sort();
+  // Do not discard previously discovered organization selectors just because a
+  // narrower server filter returned zero rows. Clear this cache on port/actor switch.
+  const organizations=[...seenOrganizations.current].sort();
   const thisYear=Number(publishedDayKst(new Date().toISOString()).slice(0,4));
   const years=Array.from({length:9},(_,i)=>thisYear+1-i);
   return <section className="section">
