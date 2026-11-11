@@ -88,7 +88,7 @@ export function readBoundedHwpCfbStreams(content){
     return Buffer.concat(ids.map(id=>sector(id)),ids.length*sectorSize).subarray(0,byteCount);
   };
   // A directory chain does not carry a byte length: walk FAT until ENDOFCHAIN.
-  const dirIds=chain(directoryStart,Math.ceil(MAX_DIR_ENTRIES*128/sectorSize));
+  const dirIds=chain(directoryStart,Math.min(sectors,Math.ceil(MAX_DIR_ENTRIES*128/sectorSize)));
   const directories=Buffer.concat(dirIds.map(id=>sector(id)));
   if(directories.length%128||directories.length>MAX_DIR_ENTRIES*128)rejected();
   const entries=[];
