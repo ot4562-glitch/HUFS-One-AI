@@ -114,6 +114,8 @@ describe('versioned feature contracts preserve source and actor-independent wire
       'http://example.org/notice', 'javascript:alert(1)', 'https://localhost/a',
       'https://127.0.0.1/a', 'https://user:pass@example.org/notice',
       'https://example.invalid/a', 'https://internal.local/a',
+      'https://localhost./a', 'https://example.local./a',
+      'https://metadata.google.internal./latest', 'https://example.org./notice',
     ]) expect(S.OpportunityCatalogItemSchema.safeParse({...original,sourceUrl}).success)
       .toBe(false);
     expect(S.OpportunityCatalogItemSchema.parse(original).sourceUrl).toBeUndefined();

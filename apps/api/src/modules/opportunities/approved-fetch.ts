@@ -63,6 +63,7 @@ function canonicalize(raw:string):URL{
     ||url.searchParams.has('redirect')
     ||!url.hostname||url.hostname==='localhost'
     ||url.hostname.endsWith('.localhost')||url.hostname.endsWith('.local')
+    ||url.hostname.endsWith('.')||url.hostname.endsWith('.internal')
     ||/^[0-9.]+$/.test(url.hostname)||url.hostname.includes(':'))
     throw new SourceIngestionError();
   // Avoid using an authority with an alternate port without an explicit review.
