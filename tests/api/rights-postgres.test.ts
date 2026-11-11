@@ -51,6 +51,9 @@ describe('persisted exact-actor source rights and independent academic scope',()
     ['future approval',{reviewed_at:'2026-11-03T00:00:00Z'}],
     ['expired',{expires_at:NOW}],['not yet valid',{starts_at:'2026-11-03T00:00:00Z'}],
     ['revoked',{revoked_at:NOW}],['noncanonical URL',{canonical_url:'https://example.org:8443/source'}],
+    ['dotted localhost',{canonical_url:'https://localhost./source'}],
+    ['dotted internal',{canonical_url:'https://metadata.google.internal./source'}],
+    ['literal IP',{canonical_url:'https://127.0.0.1/source'}],
     ['unrecognized purpose',{purposes:['ADMIN']}],
     ['DB clock passed expiry',{database_now:'2026-11-03T00:00:00Z'}],
   ])('denies %s even if a malformed SQL adapter returns it',async(_label,patch)=>{
