@@ -23,7 +23,15 @@
 > [!IMPORTANT]
 > **현재 공개 가능한 범위는 합성 데이터 기반 시연 및 자동 검증된 코드입니다.** 실서비스 출시는 `RELEASE_BLOCKED`이며, 학교 공식 인증·졸업 판정·실학생 데이터 사용·실 NCP/AI 유료 호출의 완료를 뜻하지 않습니다. 프로젝트 소유자의 `OWNER_CONFIRMED_APPROVED`와 실제 환경 구성·권리·검증은 별개입니다. [현재 상태](STATUS.md) · [데이터 승인·권리](docs/AUTHORIZATION.md)
 
-## 개발·검수 현황 — 2026-11-09 전수 PR 정리
+## 현행 PR·이슈 전수 검수 — 2026-11-11
+
+- **감사 착수 당시 공개 GitHub OPEN PR 22건·OPEN Issue 31건.** 코드 diff/최신 HEAD/CI·기존 협업자 리뷰와 이슈별 본문·인계 기록을 점검했습니다. [PR·Issue 2026-11-11 전체 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)에 22개 PR과 31개 열린 이슈를 각각 기록했습니다. 이 숫자는 스냅샷이며 실시간 현황은 [PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)과 [Issue 목록](https://github.com/ot4562-glitch/HUFS-One-AI/issues)을 확인하세요.
+- 최초 PR 22건 **전부 GitHub 공식 COMMENT 코드 리뷰 등록**. 작성자 본인의 COMMENT를 협업자 APPROVED로 대체하지 않습니다. [#475 API 계약 인벤토리 수정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475)은 **현재 HEAD 타인 APPROVED + CI 6/6 통과** 확인 후 [main 05d78cd](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)로 실제 병합; 나머지는 종속/인적 승인·검증 대기입니다.
+- **정확한 최신 HEAD 협업자 승인 원칙:** 11월 9일의 선택적 리뷰 운영은 이후 [#466](https://github.com/ot4562-glitch/HUFS-One-AI/pull/466)의 11월 11일 강화 지침으로 대체 예정입니다. 신뢰된 main 검증기 [#481](https://github.com/ot4562-glitch/HUFS-One-AI/pull/481)의 실제 승인/병합 전 #466/#476의 독립 gate는 BOOTSTRAP_PENDING으로 차단되며, 체크 우회·자동 병합을 하지 않습니다.
+- #431의 주석 속 가짜 시간표 데이터는 [#482](https://github.com/ot4562-glitch/HUFS-One-AI/pull/482) 후속 수정 반영·재검토가 필요합니다. #476 대규모 통합은 **5,100개 canonical rights proof lookahead 한도 버그**를 수정했으나 NCP 실서버/자료·Gold 승인이 아닙니다.
+- 기존 본선 전 담당 9개 이슈는 11월 9일 완료·이관 기록을 유지하되, 새로 배정된 **#445 Crawlee/NCP, #447 전 기능 P0, #449 NCP 설계**와 #418/#427 웹 버그 및 #341 FAQ 반례는 OPEN입니다. **31개 열린 이슈를 근거 없이 종료하지 않았으며, RELEASE_BLOCKED는 그대로 유지**합니다.
+
+## 2026-11-09 전수 PR 정리 — 역사적 스냅샷
 
 - 이번 작업의 코드/의존성 15건·리뷰 정책 #425·최종 문서 #419를 합쳐 **실제 병합 17건** (GitHub OPEN PR 0건): 먼저 병합된 #424/#420/#402/#403/#404/#409/#407/#408/#422 **9건**과, 직접 수정 또는 재검토 후 GitHub 병합이 확인된 **#361/#372/#405/#406/#410/#421 6건**입니다. 개별 병합 SHA는 [STATUS](STATUS.md)와 [감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)을 참고하세요.
 - **정책 PR [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)**도 [main `88b7814`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)에 실제 병합되었습니다. 승인 검사용 GitHub Actions 및 그 전용 테스트·CI 참조를 완전히 제거하고 리뷰 기준을 AGENTS/PR_WORKFLOW 문서에 남겼습니다. **마지막 문서 PR [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)**도 최신 HEAD 일반 CI 11/11 성공 후 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)으로 병합 완료했습니다. 이제 [OPEN PR 0건](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)이며 기존 과거 시점의 대기 기록은 역사적 스냅샷입니다. GitHub [실시간 PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 정본으로 삼습니다.
