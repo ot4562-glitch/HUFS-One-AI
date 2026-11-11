@@ -53,6 +53,8 @@ type ReadQuery={actorId:string;kind:ApprovedProjectionKind;entityId?:string;asOf
 export type ApprovedOwnerKeysetPage={
   rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;
   validUntil:string;hasMore:boolean;nextAfterEntityId:string|null;
+  /** Verified in the same read-only transaction and fingerprint as each page. */
+  extra?:unknown;
 };
 
 /** Shared actual SQL reader for catalog and academic loader. There is no writer,
@@ -217,18 +219,22 @@ export class PostgresApprovedOwnerReader {
    * pinned global revision/consistency design.
    */
   async readV2KeysetPage(input:{actorId:string;asOf:string;pageSize:number;
-    afterEntityId?:string},now:string):Promise<ApprovedOwnerKeysetPage|null>{
+    afterEntityId?:string},now:string,
+    extra?:(connection:ReviewerSqlConnection,
+      projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+  ):Promise<ApprovedOwnerKeysetPage|null>{
     const result=await this.read({
       actorId:input.actorId,kind:'V2_CATALOG',asOf:input.asOf,
       page:{pageSize:input.pageSize,
         ...(input.afterEntityId===undefined?{}:{afterEntityId:input.afterEntityId})},
-    },now);
+    },now,extra);
     if(!result)return null;
     const last=result.rows.at(-1)?.entity_id??null;
     if(result.hasMore&&!last)throw new Error('Invalid verified page lookahead');
     return {rows:result.rows,consentVersion:result.consentVersion,
       fingerprint:result.fingerprint,validUntil:result.validUntil,
-      hasMore:result.hasMore===true,nextAfterEntityId:result.hasMore?last:null};
+      hasMore:result.hasMore===true,nextAfterEntityId:result.hasMore?last:null,
+      ...(result.extra===undefined?{}:{extra:result.extra})};
   }
   private async deny(c:ReviewerSqlConnection,done:()=>void):Promise<null>{
     await c.query('COMMIT');done();return null;
