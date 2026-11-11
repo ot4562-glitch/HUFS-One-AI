@@ -23,6 +23,8 @@
 > [!IMPORTANT]
 > **현재 공개 가능한 범위는 합성 데이터 기반 시연 및 자동 검증된 코드입니다.** 실서비스 출시는 `RELEASE_BLOCKED`이며, 학교 공식 인증·졸업 판정·실학생 데이터 사용·실 NCP/AI 유료 호출의 완료를 뜻하지 않습니다. 프로젝트 소유자의 `OWNER_CONFIRMED_APPROVED`와 실제 환경 구성·권리·검증은 별개입니다. [현재 상태](STATUS.md) · [데이터 승인·권리](docs/AUTHORIZATION.md)
 
+> **추가 열린 PR 반영:** 최초 감사 이후 [#483 FAQ 부정어 회귀 보정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483)이 추가되어 현재 HEAD `4d8b911` 코드 리뷰/CI 7/7 확인·공식 COMMENT 제출(실제 동료 APPROVED·병합 대기). 문서 현행화는 [#484](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484) 리뷰·CI 대기 중입니다. 최신 재조회 결과 **열린 PR 23건·이슈 31건**, 감사 시작 당시 22건과 구분합니다.
+
 ## 현행 PR·이슈 전수 검수 — 2026-11-11
 
 - **감사 착수 당시 공개 GitHub OPEN PR 22건·OPEN Issue 31건.** 코드 diff/최신 HEAD/CI·기존 협업자 리뷰와 이슈별 본문·인계 기록을 점검했습니다. [PR·Issue 2026-11-11 전체 감사 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)에 22개 PR과 31개 열린 이슈를 각각 기록했습니다. 이 숫자는 스냅샷이며 실시간 현황은 [PR 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)과 [Issue 목록](https://github.com/ot4562-glitch/HUFS-One-AI/issues)을 확인하세요.
