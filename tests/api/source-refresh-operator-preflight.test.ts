@@ -5,8 +5,9 @@ import {syntheticPreflightDraft} from './fixtures/source-refresh-preflight.js';
 
 const input={sourceId:'SYN-SOURCE',permissionRef:'SYN-PERM',
   canonicalUrl:'https://example.org/approved-page',now:'2026-11-11T00:00:00Z'};
-const create=(transform:(draft:ReturnType<typeof syntheticPreflightDraft>)=>unknown)=>
-  {loadCurrent:vi.fn(async()=>transform(syntheticPreflightDraft(input)))};
+const create=(transform:(draft:ReturnType<typeof syntheticPreflightDraft>)=>unknown)=>({
+  loadCurrent:vi.fn(async()=>transform(syntheticPreflightDraft(input))),
+});
 
 describe('#445 private operator source preflight wired to actual acquisition',()=>{
   it('admits only a matching, currently reviewed synthetic source',async()=>{
