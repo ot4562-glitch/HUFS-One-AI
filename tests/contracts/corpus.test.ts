@@ -4,7 +4,12 @@ import {fixture} from './helpers.js';
 const original=fixture<{feed:{featured:any[];compact:any[];totalCandidates:number};notices:{items:any[];pinnedIds:string[]}}> ('synthetic/demo-snapshot.json');
 describe('A04/A05/A07 recommendation/notice wire shape',()=>{
   it('rejects private or trailing-dot organization homepages',()=>{
-    const base=original.feed.featured[0];
+    const base={id:'SYN-OPP',version:'v1',sourceSnapshotId:'SYN-SRC',
+      title:'Synthetic notice',organization:'Synthetic',kind:'CONTEST',
+      topicCodes:['DATA_ANALYTICS'],languageCodes:[],eventSessions:[],
+      actualApplicationRoute:'DEMO_DISABLED',conditions:[],roleSteps:[],
+      prioritySelection:[],completionRules:[],dataMode:'SYNTHETIC',dataQuality:'COMPLETE'};
+    expect(OpportunitySchema.safeParse({...base,organizationHomepage:'https://example.org/'}).success).toBe(true);
     for(const url of ['https://localhost./','https://example.internal./',
       'https://example.local./'])
       expect(OpportunitySchema.safeParse({...base,organizationHomepage:url}).success).toBe(false);
