@@ -50,6 +50,14 @@ describe('#445 Crawlee ticks use the durable PostgreSQL queue, never raw executo
     await assert.rejects(dispatchApprovedCrawleeQueue(f.params),
       /APPROVED_SOURCE_DISPATCH_BLOCKED/);
     assert.equal(f.called,1);
+    const second=fixture([{state:'LOCK_BUSY'}]),closed=[];
+    const worker=createApprovedCrawleeRefreshWorker({
+      ...second.params,closeQueue:async()=>{closed.push('closed');},
+    });
+    await assert.rejects(worker.runOnce(),/APPROVED_SOURCE_DISPATCH_BLOCKED/);
+    await worker.close();
+    assert.deepEqual(closed,['closed']);
+    assert.equal(second.called,1); // never retry a contended queue inside this tick
   });
   it('fails closed on changed or stale virtual tick before any durable call',async()=>{
     const f=fixture();f.mutate(seed=>({...seed,url:'https://evil.example.org/source'}));
