@@ -27,7 +27,12 @@ jobs:
           sparse-checkout: |
             /tools/ci/check-independent-review.mjs
       - name: Check human approval against exact latest head
-        run: node tools/ci/check-independent-review.mjs
+        run: |
+          if [ ! -f tools/ci/check-independent-review.mjs ]; then
+            echo 'BOOTSTRAP_PENDING: trusted gate not yet on default branch; independent human review still required'
+            exit 1
+          fi
+          node tools/ci/check-independent-review.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
