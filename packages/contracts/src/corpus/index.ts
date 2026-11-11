@@ -33,7 +33,8 @@ export const OpportunitySchema = z.strictObject({
   organizationHomepage:z.url().refine(value=>{
     try{const u=new URL(value);return u.protocol==='https:'&&u.username===''&&u.password===''&&u.hostname.length>3
       &&!['localhost','127.0.0.1','0.0.0.0','::1'].includes(u.hostname)
-      &&!u.hostname.endsWith('.localhost')&&!u.hostname.endsWith('.internal');}
+      &&!u.hostname.endsWith('.localhost')&&!u.hostname.endsWith('.internal')
+      &&!u.hostname.endsWith('.')&&!u.hostname.endsWith('.local');}
     catch{return false;}
   }).optional(),
   kind:z.enum(['JOB','INTERNSHIP','CONTEST','EXTRACURRICULAR','SCHOLARSHIP']),
