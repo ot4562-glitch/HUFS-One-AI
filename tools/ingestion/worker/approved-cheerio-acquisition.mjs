@@ -95,7 +95,11 @@ export function createApprovedCheerioAcquisition(){
       // can choose a default request manager and leave the private queue
       // empty. Seed ONLY this private queue and run it directly.
       await queue.addRequest({url,uniqueKey:randomUUID(),method:'GET'});
+      const before=await queue.getInfo();
+      diagnostic('QUEUE_BEFORE_'+String(before?.pendingRequestCount));
       await crawler.run();
+      const after=await queue.getInfo();
+      diagnostic('QUEUE_AFTER_'+String(after?.pendingRequestCount));
       if(failed||!handled||calls!==1){diagnostic('INCOMPLETE_'+Number(calls)+'_'+Number(handled)+'_'+Number(failed));fail();}
     }catch(error){diagnostic('OUTER_CATCH_'+category(error));fail();}
     finally{
