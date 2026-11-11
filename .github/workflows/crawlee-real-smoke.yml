@@ -26,6 +26,15 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /tools/ingestion/
+            /tools/strip_build_sourcemaps.mjs
+            /package.json
+            /package-lock.json
+            /tsconfig.json
+            /apps/api/
+            /packages/contracts/
+            /packages/core/
+            /packages/ai/
+            /packages/fixtures/synthetic/
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
@@ -42,4 +51,8 @@ jobs:
           node tools/ingestion/worker/synthetic-smoke.mjs
           node --test tools/ingestion/worker/notice-html-extractor.node.test.mjs tools/ingestion/worker/site-adapters.node.test.mjs
           node --test tools/ingestion/worker/korean-documents.node.test.mjs tools/ingestion/worker/hwp-cfb.node.test.mjs
+          node --test tools/ingestion/worker/approved-cheerio-acquisition.node.test.mjs
           node --test tools/ingestion/crawlee-approved-dispatch.node.test.mjs tools/ingestion/approved-link-candidates.node.test.mjs tools/ingestion/notice-field-candidates.node.test.mjs
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build:api
+          node --test tools/ingestion/worker/durable-acquisition.integration.mjs

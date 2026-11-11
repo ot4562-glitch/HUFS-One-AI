@@ -1,6 +1,7 @@
 import {describe,it,expect,vi} from 'vitest';
 import {createOperatorApprovedSource} from '../../apps/api/src/operator-approved-source.js';
 import type {SourceDocumentExtractor} from '../../apps/api/src/modules/opportunities/source-document-extractor.js';
+import type {ApprovedSourceAcquisition} from '../../apps/api/src/modules/opportunities/source-acquisition.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const NOW='2026-11-04T00:00:00.000Z';
@@ -16,7 +17,8 @@ const receipt=()=>({receipt_id:'RECEIPT_A',actor_id:'operator-A',
   starts_at:'2026-11-03T00:00:00Z',expires_at:'2026-11-05T00:00:00Z',
   policy_version:'p1',database_now:NOW,revoked_at:null});
 
-function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:SourceDocumentExtractor){
+function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:SourceDocumentExtractor,
+  acquisition?:ApprovedSourceAcquisition){
   const query=vi.fn(async()=>({rows:current?[current]:[]}));
   const rights={connect:vi.fn(async()=>({query,release:()=>{}}))};
   const untouched=()=>({connect:vi.fn(async()=>{throw Error('unexpected SQL');})});
@@ -30,12 +32,22 @@ function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:
     egress:{resolveAddresses,requestPinned},
     extractor:{extract:async()=>[{id:'p1',text:'Synthetic approved test'}]},
     ...(documentExtractor?{documentExtractor}:{}),
+    ...(acquisition?{acquisition}:{}),
     authority:{mayProcess},now:()=>NOW,
   });
   return {result,rights,headReader,writer,queue,resolveAddresses,requestPinned,mayProcess,query};
 }
 
 describe('operator SourceRevision composition',()=>{
+  it('does not fall back to a direct HTTP request after the configured crawler fails',async()=>{
+    const acquire=vi.fn(async()=>{throw new Error('SYNTHETIC PRIVATE CRAWLER FAILURE');});
+    const f=setup(receipt(),undefined,{acquire});
+    f.headReader.connect.mockResolvedValue({query:async()=>({rows:[]}),release:()=>{}});
+    await expect(f.result.executor.execute({actorRef:'operator-A',sourceId:'SRC_A',permissionRef:'RIGHT_A'}))
+      .rejects.toThrow('Approved source acquisition failed');
+    expect(acquire).toHaveBeenCalledTimes(1);expect(f.requestPinned).not.toHaveBeenCalled();
+    expect(f.writer.connect).not.toHaveBeenCalled();
+  });
   it('forwards the explicit local document parser after current rights and head lookup',async()=>{
     const extract=vi.fn(async()=>{throw new Error('synthetic document parser entered');});
     const f=setup(receipt(),{extract});

@@ -15,6 +15,7 @@ import type {SourcePdfExtractor} from './approved-pdf-extractor.js';
 import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
 import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
 import {KOREAN_DOCUMENT_MIMES,parseSourceDocumentDraft,type SourceDocumentExtractor} from './source-document-extractor.js';
+import {acquireApprovedSourceResponse,type ApprovedSourceAcquisition} from './source-acquisition.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/xml','text/xml',
@@ -79,6 +80,8 @@ export function createApprovedDurableSourceExecutor(options:{
   rights:ApprovedSourceRightsResolver;
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
+  /** Optional native crawler; gets one guarded request, never arbitrary egress. */
+  acquisition?:ApprovedSourceAcquisition;
   /** Optional local HWP/HWPX parser. Its output never constitutes human review. */
   documentExtractor?:SourceDocumentExtractor;
   /** Explicit private image adapter; absent means binary extraction is refused. */
@@ -143,8 +146,10 @@ export function createApprovedDurableSourceExecutor(options:{
       };
       if(head?.etag)headers['If-None-Match']=head.etag;
       if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
-      const response=await transport(u,{method:'GET',redirect:'error',credentials:'omit',
-        headers,signal:AbortSignal.timeout(5000)});
+      const response=await acquireApprovedSourceResponse({canonicalUrl:u.href,
+        ...(options.acquisition?{acquisition:options.acquisition}:{}),
+        request:signal=>transport(u,{method:'GET',redirect:'error',credentials:'omit',
+          headers,signal:signal?AbortSignal.any([signal,AbortSignal.timeout(5000)]):AbortSignal.timeout(5000)})});
       try{
       // Conditional requests are valid only with a persisted validator for
       // exactly this canonical URL and current immutable source revision.
