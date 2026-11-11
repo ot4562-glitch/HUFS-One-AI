@@ -6,6 +6,8 @@
 
 > **2026-11-11 후속 재조회:** 최초 22개 PR에 대한 감사 이후 [#483 FAQ 한국어 부정 표현 버그 수정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483)이 추가되었습니다. HEAD `4d8b911` 코드/부정 테스트 검토·GitHub **7/7 Actions SUCCESS**와 공식 COMMENT 리뷰 등록을 확인했으나 **미병합·독립 최신 HEAD APPROVED 없음**. [#484 문서 통합 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484)도 생성되어, #475 병합 이후 최신 열린 PR은 **23건**, 열린 Issue는 **31건**입니다. 변경 시 GitHub 재조회가 우선하며 #341은 실 FAQ/HCX/Gold 인수까지 OPEN입니다.
 
+> **2026-11-11 추가 개발 지시 반영:** 심민성은 기존 AI/데이터 담당자 assignee를 유지하면서 13개 `[추가 기능]` #339–#341·#343–#352에도 병렬 기여합니다. 첫 실제 코드 [#485](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485) (HEAD `4198d20`)는 #345 상담 UI의 #427 구응답 누설 버그를 수정하고 합성 JSDOM 회귀를 추가했습니다. **CI/협업자 실제 최신 HEAD APPROVED 대기, 미병합.** #485 생성 후 열린 PR 24건/Issue 31건(시점 스냅샷). 실 상담기관·NCP/권리·Gold/학생 E2E는 여전히 NOT_RUN, RELEASE_BLOCKED입니다.
+
 ## 2026-11-11 현재 PR·Issue 감사 및 본선 전 통합 현황
 
 - **GitHub 감사 시점:** 최초 OPEN PR 22건, OPEN Issue 31건. 22건의 최신 HEAD diff·일반 CI·기존 협업자 리뷰를 확인하고 **전부 공식 COMMENT 코드 리뷰를 GitHub에 작성**했습니다. 각 PR의 상세 상태와 이슈 31건 인수 표는 [11월 11일 전수 감사](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조하세요. 작성자 COMMENT는 독립 협업자 APPROVED가 아닙니다.
