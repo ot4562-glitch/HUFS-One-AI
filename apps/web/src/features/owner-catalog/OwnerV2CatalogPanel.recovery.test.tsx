@@ -11,7 +11,7 @@ const CURSOR='SYN-OPAQUE-CURSOR-16CHARS';
 const identity=(id='SYN-OWNER-A')=>({actorId:id,role:'BETA' as const,
   schoolMailProofValid:true as const,betaAllowed:true as const});
 const item=(id:string):C.OpportunityCatalogItem=>({
-  id,title:'합성 허가 공고 '+id,category:'SCHOLARSHIP',topicCodes:[],
+  id,title:'합성 허가 공고 '+id,summary:'허가된 합성 공고',category:'SCHOLARSHIP',topicCodes:[],
   eligibility:'UNKNOWN',permitted:true,
   sourceUrl:'https://example.org/notice/'+id,
   source:{sourceId:'SYN-SOURCE',revisionId:'SYN-REV',status:'VERIFIED',
