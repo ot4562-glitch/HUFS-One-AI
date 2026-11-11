@@ -1,11 +1,14 @@
 # NCP에 HUFS One AI 제품과 GPT(Codex)·Claude Code 설치하기
 
-> 기준: 2026-11-06. **설치 절차 문서이지 실제 배포 완료 보고가 아니다.** 먼저 [NCP 서버 개설·보안 가이드](BEGINNER_NCP_SERVER_SETUP.md)를 읽는다. 실서비스 준비는 [운영 통합 이슈 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 추적하며 `RELEASE_BLOCKED` 상태다. 공개 Git의 `csv/` 원본 5개는 **함부로 변경·삭제하지 않고**, 웹·서버 이미지·에이전트 작업 디렉터리에 **포함하지 않는다**.
+> **현행 2026-11-11:** 이 안내는 설치 예시이며 배포·모델 사용/권리·실학생 데이터 인수 사실이 아닙니다. 기존 #276은 보관된 이슈이며 새 업무 정본은 [#445 Crawlee/NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능/실자료](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 운영 데이터 설계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)입니다. 실자료는 NCP 사설 환경만, 외부 AI/ChatGPT/Claude에는 합성 또는 허가된 비민감 예시만 사용합니다. [전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)에서 PR/Issue 실제 상태를 확인하세요.
+
+
+> 기준: 2026-11-06. **설치 절차 문서이지 실제 배포 완료 보고가 아니다.** 먼저 [NCP 서버 개설·보안 가이드](BEGINNER_NCP_SERVER_SETUP.md)를 읽는다. 실서비스 준비는 현행 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445)·[#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447)·[#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)에서 추적하며 `RELEASE_BLOCKED` 상태다. 공개 Git의 `csv/` 원본 5개는 **함부로 변경·삭제하지 않고**, 웹·서버 이미지·에이전트 작업 디렉터리에 **포함하지 않는다**.
 
 ## 처음 설치·실행한 코딩 에이전트가 꼭 읽을 업무 배정 규칙
 
 1. 저장소 루트 [AGENTS.md](../AGENTS.md), [이슈 자동 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md), [팀 역할](WORKSTREAMS.md), 작업 폴더의 `AGENTS.md`를 읽는다.
-2. **`[본선 진출 이후]`/`[본선진출이후]` #355–#359는 완전히 읽기 전용**이다. 역할 변경 요청·상황 보고·코드/데이터 의뢰를 이 이슈의 댓글이나 본문에 남기지 않는다.
+2. **`[본선 진출 이후]`/`[본선진출이후]` #355–#359의 제목·원문·담당·라벨·상태는 수정 금지**다. 진행·인수·정정 사항은 **새 댓글로만** 기록하고 일반 기능/데이터 작업은 개별 이슈에 남긴다.
 3. 새 `[추가 기능]`은 심민성에게 처음 배정하여 **구조 설계뿐 아니라 가능한 비AI 코어/API/DB/계약/통합 구현까지 수행**한다. 규칙/코드 기반 추천·랭킹·OCR/RAG/LLM 등 AI 영역은 이의상/박준영으로 인계한다.
 4. 공식 공고·학사/기관 문서·포스터·이미지 게시권·독립 Gold가 필요하면 **별도의 `[데이터 요청]` 이슈를 김채윤에게 만들고 기능 이슈에도 공동 assignee**로 배정한다. 현행 13개 기능은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360) 자료 요청을 따른다.
 5. 박준영은 AI 기술 QA, 이의상/박준영은 상호 교차검증, 김채윤은 실제 데이터 입력/가벼운 사용자 시연, 이서연은 웹 디자인/기능 실제 배치, 심민성은 전체 개발 단계 검수를 담당한다. 계정/서버 자격증명이 없어도 이슈 분석·코드 계획은 가능하지만, 실서비스 검증을 수행했다고 기록하는 것은 실제 증거가 있을 때만 한다.
