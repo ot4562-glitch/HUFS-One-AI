@@ -38,7 +38,8 @@ export function resolveInternationalGuide(input:{
     return blank('APPLICABILITY_UNKNOWN');
   const validatedSteps=guide.steps.filter(s=>guide.source.evidenceSpanIds.includes(s.sourceSpanId));
   if(validatedSteps.length!==guide.steps.length
-    || new Set(validatedSteps.map(s=>s.id)).size!==validatedSteps.length)
+    || new Set(validatedSteps.map(s=>s.id)).size!==validatedSteps.length
+    || new Set(validatedSteps.map(s=>s.order)).size!==validatedSteps.length)
     return blank('UNKNOWN_SOURCE');
   const request=guide.translations[input.locale];
   const korean=guide.translations.ko;
@@ -54,6 +55,9 @@ export function resolveInternationalGuide(input:{
 export type GuideChecklist={
   guideId:string;guideRevisionId:string;ownerCheckedStepIds:readonly string[];
   expectedVersion:number;
+  /** Bind persisted owner checkboxes to the actually displayed HUMAN_VERIFIED
+   * translation. A Korean fallback must be saved as locale=ko, not en/zh. */
+  locale?:GuideLocale;translationVersion?:string;
 };
 export type ChecklistReconciliation={
   state:'READY'|'STALE_GUIDE'|'VERSION_CONFLICT';
@@ -73,9 +77,16 @@ export function reconcileGuideChecklist(
   // by a new source state. A saved checkbox is never proof of current rights.
   const sourceOk=verifySource(guide.source,asOf,mode).usable;
   const ids=new Set(guide.steps.map(step=>step.id));
-  const stepsOk=ids.size===guide.steps.length && guide.steps.every(step=>
-    guide.source.evidenceSpanIds.includes(step.sourceSpanId));
-  if(!sourceOk||!stepsOk||saved.guideId!==guide.id
+  const stepsOk=ids.size===guide.steps.length
+    &&new Set(guide.steps.map(step=>step.order)).size===guide.steps.length
+    &&guide.steps.every(step=>guide.source.evidenceSpanIds.includes(step.sourceSpanId));
+  const translation=saved.locale?guide.translations[saved.locale]:undefined;
+  const translationCurrent=(saved.locale===undefined&&saved.translationVersion===undefined)
+    ||(saved.locale!==undefined&&saved.translationVersion!==undefined
+      &&translation?.review==='HUMAN_VERIFIED'
+      &&translation.basedOnRevisionId===guide.source.revisionId
+      &&translation.translationVersion===saved.translationVersion);
+  if(!sourceOk||!stepsOk||!translationCurrent||saved.guideId!==guide.id
     ||saved.guideRevisionId!==guide.source.revisionId)
     return {...base,state:'STALE_GUIDE',checkedStepIds:[],
       invalidatedStepIds:[...new Set(saved.ownerCheckedStepIds)].sort()};
