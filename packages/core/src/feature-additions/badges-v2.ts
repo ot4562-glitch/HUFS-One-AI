@@ -65,7 +65,25 @@ export function prepareBadgeV2(input:{
   evidence:readonly C.BadgeEvidence[];
   asOf:string;mode?:FeatureMode;
 }):BadgePreparationReport {
-  const {badge,evidence}=input,at=parseAsOf(input.asOf);
+  const {badge}=input,at=parseAsOf(input.asOf);
+  // A private proof ID cannot refer to two different activities/rights states.
+  // Identical pagination repeats count once, but conflicting copies are ALL
+  // quarantined, never used to manufacture two distinct completions.
+  const byId=new Map<string,C.BadgeEvidence>();
+  const conflicted=new Set<string>();
+  for(const record of input.evidence){
+    const prior=byId.get(record.id);
+    if(prior&&(prior.activityId!==record.activityId
+      ||prior.date!==record.date||prior.ownerApproved!==record.ownerApproved
+      ||prior.officialVerified!==record.officialVerified
+      ||prior.sourceRevisionId!==record.sourceRevisionId
+      ||prior.topicCodes.length!==record.topicCodes.length
+      ||prior.topicCodes.some(t=>!record.topicCodes.includes(t))
+      ||record.topicCodes.some(t=>!prior.topicCodes.includes(t))))
+      conflicted.add(record.id);
+    else if(!prior)byId.set(record.id,record);
+  }
+  const evidence=[...byId.values()].filter(e=>!conflicted.has(e.id));
   const base={badgeId:badge.id,sourceRevisionId:badge.source.revisionId,
     issuedCredential:null};
   if(!verifySource(badge.source,input.asOf,input.mode).usable)
