@@ -132,7 +132,7 @@
 - AI가 “활동 경험이 좋다”고 쓴 **초안**을 학생이 승인하지 않았다면, 실제 역량 인증이나 추천 입력의 확정 사실로 사용하지 않는다.
 - 추천 점수는 **합격 확률/취업 성공률**이 아니다. 현재 실측하지 않은 정확도 향상을 확정 효과로 표현하지 않는다.
 
-기술 자료: [추천 코어](../packages/core/src/opportunities/README.md) · [데이터/권한 계약](Architecture.md#contract-boundaries).
+기술 자료: [추천 코어](../packages/core/src/opportunities/README.md) · [데이터/권한 계약](../Architecture.md#contract-boundaries).
 
 ## 6. 학업 계산의 원리 — 취득·수강중·계획을 분리
 
@@ -166,7 +166,7 @@
 
 예를 들어 공고의 지원 마감이 11월 15일에서 11월 12일로 정정됐다면, 시스템은 **오래된 요약을 새 공고인 것처럼 쓰지 않고** 원문 버전(`SourceRevision`)을 구분해야 한다. 미래에 알게 된 정정 정보를 지난 시점 추천에 무심코 섞지 않는 것도 중요한 조건이다.
 
-OCR/이미지에서 읽어 낸 문자도 자동으로 진실이 아니다. 숫자·날짜·링크·조건은 원문과 비교해 오류를 잡거나 `NEEDS_REVIEW`로 보류한다. [원문/RAG/시점 설계](Architecture.md#trusted-rag-media-versioning)를 참고한다.
+OCR/이미지에서 읽어 낸 문자도 자동으로 진실이 아니다. 숫자·날짜·링크·조건은 원문과 비교해 오류를 잡거나 `NEEDS_REVIEW`로 보류한다. [원문/RAG/시점 설계](../Architecture.md#trusted-rag-media-versioning)를 참고한다.
 
 ## 9. 왜 DB에 전부 넣고 모두 보여 주지 않나?
 
