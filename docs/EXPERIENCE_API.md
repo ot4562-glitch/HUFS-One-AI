@@ -1,5 +1,7 @@
 # 경험·학생 승인 태그 API
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 기존 #257 공통 계약·API·DB 코드는 분할 병합으로 완료되어 이슈가 닫혔습니다. **[#279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279)의 경험 역량 후보/현재 승인 추천 순수 코어가 병합되어 [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259)는 한정된 코어 범위 완료**. 실제 UI는 #258, 교과 근거는 #260, 실 Google/NCP/모델·실학생 데이터는 #276에서 검증해야 합니다. `OWNER_CONFIRMED_APPROVED`는 개인별 현재 권리·동의/버전 검증을 면제하지 않습니다.
 
 ## 기존 동작
