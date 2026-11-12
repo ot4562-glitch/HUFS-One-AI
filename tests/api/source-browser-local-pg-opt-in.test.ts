@@ -19,7 +19,7 @@ describe.skipIf(process.env.HUFS_SOURCE_BROWSER_PGLITE!=='1')('local synthetic b
         await db.exec(await readFile(new URL('../../infra/sql/'+file,import.meta.url),'utf8'));
       await db.exec(`CREATE ROLE synthetic_browser_reader NOLOGIN;
         GRANT USAGE ON SCHEMA public TO synthetic_browser_reader;
-        GRANT SELECT ON source_effective_revisions_vnext TO synthetic_browser_reader;`);
+        GRANT SELECT ON source_effective_revisions_vnext,source_browser_revision_metadata_vnext TO synthetic_browser_reader;`);
       const admin={query:async(sql:string,params:readonly unknown[]=[])=>db.query(sql,[...params]),
         connect:async()=>({query:async(sql:string,params:readonly unknown[]=[])=>db.query(sql,[...params]),release:()=>{}})};
       const reader={query:async(sql:string,params:readonly unknown[]=[])=>db.transaction(async(tx:any)=>{

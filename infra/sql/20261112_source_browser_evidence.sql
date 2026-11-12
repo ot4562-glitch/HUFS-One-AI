@@ -181,4 +181,10 @@ CROSS JOIN LATERAL (SELECT a.decision='APPROVED'
   AND r.source_class IN ('SYNTHETIC','LICENSED_EXTERNAL') AS valid) reviewed;
 
 REVOKE ALL ON source_originals_vnext,source_review_attestations_vnext,source_effective_revisions_vnext FROM PUBLIC;
+-- Private head readers need only these two fields, never original/DOM bytes.
+-- Explicitly grant this view to the private ingestion head-reader role.
+CREATE OR REPLACE VIEW source_browser_revision_metadata_vnext AS
+  SELECT revision_id,browser_evidence->>'renderingSha256' AS rendering_sha256
+  FROM source_originals_vnext WHERE browser_evidence IS NOT NULL;
+REVOKE ALL ON source_browser_revision_metadata_vnext FROM PUBLIC;
 COMMIT;

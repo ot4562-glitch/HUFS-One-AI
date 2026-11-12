@@ -68,3 +68,11 @@
 합성 PGlite에서 실제 9개 migration과 writer→검수→제한된 reader view, 원본/DOM 별도 보존, 자원 변경/철회 및 불변 원본 UPDATE 거부를 실행해 통과했다. 같은 시험을 기존 네이티브 disposable PostgreSQL suite에도 추가했다. 네이티브 다중 연결·NCP는 NOT_RUN이다. 별도 코드 검토에서 차단 결함은 발견되지 않았다. **Crawlee/Playwright 렌더링, 현재 자원 바이트 로딩, 취득 executor 연결과 304/동일판 처리의 연결은 다음 구현 대상이다.**
 
 이 단계의 최종 전체 회귀: Node 24.15.0에서 430개 파일/5,060개 테스트 PASS, 13개 파일/105개 테스트 명시적 SKIP. 해당 SKIP 중 로컬 PGlite 1개는 별도로 켜서 PASS했으며 네이티브 PG/동시성 증거는 아니다. 타입 검사·API 빌드·공개 경계 172개 PASS. 기존 일반 원본 저장 시험은 새 DOM 열 3개가 모두 NULL임을 확인하도록 계약을 갱신했고, 관련 집중 회귀 56개도 PASS했다.
+
+### 브라우저 실행기 연결 후속 구현
+
+명시적 `SourceBrowserExtractor` 포트를 운영 구성과 durable executor에 연결했다. 기존 정적 extractor의 비실행 계약은 유지한다. 브라우저 포트는 고정 렌더러 신원·정확한 원문 해시/길이·URL·새 판본 ID·DOM/문단을 재검증하고 원본과 DOM을 별도 저장한다. 원래 Content-Type의 charset도 포트에 전달한다. crawler acquisition 없이 브라우저만 구성해도 현재 preflight·버전·일일 예산을 요구한다.
+
+브라우저를 구성했거나 이전 head에 브라우저 근거가 있으면 HTTP 조건부 헤더와 304 재사용을 거부한다. 같은 원문/문단이라도 렌더링 해시가 다르면 검수할 새 판본을 만들며, 브라우저 모드 해제도 기존 승인을 재사용하지 않는다. 자원 권리 재검증은 변경 없음 기록 직전에도 실행한다. head reader는 원본 저장소 대신 `source_browser_revision_metadata_vnext`의 판본 ID/렌더링 해시만 읽는다. 운영 migration 적용 및 해당 private head-reader 역할의 명시적 SELECT grant가 필요하며 PUBLIC 권한은 없다.
+
+연결·기존 수집·운영 구성 집중 회귀 57개, 타입 검사 및 API 빌드 PASS. 추가 모드 전환 반례를 포함한 브라우저 연결 9개와 합성 PGlite 실제 SQL 1개도 PASS했다. 제한된 역할에서 메타데이터 조회는 성공하고 원본/DOM 직접 조회는 실패한다. 별도 코드 검토의 권한 범위 의견을 위 전용 view로 반영했다. 실제 Crawlee/Playwright 렌더링 및 승인된 자원 바이트 loader는 계속 다음 구현 대상이며, NCP/실제 Linux 런타임은 NOT_RUN이다.

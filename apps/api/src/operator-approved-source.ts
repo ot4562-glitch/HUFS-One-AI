@@ -17,6 +17,7 @@ import type {ApprovedSourceAcquisition} from './modules/opportunities/source-acq
 import type {TrustedSourceRefreshPreflight} from './modules/opportunities/source-refresh-operator-preflight.js';
 import type {TrustedSourceRuntimeVersion} from './modules/opportunities/source-runtime-version.js';
 import type {TrustedSourceRefreshBudget} from './modules/opportunities/source-refresh-budget.js';
+import type {SourceBrowserExtractor} from './modules/opportunities/source-browser-extractor.js';
 
 type OperatorSourcePort=NonNullable<PostgresPlatformConfig['sourceIngestion']>;
 export interface OperatorApprovedSourceInput {
@@ -26,6 +27,7 @@ export interface OperatorApprovedSourceInput {
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
   documentExtractor?:SourceDocumentExtractor;
+  browserExtractor?:SourceBrowserExtractor;
   acquisition?:ApprovedSourceAcquisition;
   preflight?:TrustedSourceRefreshPreflight;
   runtimeVersion?:TrustedSourceRuntimeVersion;
@@ -43,6 +45,7 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
     ||typeof input.egress?.requestPinned!=='function'
     ||typeof input.extractor?.extract!=='function'
     ||(input.documentExtractor!==undefined&&typeof input.documentExtractor?.extract!=='function')
+    ||(input.browserExtractor!==undefined&&typeof input.browserExtractor?.extract!=='function')
     ||(input.acquisition!==undefined&&typeof input.acquisition?.acquire!=='function')
     ||(input.acquisition!==undefined&&typeof input.preflight?.loadCurrent!=='function')
     ||(input.preflight!==undefined&&typeof input.preflight?.loadCurrent!=='function')
@@ -96,6 +99,7 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
   const executor=createApprovedDurableSourceExecutor({
     policies,rights,egress:input.egress,extractor:input.extractor,
     ...(input.documentExtractor?{documentExtractor:input.documentExtractor}:{}),
+    ...(input.browserExtractor?{browserExtractor:input.browserExtractor}:{}),
     ...(input.acquisition?{acquisition:input.acquisition}:{}),
     ...(input.preflight?{preflight:input.preflight}:{}),
     ...(input.runtimeVersion?{runtimeVersion:input.runtimeVersion}:{}),

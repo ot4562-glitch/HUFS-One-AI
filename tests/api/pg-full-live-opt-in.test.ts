@@ -144,7 +144,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        GRANT SELECT,INSERT ON api_intake_revisions TO hufs_test_intake;
        GRANT EXECUTE ON FUNCTION reviewer_sandbox_allowed(text,text) TO hufs_test_sandbox;
        GRANT SELECT,INSERT,UPDATE ON reviewer_sandbox_state TO hufs_test_sandbox;
-      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_effective_revisions_vnext,source_paragraphs_vnext,
+      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_effective_revisions_vnext,source_browser_revision_metadata_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
       GRANT USAGE ON SCHEMA public TO hufs_test_ai_budget;

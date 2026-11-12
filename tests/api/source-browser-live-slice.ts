@@ -40,6 +40,10 @@ export async function proveSourceBrowserPg(admin:Pool,reader:Pool):Promise<void>
     const proof=parseSourceBrowserEvidence(evidence,dom,paragraphs,{sourceId,revisionId:revision.revisionId,
       permissionRef,originalSha256:sha(original),originalByteLength:original.length,asOf:T(offset)});
     await writer.append({revision,paragraphs,originalBytes:original,permissionReviewed:true,browserEvidence:evidence,browserDomBytes:dom});
+    expect((await reader.query('SELECT rendering_sha256 FROM source_browser_revision_metadata_vnext WHERE revision_id=$1',
+      [revision.revisionId])).rows).toEqual([{rendering_sha256:evidence.renderingSha256}]);
+    await expect(reader.query('SELECT browser_dom_bytes FROM source_browser_revision_metadata_vnext')).rejects.toThrow();
+    await expect(reader.query('SELECT original_bytes FROM source_originals_vnext')).rejects.toThrow();
     expect((await reader.query('SELECT status FROM source_effective_revisions_vnext WHERE revision_id=$1',[revision.revisionId])).rows[0].status).toBe('NEEDS_REVIEW');
     const reviewer=new PostgresSourceReviewService(pool,{authorize:async()=>({reviewerId:'SYN-BROWSER-REVIEWER',
       independentReview:true,permissionPolicyVersion:'SYN-RIGHTS',browserEvidenceSha256:proof.sha256})},()=>T(offset+1000));
