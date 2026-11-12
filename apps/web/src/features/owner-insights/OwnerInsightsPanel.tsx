@@ -1,4 +1,4 @@
-import {useEffect,useState,useSyncExternalStore} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import type {FeatureAdditions as V} from '@hufs-one/contracts';
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
@@ -21,6 +21,57 @@ export const OWNER_INSIGHT_TITLES:Readonly<Record<V.OwnerInsightsKind,string>>={
 const kst=(value:string)=>new Intl.DateTimeFormat('ko-KR',{
   timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',
 }).format(new Date(value));
+type EmploymentReady=Extract<Ready,{kind:'EMPLOYMENT'}>;
+function EmploymentDashboard({data}:{data:EmploymentReady}){
+  const [year,setYear]=useState('ALL'),[metric,setMetric]=useState('ALL');
+  const years=[...new Set(data.rows.map(row=>String(row.year)))].sort().reverse();
+  const metrics=[...new Set(data.rows.map(row=>row.metricId))].sort();
+  const selected=data.rows.filter(row=>(year==='ALL'||String(row.year)===year)
+    &&(metric==='ALL'||row.metricId===metric));
+  const safeNumber=(row:EmploymentReady['rows'][number])=>
+    (row.status==='PERCENT'||row.status==='OBSERVED_ZERO')
+    &&Number.isFinite(row.percent)&&Number.isSafeInteger(row.numerator)
+    &&Number.isSafeInteger(row.denominator)&&row.denominator!>0
+      ?row.percent!.toFixed(2)+'% ('+row.numerator+'/'+row.denominator+')'
+      :null;
+  const label=(row:EmploymentReady['rows'][number])=>{
+    const number=safeNumber(row);
+    if(number!==null)return number;
+    if(row.status==='SUPPRESSED')return '소표본 보호·게시 제한';
+    if(row.status==='NO_DATA')return '미수집·미공유';
+    if(row.status==='OBSERVED_ZERO'||row.status==='PERCENT')return '검증되지 않은 수치';
+    if(row.status==='INVALID')return '집계 분자·분모 오류';
+    return '출처 권리 또는 공개 여부 미확인';
+  };
+  return <section aria-label="취업통계 비교 표">
+    <p>서로 비교 가능: {data.comparable?'예':'아니오'} · 근거 {data.reason}</p>
+    <p role="note">아래 값은 본인에게 허가된 현재 결과 최대 50개 셀만 표시하며,
+      서로 다른 원천·모집단·연도·비공개 기준은 직접 비교할 수 없습니다.
+      통계는 개인 취업 확률이나 연봉 보장이 아닙니다.</p>
+    <label htmlFor="owner-stat-year">통계 연도 선택</label>
+    <select id="owner-stat-year" value={year} onChange={event=>setYear(event.target.value)}>
+      <option value="ALL">전체 연도</option>
+      {years.map(value=><option key={value} value={value}>{value}년</option>)}
+    </select>
+    <label htmlFor="owner-stat-metric">통계 지표 선택</label>
+    <select id="owner-stat-metric" value={metric} onChange={event=>setMetric(event.target.value)}>
+      <option value="ALL">전체 지표</option>
+      {metrics.map(value=><option key={value} value={value}>{value}</option>)}
+    </select>
+    <div style={{overflowX:'auto',maxWidth:'100%'}}>
+      <table>
+        <caption>검증된 집계만 공개하는 통계표 · 현재 조건 {selected.length}건</caption>
+        <thead><tr><th scope="col">연도</th><th scope="col">구분</th>
+          <th scope="col">지표</th><th scope="col">결과</th><th scope="col">출처 판본</th></tr></thead>
+        <tbody>{selected.map(row=><tr key={row.id}>
+          <th scope="row">{row.year}</th><td>{row.groupId}</td><td>{row.metricId}</td>
+          <td>{label(row)}</td><td>{row.sourceRevisionId}</td>
+        </tr>)}</tbody>
+      </table>
+    </div>
+    {!selected.length&&<p role="status">현재 허가된 응답에서 선택한 통계값을 찾지 못했습니다. 미관측 값을 0%로 표시하지 않습니다.</p>}
+  </section>;
+}
 function details(data:Ready){
   switch(data.kind){
     case 'MENTORS':
@@ -58,17 +109,7 @@ function details(data:Ready){
         </li>)}</ul>
       </section>;
     case 'EMPLOYMENT':
-      return <section>
-        <p>서로 비교 가능: {data.comparable?'예':'아니오'} · 근거 {data.reason}</p>
-        <p>소표본·미공개·미검증 셀은 비율과 분자/분모를 표시하지 않습니다.</p>
-        <ul>{data.rows.map(r=><li key={r.id}>
-          <strong>{r.year}년 · {r.groupId} · {r.metricId}</strong>
-          <p>{r.status==='PERCENT'||r.status==='OBSERVED_ZERO'
-            ?'검토된 비율 '+r.percent?.toFixed(2)+'% ('+r.numerator+'/'+r.denominator+')'
-            :'공개 불가 또는 미확정: '+r.status}</p>
-          <p className="muted">공식 공개판본 {r.sourceRevisionId}</p>
-        </li>)}</ul>
-      </section>;
+      return <EmploymentDashboard data={data}/>;
     case 'INTERNATIONAL':
       return <section><p>체크리스트는 학생의 준비 참고이며 학교 학사 처리 완료를 뜻하지 않습니다.</p>
         <ul>{data.guides.map(g=><li key={g.guideId}>
@@ -84,16 +125,22 @@ export function OwnerInsightsPanel({port,kind}:{port:OwnerInsightsPort;kind:V.Ow
   const scope=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
+  const requestVersion=useRef(0);
   useEffect(()=>{void port.session.initialize();},[port.session]);
-  useEffect(()=>{setResult(null);setBusy(false);},[scope.epoch,scope.status,kind]);
+  useEffect(()=>{
+    requestVersion.current++;setResult(null);setBusy(false);
+    return ()=>{requestVersion.current++;};
+  },[port.read,port.session,scope.epoch,scope.status,kind]);
   const load=async()=>{
     if(scope.status!=='READY'||busy)return;
+    const ticket=++requestVersion.current;
     setResult(null);setBusy(true);
     try{
       const next=await port.session.runLatest('v2-insights-'+kind,
         signal=>port.read(kind,signal));
-      if(next&&port.session.getState().status==='READY')setResult(next);
-    }finally{setBusy(false);}
+      if(ticket===requestVersion.current&&next&&port.session.getState().status==='READY')
+        setResult(next);
+    }finally{if(ticket===requestVersion.current)setBusy(false);}
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p role="status" aria-busy="true">BETA 본인 인증 확인 중입니다.</p>;

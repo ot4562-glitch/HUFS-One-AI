@@ -7,7 +7,9 @@ export const OfficialHttpsUrlSchema=z.url().refine(value=>{
     const url=new URL(value);
     if(url.protocol!=='https:' || !!url.username || !!url.password) return false;
     const host=url.hostname.toLowerCase();
-    if(host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')
+    // Reject trailing-dot authorities instead of letting them bypass .local/.internal
+    // and localhost checks; keep outbound URLs in their approved canonical form.
+    if(host.endsWith('.')||host==='localhost'||host.endsWith('.localhost')||host.endsWith('.local')
       ||host.endsWith('.internal')||host.endsWith('.test')||host.endsWith('.invalid')
       ||host.startsWith('[')||!host.includes('.')) return false;
     // Reject literal IPv4 and IPv6 addresses (including loopback/private/metadata).

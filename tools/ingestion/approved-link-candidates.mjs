@@ -21,7 +21,7 @@ function urlFrom(value,base,origin,prefixes){
   const host=url.hostname.toLowerCase();
   if(url.protocol!=='https:'||url.origin!==origin||url.username||url.password
     ||url.port||isIP(host)!==0||url.hash||!host.includes('.')
-    ||host.endsWith('.internal')||host.endsWith('.local')
+    ||host.endsWith('.')||host.endsWith('.internal')||host.endsWith('.local')
     ||host.endsWith('.invalid')||host.endsWith('.test')
     ||host==='localhost'||url.href.length>2048)return null;
   if(!prefixes.some(prefix=>prefix==='/'||url.pathname===prefix
@@ -48,7 +48,8 @@ export function extractReviewedLinkCandidates({
   }catch{invalid();}
   if(base.protocol!=='https:'||base.hash||base.username||base.password||base.port
     ||origin.href!==origin.origin+'/'||base.origin!==origin.origin
-    ||isIP(base.hostname)!==0||base.hostname.endsWith('.internal')
+    ||isIP(base.hostname)!==0||base.hostname.endsWith('.')
+    ||origin.hostname.endsWith('.')||base.hostname.endsWith('.internal')
     ||base.hostname.endsWith('.local')||base.hostname.endsWith('.invalid')
     ||base.hostname.endsWith('.test'))invalid();
   for(const prefix of allowPathPrefixes){

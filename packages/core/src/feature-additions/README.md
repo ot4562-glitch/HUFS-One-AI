@@ -107,3 +107,32 @@
 ## NCP IaC CI 복구
 
 기존 GitHub Terraform 공급자 서명 조회가 HTTP 504로 반복 실패했다. 이를 CI 예외 처리하거나 검사를 생략하지 않고, **공식 ncloud v4.0.7 ZIP의 SHA-256 검증 → 캐시된 로컬 파일시스템 미러 → 네트워크 없는 init/validate/mock test**로 바꿨다. 수집/해시가 실패하면 CI도 실패한다. `infra/ncp/terraform/provider-mirror.py`, `check-offline.py`, `ncp-iac-offline.yml` 및 14개 Python 부정 테스트로 재현한다. 수정 HEAD에서 NCP IaC Windows/Ubuntu/network-mock 잡 모두 성공했으나 실제 NCP API·apply·배포는 `NOT_RUN / RELEASE_BLOCKED`다.
+
+## #447 pre-NCP large owner catalog reference paging
+
+`searchApprovedCatalogV2` now performs bounded top-K selection with a
+max-heap rather than fully sorting all approved rows on every request. It
+preserves the existing `TITLE`/`DEADLINE_ASC`/`PUBLISHED_DESC` ordering,
+identical signed cursor fingerprints, duplicate-ID quarantine and current
+source-rights filters. The algorithm scans its authorized input and retains
+only `pageSize <= 50` output candidates, with an O(n) ID-frequency map so
+ambiguous duplicates never become visible. Asymptotic search comparisons:
+O(n log pageSize), vs previous O(n log n) full sorting.
+
+**Reproducible synthetic performance/equivalence regression:**
+
+`HUFS_CATALOG_BENCHMARK=1 npx vitest run packages/core/src/feature-additions/v2.catalog-performance.test.ts --reporter=verbose`
+
+This test creates 25,000 *fictional* approved/rejected opportunities and
+checks that three successive pages for all three sort orders equal a separate
+full-sort reference, including malformed cursor and source-revision checks.
+No CI wall-time threshold is asserted because shared runners fluctuate.
+
+**Current blocking boundary:** this optimization speeds only an already
+authorized **in-memory snapshot**. The existing PostgreSQL approved owner
+reader still fails closed above 500 projections, and the HTTP handler still
+caps its in-memory read at 2,000. Serving genuinely large real catalogs will
+require a separately reviewed database keyset reader with current per-actor
+SEARCH rights, consent, original/review hashes, stable revision tokens and
+SQL query plans. Do not silently lift those limits or claim this PR connects
+to NCP; deployment remains RELEASE_BLOCKED.

@@ -43,7 +43,11 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 - 읽기/적용은 인증된 별도 **private operator plan→preview→apply** 절차로만. HTTP 공개 업로드/검증되지 않은 권한 주입/실학생 자료를 CI 또는 외부 AI로 옮기지 않는다.
 - 목적·필드·제공자·보관 기간·팀 공유·최초 Git 게시·클라우드/모델 외부 전송·발표/삭제·현재 철회는 서로 별도 권리 영수증. 사용자 확인된 자료 수집 허가는 보존하되 새 목적까지 자동 허용하지 않는다.
 
-## A04. 폐쇄형 공통 타입·출처
+## A04. 공통 타입·출처와 공개 웹 발견 정책
+
+**공개 웹 데이터 발견은 확장한다.** 학교 공식 공개 페이지는 URL별 수동 허가가 미등록이라는 이유만으로 발견 후보에서 제외하지 않는다. 일반 학생에게 공통 공개된 정보도 접근권 범위에 따라 별도 수집 후보가 될 수 있다. `robots.txt`로 자동 취득에 제한이 생겨도 목록에서 소실시키지 않고 공식/운영자 검토 취득·사용자 저장본 가져오기 등 다른 합당한 경로를 기록한다. 공개로 보이는 것과 자동 크롤링·원문 재게시·개인정보 활용 허가는 서로 독립이다. **현행 정확 URL 기반 수집 코드가 이 정책을 모두 구현한 것은 아니다.** 상세: [공개 웹 수집 정책](docs/PUBLIC_WEB_INGESTION_POLICY.md).
+
+
 
 공통 `@hufs-one/contracts`/Zod의 **TopicCode 24개**, Actor/Consent/SharingGrant/SourceRights, Context/VersionEnvelope, SourceRevision/SourceSpan/MediaEvidence, Academic/Forecast/Recommendation/AI 결과를 단일 정본으로 사용한다. `SourceClass`별 collect/store/display/AI transmit 허용 범위를 명시하고, 권리·원본 시점 불명은 `BLOCKED_RIGHTS/UNKNOWN`.
 

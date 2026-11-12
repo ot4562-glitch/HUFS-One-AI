@@ -1,4 +1,4 @@
-import {useEffect,useState,useSyncExternalStore} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
@@ -19,15 +19,23 @@ export function OwnerPreparationPanel({port,kind}:{port:OwnerPreparationPort;kin
   const scope=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
+  const requestVersion=useRef(0);
   useEffect(()=>{void port.session.initialize();},[port.session]);
-  useEffect(()=>{setResult(null);setBusy(false);},[scope.epoch,scope.status,kind]);
+  useEffect(()=>{
+    // An actor/permission epoch or feature tab switch invalidates pending
+    // responses even when the previous API promise ignores AbortSignal.
+    requestVersion.current++;setResult(null);setBusy(false);
+    return ()=>{requestVersion.current++;};
+  },[port.session,port.read,scope.epoch,scope.status,kind]);
   const load=async()=>{
     if(scope.status!=='READY'||busy)return;
+    const ticket=++requestVersion.current;
     setResult(null);setBusy(true);
     try{
       const value=await port.session.runLatest('owner-preparation-'+kind,signal=>port.read(signal));
-      if(value&&port.session.getState().status==='READY')setResult(value);
-    }finally{setBusy(false);}
+      if(ticket===requestVersion.current&&value&&port.session.getState().status==='READY')
+        setResult(value);
+    }finally{if(ticket===requestVersion.current)setBusy(false);}
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p role="status" aria-busy="true">BETA 본인 세션 확인 중입니다.</p>;
@@ -46,7 +54,24 @@ export function OwnerPreparationPanel({port,kind}:{port:OwnerPreparationPort;kin
               <h3>장학금 {s.scholarshipId}</h3>
               <p>지원 요건 {evidence[s.overall]} · 신청기간 {s.applicationWindow} · 기관 판정 없음</p>
               {s.missingFactKeys.length>0&&<p>추가 확인할 자료: {s.missingFactKeys.join(', ')}</p>}
+              {s.groups.length===0?<p>검증된 현재 장학금 요건을 제공받지 못해 확인을 보류합니다.</p>:
+                <section aria-label={s.scholarshipId+' 장학 조건별 체크리스트'}>
+                  <h4>규정 조건별 확인 상태 (지원 확정 아님)</h4>
+                  <ul>{s.groups.map(group=><li key={group.id}>
+                    <strong>조건 묶음 {group.id} ({group.join==='ALL'?'모두 필요':'한 개 이상 필요'})</strong>
+                    <p>묶음 결과: {evidence[group.state]}</p>
+                    <ul>{group.conditions.map(condition=><li key={condition.id}>
+                      <strong>{condition.factKey}:</strong> {evidence[condition.state]}
+                      {condition.required?' · 필수':' · 선택'}
+                      {' · 조건 근거 '+condition.evidenceSpanId}
+                      {condition.state==='UNKNOWN'
+                        ? ' · 현재 확인 가능한 검증자료가 없어 추가 서류·기관 확인이 필요합니다.':''}
+                    </li>)}</ul>
+                  </li>)}</ul>
+                </section>}
               <p className="muted">원문 규정 판본 {s.ruleRevisionId} · 자료 상태 {s.sourceReason}</p>
+              <p className="muted">신청기간 판본·확정 마감은 원문을 직접 확인하세요.
+                이 기능은 금전 지급, 학교의 자격 인증, 신청서 제출을 수행하지 않습니다.</p>
             </li>)}</ul>
           :result.badges.length===0?<p>현재 검토 가능한 배지 발급 기준이 없습니다.</p>
             :<ul>{result.badges.map(b=><li key={b.badgeId}>

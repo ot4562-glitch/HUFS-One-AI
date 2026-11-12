@@ -53,6 +53,12 @@ function fixture(){
   };
 }
 describe('TASK-19 permission-scoped current SourceRevision metadata API (synthetic)',()=>{
+  it.each(['HWP','HWPX'])('preserves %s metadata without exposing original document bytes',async media_kind=>{
+    const h=fixture();h.setRows([{...row('rev2','CORRECTED','NEEDS_REVIEW'),media_kind},{...row('rev1'),media_kind}]);
+    const value=await h.service.read({actor,sourceId:'source-1',now});
+    expect(value?.revisions.map(r=>r.mediaKind)).toEqual([media_kind,media_kind]);
+    expect(JSON.stringify(value)).not.toMatch(/original_bytes|paragraph_text/);
+  });
   const apps:Array<ReturnType<typeof createIntegratedApi>>=[];
   afterEach(async()=>{await Promise.all(apps.map(a=>a.close()));apps.length=0;});
   it('shows only authorized metadata, with the newest unapproved revision as head',async()=>{

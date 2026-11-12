@@ -39,7 +39,12 @@ export class PostgresOwnerV2CatalogSource implements TrustedOwnerV2CatalogSource
         source_id:ref.sourceId,permission_ref:ref.permissionRef,
       });
     if(!refs.size)return [];
-    const result=await connection.query(`SELECT r.source_id,r.permission_ref,r.canonical_url
+    // Renewed receipts may overlap, but different canonical URLs for
+    // the *same pair* are ambiguous. Collapse only agreeing URLs.
+    // A conflicting pair is omitted by HAVING and fails the pair count
+    // below. All rows here were independently current/rights checked.
+    const result=await connection.query(`SELECT r.source_id,r.permission_ref,
+        MIN(r.canonical_url) AS canonical_url
       FROM jsonb_to_recordset($1::jsonb)
         AS p(source_id text,permission_ref text)
       JOIN source_rights_receipts r
@@ -51,7 +56,9 @@ export class PostgresOwnerV2CatalogSource implements TrustedOwnerV2CatalogSource
         AND r.expires_at>GREATEST($3::timestamptz,clock_timestamp())
         AND NOT EXISTS(SELECT 1 FROM source_rights_revocations revoked
           WHERE revoked.receipt_id=r.receipt_id)
-      ORDER BY r.source_id,r.permission_ref,r.canonical_url`,
+      GROUP BY r.source_id,r.permission_ref
+      HAVING COUNT(DISTINCT r.canonical_url)=1
+      ORDER BY r.source_id,r.permission_ref`,
     [JSON.stringify([...refs.values()]),actorId,now]);
     // Ambiguous/missing canonical URLs fail the entire owner response,
     // even when an item lacks sourceUrl: no partial approved results.
@@ -104,8 +111,16 @@ export class PostgresOwnerV2CatalogSource implements TrustedOwnerV2CatalogSource
     const nowMs=Date.parse(now),expires=Math.min(nowMs+30_000,Date.parse(result.read.validUntil));
     if(!Number.isFinite(expires)||expires<=nowMs)fail();
     for(const [id,ticket] of this.tickets)if(ticket.expires<=nowMs)this.tickets.delete(id);
-    if(this.tickets.size>=128&&!this.tickets.has(result.read.fingerprint))fail();
-    this.tickets.set(result.read.fingerprint,{query,fingerprint:result.read.fingerprint,expires});
+    // Bound process memory without denying the 129th *different* user.
+    // An evicted ticket can only fail closed on revalidation; it never
+    // becomes an authorization substitute for the current PostgreSQL read.
+    const id=pair(input.actorId,result.read.fingerprint);
+    this.tickets.delete(id); // refresh insertion/LRU order
+    if(this.tickets.size>=4096){
+      const oldest=this.tickets.keys().next().value;
+      if(oldest!==undefined)this.tickets.delete(oldest);
+    }
+    this.tickets.set(id,{query,fingerprint:result.read.fingerprint,expires});
     return {
       items:result.items,
       scopeKey:result.read.fingerprint,
@@ -118,7 +133,7 @@ export class PostgresOwnerV2CatalogSource implements TrustedOwnerV2CatalogSource
 
   async revalidate(input:Parameters<TrustedOwnerV2CatalogSource['revalidate']>[0]):Promise<boolean>{
     try{
-      const now=Time.parse(input.now),ticket=this.tickets.get(input.receipt.sourceVersion);
+      const now=Time.parse(input.now),ticket=this.tickets.get(pair(input.actorId,input.receipt.sourceVersion));
       if(!ticket||input.actorId!==ticket.query.actorId
         ||input.receipt.actorId!==input.actorId
         ||Date.parse(input.receipt.expiresAt)!==ticket.expires

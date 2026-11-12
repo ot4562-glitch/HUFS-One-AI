@@ -50,6 +50,11 @@ export function recommendLearningV2(input:{
     }
     if (program.deadlineAt && parseAsOf(program.deadlineAt) <= at) {
       eligibility='NOT_MET';hardReasons.push('APPLICATION_CLOSED');
+    } else if(!program.deadlineAt){
+      // An undated program is not proven to be accepting applications.
+      // It may still be relevant as a learning lead, never a verified seat.
+      if(eligibility==='MET')eligibility='UNKNOWN';
+      hardReasons.push('APPLICATION_DEADLINE_UNVERIFIED');
     }
     if (program.requiredCourseCodes.length && input.verifiedCompletedCourses===undefined) {
       if(eligibility==='MET') eligibility='UNKNOWN';

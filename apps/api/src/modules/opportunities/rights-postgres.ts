@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {isIP} from 'node:net';
 import {z} from 'zod';
 import {AcademicDegreePathSelectionVNextSchema,type EvidenceActorScope} from '@hufs-one/contracts';
 import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
@@ -56,7 +57,9 @@ function active(r:ActiveRecord,actorId:string,t:{request:string;current:string})
 function canonical(value:string):boolean{
   try{const u=new URL(value);return u.href===value&&u.protocol==='https:'&&!u.username&&!u.password
     &&!u.port&&!u.hash&&u.hostname!=='localhost'&&!u.hostname.endsWith('.local')
-    &&!u.hostname.endsWith('.localhost');}catch{return false;}
+    &&!u.hostname.endsWith('.localhost')&&!u.hostname.endsWith('.')
+    &&!u.hostname.endsWith('.internal')&&!u.hostname.startsWith('[')
+    &&isIP(u.hostname)===0;}catch{return false;}
 }
 const RECEIPTS=`SELECT r.*,v.revoked_at,clock_timestamp() AS database_now FROM (
   SELECT DISTINCT ON (source_id,permission_ref) * FROM source_rights_receipts

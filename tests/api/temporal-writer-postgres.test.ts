@@ -52,6 +52,14 @@ function db(settings:{head?:string|null;headAt?:string;
   }),calls,released};
 }
 describe('TASK-19 SQL append-only revisions and atomic cross-instance invalidation',()=>{
+  it.each(['HWP','HWPX'])('retains %s drafts but refuses direct self-approval before SQL',async mediaKind=>{
+    const x=db(),draft=record();
+    await x.store.append({...draft,revision:{...draft.revision,mediaKind,status:'NEEDS_REVIEW',lastVerifiedAt:undefined}});
+    expect(x.calls.find(q=>q.sql.includes('INSERT INTO source_revisions_vnext'))?.params[5]).toBe(mediaKind);
+    const forbidden=db();
+    await expect(forbidden.store.append({...draft,revision:{...draft.revision,mediaKind}})).rejects.toThrow();
+    expect(forbidden.calls).toHaveLength(0);
+  });
   it('locks a source head before writing original revision and text paragraphs',async()=>{
     const x=db();
     const event=await x.store.append(record());
