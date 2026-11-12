@@ -1,5 +1,7 @@
 # HUFS One AI — 승인된 운영 API 실행
 
+**2026-11-12 실제 운영 인수와 구별:** 인증된 서버/PG/NCP/Crawlee용 코드 및 합성/일회용 테스트가 일부 존재해도, 라이브 NCP·실원본·운영 키·권한/RLS/권리·사람 검증은 아직 독립 확인되지 않았습니다. [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445)/[#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)/[#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446) 및 [STATUS](../STATUS.md)의 `NOT_RUN/NOT_CONNECTED/RELEASE_BLOCKED` 경계를 우선합니다. 이하 11월 8일 내용은 당시 코딩/검증 스냅샷입니다.
+
 프로젝트 승인 상태는 **OWNER_CONFIRMED_APPROVED**입니다. 2026-11-08 기준 인증된 PostgreSQL 조립/운영 엔트리 코드는 `main`에 존재하고, [PR #396](https://github.com/ot4562-glitch/HUFS-One-AI/pull/396)에서 CampusAssist의 **명시적 승인 source 포트 전달 경로만** 추가됐습니다. 그러나 실제 Google/학교 메일·현재 학생 동의/권리·관리형 PostgreSQL/NCP·실기관 자료/모델과 청구·복구·독립 사람 검증은 **`NOT_RUN/NOT_CONNECTED`**이며 실서비스는 **`RELEASE_BLOCKED`**입니다. 현행 열린 요구사항은 [상태](../STATUS.md), [공식 출처 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360), [개인정보 공개 검토 #362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362), [기능 API 통합 #366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366), [CampusAssist 실연결 #367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367)에서 추적합니다. 이전 연혁은 [보관 이력](ENGINEERING_ARCHIVE.md#owner-track-release-evidence)에 유지합니다.
 
 ## 구성
