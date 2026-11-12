@@ -137,6 +137,7 @@ export const GuideResolutionV2Schema=z.strictObject({
   locale:z.enum(['ko','en','zh']),body:z.string().max(12000).optional(),
   steps:z.array(z.strictObject({
     id:Id,order:z.number().int().nonnegative(),
+    label:z.string().min(1).max(160).optional(),
     documentCodes:Ids,
     officeCode:Id.optional(),
     sourceSpanId:Id,
@@ -153,12 +154,13 @@ export const GuideChecklistWriteV2Schema=z.strictObject({
 export const GuideChecklistResponseV2Schema=z.discriminatedUnion('state',[
   z.strictObject({state:z.literal('NOT_CONNECTED')}),
   z.strictObject({state:z.literal('READY'),guide:GuideResolutionV2Schema,
+    asOf:z.iso.datetime({offset:true}),expiresAt:z.iso.datetime({offset:true}),sourceVersion:Id,
     translationVersion:Id.nullable(),contextVersion:z.string().regex(/^[a-f0-9]{64}$/),
     version:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
     checklist:z.strictObject({state:z.enum(['READY','STALE_GUIDE','VERSION_CONFLICT']),
       checkedStepIds:z.array(Id).max(50),invalidatedStepIds:z.array(Id).max(50),
       officialAdministrationComplete:z.literal(false)}),
-  }),
+  }).refine(value=>Date.parse(value.expiresAt)>Date.parse(value.asOf)),
 ]);
 
 /** HTTP layer MUST sign an opaque cursor; the pure core's cursor is internal. */

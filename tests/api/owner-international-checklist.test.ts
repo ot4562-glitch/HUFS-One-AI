@@ -59,6 +59,14 @@ it('rejects receipt expiration during the final asynchronous source recheck',asy
   h.source.revalidate=async input=>{if(++checks===2)h.setNow('2026-11-30T00:00:01Z');return revalidate(input);};
   expect((await h.read()).statusCode).toBe(403);
 });
+it('reports its own snapshot lease capped by guide validity and refuses crossing that deadline',async()=>{
+  const h=setup();h.current.source.effectiveUntil='2026-11-15T00:00:00Z';
+  const response=await h.read();expect(response.statusCode,response.body).toBe(200);
+  expect(response.json()).toMatchObject({asOf:FIXED_NOW,sourceVersion:'SYN-SOURCE',expiresAt:'2026-11-15T00:00:00.000Z'});
+  let checks=0;const revalidate=h.source.revalidate;
+  h.source.revalidate=async input=>{if(++checks===2)h.setNow('2026-11-15T00:00:01Z');return revalidate(input);};
+  expect((await h.read()).statusCode).toBe(403);
+});
 it('does not reuse an old request after storage consent withdrawal and regrant',async()=>{
   const h=setup(),view=(await h.read()).json();await h.save(view,[h.current.steps[0]!.id]);
   h.changeConsent();const renewed=(await h.read()).json();expect(renewed.version).toBe(0);

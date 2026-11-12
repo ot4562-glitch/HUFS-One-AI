@@ -441,7 +441,8 @@ export class HufsOwnerApiClient {
     const language=clientInput(z.enum(['ko','en','zh']),locale);
     const result=await this.request('/api/owner/features/v2/international/'+encodeURIComponent(id)+'/checklist?locale='+language,
       V.GuideChecklistResponseV2Schema,{signal});
-    if(result.state==='READY')requireMatchingReceipt(result.guide.guideId===id);
+    if(result.state==='READY')requireMatchingReceipt(result.guide.guideId===id
+      &&(result.guide.locale===language||result.guide.status==='KOREAN_FALLBACK'&&result.guide.locale==='ko'));
     return result;
   }
   async saveOwnerGuideChecklist(guideId:string,change:z.input<typeof V.GuideChecklistWriteV2Schema>,signal?:AbortSignal){

@@ -17,6 +17,19 @@ function fakeApi(session: () => Promise<unknown>, caps: () => Promise<{actions: 
 const down = () => Promise.reject(new HufsApiError('PROVIDER_UNAVAILABLE', 503));
 
 describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
+  it('connects guide read/save to the confirmed owner API and the shared private session',async()=>{
+    const api=fakeApi(async()=>BETA,async()=>({actions:[]}));
+    const read=vi.fn(async()=>({state:'NOT_CONNECTED' as const})),save=vi.fn(async()=>({state:'NOT_CONNECTED' as const}));
+    api.owner.getOwnerGuideChecklist=read;api.owner.saveOwnerGuideChecklist=save;
+    const services=roleServices(api,await resolveSessionRole(api));
+    await services.ownerInsights?.readGuide?.('SYN-GUIDE','zh');
+    expect(read).toHaveBeenCalledExactlyOnceWith('SYN-GUIDE','zh',undefined);
+    const change={expectedVersion:0,locale:'ko' as const,displayedLocale:'ko' as const,guideRevisionId:'SYN-REV',
+      translationVersion:'SYN-KO',contextVersion:'a'.repeat(64),checkedStepIds:[]};
+    await services.ownerInsights?.saveGuide?.('SYN-GUIDE',change);
+    expect(save).toHaveBeenCalledExactlyOnceWith('SYN-GUIDE',change,undefined);
+    expect(services.ownerInsights?.session).toBe(services.ownerDemoProfile?.session);
+  });
   it('REVIEWER + capabilities 503: no overlay is installed and /api/demo/overlay is never called', async () => {
     const api = fakeApi(async () => REVIEWER, down);
     const role = await resolveSessionRole(api);

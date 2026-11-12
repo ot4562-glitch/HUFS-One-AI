@@ -36,13 +36,15 @@ export function registerInternationalChecklistRoutes(options:{app:FastifyInstanc
           throw new ApiFailure('PROVIDER_UNAVAILABLE');
         const entry=snapshot.guides.find(g=>g.guide.id===id);
         if(!entry)throw new ApiFailure('FORBIDDEN');
+        const expiresAt=new Date(Math.min(Date.parse(snapshot.receipt.expiresAt),
+          entry.guide.source.effectiveUntil?Date.parse(entry.guide.source.effectiveUntil):Infinity)).toISOString();
         const recheck=async()=>{
           await betaRecheck(req,session,actor);
-          if(Date.parse(snapshot.receipt.expiresAt)<=Date.parse(session.now())
+          if(Date.parse(expiresAt)<=Date.parse(session.now())
             ||await services.source.revalidate({actorId:actor.actorId,kind:'INTERNATIONAL',receipt:snapshot.receipt,now:session.now()})!==true)
             throw new ApiFailure('FORBIDDEN');
           await betaRecheck(req,session,actor);
-          if(Date.parse(snapshot.receipt.expiresAt)<=Date.parse(session.now()))throw new ApiFailure('FORBIDDEN');
+          if(Date.parse(expiresAt)<=Date.parse(session.now()))throw new ApiFailure('FORBIDDEN');
         };
         await recheck();
         const locale=change?.locale??queryLocale;
@@ -90,7 +92,7 @@ export function registerInternationalChecklistRoutes(options:{app:FastifyInstanc
         }
         await recheck();
         return V.GuideChecklistResponseV2Schema.parse({state:'READY',guide:resolved,translationVersion,
-          contextVersion,version:record?.version??0,checklist});
+          asOf,expiresAt,sourceVersion:snapshot.receipt.sourceVersion,contextVersion,version:record?.version??0,checklist});
       }catch(error){
         if(error instanceof ApiFailure||error instanceof z.ZodError)throw error;
         if(error instanceof WorkspaceDenied)throw new ApiFailure('FORBIDDEN');

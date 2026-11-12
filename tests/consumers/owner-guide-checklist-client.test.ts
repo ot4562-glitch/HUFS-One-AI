@@ -5,6 +5,7 @@ import {resolveInternationalGuide} from '../../packages/core/src/feature-additio
 const current=guide(),resolved=resolveInternationalGuide({guide:current,locale:'zh',topicCode:current.topicCode,
   campus:'SEOUL',term:'2026-2',audienceCodes:['INTERNATIONAL_STUDENT'],asOf:FIXED_NOW});
 const view={state:'READY',guide:resolved,translationVersion:'zh-r1',contextVersion:'a'.repeat(64),version:1,
+  asOf:FIXED_NOW,expiresAt:'2026-11-30T00:00:00Z',sourceVersion:'SYN-GUIDE-SOURCE',
   checklist:{state:'READY',checkedStepIds:['step-1'],invalidatedStepIds:[],officialAdministrationComplete:false}};
 const input={expectedVersion:0,locale:'zh' as const,displayedLocale:'zh' as const,
   guideRevisionId:resolved.sourceRevisionId,translationVersion:'zh-r1',contextVersion:'a'.repeat(64),checkedStepIds:['step-1']};
@@ -27,4 +28,12 @@ it('rejects mismatched server acknowledgements and refuses generic checklist CRU
   }
   const h=harness(view);await expect(h.client.owner.listWorkspace('GUIDE_CHECKLIST')).rejects.toBeDefined();
   expect(h.calls).toEqual([]);
+});
+it('rejects another requested locale but accepts an explicit Korean fallback',async()=>{
+  const h=harness(view);
+  await expect(h.client.owner.getOwnerGuideChecklist(current.id,'en')).rejects.toMatchObject({code:'VERSION_CONFLICT'});
+  const korean=resolveInternationalGuide({guide:current,locale:'ko',topicCode:current.topicCode,campus:'SEOUL',term:'2026-2',
+    audienceCodes:['INTERNATIONAL_STUDENT'],asOf:FIXED_NOW});
+  const fallback={...view,guide:{...korean,status:'KOREAN_FALLBACK'},translationVersion:'ko-r1'};
+  expect(await harness(fallback).client.owner.getOwnerGuideChecklist(current.id,'en')).toEqual(fallback);
 });
