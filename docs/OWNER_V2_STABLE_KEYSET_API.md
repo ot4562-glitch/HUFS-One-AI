@@ -43,17 +43,26 @@ This is a correctness baseline, **not high-scale server-side filtered SQL**.
 The 5,000-row cap and up-to-two full verified scans **per HTTP request** are
 intentional and may be costly; they cannot return a partial or misleading
 count when exceeded. The normal unpaged reader's 500-row cap remains.
-Every **single complete scan** now holds a read-only PostgreSQL
-`REPEATABLE READ` exporter transaction and imports its opaque `pg_export_snapshot()`
-identifier **before the first query of every keyset page transaction**.
-Thus the HEAD and rights row visibility cannot drift between pages even when a
-publisher commits concurrently; the exporter is rolled back and its connection
-released after the scan, including failure paths. The exporter is additionally
-subject to a PostgreSQL 30-second `idle_in_transaction_session_timeout`;
-slow/stalled scans fail closed rather than retain an open MVCC transaction. The response gate starts
-an entirely **fresh** exported snapshot and compares all verified page hashes
-and current rights again before returning a result. A snapshot never serves as
-an authorization grant.
+Each **single complete scan** now holds exactly **one** PostgreSQL client
+and one `REPEATABLE READ READ ONLY` transaction for **all keyset pages**.
+The first SQL read pins one MVCC snapshot through the final lookahead; there is
+no separate exporter connection, `pg_export_snapshot()`, or per-page
+`SET TRANSACTION SNAPSHOT`. This removes the request-to-connection-pool
+deadlock found in the reviewer test with `pg.Pool(max=5)` and five simultaneous
+scans. Consent, RLS, reviewed-source proofs, rights/HEAD checks and projection
+hashes remain enforced for every page. The bounded transaction is rolled back
+and its sole client released on success, denial or error. PostgreSQL
+`idle_in_transaction_session_timeout='30s'` still limits stalls. The
+actor's external authority is checked **before acquiring** this connection
+and again **after releasing** it, so a check never waits for a second client
+while holding an active pinned scan. Finally, the response gate performs a
+**second independent fresh full scan**, comparing all verified page hashes
+and current rights before returning any result. A pinned snapshot never
+serves as a standalone authorization grant.
+
+The synthetic pool-5 concurrency regression and disposable PostgreSQL
+mid-scan writer test must both pass before integration; neither is proof
+of NCP production pool sizing, latency or rights permission.
 
 This still does **not** pin one MVCC snapshot **across HTTP requests** or
 provide a durable global catalog publication/authorization epoch. A page

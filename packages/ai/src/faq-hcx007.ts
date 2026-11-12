@@ -30,6 +30,13 @@ export function buildFaqHcx007Request(question:string,evidence:readonly FaqEvide
   if(question.trim().length<2||question.length>500||evidence.length<1||evidence.length>6)
     throw new RangeError('Invalid HCX FAQ input');
   if(new Set(evidence.map(e=>e.citationId)).size!==evidence.length)throw new RangeError('Duplicate FAQ citation');
+  if(new Set(evidence.map(e=>e.provenance)).size!==1)
+    throw new RangeError('Mixed FAQ source modes');
+  // Official documents may accidentally contain a student email, phone number,
+  // name or identifier. Redaction would break the quote-to-source contract, so
+  // quarantine the whole input BEFORE any admission or billable provider call.
+  if(evidence.some(e=>maskFaqQuestion(e.text).redactions.length>0))
+    throw new RangeError('FAQ source contains personal identifiers');
   const context=evidence.map(e=>({citationId:e.citationId,text:e.text,
     revisionId:e.revisionId,verifiedAt:e.verifiedAt}));
   // Student numbers, phones, e-mails and RRNs never reach the external model.

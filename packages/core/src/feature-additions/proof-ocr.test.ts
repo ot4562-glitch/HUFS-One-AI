@@ -73,11 +73,11 @@ describe('#346 OCR proof candidate extraction (synthetic lines, not OCR accuracy
       confidence:cert.confidence,ownerConfirmed:false});
     expect(before.status).toBe('NEEDS_REVIEW');
     const after=classifyProofCandidate({rule,assetId:'asset-1',proposedKind:cert.proposedKind,evidencePage:0,
-      confidence:cert.confidence,ownerConfirmed:true});
+      confidence:cert.confidence,ownerConfirmed:true,asOf:FIXED_NOW});
     expect(after).toMatchObject({status:'OWNER_CONFIRMED_CANDIDATE',documentKind:'CERTIFICATE'});
     const receipt=extractProofCandidate(PROOF_OCR_CASES.find(c=>c.id==='receipt')!.lines);
     expect(classifyProofCandidate({rule,assetId:'asset-2',proposedKind:receipt.proposedKind,evidencePage:0,
-      confidence:receipt.confidence,ownerConfirmed:true}).status).toBe('REJECTED');
+      confidence:receipt.confidence,ownerConfirmed:true,asOf:FIXED_NOW}).status).toBe('REJECTED');
     const report=prepareRecognitionV2({rule,activity:{id:'A1',kind:'VOLUNTEER',endedAt:'2026-06-20T00:00:00+09:00'},
       proofs:[proof('CERTIFICATE',{activityId:'A1'})],asOf:FIXED_NOW});
     expect(report).toMatchObject({status:'DOCUMENTS_PENDING',missingKinds:['PARTICIPATION_PROOF'],officiallyRecognized:false});

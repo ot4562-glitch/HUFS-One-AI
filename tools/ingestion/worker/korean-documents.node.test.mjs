@@ -159,7 +159,7 @@ describe('#445 HWP5 binary section record decoder (requires independently review
     });
     assert.deepEqual(zipped.paragraphs,raw.paragraphs);
   });
-  it('rejects mismatched paragraph counts and dangling headers before draft storage',()=>{
+  it('rejects mismatched paragraph counts and dangling nonempty headers',()=>{
     const tooLong=Buffer.alloc(4);tooLong.writeUInt32LE(text.length+2);
     for(const bytes of [
       Buffer.concat([record(0x42,tooLong),record(0x43,payload)]),

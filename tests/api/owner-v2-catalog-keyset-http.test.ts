@@ -48,10 +48,9 @@ function fixture(count=1250){
     payload_sha256:canonicalProjectionHash(item),
     sources_json:maxProofRefs?Array.from({length:100},(_,j)=>j===0
       ?{...ref,permissionRef:'SYN-PERM-PRIMARY-'+i}:{
-      sourceId:'SYN-SOURCE-'+i+'-'+j,
-      revisionId:ref.revisionId,
-      permissionRef:'SYN-PERM-'+i+'-'+j,
-    }):[ref],
+        sourceId:'SYN-SOURCE-'+i+'-'+j,revisionId:ref.revisionId,
+        permissionRef:'SYN-PERM-'+i+'-'+j,
+      }):[ref],
     reviewed_by:'SYN-INDEPENDENT',reviewed_at:'2026-11-01T00:00:00Z',
     as_of:'2026-11-01T00:00:00Z',starts_at:'2026-11-01T00:00:00Z',
     expires_at:'2026-12-01T00:00:00Z',
@@ -64,11 +63,8 @@ function fixture(count=1250){
     expect(text).toContain('HAVING COUNT(DISTINCT r.canonical_url)=1');
     if(revoked||conflictingReceipts)return {rows:[]};
     if(maxProofRefs){
-      const inputs=JSON.parse(String(_params?.[0])) as
-        {source_id:string;permission_ref:string}[];
-      return {rows:inputs.map(({source_id,permission_ref})=>({
-        source_id,permission_ref,canonical_url:canonicalUrl,
-      }))};
+      const input=JSON.parse(String(_params?.[0])) as {source_id:string;permission_ref:string}[];
+      return {rows:input.map(x=>({...x,canonical_url:canonicalUrl}))};
     }
     return {rows:[{source_id:ref.sourceId,permission_ref:ref.permissionRef,
       canonical_url:canonicalUrl}]};
@@ -87,8 +83,7 @@ function fixture(count=1250){
       throw new Error('INVALID_SQL_KEYSET_ANCHOR');
     const window=sourceRows.slice(start,start+50);
     const hasMore=start+window.length<sourceRows.length;
-    // The real PostgreSQL reader passes its validated lookahead to the
-    // canonical-rights callback before returning only displayed page rows.
+    // Validate the bounded 51st lookahead's rights as well.
     const proofRows=maxProofRefs?sourceRows.slice(start,start+51):window;
     const proof=extra?await extra(connection,proofRows):undefined;
     reads++;
@@ -123,9 +118,9 @@ function fixture(count=1250){
   const reader={readV2KeysetPage,withV2KeysetSnapshot} as unknown as PostgresApprovedOwnerReader;
   const source=new PostgresOwnerV2StableKeysetSource(reader,()=>FIXED_NOW);
   return {items,source,readV2KeysetPage,sql,
-    useMaxProofRefs:()=>{maxProofRefs=true;},
     revoke:()=>{revoked=true;},
     conflictReceipts:()=>{conflictingReceipts=true;},
+    useMaxProofRefs:()=>{maxProofRefs=true;},
     changeHead:()=>{version='SYN-HEAD-2';},
     changeConsent:()=>{consentVersion='SYN-CONSENT-2';},
     changeCanonical:()=>{canonicalUrl='https://example.org/notices/other';},
@@ -161,13 +156,10 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
     await expect(f.source.read({actorId:ACTOR,asOf:FIXED_NOW}))
       .rejects.toThrow('V2_CATALOG_EPOCH_UNAVAILABLE');
   });
-  it('accepts all 5,100 unique rights proofs including the 51st lookahead row',async()=>{
-    const f=fixture(51);
-    f.useMaxProofRefs();
+  it('verifies all 5,100 distinct rights receipts including a page lookahead',async()=>{
+    const f=fixture(51);f.useMaxProofRefs();
     const snapshot=await f.source.read({actorId:ACTOR,asOf:FIXED_NOW});
     expect(snapshot?.items).toHaveLength(51);
-    // A 50-row displayed page can validate a 51st lookahead; each reviewed
-    // row has up to 100 distinct authorized source reference pairs.
     const firstSqlParams=f.sql.mock.calls[0]?.[1];
     expect(JSON.parse(String(firstSqlParams?.[0]))).toHaveLength(5100);
     expect(f.sql).toHaveBeenCalledTimes(2);
@@ -175,7 +167,6 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
       actorId:ACTOR,receipt:snapshot!.receipt,now:FIXED_NOW,
     })).toBe(true);
   });
-
   it('globally pins 1,250 rows across multiple signed pages and counts by core filters',async()=>{
     const f=setup();
     const first=await f.get(params());

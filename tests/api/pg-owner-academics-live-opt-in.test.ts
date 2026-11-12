@@ -167,7 +167,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
     expect(remaining.rows[0]?.n).toBe(0);
   });
 
-  it('pins all V2 SQL keyset pages to one exported MVCC snapshot despite concurrent HEAD insert',async()=>{
+  it('pins all V2 SQL keyset pages to one READ ONLY transaction despite concurrent HEAD insert',async()=>{
     const f=await seed('MVCC'),ref={
       sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
     };
@@ -203,6 +203,33 @@ describe.skipIf(!RUN)('REAL PostgreSQL: approved owner double-major and study-pl
           third!.rows[0]!.entity_id];
       });
     expect(fresh).toEqual(['SYN-MVCC-A','SYN-MVCC-M','SYN-MVCC-Z']);
+  },30000);
+
+  it('runs four concurrent pinned scans on pool max=4 with no second-page connection waits',async()=>{
+    const f=await seed('PINNED-POOL4'),ref={
+      sourceId:f.sourceId,revisionId:f.revisionId,permissionRef:f.permissionRef,
+    };
+    await f.insert('V2_CATALOG','SYN-POOL4-A',{
+      id:'SYN-POOL4-A',title:'Synthetic concurrent one-client scan',source:ref,
+    },'SYN-POOL4-PROJECTION');
+    // The reader role has a 4-client connection cap. A second exporter+
+    // importer client for each scan would exhaust this cap and fail in 3s.
+    const loader=new PostgresApprovedOwnerReader(adapter(reader),f.authority);
+    const asOf=now();
+    let started=0;
+    let releaseAll!:()=>void;
+    const allStarted=new Promise<void>(resolve=>{releaseAll=resolve;});
+    const attempts=Array.from({length:4},(_,index)=>
+      loader.withV2KeysetSnapshot({actorId:f.actorId,asOf},asOf,async readPage=>{
+        started++;
+        if(started===4)releaseAll();
+        await allStarted; // force four pinned transactions to overlap
+        const page=await readPage({pageSize:1});
+        expect(page?.rows.map(row=>row.entity_id)).toEqual(['SYN-POOL4-A']);
+        expect(page?.hasMore).toBe(false);
+        return index;
+      }));
+    expect(await Promise.all(attempts)).toEqual([0,1,2,3]);
   },30000);
 
   it('pages 1,250 PostgreSQL V2 approved heads with bounded SQL keysets and RLS',async()=>{
