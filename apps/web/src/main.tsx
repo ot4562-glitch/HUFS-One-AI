@@ -11,7 +11,9 @@ import {liveServices} from './liveServices.js';
 import {resolveSessionRole, roleServices} from './roleServices.js';
 import {boardPort} from './features/applications/boardPort.js';
 import {appPages} from './pages/index.js';
+import './design/open-props.css';
 import './styles.css';
+import './features/discovery/featureUniverse.css';
 
 // First synchronous step on load, before any network call or render: take the REVIEWER code out of
 // the URL fragment (only on the canonical HTTPS origin at /reviewer/invite) and keep it in memory.
