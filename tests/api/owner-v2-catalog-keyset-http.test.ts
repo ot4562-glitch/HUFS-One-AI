@@ -30,7 +30,7 @@ function fixture(count=1250){
   let version='SYN-HEAD-1',consentVersion='SYN-CONSENT-1';
   let revoked=false,canonicalUrl=URL,wrongScope=false,flipDuringRecheck=false;
   let mutateMidScan=false;
-  let reads=0,conflictingReceipts=false;
+  let reads=0,conflictingReceipts=false,maxProofRefs=false;
   const items=Array.from({length:count},(_,i)=>opportunity(
     'SYN-OP-'+String(i).padStart(5,'0'),{
       title:(i%4===0?'경제 분석':i%4===1?'가상 지원':'Economics research')+' '+i,
@@ -45,7 +45,12 @@ function fixture(count=1250){
     projection_id:'SYN-P-'+String(i).padStart(5,'0'),
     actor_id:ACTOR,kind:'V2_CATALOG',entity_id:item.id,
     version:'SYN-V1',payload_json:item,
-    payload_sha256:canonicalProjectionHash(item),sources_json:[ref],
+    payload_sha256:canonicalProjectionHash(item),
+    sources_json:maxProofRefs?Array.from({length:100},(_,j)=>j===0
+      ?{...ref,permissionRef:'SYN-PERM-PRIMARY-'+i}:{
+        sourceId:'SYN-SOURCE-'+i+'-'+j,revisionId:ref.revisionId,
+        permissionRef:'SYN-PERM-'+i+'-'+j,
+      }):[ref],
     reviewed_by:'SYN-INDEPENDENT',reviewed_at:'2026-11-01T00:00:00Z',
     as_of:'2026-11-01T00:00:00Z',starts_at:'2026-11-01T00:00:00Z',
     expires_at:'2026-12-01T00:00:00Z',
@@ -57,6 +62,10 @@ function fixture(count=1250){
     expect(text).toContain('GROUP BY r.source_id,r.permission_ref');
     expect(text).toContain('HAVING COUNT(DISTINCT r.canonical_url)=1');
     if(revoked||conflictingReceipts)return {rows:[]};
+    if(maxProofRefs){
+      const input=JSON.parse(String(_params?.[0])) as {source_id:string;permission_ref:string}[];
+      return {rows:input.map(x=>({...x,canonical_url:canonicalUrl}))};
+    }
     return {rows:[{source_id:ref.sourceId,permission_ref:ref.permissionRef,
       canonical_url:canonicalUrl}]};
   });
@@ -74,7 +83,9 @@ function fixture(count=1250){
       throw new Error('INVALID_SQL_KEYSET_ANCHOR');
     const window=sourceRows.slice(start,start+50);
     const hasMore=start+window.length<sourceRows.length;
-    const proof=extra?await extra(connection,window):undefined;
+    // Validate the bounded 51st lookahead's rights as well.
+    const proofRows=maxProofRefs?sourceRows.slice(start,start+51):window;
+    const proof=extra?await extra(connection,proofRows):undefined;
     reads++;
     // Model a publisher modifying a HEAD midway through a long keyset pass.
     // The currently exported MVCC view MUST remain unchanged.
@@ -109,6 +120,7 @@ function fixture(count=1250){
   return {items,source,readV2KeysetPage,sql,
     revoke:()=>{revoked=true;},
     conflictReceipts:()=>{conflictingReceipts=true;},
+    useMaxProofRefs:()=>{maxProofRefs=true;},
     changeHead:()=>{version='SYN-HEAD-2';},
     changeConsent:()=>{consentVersion='SYN-CONSENT-2';},
     changeCanonical:()=>{canonicalUrl='https://example.org/notices/other';},
@@ -143,6 +155,17 @@ describe('#447 real PostgreSQL keyset-compatible HTTP bridge (synthetic input)',
     f.conflictReceipts();
     await expect(f.source.read({actorId:ACTOR,asOf:FIXED_NOW}))
       .rejects.toThrow('V2_CATALOG_EPOCH_UNAVAILABLE');
+  });
+  it('verifies all 5,100 distinct rights receipts including a page lookahead',async()=>{
+    const f=fixture(51);f.useMaxProofRefs();
+    const snapshot=await f.source.read({actorId:ACTOR,asOf:FIXED_NOW});
+    expect(snapshot?.items).toHaveLength(51);
+    const firstSqlParams=f.sql.mock.calls[0]?.[1];
+    expect(JSON.parse(String(firstSqlParams?.[0]))).toHaveLength(5100);
+    expect(f.sql).toHaveBeenCalledTimes(2);
+    expect(await f.source.revalidate({
+      actorId:ACTOR,receipt:snapshot!.receipt,now:FIXED_NOW,
+    })).toBe(true);
   });
   it('globally pins 1,250 rows across multiple signed pages and counts by core filters',async()=>{
     const f=setup();
