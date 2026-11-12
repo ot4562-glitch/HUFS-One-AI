@@ -275,11 +275,12 @@ export class PostgresApprovedOwnerReader {
       extra?:(connection:ReviewerSqlConnection,
         projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
     )=>Promise<ApprovedOwnerKeysetPage|null>)=>Promise<T>,
-  ):Promise<T>{
+  ):Promise<T|null>{
     Ref.parse(input.actorId);Utc.parse(input.asOf);Utc.parse(now);
     const grants=await this.authority.resolve({actorId:input.actorId,now});
-    if(!grants||!grants.permissionRefs.size)
-      throw new Error('V2 keyset actor authority unavailable');
+    // No current owner authority is a permission denial, not a provider outage.
+    // Returning null preserves the read-only catalog HTTP 403 boundary.
+    if(!grants||!grants.permissionRefs.size)return null;
     const policy=policyFingerprint(grants);
     const connection=await this.pool.connect();
     let opened=false;
@@ -302,8 +303,9 @@ export class PostgresApprovedOwnerReader {
     }
     const completed=timestamp(this.clock());
     const after=await this.authority.resolve({actorId:input.actorId,now:completed});
-    if(!after||policyFingerprint(after)!==policy)
-      throw new Error('V2 keyset authorization changed during pinned scan');
+    // Any authority change invalidates the entire pinned result (403 via
+    // source.read), even though the SQL transaction had a consistent view.
+    if(!after||policyFingerprint(after)!==policy)return null;
     return value;
   }
   private async deny(c:ReviewerSqlConnection,done:()=>void,scoped=false):Promise<null>{
