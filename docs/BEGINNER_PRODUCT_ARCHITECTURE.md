@@ -1,5 +1,7 @@
 # HUFS One AI 구조와 동작 원리 — 비전공자를 위한 설명서
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **현행 2026-11-11 상태:** 기존 2026-11-06 합성 제품 설명을 유지하되, NCP 실제 자료 수집/권리 검증·배포는 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), 전 기능 실자료 전환은 [#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), 운영 계약 설계는 [#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)에서 **미완료**로 추적합니다. 예전 #276은 보관·이관 완료 이슈입니다. GitHub에는 코드·가상 시험 데이터만, 실제 출처/원문/Gold·권리/DB/비밀은 NCP 비공개 환경에만 보관하도록 설계합니다. [PR·Issue 전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참고하세요.
 
 
