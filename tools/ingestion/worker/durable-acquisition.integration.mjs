@@ -11,6 +11,8 @@ const bytes=Buffer.from('<!doctype html><main><h1>합성 공고</h1><p>가상 �
 function fixture({poison=false,revokeDuringFetch=false}={}){
   let head=null,etag=null,revoked=false,calls=0,observed=0;
   const stored=[];
+  const version={gitSha:'a'.repeat(40),buildSha:'b'.repeat(64),migrationVersion:'SYN-MIGRATION',
+    adapterVersion:'SYN-ADAPTER',datasetRevision:'SYN-DATASET',schemaVersion:1};
   const policy={sourceId:'SYN-CHEERIO-SOURCE',permissionRef:'SYN-PERMISSION',canonicalUrl,
     approvedOrigin:'https://synthetic.example.edu',rightsReviewed:true,
     sourceClass:'LICENSED_EXTERNAL',provenance:'REAL_APPROVED'};
@@ -18,6 +20,8 @@ function fixture({poison=false,revokeDuringFetch=false}={}){
     rights:{resolve:async()=>({...policy,status:revoked?'REVOKED':'APPROVED',policyVersion:'SYN-RIGHTS',
       reviewedBy:'SYN-INDEPENDENT',reviewedAt:'2026-11-10T00:00:00Z',allowedPurposes:new Set(['COLLECT','STORE'])})},
     acquisition:createApprovedCheerioAcquisition(),
+    runtimeVersion:{expected:version,reader:{minSchemaVersion:1,maxSchemaVersion:1},loadCurrent:async()=>({...version})},
+    budget:{reserve:async()=>true},
     // Synthetic private operator evidence; no real source, robots request or
     // NCP budget is touched by this test.
     preflight:{loadCurrent:async({sourceId,permissionRef,canonicalUrl,now})=>({

@@ -7,7 +7,7 @@ import {ApiFailure,authorizeSession,requireStateChangeProof} from './auth/gates.
 import {archiveActivities,forecastActivity} from '../../../../packages/core/src/campus-assist/activities.js';
 import {evaluateExchange,resolveExchangePolicy} from '../../../../packages/core/src/campus-assist/exchange.js';
 import {retrieveFaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
-import {maskFaqQuestion} from '../../../../packages/core/src/campus-assist/faq-privacy.js';
+import {faqEvidenceIsModelSafe} from '../../../../packages/core/src/campus-assist/faq-privacy.js';
 import {buildFaqHcx007Request,parseFaqHcx007Response} from '../../../../packages/ai/src/faq-hcx007.js';
 
 const Iso=z.iso.datetime({offset:true});
@@ -181,7 +181,7 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       // merely because an unrelated source chunk lists an office contact.
       // All evidence sent back with a model candidate must be the same subset
       // the model actually saw, so it cannot cite a quarantined paragraph.
-      const modelEvidence=evidence.filter(e=>maskFaqQuestion(e.text).redactions.length===0);
+      const modelEvidence=evidence.filter(faqEvidenceIsModelSafe);
       let wire:ReturnType<typeof buildFaqHcx007Request>;
       try{wire=buildFaqHcx007Request(args.question,modelEvidence);}
       catch{throw new ApiFailure('UNVERIFIED_EVIDENCE');}

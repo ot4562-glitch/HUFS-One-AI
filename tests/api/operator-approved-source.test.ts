@@ -4,6 +4,8 @@ import type {SourceDocumentExtractor} from '../../apps/api/src/modules/opportuni
 import type {ApprovedSourceAcquisition} from '../../apps/api/src/modules/opportunities/source-acquisition.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 import {syntheticPreflightDraft} from './fixtures/source-refresh-preflight.js';
+import {syntheticSourceRuntimeVersion} from './fixtures/source-runtime-version.js';
+import {PostgresSourceRefreshBudget} from '../../apps/api/src/modules/opportunities/source-refresh-budget.js';
 
 const NOW='2026-11-04T00:00:00.000Z';
 const policy={sourceId:'SRC_A',permissionRef:'RIGHT_A',
@@ -19,7 +21,7 @@ const receipt=()=>({receipt_id:'RECEIPT_A',actor_id:'operator-A',
   policy_version:'p1',database_now:NOW,revoked_at:null});
 
 function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:SourceDocumentExtractor,
-  acquisition?:ApprovedSourceAcquisition){
+  acquisition?:ApprovedSourceAcquisition,reuseQueueBudget=false){
   const query=vi.fn(async()=>({rows:current?[current]:[]}));
   const rights={connect:vi.fn(async()=>({query,release:()=>{}}))};
   const untouched=()=>({connect:vi.fn(async()=>{throw Error('unexpected SQL');})});
@@ -34,6 +36,11 @@ function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:
     extractor:{extract:async()=>[{id:'p1',text:'Synthetic approved test'}]},
     ...(documentExtractor?{documentExtractor}:{}),
     ...(acquisition?{acquisition}:{}),
+    ...(acquisition?{runtimeVersion:syntheticSourceRuntimeVersion()}:{}),
+    ...(acquisition?{budget:reuseQueueBudget?new PostgresSourceRefreshBudget(queue,[{
+      sourceId:policy.sourceId,origin:new URL(policy.canonicalUrl).origin,
+      sourceDailyRequests:1,sourceDailyBytes:262144,originDailyRequests:1,originDailyBytes:262144,
+    }]):{reserve:async()=>true}}:{}),
     ...(acquisition?{preflight:{loadCurrent:async(i:Parameters<typeof syntheticPreflightDraft>[0])=>syntheticPreflightDraft(i)}}:{}),
     authority:{mayProcess},now:()=>NOW,
   });
@@ -41,6 +48,10 @@ function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:
 }
 
 describe('operator SourceRevision composition',()=>{
+  it('rejects a budget sharing the active queue pool before any DB/network operation',()=>{
+    expect(()=>setup(receipt(),undefined,{acquire:async()=>{}},true))
+      .toThrow('Independent source budget pool required');
+  });
   it('does not fall back to a direct HTTP request after the configured crawler fails',async()=>{
     const acquire=vi.fn(async()=>{throw new Error('SYNTHETIC PRIVATE CRAWLER FAILURE');});
     const f=setup(receipt(),undefined,{acquire});

@@ -11,12 +11,46 @@ reads its copy. The driver cannot replace origin bytes or create another URL.
 Sessions, cookies, proxy use, automatic retries, source logging and persistent
 Crawlee storage are disabled. Conditional 304 remains an unchanged observation.
 
-This is a **partial acquisition implementation**, not the finished #445
-pipeline. Playwright/browser fallback, execution of the draft source preflight,
-source/domain TTL and budget accounting, alert delivery and runtime version
-handshake enforcement remain unfinished. No actual source/NCP was accessed.
-The development snapshot is submitted as a draft with these unfinished items
-preserved for later review.
+This remains a **partial #445 pipeline**. The native acquisition path now
+requires the private source preflight and runtime version manifest; both are
+rechecked immediately before pinned HTTP. Version drift is also checked before
+every persistence operation. No actual source/NCP was accessed.
+
+The private `runtimeVersion` port passed to `createOperatorApprovedSource`
+contains `expected` (`gitSha`, `buildSha`, `migrationVersion`, `adapterVersion`,
+`datasetRevision`, `schemaVersion`), a reader schema range, and `loadCurrent`.
+The initial policy permits only exact pinned versions. Missing configuration,
+drift or loader failure blocks native acquisition; it never initiates migration.
+
+`PostgresSourceRefreshScheduler` and `createScheduledSourceQueue` (compiled API
+modules) can wrap the existing SQL queue before passing it to
+`createNativeApprovedQueueWorker`. A private `loadSchedules` supplies at most 16
+records with `sourceId`, `permissionRef`, `actorRef`, `scheduleVersion`,
+`anchorAt`, and explicit `intervalSeconds` (300 seconds–30 days). Configuration
+is loaded once per one-shot worker, never from a browser or source HTML. A
+stable interval key, per-source advisory lock, last settled job timestamp and
+the existing global capacity lock prevent duplicate/catch-up work. Pending,
+ambiguous or rights-blocked jobs are not automatically retried. Schedule
+selection and rights-aware enqueue share one connection and transaction,
+including for a single-slot pool; the independent rights resolver retains its
+separate restricted pool. Only the existing systemd timer triggers execution.
+
+`PostgresSourceRefreshBudget` supplies the mandatory native `budget` port.
+Apply the separately reviewed `infra/sql/20261112_source_refresh_budget.sql`
+before configuring it. Give the restricted worker only EXECUTE on
+`reserve_source_refresh_budget(text,text,integer,bigint,integer,bigint,integer)`;
+do not grant direct table access. Use a pool independent of the active queue
+lease pool (composition rejects reuse). Private per-source policies include a
+canonical HTTPS origin and explicit source/origin daily request and byte caps.
+The SQL clock determines UTC days. Each HTTP attempt reserves the full 256 KiB
+response bound against both scopes before transmission, including conditional
+304s and failures; unknown outcomes are never refunded or retried. Limits are
+conservative response allowances, not measured NCP traffic or billing credits.
+Rights and version are rechecked after asynchronous budget admission.
+
+Playwright/browser acquisition and alert delivery still need implementation
+and tests. Actual schedules, manifests,
+SQL privileges, site policies and NCP installation remain NOT_CONNECTED/NOT_RUN.
 
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
 pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled

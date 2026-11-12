@@ -99,6 +99,10 @@ export const ExchangeResultSchema = z.strictObject({
 });
 export type ExchangeResult = z.infer<typeof ExchangeResultSchema>;
 
+/** Explicitly reviewed public office endpoints, never a domain-wide PII exemption. */
+export const FaqPublicContactsSchema = z.array(z.string().max(254).regex(
+  /^(?:[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?:02|0[3-6][1-5])-\d{3,4}-\d{4})$/,
+)).max(8).refine(values=>new Set(values).size===values.length);
 export const FaqDocumentSchema = z.strictObject({
   documentId:Id, revisionId:Id,
   title:z.string().trim().min(2).max(200), sourceUrl:Source,
@@ -106,7 +110,9 @@ export const FaqDocumentSchema = z.strictObject({
   publishedAt:Iso, verifiedAt:Iso, effectiveFrom:Day, effectiveUntil:Day.optional(),
   rights:CampusRightsSchema, provenance:CampusProvenanceSchema,
   accessScope:z.literal('PUBLIC'),
-  paragraphs:z.array(z.strictObject({id:Id,text:z.string().trim().min(5).max(1000)})).min(1).max(20),
+  paragraphs:z.array(z.strictObject({id:Id,text:z.string().trim().min(5).max(1000),
+    publicContacts:FaqPublicContactsSchema.optional(),
+  })).min(1).max(20),
 });
 export type FaqDocument = z.infer<typeof FaqDocumentSchema>;
 export const FaqCitationSchema = z.strictObject({

@@ -18,6 +18,8 @@ import {KOREAN_DOCUMENT_MIMES,parseSourceDocumentDraft,type SourceDocumentExtrac
 import {acquireApprovedSourceResponse,type ApprovedSourceAcquisition} from './source-acquisition.js';
 import {requireCurrentSourceRefreshPreflight,type TrustedSourceRefreshPreflight}
   from './source-refresh-operator-preflight.js';
+import {requireSourceRuntimeVersion,type TrustedSourceRuntimeVersion} from './source-runtime-version.js';
+import type {TrustedSourceRefreshBudget} from './source-refresh-budget.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/xml','text/xml',
@@ -86,6 +88,8 @@ export function createApprovedDurableSourceExecutor(options:{
   acquisition?:ApprovedSourceAcquisition;
   /** Mandatory private live policy/robots/terms/budget snapshot for native acquisition. */
   preflight?:TrustedSourceRefreshPreflight;
+  runtimeVersion?:TrustedSourceRuntimeVersion;
+  budget?:TrustedSourceRefreshBudget;
   /** Optional local HWP/HWPX parser. Its output never constitutes human review. */
   documentExtractor?:SourceDocumentExtractor;
   /** Explicit private image adapter; absent means binary extraction is refused. */
@@ -98,7 +102,14 @@ export function createApprovedDurableSourceExecutor(options:{
 }):TrustedDurableSourceExecutor{
   if(options.acquisition&&typeof options.preflight?.loadCurrent!=='function')
     throw new Error('Approved source preflight configuration required');
+  if(options.acquisition&&typeof options.runtimeVersion?.loadCurrent!=='function')
+    throw new Error('Source runtime version configuration required');
+  if(options.acquisition&&typeof options.budget?.reserve!=='function')
+    throw new Error('Source refresh budget configuration required');
   const now=options.now??(()=>new Date().toISOString());
+  const requireVersion=async(sourceId:string,permissionRef:string)=>{
+    if(options.runtimeVersion)await requireSourceRuntimeVersion(options.runtimeVersion,{sourceId,permissionRef,now:now()});
+  };
   const readHead=async(sourceId:string,canonicalUrl:string):Promise<StoredHead|null>=>{
     const c=await options.readerPool.connect();
     try{
@@ -136,6 +147,7 @@ export function createApprovedDurableSourceExecutor(options:{
       const policy={...registered};
       const u=reviewPolicy(policy,input.sourceId,input.permissionRef);
       const at=now(),initial=await approvedFingerprint({policy,resolver:options.rights,now:at});
+      if(options.runtimeVersion)await requireSourceRuntimeVersion(options.runtimeVersion,{...input,now:at});
       if(options.acquisition)await requireCurrentSourceRefreshPreflight(
         options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
           canonicalUrl:u.href,now:at});
@@ -148,6 +160,7 @@ export function createApprovedDurableSourceExecutor(options:{
         // Head lookup and both DNS checks may outlive the original grant.
         // Revalidate the same COLLECT/STORE authority immediately before HTTP.
         const currentTime=now();
+        if(options.runtimeVersion)await requireSourceRuntimeVersion(options.runtimeVersion,{...input,now:currentTime});
         if(await approvedFingerprint({policy,resolver:options.rights,now:currentTime})!==initial)
           throw new Error('Source rights changed before HTTP');
         // A queue admission preflight is not a network grant. Re-read the
@@ -156,6 +169,16 @@ export function createApprovedDurableSourceExecutor(options:{
         if(options.acquisition)await requireCurrentSourceRefreshPreflight(
           options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
             canonicalUrl:u.href,now:currentTime});
+        // Reserve the complete response cap durably before any request bytes
+        // leave the host. Never refund failures, 304s or unknown outcomes.
+        if(options.budget&&await options.budget.reserve({sourceId:input.sourceId,
+          permissionRef:input.permissionRef,canonicalUrl:u.href,now:currentTime})!==true)
+          throw new Error('Source refresh budget exhausted');
+        if(options.budget){
+          if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+            throw new Error('Source rights changed during budget admission');
+          await requireVersion(input.sourceId,input.permissionRef);
+        }
       }},options.egress);
       const headers:Record<string,string>={
         Accept:[...ALLOWED,...(options.documentExtractor?KOREAN_DOCUMENT_MIMES.keys():[])].join(','),
@@ -174,6 +197,7 @@ export function createApprovedDurableSourceExecutor(options:{
           throw new Error('Unconditional 304 refused');
         if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
           throw new Error('Source rights changed during conditional fetch');
+        await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.observeUnchanged({sourceId:input.sourceId,
           revisionId:head.revisionId,checkedAt:now(),responseStatus:304});
         return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -202,7 +226,9 @@ export function createApprovedDurableSourceExecutor(options:{
           if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
             throw new Error('Source rights changed during PDF check');
           const checkedAt=now();
+          await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
             canonicalUrl:u.href,checkedAt,etag,lastModified});
           return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -245,7 +271,9 @@ export function createApprovedDurableSourceExecutor(options:{
           if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
             throw new Error('Source rights changed during image check');
           const checkedAt=now();
+          await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
             canonicalUrl:u.href,checkedAt,etag,lastModified});
           return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -282,8 +310,10 @@ export function createApprovedDurableSourceExecutor(options:{
       if(head&&head.originalSha256===originalSha256
         &&head.contentSha256===contentSha256&&(media!=='application/pdf'||head.hasPdfEvidence)){
         const checkedAt=now();
+        await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.observeUnchanged({sourceId:input.sourceId,
           revisionId:head.revisionId,checkedAt,responseStatus:200});
+        await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.storeHttpValidators({sourceId:input.sourceId,
           revisionId:head.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
         return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -307,9 +337,11 @@ export function createApprovedDurableSourceExecutor(options:{
         pdfInput={pdfEvidence:pdf.evidence,pdfRasters};
       }
       if(revalidateMedia)await revalidateMedia();
+      await requireVersion(input.sourceId,input.permissionRef);
       await options.writer.append({revision,paragraphs,originalBytes:bytes,
         permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{}),...(pdfInput??{})});
       if(revalidateMedia)await revalidateMedia();
+      await requireVersion(input.sourceId,input.permissionRef);
       await options.writer.storeHttpValidators({sourceId:input.sourceId,
         revisionId:revision.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
       // A revocation after append leaves an unapproved DRAFT, never ACTIVE.

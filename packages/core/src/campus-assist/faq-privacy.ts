@@ -2,6 +2,8 @@
  * public FAQ, so they are replaced before the question leaves the server for a model (#341 D).
  * A bare "저는 …입니다" is not masked: by rule it is too often a status ("휴학생"), so the screen
  * must still tell students not to type personal data. */
+import {FaqPublicContactsSchema} from '@hufs-one/contracts';
+
 export type FaqRedaction='RRN'|'PHONE'|'EMAIL'|'STUDENT_ID'|'NAME'|'LONG_NUMBER';
 const RULES:readonly [FaqRedaction,RegExp,string][]=[
   ['RRN',/\d{6}\s*-\s*[1-4]\d{6}/g,'[주민번호]'],
@@ -25,4 +27,24 @@ export function maskFaqQuestion(question:string):{text:string;redactions:FaqReda
     if(next!==text){redactions.push(kind);text=next;}
   }
   return {text,redactions};
+}
+
+/** Inspect immutable source text without modifying the model's quote context.
+ * Only a trusted, revision-scoped source port can provide reviewed endpoints.
+ * Labels, academic domains and caller questions never authorize an exemption. */
+export function faqEvidenceIsModelSafe(evidence:{text:string;publicContacts?:readonly string[]}):boolean{
+  const parsed=FaqPublicContactsSchema.safeParse(evidence.publicContacts??[]);
+  if(!parsed.success)return false;
+  // Public endpoints can explain generic EMAIL/LONG_NUMBER matches only.
+  // A labelled student ID, RRN, name or mobile stays private even when its
+  // bytes happen to overlap a reviewed endpoint.
+  if(maskFaqQuestion(evidence.text).redactions.some(kind=>kind!=='EMAIL'&&kind!=='LONG_NUMBER'))return false;
+  const allowed=new Set(parsed.data),seen=new Set<string>();
+  const inspected=evidence.text.replace(
+    /[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\d-])(?:02|0[3-6][1-5])-\d{3,4}-\d{4}(?![\d-])/g,
+    value=>{
+      if(!allowed.has(value))return value;
+      seen.add(value);return '[검수된 부서 문의처]';
+    });
+  return seen.size===allowed.size&&maskFaqQuestion(inspected).redactions.length===0;
 }

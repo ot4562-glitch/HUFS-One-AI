@@ -1,4 +1,4 @@
-import {beforeEach,describe,it,expect,vi} from 'vitest';
+import {afterEach,beforeEach,describe,it,expect,vi} from 'vitest';
 import {createHash} from 'node:crypto';
 const memory=vi.hoisted(()=>({
   nodes:new Map<string,{kind:'file'|'dir'|'link';bytes:Buffer;mode:number;uid:number;nlink:number;target?:string}>(),
@@ -26,6 +26,8 @@ import {verifyPdfRuntime,type PdfRuntimeConfig} from '../../packages/ai/src/pdf-
 const sha=(v:Uint8Array|string)=>createHash('sha256').update(v).digest('hex');
 const elf=(name:string)=>Buffer.from('\x7fELFSYNTHETIC-'+name);
 const root='/opt/hufs-pdf';
+const platformDescriptor=Object.getOwnPropertyDescriptor(process,'platform')!;
+afterEach(()=>{Object.defineProperty(process,'platform',platformDescriptor);});
 const entries:Array<[string,'dir'|'file',number,Buffer]>=[
   ['bin','dir',0o755,Buffer.alloc(0)],
   ['bin/pdftoppm','file',0o755,elf('poppler')],
@@ -58,6 +60,9 @@ function configuration():PdfRuntimeConfig{
     popplerVersion:'26.05.0',policyVersion:'SYN-PDF-POLICY-1'};
 }
 beforeEach(()=>{
+  // This suite simulates a Linux rootfs, including uid/mode/native ELF bytes.
+  // Run that same boundary on Windows without weakening the real Linux gate.
+  Object.defineProperty(process,'platform',{value:'linux'});
   memory.nodes.clear();memory.opened.length=0;
   for(const path of ['/opt',root,'/usr','/usr/bin','/app','/app/infra','/app/infra/ai'])
     memory.nodes.set(path,{kind:'dir',bytes:Buffer.alloc(0),mode:0o755,uid:0,nlink:1});
@@ -67,6 +72,11 @@ beforeEach(()=>{
   memory.nodes.set('/app/infra/ai/pdf-render-worker.py',{kind:'file',bytes:Buffer.from('SYNTHETIC-WORKER'),mode:0o444,uid:0,nlink:1});
 });
 describe('private runtime artifact proof',()=>{
+  it('rejects an actual non-Linux runtime before opening any artifact',async()=>{
+    Object.defineProperty(process,'platform',{value:'win32'});
+    await expect(verifyPdfRuntime(configuration())).rejects.toThrow('PDF_RENDERER_UNAVAILABLE');
+    expect(memory.opened).toEqual([]);
+  });
   it('verifies a bounded read-only rootfs with all native, package, shared library and font bytes',async()=>{
     await expect(verifyPdfRuntime(configuration())).resolves.toEqual(configuration());
     expect(memory.opened).toContain(root+'/lib/libpoppler.so');expect(memory.opened).toContain(root+'/fonts/sample.ttf');
