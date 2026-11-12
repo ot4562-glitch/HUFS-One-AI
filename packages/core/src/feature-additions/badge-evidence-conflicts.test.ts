@@ -25,7 +25,10 @@ describe('#349 offline badge evidence IDs cannot be reused as forged completions
     ['conflicting topic codes',{topicCodes:['PRODUCT_UX' as const]}],
     ['different verified source version',{sourceRevisionId:'SYN-OTHER-REV'}],
   ] as const)('quarantines both copies of a shared proof ID with %s',(_label,change)=>{
-    const r=run([a,{...a,...change},b]);
+    const normalized=Object.fromEntries(Object.entries(change).map(
+      ([key,value])=>[key,Array.isArray(value)?[...value]:value]
+    )) as Partial<ReturnType<typeof badgeEvidence>>;
+    const r=run([a,{...a,...normalized},b]);
     expect(r.status).toBe('IN_PROGRESS');
     expect(r.groups[0]?.requirements[0]?.observedDistinct).toBe(1);
     expect(r.groups[0]?.requirements[0]?.activityIds).toEqual(['SYN-B']);
