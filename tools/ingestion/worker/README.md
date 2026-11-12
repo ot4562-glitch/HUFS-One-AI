@@ -1,5 +1,29 @@
 # #445 Crawlee native worker package (NCP deployment pending)
 
+## Work in progress: native Cheerio acquisition
+
+`createApprovedCheerioAcquisition()` is exported by `native-worker.mjs` and
+can be passed as `acquisition` to `createOperatorApprovedSource`. Its actual
+CheerioCrawler client uses only the API's one-use exact GET capability; current
+rights, two DNS checks, IP pinning and TLS/SNI remain in the existing transport.
+The API separately retains bounded original bytes/headers before the crawler
+reads its copy. The driver cannot replace origin bytes or create another URL.
+Sessions, cookies, proxy use, automatic retries, source logging and persistent
+Crawlee storage are disabled. Conditional 304 remains an unchanged observation.
+
+This is a **partial acquisition implementation**, not the finished #445
+pipeline. Playwright/browser fallback, execution of the draft source preflight,
+source/domain TTL and budget accounting, alert delivery and runtime version
+handshake enforcement remain unfinished. No actual source/NCP was accessed.
+The development snapshot is submitted as a draft with these unfinished items
+preserved for later review.
+
+Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
+pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled
+executor in `durable-acquisition.integration.mjs`. The integration test has
+synthetic HTTPS/SQL ports and makes no real source request. CI builds the API
+from a sparse code/synthetic-only checkout before running it.
+
 ## Durable HWP/HWPX ingestion port
 
 The NCP-private operator factory can pass
