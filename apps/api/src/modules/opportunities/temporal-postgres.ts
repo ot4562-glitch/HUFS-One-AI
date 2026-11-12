@@ -12,7 +12,7 @@ const Row=z.object({
   paragraph_id:Ref,
   paragraph_text:z.string().min(1).max(20_000),
   score:z.coerce.number().int().min(1).max(20),
-  media_kind:z.enum(['TEXT','HTML','IMAGE','PDF']).default('TEXT'),
+  media_kind:z.enum(['TEXT','HTML','IMAGE','PDF','HWP','HWPX']).default('TEXT'),
   original_sha256:z.string().regex(/^[a-f0-9]{64}$/).optional(),image_span:z.unknown().optional(),
   pdf_page_assets:z.array(Ref).min(1).max(4).nullish(),
 });

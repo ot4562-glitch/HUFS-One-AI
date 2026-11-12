@@ -1,20 +1,11 @@
 # HUFS One AI — 현재 NCP 네트워크·호스트·배포 안전 가이드
 
-**현재 상태:** network/host Terraform·Windows→Ubuntu 계획/SSH 합성 프리뷰/롤백 **코드**가 존재하며 NCP 실제 리소스를 만들거나 운영·유료 모델을 실행한 것은 아닙니다. 자료·개인정보·기관·NCP/모델·운영/출시 승인은 소유자가 모두 완료 확인해 **`OWNER_CONFIRMED_APPROVED`**입니다. 실제 자격증명/호스트/요금·인그레스·복구 검증이 없어 **`CONFIGURATION_REQUIRED`** 및 **`RELEASE_BLOCKED`**로 관리합니다. 구현 현황 [STATUS](../../STATUS.md), 현행 실제 인수 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445)·[#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447)·[#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449); 이전 #276/#12는 보관·이관 기록입니다.
-
-## 2026-11-11 현행 NCP/수집기 책임 및 안전 경계
-
-현재 NCP 인프라 예제의 `plan/mock` 성공은 실제 NCP 생성·배포나 Gold·기관 자료 수락을 의미하지 않습니다. 이전 운영 이슈 #276/#12는 보관·이관되었고, [#445 수집·갱신](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능 실자료](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 보존/권한/예산 설계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)가 **현행 OPEN 작업**입니다. [2026-11-11 전수 감사](../../docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조하십시오.
-
-- **GitHub = 코드/스키마/합성 테스트**; **NCP 비공개 영역 = 실제 URL registry, 원문/첨부, 사용권·개인 동의/Gold/검수 이력, DB/백업·비밀·실행로그**. 기존 GitHub CSV 5개 공개 이력의 권리 이슈는 #360에서 별도 검토.
-- Crawlee·파서/API/DB/배포/rollback/systemd timer **코드 개발과 전체 검수는 심민성**, 실자료 발굴·독립 사용권/Gold 검수 및 승인된 운영 실행 관찰은 **김채윤**. 이서연은 UI/웹 연결/디자인, 이의상·박준영은 AI 개발/기술 QA와 상호 리뷰.
-- 실제 IAM/계정/비용 승인은 담당 운영자의 별도 조치. **팀원별 개별 NCP Sub Account·SSH 키·MFA·최소권한·회수**; 공용 root SSH 개인키/주계정 비밀키 공유 금지. Crawlee 프로세스는 비특권 service user로 실행하고, root는 제한된 서비스 trigger만 수행.
-- 코드의 독립 HEAD 리뷰 정책은 [#481](https://github.com/ot4562-glitch/HUFS-One-AI/pull/481)→[#466](https://github.com/ot4562-glitch/HUFS-One-AI/pull/466)의 trusted gate 부트스트랩이 선행됩니다. **실 NCP 구성은 NOT_RUN/CONFIGURATION_REQUIRED, 출시는 RELEASE_BLOCKED**입니다.
+**현재 상태:** network/host Terraform·Windows→Ubuntu 계획/SSH 합성 프리뷰/롤백 **코드**가 존재하며 NCP 실제 리소스를 만들거나 운영·유료 모델을 실행한 것은 아닙니다. 자료·개인정보·기관·NCP/모델·운영/출시 승인은 소유자가 모두 완료 확인해 **`OWNER_CONFIRMED_APPROVED`**입니다. 실제 자격증명/호스트/요금·인그레스·복구 검증이 없어 **`CONFIGURATION_REQUIRED`** 및 **`RELEASE_BLOCKED`**로 관리합니다. 구현 현황 [STATUS](../../STATUS.md), 실운영 인수 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 비코드 운영 책임 [#12](https://github.com/ot4562-glitch/HUFS-One-AI/issues/12).
 
 ## 운영 책임과 승인
 
 - 심민성: Terraform·NCP SDK·배포 자동화/PowerShell·systemd/OS·worker·CI·rollback **모든 소프트웨어 코드**.
-- 이서연: React UI/UX·API·디자인 화면 구현 및 실제 서비스 연결. NCP 실 IAM/크레딧/비용·관리자 운영 권한은 **권한을 부여받은 운영자**가 #449의 책임·비용 계약 확정 후 수행하며 누구의 계정도 자동 가정하지 않습니다.
+- 이서연: NCP 계정/IAM·리전/SKU/스토리지/요금·크레딧/quota·실서버·실측 CPU/RSS/중지/반납 **비코드 운영**.
 - 프로젝트의 자료·클라우드·모델·운영 승인은 **소유자 완료 확인**. 실제 기관 라이선스·학생별 현재 동의·역할/비밀·현행 요금/리전/SKU/계정 한도와 적용 대상은 운영 구성을 통해 별도 검증합니다. `-Apply`·`terraform apply`는 명시적인 현재 대상/복구 조건으로만 수행합니다.
 
 ## 구성 단계

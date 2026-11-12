@@ -1,10 +1,5 @@
 # HUFS One AI — 독립 추천·미디어·시간 검증
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
-> **2026-11-11 기준:** 아래 Gold 분모·표본 수는 과거 조사 당시 수치이며, 이번 감사에서 새 사람 검수 실측값으로 갱신했다고 주장하지 않습니다. 운영 평가 인수는 [#360 사용권/Gold](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)·[#446 실제 검수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446)·[#452 AI QA](https://github.com/ot4562-glitch/HUFS-One-AI/issues/452)와 [11월 11일 전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)를 따릅니다. [#480 지표 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/480)의 macro-F1/Recall@k·MRR/span agreement 합성 CI 성공은 독립 사람 Gold/실모델 성능을 입증하지 않습니다. `NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
-
 **현재 상태:** 합성 평가 자료/검토 HTML·Ed25519 서명/append 원장 코드와 순수 코어·오프라인 평가 도구는 존재한다. 하지만 **실제 비작성자 사람 정답: 추천 0/200, 포스터 0/20, Temporal 0/12(합계 0/32)**. 코드 생성 서명·AI가 채운 라벨·자체 평가와 사람이 실제 읽고 검수한 Gold를 구별한다. 독립 사람 Gold는 본선 전 작업 범위에서 제외되어 있으며 완료/PASS가 아니다. 실제 추천 품질은 [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281), 운영 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 추적한다.
 
 ## 고정 평가 범위
@@ -51,7 +46,7 @@ node tools/evaluation/run.mjs report \
 2. 사람은 사례별 조건·관련성/불확실성·오독·bbox/시점·정정 근거를 실제 읽고, 판정/수정 이유·보류 사유를 입력하고 **검토자 자신의 서명**을 남긴다.
 3. 검증된 서명/범위·append-only ledger의 수정/replay·충돌 처리를 통과한 `LABELLED`만 사람 Gold 집계. `HOLD/NOT_RUN`을 0점·정답으로 채우지 않음.
 4. 사람 Gold 기반으로 P@3/nDCG@3, 조건 precision/recall, 중대한 거짓 ELIGIBLE·잘못된 asOf/출처, OCR bbox IoU와 model/token/KRW 비용을 재산출. 실 Provider 호출은 별도 이용권·예산 승인 이후에만.
-5. 실패는 개인 원문을 제거한 **합성 최소 반례**로 기록하고 현행 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)·[#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446)·[#452](https://github.com/ot4562-glitch/HUFS-One-AI/issues/452)의 인수와 연결한다. 원래 사람이 본 권리 있는 자료는 제한 원장에만 연결한다.
+5. 실패는 개인 원문을 제거한 **합성 최소 반례**로 기록하고 [#281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281)·[#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)의 인수와 연결한다. 원래 사람이 본 권리 있는 자료는 제한 원장에만 연결한다.
 
 ## 목표·한계
 
@@ -60,4 +55,4 @@ node tools/evaluation/run.mjs report \
 - 합성 5슬롯은 개인 학업 원본 제출 4명과 별개이며, 실제 원본 소유자·학교 RulePack 독립 대조는 [B03 인수](HUMAN_ACCEPTANCE_GATE_20261104.md)가 필요하다.
 - 실 호스트/실 계정/실기기/스크린리더 등은 평가 HTML+CI로 완료 표시하지 않는다.
 
-**진행·증거:** [STATUS](../STATUS.md), [REPORT](../REPORT.md), [추천 인수 #281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281), [현행 운영 통합 #445/#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445).
+**진행·증거:** [STATUS](../STATUS.md), [REPORT](../REPORT.md), [추천 인수 #281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281), [운영 통합 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276).

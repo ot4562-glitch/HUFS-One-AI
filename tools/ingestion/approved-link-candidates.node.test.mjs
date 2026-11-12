@@ -49,6 +49,8 @@ describe('#445 offline HTML/RSS/Atom/sitemap candidate extraction',()=>{
       {attrs:{href:'http://example.org/notices/1'}},
       {attrs:{href:'https://u:p@example.org/notices/1'}},
       {attrs:{href:'https://127.0.0.1/notices/1'}},
+      {attrs:{href:'https://localhost./notices/1'}},
+      {attrs:{href:'https://example.org./notices/1'}},
       {attrs:{href:'https://example.org/notices/%2e%2e/admin'}},
       {attrs:{href:'https://example.org/notices/1#token'}},
       {attrs:{href:'//other.example.org/notices/1'}},
@@ -65,6 +67,7 @@ describe('#445 offline HTML/RSS/Atom/sitemap candidate extraction',()=>{
   it('rejects unsafe scope, URL, parser or unbounded result limits',()=>{
     for(const opts of [{approvedOrigin:'https://other.example.org/'},
       {canonicalUrl:'http://example.org/notices/page/1'},
+      {canonicalUrl:'https://example.org./notices/page/1',approvedOrigin:'https://example.org./'},
       {allowPathPrefixes:[]},{allowPathPrefixes:['../']},
       {allowPathPrefixes:['/notices/%2e%2e']},{limit:101},{kind:'UNKNOWN'}]){
       assert.throws(()=>run([],opts.kind||'HTML',opts),/SOURCE_CANDIDATES_NOT_APPROVED/);

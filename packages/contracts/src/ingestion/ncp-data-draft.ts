@@ -113,15 +113,29 @@ export type DiscoveredLinkBatchDraft=z.infer<typeof DiscoveredLinkBatchDraftSche
 export function prepareDiscoveryReviewDrafts(input:{
   sourceId:string;revisionId:string;seenAt:string;
   scope:unknown;discovered:unknown;
+  /** Both records come from the operator's existing private source ledger. */
+  registration:unknown;revision:unknown;
 }):DiscoveryCandidateDraft[]{
   const sourceId=Id.parse(input.sourceId);
   const revisionId=Id.parse(input.revisionId);
   const seenAt=Iso.parse(input.seenAt);
   const scope=CrawlScopeDraftSchema.parse(input.scope);
   const batch=DiscoveredLinkBatchDraftSchema.parse(input.discovered);
-  if(sourceId!==scope.sourceId
-    ||new URL(batch.sourceUrl).origin!==new URL(scope.approvedOrigin).origin)
-    throw new Error('Discovery scope does not match the source');
+  const registration=SourceRegistrationDraftSchema.parse(input.registration);
+  const revision=SourceRevisionDraftSchema.parse(input.revision);
+  // Do not accept caller-supplied source/revision IDs without independently
+  // loading and comparing the captured original from the private ledger.
+  if(sourceId!==scope.sourceId||registration.sourceId!==sourceId
+    ||revision.sourceId!==sourceId||revision.revisionId!==revisionId
+    ||registration.permissionRef!==revision.permissionRef
+    ||registration.canonicalUrl!==batch.sourceUrl
+    ||new URL(batch.sourceUrl).origin!==new URL(scope.approvedOrigin).origin
+    ||!registration.rights.collect||!registration.rights.store
+    ||!revision.rights.collect||!revision.rights.store
+    ||!['PARSED','NEEDS_REVIEW','APPROVED','ACTIVE'].includes(revision.stage)
+    ||Date.parse(registration.observedAt)>Date.parse(seenAt)
+    ||Date.parse(revision.fetchedAt)>Date.parse(seenAt))
+    throw new Error('Discovery capture and source revision mismatch');
   const seen=new Set<string>();
   const records:DiscoveryCandidateDraft[]=[];
   for(const link of batch.candidates){
@@ -138,12 +152,100 @@ export function prepareDiscoveryReviewDrafts(input:{
   return records;
 }
 
+/** Conservative *offline* source budget/rights/robots gate. A READY result
+ * is NOT authorization to fetch: the private operator MUST independently
+ * recheck fresh rights, robots, terms, DNS/IP, HTTP status and tenant budget
+ * immediately before each request. No implicit network or timers here. */
+export const SourceRefreshPreflightDraftSchema=z.strictObject({
+  registration:SourceRegistrationDraftSchema,
+  scope:CrawlScopeDraftSchema,
+  pageUrl:OfficialHttpsUrlSchema,
+  now:Iso,
+  remainingRequests:z.number().int().min(0).max(100_000),
+  remainingBytes:z.number().int().min(0).max(1_000_000_000),
+  retryAfter:Iso.optional(),
+  // The private durable queue supplies actual counts and the last HTTP
+  // response status. No auto-retry decision is made from a page's text.
+  attemptsForUrl:z.number().int().min(0).max(10),
+  maxAttempts:z.number().int().min(1).max(3),
+  lastHttpStatus:z.number().int().min(100).max(599).optional(),
+  retryAfterHeader:z.string().min(1).max(128).optional(),
+});
+/** Strict RFC 9110 Retry-After delay-seconds or IMF-fixdate candidate.
+ * A missing/malformed/oversized header is NOT permission to retry.
+ * This is not a network client, clock authority or durable scheduler.
+ */
+export function parseReviewedRetryAfter(value:unknown,now:unknown):string|null{
+  if(typeof value!=='string'||value.length>128||value!==value.trim()
+    ||typeof now!=='string'||!Iso.safeParse(now).success)return null;
+  const at=Date.parse(now),max=86_400_000;
+  let until:number;
+  if(/^\d{1,5}$/.test(value)){
+    const seconds=Number(value);
+    if(!Number.isSafeInteger(seconds)||seconds>86400)return null;
+    until=at+seconds*1000;
+  }else{
+    // Accept the HTTP-date grammar produced by Date#toUTCString, not
+    // locale-dependent Date.parse variants or embedded input.
+    until=Date.parse(value);
+    if(!Number.isFinite(until)||new Date(until).toUTCString()!==value)return null;
+  }
+  return until<at||until-at>max?null:new Date(until).toISOString();
+}
+export type SourceRefreshPreflightDraft=z.infer<typeof SourceRefreshPreflightDraftSchema>;
+export type SourceRefreshPreflightResult={
+  state:'BLOCKED'|'READY_FOR_OPERATOR_RECHECK';
+  reasons:readonly string[];
+};
+export function evaluateSourceRefreshPreflight(input:unknown):SourceRefreshPreflightResult{
+  const parsed=SourceRefreshPreflightDraftSchema.safeParse(input);
+  if(!parsed.success)return {state:'BLOCKED',reasons:['INVALID_CONFIGURATION']};
+  const {registration,scope,pageUrl,now,remainingRequests,remainingBytes,retryAfter,
+    attemptsForUrl,maxAttempts,lastHttpStatus,retryAfterHeader}=parsed.data;
+  const reasons:string[]=[];
+  if(registration.sourceId!==scope.sourceId
+    ||new URL(registration.canonicalUrl).origin!==new URL(scope.approvedOrigin).origin
+    ||pageUrl!==registration.canonicalUrl)
+    reasons.push('UNREGISTERED_SOURCE');
+  if(!registration.rights.collect||!registration.rights.store)
+    reasons.push('PURPOSE_RIGHTS_NOT_REVIEWED');
+  if(scope.robotsStatus!=='REVIEWED_PERMITTED')
+    reasons.push('ROBOTS_NOT_PERMITTED');
+  if(scope.termsStatus!=='REVIEWED_PERMITTED')
+    reasons.push('TERMS_NOT_PERMITTED');
+  if(Date.parse(registration.observedAt)>Date.parse(now)
+    ||Date.parse(scope.observedAt)>Date.parse(now))reasons.push('FUTURE_REVIEW');
+  const pathname=new URL(pageUrl).pathname;
+  if(/%(?:00|25|2e|2f|5c)/i.test(pathname)
+    ||!scope.pathPrefixes.some(prefix=>prefix==='/'||pathname===prefix
+      ||pathname.startsWith(prefix.endsWith('/')?prefix:prefix+'/')))
+    reasons.push('PATH_NOT_APPROVED');
+  if(remainingRequests<1||remainingBytes<1)reasons.push('BUDGET_EXHAUSTED');
+  if(attemptsForUrl>=maxAttempts)reasons.push('ATTEMPT_LIMIT');
+  if(lastHttpStatus===401||lastHttpStatus===403)
+    reasons.push('ACCESS_CONTROLLED_NO_RETRY');
+  else if(lastHttpStatus!==undefined&&lastHttpStatus>=400
+    &&lastHttpStatus!==429&&lastHttpStatus!==503)
+    reasons.push('HTTP_ERROR_REVIEW_REQUIRED');
+  if(lastHttpStatus===429||lastHttpStatus===503){
+    const due=parseReviewedRetryAfter(retryAfterHeader,now);
+    if(!due)reasons.push('THROTTLED_OPERATOR_REVIEW');
+    else if(Date.parse(due)>Date.parse(now))reasons.push('RETRY_AFTER');
+  }
+  if(retryAfter&&Date.parse(retryAfter)>Date.parse(now))reasons.push('RETRY_AFTER');
+  return reasons.length?{state:'BLOCKED',reasons}:
+    {state:'READY_FOR_OPERATOR_RECHECK',reasons:[]};
+}
+
 export const SourceRevisionDraftSchema=z.strictObject({
   schemaVersion:z.literal(1),
   sourceId:Id,revisionId:Id,permissionRef:Id,
   /** An NCP-private opaque object identifier; never real bytes or signed URLs. */
   rawObjectKey:z.string().min(1).max(512)
-    .refine(v=>!v.includes('://')&&!v.startsWith('/')&&!v.includes('..')&&!/[\\\x00-\x1f]/.test(v)),
+    // Opaque object keys must not be accepted as URLs, encoded filesystem
+    // traversal, absolute paths or percent-decoded alternate names.
+    .regex(/^[A-Za-z0-9][A-Za-z0-9/_.:-]*$/)
+    .refine(v=>!v.includes('//')&&!v.includes('..')&&!v.includes('://')),
   originalSha256:Sha256,normalizedSha256:Sha256,
   extractedFromOriginalSha256:Sha256,
   ingestedBy:Id,fetchedAt:Iso,

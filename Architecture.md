@@ -1,20 +1,8 @@
 # HUFS One AI — Architecture
 
-> **2026-11-12 현행 재감사:** [36개 PR·31개 이슈 전수 기록](docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 새로 PR 3개 병합·버그 #427만 완료해 **PR 33건 / Issue 30건 OPEN**(감사 시점). 아래 옛 수치/상태는 기록 당시 스냅샷입니다. 합성 CI는 실 NCP·공식 출처 권리/사람 Gold 인수를 대신하지 않으며 `RELEASE_BLOCKED` 유지.
-
 **규범:** 이 문서는 현재 목표·권한·API·검증 계약이다. 실제 코드 정본은 [STATUS](STATUS.md)·GitHub `main`·[inventory](tools/api_contract_inventory.json). 기존 #252/#253/#257은 후속을 이관하여 종료되었으며, 실서비스 운영·실사용자/원본/기관/요금·출시 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 검증한다. 계획/스키마·합성 CI는 실운영·공식 학교 증명이 아니고 현재 `RELEASE_BLOCKED`.
 
 **업무 자동 배정/고정 역할 이슈 변경 금지:** [신규 에이전트 가이드](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md) · [대규모 실제 데이터 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360). 아래 과거 TASK 명칭은 코드 영역을 설명하는 참고이며 현행 사람별 기능 담당은 각 이슈의 최신 assignee/댓글을 따른다.
-
-## 2026-11-11 현행 경계 — NCP-only 실자료와 코드 통합/출시 분리
-
-**현재 운영 원칙:** 본 저장소는 **Crawlee 수집기·HWP/HWPX/HTML 파서·계약·API/DB migration·배포 스크립트와 오프라인/합성 테스트**를 관리합니다. 실제 공식 출처 URL 운영원장, 수집 원문·첨부 bytes, 권리/사람 Gold·독립 검수 원장, 실제 PostgreSQL/백업/비밀/개인자료는 **NCP 비공개 환경**에만 보존하도록 설계합니다. 공개 GitHub 이력의 과거 CSV 5개 권리 문제는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)에서 별도 조사 중이며, 자료 위치 정책만 바꾼다고 기존 노출이 지워지지는 않습니다.
-
-**출처 권리 분리:** 공개 URL 발견(discovery)은 허용된 취득·원본 저장·검색 노출·원문 재게시·OCR/HCX 외부 전송을 자동으로 허가하지 않습니다. robots/terms·현재 목적 권리/원본 hash·출처/판본·폐기/정정·실제 승인자는 분리해 판정하며, 수집 초안 `REVIEW_REQUIRED/NEEDS_REVIEW`는 `ACTIVE/REAL_APPROVED`가 아닙니다. 학생 개인 자료는 공개 크롤링 대상으로 사용하지 않습니다.
-
-**추가 기술 설계·개발:** [#445 Crawlee 기반 NCP 수집·갱신](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능/실자료 전환](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 미확정 데이터/권한/보존·예산 설계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449). 실제 인프라 설정/청구/키·RPO/RTO·권리·복원·수집 성공 지표는 `NOT_DESIGNED/NOT_RUN/CONFIGURATION_REQUIRED`로 추적합니다. 학교 SSO/API 직접 연동은 공모전용 독립 기능의 필수 조건이 아니지만 학교 공식 학적·상담·신청 완료를 주장할 수 없습니다.
-
-**현재 PR 감사:** 2026-11-11 최초 열린 PR 22건·이슈 31건, PR 모두 공식 COMMENT 코드 리뷰. [#475](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475)만 실제 동료 최신 HEAD 승인 후 [main 05d78cd](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939) 병합, 나머지 스택/동료 승인은 대기 중입니다. [전체 원장](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md) · [팀 역할](docs/WORKSTREAMS.md) · [PR 운영 정책](docs/PR_WORKFLOW.md). 이전 #276·2026-11-06 설명은 그 시점 이력으로 읽습니다.
 
 ## A00. 정본·용어·판정
 
@@ -55,7 +43,11 @@ Fastify API: OIDC/메일 검증·BETA/REVIEWER/ADMIN 분리·인가
 - 읽기/적용은 인증된 별도 **private operator plan→preview→apply** 절차로만. HTTP 공개 업로드/검증되지 않은 권한 주입/실학생 자료를 CI 또는 외부 AI로 옮기지 않는다.
 - 목적·필드·제공자·보관 기간·팀 공유·최초 Git 게시·클라우드/모델 외부 전송·발표/삭제·현재 철회는 서로 별도 권리 영수증. 사용자 확인된 자료 수집 허가는 보존하되 새 목적까지 자동 허용하지 않는다.
 
-## A04. 폐쇄형 공통 타입·출처
+## A04. 공통 타입·출처와 공개 웹 발견 정책
+
+**공개 웹 데이터 발견은 확장한다.** 학교 공식 공개 페이지는 URL별 수동 허가가 미등록이라는 이유만으로 발견 후보에서 제외하지 않는다. 일반 학생에게 공통 공개된 정보도 접근권 범위에 따라 별도 수집 후보가 될 수 있다. `robots.txt`로 자동 취득에 제한이 생겨도 목록에서 소실시키지 않고 공식/운영자 검토 취득·사용자 저장본 가져오기 등 다른 합당한 경로를 기록한다. 공개로 보이는 것과 자동 크롤링·원문 재게시·개인정보 활용 허가는 서로 독립이다. **현행 정확 URL 기반 수집 코드가 이 정책을 모두 구현한 것은 아니다.** 상세: [공개 웹 수집 정책](docs/PUBLIC_WEB_INGESTION_POLICY.md).
+
+
 
 공통 `@hufs-one/contracts`/Zod의 **TopicCode 24개**, Actor/Consent/SharingGrant/SourceRights, Context/VersionEnvelope, SourceRevision/SourceSpan/MediaEvidence, Academic/Forecast/Recommendation/AI 결과를 단일 정본으로 사용한다. `SourceClass`별 collect/store/display/AI transmit 허용 범위를 명시하고, 권리·원본 시점 불명은 `BLOCKED_RIGHTS/UNKNOWN`.
 

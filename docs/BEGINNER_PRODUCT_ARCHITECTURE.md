@@ -1,11 +1,6 @@
 # HUFS One AI 구조와 동작 원리 — 비전공자를 위한 설명서
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
-> **현행 2026-11-11 상태:** 기존 2026-11-06 합성 제품 설명을 유지하되, NCP 실제 자료 수집/권리 검증·배포는 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), 전 기능 실자료 전환은 [#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), 운영 계약 설계는 [#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)에서 **미완료**로 추적합니다. 예전 #276은 보관·이관 완료 이슈입니다. GitHub에는 코드·가상 시험 데이터만, 실제 출처/원문/Gold·권리/DB/비밀은 NCP 비공개 환경에만 보관하도록 설계합니다. [PR·Issue 전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참고하세요.
-
-
-> 기준: 2026-11-06. 코드를 몰라도 **서비스가 무엇을 하고, 데이터가 어디로 가며, 무엇이 실제 작동하고 무엇이 아직 준비 단계인지** 이해하도록 쓴다. 개발/운영 프로젝트 승인 상태는 `OWNER_CONFIRMED_APPROVED`지만 실제 학생의 소유권·현재 동의·외부 전송·실서비스 설정·인수는 별도다. 이전 [통합 이슈 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)은 보관·이관 완료 상태이며, NCP 운영 출시 여부는 `RELEASE_BLOCKED`로 구분한다.
+> 기준: 2026-11-06. 코드를 몰라도 **서비스가 무엇을 하고, 데이터가 어디로 가며, 무엇이 실제 작동하고 무엇이 아직 준비 단계인지** 이해하도록 쓴다. 개발/운영 프로젝트 승인 상태는 `OWNER_CONFIRMED_APPROVED`지만 실제 학생의 소유권·현재 동의·외부 전송·실서비스 설정·인수는 별도다. 관련 [운영 이슈 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)은 열린 상태이며, NCP 운영 출시 여부는 `RELEASE_BLOCKED`로 구분한다.
 
 [처음부터 서버 만들기](BEGINNER_NCP_SERVER_SETUP.md) · [서버에 제품·개발 AI 에이전트 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [프로젝트 README](../README.md)
 

@@ -1,29 +1,22 @@
 # HUFS One AI — PR 리뷰·검증·병합
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
-## 2026-11-11 현행 검토·병합 절차 — 11월 9일 지침보다 우선
+## 2026-11-11 사용자 지시 — 최신 HEAD 협업자 승인 없이는 병합 금지 (현행 우선)
 
-**현행 사용자 지시:** 가능한 PR 모두에 실제 최신 HEAD 코드/CI 리뷰를 작성하고, **작성자와 다른 팀 협업자의 현재 HEAD GitHub APPROVED**를 확인한 경우에만 병합합니다. 작성자 COMMENT·과거 SHA 승인·자동 검사 SKIPPED·실패 상태를 승인으로 대체하지 않습니다. 기능/보안 CI가 실패하거나 unresolved CHANGES_REQUESTED가 있으면 수정·재검증합니다. 최소 권한/서버 자료·학생 개인정보 경계를 유지합니다.
+- 과거 2026-11-09의 독립 리뷰 선택 및 자동 검사 폐기 지침은 **이후 사용자 지시로 변경**되었습니다. 아래 2026-11-09 내용은 역사적 기록으로만 읽으며 현재 병합 권한을 부여하지 않습니다.
+- 작성자와 **다른 팀 협업자** 1명 이상이 **정확한 현재 PR HEAD**의 변경 코드를 검토해 GitHub `APPROVED`를 제출해야 합니다. 작성자 COMMENT, CI 성공, 단순 리뷰 요청은 승인에 해당하지 않습니다. HEAD를 수정하면 다시 승인받아야 하고 보류된 `CHANGES_REQUESTED` 상태는 해결되어야 합니다.
+- 실원본/권리·NCP·DB migration·보안 계약은 해당 담당자의 추가 검토를 요청하고 실제 운영·권한 인수와 코드 병합을 구분합니다. 서버·실원본·일회용 PG의 실제 승인은 별도입니다.
+- `.github/workflows/independent-collaborator-review.yml`은 신뢰된 main의 읽기 전용 리뷰 검사를 수행합니다. **저장소 관리자**가 기본 브랜치 branch protection/ruleset에서 "PR 필수", "리뷰 최소 1", "최신 변경 시 승인 무효화", "필수 리뷰 체크"를 직접 설정해야 하며, 이 코드의 추가만으로 설정이 활성화되지는 않습니다.
+- 2026-11-11 당시 #456–#462의 과거 병합 승인 부재는 소급 승인으로 변경하지 않습니다. 후속 수정 PR #463 및 기능 PR #464–#465는 협업자 승인 전 병합하지 않습니다.
 
-1. GitHub에서 현재 main/PR head/base/stack 상태를 재조회하여 **실제 diff·파일/계약/권리·마이그레이션**을 검토합니다. CODEOWNER/담당자 재확인, source rights/개인정보 영향 및 모의 테스트 한계를 적습니다.
-2. 모든 열린 PR에 **실제 GitHub Review COMMENT 또는 정당한 리뷰**를 남기되, 본인 리뷰를 다른 협업자의 독립 승인으로 꾸미지 않습니다. 미해결 반례가 있으면 수정 PR이나 변경 요청으로 남깁니다.
-3. 동일한 **정확 HEAD**에서 TypeScript/계약, API, 일회용 PostgreSQL, Chrome, CodeQL, CSV 메타데이터 및 영향을 받는 Crawlee/NCP offline 검사 결과를 확인합니다. 각 실패·SKIP·NOT_RUN을 구별합니다.
-4. 리뷰 gate 부트스트랩은 [#481](https://github.com/ot4562-glitch/HUFS-One-AI/pull/481) → [#466](https://github.com/ot4562-glitch/HUFS-One-AI/pull/466) 순서입니다. **#481 자체의 타인 승인**이 먼저 필요합니다. #466/#476의 `BOOTSTRAP_PENDING`은 trusted main에 평가기가 아직 없어서 fail-closed된 상태이므로 자동 성공 처리/게이트 삭제 금지입니다. 관리자가 GitHub ruleset/branch protection에서 PR 및 최신 리뷰/필수 검사 보호를 별도 확인해야 합니다.
-5. 스택 PR은 부모 승인·병합·충돌/중복 여부를 확인합니다. 대표 순서: #482→#431, #465→#471→#472, #468→#474, #476→#477→#479. #476 통합에 포함된 **5,100개 rights proof lookahead 버그 수정**을 누락하거나 중복 덮어쓰지 않습니다.
-6. 병합 시 HEAD 고정 SHA를 지정한 squash/merge 후, **새 main SHA**로 해당 계약/보안 CI를 재검증합니다. 실제 NCP/학교 자료·원본 권리·인적 Gold/학생 E2E는 CI나 PR 병합으로 인수하지 않습니다. `RELEASE_BLOCKED` 유지.
-
-**2026-11-11 감사 결과:** 최초 OPEN PR 22건 모두 GitHub COMMENT 리뷰 작성, 그중 [#475](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475)만 타인 exact HEAD APPROVED와 CI 6/6 확인 후 main [`05d78cd`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)로 병합했습니다. OPEN Issue 31건은 완료 근거와 실제 인수 부족으로 자동 종료하지 않았습니다. [전수 감사 원장](REVIEW_AND_ISSUE_AUDIT_20261111.md) · [현재 상태](../STATUS.md). 이 아래 11월 9일의 선택적 승인 정책은 **당시의 역사 기록**이며 현행 승인 근거가 아닙니다.
-
-## 2026-11-09 당시 PR 병합·리뷰 정책 적용 스냅샷
+## 2026-11-09 최신 PR 병합·리뷰 정책 적용 스냅샷
 
 - 이전 검수의 9건(#424/#420/#402/#403/#404/#409/#407/#408/#422)과 후속 6건(#361/#372/#405/#406/#410/#421), **15개 코드·의존성 PR이 실제 병합됐습니다.** 추가로 정책 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)가 [88b7814](https://github.com/ot4562-glitch/HUFS-One-AI/commit/88b7814a1317bc7856ee04ca83b294f2d9eee465)로 병합돼 이번 이력에서 최종 문서 [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)의 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)까지 **총 17건 병합**을 확인했습니다. [현행 STATUS](../STATUS.md)에 추가 6건의 정확한 main 병합 SHA가 있습니다.
 - 사용자가 승인 검사용 `exact-HEAD independent approval`의 자동 실패를 중단하도록 명시했고, 실제 병합된 [#425](https://github.com/ot4562-glitch/HUFS-One-AI/pull/425)는 워크플로·그 전용 테스트·CI checkout 참조를 제거했습니다. **일반 기능/보안 CI는 유지**하며 담당 에이전트는 이 문서의 diff·안전성·CI 검토를 실제로 수행하고 불확실성/미승인을 정직하게 표시합니다.
 - 최종 문서 [#419](https://github.com/ot4562-glitch/HUFS-One-AI/pull/419)는 [main `fd55ba0`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/fd55ba033b88a44deda159ef8fca4a30f7e84cea)로 병합했고, 기능/보안 CI를 유지하며 [OPEN PR 0건](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 확인했습니다. 과거 시점의 7개 OPEN 기록은 역사적 정보이며, 매 작업 시 실제 GitHub를 다시 확인합니다.
 
-## 2026-11-09 당시 PR 협업 검토 운영 지침 — 자동 승인 강제 제거(역사적 기록)
+## PR 협업 검토 운영 지침 — 2026-11-09 사용자 지시로 자동 승인 강제 제거
 
 **GitHub Actions가 외부 협업자 `APPROVED` 또는 exact-HEAD 리뷰 유무 때문에 실패하도록 하지 않습니다.** 자동 차단 워크플로 `.github/workflows/independent-pr-review.yml`과 이에 종속된 테스트를 제거하고, 사람 리뷰 원칙은 문서 가이드로 유지합니다. 승인 미수신을 코드·보안 테스트 실패로 표시하지 않습니다.
 

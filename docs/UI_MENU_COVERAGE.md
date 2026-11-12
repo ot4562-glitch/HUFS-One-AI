@@ -1,7 +1,5 @@
 # HUFS One AI — 현재 메뉴·기능 대응표
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
 **제품은 독자적인 React UI**이며 기존 HUFSAbility의 코드·브랜드/디자인을 복제하지 않습니다. 메뉴/기능 이름을 참조하는 것은 학교 공식 기능을 새 서비스에서 제공하거나 SSO로 연동했다는 뜻이 아닙니다.
 
 ## 제품 주요 메뉴 (실제 React 경로)

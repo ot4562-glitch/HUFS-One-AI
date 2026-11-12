@@ -1,7 +1,5 @@
 # HUFS One AI — 현재 운영 구성
 
-> **2026-11-12 현행 재감사:** [36개 PR·31개 이슈 전수 기록](docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 새로 PR 3개 병합·버그 #427만 완료해 **PR 33건 / Issue 30건 OPEN**(감사 시점). 아래 옛 수치/상태는 기록 당시 스냅샷입니다. 합성 CI는 실 NCP·공식 출처 권리/사람 Gold 인수를 대신하지 않으며 `RELEASE_BLOCKED` 유지.
-
 **승인 상태: OWNER_CONFIRMED_APPROVED.** 프로젝트 소유자가 개발·운영 방향의 승인을 확인했으나 실제 현재 학생·원문 이용권/동의·NCP/PG·HCX-007/OCR 청구/운영/복구 인수는 **NOT_RUN/NOT_CONNECTED/RELEASE_BLOCKED**입니다. 현행 코드·배포/비용·권한 증거는 [STATUS](STATUS.md)·[운영 절차](docs/PRODUCTION_RUNTIME.md)·[데이터 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)·[보안 #362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362)·[CampusAssist #367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367)에서 추적합니다. 과거 #276은 실서비스 현재 OPEN 여부를 대신하지 않습니다.
 
 ## 코드와 운영

@@ -1,30 +1,6 @@
 # HUFS One AI — 현재 팀 역할·추가 기능 협업 정본
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
-> 2026-11-11 전수 감사 기준. 11월 9일까지의 인계와 역할 기록은 보존하며 새로운 P0/P1 업무·승인 의존성은 아래 현행 표를 우선 적용한다. **고정 역할의 정의는 #355–#359 원래 본문이며, 최신 실행 가이드와 인수 기록은 해당 이슈의 댓글로만 추가**한다. #321–#325는 보관됐으며 과거 배정 방식·일정·담당을 현재 기준에 적용하지 않는다. 기능별 담당·실제 인수 상태의 최신 정본은 개별 `[추가 기능]` 이슈와 PR이다.
-
-## 2026-11-11 현재 열린 과업·검수 책임과 의존성
-
-**[PR 22건·Issue 31건 전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)**에 현재 HEAD/CI·협업자 리뷰·이슈별 미완 인수 근거를 기록했습니다. 최초 열린 PR 22건 모두 공식 코드 COMMENT 리뷰, 그중 #475만 정확 HEAD 동료 승인/CI 6/6 확인 후 main [05d78cd](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)에 병합됐습니다. **열린 31건 모두 자동 종결하지 않았으며**, 11월 9일의 기존 본선 전 담당 9건 완료·이관과 이후 새로 배정된 P0/P1 업무는 별도입니다.
-
-| 실행 흐름 | 개발·검수 주책임 | 아직 완료하지 않은 조건 |
-| --- | --- | --- |
-| [#445 Crawlee/NCP 수집](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) P1 | **심민성** 코드/worker/DB·배포; **김채윤** 권한 있는 수집·실원문 검수 | #476 통합, #477→#479 preflight, 비공개 NCP source registry/권리·실서비스·복원/스케줄·비특권 실행 실제 인수 |
-| [#447 전 기능 실데이터](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447) P0 | **심민성** API/DB·코드/통합, **김채윤** 실자료/Gold; AI·웹 각 책임자 | #465→#471→#472 V2 스택, #470 Top-K, NCP 실제 원문→정규화→DB→API→화면 권리·실증 인수 |
-| [#449 NCP 계약 설계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449) P1 | **심민성** 총괄·설계 결정; **김채윤** 권리/Gold 인수 의견 | 데이터 계약/보존·삭제/RPO·RTO/예산/크레딧/계정·실원장 운영 선택 A~G NOT_DESIGNED |
-| [#418 검색 세션·KST](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418), [#427 상담 async 경합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427) | **이서연** 프런트 UI, **박준영** QA, **심민성** API/인증 경계 검수 | 409·422·429/세션 분리, KST 날짜, 늦은 비동기 응답 폐기·브라우저 회귀 미완 |
-| [#341 FAQ 극성 반례](https://github.com/ot4562-glitch/HUFS-One-AI/issues/341), [#373 동일 판본 충돌](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373) | **이의상** FAQ AI/언어, **박준영** 독립 반례 QA | `못합니다`/`안 됩니다` 부정 회귀, 후속 #478 동료 검수·병합/원장 검증 |
-| [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360) / [#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446) 실제 자료·Gold | **김채윤** 공식 자료/권리·독립 Gold·시연 | NCP 사설 원장에 실제 출처/권리·재게시/외부 AI 송신·수정/철회 검수, 과거 공개 CSV 권리 문제 |
-| [#466](https://github.com/ot4562-glitch/HUFS-One-AI/pull/466) 리뷰 gate / [#481](https://github.com/ot4562-glitch/HUFS-One-AI/pull/481) 선행 | **심민성** 통합·GitHub 설정, **작성자 아닌 동료 협업자** 실제 HEAD 승인 | #481 독립 승인→병합→#466 gate 재실행, 관리자 ruleset 활성화. 작성자 COMMENT는 승인 아님 |
-
-**기본 운영:** 코드 리뷰/CI/일회용 PG와 실 NCP·실학교 원문·실학생/사람 Gold/사용권 승인은 분리. 합성 PASS를 운영 완료라고 표시하지 않고 `RELEASE_BLOCKED` 유지합니다. 본선 이후 고정 역할 #355–#359는 제목·본문·상태·담당을 수정하지 않으며 진행은 **새 댓글로만** 기록합니다.
-
-## 2026-11-11 추가 기능 이번 회차 직접 개발 한시 기록 (상시 정책 아님)
-
-**2026-11-11 요청의 이번 개발 회차에만** 심민성이 담당 여부와 무관하게 13개 [추가 기능] #339–#341·#343–#352의 미완 코드를 직접 구현합니다. **향후 반복 적용하는 상시 역할 정책이 아니며**, 다음 회차는 기존 업무 배정·별도 사용자 지시를 따릅니다. 최초 AI 주담당(박준영 6개·이의상 7개), 데이터·독립 Gold(김채윤), 웹 구현(이서연)의 **기존 담당을 해제하거나 역할 이슈 #355–#359를 고치지 않습니다.** 심민성은 기능별 최신 코드·열린 PR/테스트를 확인해 Core/Contracts/API/DB·웹·AI 보정 중 중복되지 않은 부분을 직접 구현하고, 다른 담당자에게 정확한 PR/SHA·검토 요청을 남깁니다. AI/추천·규칙 코드는 AI 개발자 상호 검수 및 독립 HEAD 승인 전 병합하지 않습니다.
-
-**첫 실행:** [#345](https://github.com/ot4562-glitch/HUFS-One-AI/issues/345) React 상담기관 필터 비동기 응답 오류 [#427](https://github.com/ot4562-glitch/HUFS-One-AI/issues/427)의 구현 PR [#485](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485). 필터 목적·캠퍼스·언어 변경/구요청 역순 응답·actor 전환·unmount 합성 회귀를 포함. CI와 실제 외부 협업자 승인은 별도 확인 후 merge. 실 상담기관 NCP 권리/Gold·인적 실증은 여전히 NOT_RUN/RELEASE_BLOCKED입니다.
+> 2026-11-09 현재 팀 운영 정책. **고정 역할의 정의는 #355–#359 원래 본문이며, 최신 실행 가이드와 인수 기록은 해당 이슈의 댓글로만 추가**한다. #321–#325는 보관됐으며 과거 배정 방식·일정·담당을 현재 기준에 적용하지 않는다. 기능별 담당·실제 인수 상태의 최신 정본은 개별 `[추가 기능]` 이슈와 PR이다.
 
 ## 1. 고정 팀 역할
 

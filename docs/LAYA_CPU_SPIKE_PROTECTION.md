@@ -1,7 +1,5 @@
 # HUFS One AI — Laya CPU/메모리 격리 및 안전 중단
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
 **현재 상태:** Laya ONNX·child IPC/supervisor·스케줄/압력 방어와 Linux cgroup/systemd 관련 **안전 코드/샘플 설정**이 존재하지만 실제 승인된 NCP 호스트의 CPUQuota/RSS/OOM/p95·모델 weight/라이선스·서비스 비용·실현성은 미수락입니다. **`LAYA_ENABLED=false`/AI 기본 OFF, RELEASE_BLOCKED.**
 
 ## 원칙

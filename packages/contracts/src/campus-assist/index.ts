@@ -12,6 +12,8 @@ export const CampusProvenanceSchema = z.enum(['SYNTHETIC','REAL_APPROVED']);
 
 export const ActivityRecordSchema = z.strictObject({
   entryId:Id, sourceId:Id, revisionId:Id, supersedes:Id.optional(),
+  /** Optional for existing records; required by offline channel-intake verification. */
+  channelId:Id.optional(),
   organizationId:Id, seriesId:Id, title:z.string().trim().min(2).max(240),
   kind:z.enum(['ORIENTATION','ACADEMIC','RECRUITMENT','LECTURE','OTHER']),
   campus:z.enum(['SEOUL','GLOBAL','BOTH']),
@@ -22,6 +24,24 @@ export const ActivityRecordSchema = z.strictObject({
   venue:z.string().max(160).optional(),
 });
 export type ActivityRecord = z.infer<typeof ActivityRecordSchema>;
+/** Pre-NCP, operator-curated channel registry. Nothing in this contract is a
+ * live crawler authorization or an independent rights attestation. */
+export const ActivityOrganizationSchema=z.strictObject({
+  organizationId:Id,displayName:z.string().trim().min(2).max(160),
+  campus:z.enum(['SEOUL','GLOBAL','BOTH']),
+  aliases:z.array(z.string().trim().min(2).max(160)).max(20),
+  verifiedAt:Iso,
+});
+export type ActivityOrganization=z.infer<typeof ActivityOrganizationSchema>;
+export const ActivityChannelSchema=z.strictObject({
+  channelId:Id,organizationId:Id,sourceBaseUrl:Source,
+  verifiedAt:Iso,effectiveFrom:Iso,effectiveUntil:Iso.optional(),
+  rights:CampusRightsSchema,provenance:CampusProvenanceSchema,
+  status:z.enum(['ACTIVE','REMOVED']),
+  reviewRef:Id,
+});
+export type ActivityChannel=z.infer<typeof ActivityChannelSchema>;
+
 export const ActivityForecastSchema = z.strictObject({
   organizationId:Id, seriesId:Id, targetYear:z.number().int().min(2000).max(2200),
   asOf:Iso, state:z.enum(['PREDICTED','CONFIRMED','CANCELLED','INSUFFICIENT_DATA','UNKNOWN']),
@@ -102,6 +122,8 @@ export type FaqCandidate = z.infer<typeof FaqCandidateSchema>;
 
 export const ActivityArchiveResponseSchema=z.strictObject({
   asOf:Iso,sourceVersion:Id,items:z.array(ActivityRecordSchema).max(200),
+  /** Optional for older read-only clients; true means only a bounded subset was returned. */
+  hasMore:z.boolean().optional(),
 });
 export const ExchangePartnerSummarySchema=z.strictObject({
   partnerId:Id,track:z.enum(['OIA','DEPARTMENT']),minimumGpa:z.number().min(0).max(4.5),
@@ -112,9 +134,17 @@ export const ExchangePartnerSummarySchema=z.strictObject({
 export const ExchangePartnerListSchema=z.strictObject({
   asOf:Iso,sourceVersion:Id,partners:z.array(ExchangePartnerSummarySchema).max(50),
 });
+/** Source-only fallback: references are reviewed server metadata, not generated text. */
+export const FaqSourceLinkSchema=z.strictObject({
+  documentId:Id,revisionId:Id,title:z.string().min(1).max(200),
+  sourceUrl:Source,verifiedAt:Iso,
+});
 export const FaqAskResponseSchema=z.discriminatedUnion('status',[
   z.strictObject({status:z.literal('NOT_FOUND'),asOf:Iso,evidence:z.array(z.never()).length(0)}),
-  z.strictObject({status:z.literal('CONFIGURATION_REQUIRED'),asOf:Iso,evidence:z.array(z.never()).length(0)}),
+  z.strictObject({status:z.literal('CONFIGURATION_REQUIRED'),asOf:Iso,
+    evidence:z.array(z.never()).length(0),
+    /** No model answer or paragraph text. Safe, current official source links only. */
+    sourceLinks:z.array(FaqSourceLinkSchema).max(6).optional()}),
   z.strictObject({status:z.literal('NEEDS_REVIEW'),asOf:Iso,answer:FaqCandidateSchema,
     evidence:z.array(z.strictObject({citationId:Id,sourceUrl:Source,title:z.string().min(1),verifiedAt:Iso})).max(6),
     usage:z.strictObject({promptTokens:z.number().int().nonnegative(),completionTokens:z.number().int().positive(),

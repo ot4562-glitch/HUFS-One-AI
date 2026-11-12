@@ -12,7 +12,7 @@ const Revision=z.object({
   permission_ref:Id,
   status:z.enum(['ACTIVE','NEEDS_REVIEW','STALE','RETRACTED','BLOCKED_RIGHTS']),
   change_kind:z.enum(['NEW','CORRECTED','EXTENDED','CANCELLED','UNKNOWN']),
-  media_kind:z.enum(['HTML','TEXT','PDF','IMAGE']),
+  media_kind:z.enum(['HTML','TEXT','PDF','IMAGE','HWP','HWPX']),
   source_class:z.enum(['SYNTHETIC','LICENSED_EXTERNAL','PERSONAL_CONSENTED','RESEARCH_REFERENCE_ONLY']),
   provenance:z.enum(['SYNTHETIC','REAL_APPROVED','RESEARCH_ONLY']),
   content_sha256:z.string().regex(/^[0-9a-f]{64}$/),
@@ -45,7 +45,7 @@ export interface PublicSourceRevisionMetadata {
   revisionId:string;supersedes?:string;
   status:'ACTIVE'|'NEEDS_REVIEW'|'STALE'|'RETRACTED'|'BLOCKED_RIGHTS';
   changeKind:'NEW'|'CORRECTED'|'EXTENDED'|'CANCELLED'|'UNKNOWN';
-  mediaKind:'HTML'|'TEXT'|'PDF'|'IMAGE';contentSha256:string;
+  mediaKind:'HTML'|'TEXT'|'PDF'|'IMAGE'|'HWP'|'HWPX';contentSha256:string;
   publishedAt?:string;fetchedAt:string;lastCheckedAt:string;lastVerifiedAt?:string;
 }
 export interface PublicSourceRevisionHistory {

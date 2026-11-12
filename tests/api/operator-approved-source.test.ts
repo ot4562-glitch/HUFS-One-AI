@@ -1,5 +1,7 @@
 import {describe,it,expect,vi} from 'vitest';
 import {createOperatorApprovedSource} from '../../apps/api/src/operator-approved-source.js';
+import type {SourceDocumentExtractor} from '../../apps/api/src/modules/opportunities/source-document-extractor.js';
+import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
 
 const NOW='2026-11-04T00:00:00.000Z';
 const policy={sourceId:'SRC_A',permissionRef:'RIGHT_A',
@@ -14,11 +16,11 @@ const receipt=()=>({receipt_id:'RECEIPT_A',actor_id:'operator-A',
   starts_at:'2026-11-03T00:00:00Z',expires_at:'2026-11-05T00:00:00Z',
   policy_version:'p1',database_now:NOW,revoked_at:null});
 
-function setup(current:Record<string,unknown>|null=receipt()){
+function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:SourceDocumentExtractor){
   const query=vi.fn(async()=>({rows:current?[current]:[]}));
   const rights={connect:vi.fn(async()=>({query,release:()=>{}}))};
   const untouched=()=>({connect:vi.fn(async()=>{throw Error('unexpected SQL');})});
-  const headReader=untouched(),writer=untouched(),queue=untouched();
+  const headReader={connect:vi.fn<ReviewerSqlPool['connect']>(async()=>{throw Error('unexpected SQL');})},writer=untouched(),queue=untouched();
   const resolveAddresses=vi.fn(async()=>['8.8.8.8']);
   const requestPinned=vi.fn(async()=>new Response('synthetic'));
   const mayProcess=vi.fn(async()=>true);
@@ -27,12 +29,22 @@ function setup(current:Record<string,unknown>|null=receipt()){
     pools:{rights,headReader,writer,queue},
     egress:{resolveAddresses,requestPinned},
     extractor:{extract:async()=>[{id:'p1',text:'Synthetic approved test'}]},
+    ...(documentExtractor?{documentExtractor}:{}),
     authority:{mayProcess},now:()=>NOW,
   });
   return {result,rights,headReader,writer,queue,resolveAddresses,requestPinned,mayProcess,query};
 }
 
 describe('operator SourceRevision composition',()=>{
+  it('forwards the explicit local document parser after current rights and head lookup',async()=>{
+    const extract=vi.fn(async()=>{throw new Error('synthetic document parser entered');});
+    const f=setup(receipt(),{extract});
+    f.headReader.connect.mockResolvedValue({query:async()=>({rows:[]}),release:()=>{}});
+    f.requestPinned.mockImplementation(async()=>new Response('synthetic bytes',{headers:{'content-type':'application/x-hwp'}}));
+    await expect(f.result.executor.execute({actorRef:'operator-A',sourceId:'SRC_A',permissionRef:'RIGHT_A'}))
+      .rejects.toThrow('synthetic document parser entered');
+    expect(extract).toHaveBeenCalledTimes(1);expect(f.writer.connect).not.toHaveBeenCalled();
+  });
   it('stays inert on construction and rejects foreign actor/source without DB or HTTP',async()=>{
     const f=setup();
     expect(f.rights.connect).not.toHaveBeenCalled();

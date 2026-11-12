@@ -1,34 +1,10 @@
 # HUFS One AI — 현재 구현·검증·후속 인수
 
-> **2026-11-12 현행 재감사:** [36개 PR·31개 이슈 전수 기록](docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 새로 PR 3개 병합·버그 #427만 완료해 **PR 33건 / Issue 30건 OPEN**(감사 시점). 아래 옛 수치/상태는 기록 당시 스냅샷입니다. 합성 CI는 실 NCP·공식 출처 권리/사람 Gold 인수를 대신하지 않으며 `RELEASE_BLOCKED` 유지.
-
-> **현행 상태: 2026-11-11 (Asia/Seoul).** 11월 9일까지의 수치와 완료 기록은 날짜가 명시된 역사적 스냅샷이며, **현재 진행사항은 아래 11월 11일 섹션을 우선** 적용합니다. 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
+> **현행 상태: 2026-11-09 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
 
-> **2026-11-11 후속 재조회:** 최초 22개 PR에 대한 감사 이후 [#483 FAQ 한국어 부정 표현 버그 수정](https://github.com/ot4562-glitch/HUFS-One-AI/pull/483)이 추가되었습니다. HEAD `4d8b911` 코드/부정 테스트 검토·GitHub **7/7 Actions SUCCESS**와 공식 COMMENT 리뷰 등록을 확인했으나 **미병합·독립 최신 HEAD APPROVED 없음**. [#484 문서 통합 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/484)도 생성되어, #475 병합 이후 최신 열린 PR은 **23건**, 열린 Issue는 **31건**입니다. 변경 시 GitHub 재조회가 우선하며 #341은 실 FAQ/HCX/Gold 인수까지 OPEN입니다.
-
-> **2026-11-11 이번 회차에 한정된 추가 개발 지시 반영(상시 정책 아님):** 심민성은 기존 AI/데이터 담당자 assignee를 유지하면서 13개 `[추가 기능]` #339–#341·#343–#352에도 병렬 기여합니다. 첫 실제 코드 [#485](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485) (HEAD `4198d20`)는 #345 상담 UI의 #427 구응답 누설 버그를 수정하고 합성 JSDOM 회귀를 추가했습니다. **CI/협업자 실제 최신 HEAD APPROVED 대기, 미병합.** #485 생성 후 열린 PR 24건/Issue 31건(시점 스냅샷). 실 상담기관·NCP/권리·Gold/학생 E2E는 여전히 NOT_RUN, RELEASE_BLOCKED입니다.
-
-## 2026-11-12 이번 구현 회차 현재 통합·리뷰 상태 (이전 스냅샷보다 우선)
-
-- **이번 개발 회차만** 심민성이 `[추가 기능]` 비배정 건의 합성 코드에 직접 기여합니다. 기존 13개 이슈의 박준영·이의상 AI 주담당, 김채윤 원본/Gold, 이서연 웹 담당을 **영구 변경하지 않습니다**.
-- [#485 상담 검색 경합](https://github.com/ot4562-glitch/HUFS-One-AI/pull/485): 최신 HEAD `4198d20`의 타인 `APPROVED`, 전체 Actions 7/7 성공을 확인해 **main [79e8810](https://github.com/ot4562-glitch/HUFS-One-AI/commit/79e8810b49fe7392bf27410b95f3c8596a6e0649)에 실제 squash 병합**. #345 전체 실상담/인적 인수와 #427 브라우저 실사용 확인은 별도로 남음.
-- [#486 공고 검색 세션·커서·429](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486): HEAD `31939aa`, 최초 합성 테스트 fixture 누락 수정 후 TASK-00 SUCCESS·신규 UI 회귀 **10건 통과**. [#487 교환학생 1~3개 승인 대학 비교](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487): HEAD `95e3ad5`, JSX 문법 오류 보정 후 TASK-00 SUCCESS·새 테스트 **6건 통과**. [#488 활동 공지/취소 KST 연도](https://github.com/ot4562-glitch/HUFS-One-AI/pull/488): HEAD `981b4f5`, TASK-00 SUCCESS·새 회귀 **5건 통과**. **세 PR 모두 미병합·작성자 아닌 최신 HEAD 승인 미확인**. 이 시점 GitHub-hosted Ubuntu의 Korean fonts `apt` 다운로드 DNS 실패 때문에 Browser E2E/Pages CI에 실패가 있으며 전체 CI 통과라고 주장하지 않습니다. 실제 NCP/기관 자료·권리·Gold/실계정은 별도입니다.
-- **추가 WIS 버그 [#482](https://github.com/ot4562-glitch/HUFS-One-AI/pull/482):** 리뷰어의 기존 `CHANGES_REQUESTED` 원인(스크립트 문자열 `<!--` 때문에 표 전체 삭제)을 재현하고 `script → comment` 제거 순서로 수정, 신규 회귀 2건 추가했습니다. HEAD `10d412e`의 재테스트·리뷰어 재승인/부모 #431 반영 전까지 병합 보류. 승인 요청 자체는 승인 완료가 아닙니다.
-- **동료 exact HEAD 리뷰 최신 정정:** #463 `94461c0`, #465 `f8bf33c`, #470 `554c220`, #471 `e39f703`은 2026-11-11 리뷰에서 각각 협업자 `APPROVED`를 받았습니다(아래 표의 과거 미승인 표시는 당시 기록). 단, CI·충돌·stack/다른 리뷰를 별도 확인해야 병합 가능. [#472](https://github.com/ot4562-glitch/HUFS-One-AI/pull/472)는 DB 연결 2개/요청으로 작은 연결 풀에서 동시 요청 timeout이 재현되어 **구조적 연결 자원 수정·실 PG 부하 재검증 전 통합 금지**.
-- **독립 승인·실서비스 경계:** #481 trusted-main 검증기 부트스트랩 후 #466/#476 gate 재실행, #482→#431 정상 사이트 회귀, 스택 중복 해결. `RELEASE_BLOCKED` 유지. 현행 기술/자료 인수 #445/#447/#449/#360/#446는 합성 코드 완료와 별개입니다.
-
-## 2026-11-11 현재 PR·Issue 감사 및 본선 전 통합 현황
-
-- **GitHub 감사 시점:** 최초 OPEN PR 22건, OPEN Issue 31건. 22건의 최신 HEAD diff·일반 CI·기존 협업자 리뷰를 확인하고 **전부 공식 COMMENT 코드 리뷰를 GitHub에 작성**했습니다. 각 PR의 상세 상태와 이슈 31건 인수 표는 [11월 11일 전수 감사](docs/REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조하세요. 작성자 COMMENT는 독립 협업자 APPROVED가 아닙니다.
-- **실제 병합:** [#475](https://github.com/ot4562-glitch/HUFS-One-AI/pull/475) HEAD `4a0f906`에서 팀 협업자 정확 HEAD APPROVED + 필수 기능 CI 6/6 SUCCESS를 확인, main [`05d78cd`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/05d78cdff03d68d1b711f9009bdbb335bc0e2939)로 squash 병합했습니다. 최초 나머지 21건은 **승인/스택 의존성/잔여 검토**로 미병합이며 새 문서 PR은 별도 취급합니다.
-- **승인 검증기:** #466 HEAD `21c0c17`은 동료 APPROVED가 있지만 #481을 신뢰된 main에 먼저 승인·병합해야 합니다. #466과 #476의 independent gate 실패 `BOOTSTRAP_PENDING`은 실제 코드 기능 CI 실패가 아니며 **우회하지 않습니다**. #476 일반 CI 9/9 성공과 정확 HEAD 동료 승인 부재는 별도입니다. #477/#479의 skipped gate도 승인으로 치지 않습니다.
-- **코드 보정 및 스택:** #476에는 51행 lookahead×100 unique rights 증명 5,100개를 기존 상한 5,050개가 거부하던 버그 수정이 있습니다. 시간표 PR #431은 주석 속 가짜 행·학기·캠퍼스가 실제 데이터가 되는 결함을 수리한 #482를 부모 HEAD에 통합한 뒤 재검증해야 합니다. #465→#471→#472, #468→#474, #476→#477→#479 의존 순서를 보존합니다.
-- **이슈 전수 점검:** OPEN 31건 본문·담당·기존 인계 기록을 검토했고, **이번에 근거 없이 완료/종결한 이슈는 0건**입니다. 기존 본선 전 담당 9건의 11월 9일 완료·이관 기록을 유지하면서 새 #445 Crawlee·NCP, #447 전 기능 P0, #449 설계 P1은 미완 상태입니다. #341 FAQ 부정극성 반례, #373 출처 충돌(#478 미병합), #418 공고 검색 KST/세션, #427 상담 async 경합은 별도 OPEN입니다.
-- **운영/권리:** 실제 NCP, 기관 원본 권리·재게시/외부 AI 전송, 원본 CSV 5개 공개 위험, 독립 Gold·팀원 계정/비밀·백업/restore, 실학생 E2E는 코드 CI가 수락하지 않습니다. **OWNER_CONFIRMED_APPROVED(개발 승인) / RELEASE_BLOCKED(실운영 불가)** 유지. 고정 역할 이슈 #355–#359의 원문·상태는 수정하지 않았습니다.
-
-## 2026-11-09 본선 전 심민성 담당 이슈 정산 (역사적 스냅샷)
+## 2026-11-09 본선 전 심민성 담당 이슈 정산 (최신)
 
 - **기준 main:** [`6c27fdc`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6c27fdc281a1d3c632eb39d9ada4322540493069). GitHub 확인: **전체 열린 이슈 22건**, **열린 PR #431 1건**, 심민성에게 배정된 열린 이슈는 [본선 이후 역할 #359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) 한 건뿐입니다.
 - **본선 전 담당 9건 완료·이관 후 CLOSED/completed:** [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362), [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366), [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367), [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375), [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381), [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416), [#430](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430), [#433](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433). 각 이슈 댓글에 실제 PR/CI/일회용 PG 검수와 이관 근거를 기록했습니다.

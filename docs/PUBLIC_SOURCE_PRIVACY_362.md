@@ -1,7 +1,5 @@
 # Public tracked CSV exposure review — #362
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
 **Status: OPEN / HUMAN RIGHTS REVIEW REQUIRED (2026-11-09).**
 
 Five previously committed original CSV files under `csv/` are already tracked in the **public** repository. A `.gitignore` entry does **not** hide existing tracked objects or remove historical downloads or forks. This status is **not** a finding that anyone violated a law and not proof of a privacy breach; publication rights and reidentification risks remain unverified. Existing original names, data and history are not copied into this file.

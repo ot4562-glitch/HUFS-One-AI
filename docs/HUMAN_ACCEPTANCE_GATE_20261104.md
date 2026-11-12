@@ -1,7 +1,5 @@
 # HUFS One AI — 실제 검증 체크리스트
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
 문서상 승인·자료 사용·운영/출시 동의는 소유자가 모두 완료 확인했습니다. **OWNER_CONFIRMED_APPROVED**입니다. 본 목록은 승인 대기표가 아니라 실제 구현·측정·시험 결과 확인표입니다. [승인 정본](AUTHORIZATION.md) · [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276).
 
 - [ ] **인증/권한:** 실제 OIDC·메일·ADMIN/BETA/REVIEWER·만료/철회·다중탭·CSRF/다른 사용자 사칭 거부.

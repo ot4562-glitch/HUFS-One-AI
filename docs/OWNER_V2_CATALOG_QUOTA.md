@@ -1,7 +1,5 @@
 # #447 — V2 owner catalog durable quota (pre-NCP)
 
-> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
-
 `PostgresOwnerV2CatalogQuota` provides the **existing**
 `TrustedOwnerV2SearchQuota` interface for the private owner V2 search route.
 It is replica-shared via a PostgreSQL security-definer function with a
@@ -10,7 +8,10 @@ and counts are stored, never actor IDs, student details or search text.
 
 **Fail-closed deployment:** the migration creates an **empty** quota policy
 table. Until the owner approves a per-minute limit between 1 and 120 and an
-independent operator enters it, every call is DENIED. The SQL file does not
+independent operator enters it, every call fails closed as an operator
+configuration error (`PROVIDER_UNAVAILABLE`), **not** a misleading
+per-actor `RATE_LIMITED` response. Actual quota exhaustion returns false
+and maps to `RATE_LIMITED`. The SQL file does not
 automatically grant EXECUTE, create roles, or enable catalog data sources.
 Only a reviewed operator role can call the function. DB time, rather than an
 untrusted browser clock, is authoritative, and one UPSERT arbitrates concurrent

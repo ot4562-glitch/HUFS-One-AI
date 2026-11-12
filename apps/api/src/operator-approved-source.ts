@@ -12,6 +12,7 @@ import {createApprovedDurableSourceExecutor} from './modules/opportunities/sourc
 import type {ApprovedFetchPolicy,SourceContentExtractor} from './modules/opportunities/approved-fetch.js';
 import type {ApprovedPinnedEgress} from './modules/opportunities/approved-egress.js';
 import type {TrustedSourceIngestionAuthority} from './modules/opportunities/source-ingestion-queue-postgres.js';
+import type {SourceDocumentExtractor} from './modules/opportunities/source-document-extractor.js';
 
 type OperatorSourcePort=NonNullable<PostgresPlatformConfig['sourceIngestion']>;
 export interface OperatorApprovedSourceInput {
@@ -20,6 +21,7 @@ export interface OperatorApprovedSourceInput {
   pools:{rights:ReviewerSqlPool;headReader:ReviewerSqlPool;writer:ReviewerSqlPool;queue:ReviewerSqlPool};
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
+  documentExtractor?:SourceDocumentExtractor;
   /** Independently revocation-aware operator authorization, never a browser claim. */
   authority:TrustedSourceIngestionAuthority;
   now?:()=>string;
@@ -32,6 +34,7 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
     ||typeof input.egress?.resolveAddresses!=='function'
     ||typeof input.egress?.requestPinned!=='function'
     ||typeof input.extractor?.extract!=='function'
+    ||(input.documentExtractor!==undefined&&typeof input.documentExtractor?.extract!=='function')
     ||typeof input.authority?.mayProcess!=='function')
     throw new Error('Approved SourceRevision configuration missing');
   const pools=Object.values(input.pools??{});
@@ -79,6 +82,7 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
   const writer=new PostgresSourceRevisionWriter(input.pools.writer);
   const executor=createApprovedDurableSourceExecutor({
     policies,rights,egress:input.egress,extractor:input.extractor,
+    ...(input.documentExtractor?{documentExtractor:input.documentExtractor}:{}),
     readerPool:input.pools.headReader,writer,now,
   });
   return {pool:input.pools.queue,authority,executor};

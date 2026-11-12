@@ -127,6 +127,8 @@ describe('TASK-19 approved-source ingestion, fail-closed HTTP and immutable draf
       {...POLICY,canonicalUrl:'https://user:pass@official.example.edu/notice'},
       {...POLICY,canonicalUrl:'https://localhost/notice'},
       {...POLICY,canonicalUrl:'https://127.0.0.1/notice'},
+      {...POLICY,canonicalUrl:'https://localhost./notice'},
+      {...POLICY,canonicalUrl:'https://metadata.google.internal./notice'},
       {...POLICY,canonicalUrl:'https://official.example.edu:8443/notice'},
     ])expect(()=>createApprovedSourceFetcher({
       policy,ledger:new MemorySourceRevisionLedger(),extractor,
