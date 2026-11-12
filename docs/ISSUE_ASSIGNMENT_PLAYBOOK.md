@@ -1,5 +1,7 @@
 # 신규 이슈 자동 업무 배정 · 자료 요청 · 구현 인수 실행 규칙
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **최초 방문 에이전트용 정본.** 저장소 루트 [AGENTS.md](../AGENTS.md)와 [팀 업무](WORKSTREAMS.md)를 먼저 읽는다. 이 문서는 GitHub 이슈를 읽고 **추가 질문 없이 기본 배정 규칙을 집행**하기 위한 절차이다. [초기 배정 Actions](../.github/workflows/issue-initial-routing.yml)와 [추가 기능/데이터 요청 템플릿](../.github/ISSUE_TEMPLATE/)이 **새 이슈의 최초 assignee**를 자동 지정하며, 에이전트는 실제 **자료 필요성 판단·독립 데이터 이슈 생성/공동 assignee·AI 인계/교차검증**을 이어서 수행한다. 이 Actions의 실제 실행 성공 여부는 새 이슈 생성 시 별도로 확인한다.
 
 ## 처음 방문한 에이전트: 이슈 생성 전 반드시 읽기
