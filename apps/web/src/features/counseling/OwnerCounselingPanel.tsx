@@ -14,12 +14,17 @@ const purposes=[
   {code:'STUDY',label:'학습 방법'},
   {code:'INTERNATIONAL',label:'국제학생·교류'},
   {code:'WELLBEING',label:'학생 생활·상담'},
+  {code:'MAJOR',label:'전공 선택·변경'},
+  {code:'JOB_SEARCH',label:'구직·면접 준비'},
+  {code:'WRITING',label:'글쓰기 지원'},
+  {code:'OTHER',label:'기타 공식 상담'},
 ] as const;
 
 /** #366 owner-only verified institutional suggestions; never school counseling bookings. */
 export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
   const scope=useSyncExternalStore(port.session.subscribe,port.session.getState,port.session.getState);
   const [purpose,setPurpose]=useState<string>('CAREER');
+  const [extraPurposes,setExtraPurposes]=useState<string[]>([]);
   const [campus,setCampus]=useState('');
   const [language,setLanguage]=useState('');
   const [result,setResult]=useState<Result|null>(null);
@@ -44,7 +49,7 @@ export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
     setResult(null);setBusy(true);
     try{
       const value=await port.session.runLatest('owner-counseling',
-        signal=>port.search({purposes:[purpose],
+        signal=>port.search({purposes:[purpose,...extraPurposes.filter(code=>code!==purpose)].slice(0,5),
           ...(campus?{campus}:{}),...(language?{language}:{})},signal));
       if(version===requestVersion.current&&value&&port.session.getState().status==='READY')
         setResult(value);
@@ -66,6 +71,25 @@ export function OwnerCounselingPanel({port}:{port:OwnerCounselingPort}){
         onChange={event=>{setPurpose(event.target.value);invalidateResults();}}>
         {purposes.map(item=><option key={item.code} value={item.code}>{item.label}</option>)}
       </select>
+      <fieldset>
+        <legend>복합 상담 목적 (추가 선택, 최대 5개)</legend>
+        {purposes.filter(item=>item.code!==purpose).map(item=>
+          <label key={item.code}>
+            <input type="checkbox" name="additional-counseling-purpose"
+              value={item.code} checked={extraPurposes.includes(item.code)}
+              disabled={!extraPurposes.includes(item.code)
+                &&extraPurposes.filter(code=>code!==purpose).length>=4}
+              onChange={event=>{
+                const code=event.target.value;
+                setExtraPurposes(current=>event.target.checked
+                  ?[...current.filter(x=>x!==purpose),code].slice(0,4)
+                  :current.filter(x=>x!==code));
+                invalidateResults();
+              }} />
+            {item.label}
+          </label>)}
+        <p className="muted">직접 선택한 목적 코드만 조회합니다. 사연·진단명은 전송하지 않습니다.</p>
+      </fieldset>
       <label htmlFor="counseling-campus">찾을 캠퍼스 (본인 학적 검증 아님)</label>
       <select id="counseling-campus" value={campus} onChange={e=>{setCampus(e.target.value);invalidateResults();}}>
         <option value="">캠퍼스 선택 안 함</option><option value="SEOUL">서울</option><option value="GLOBAL">글로벌</option>
