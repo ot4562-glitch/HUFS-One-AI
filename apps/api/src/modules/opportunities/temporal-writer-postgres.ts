@@ -9,6 +9,7 @@ import type {RevisionParagraph} from './revision-ledger.js';
 import {parseSourceImageEvidence} from './source-image-evidence.js';
 import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
 import {validatePdfRasters} from './source-pdf-rasters.js';
+import {parseSourceBrowserEvidence} from './source-browser-evidence.js';
 
 /**
  * Transactional Postgres source writer. Cannot be reached by browser routes.
@@ -26,6 +27,8 @@ export class PostgresSourceRevisionWriter {
     imageEvidence?:unknown;
     pdfEvidence?:unknown;
     pdfRasters?:readonly SourcePdfRaster[];
+    browserEvidence?:unknown;
+    browserDomBytes?:Uint8Array;
   }):Promise<RevisionInvalidationVNext|null>{
     if(!input.permissionReviewed)throw new Error('Missing approved source rights');
     const r=SourceRevisionVNextSchema.parse(input.revision);
@@ -47,6 +50,11 @@ export class PostgresSourceRevisionWriter {
       throw new Error('Immutable revision integrity failure');
     // Image/PDF candidates retain their original OCR geometry and cannot self-approve.
     const binding={sourceId:r.sourceId,revisionId:r.revisionId,permissionRef:r.permissionRef,originalSha256:r.originalSha256};
+    const browserRequested=input.browserEvidence!==undefined||input.browserDomBytes!==undefined;
+    if(browserRequested&&(r.mediaKind!=='HTML'||r.status!=='NEEDS_REVIEW'||r.lastVerifiedAt!==undefined
+      ||!(input.browserDomBytes instanceof Uint8Array)))throw new Error('Source browser evidence requires independent review');
+    const browser=browserRequested?parseSourceBrowserEvidence(input.browserEvidence,input.browserDomBytes!,paragraphs,
+      {...binding,originalByteLength:originalBytes.length,asOf:r.fetchedAt}):undefined;
     const pdf=r.mediaKind==='PDF'?parseSourcePdfEvidence(input.pdfEvidence,binding):undefined;
     const image=r.mediaKind==='IMAGE'?parseSourceImageEvidence(input.imageEvidence,binding):pdf;
     if(image&&(r.status==='ACTIVE'||r.lastVerifiedAt!==undefined
@@ -116,10 +124,12 @@ export class PostgresSourceRevisionWriter {
         r.revisionId,page.pageIndex,page.assetId,page.rasterSha256,page.bytes,page.width,page.height,
       ]);
       await c.query(`INSERT INTO source_originals_vnext(
-        revision_id,original_sha256,original_bytes,captured_at,image_evidence,image_evidence_sha256)
-        VALUES($1,$2,$3,$4,$5::jsonb,$6)`,[
+        revision_id,original_sha256,original_bytes,captured_at,image_evidence,image_evidence_sha256,
+        browser_evidence,browser_evidence_sha256,browser_dom_bytes)
+        VALUES($1,$2,$3,$4,$5::jsonb,$6,$7::jsonb,$8,$9)`,[
         r.revisionId,r.originalSha256,originalBytes,r.fetchedAt,
         image?JSON.stringify(image.evidence):null,image?.sha256??null,
+        browser?JSON.stringify(browser.evidence):null,browser?.sha256??null,browser?.domBytes??null,
       ]);
       const updated=await c.query(`UPDATE source_ingest_heads
         SET revision_id=$2,fetched_at=$3,last_checked_at=$3

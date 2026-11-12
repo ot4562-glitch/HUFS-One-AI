@@ -13,6 +13,7 @@ const Runtime=z.strictObject({wrapperSha256:SHA,bwrapSha256:SHA,rootfsSha256:SHA
   chromiumVersion:z.string().regex(/^\d{2,3}\.\d+\.\d+\.\d+$/),
   policyVersion:z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/),
 });
+export {Runtime as SourceBrowserRuntimeSchema};
 export type SourceBrowserRuntime=z.infer<typeof Runtime>;
 function denied():never{throw new Error('SOURCE_BROWSER_UNAVAILABLE');}
 const sha=(v:string|Uint8Array)=>createHash('sha256').update(v).digest('hex');

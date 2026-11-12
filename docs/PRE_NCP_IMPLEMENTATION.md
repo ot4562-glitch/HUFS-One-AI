@@ -59,4 +59,12 @@
 
 고정 Chromium 래퍼·bubblewrap·독립 rootfs의 전체 해시/소유권/권한 검증을 추가했다. rootfs 링크는 커널 순서대로 해석하고, 외부/없는 대상·순환·비실행 ELF·쓰기 가능한 파일/잘못된 소유권을 거부한다. 래퍼는 네트워크 namespace·읽기 전용 rootfs·별도 proc/dev/tmp·환경 초기화·capability 제거를 적용하고 Chromium 자체 sandbox를 유지한다. sandbox 무효화 옵션의 단일/이중 하이픈 및 `=값` 우회도 거부한다.
 
-독립 코드 검토에서 발견한 링크/`..` 순서·디렉터리 오인·옵션 표기 우회 3건을 각각 실패로 재현한 뒤 수정했다. 브라우저 경계+기존 PDF 회귀 23개, 타입 검사, API 빌드 및 Bash 문법 검사를 수행했다. 파일 메타데이터/바이트는 합성 모의이며, 실제 Chromium/rootfs/커널 namespace 실행은 NOT_RUN이다. **Crawlee 렌더링·원본/DOM 구분·저장/검수 연결은 아직 후속 구현 대상이다.**
+독립 코드 검토에서 발견한 링크/`..` 순서·디렉터리 오인·옵션 표기 우회 3건을 각각 실패로 재현한 뒤 수정했다. 브라우저 경계+기존 PDF 회귀 23개, 타입 검사, API 빌드 및 Bash 문법 검사를 수행했다. 파일 메타데이터/바이트는 합성 모의이며, 실제 Chromium/rootfs/커널 namespace 실행은 NOT_RUN이다. 이 단계 당시의 DOM 저장·검수 잔여 범위는 아래 후속 구현 기록을 우선한다.
+
+### 브라우저 DOM 근거 저장·검수 후속 구현
+
+`source-browser-evidence.ts`가 원본/DOM/문단·렌더러·자원 판본을 별도로 결속한다. DOM과 원본을 같은 SQL 트랜잭션에 보존하며 브라우저 결과의 자기 승격을 거부한다. 검수 포트는 보존된 정확한 `browserEvidenceSha256`를 독립적으로 확인해야 한다. 새 migration은 기존 이미지/PDF view의 열·검수 규칙을 유지하고 자원 최신 head·정확한 최신 권리 receipt·만료/철회를 계속 검사한다. 자원 정정/권리 철회 시 부모 DOM 근거가 즉시 NEEDS_REVIEW로 돌아간다.
+
+합성 PGlite에서 실제 9개 migration과 writer→검수→제한된 reader view, 원본/DOM 별도 보존, 자원 변경/철회 및 불변 원본 UPDATE 거부를 실행해 통과했다. 같은 시험을 기존 네이티브 disposable PostgreSQL suite에도 추가했다. 네이티브 다중 연결·NCP는 NOT_RUN이다. 별도 코드 검토에서 차단 결함은 발견되지 않았다. **Crawlee/Playwright 렌더링, 현재 자원 바이트 로딩, 취득 executor 연결과 304/동일판 처리의 연결은 다음 구현 대상이다.**
+
+이 단계의 최종 전체 회귀: Node 24.15.0에서 430개 파일/5,060개 테스트 PASS, 13개 파일/105개 테스트 명시적 SKIP. 해당 SKIP 중 로컬 PGlite 1개는 별도로 켜서 PASS했으며 네이티브 PG/동시성 증거는 아니다. 타입 검사·API 빌드·공개 경계 172개 PASS. 기존 일반 원본 저장 시험은 새 DOM 열 3개가 모두 NULL임을 확인하도록 계약을 갱신했고, 관련 집중 회귀 56개도 PASS했다.

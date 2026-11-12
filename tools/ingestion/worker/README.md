@@ -99,8 +99,43 @@ in filesystem order before subsequent `..` components. The fixed
 The current synthetic tests simulate metadata/bytes and execute only shell
 argument validation. They do not establish that an NCP rootfs, user namespaces
 or Chromium is installed or runnable. The next implementation must connect
-this boundary to Crawlee/Playwright, serve only already-authorized captured
-bytes, and retain separate original/DOM hashes and review evidence.
+this boundary to Crawlee/Playwright and serve only already-authorized captured
+bytes. The following storage contract is implemented independently of rendering.
+
+### Browser DOM proof and review storage
+
+Apply `infra/sql/20261112_source_browser_evidence.sql` after the PDF evidence
+and verified-source-rights migrations **before deploying the new source writer
+or reviewer**, including when browser rendering is disabled. The existing
+originals table gains private DOM bytes, a separate DOM metadata bundle and
+its hash. No public DTO/view exposes those bytes. Originals and DOM proof are
+inserted in one transaction; existing immutable-history triggers cover all
+added columns. Browser-produced HTML must start as `NEEDS_REVIEW`.
+
+`source-browser-evidence.ts` binds the original byte SHA/length, DOM SHA/length,
+paragraph hash, root selector, exact renderer identity and resource references.
+Its stable rendering hash excludes capture time/revision identity, allowing
+unchanged captures to be recognized without mislabelling DOM as origin bytes.
+Resources are bounded to 16 distinct canonical URLs/1 MiB, each linked to an
+immutable source revision and exact `rightsReceiptId` with current
+COLLECT/STORE/SEARCH authority. Native resource acquisition remains separately
+rights/egress/budget gated; metadata alone grants no fetch permission.
+
+The independent review port must acknowledge `browserEvidenceSha256` for the
+exact retained bundle. SQL activation also checks that each resource still has
+the same current head and latest non-revoked, unexpired rights receipt.
+Correction or withdrawal of a resource immediately makes the derived parent
+`NEEDS_REVIEW`; it cannot retain a previous browser approval. The prior
+TEXT/image/PDF view columns and behaviour are preserved.
+
+The native disposable PostgreSQL suite includes the complete synthetic
+writer→review→effective-view flow and dependency changes. A local, explicitly
+enabled PGlite proof can exercise the same slice on Windows:
+`$env:HUFS_SOURCE_BROWSER_PGLITE='1'; npx vitest run tests/api/source-browser-local-pg-opt-in.test.ts` (PowerShell).
+It requires an operator-installed development-only PGlite at
+`local_only/sql-validation`; the test does not install packages or open a socket.
+PostgreSQL-WASM is a single-connection proof, not native pool/concurrency or NCP
+acceptance. Actual browser rendering still needs the Crawlee adapter connection.
 
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
 pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled
