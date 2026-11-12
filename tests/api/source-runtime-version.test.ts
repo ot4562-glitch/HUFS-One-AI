@@ -1,5 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
-import {requireSourceRuntimeVersion} from '../../apps/api/src/modules/opportunities/source-runtime-version.js';
+import {requireSourceRuntimeVersion,pinSourceRuntimeVersion} from '../../apps/api/src/modules/opportunities/source-runtime-version.js';
 
 const expected={gitSha:'a'.repeat(40),buildSha:'b'.repeat(64),migrationVersion:'migration-1',
   adapterVersion:'adapter-1',datasetRevision:'dataset-1',schemaVersion:1};
@@ -28,5 +28,22 @@ describe('#445/#449 runtime version handshake',()=>{
   it('rejects unsupported readers even with an otherwise identical version',async()=>{
     await expect(requireSourceRuntimeVersion({...make(),reader:{minSchemaVersion:2,maxSchemaVersion:2}},request))
       .rejects.toThrow('Source runtime version blocked');
+  });
+  it('snapshots deployment and reader targets without freezing caller-owned configuration',async()=>{
+    const port={...make(),expected:{...expected},reader:{minSchemaVersion:1,maxSchemaVersion:1}};
+    const pinned=pinSourceRuntimeVersion(port);
+    port.expected.datasetRevision='SYN-NEW';port.reader.maxSchemaVersion=2;
+    expect(pinned.expected.datasetRevision).toBe('dataset-1');expect(pinned.reader.maxSchemaVersion).toBe(1);
+    expect(Object.isFrozen(pinned.expected)).toBe(true);expect(Object.isFrozen(pinned.reader)).toBe(true);
+    port.loadCurrent.mockResolvedValue({...expected,datasetRevision:'SYN-NEW'});
+    await expect(requireSourceRuntimeVersion(pinned,request)).rejects.toThrow('Source runtime version blocked');
+  });
+  it('does not allow reader widening while a current-state lookup is awaiting IO',async()=>{
+    const port=make({...expected,schemaVersion:2});
+    port.loadCurrent.mockImplementation(async()=>{port.reader.maxSchemaVersion=2;return {...expected,schemaVersion:2};});
+    // Matching expected schemaVersion is allowed by a later deployment, but
+    // it must not widen this invocation's independently pinned reader range.
+    const wider={...port,expected:{...expected,schemaVersion:2}};
+    await expect(requireSourceRuntimeVersion(wider,request)).rejects.toThrow('Source runtime version blocked');
   });
 });

@@ -58,6 +58,14 @@ describe('#445 guarded source acquisition driver',()=>{
     expect(x.append).not.toHaveBeenCalled();
     expect(x.storeHttpValidators).not.toHaveBeenCalled();
   });
+  it('#449 cannot move the pinned deployment target by mutating caller configuration during acquisition',async()=>{
+    const x=harness(async({request})=>{await request();
+      x.runtime.expected.datasetRevision='SYN-MOVED-TARGET';
+      x.loadVersion.mockResolvedValue({...x.runtime.expected});
+    });
+    await expect(x.service.execute(input)).rejects.toThrow('Source runtime version blocked');
+    expect(x.append).not.toHaveBeenCalled();expect(x.storeHttpValidators).not.toHaveBeenCalled();
+  });
   it('requires the independent source preflight and checks it twice before pinned HTTP',async()=>{
     const x=harness(async({request})=>{await request();});
     await x.service.execute(input);

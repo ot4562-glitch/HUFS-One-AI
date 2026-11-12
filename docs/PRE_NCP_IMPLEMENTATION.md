@@ -96,3 +96,9 @@
 최신 열린 이슈 31개의 상태를 재조회했다. #450–#454의 본문/댓글을 확인하고 기존 metrics/FAQ 합성 지표를 재사용하도록 유지했다. 선택적 개발 가상환경에서 실제 MarkItDown 0.1.9와 기존 Cheerio를 한국어 HTML 8개로 비교했다. 기대 문구 보존은 양쪽 16/16, 제외 문구 잔존은 기존 0/5·기본 후보 2/5, 빈 문서 처리는 양쪽 2/2였다. 결과·정의·한계·재현 명령·공식 LICENSE/버전 근거는 [OSS 기록](oss/README.md)에 있다. 현재 HTML은 기존 경로를 유지하고 후보 운영 도입은 보류한다. PDF/Office·LangExtract·FAISS/GraphRAG·다른 도구/계정의 실제 A/B와 전체 이슈 감사·최종 PR은 계속 남아 있다.
 
 Windows Python stdout 기본 코드페이지로 문자가 손실되는 실험 harness 문제를 ASCII JSON으로 수정하고 실제 후보의 한국어 전달 시험으로 검증했다. Node 24.15.0에서 기본/지표/실제 후보 3개 시험 PASS. 별도 코드 검토에서 나온 provenance 보완 의견을 반영해 실제 baseline 소스/worker lock 해시·Cheerio 버전도 저장했다. 실자료·NCP·유료 AI 호출은 없다. 이 문자열 실측을 독립 사람 Gold나 전체 RAG 정확도로 집계하지 않는다.
+
+### 버전 계약의 mutable target 수정 — #445/#449
+
+현재 #445/#449/#519 본문을 재대조하면서 버전 검사 기준이 호출자 객체를 계속 참조하는 결함을 확인했다. 실제 수집 callback이 HTTP 이후 expected datasetRevision과 live manifest를 함께 바꾸면 기존 실행기가 NEW_DRAFT를 저장했고, loader 대기 중 reader 범위 확대도 허용했다. 두 반례를 실패로 재현한 뒤 executor 생성 시 expected/reader를 검증·복사·동결하도록 수정했다. live loader의 조회와 메서드 this 바인딩은 유지하며, 새 배포는 새 executor를 구성해야 한다. 단독 handshake도 await 전에 reader 범위를 복사·검증한다.
+
+버전/취득/브라우저/운영 구성 집중 회귀 42개와 타입 검사·API 빌드 PASS. 실제 고정 CheerioCrawler와 컴파일된 executor 통합 3개도 PASS했다. 별도 코드 검토에서 남은 차단 결함은 없었다. 이 수정은 런타임 버전의 일관성 검사이며, **수집·변경 없음 관측 원장에 실제 실행 버전 전체를 영속 기록하는 요구는 아직 남아 있다**. 현재 writer의 새 원본과 source_check_observations INSERT에는 git/build/migration/adapter/dataset/schema manifest를 기록하지 않는다. 다음 구현은 이 private 이력 결속이며, 이를 기존 handshake 통과만으로 완료 처리하지 않는다.

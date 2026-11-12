@@ -18,7 +18,7 @@ import {KOREAN_DOCUMENT_MIMES,parseSourceDocumentDraft,type SourceDocumentExtrac
 import {acquireApprovedSourceResponse,type ApprovedSourceAcquisition} from './source-acquisition.js';
 import {requireCurrentSourceRefreshPreflight,type TrustedSourceRefreshPreflight}
   from './source-refresh-operator-preflight.js';
-import {requireSourceRuntimeVersion,type TrustedSourceRuntimeVersion} from './source-runtime-version.js';
+import {requireSourceRuntimeVersion,pinSourceRuntimeVersion,type TrustedSourceRuntimeVersion} from './source-runtime-version.js';
 import type {TrustedSourceRefreshBudget} from './source-refresh-budget.js';
 import type {SourceBrowserExtractor} from './source-browser-extractor.js';
 import {parseSourceBrowserEvidence,SourceBrowserRendererSchema} from './source-browser-evidence.js';
@@ -111,9 +111,10 @@ export function createApprovedDurableSourceExecutor(options:{
     throw new Error('Source runtime version configuration required');
   if(native&&typeof options.budget?.reserve!=='function')
     throw new Error('Source refresh budget configuration required');
+  const runtimeVersion=options.runtimeVersion?pinSourceRuntimeVersion(options.runtimeVersion):undefined;
   const now=options.now??(()=>new Date().toISOString());
   const requireVersion=async(sourceId:string,permissionRef:string)=>{
-    if(options.runtimeVersion)await requireSourceRuntimeVersion(options.runtimeVersion,{sourceId,permissionRef,now:now()});
+    if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{sourceId,permissionRef,now:now()});
   };
   const readHead=async(sourceId:string,canonicalUrl:string):Promise<StoredHead|null>=>{
     const c=await options.readerPool.connect();
@@ -155,7 +156,7 @@ export function createApprovedDurableSourceExecutor(options:{
       const policy={...registered};
       const u=reviewPolicy(policy,input.sourceId,input.permissionRef);
       const at=now(),initial=await approvedFingerprint({policy,resolver:options.rights,now:at});
-      if(options.runtimeVersion)await requireSourceRuntimeVersion(options.runtimeVersion,{...input,now:at});
+      if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{...input,now:at});
       if(native)await requireCurrentSourceRefreshPreflight(
         options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
           canonicalUrl:u.href,now:at});
@@ -168,7 +169,7 @@ export function createApprovedDurableSourceExecutor(options:{
         // Head lookup and both DNS checks may outlive the original grant.
         // Revalidate the same COLLECT/STORE authority immediately before HTTP.
         const currentTime=now();
-        if(options.runtimeVersion)await requireSourceRuntimeVersion(options.runtimeVersion,{...input,now:currentTime});
+        if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{...input,now:currentTime});
         if(await approvedFingerprint({policy,resolver:options.rights,now:currentTime})!==initial)
           throw new Error('Source rights changed before HTTP');
         // A queue admission preflight is not a network grant. Re-read the
