@@ -29,7 +29,8 @@ describe('#9 redesign home (P001) and banners', () => {
     const [matched, due, credits] = cards();
     const listed = within(screen.getByRole('region', {name: '나에게 맞춘 공고'})).getAllByRole('heading', {level: 3}).length;
     expect(matched).toContain(`${listed}건`);
-    expect(due).toMatch(/^확정 7일 내 일정\d+건확정 마감 \d+개/);
+    expect(due).toMatch(/^확정 7일 내 일정\d+건/);
+    expect(due).not.toContain('확정 마감');
     expect(credits).toContain('95학점');
     expect(credits).toContain('공식 판정 아님');
   });

@@ -319,3 +319,20 @@ test('interactive discovery: home selector and live opportunity filters at 360px
   const overflow = await noHorizontalOverflow(page);
   expect(overflow.scroll, JSON.stringify(overflow.offenders)).toBeLessThanOrEqual(overflow.width);
 });
+
+test('product heading aligns with the shared header and stays compact on mobile', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 900});
+  await page.goto('/');
+  const bounds = await page.evaluate(() => {
+    const header = document.querySelector('.topbar__row')!.getBoundingClientRect();
+    const heading = document.querySelector('.page-head')!.getBoundingClientRect();
+    return {headerLeft: header.left, headingLeft: heading.left};
+  });
+  expect(Math.abs(bounds.headerLeft - bounds.headingLeft)).toBeLessThanOrEqual(1);
+  await expect(page.getByRole('heading', {level: 1})).toHaveText('오늘');
+  await expect(page.locator('.hero')).toHaveCount(0);
+  await page.setViewportSize({width: 360, height: 900});
+  await expect(page.getByRole('heading', {level: 1})).toBeVisible();
+  const overflow = await noHorizontalOverflow(page);
+  expect(overflow.scroll, JSON.stringify(overflow.offenders)).toBeLessThanOrEqual(overflow.width);
+});
