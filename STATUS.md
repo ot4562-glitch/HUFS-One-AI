@@ -1,5 +1,7 @@
 # HUFS One AI — 현재 구현·검증·후속 인수
 
+> **2026-11-12 현행 재감사:** [36개 PR·31개 이슈 전수 기록](docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 새로 PR 3개 병합·버그 #427만 완료해 **PR 33건 / Issue 30건 OPEN**(감사 시점). 아래 옛 수치/상태는 기록 당시 스냅샷입니다. 합성 CI는 실 NCP·공식 출처 권리/사람 Gold 인수를 대신하지 않으며 `RELEASE_BLOCKED` 유지.
+
 > **현행 상태: 2026-11-11 (Asia/Seoul).** 11월 9일까지의 수치와 완료 기록은 날짜가 명시된 역사적 스냅샷이며, **현재 진행사항은 아래 11월 11일 섹션을 우선** 적용합니다. 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
