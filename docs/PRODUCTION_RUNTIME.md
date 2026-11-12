@@ -1,5 +1,7 @@
 # HUFS One AI — 승인된 운영 API 실행
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **2026-11-11 현행 책임과 인수:** 본 파일은 DB/API/docker 운영 코드 구조 설명이며, 2026-11-08 이후 새 책임 범위 [#445 NCP 수집·갱신](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능 실데이터](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 운영 설계·계정/권한·버전·보존·비용](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)이 OPEN입니다. 옛 #276은 보관·이관 완료 이슈이고 최신 실행 결과를 기록하는 곳이 아닙니다. 실제 PostgreSQL/원본·Gold/키·NCP 실배포·백업/복원·운영 학교/AI 권리는 `NOT_RUN / CONFIGURATION_REQUIRED / RELEASE_BLOCKED`이며 [전체 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)를 참조합니다. 실제 source registry/학생정보·운영 로그/DB·Gold는 NCP 제한 환경에 보존하고 GitHub/외부 모델에 옮기지 않습니다.
 
 
