@@ -1,5 +1,7 @@
 # HUFS One AI — 독립 추천·미디어·시간 검증
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **2026-11-11 기준:** 아래 Gold 분모·표본 수는 과거 조사 당시 수치이며, 이번 감사에서 새 사람 검수 실측값으로 갱신했다고 주장하지 않습니다. 운영 평가 인수는 [#360 사용권/Gold](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)·[#446 실제 검수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446)·[#452 AI QA](https://github.com/ot4562-glitch/HUFS-One-AI/issues/452)와 [11월 11일 전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)를 따릅니다. [#480 지표 PR](https://github.com/ot4562-glitch/HUFS-One-AI/pull/480)의 macro-F1/Recall@k·MRR/span agreement 합성 CI 성공은 독립 사람 Gold/실모델 성능을 입증하지 않습니다. `NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
 
 
