@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react';
-import {InAppLink} from '../shell/AppShell.js';
-import {AREAS} from '../shell/areas.js';
-import {MENU_GROUPS, type MenuItem} from '../shell/menuCatalog.js';
+import {InAppLink} from '../../shell/AppShell.js';
+import {AREAS} from '../../shell/areas.js';
+import {MENU_GROUPS, type MenuItem} from '../../shell/menuCatalog.js';
 
 /**
  * A complete, UI-only feature index assembled from the actual application menu and

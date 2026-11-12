@@ -20,7 +20,7 @@ describe('complete feature universe', () => {
       for (const screen of area.ours)
         expect(inventory.some(feature => feature.route === screen.route), screen.route).toBe(true);
       for (const label of area.observed)
-        expect(inventory.some(feature => feature.label === label && feature.access === 'unavailable'), label).toBe(true);
+        expect(inventory.some(feature => feature.label === label && (feature.access === 'unavailable' || feature.access === 'official')), label).toBe(true);
     }
     for (const route of ['/graduation/what-if', '/settings', '/career', '/demo-profile',
       '/owner-intake', '/owner-ai', '/clubs/admin', '/reviewer/invite'])

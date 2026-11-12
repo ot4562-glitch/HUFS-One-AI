@@ -13,6 +13,7 @@ describe('interactive complete menu', () => {
     expect(initial).toBe(MENU_GROUPS.reduce((sum, group) => sum + group.items.length, 0));
     fireEvent.change(screen.getByRole('searchbox', {name: '메뉴 검색'}), {target: {value: '장학'}});
     expect(document.querySelectorAll('.menu--page .menu__item').length).toBeLessThan(initial);
+    fireEvent.change(screen.getByRole('searchbox', {name: '메뉴 검색'}), {target: {value: ''}});
     fireEvent.click(screen.getByRole('button', {name: '학교 참고 메뉴'}));
     expect(document.querySelectorAll('.menu--page .menu__item.is-off').length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', {name: '전체 다시 보기'}));
