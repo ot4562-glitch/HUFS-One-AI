@@ -1,5 +1,7 @@
 # NCP에 HUFS One AI 제품과 GPT(Codex)·Claude Code 설치하기
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **현행 2026-11-11:** 이 안내는 설치 예시이며 배포·모델 사용/권리·실학생 데이터 인수 사실이 아닙니다. 기존 #276은 보관된 이슈이며 새 업무 정본은 [#445 Crawlee/NCP](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), [#447 전 기능/실자료](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447), [#449 운영 데이터 설계](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)입니다. 실자료는 NCP 사설 환경만, 외부 AI/ChatGPT/Claude에는 합성 또는 허가된 비민감 예시만 사용합니다. [전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md)에서 PR/Issue 실제 상태를 확인하세요.
 
 
