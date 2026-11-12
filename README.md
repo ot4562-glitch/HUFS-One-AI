@@ -244,6 +244,9 @@ GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위�
 | **[② 제품·GPT(Codex)·Claude Code 설치](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md)** | 서버/개발 담당자 — 배포·SSH·롤백과 개발용 CLI 구분 |
 | **[③ 제품 구조와 동작 원리](docs/BEGINNER_PRODUCT_ARCHITECTURE.md)** | 비전공자·심사자 — React/API/DB, 추천/학업, RAG, 개인정보 |
 | **[기술 아키텍처 정본](Architecture.md)** | 개발자 — A00–A19 인터페이스·시점·권한 계약 |
+| **[웹 디자인·AI 슬롭 금지 100/허용 100](apps/web/AGENTS.md)** | 웹 개발자·AI 에이전트 — 컴포넌트·챗봇·이미지·카피 QA 규칙 |
+| **[통합 운영·데모 매뉴얼](docs/OPERATIONS.md)** | 운영·시연·NCP·의존성 점검 8개 문서의 단일 진입점 |
+| **[통합 기술·역사 기록](docs/ENGINEERING_ARCHIVE.md)** | 과거 사전개발·검수 증거를 원본 SHA와 함께 보존한 자료 |
 | **[현재 구현·검증](STATUS.md)** | 전체 팀 — 검증된 것과 미실행·구성 필요 영역 |
 | **[시연 매뉴얼](docs/OPERATIONS.md#demo-manual)** | 심사자·발표자 — 합성 시연 경로와 설명 |
 | **[보안·데이터 정책](docs/DATA_GOVERNANCE.md)** | 전체 팀 — 원본 CSV, 권리, 철회, 접근 제어 |
