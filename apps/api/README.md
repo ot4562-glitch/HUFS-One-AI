@@ -67,4 +67,4 @@ npm run check:privacy
 
 격리 disposable PostgreSQL/Chrome의 실제 실행·SKIP 상태는 해당 CI job/실행 log로만 확인한다. 로컬 합성 API는 `npm run start:api:synthetic-accounts` 또는 별도로 `npm run start:api:synthetic-empty-demo`; 서로 다른 목적/권한 가드를 혼합하지 않는다. 실제 운영 entrypoint를 간단한 환경변수 전환으로 열지 않는다.
 
-**기술 계약:** [Architecture](../../Architecture.md), [공통 contracts](../../packages/contracts/README.md), [RAG/미디어](../../docs/TRUSTED_RAG_MEDIA_VERSIONING.md), [REVIEWER](../../docs/REVIEWER_ACCESS.md), [데이터 거버넌스](../../docs/DATA_GOVERNANCE.md).
+**기술 계약:** [Architecture](../../Architecture.md), [공통 contracts](../../packages/contracts/README.md), [RAG/미디어](../../Architecture.md#trusted-rag-media-versioning), [REVIEWER](../../docs/REVIEWER_ACCESS.md), [데이터 거버넌스](../../docs/DATA_GOVERNANCE.md).

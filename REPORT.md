@@ -40,4 +40,4 @@
 - 실제 Google/외대 메일·4인 Forms↔CSV↔actor·공식 학칙/학수번호·운영 PG/NCP/TLS·유료 모델·호스트 업로드/복구·비용: `CONFIGURATION_REQUIRED/NOT_RUN`, #276/#280–#283/#297/#299/#301/#302.
 - 실서비스 정확도·시간 절감·사용성·p95/CPU/RSS/청구는 해당 실측 전 `NOT_MEASURED`다. 실서비스는 `RELEASE_BLOCKED`다.
 
-[평가 방법](docs/INDEPENDENT_EVALUATION.md) · [사전 운영 계획](docs/PREFINAL_OPERATIONS_PLAN.md) · [사람 인수 기준](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)
+[평가 방법](docs/INDEPENDENT_EVALUATION.md) · [사전 운영 계획](docs/OPERATIONS.md#prefinal-operations-plan) · [사람 인수 기준](docs/HUMAN_ACCEPTANCE_GATE_20261104.md)

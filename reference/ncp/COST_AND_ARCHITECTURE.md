@@ -1,6 +1,6 @@
 # HUFS One AI — 현재 NCP 배치·운영 비용 확인 기준
 
-**현재:** NCP 인프라 계획/SSH 비공개 합성 preview·Terraform IaC/worker 통합 코드가 존재한다. 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`이며 실제 서버·크레딧/과금·OCR/HCX·HTTPS/TLS/Google/PG 구성과 실행은 `CONFIGURATION_REQUIRED/NOT_RUN`이다. **RELEASE_BLOCKED/NO_GO**. [본선 전 사전 계획·공식 가격 출처·견적과 검수표](../../docs/PREFINAL_OPERATIONS_PLAN.md)를 기준으로 계정별 견적을 확정한다.
+**현재:** NCP 인프라 계획/SSH 비공개 합성 preview·Terraform IaC/worker 통합 코드가 존재한다. 프로젝트 승인은 `OWNER_CONFIRMED_APPROVED`이며 실제 서버·크레딧/과금·OCR/HCX·HTTPS/TLS/Google/PG 구성과 실행은 `CONFIGURATION_REQUIRED/NOT_RUN`이다. **RELEASE_BLOCKED/NO_GO**. [본선 전 사전 계획·공식 가격 출처·견적과 검수표](../../docs/OPERATIONS.md#prefinal-operations-plan)를 기준으로 계정별 견적을 확정한다.
 
 **개발 책임:** 심민성 모든 API/SDK/AI/OCR/HCX/Laya·IAC/OS/배포 코드, **운영 책임:** 이서연 계정/IAM·리전/SKU/할당량·크레딧/요금·실호스트/비코드 증거, **최종 승인:** 사용자/자료·학교 권리자.
 
@@ -36,4 +36,4 @@ React / Fastify API (권한·SourceRevision·rule/AI)
 - [CLOVA Studio 모델 안내](https://guide.ncloud-docs.com/docs/clovastudio-model)
 - [CLOVA OCR 안내](https://www.ncloud.com/product/aiService/ocr)
 
-**제품 인수:** 실 Google·메일/PG/TLS/보안·비용·복구는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 실제 계정·견적/청구·권리·반납은 [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283). 사전 계획은 [운영 계획](../../docs/PREFINAL_OPERATIONS_PLAN.md), 상세 설정은 [NCP 운영 정본](../../docs/NCP_OPERATIONS_2026.md).
+**제품 인수:** 실 Google·메일/PG/TLS/보안·비용·복구는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276), 실제 계정·견적/청구·권리·반납은 [#283](https://github.com/ot4562-glitch/HUFS-One-AI/issues/283). 사전 계획은 [운영 계획](../../docs/OPERATIONS.md#prefinal-operations-plan), 상세 설정은 [NCP 운영 정본](../../docs/OPERATIONS.md#ncp-operations-2026).

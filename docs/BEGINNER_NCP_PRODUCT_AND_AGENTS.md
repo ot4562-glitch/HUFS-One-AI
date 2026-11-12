@@ -208,7 +208,7 @@ sudo journalctl -u hufs-production-api.service -n 40 --no-pager
 - **운영:** CPU/RSS/p95·백업/복원·원복/서비스 중단·NCP 요금/반납 및 사용자 인수.
 - **학사/추천:** 미검증 RulePack/개설/합격·졸업 요건은 `UNKNOWN/NEEDS_REVIEW`. 사람 검토 없이 공식 판정하지 않음.
 
-하나라도 필수 항목이 미실행이면 실제 서비스 출시 상태는 계속 `RELEASE_BLOCKED`이다. [운영 코드 설명](PRODUCTION_RUNTIME.md)·[제품 활성화 순서](PRODUCT_ACTIVATION_RUNBOOK_20261105.md)를 함께 참고한다.
+하나라도 필수 항목이 미실행이면 실제 서비스 출시 상태는 계속 `RELEASE_BLOCKED`이다. [운영 코드 설명](PRODUCTION_RUNTIME.md)·[제품 활성화 순서](OPERATIONS.md#product-activation-runbook)를 함께 참고한다.
 
 ---
 

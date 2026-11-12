@@ -35,4 +35,4 @@ npm run check:privacy
 
 native dependency가 없는 실행에서는 SKIP/NOT_RUN을 명시하고 실제 pypdf/Poppler/bwrap 관련 전 경계 PASS를 주장하지 않는다. 실제 기관별 권리·OCR 정확도/Gold 20+12·실 worker CPU/RSS·p95/유료 provider는 [#252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252)에서만 수락.
 
-**관련:** [API](../../apps/api/README.md) · [RAG](../../docs/TRUSTED_RAG_MEDIA_VERSIONING.md) · [구현 #253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).
+**관련:** [API](../../apps/api/README.md) · [RAG](../../Architecture.md#trusted-rag-media-versioning) · [구현 #253](https://github.com/minseong-hufs/HUFS-One-AI/issues/253).

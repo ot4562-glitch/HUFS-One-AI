@@ -43,7 +43,7 @@ node --test tests/security/ncp-network-iac.test.mjs
 - Windows에서 `Prepare-NcpPreview.ps1`로 현재 승인 main SHA/allowlist synthetic 파일의 ZIP+SHA를 생성. 실제 학생/원본·private repo·키/비밀/서버 .env는 artifact에 포함하지 않음.
 - `Deploy-NcpPreview.ps1` 기본 plan을 살펴보고, **명시 `-Apply`는 해당 실제 host/현재 요금·복구 대상 확인 이후만**. 호스트키 지문/SSH 공개키 로그인 두 독립 세션 성공 후 root/password 차단. 원격 SFTP/SSH·127.0.0.1:5173 systemd/헬스/재기동·명시적 rollback을 실제 확인.
 - 공개 80/443·API/PG·학교메일/Google/유료 CLOVA/실학생 데이터/외부 네트워크 배포는 **SSH 합성 preview에서 사용하지 않는다**.
-- 운영 배포를 위한 안전 코드 수정과 인적/운영 검증은 [제품 런북](../../docs/PRODUCT_ACTIVATION_RUNBOOK_20261105.md)을 따른다. production 거부 환경변수를 강제로 바꿔 공개하지 않음.
+- 운영 배포를 위한 안전 코드 수정과 인적/운영 검증은 [제품 런북](../../docs/OPERATIONS.md#product-activation-runbook)을 따른다. production 거부 환경변수를 강제로 바꿔 공개하지 않음.
 
 ### Windows 경로·호스트키 및 설치 공개키 계약
 

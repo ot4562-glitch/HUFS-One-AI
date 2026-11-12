@@ -35,7 +35,7 @@ npm run test:e2e:web
 
 Chrome/Playwright·jsdom/단위·360/390/768/1440 viewport/키보드 검사와 **실제 별도 스크린리더/실기기 사람 검증**은 구분한다. UI의 미확인 기능을 자동으로 활성화하지 않는다.
 
-**현행 상태** [STATUS](../../STATUS.md) · **화면 정보구조** [UI_MENU_COVERAGE](../../docs/UI_MENU_COVERAGE.md) · **웹 담당** [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357) · **통합/실원장 인수** [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366) · **공고 UX 버그** [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418). #252/#9/#119는 과거 이력입니다.
+**현행 상태** [STATUS](../../STATUS.md) · **화면 정보구조** [UI_MENU_COVERAGE](../../docs/HUFSABILITY_UI_COMPONENT_ATLAS.md#ui-menu-coverage) · **웹 담당** [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357) · **통합/실원장 인수** [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366) · **공고 UX 버그** [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418). #252/#9/#119는 과거 이력입니다.
 
 
 ## 인터랙티브 디자인 ([병합 PR #307](https://github.com/ot4562-glitch/HUFS-One-AI/pull/307), 2026-11-06)

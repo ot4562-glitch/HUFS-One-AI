@@ -14,4 +14,4 @@
 
 포스터/외부 모델용 입력에는 실제 학교/학번/학생·교수/상표·기업 원본을 포함하지 않는다. 시연 글의 제목·자격/일시는 제품 HTML과 SourceRevision/승인 상태로 관리하고 이미지의 장식 글자·합성 속 내용을 공식 원본의 근거로 사용하지 않는다.
 
-**현재 인수와 구현:** [#252 D02/A04](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) · [#253 이미지/서버 최적화](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [합성 시연](EMPTY_DEMO_RUNBOOK.md).
+**현재 인수와 구현:** [#252 D02/A04](https://github.com/minseong-hufs/HUFS-One-AI/issues/252) · [#253 이미지/서버 최적화](https://github.com/minseong-hufs/HUFS-One-AI/issues/253) · [합성 시연](OPERATIONS.md#empty-demo-runbook).
