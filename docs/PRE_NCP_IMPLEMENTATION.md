@@ -54,3 +54,9 @@
 `OnFailure` 전용 비특권 service와 `refresh-alert-cli.mjs`를 추가했다. 전달 포트는 원문/URL/개인정보/비밀 대신 고정 오류 코드, 발생 시각, systemd invocation 기반 멱등 키만 받는다. 5초 시간 제한·중단 신호·명시적 DELIVERED 응답을 요구하며 실패/불명확 응답을 성공으로 승격하거나 재시도하지 않는다. `--plan`은 factory·네트워크를 사용하지 않는다. root 소유 factory 신뢰 검사와 비root Linux 제한을 재사용했다. CI에 합성 알림 시험을 포함했다. 실제 NCP unit 설치·전달 대상·systemd 251+ 확인 및 실제 알림 도착은 NOT_RUN이다.
 
 알림/refresh/dispatch Node 시험 25개, 진입점 검사 11개, 공개 경계 검사 172개 PASS. 별도 코드 검토에서 차단 결함은 없었으며, 제안된 systemd unit/invocation 바인딩 및 지연 ACK 반례를 추가해 통과했다. 실제 systemd 활성화·외부 통지는 이 시험에 포함하지 않는다.
+
+### 브라우저 런타임 경계 후속 구현
+
+고정 Chromium 래퍼·bubblewrap·독립 rootfs의 전체 해시/소유권/권한 검증을 추가했다. rootfs 링크는 커널 순서대로 해석하고, 외부/없는 대상·순환·비실행 ELF·쓰기 가능한 파일/잘못된 소유권을 거부한다. 래퍼는 네트워크 namespace·읽기 전용 rootfs·별도 proc/dev/tmp·환경 초기화·capability 제거를 적용하고 Chromium 자체 sandbox를 유지한다. sandbox 무효화 옵션의 단일/이중 하이픈 및 `=값` 우회도 거부한다.
+
+독립 코드 검토에서 발견한 링크/`..` 순서·디렉터리 오인·옵션 표기 우회 3건을 각각 실패로 재현한 뒤 수정했다. 브라우저 경계+기존 PDF 회귀 23개, 타입 검사, API 빌드 및 Bash 문법 검사를 수행했다. 파일 메타데이터/바이트는 합성 모의이며, 실제 Chromium/rootfs/커널 namespace 실행은 NOT_RUN이다. **Crawlee 렌더링·원본/DOM 구분·저장/검수 연결은 아직 후속 구현 대상이다.**

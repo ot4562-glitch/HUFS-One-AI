@@ -70,6 +70,38 @@ host operations and actual alert delivery have not been executed locally.
 Playwright/browser acquisition still needs implementation and tests. Actual schedules, manifests,
 SQL privileges, site policies and NCP installation remain NOT_CONNECTED/NOT_RUN.
 
+### Browser runtime foundation (#445, rendering integration pending)
+
+`apps/api/src/modules/opportunities/source-browser-runtime.ts` verifies the
+separate Chromium runtime without launching a browser or fetching a source.
+The private manifest pins `wrapperSha256`, `bwrapSha256`, `rootfsSha256`,
+`chromiumVersion`, and `policyVersion`. Runtime paths are fixed:
+`/usr/local/libexec/hufs-one-source-browser`, `/usr/bin/bwrap`, and
+`/opt/hufs-one-source-browser/rootfs`. Root and non-Linux workers are refused.
+
+The wrapper is provided by `infra/ncp/launch-source-browser.sh` and must be
+installed root-owned/executable at the fixed path. It runs Chromium inside
+`bubblewrap --unshare-all` with a separate read-only rootfs, private proc/dev/tmp,
+cleared environment and dropped capabilities; no host root or private data
+directory is mounted. Chromium's own sandbox remains enabled. Alternate
+switch spellings that disable isolation are rejected. Playwright's inherited
+debugging pipes are carried into the child; no TCP debugging port is enabled.
+[bubblewrap's source](https://github.com/containers/bubblewrap/blob/main/bubblewrap.c)
+defines namespace and inherited-file-descriptor behaviour.
+
+Verification streams rootfs files (512 MiB/file, 2 GiB total, 30,000 entries,
+depth 32) and hashes ordered `D/path/mode`, `F/path/mode/size/SHA-256`, and
+`L/path/target` records. Ownership, writable/setuid modes, hardlinks, unsupported
+entries, unknown targets, escaping links and cycles fail closed. Links resolve
+in filesystem order before subsequent `..` components. The fixed
+`usr/lib/chromium/chromium` target must be an executable native ELF file.
+
+The current synthetic tests simulate metadata/bytes and execute only shell
+argument validation. They do not establish that an NCP rootfs, user namespaces
+or Chromium is installed or runnable. The next implementation must connect
+this boundary to Crawlee/Playwright, serve only already-authorized captured
+bytes, and retain separate original/DOM hashes and review evidence.
+
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
 pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled
 executor in `durable-acquisition.integration.mjs`. The integration test has
