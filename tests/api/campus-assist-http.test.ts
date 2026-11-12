@@ -68,6 +68,44 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect(provider.execute).not.toHaveBeenCalled();
   });
 
+  it('#341 quarantines an unsafe FAQ paragraph before budget admission',async()=>{
+    const admit=vi.fn(async()=>true),execute=vi.fn(async()=>({status:{code:'20000'}}));
+    const h=fixture({admit,execute});
+    const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,documentId:'SYN-FAQ-PRIVATE',
+      revisionId:'SYN-FAQ-PRIVATE-r1',title:'가상 교환학생 어학',
+      paragraphs:[{id:'p1',text:'가상 교환학생 어학 상담 번호는 010-1234-5678입니다.'}]};
+    h.faq.read.mockResolvedValue({items:[doc],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const response=await h.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    expect(response.statusCode).toBe(422);
+    expect(admit).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
+    expect(response.body).not.toContain('010-1234-5678');
+  });
+  it('#341 admits only clean paragraphs when one official FAQ chunk contains an office phone',async()=>{
+    const admit=vi.fn(async()=>true),execute=vi.fn(async()=>({status:{code:'20000'}}));
+    const h=fixture({admit,execute});
+    const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,documentId:'SYN-FAQ-MIXED-CHUNKS',
+      revisionId:'SYN-FAQ-MIXED-CHUNKS-r1',title:'가상 교환학생 어학',
+      paragraphs:[
+        {id:'safe',text:'가상 교환학생 어학 준비 요건은 공식 원문에서 확인해야 합니다.'},
+        {id:'contact',text:'가상 교환학생 어학 관련 문의는 부서 02-1234-5678로 연락하세요.'},
+      ]};
+    h.faq.read.mockResolvedValue({items:[doc],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const response=await h.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    // A mock without a valid candidate fails *after* model execution, but
+    // the safe query was admitted and the unsafe source was never sent.
+    expect(response.statusCode).toBe(422);
+    expect(admit).toHaveBeenCalledOnce();
+    expect(execute).toHaveBeenCalledOnce();
+    const payload=JSON.stringify(execute.mock.calls[0]![0].wire.body.messages[1]!.content);
+    expect(payload).toContain('공식 원문에서 확인해야 합니다');
+    expect(payload).not.toContain('02-1234-5678');
+    expect(payload).not.toContain(':contact');
+  });
   it('scopes activity reads to an authorized, revalidated snapshot',async()=>{
     const h=fixture(),r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
     expect(r.statusCode).toBe(200);
