@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {importWisTimetable, type TimetableImportRequest} from './wis-timetable.js';
+import {importWisTimetable, withoutBlocks, type TimetableImportRequest} from './wis-timetable.js';
 
 /**
  * Synthetic pages only: the layout mirrors a saved wis.hufs.ac.kr 강의시간표 page, but every
@@ -275,5 +275,105 @@ describe('importWisTimetable', () => {
   it('refuses a card list left over from another term', () => {
     const stale = ROWS.map(row => ({...row, year:'2026', sessn:'1'}));
     expect(() => importWisTimetable(request(page(ROWS, {cards:stale})))).toThrow(/more than one year and session/);
+  });
+});
+
+describe('script and comment blocks are cut before rows are read (CodeQL #1-#6)', () => {
+  const FAKE = '<tr><td>99</td><td>가상 스크립트 행</td></tr>';
+  it('a closing tag with a space or attributes still ends the script', () => {
+    for (const close of ['</script >', '</SCRIPT  >', '</script data-x="1">']) {
+      const html = page(ROWS).replace('<script>', `<script>${FAKE}`).replace('</script>', close);
+      // Before: the regex needed exactly "</script>", so the fake row was read and the import refused it.
+      expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
+    }
+  });
+  it('cuts pieces that meet after a cut, and is case-insensitive', () => {
+    expect(withoutBlocks('a<scr<script>x</script>ipt>b</script>c', 'script')).toBe('ac');
+    expect(withoutBlocks('a<SCRIPT type="t">x</Script >b', 'script')).toBe('ab');
+    expect(withoutBlocks('a<!<!-- x -->-- y -->b', 'comment')).toBe('ab');
+  });
+  it('an opening "<script" or "<!--" with no closing tag is kept, as the earlier regex did', () => {
+    expect(withoutBlocks('keep<script>var x = 1;', 'script')).toBe('keep<script>var x = 1;');
+    expect(withoutBlocks('keep<!-- open', 'comment')).toBe('keep<!-- open');
+    // a closed block before an unclosed one is still cut
+    expect(withoutBlocks('a<script>x</script>b<script>y', 'script')).toBe('ab<script>y');
+    // an attribute value that spells "<script" does not eat the table after it
+    const table = '<table><tr><td>OK</td></tr></table>';
+    expect(withoutBlocks(`<div title="<script">x</div>${table}`, 'script')).toBe(`<div title="<script">x</div>${table}`);
+    const html = page(ROWS).replace('<table>', '<div title="<script">x</div><table>');
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
+  });
+  it('keeps a table between a fake script in an attribute and a later real closing script', () => {
+    const table = '<table><tr><td>OK</td></tr></table>';
+    const html = '<div title="<script">plain text</div>' + table
+      + '<script>const hidden=1</script>';
+    expect(withoutBlocks(html,'script')).toBe('<div title="<script">plain text</div>' + table);
+    const saved=page(ROWS).replace('<table>','<div data-note="<script">x</div><table>')
+      .replace('</table>','</table><script>var hidden=1;</script>');
+    expect(importWisTimetable(request(saved)).rows.map(r=>r.rawCode)).toEqual(ROWS.map(r=>r.code));
+  });
+  it('leaves look-alike tags and plain text alone', () => {
+    expect(withoutBlocks('<scripture>t</scripture><noscript>n</noscript>', 'script'))
+      .toBe('<scripture>t</scripture><noscript>n</noscript>');
+    expect(withoutBlocks('no blocks here', 'comment')).toBe('no blocks here');
+    expect(withoutBlocks('<script>a</scripts>b</script>c', 'script')).toBe('c');
+  });
+  // PR #431 review (심민성): two counterexamples to the first version of withoutBlocks.
+  it('a "<script" written inside an HTML comment is not a tag and does not eat the table', () => {
+    const table = '<table><tr><td>OK</td></tr></table>';
+    expect(withoutBlocks(`<!-- Example: <script src='example.js'> -->\n${table}`, 'script'))
+      .toBe(`<!-- Example: <script src='example.js'> -->\n${table}`);
+    // a real script after the comment is still cut; the comment stays
+    expect(withoutBlocks(`<!-- <script> -->a<script>x</script>b`, 'script')).toBe('<!-- <script> -->ab');
+    // an unclosed comment keeps everything after it as comment text
+    expect(withoutBlocks('a<!-- <script>x', 'script')).toBe('a<!-- <script>x');
+    // the whole import keeps its rows when such a comment sits before the table
+    const html = page(ROWS).replace('<table>', `<!-- Example: <script src='example.js'> --><table>`);
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
+  });
+  it('cut positions stay right when text before or after a block changes length when lowercased', () => {
+    // "İ" (U+0130) lowercases to two code units; only A-Z may be lowered for the search.
+    const table = '<table><tr><td>OK</td></tr></table>';
+    expect(withoutBlocks(`İİİİİİ<script>var x=1</script>${table}`, 'script')).toBe(`İİİİİİ${table}`);
+    expect(withoutBlocks(`İİİ<!--note-->${table}`, 'comment')).toBe(`İİİ${table}`);
+    expect(withoutBlocks(`<SCRIPT>İ</SCRIPT>İ${table}`, 'script')).toBe(`İ${table}`);
+    expect(withoutBlocks(`<!--İİ-->İ<!--x-->${table}`, 'comment')).toBe(`İ${table}`);
+    const html = page(ROWS).replace('<script>', 'İİİİ<script>');
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
+  });
+});
+
+
+describe('commented timetable markup is not approved source data (#431 follow-up)', () => {
+  it('ignores commented fake course rows and stale syllabus term links', () => {
+    const ghost = '<tr><td>4</td><td>잘못된 주석 행</td></tr>'
+      + " lecture_open('2025','1','A','SYN000000')";
+    const html = page(ROWS).replace('<table>', `<!-- ${ghost} --><table>`);
+    const result = importWisTimetable(request(html));
+    expect(result.rows.map(row => row.rawCode)).toEqual(ROWS.map(row => row.code));
+    expect(result.term).toEqual({year:2026, session:'2', academicTerm:'2026-2'});
+    // Keep parsing the browser-saved provenance comment from the raw page.
+    expect(result.source.savedFromUrl).toBe('https://wis.hufs.ac.kr/src08/jsp/lecture/LECTURE2020L.jsp');
+  });
+  it('keeps a real table after a script string containing an HTML comment opener', () => {
+    const html = page(ROWS)
+      .replace('<table>', '<script>const marker="<!--";</script><table>')
+      .replace('</table>', '</table><!-- footer -->');
+    const result = importWisTimetable(request(html));
+    expect(result.rows.map(row => row.rawCode)).toEqual(ROWS.map(row => row.code));
+    expect(result.term).toEqual({year:2026, session:'2', academicTerm:'2026-2'});
+  });
+  it('keeps rows after old script-comment wrappers while deleting commented fake rows', () => {
+    const html = page(ROWS).replace('<table>',
+      '<script><!-- var legacy=1; //--></script><!-- <tr><td>fake</td></tr> --><table>');
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode))
+      .toEqual(ROWS.map(r => r.code));
+  });
+  it('does not count commented campus controls as real checked inputs', () => {
+    const actual = '<input name="campus_sect" value="H1" checked>'
+      + '<select name="ag_crs_strct_cd"><option>(서울) - 가상학과</option></select>';
+    const phantom = '<!-- <input name="campus_sect" value="H2" checked> -->';
+    const html = page(ROWS).replace('<table>', actual + phantom + '<table>');
+    expect(importWisTimetable(request(html)).campus).toBe('SEOUL');
   });
 });

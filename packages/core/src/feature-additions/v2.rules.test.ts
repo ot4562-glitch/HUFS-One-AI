@@ -175,11 +175,18 @@ describe('#343 — actionable scholarship evaluation',()=>{
       mode:'NOT_AVAILABLE',overall:'UNKNOWN',sourceReason:'REVOKED'});
   });
   it('separates application not yet open and closed',()=>{
-    const early=checkScholarship({policy:scholarship(),verifiedFacts:[fact()],
+    const earlyUnverified=checkScholarship({policy:scholarship(),verifiedFacts:[fact()],
       authorizedFactRevisions:FACT_REVISIONS,asOf:'2026-09-01T12:00:00+09:00'});
+    // The default policy is not VERIFIED until Nov 1. Its earlier calendar
+    // opening date is not an authorized fact as of September.
+    expect(earlyUnverified.applicationWindow).toBe('UNKNOWN');
+    const earlyReviewed=checkScholarship({policy:scholarship({
+      source:{...source(),verifiedAt:'2026-01-02T00:00:00+09:00'}}),
+      verifiedFacts:[fact()],authorizedFactRevisions:FACT_REVISIONS,
+      asOf:'2026-09-01T12:00:00+09:00'});
     const closed=checkScholarship({policy:scholarship(),verifiedFacts:[fact()],
       authorizedFactRevisions:FACT_REVISIONS,asOf:'2027-01-01T12:00:00+09:00'});
-    expect(early.applicationWindow).toBe('BEFORE_OPEN');
+    expect(earlyReviewed.applicationWindow).toBe('BEFORE_OPEN');
     expect(closed.applicationWindow).toBe('CLOSED');
   });
 });

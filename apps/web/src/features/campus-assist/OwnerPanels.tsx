@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {ActivityForecast,ActivityRecord,ExchangeApplicant,ExchangeResult,FaqAskResponse} from '@hufs-one/contracts';
 import type {CampusAssistPort} from './ownerPort.js';
+import {publishedDayKst} from '../../../../../packages/core/src/campus-assist/activities.js';
 import {prepareExchangeApplication} from '../../../../../packages/core/src/campus-assist/exchange-preparation.js';
 import {InAppLink} from '../../shell/AppShell.js';
 
@@ -11,63 +12,109 @@ const outlookLabel:Record<ActivityForecast['state'],string>={
   CANCELLED:'취소 기록 확인',INSUFFICIENT_DATA:'예측 근거 부족',UNKNOWN:'예측 보류',
 };
 
+const activityKindLabels:Record<ActivityRecord['kind'],string>={
+  ORIENTATION:'오리엔테이션',ACADEMIC:'학술·전공 활동',RECRUITMENT:'모집',
+  LECTURE:'특강',OTHER:'기타',
+};
 export function OwnerActivityPanel({port,navigate}:{port:CampusAssistPort;navigate:(p:string)=>void}){
   const [items,setItems]=useState<readonly ActivityRecord[]|null>(null);
+  const [hasMore,setHasMore]=useState<boolean|null>(null);
   const [forecasts,setForecasts]=useState<readonly ActivityForecast[]>([]);
   const [error,setError]=useState(false);
-  const [org,setOrg]=useState('ALL'),[year,setYear]=useState('ALL'),[query,setQuery]=useState('');
+  const [org,setOrg]=useState('ALL'),[year,setYear]=useState('ALL');
+  const [campus,setCampus]=useState<'ALL'|'SEOUL'|'GLOBAL'|'BOTH'>('ALL');
+  const [kind,setKind]=useState<'ALL'|ActivityRecord['kind']>('ALL');
+  const [draft,setDraft]=useState(''),[query,setQuery]=useState('');
+  const seenOrganizations=useRef(new Set<string>());
+  useEffect(()=>{seenOrganizations.current.clear();},[port]);
+  // On every filter, port/owner or query change, abort the previous actor-scoped
+  // read and every forecast. Never render late results under new filters.
   useEffect(()=>{
     const abort=new AbortController(),asOf=new Date().toISOString();
+    setItems(null);setHasMore(null);setForecasts([]);setError(false);
     void (async()=>{
       try{
-        const snapshot=await port.activities({asOf},abort.signal);
+        const snapshot=await port.activities({
+          asOf,...(org==='ALL'?{}:{organizationId:org}),
+          ...(year==='ALL'?{}:{year:Number(year)}),
+          ...(campus==='ALL'?{}:{campus}),
+          ...(kind==='ALL'?{}:{kind}),
+          ...(query?{query}:{})
+        },abort.signal);
         if(abort.signal.aborted)return;
-        setItems(snapshot.items);
+        for(const row of snapshot.items)seenOrganizations.current.add(row.organizationId);
+        setItems(snapshot.items);setHasMore(snapshot.hasMore??null);
         const distinct=[...new Map(snapshot.items.map(row=>[row.organizationId+':'+row.seriesId,
           {organizationId:row.organizationId,seriesId:row.seriesId}])).values()].slice(0,12);
-        const outlook=await Promise.all(distinct.map(x=>port.forecast({...x,asOf,
-          targetYear:new Date().getUTCFullYear()+1},abort.signal)));
+        const targetYear=Number(publishedDayKst(asOf).slice(0,4))+1;
+        const outlook=await Promise.all(distinct.map(x=>port.forecast({...x,asOf,targetYear},abort.signal)));
         if(!abort.signal.aborted)setForecasts(outlook);
-      }catch{if(!abort.signal.aborted)setError(true);}
+      }catch{
+        if(!abort.signal.aborted){setError(true);setItems(null);setHasMore(null);setForecasts([]);}
+      }
     })();
     return ()=>abort.abort();
-  },[port]);
-  const shown=(items||[]).filter(row=>(org==='ALL'||row.organizationId===org)
-    &&(year==='ALL'||(row.eventDate||row.publishedAt.slice(0,10)).startsWith(year))
-    &&(!query||row.title.toLocaleLowerCase('ko').includes(query.toLocaleLowerCase('ko'))));
-  const organizations=[...new Set(items?.map(i=>i.organizationId)||[])].sort();
+  },[port,org,year,campus,kind,query]);
+  // Do not discard previously discovered organization selectors just because a
+  // narrower server filter returned zero rows. Clear this cache on port/actor switch.
+  const organizations=[...seenOrganizations.current].sort();
+  const thisYear=Number(publishedDayKst(new Date().toISOString()).slice(0,4));
+  const years=Array.from({length:9},(_,i)=>thisYear+1-i);
   return <section className="section">
-    <p className="muted" role="note">학교 공식 서비스가 아닙니다. 자료 이용권·출처 판본·검증 시점이 확인된 자료만 표시합니다. 제공되지 않는 연도는 미개설이 아니라 미수집일 수 있습니다.</p>
-    {error?<p role="alert">{unavailable}</p>:items===null?<p role="status">인증된 활동 기록을 확인하고 있습니다.</p>:<>
-      <form role="search" onSubmit={e=>e.preventDefault()} className="club__filters">
-        <label htmlFor="owner-act-org">조직</label>
-        <select id="owner-act-org" value={org} onChange={e=>setOrg(e.target.value)}>
-          <option value="ALL">전체</option>{organizations.map(o=><option key={o} value={o}>{o}</option>)}
-        </select>
-        <label htmlFor="owner-act-year">연도</label>
-        <select id="owner-act-year" value={year} onChange={e=>setYear(e.target.value)}>
-          <option value="ALL">전체</option>{[2023,2024,2025,2026,2027].map(y=><option key={y} value={y}>{y}</option>)}
-        </select>
-        <label htmlFor="owner-act-q">검색</label>
-        <input id="owner-act-q" value={query} maxLength={100} onChange={e=>setQuery(e.target.value)} />
-      </form>
-      <p role="status">조회된 {items.length}건 중 {shown.length}건 표시</p>
-      {shown.length===0?<p>검증된 활동 기록이 없습니다.</p>:
-        <ul>{shown.map(row=><li key={row.entryId}><strong>{row.title}</strong>
-          <p>{row.organizationId} · 행사일 {row.eventDate||'미확인'} · 게시일 {row.publishedAt.slice(0,10)}
-            · {row.status==='CANCELLED'?'취소':row.status==='CONFIRMED'?'확인된 기록':'공지'}</p>
-          <p>{row.provenance==='SYNTHETIC'?'가상 합성 자료':'출처 승인 기록'}
-            · <a target="_blank" rel="noopener noreferrer" href={row.sourceUrl}>출처 열기</a>
-            · 판본 {row.revisionId}</p></li>)}</ul>}
-      <h2 className="section__title">반복 행사 예상 기간</h2>
-      {forecasts.length===0?<p>예상 자료가 없거나 현재 확인 중입니다.</p>:
+    <p className="muted" role="note">학교 공식 서비스가 아닙니다. 자료 이용권·출처 판본·검증 시점이 확인된 자료만 표시합니다. 조회 최대 200건이며, 결과가 비어도 행사 미개최를 뜻하지 않습니다. 게시일·신청 마감·행사일은 서로 다른 날짜입니다.</p>
+    <form role="search" onSubmit={e=>{e.preventDefault();setQuery(draft.trim());}} className="club__filters">
+      <label htmlFor="owner-act-org">조직</label>
+      <select id="owner-act-org" value={org} onChange={e=>setOrg(e.target.value)}>
+        <option value="ALL">전체</option>
+        {organizations.map(o=><option key={o} value={o}>{o}</option>)}
+      </select>
+      <label htmlFor="owner-act-year">연도</label>
+      <select id="owner-act-year" value={year} onChange={e=>setYear(e.target.value)}>
+        <option value="ALL">전체</option>
+        {years.map(y=><option key={y} value={y}>{y}</option>)}
+      </select>
+      <label htmlFor="owner-act-campus">캠퍼스</label>
+      <select id="owner-act-campus" value={campus} onChange={e=>setCampus(e.target.value as typeof campus)}>
+        <option value="ALL">전체</option>
+        <option value="SEOUL">서울</option><option value="GLOBAL">글로벌</option>
+        <option value="BOTH">양 캠퍼스 공통 공지</option>
+      </select>
+      <label htmlFor="owner-act-kind">활동 종류</label>
+      <select id="owner-act-kind" value={kind} onChange={e=>setKind(e.target.value as typeof kind)}>
+        <option value="ALL">전체</option>
+        {(Object.keys(activityKindLabels) as ActivityRecord['kind'][]).map(k=>
+          <option key={k} value={k}>{activityKindLabels[k]}</option>)}
+      </select>
+      <label htmlFor="owner-act-q">활동 검색어</label>
+      <input id="owner-act-q" type="search" value={draft} maxLength={100}
+        onChange={e=>setDraft(e.target.value)} />
+      <button type="submit">검색 적용</button>
+    </form>
+    {error?<p role="alert">{unavailable}</p>:items===null
+      ?<p role="status">현재 조건에 맞는 승인된 활동 기록을 확인하고 있습니다.</p>:<>
+      <p role="status">현재 조건의 승인된 결과 {items.length}건 표시
+        {hasMore!==false?' · 전체를 가져온 것이 아니므로 조건을 좁혀 주세요.':''}</p>
+      {items.length===0?<p>해당 조건으로 조회 가능한 승인된 활동 기록이 없습니다. 기록 없음이 행사 미개최를 의미하지 않습니다.</p>:
+        <ul>{items.map(row=><li key={row.entryId+':'+row.revisionId}>
+          <strong>{row.title}</strong>
+          <p>{row.organizationId} · {activityKindLabels[row.kind]}
+            · 행사일 {row.eventDate||'미확인'}
+            · 게시일(한국시간) {publishedDayKst(row.publishedAt)}
+            · 신청 마감 {row.applicationDeadline||'미확인'}
+            · {row.status==='CANCELLED'?'취소':row.status==='CONFIRMED'?'확인된 개최 기록':'공지 단계'}</p>
+          <p>{row.provenance==='SYNTHETIC'?'가상 합성 자료':'이용 승인 출처'}
+            · <a target="_blank" rel="noopener noreferrer" href={row.sourceUrl}>원문 출처 열기</a>
+            · 판본 {row.revisionId} · 마지막 확인 {publishedDayKst(row.verifiedAt)}</p>
+        </li>)}</ul>}
+      <h2 className="section__title">반복 행사 예상 기간 (확정 일정 아님)</h2>
+      {forecasts.length===0?<p>반복 행사 근거가 부족하거나 자료 조회 중입니다.</p>:
         <ul>{forecasts.map(f=><li key={f.organizationId+':'+f.seriesId}>
           <strong>{f.organizationId} · {f.seriesId}</strong> — {outlookLabel[f.state]}
           {f.from&&f.to?' '+f.from+' ~ '+f.to:''}
           <p className="muted">{f.reason} · 과거 근거 {f.observedYears.join(', ')||'없음'}</p>
         </li>)}</ul>}
     </>}
-    <p><InAppLink to="/notices" navigate={navigate}>학사 공지·캘린더</InAppLink></p>
+    <p><InAppLink to="/notices" navigate={navigate}>학사 공지·마감 캘린더</InAppLink></p>
   </section>;
 }
 

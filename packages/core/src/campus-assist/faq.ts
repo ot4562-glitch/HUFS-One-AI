@@ -7,10 +7,45 @@ export interface FaqEvidence {
   citationId:string;documentId:string;revisionId:string;title:string;sourceUrl:string;
   verifiedAt:string;text:string;provenance:FaqDocument['provenance'];
 }
-/** Instant first, then a numeric-aware revision ID ("r10" after "r9"). Strings would misorder time offsets. */
-function newer(a:FaqDocument,b:FaqDocument):boolean{
+/** Instant first, then a numeric-aware revision ID ("r10" after "r9"). Strings would misorder time offsets.
+ * 0 means the same revision position. */
+function revisionOrder(a:FaqDocument,b:FaqDocument):number{
   const ta=Date.parse(a.publishedAt),tb=Date.parse(b.publishedAt);
-  return ta!==tb?ta>tb:a.revisionId.localeCompare(b.revisionId,'en',{numeric:true})>0;
+  return ta!==tb?Math.sign(ta-tb):Math.sign(a.revisionId.localeCompare(b.revisionId,'en',{numeric:true}));
+}
+/** Key-order independent JSON form, so two copies compare by content only. */
+function canonical(value:unknown):string{
+  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';
+  if(value&&typeof value==='object')
+    return '{'+Object.keys(value).filter(k=>(value as Record<string,unknown>)[k]!==undefined).sort().map(k=>JSON.stringify(k)+':'+canonical((value as Record<string,unknown>)[k])).join(',')+'}';
+  return JSON.stringify(value)??'null';
+}
+/**
+ * Newest revision per documentId that was both published and verified by `asOf`.
+ * If several copies share that newest revision position but differ in any field (rights,
+ * paragraphs, dates, URL), the whole document is quarantined (#373): input order must never
+ * decide whether an APPROVED or a REVOKED/BLOCKED copy survives, and there is no fallback to
+ * an older approved revision. Identical copies collapse to one.
+ */
+function documentHeadsAt(docs:readonly FaqDocument[],time:number):Map<string,FaqDocument>{
+  const eligible=new Map<string,FaqDocument[]>();
+  for(const doc of docs){
+    if(Date.parse(doc.publishedAt)>time||Date.parse(doc.verifiedAt)>time)continue;
+    const copies=eligible.get(doc.documentId)??[];
+    copies.push(doc);eligible.set(doc.documentId,copies);
+  }
+  const heads=new Map<string,FaqDocument>();
+  for(const [documentId,rows] of eligible){
+    let head=rows[0]!;
+    for(const doc of rows)if(revisionOrder(doc,head)>0)head=doc;
+    // A revision ID is an identity: two copies with that ID and different
+    // publishedAt are conflicting copies, not a legitimate new revision.
+    // Preserve the former quarantine for colliding numeric-order ties (r1/r01).
+    const copies=rows.filter(doc=>doc.revisionId===head.revisionId
+      ||revisionOrder(doc,head)===0);
+    if(new Set(copies.map(canonical)).size===1)heads.set(documentId,head);
+  }
+  return heads;
 }
 /** New revoked, blocked or expired document heads quarantine the whole document.
  * Effective dates are KST calendar days compared on the absolute `asOf` instant (same rule as #365/#385).
@@ -21,12 +56,7 @@ export function retrieveFaqEvidence(question:string,raw:readonly FaqDocument[],a
   if(!Number.isFinite(time)||question.trim().length<2||question.length>500)throw new RangeError('Invalid FAQ query');
   if(!Number.isInteger(limit)||limit<1||limit>8)throw new RangeError('Invalid retrieval limit');
   const docs=FaqDocumentSchema.array().max(10000).parse(raw);
-  const heads=new Map<string,FaqDocument>();
-  for(const doc of docs){
-    if(Date.parse(doc.publishedAt)>time||Date.parse(doc.verifiedAt)>time)continue;
-    const current=heads.get(doc.documentId);
-    if(!current||newer(doc,current))heads.set(doc.documentId,doc);
-  }
+  const heads=documentHeadsAt(docs,time);
   const paragraphs=new Map<string,FaqEvidence>();
   for(const doc of heads.values()){
     if(doc.rights!=='APPROVED'||!exchangePolicyInEffect(doc,asOf))continue;

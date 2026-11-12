@@ -132,6 +132,93 @@ const cellText = (cell:string):string => decode(cell.replace(/<[^>]*>/g, ' ')).r
 const cells = (row:string, tag:'td'|'th'):string[] =>
   [...row.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)</${tag}>`, 'gi'))].map(match => match[1]!);
 
+/**
+ * Cut every script block or HTML comment out of the saved page before its text is read as table
+ * rows. This is not an HTML sanitizer (nothing here is rendered as HTML); it keeps script source
+ * and commented-out markup from being parsed as rows. Matching is case-insensitive, a closing tag
+ * may carry spaces or attributes (`</script >`), and in script mode a "<script" inside an HTML
+ * comment is left alone with its comment. A "<script" or "<!--" with no closing tag after it is kept
+ * as it is, as the earlier regex did: it may be plain text or an attribute value
+ * (`title="<script"`), and cutting to the end of the page would drop the table that follows. After
+ * each cut the search resumes at the same place, so pieces that meet after a cut ("<scr" + "ipt")
+ * are cut as well.
+ */
+/** A <script token inside a quoted HTML attribute is text, not a tag.
+ * Check the raw source (no Unicode-lowercasing of positions) before cutting.
+ * This scanner is not an HTML sanitizer or renderer.
+ */
+function inQuotedTagAttribute(value:string,offset:number):boolean {
+  let inside=false,comment=false,quote:string|null=null;
+  for(let i=0;i<offset;i++){
+    if(comment){
+      if(value.startsWith('-->',i)){comment=false;i+=2;}
+      continue;
+    }
+    if(!inside){
+      if(value.startsWith('<!--',i)){comment=true;i+=3;}
+      else if(value[i]==='<'&&/[a-z/!]/i.test(value[i+1]??''))inside=true;
+    }else if(quote){
+      if(value[i]===quote)quote=null;
+    }else if(value[i]==='"'||value[i]==="'"){
+      quote=value[i]!;
+    }else if(value[i]==='>'){
+      inside=false;
+    }
+  }
+  return inside&&quote!==null;
+}
+export function withoutBlocks(html:string, kind:'script'|'comment'):string {
+  // Only A-Z are lowered, so every index in `lower` is the same index in `out`
+  // (String#toLowerCase can change the length, e.g. "İ" becomes two code units).
+  const lowerAscii = (s:string) => s.replace(/[A-Z]+/g, letters => letters.toLowerCase());
+  let out = html;
+  let from = 0;
+  // Text before `floor` is a comment kept in script mode; never search back into it.
+  let floor = 0;
+  for (;;) {
+    const lower = lowerAscii(out);
+    let start:number;
+    let end:number;
+    if (kind === 'comment') {
+      start = lower.indexOf('<!--', from);
+      if (start < 0) return out;
+      const close = lower.indexOf('-->', start + 4);
+      if (close < 0) return out;
+      end = close + 3;
+    } else {
+      start = lower.indexOf('<script', from);
+      if (start < 0) return out;
+      // A "<script" written inside an HTML comment is not a tag: keep the comment, skip past it.
+      const comment = lower.indexOf('<!--', from);
+      if (comment >= 0 && comment < start) {
+        const close = lower.indexOf('-->', comment + 4);
+        if (close < 0) return out;
+        from = floor = close + 3;
+        continue;
+      }
+      if (inQuotedTagAttribute(out,start)
+        ||/[a-z0-9_-]/.test(lower.charAt(start + 7))) {
+        from = start + 1; continue;
+      }
+      let close = lower.indexOf('</script', start + 7);
+      while (close >= 0 && /[a-z0-9_-]/.test(lower.charAt(close + 8))) close = lower.indexOf('</script', close + 1);
+      const gt = close < 0 ? -1 : lower.indexOf('>', close + 8);
+      if (gt < 0) return out;
+      end = gt + 1;
+    }
+    out = out.slice(0, start) + out.slice(end);
+    from = Math.max(floor, start - 8);
+  }
+}
+
+/** Strip scripts before comments: HTML comment delimiters inside script
+ * strings are not DOM comments. The script scanner already skips commented
+ * fake scripts, and the comment pass then drops fake rows and controls. The
+ * raw HTML is used only for browser-saved source provenance. */
+function withoutNonDataBlocks(html:string):string {
+  return withoutBlocks(withoutBlocks(html, 'script'), 'comment');
+}
+
 function savedFromUrl(html:string):string {
   const match = /<!--\s*saved from url=\(\d+\)(\S+)\s*-->/i.exec(html);
   if (!match) throw new TypeError('not a browser-saved page: no "saved from url" comment');
@@ -233,7 +320,7 @@ function units(text:string):number|null {
 
 export function importWisTimetable(input:TimetableImportRequest):TimetableImport {
   if (!Number.isFinite(Date.parse(input.savedAt))) throw new TypeError('savedAt must be a datetime');
-  const html = input.html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
+  const html = withoutNonDataBlocks(input.html);
   const url = savedFromUrl(input.html);
 
   const rowsHtml = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(match => match[1]!);
@@ -347,7 +434,7 @@ export function importWisTimetable(input:TimetableImportRequest):TimetableImport
  * name), lists inside HTML comments are ignored, and two lists that disagree count as none.
  */
 function basicFields(html:string):Set<string> {
-  const page = html.replace(/<!--[\s\S]*?-->/g, '');
+  const page = withoutBlocks(html, 'comment');
   const lists = [...page.matchAll(/<select\b([^>]*)>([\s\S]*?)<\/select>/gi)]
     .filter(match => /(?:^|\s)name\s*=\s*(?:"ag_basic_fld_cd"|'ag_basic_fld_cd'|ag_basic_fld_cd(?=[\s/>]|$))/i.test(match[1]!))
     .map(match => [...match[2]!.matchAll(/<option\b[^>]*>([\s\S]*?)<\/option>/gi)]
@@ -389,7 +476,7 @@ function result(
     source:{system:'HUFS_WIS_LECTURE_TIMETABLE', savedFromUrl:savedFrom, fileName:input.fileName, savedAt:input.savedAt},
     term:{...term, ...(term.session === '1' || term.session === '2' ? {academicTerm:`${term.year}-${term.session}`} : {})},
     departmentLabel,
-    campus:pageCampus(input.html.replace(/<script\b[\s\S]*?<\/script>/gi, '')),
+    campus:pageCampus(withoutNonDataBlocks(input.html)),
     coverage:'ONE_DEPARTMENT_PAGE',
     codeFormat:{reviewed:input.codeFormatReviewed === true, consistentWithCourse7Section2:consistent},
     rows,
