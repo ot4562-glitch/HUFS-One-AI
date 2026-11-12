@@ -44,6 +44,11 @@ export function collectCandidatesFromApprovedBytes({
   });
 }
 
-// Offline public listing layout adapters. Only review proposals; never HTTP.
+// Optional operator-selected, previously fetched HTML detail extractor. This
+// does NOT perform HTTP, source approval or model/OCR inference.
+export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
+  from './notice-html-extractor.mjs';
+
+// Offline board candidates remain review-only, with no network access.
 export {parseApprovedBoardCandidates,reconcileReviewedBoardPages}
   from './site-adapters.mjs';

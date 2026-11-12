@@ -435,9 +435,19 @@ function buildInventory(selectedRoot) {
   // Older fixture documents deliberately carry a canonical contract table.
   // Current STATUS has only current assigned issues; do not require its
   // deleted historical issue progress table to restore audit coverage.
-  const documented = [...status.matchAll(/^\|\s*\[#(\d+)[^\]]*\]\(https:\/\/github\.com\/(?:minseong-hufs|ot4562-glitch)\/HUFS-One-AI\/issues\/\d+\)/gm)]
+  // Only the explicitly named historical contract section is normative here.
+  // Current owner/status tables elsewhere may legitimately mention different
+  // issues; they must neither invalidate nor fill gaps in the old contract set.
+  const canonicalHeading = /^##[ \t]+5\.[ \t]+Canonical issues[ \t]*\r?$/im.exec(status);
+  let canonicalSection = null;
+  if (canonicalHeading) {
+    canonicalSection = status.slice(canonicalHeading.index + canonicalHeading[0].length);
+    const nextSection = canonicalSection.search(/^#{1,2}[ \t]+/m);
+    if (nextSection !== -1) canonicalSection = canonicalSection.slice(0, nextSection);
+  }
+  const documented = [...(canonicalSection ?? '').matchAll(/^\|\s*\[#(\d+)[^\]]*\]\(https:\/\/github\.com\/(?:minseong-hufs|ot4562-glitch)\/HUFS-One-AI\/issues\/\d+\)/gm)]
     .map((match) => Number(match[1]));
-  if (documented.length && (documented.length !== CONTRACT_ISSUES.length
+  if (canonicalSection !== null && (documented.length !== CONTRACT_ISSUES.length
     || new Set(documented).size !== CONTRACT_ISSUES.length
     || documented.some((id) => !issueSet.has(id))))
     finding('CANONICAL_ISSUES_MISMATCH');

@@ -44,11 +44,12 @@ export async function dispatchApprovedCrawleeQueue({
         if(typeof key!=='string'||!expected.has(key)
           ||request.url!==expected.get(key)||seen.has(key))deny();
         seen.add(key);
-        if(idle)return; // No further DB calls after an unavailable lease.
+        if(idle)return; // Empty durable queue: no further SQL dispatch.
         const result=await queue.runOne();
         if(!result||typeof result.state!=='string')deny();
+        if(result.state==='LOCK_BUSY')deny(); // A skipped lease is not a successful refresh.
         if(result.state==='IDLE'){
-          idle=true;return;
+          idle=true;return; // SQL proved no pending jobs.
         }
         // The durable queue settled denied/uncertain jobs. Never re-run them.
         if(!COMPLETED.has(result.state)

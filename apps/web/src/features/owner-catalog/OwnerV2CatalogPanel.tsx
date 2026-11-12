@@ -2,6 +2,7 @@ import {useEffect,useRef,useState,useSyncExternalStore,type FormEvent} from 'rea
 import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
+import {HufsApiError} from '../../integrations/api-error.js';
 import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 
 export interface OwnerV2CatalogPort {
@@ -23,6 +24,20 @@ export function formatKstDate(value?:string):string{
 }
 
 type SearchResult=Awaited<ReturnType<OwnerV2CatalogPort['search']>>;
+type RecoverableCatalogError='EXPIRED_SNAPSHOT'|'RATE_LIMITED'|'INVALID_FILTER';
+type CatalogLookup={kind:'RESULT';value:SearchResult}
+  |{kind:'RECOVERABLE';reason:RecoverableCatalogError};
+/** A failed catalog page is not necessarily a failed owner session. Preserve the
+ * authenticated session for expired signed cursors or exhausted read quota.
+ * Other errors (especially 401/403) must reach the fail-closed session controller. */
+function recoverableCatalogError(error:unknown,continuation:boolean):RecoverableCatalogError|null{
+  if(!(error instanceof HufsApiError))return null;
+  if(error.status===409&&error.code==='VERSION_CONFLICT')return 'EXPIRED_SNAPSHOT';
+  if(error.status===422&&error.code==='INVALID_INPUT')
+    return continuation?'EXPIRED_SNAPSHOT':'INVALID_FILTER';
+  if(error.status===429&&error.code==='RATE_LIMITED')return 'RATE_LIMITED';
+  return null;
+}
 type EligibilityFilter=''|'MET'|'NOT_MET'|'UNKNOWN';
 type Sort='TITLE'|'DEADLINE_ASC'|'PUBLISHED_DESC';
 type CatalogFilters={
@@ -72,36 +87,46 @@ export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
   const [deadlineDate,setDeadlineDate]=useState('');
   const [includeClosed,setIncludeClosed]=useState(false);
   const [result,setResult]=useState<SearchResult|null>(null);
+  const [notice,setNotice]=useState<RecoverableCatalogError|null>(null);
   const [busy,setBusy]=useState(false);
   const generation=useRef(0);
   useEffect(()=>()=>{generation.current++;},[]);
   useEffect(()=>{void port.session.initialize();},[port.session]);
-  useEffect(()=>{generation.current++;setResult(null);setBusy(false);},[scope.epoch,scope.status]);
-  const clearResults=()=>{generation.current++;setBusy(false);setResult(null);};
+  useEffect(()=>{generation.current++;setResult(null);setNotice(null);setBusy(false);},[scope.epoch,scope.status]);
+  const clearResults=()=>{generation.current++;setBusy(false);setResult(null);setNotice(null);};
   const filters=(q:string):CatalogFilters=>({
     q,sort,category,campus,eligibility,deadlineDate,includeClosed,
   });
   const search=async(cursor?:string,asOf?:string)=>{
     if(scope.status!=='READY'||busy)return;
     const ticket=++generation.current;
-    setBusy(true);
-    if(!cursor)setResult(null);
+    const continuation=Boolean(cursor&&asOf);
+    const query=buildCatalogSearchQuery(filters(continuation?term:draft),cursor,asOf);
+    if(!continuation)setTerm(draft);
+    setBusy(true);setNotice(null);
+    if(!continuation)setResult(null);
     try{
-      const received=await port.session.runLatest('owner-v2-catalog',signal=>
-        port.search(buildCatalogSearchQuery(filters(term),cursor,asOf),signal));
-      if(received&&ticket===generation.current&&port.session.getState().status==='READY')setResult(received);
+      const received=await port.session.runLatest<CatalogLookup>(
+        'owner-v2-catalog',async signal=>{
+          try{return {kind:'RESULT',value:await port.search(query,signal)};}
+          catch(error){
+            const reason=recoverableCatalogError(error,continuation);
+            if(reason)return {kind:'RECOVERABLE',reason};
+            throw error; // 401/403 and unexpected failures remain fail-closed
+          }
+        });
+      if(!received||ticket!==generation.current||port.session.getState().status!=='READY')return;
+      if(received.kind==='RESULT')setResult(received.value);
+      else{
+        // Never leave a stale signed cursor or private page visible after rejection.
+        setResult(null);setNotice(received.reason);
+      }
     }finally{if(ticket===generation.current)setBusy(false);}
   };
   const submit=(event:FormEvent)=>{
-    event.preventDefault();setTerm(draft);
-    // Use the same current form value, not the previous React state.
-    if(scope.status!=='READY'||busy)return;
-    const ticket=++generation.current;
-    setBusy(true);setResult(null);
-    void port.session.runLatest('owner-v2-catalog',signal=>
-      port.search(buildCatalogSearchQuery(filters(draft)),signal))
-      .then(received=>{if(received&&ticket===generation.current&&port.session.getState().status==='READY')setResult(received);})
-      .finally(()=>{if(ticket===generation.current)setBusy(false);});
+    event.preventDefault();
+    // A first-page search intentionally omits all prior cursor/asOf state.
+    void search();
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p role="status" aria-busy="true">BETA 본인 권한 확인 중입니다.</p>;
@@ -155,6 +180,12 @@ export function OwnerV2CatalogPanel({port}:{port:OwnerV2CatalogPort}){
       </label>
       <button type="submit" disabled={busy}>{busy?'조회 중':'검색'}</button>
     </form>
+    {notice==='EXPIRED_SNAPSHOT'&&<div role="status">
+      <p>승인 출처 판본 또는 검색 기준 시점이 변경되었거나 서명 커서가 만료됐습니다. 계정 권한은 유지됩니다. 첫 페이지부터 새 기준으로 조회하세요.</p>
+      <button type="button" disabled={busy} onClick={()=>void search()}>첫 페이지 새로 검색</button>
+    </div>}
+    {notice==='RATE_LIMITED'&&<p role="status">요청 한도를 초과했습니다. 잠시 후 검색을 직접 다시 시도하세요. 자동으로 반복 요청하지 않습니다.</p>}
+    {notice==='INVALID_FILTER'&&<p role="status">검색 조건을 확인할 수 없습니다. 필터를 수정한 뒤 새로 검색하세요.</p>}
     {result?.state==='NOT_CONNECTED'&&<p role="status">NOT_CONNECTED — 현재 권한 검증된 공고 데이터와 서명 커서가 운영 서버에 설정되지 않았습니다. 합성/추정 결과로 대체하지 않습니다.</p>}
     {result?.state==='READY'&&<section aria-live="polite">
       <p className="muted">승인된 검색 범위 {result.page.totalInAuthorizedScope}건 · 조회 판본 {result.sourceVersion} · 기준 {formatKstDate(result.page.at)}</p>

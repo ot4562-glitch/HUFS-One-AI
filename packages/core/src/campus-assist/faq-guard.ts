@@ -16,7 +16,9 @@ export const FAQ_MIN_SUPPORT=0.6;
 const POLARITY_MIN_OVERLAP=0.3;
 
 // Predicate negation only: adverbial "없이" ("신청서 없이 할 수 있습니다") states a positive rule.
-const NEGATION=/아니|아닙|아님|않|없(?!이|는)|불가|못\s|금지|제외/;
+// "못" covers both "못 해요" and the fused "못합니다/못해요/못했/못함" (#341 follow-up). "안 되다" is a
+// negation only as a standalone word: "보안 됩니다" and "안내됩니다" must stay positive.
+const NEGATION=/아니|아닙|아님|않|없(?!이|는)|불가|못(?:\s|하|해|했|합|함)|(?<![가-힣])안\s*(?:되|돼|됐|됩|됨)|금지|제외/;
 /** Keep modal predicate polarity distinct from incidental adjectives such as "기간 제한 없는".
  * Use action-specific matches where possible, rather than a paragraph-level negation bit. */
 function modalClaims(sentence:string):{action:string;negative:boolean}[]{

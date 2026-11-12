@@ -25,6 +25,25 @@ Run `npm ci --ignore-scripts --no-audit --no-fund` from this folder and execute 
 private operator factory, credentials, rights and live source approval remain
 NOT_CONNECTED/NOT_RUN.
 
+## Offline approved HTML5 notice detail
+
+`notice-html-extractor.mjs` consumes *already authorized/fetched* UTF-8 HTML
+only (max 256KiB) and uses pinned Cheerio to parse h1-h3, paragraphs,
+lists and table rows into immutable, ordered paragraph IDs. It strips
+script/form/iframe content, rejects DTD/entity declarations, invalid UTF-8,
+ambiguous section selectors, more than 200 paragraphs and 20k-char lines.
+A NCP-private operator must choose a reviewed root selector (simple body/main/
+article/id/class only), verify current source/permission and preserve the
+original-bytes SHA before calling this plugin as a SourceContentExtractor.
+The result remains `NEEDS_REVIEW`; it cannot declare official deadlines,
+student eligibility or publication rights without the independent source review.
+
+The synthetic real-Cheerio regression runs in the pinned worker CI and covers
+Korean public notice dates/table cells/active content rejection. No live site,
+attachment, CAPTCHA/login or network request is exercised. HWP/HWPX and
+unlicensed PDFs remain separate unsupported formats until an approved native
+parser exists. Do not infer these as TEXT from file names or extensions.
+
 ## Public board layout adapters (offline only, #445)
 
 `site-adapters.mjs` provides two deliberately **synthetic layout families**,

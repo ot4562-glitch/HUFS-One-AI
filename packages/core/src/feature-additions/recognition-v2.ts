@@ -58,13 +58,28 @@ export function prepareRecognitionV2(input:{
 export function classifyProofCandidate(input:{
   rule:C.ActivityRecognitionRule;assetId:string;proposedKind:string;
   evidencePage?:number;confidence?:number;ownerConfirmed:boolean;
+  /** Mandatory for an owner-confirmed proposal; an OCR confidence is never a
+   * rights, source-period or official-experience attestation. */
+  asOf?:string;mode?:FeatureMode;
 }):{assetId:string;status:'OWNER_CONFIRMED_CANDIDATE'|'NEEDS_REVIEW'|'REJECTED';
   documentKind?:string} {
-  if (!input.assetId || !Number.isSafeInteger(input.evidencePage)||input.evidencePage!<0
+  const rejected={assetId:input.assetId,status:'REJECTED' as const};
+  if (!/^[A-Za-z0-9_.:-]{1,128}$/.test(input.assetId)
+    || !/^[A-Za-z0-9_.:-]{1,128}$/.test(input.proposedKind)
+    || !Number.isSafeInteger(input.evidencePage)||input.evidencePage!<0
+    || input.evidencePage!>50
     || !Number.isFinite(input.confidence)||input.confidence!<0||input.confidence!>1)
-    return {assetId:input.assetId,status:'REJECTED'};
+    return rejected;
   if (!input.rule.documentGroups.some(g=>g.kinds.includes(input.proposedKind)))
-    return {assetId:input.assetId,status:'REJECTED'};
+    return rejected;
   if (!input.ownerConfirmed) return {assetId:input.assetId,status:'NEEDS_REVIEW'};
+  // Confirmation can elevate an OCR guess only to an owner-reviewed candidate,
+  // never a proof of institutional issuance. Current source rights/HEAD must
+  // be independently verified when this action is requested.
+  if (!input.asOf||!verifySource(input.rule.source,input.asOf,input.mode).usable)
+    return rejected;
+  if(input.rule.applicationEndsAt
+    &&parseAsOf(input.asOf)>parseAsOf(input.rule.applicationEndsAt))
+    return rejected;
   return {assetId:input.assetId,status:'OWNER_CONFIRMED_CANDIDATE',documentKind:input.proposedKind};
 }
