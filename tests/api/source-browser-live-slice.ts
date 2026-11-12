@@ -6,6 +6,7 @@ import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportuni
 import {PostgresSourceReviewService} from '../../apps/api/src/modules/opportunities/source-review-postgres.js';
 import {buildSourceBrowserEvidence,parseSourceBrowserEvidence} from '../../apps/api/src/modules/opportunities/source-browser-evidence.js';
 import {hashRevisionParagraphs} from '../../apps/api/src/modules/opportunities/revision-ledger.js';
+import {createPostgresSourceBrowserResources} from '../../apps/api/src/modules/opportunities/source-browser-resources.js';
 const sha=(b:Uint8Array)=>createHash('sha256').update(b).digest('hex');
 export async function proveSourceBrowserPg(admin:Pool,reader:Pool):Promise<void>{
   const base=Date.now()-60000,T=(ms:number)=>new Date(base+ms).toISOString();
@@ -57,15 +58,25 @@ export async function proveSourceBrowserPg(admin:Pool,reader:Pool):Promise<void>
     return revision;
   }
   const first=await appendBrowser('SYN-BROWSER-PG');
+  const resourceStore=createPostgresSourceBrowserResources({pool,actorRef:'SYN-BROWSER-OPERATOR',
+    registrations:[{sourceId:assetId,permissionRef,canonicalUrl:'https://synthetic.example.edu/script.js',
+      kind:'SCRIPT',contentType:'text/javascript; charset=utf-8'}]});
+  const captured=await resourceStore.load({actorRef:'SYN-BROWSER-OPERATOR'});
+  expect(captured.resources[0]!.bytes).toEqual(assetBytes);
+  expect(captured.resources[0]!.manifest.rightsReceiptId).toBe('SYN-BROWSER-RIGHT');
+  await captured.revalidate();
   const changed=Buffer.from('SYNTHETIC corrected script');
   await writer.append({revision:{...asset,revisionId:'SYN-BROWSER-ASSET-2',supersedes:asset.revisionId,
     changeKind:'CORRECTED',fetchedAt:T(4000),lastCheckedAt:T(4000),originalSha256:sha(changed),
     contentSha256:hashRevisionParagraphs([{id:'p1',text:'SYNTHETIC corrected script'}])},
     paragraphs:[{id:'p1',text:'SYNTHETIC corrected script'}],originalBytes:changed,permissionReviewed:true});
+  await expect(captured.revalidate()).rejects.toThrow('Approved browser resources unavailable');
   expect((await reader.query('SELECT status FROM source_effective_revisions_vnext WHERE revision_id=$1',[first.revisionId])).rows[0].status).toBe('NEEDS_REVIEW');
   const second=await appendBrowser('SYN-BROWSER-PG-SECOND','SYN-BROWSER-ASSET-2',changed,6000);
+  const renewed=await resourceStore.load({actorRef:'SYN-BROWSER-OPERATOR'});
   await admin.query(`INSERT INTO source_rights_revocations(receipt_id,revoked_by,revoked_at,reason_ref)
     VALUES('SYN-BROWSER-RIGHT','SYN-OPERATOR',clock_timestamp(),'SYN-REVOKED')`);
+  await expect(renewed.revalidate()).rejects.toThrow('Approved browser resources unavailable');
   expect((await reader.query('SELECT status FROM source_effective_revisions_vnext WHERE revision_id=$1',[second.revisionId])).rows[0].status).toBe('NEEDS_REVIEW');
   await expect(admin.query('UPDATE source_originals_vnext SET browser_dom_bytes=$1 WHERE revision_id=$2',
     [Buffer.from('changed'),first.revisionId])).rejects.toThrow();

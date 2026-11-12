@@ -76,3 +76,9 @@
 브라우저를 구성했거나 이전 head에 브라우저 근거가 있으면 HTTP 조건부 헤더와 304 재사용을 거부한다. 같은 원문/문단이라도 렌더링 해시가 다르면 검수할 새 판본을 만들며, 브라우저 모드 해제도 기존 승인을 재사용하지 않는다. 자원 권리 재검증은 변경 없음 기록 직전에도 실행한다. head reader는 원본 저장소 대신 `source_browser_revision_metadata_vnext`의 판본 ID/렌더링 해시만 읽는다. 운영 migration 적용 및 해당 private head-reader 역할의 명시적 SELECT grant가 필요하며 PUBLIC 권한은 없다.
 
 연결·기존 수집·운영 구성 집중 회귀 57개, 타입 검사 및 API 빌드 PASS. 추가 모드 전환 반례를 포함한 브라우저 연결 9개와 합성 PGlite 실제 SQL 1개도 PASS했다. 제한된 역할에서 메타데이터 조회는 성공하고 원본/DOM 직접 조회는 실패한다. 별도 코드 검토의 권한 범위 의견을 위 전용 view로 반영했다. 실제 Crawlee/Playwright 렌더링 및 승인된 자원 바이트 loader는 계속 다음 구현 대상이며, NCP/실제 Linux 런타임은 NOT_RUN이다.
+
+### 승인된 보존 자원 바이트 loader
+
+`createPostgresSourceBrowserResources`는 private 운영자가 등록한 정확한 URL·source·permission·종류별 MIME만 읽는다. 현재 source head의 불변 원본, 해당 운영자의 최신 독립 권리 receipt 및 COLLECT/STORE/SEARCH를 확인하고 DB/호출 시각 중 먼저 도래한 만료도 거부한다. 자원당 256 KiB·전체 16개/1 MiB 한도를 적용하며 SQL 전송 자체도 원본 크기를 제한한다. 반환 바이트를 복사하고 렌더링 이후 revalidate에서 판본과 receipt의 불변 사실을 재조회한다. URL 발견/네트워크/권리 승인/원본 생성 기능은 없다. 원본을 읽을 private resource-reader 역할은 일반 head/retrieval 역할과 분리해야 한다.
+
+18개 합성 단위 시험과 실제 SQL을 실행하는 PGlite 통합 1개 PASS. 통합에서 정확한 바이트/receipt 결속, head 정정 및 권리 철회 이후 revalidate 실패를 확인했다. 타입 검사 PASS. 별도 코드 검토에서 차단 결함은 없었다. 실제 브라우저 렌더러와 이 loader를 연결하는 단계는 계속 진행한다.
