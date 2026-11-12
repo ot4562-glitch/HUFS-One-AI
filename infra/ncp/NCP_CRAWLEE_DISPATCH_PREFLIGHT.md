@@ -1,5 +1,7 @@
 # #445 — Crawlee + PostgreSQL durable job queue (pre-NCP)
 
+> **2026-11-12 NCP/문서 현행:** [전체 PR·이슈 인수표](../../docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 코드 PR 3건 실제 병합/버그 #427만 종료; 현재 PR 33건·이슈 30건 미완. 이 문서의 서버 명령·마이그레이션·백업·권한/비용 표는 **실 NCP에서 실행했다고 확인한 기록이 아닙니다**. 기관 출처 권리/Gold/실학생·실운영은 `NOT_RUN / RELEASE_BLOCKED`.
+
 **Corrected architecture:** Crawlee's `BasicCrawler` only schedules bounded, synthetic
 **virtual ticks**. It does not call `createApprovedDurableSourceExecutor` directly.
 For each tick it invokes the existing `PostgresSourceIngestionQueue.runOne()`,
