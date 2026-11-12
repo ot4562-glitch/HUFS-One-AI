@@ -1,10 +1,60 @@
 # HUFS One AI — 현재 구현·검증·후속 인수
 
-> **현행 상태: 2026-11-09 (Asia/Seoul).** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
+## 2026-11-12 GitHub 실시간 대조 — 현행 정본 (KST)
+    
+- **대조 기준:** `main` [`3c6b87b`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3c6b87b1f28e360b37f90a0dc59557d3f9e30b74) (PR [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 병합). 이 시점 **열린 PR 0건, 열린 Issue 31건(고정 역할 5건 포함)**. 신규 문서 정비 PR은 이 기준 스냅샷 이후 별도 제출하므로 열린 PR 숫자는 [실시간 목록](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)을 따른다.
+- **최근 병합:** [#502](https://github.com/ot4562-glitch/HUFS-One-AI/pull/502) 문서 최소화/웹 AI 슬롭 금지·허용 100쌍, [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 홈 기능 전체 찾기·제품 내비게이션, [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486) 409/422·429·KST 검색 회복, [#478](https://github.com/ot4562-glitch/HUFS-One-AI/pull/478) FAQ 판본 충돌 격리, [#489](https://github.com/ot4562-glitch/HUFS-One-AI/pull/489) 근거 링크/HCX 차단 경계. **코드 병합과 실제 NCP/원본/학생·학교 승인·사람 검수는 다르다.**
+- **리뷰 정책 적합성 별도 감사:** #503(13개 성공·1개 SKIPPED·독립 검수 검사 FAILURE), #502(14개 성공·1개 SKIPPED·독립 검수 검사 FAILURE)는 각각 **최신 HEAD 독립 `APPROVED` 없이 이미 병합됨**. #478은 작성자 `COMMENTED`만 확인. #486은 `taewangim-alt`의 정확한 HEAD `APPROVED` 확인. #489에는 협업자 `COMMENTED`로 공식 부서 전화/이메일의 과도한 PII 차단 우려가 기록됨. **과거 병합을 되돌려 승인된 것처럼 주장하지 않으며**, 후속 수리·검토와 독립 승인 시스템 실효성을 검증한다.
+- **제품 범위:** 공개 미리보기와 합성·API/DB·수집기 코드가 존재해도 실제 원본 게시권/동의·Gold·NCP/실 PostgreSQL·유료 HCX/CLOVA 호출·복구/사람 수락은 미증명. 현재 `RELEASE_BLOCKED`. `csv/`의 기존 학생 원본 5개는 이번 감사에서 읽거나 변경하지 않음.
+- **고정 역할 불변:** #355–#359의 기존 제목·본문·assignee·label·milestone·상태는 변경하지 않으며 새 진행 댓글만 허용. #500은 image 제작·담당 지정·배포 없이 `routing:hold` 유지.
+- **참조 이력 정정:** [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362)는 11월 9일 `CLOSED/completed`(코드/감사 단계), [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)는 11월 7일 `CLOSED/duplicate`; 이것이 공개 원본 이용권·NCP 운영 승인을 증명하지 않는다. 운영 데이터 검수는 #360/#446에서 추적한다.
+
+### 열린 Issue 전체 31건: 구현 및 남은 완료 조건
+
+| Issue | 대상 | 관련 병합 PR(일부) | 종료 전 필요한 근거 |
+| --- | --- | --- | --- |
+| [#500](https://github.com/ot4562-glitch/HUFS-One-AI/issues/500) | 홈·FAQ용 생성 이미지 검토 | — | 담당자 미지정·routing:hold, 이미지 생성/삽입 의도적으로 보류 |
+| [#454](https://github.com/ot4562-glitch/HUFS-One-AI/issues/454) | 데이터 검수 도구 연구 | — | NCP 접근/비교 검증·도입 판단 미완 |
+| [#453](https://github.com/ot4562-glitch/HUFS-One-AI/issues/453) | RAG/파서·검색 도구 연구 | — | 실 정량 비교·권리/전송 검증 미완 |
+| [#452](https://github.com/ot4562-glitch/HUFS-One-AI/issues/452) | AI 평가·추천 도구 연구 | [#480](https://github.com/ot4562-glitch/HUFS-One-AI/pull/480) | 평가 함수 코드 병합, 실 Gold·비교 평가·채택 승인 미완 |
+| [#451](https://github.com/ot4562-glitch/HUFS-One-AI/issues/451) | 웹 OSS·디자인 연구 | [#499](https://github.com/ot4562-glitch/HUFS-One-AI/pull/499), [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) | UI 개선 병합, 현지화/접근성/OSS 평가 및 독립 검수 미완 |
+| [#450](https://github.com/ot4562-glitch/HUFS-One-AI/issues/450) | 개발 OSS·에이전트 연구 | — | 도구·권한·도입 실증 미완 |
+| [#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449) | 실데이터 계약·검수 설계 | — | DRAFT 및 승인·운영 책임·리비전/권한 계약 미확정 |
+| [#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447) | HUFSAbility 독립 전기능·실자료 | [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) | 기능 검색 UI 병합, 학교 권한 기능/실데이터·최종 인수 미완 |
+| [#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446) | 실데이터 출처·검수·Gold | — | 실원본 NCP 전용 검수/권리·Gold 미인수 |
+| [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) | Crawlee 수집·갱신 | [#477](https://github.com/ot4562-glitch/HUFS-One-AI/pull/477), [#479](https://github.com/ot4562-glitch/HUFS-One-AI/pull/479) | 취득/파서/사전검사 코드 병합; 실제 NCP 스케줄·권리 승인 미실행 |
+| [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418) | 검색 409/422·429·KST UX | [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486) | 최신 HEAD 협업자 승인 및 코드 병합; 실브라우저·실세션 QA 미인수 |
+| [#373](https://github.com/ot4562-glitch/HUFS-One-AI/issues/373) | CampusAssist 판본 권리 충돌 | [#389](https://github.com/ot4562-glitch/HUFS-One-AI/pull/389), [#478](https://github.com/ot4562-glitch/HUFS-One-AI/pull/478) | 코드 격리 병합; #478 독립 승인 부재·실원장 검수 미실행 |
+| [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360) | 13개 기능 공식 데이터·권리·Gold | — | 실원본/게시권/동의·Gold NCP 원장 미인수 |
+| [#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) | 심민성 통합 고정 역할 | — | 원제목·본문·메타·상태 동결; 새 진행 댓글만 허용 |
+| [#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358) | 김채윤 데이터 고정 역할 | — | 원제목·본문·메타·상태 동결; 새 진행 댓글만 허용 |
+| [#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357) | 이서연 웹 고정 역할 | — | 원제목·본문·메타·상태 동결; 새 진행 댓글만 허용 |
+| [#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356) | 박준영 AI QA 고정 역할 | — | 원제목·본문·메타·상태 동결; 새 진행 댓글만 허용 |
+| [#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355) | 이의상 AI 고정 역할 | — | 원제목·본문·메타·상태 동결; 새 진행 댓글만 허용 |
+| [#352](https://github.com/ot4562-glitch/HUFS-One-AI/issues/352) | 국제학생 학사 절차 | [#498](https://github.com/ot4562-glitch/HUFS-One-AI/pull/498) | 실 다국어 번역·학기/캠퍼스·담당 기관 검수 |
+| [#351](https://github.com/ot4562-glitch/HUFS-One-AI/issues/351) | 취업통계 대시보드 | [#497](https://github.com/ot4562-glitch/HUFS-One-AI/pull/497) | 실 분모/집계·공개권·독립 검수 |
+| [#350](https://github.com/ot4562-glitch/HUFS-One-AI/issues/350) | 학습공동체 추천 | [#496](https://github.com/ot4562-glitch/HUFS-One-AI/pull/496) | 실 모집 조건·자격·Gold |
+| [#349](https://github.com/ot4562-glitch/HUFS-One-AI/issues/349) | 오픈배지 요건 | [#495](https://github.com/ot4562-glitch/HUFS-One-AI/pull/495) | 실 발급규정·활동 원장·승인 확인 |
+| [#348](https://github.com/ot4562-glitch/HUFS-One-AI/issues/348) | 서버 전체 승인 공고 검색 | [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486) | 실 출처 권리·대규모 운영 DB/UX 확인 |
+| [#347](https://github.com/ot4562-glitch/HUFS-One-AI/issues/347) | NCS 역량 대조 | [#494](https://github.com/ot4562-glitch/HUFS-One-AI/pull/494) | 공식 직무 원장·비교 품질 검증 |
+| [#346](https://github.com/ot4562-glitch/HUFS-One-AI/issues/346) | 교외 활동 인정 증빙 | [#493](https://github.com/ot4562-glitch/HUFS-One-AI/pull/493) | 실 OCR/기관 자료·사람 승인 |
+| [#345](https://github.com/ot4562-glitch/HUFS-One-AI/issues/345) | 상담 경로 추천 | [#492](https://github.com/ot4562-glitch/HUFS-One-AI/pull/492) | 현행 기관 안내·실데이터·사람 QA |
+| [#344](https://github.com/ot4562-glitch/HUFS-One-AI/issues/344) | 현직 멘토 추천 | [#491](https://github.com/ot4562-glitch/HUFS-One-AI/pull/491) | 실 멘토·공개 근거·독립 추천 평가 |
+| [#343](https://github.com/ot4562-glitch/HUFS-One-AI/issues/343) | 장학 요건 체크리스트 | [#490](https://github.com/ot4562-glitch/HUFS-One-AI/pull/490) | 실 장학·학생 원장·신청 요건 검증 |
+| [#341](https://github.com/ot4562-glitch/HUFS-One-AI/issues/341) | FAQ·학사 HCX-007 | [#489](https://github.com/ot4562-glitch/HUFS-One-AI/pull/489) | 실 HCX·권리·독립 Gold; #489 문의처 개인정보 오탐 QA |
+| [#340](https://github.com/ot4562-glitch/HUFS-One-AI/issues/340) | 교환대학 자격 비교 | [#487](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487) | 대학별 현행 공식 규정·인적 검증 |
+| [#339](https://github.com/ot4562-glitch/HUFS-One-AI/issues/339) | 활동 아카이브·반복 일정 | [#488](https://github.com/ot4562-glitch/HUFS-One-AI/pull/488) | 공식 학생회/학과 판본·권리·사람 검수 |
+
+**판정:** 현 단계에서 기존 31개 이슈 중 **전체 완료 기준을 실제로 입증하여 일괄 종료할 대상은 확인되지 않음**. 위 열은 남은 인수의 요약으로, 실제 이슈의 체크리스트/댓글과 최신 코드·CI가 우선한다. 코드 병합 부분은 이슈 댓글에 경과를 남기고, `NOT_CONNECTED/NOT_RUN/UNKNOWN`은 현행 증거 없이 해제하지 않는다.
+
+---
+
+
+> **이하 보존된 2026-11-09 검토 스냅샷:** 과거 2026-11-07의 통합 이력은 [보관본](docs/archive/STATUS_20261107.md)에 보존했습니다. 이슈·PR 개수는 이 시점의 GitHub 상태로 검증하며, 이후 변경은 [Issues](https://github.com/ot4562-glitch/HUFS-One-AI/issues) · [PRs](https://github.com/ot4562-glitch/HUFS-One-AI/pulls)에서 재확인합니다.
 
 **제품 승인:** `OWNER_CONFIRMED_APPROVED`. **실서비스 출시:** `RELEASE_BLOCKED`. 합성 CI/일회용 PostgreSQL 테스트와 실제 학교·학생·출처 이용권·사람 인수·운영 NCP/HCX 실행은 별도 검증 단계입니다. **#355–#359 고정 역할의 제목·본문·담당/라벨/상태는 영구 불변, 진행 기록은 새 댓글만 허용**합니다.
 
-## 2026-11-09 본선 전 심민성 담당 이슈 정산 (최신)
+## 2026-11-09 본선 전 심민성 담당 이슈 정산 (당시 기록)
 
 - **기준 main:** [`6c27fdc`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/6c27fdc281a1d3c632eb39d9ada4322540493069). GitHub 확인: **전체 열린 이슈 22건**, **열린 PR #431 1건**, 심민성에게 배정된 열린 이슈는 [본선 이후 역할 #359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359) 한 건뿐입니다.
 - **본선 전 담당 9건 완료·이관 후 CLOSED/completed:** [#362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362), [#366](https://github.com/ot4562-glitch/HUFS-One-AI/issues/366), [#367](https://github.com/ot4562-glitch/HUFS-One-AI/issues/367), [#375](https://github.com/ot4562-glitch/HUFS-One-AI/issues/375), [#378](https://github.com/ot4562-glitch/HUFS-One-AI/issues/378), [#381](https://github.com/ot4562-glitch/HUFS-One-AI/issues/381), [#416](https://github.com/ot4562-glitch/HUFS-One-AI/issues/416), [#430](https://github.com/ot4562-glitch/HUFS-One-AI/issues/430), [#433](https://github.com/ot4562-glitch/HUFS-One-AI/issues/433). 각 이슈 댓글에 실제 PR/CI/일회용 PG 검수와 이관 근거를 기록했습니다.
