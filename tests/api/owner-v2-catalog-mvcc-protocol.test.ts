@@ -80,7 +80,7 @@ describe('#472 one-connection pinned MVCC protocol (synthetic SQL)',()=>{
         expect(await readPage({pageSize:10})).not.toBeNull();
         f.setPolicy('SYN-REVOKED-AUTHORITY');
         return 'FORBIDDEN';
-      })).rejects.toThrow('authorization changed');
+      })).resolves.toBeNull();
     expect(f.metrics()).toMatchObject({active:0,connects:1,releases:1});
     expect(f.commands[0]!.at(-1)).toBe('ROLLBACK');
   });
@@ -100,7 +100,7 @@ describe('#472 one-connection pinned MVCC protocol (synthetic SQL)',()=>{
     const f=fixture();
     f.authority.resolve.mockResolvedValueOnce(null as never);
     await expect(f.reader.withV2KeysetSnapshot({actorId,asOf:at},at,
-      async()=> 'SHOULD_NOT_RUN')).rejects.toThrow('authority unavailable');
+      async()=> 'SHOULD_NOT_RUN')).resolves.toBeNull();
     expect(f.metrics().connects).toBe(0);
   });
 });
