@@ -91,7 +91,7 @@ describe('#341 authorized offline FAQ source links, no model claims or stale act
       }]}));
     render(<OwnerFaqPanel port={f.port} navigate={vi.fn()}/>);
     await waitForQuery();
-    expect(await screen.findByText(/검증 2026\\. 12\\. 01/)).toBeTruthy();
+    expect(await screen.findByText(/검증 2026\. 12\. 01/)).toBeTruthy();
     expect(screen.queryByText(/검증 2026-11-30/)).toBeNull();
   });
   it('returns NOT_FOUND rather than showing a speculative model answer',async()=>{
