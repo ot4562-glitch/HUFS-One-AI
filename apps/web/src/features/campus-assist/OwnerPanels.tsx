@@ -161,6 +161,9 @@ export function OwnerExchangePanel({port,navigate}:{port:CampusAssistPort;naviga
     <p><InAppLink to="/faq" navigate={navigate}>학사 FAQ</InAppLink></p>
   </section>;
 }
+const formatFaqKstDate=(iso:string)=>new Intl.DateTimeFormat('ko-KR',{
+  timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',
+}).format(new Date(iso));
 export function OwnerFaqPanel({port,navigate}:{port:CampusAssistPort;navigate:(p:string)=>void}){
   const [question,setQuestion]=useState(''),[answer,setAnswer]=useState<FaqAskResponse|null>(null);
   const [busy,setBusy]=useState(false),[failure,setFailure]=useState(false);
@@ -212,7 +215,7 @@ export function OwnerFaqPanel({port,navigate}:{port:CampusAssistPort;navigate:(p
           <p role="note" className="muted">제목과 검증된 링크만 제공합니다. 개인 자격·신청 마감·학교의 공식 상담 결과가 아닙니다.</p>
           <ul>{answer.sourceLinks.map(link=><li key={link.documentId+':'+link.revisionId}>
             <a href={link.sourceUrl} target="_blank" rel="noopener noreferrer">{link.title}</a>
-            {' · 판본 '+link.revisionId+' · 검증 '+link.verifiedAt.slice(0,10)}
+            {' · 판본 '+link.revisionId+' · 검증 '+formatFaqKstDate(link.verifiedAt)}
           </li>)}</ul>
         </>:<p>표시 가능한 공식 원문 링크가 아직 없습니다.</p>}
       </section>
@@ -223,7 +226,7 @@ export function OwnerFaqPanel({port,navigate}:{port:CampusAssistPort;navigate:(p
         <ul>{answer.answer.citations.map(c=>{
           const source=answer.evidence.find(e=>e.citationId===c.citationId);
           return <li key={c.citationId}><q>{c.quote}</q>
-            {source&&<p><a href={source.sourceUrl} target="_blank" rel="noopener noreferrer">{source.title} · 검증 {source.verifiedAt.slice(0,10)}</a></p>}
+            {source&&<p><a href={source.sourceUrl} target="_blank" rel="noopener noreferrer">{source.title} · 검증 {formatFaqKstDate(source.verifiedAt)}</a></p>}
           </li>;
         })}</ul>
         <p className="muted">응답 상태: NEEDS_REVIEW. 학교 공식 적격·마감·학점 판정이 아닙니다.</p>
