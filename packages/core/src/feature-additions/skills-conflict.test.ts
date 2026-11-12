@@ -69,8 +69,10 @@ describe('#347 contradictory NCS/source/owner evidence never creates false compe
     ['owner source span absent',{evidenceSpanIds:[]}],
     ['different approved topic',{topicCodes:['PRODUCT_UX' as const]}],
   ] as const)('does not infer competence from %s',(_label,change)=>{
-    const rows=run({experiences:[experience('SYN-OWNER-EXP',
-      {...change,...('topicCodes' in change?{topicCodes:[...change.topicCodes]}:{})})]});
+    const normalized=Object.fromEntries(Object.entries(change).map(
+      ([key,value])=>[key,Array.isArray(value)?[...value]:value]
+    )) as Partial<ReturnType<typeof experience>>;
+    const rows=run({experiences:[experience('SYN-OWNER-EXP',normalized)]});
     expect(rows[0]).toMatchObject({status:'EVIDENCE_MISSING',interpretation:'RECORD_MISSING'});
   });
   it('an unknown official taxonomy code is UNMAPPED, not an unable applicant',()=>{
