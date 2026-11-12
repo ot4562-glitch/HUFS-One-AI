@@ -297,15 +297,15 @@ test('#141 /menu at 360px: manifest menus, no horizontal overflow, Tab skips �
 });
 
 
-test('interactive discovery: home selector and live opportunity filters at 360px with reduced motion', async ({page}) => {
+test('interactive discovery: compact home summary and live opportunity filters at 360px with reduced motion', async ({page}) => {
   await page.emulateMedia({reducedMotion: 'reduce'});
   await page.setViewportSize({width: 360, height: 820});
   await page.goto('/');
   await pick(page, 0);
-  const guide = page.getByRole('region', {name: '오늘의 액션 가이드'});
-  await guide.getByRole('button', {name: /취득 학점/}).click();
-  await expect(guide.getByRole('region', {name: '취득 학점 안내'})).toBeVisible();
-  await expect(guide.getByRole('button', {name: /취득 학점/})).toHaveAttribute('aria-pressed', 'true');
+  const summary = page.getByRole('region', {name: '오늘의 요약'});
+  await expect(summary.locator('.summary__card')).toHaveCount(3);
+  await expect(summary.getByRole('link', {name: /취득 학점/})).toBeVisible();
+  await expect(page.getByRole('region', {name: '오늘의 액션 가이드'})).toHaveCount(0);
   await page.getByRole('navigation', {name: '주요 메뉴'}).getByRole('link', {name: '기회'}).click();
   const explorer = page.getByRole('region', {name: '공고 탐색'});
   const initialCount = await explorer.locator('.opps > .opp').count();
@@ -323,6 +323,7 @@ test('interactive discovery: home selector and live opportunity filters at 360px
 test('product heading aligns with the shared header and stays compact on mobile', async ({page}) => {
   await page.setViewportSize({width: 1440, height: 900});
   await page.goto('/');
+  await expect(page.getByRole('heading', {level: 1, name: '오늘'})).toBeVisible();
   const bounds = await page.evaluate(() => {
     const header = document.querySelector('.topbar__row')!.getBoundingClientRect();
     const heading = document.querySelector('.page-head')!.getBoundingClientRect();
