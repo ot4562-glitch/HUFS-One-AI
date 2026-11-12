@@ -1,5 +1,7 @@
 # 현재 NCP 운영 상태
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 프로젝트 소유자는 문서에 기재된 NCP·클라우드/모델·자료 전송·운영 및 출시 승인을 모두 완료했다고 확인했습니다. **OWNER_CONFIRMED_APPROVED**입니다. 실현 대상의 계정·리전/SKU·주소·키·가격·청구/종료 구성이 필요하며 미설정은 CONFIGURATION_REQUIRED로 표시합니다.
 
 ## 2026-11-11 현재 — 승인 의사와 실제 NCP 구성은 별개
