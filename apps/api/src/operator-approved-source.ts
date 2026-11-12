@@ -14,6 +14,7 @@ import type {ApprovedPinnedEgress} from './modules/opportunities/approved-egress
 import type {TrustedSourceIngestionAuthority} from './modules/opportunities/source-ingestion-queue-postgres.js';
 import type {SourceDocumentExtractor} from './modules/opportunities/source-document-extractor.js';
 import type {ApprovedSourceAcquisition} from './modules/opportunities/source-acquisition.js';
+import type {TrustedSourceRefreshPreflight} from './modules/opportunities/source-refresh-operator-preflight.js';
 
 type OperatorSourcePort=NonNullable<PostgresPlatformConfig['sourceIngestion']>;
 export interface OperatorApprovedSourceInput {
@@ -24,6 +25,7 @@ export interface OperatorApprovedSourceInput {
   extractor:SourceContentExtractor;
   documentExtractor?:SourceDocumentExtractor;
   acquisition?:ApprovedSourceAcquisition;
+  preflight?:TrustedSourceRefreshPreflight;
   /** Independently revocation-aware operator authorization, never a browser claim. */
   authority:TrustedSourceIngestionAuthority;
   now?:()=>string;
@@ -38,6 +40,8 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
     ||typeof input.extractor?.extract!=='function'
     ||(input.documentExtractor!==undefined&&typeof input.documentExtractor?.extract!=='function')
     ||(input.acquisition!==undefined&&typeof input.acquisition?.acquire!=='function')
+    ||(input.acquisition!==undefined&&typeof input.preflight?.loadCurrent!=='function')
+    ||(input.preflight!==undefined&&typeof input.preflight?.loadCurrent!=='function')
     ||typeof input.authority?.mayProcess!=='function')
     throw new Error('Approved SourceRevision configuration missing');
   const pools=Object.values(input.pools??{});
@@ -87,6 +91,7 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
     policies,rights,egress:input.egress,extractor:input.extractor,
     ...(input.documentExtractor?{documentExtractor:input.documentExtractor}:{}),
     ...(input.acquisition?{acquisition:input.acquisition}:{}),
+    ...(input.preflight?{preflight:input.preflight}:{}),
     readerPool:input.pools.headReader,writer,now,
   });
   return {pool:input.pools.queue,authority,executor};

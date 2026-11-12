@@ -17,7 +17,22 @@ function fixture({poison=false,revokeDuringFetch=false}={}){
   const service=createApprovedDurableSourceExecutor({policies:new Map([[policy.sourceId,policy]]),
     rights:{resolve:async()=>({...policy,status:revoked?'REVOKED':'APPROVED',policyVersion:'SYN-RIGHTS',
       reviewedBy:'SYN-INDEPENDENT',reviewedAt:'2026-11-10T00:00:00Z',allowedPurposes:new Set(['COLLECT','STORE'])})},
-    acquisition:createApprovedCheerioAcquisition(),extractor:createCheerioApprovedNoticeExtractor({rootSelector:'main'}),
+    acquisition:createApprovedCheerioAcquisition(),
+    // Synthetic private operator evidence; no real source, robots request or
+    // NCP budget is touched by this test.
+    preflight:{loadCurrent:async({sourceId,permissionRef,canonicalUrl,now})=>({
+      registration:{sourceId,permissionRef,canonicalUrl,
+        publisher:'Synthetic notice',
+        sourceClass:'PUBLIC_WEB',observedAt:'2026-11-10T00:00:00Z',
+        rights:{collect:true,store:true,search:false,externalTransfer:false}},
+      scope:{sourceId,approvedOrigin:new URL(canonicalUrl).origin+'/',
+        pathPrefixes:['/notice'],robotsStatus:'REVIEWED_PERMITTED',
+        termsStatus:'REVIEWED_PERMITTED',policyRef:'SYN-POLICY',
+        observedAt:'2026-11-10T00:00:00Z'},
+      pageUrl:canonicalUrl,now,
+      remainingRequests:2,remainingBytes:262144,attemptsForUrl:0,maxAttempts:1,
+    })},
+    extractor:createCheerioApprovedNoticeExtractor({rootSelector:'main'}),
     egress:{resolveAddresses:async()=>poison?['127.0.0.1']:['8.8.8.8'],requestPinned:async({init})=>{
       calls++;if(revokeDuringFetch)revoked=true;
       if(new Headers(init.headers).get('if-none-match')==='"SYN-ORIGIN"')return new Response(null,{status:304});

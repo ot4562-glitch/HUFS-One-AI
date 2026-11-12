@@ -3,6 +3,7 @@ import {createOperatorApprovedSource} from '../../apps/api/src/operator-approved
 import type {SourceDocumentExtractor} from '../../apps/api/src/modules/opportunities/source-document-extractor.js';
 import type {ApprovedSourceAcquisition} from '../../apps/api/src/modules/opportunities/source-acquisition.js';
 import type {ReviewerSqlPool} from '../../apps/api/src/modules/auth/reviewer-postgres.js';
+import {syntheticPreflightDraft} from './fixtures/source-refresh-preflight.js';
 
 const NOW='2026-11-04T00:00:00.000Z';
 const policy={sourceId:'SRC_A',permissionRef:'RIGHT_A',
@@ -33,6 +34,7 @@ function setup(current:Record<string,unknown>|null=receipt(),documentExtractor?:
     extractor:{extract:async()=>[{id:'p1',text:'Synthetic approved test'}]},
     ...(documentExtractor?{documentExtractor}:{}),
     ...(acquisition?{acquisition}:{}),
+    ...(acquisition?{preflight:{loadCurrent:async(i:Parameters<typeof syntheticPreflightDraft>[0])=>syntheticPreflightDraft(i)}}:{}),
     authority:{mayProcess},now:()=>NOW,
   });
   return {result,rights,headReader,writer,queue,resolveAddresses,requestPinned,mayProcess,query};
