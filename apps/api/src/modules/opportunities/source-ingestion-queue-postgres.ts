@@ -27,7 +27,7 @@ export interface TrustedDurableSourceExecutor {
   }>;
 }
 export type SourceQueueRunResult =
-  | {state:'IDLE'}
+  | {state:'IDLE'|'LOCK_BUSY'}
   | {state:'NEW_DRAFT'|'CHANGED_DRAFT'|'UNCHANGED'|'BLOCKED_RIGHTS'|'NEEDS_REVIEW';jobId:string};
 export class SourceQueueDenied extends Error {constructor(){super('Source rights not approved');}}
 export class SourceQueueCapacity extends Error {constructor(){super('Source queue capacity reached');}}
@@ -129,11 +129,13 @@ export class PostgresSourceIngestionQueue {
     return await this.authority.mayProcess({...permission,now:this.now()})===true?result:null;
   }
 
-  private async claim(c:ReviewerSqlConnection):Promise<z.infer<typeof Job>|null>{
+  private async claim(c:ReviewerSqlConnection):Promise<z.infer<typeof Job>|'LOCK_BUSY'|null>{
     return this.withTransaction(async c=>{
       // This lock is transaction-scoped. No network work occurs under a DB lock.
       const guard=await c.query('SELECT pg_try_advisory_xact_lock($1::bigint) AS acquired',[64091002]);
-      if(guard.rows.length!==1||guard.rows[0]?.acquired!==true)return null;
+      if(guard.rows.length!==1||typeof guard.rows[0]?.acquired!=='boolean')
+        throw new Error('Unsafe source queue claim guard');
+      if(!guard.rows[0]!.acquired)return 'LOCK_BUSY';
       // A dead worker's lease is UNKNOWN; never re-run an uncertain provider action.
       await c.query(`UPDATE source_ingest_jobs SET state='NEEDS_REVIEW',
         lease_token=NULL,lease_until=NULL,last_error_code='UNKNOWN_COMPLETION',
@@ -141,11 +143,21 @@ export class PostgresSourceIngestionQueue {
         WHERE state='LEASED' AND lease_until<=clock_timestamp()`);
       const busy=await c.query(`SELECT job_id FROM source_ingest_jobs
         WHERE state='LEASED' AND lease_until>clock_timestamp() LIMIT 1`);
-      if(busy.rows.length>0)return null;
+      if(busy.rows.length>0)return 'LOCK_BUSY';
       const candidates=await c.query(`SELECT job_id,actor_ref,source_id,permission_ref,request_key
         FROM source_ingest_jobs WHERE state='PENDING'
         ORDER BY queued_at,job_id LIMIT 1 FOR UPDATE SKIP LOCKED`);
-      if(candidates.rows.length===0)return null;
+      if(candidates.rows.length===0){
+        // SKIP LOCKED can hide pending work owned by another transaction.
+        // Only a proven empty durable queue is IDLE; never call lock
+        // contention a successful timer refresh.
+        const pending=await c.query(`SELECT EXISTS(
+          SELECT 1 FROM source_ingest_jobs WHERE state='PENDING'
+        ) AS pending`);
+        if(pending.rows.length!==1||typeof pending.rows[0]?.pending!=='boolean')
+          throw new Error('Invalid source queue empty proof');
+        return pending.rows[0]!.pending?'LOCK_BUSY':null;
+      }
       if(candidates.rows.length!==1)throw new Error('Unsafe source queue claim');
       const job=candidates.rows[0]!,token=randomUUID();
       const result=await c.query(`UPDATE source_ingest_jobs SET state='LEASED',
@@ -211,9 +223,10 @@ export class PostgresSourceIngestionQueue {
       if(guard.rows.length!==1||typeof guard.rows[0]?.acquired!=='boolean')
         throw new Error('Invalid source queue global execution guard');
       uncertain=false;
-      if(!guard.rows[0]!.acquired)return {state:'IDLE'};
+      if(!guard.rows[0]!.acquired)return {state:'LOCK_BUSY'};
       held=true;
       const job=await this.claim(c);
+      if(job==='LOCK_BUSY')return {state:'LOCK_BUSY'};
       if(!job)return {state:'IDLE'};
       const permission={actorRef:job.actor_ref,sourceId:job.source_id,
         permissionRef:job.permission_ref,now:this.now()};
