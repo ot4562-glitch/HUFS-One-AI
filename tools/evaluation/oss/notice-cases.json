@@ -1,0 +1,14 @@
+{
+  "version": "synthetic-notice-conversion-v1",
+  "referenceKind": "AUTHOR_SYNTHETIC_NOT_HUMAN_GOLD",
+  "cases": [
+    {"id":"SYN-BASIC","html":"<!doctype html><html><body><main><h1>합성 장학 안내</h1><p>마감일: 2026-12-01</p><p>지원자격: 서울캠퍼스 재학생</p></main></body></html>","expected":["합성 장학 안내","2026-12-01","서울캠퍼스 재학생"],"excluded":[]},
+    {"id":"SYN-TABLE","html":"<html><body><main><h1>합성 교환학생</h1><table><tr><th>캠퍼스</th><td>글로벌</td></tr><tr><th>학년도</th><td>2027</td></tr><tr><th>지원학과</th><td>가상학과</td></tr></table></main></body></html>","expected":["합성 교환학생","글로벌","2027","가상학과"],"excluded":[]},
+    {"id":"SYN-CORRECTION","html":"<html><body><main><h1>합성 행사 정정</h1><p>기존 마감일 2026-12-01을 2026-12-08로 연장합니다.</p><p>적용 캠퍼스는 서울입니다.</p></main></body></html>","expected":["2026-12-01","2026-12-08","서울"],"excluded":[]},
+    {"id":"SYN-CANCELLATION","html":"<html><body><main><h1>합성 튜터링 취소</h1><p>2027학년도 가상 프로그램은 취소되었습니다.</p><p>추가 신청을 받지 않습니다.</p></main></body></html>","expected":["2027학년도","취소되었습니다","추가 신청을 받지 않습니다"],"excluded":[]},
+    {"id":"SYN-NOISE","html":"<html><body><nav><p>SYNTHETIC-NAVIGATION-NOISE</p></nav><main><h1>합성 학습공동체</h1><p>정원: 12명</p></main><footer><p>SYNTHETIC-FOOTER-NOISE</p></footer></body></html>","expected":["합성 학습공동체","12명"],"excluded":["SYNTHETIC-NAVIGATION-NOISE","SYNTHETIC-FOOTER-NOISE"]},
+    {"id":"SYN-SCRIPT","html":"<html><body><main><h1>합성 국제학생 안내</h1><p>상담 언어: 한국어·English·中文</p><script>document.write('SYNTHETIC-SCRIPT-NOISE')</script><style>.notice{content:'SYNTHETIC-STYLE-NOISE'}</style></main></body></html>","expected":["한국어·English·中文"],"excluded":["SYNTHETIC-SCRIPT-NOISE","SYNTHETIC-STYLE-NOISE"]},
+    {"id":"SYN-EMPTY","html":"<html><body><main></main></body></html>","expected":[],"excluded":[],"expectAbstention":true},
+    {"id":"SYN-JS-ONLY","html":"<html><body><main><script>document.write('<p>SYNTHETIC-NOT-EXECUTED</p>')</script></main></body></html>","expected":[],"excluded":["SYNTHETIC-NOT-EXECUTED"],"expectAbstention":true}
+  ]
+}

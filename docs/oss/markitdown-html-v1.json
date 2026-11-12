@@ -1,0 +1,343 @@
+{
+  "version": "synthetic-notice-conversion-v1",
+  "referenceKind": "AUTHOR_SYNTHETIC_NOT_HUMAN_GOLD",
+  "fixtureSha256": "4fdb94224697ba8a770378ea4725e3d05e4346a1defa503b502f24c7deb0fc49",
+  "scope": "HTML_ONLY_NOT_PDF_OFFICE_HWP_OR_MODEL_EVALUATION",
+  "externalModelCalls": 0,
+  "toolSha256": {
+    "node": "3a0606c2f201f0dd6297a71fe8b02752f34f96dd377b32331fdc8fac3a2ff610",
+    "python": "556a58a26763c69482a276acc818066da6e9e3f981be20ab2dcb9377098712a5"
+  },
+  "baseline": {
+    "state": "SYNTHETIC_LOCAL_RUN",
+    "tool": "existing-cheerio-notice-extractor",
+    "node": "v24.15.0",
+    "extractorSha256": "5dcbb7203969b275c541c1a85becb575399f89ea057cff19c5c38fa4105efb7c",
+    "cheerioVersion": "1.2.0",
+    "workerLockSha256": "3d45a22277647a8021be0060a82681ab4875f1d8c43ce170c4c097ff95128f50",
+    "importMs": 243.6522,
+    "metrics": {
+      "expectedFragments": {
+        "num": 16,
+        "den": 16,
+        "value": 1
+      },
+      "excludedFragmentsPresent": {
+        "num": 0,
+        "den": 5,
+        "value": 0
+      },
+      "correctAbstentions": {
+        "num": 2,
+        "den": 2,
+        "value": 1
+      }
+    },
+    "cases": [
+      {
+        "id": "SYN-BASIC",
+        "originalSha256": "ea1238f9d844ad68d896a73fe906d3a36fffa4a386d496a28f24626382b60a7c",
+        "outputSha256": "77471a3fd3d1e515f5687340edc78d0047dd1bb5d56bf019c11c4f1b0fcaa005",
+        "outputBytes": 90,
+        "timingMs": {
+          "first": 9.374799999999993,
+          "warmMedian": 0.3367500000000234,
+          "warmP95": 1.4092999999999734,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-TABLE",
+        "originalSha256": "36b5229989cf3cbf420ab80a60f973b73554ebe5251463234bb52c8afcf4d611",
+        "outputSha256": "ed292c7fd8fc8d2892717b4ac0be8a16241a6059ffccc1e8016bcfcebf303628",
+        "outputBytes": 91,
+        "timingMs": {
+          "first": 1.009999999999991,
+          "warmMedian": 0.2884999999999991,
+          "warmP95": 0.3599999999999568,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-CORRECTION",
+        "originalSha256": "159493893eda01d280b26620f4ff50f06394ef69aaf76901495cdb5efeae10ee",
+        "outputSha256": "53b736bb743949056501368305e3ae9a49a9d92402a6bafd5aa9ba0d8efd10b0",
+        "outputBytes": 127,
+        "timingMs": {
+          "first": 0.18790000000001328,
+          "warmMedian": 0.23544999999998595,
+          "warmP95": 0.6790000000000305,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-CANCELLATION",
+        "originalSha256": "53001497ae80ccdfa1ef2947c227cb01175211e401cdc9a0ed546db02bcc4c23",
+        "outputSha256": "11728885cd05488de95a88a25c2d87a3c3e647c5067275ad076b1238d8e71002",
+        "outputBytes": 129,
+        "timingMs": {
+          "first": 0.15730000000002065,
+          "warmMedian": 0.1567500000000166,
+          "warmP95": 0.1893000000000029,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-NOISE",
+        "originalSha256": "739957fab397ec4c0668ff959faeb0029723eb9c75633730d2f767dc788a7e70",
+        "outputSha256": "2240d5455a71fa9bf6bce8ebeeb786448c809c6eeb4384f66ea3d9c7f5b868d6",
+        "outputBytes": 44,
+        "timingMs": {
+          "first": 0.1964999999999577,
+          "warmMedian": 0.14914999999999168,
+          "warmP95": 0.19200000000000728,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-SCRIPT",
+        "originalSha256": "b00a476484a8384a0ba4a792836ad62a8939bf30146cbbb408b9524fc433b23a",
+        "outputSha256": "d0bc14e079bf745cb2d2d96dd9fec8a85f2d4f7b381f46adab1707ca4f035a59",
+        "outputBytes": 76,
+        "timingMs": {
+          "first": 0.6931999999999903,
+          "warmMedian": 0.19044999999999845,
+          "warmP95": 0.2647999999999797,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-EMPTY",
+        "originalSha256": "dda1a61d71fa1d281f28ffb295f632a284d3cf66035b6dc179ee3ee77ef71b63",
+        "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputBytes": 0,
+        "timingMs": {
+          "first": 0.29829999999998336,
+          "warmMedian": 0.11429999999998586,
+          "warmP95": 0.13630000000000564,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-JS-ONLY",
+        "originalSha256": "3f0811d6bd8bc99e0f6857c3ad9e486da099d8a223ae9dcd6f80436eca3ea3fd",
+        "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputBytes": 0,
+        "timingMs": {
+          "first": 0.2306000000000381,
+          "warmMedian": 0.11610000000001719,
+          "warmP95": 0.1449999999999818,
+          "warmSamples": 24
+        }
+      }
+    ]
+  },
+  "candidate": {
+    "state": "SYNTHETIC_LOCAL_RUN",
+    "version": "0.1.9",
+    "python": "3.14.6",
+    "dependencies": [
+      [
+        "beautifulsoup4",
+        "4.15.0"
+      ],
+      [
+        "certifi",
+        "2026.10.23"
+      ],
+      [
+        "charset-normalizer",
+        "3.5.2"
+      ],
+      [
+        "click",
+        "8.5.1"
+      ],
+      [
+        "defusedxml",
+        "0.7.1"
+      ],
+      [
+        "flatbuffers",
+        "25.12.19"
+      ],
+      [
+        "idna",
+        "3.20"
+      ],
+      [
+        "magika",
+        "1.0.3"
+      ],
+      [
+        "markdownify",
+        "1.2.3"
+      ],
+      [
+        "markitdown",
+        "0.1.9"
+      ],
+      [
+        "numpy",
+        "2.5.4"
+      ],
+      [
+        "onnxruntime",
+        "1.31.1"
+      ],
+      [
+        "packaging",
+        "26.3"
+      ],
+      [
+        "pip",
+        "26.1.2"
+      ],
+      [
+        "protobuf",
+        "7.36.2"
+      ],
+      [
+        "requests",
+        "2.34.2"
+      ],
+      [
+        "six",
+        "1.17.0"
+      ],
+      [
+        "soupsieve",
+        "4.1"
+      ],
+      [
+        "typing_extensions",
+        "4.16.0"
+      ],
+      [
+        "urllib3",
+        "2.8.0"
+      ]
+    ],
+    "networkGuard": "PYTHON_AUDIT_SOCKET_SUBPROCESS_DENY",
+    "attempts": {
+      "network": 0,
+      "subprocess": 0
+    },
+    "importMs": 599.239500000067,
+    "metrics": {
+      "expectedFragments": {
+        "num": 16,
+        "den": 16,
+        "value": 1
+      },
+      "excludedFragmentsPresent": {
+        "num": 2,
+        "den": 5,
+        "value": 0.4
+      },
+      "correctAbstentions": {
+        "num": 2,
+        "den": 2,
+        "value": 1
+      }
+    },
+    "cases": [
+      {
+        "id": "SYN-BASIC",
+        "originalSha256": "ea1238f9d844ad68d896a73fe906d3a36fffa4a386d496a28f24626382b60a7c",
+        "outputSha256": "87099329b63f10915fc0173ad3a83c5b5d7b37d7f5f323a64a7e569829116abd",
+        "outputBytes": 86,
+        "timingMs": {
+          "first": 0.6748999999217631,
+          "warmMedian": 0.29855000002498855,
+          "warmP95": 0.3388000000086322,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-TABLE",
+        "originalSha256": "36b5229989cf3cbf420ab80a60f973b73554ebe5251463234bb52c8afcf4d611",
+        "outputSha256": "051534301c689fe0630fa33f4fd37b6715af6baab887393dd0fef5add8d905a3",
+        "outputBytes": 123,
+        "timingMs": {
+          "first": 0.6601999998565589,
+          "warmMedian": 0.5912499999567444,
+          "warmP95": 0.7103999998889776,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-CORRECTION",
+        "originalSha256": "159493893eda01d280b26620f4ff50f06394ef69aaf76901495cdb5efeae10ee",
+        "outputSha256": "e2609f1b1fbd0dfce84b4eef502049c31b9211c6957e08b21db0e985c64eadd8",
+        "outputBytes": 123,
+        "timingMs": {
+          "first": 0.29810000000907166,
+          "warmMedian": 0.27435000004061294,
+          "warmP95": 0.4424000001108652,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-CANCELLATION",
+        "originalSha256": "53001497ae80ccdfa1ef2947c227cb01175211e401cdc9a0ed546db02bcc4c23",
+        "outputSha256": "087ccedb7b37c19a71cdae18f2f6a0b7b3974eff85a67d83857c294888f9dee4",
+        "outputBytes": 125,
+        "timingMs": {
+          "first": 0.277399999959016,
+          "warmMedian": 0.27190000002974557,
+          "warmP95": 0.2925999999661144,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-NOISE",
+        "originalSha256": "739957fab397ec4c0668ff959faeb0029723eb9c75633730d2f767dc788a7e70",
+        "outputSha256": "8c66da5db81b0b2d3cd4cc3c4efe8a2d9736fbaece630cbb3f1ef37712ed053b",
+        "outputBytes": 91,
+        "timingMs": {
+          "first": 0.36240000008547213,
+          "warmMedian": 0.35909999985506147,
+          "warmP95": 0.48909999986790353,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-SCRIPT",
+        "originalSha256": "b00a476484a8384a0ba4a792836ad62a8939bf30146cbbb408b9524fc433b23a",
+        "outputSha256": "3cd5a4a01c33b4af235b3e0f986aba856188fe2fa979b8e95f8ee43f1c543b33",
+        "outputBytes": 71,
+        "timingMs": {
+          "first": 0.44920000004822214,
+          "warmMedian": 0.2867499999865686,
+          "warmP95": 0.30740000011064694,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-EMPTY",
+        "originalSha256": "dda1a61d71fa1d281f28ffb295f632a284d3cf66035b6dc179ee3ee77ef71b63",
+        "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputBytes": 0,
+        "timingMs": {
+          "first": 0.16440000013062672,
+          "warmMedian": 0.15309999992041412,
+          "warmP95": 0.2448000000185857,
+          "warmSamples": 24
+        }
+      },
+      {
+        "id": "SYN-JS-ONLY",
+        "originalSha256": "3f0811d6bd8bc99e0f6857c3ad9e486da099d8a223ae9dcd6f80436eca3ea3fd",
+        "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "outputBytes": 0,
+        "timingMs": {
+          "first": 0.20150000000285218,
+          "warmMedian": 0.17630000002100132,
+          "warmP95": 0.18460000001141452,
+          "warmSamples": 24
+        }
+      }
+    ]
+  }
+}
