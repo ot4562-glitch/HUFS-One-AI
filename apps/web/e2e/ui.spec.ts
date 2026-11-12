@@ -365,6 +365,7 @@ test('editorial feature universe exposes every listed function without making sc
 test('menu filters keep all canonical routes on reset and never link an unsupported school function', async ({page}) => {
   await page.goto('/menu');
   const menu = page.locator('.menu--page');
+  await expect(menu.locator('.menu__item').first()).toBeVisible();
   const initial = await menu.locator('.menu__item').count();
   await menu.getByRole('searchbox', {name: '메뉴 검색'}).fill('장학');
   expect(await menu.locator('.menu__item').count()).toBeLessThan(initial);
