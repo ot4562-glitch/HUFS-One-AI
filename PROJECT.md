@@ -8,7 +8,7 @@ HUFS One AI는 한국외국어대학교 학생의 기회 탐색·학사 공지·
 
 ## 2026-11-12 프로젝트 범위·검증 현황
 
-[main `3c6b87b`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3c6b87b1f28e360b37f90a0dc59557d3f9e30b74) 기준 [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 전 기능 검색 디렉터리·제품형 진입 UI와 #339–#352 추가 기능의 다수 코드/계약/웹 PR이 반영되었습니다. **전체 메뉴 탐색 가능**은 **학교 기능 전체가 구현·운영·승인됐다**는 뜻이 아니며, 공식 학교 권한 기능은 미지원 상태를 유지합니다. 실 데이터 취득·권리·Gold는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)/[#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446), NCP 수집기·설계는 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445)/[#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449), 전체 범위는 [#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447)로 추적합니다. 실서비스는 `RELEASE_BLOCKED`입니다. [현재 전체 31개 이슈 상태](STATUS.md).
+[main `3c6b87b`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3c6b87b1f28e360b37f90a0dc59557d3f9e30b74) 기준 [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 전 기능 검색 디렉터리·제품형 진입 UI와 기존 13개 추가 기능의 다수 코드/계약/웹 PR이 반영되었습니다. **현재 남은 담당 업무는 새 [#506–#518](https://github.com/ot4562-glitch/HUFS-One-AI/issues/506)에서 추적**합니다. **전체 메뉴 탐색 가능**은 **학교 기능 전체가 구현·운영·승인됐다**는 뜻이 아니며, 공식 학교 권한 기능은 미지원 상태를 유지합니다. 실 데이터 취득·권리·Gold는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)/[#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446), NCP 수집기·설계는 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445)/[#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449), 전체 범위는 [#519](https://github.com/ot4562-glitch/HUFS-One-AI/issues/519)로 추적합니다. 실서비스는 `RELEASE_BLOCKED`입니다. [현재 전체 31개 이슈 상태](STATUS.md).
 
 ## 현재 제공하는 합성 여정
 
