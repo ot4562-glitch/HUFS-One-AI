@@ -48,8 +48,26 @@ response bound against both scopes before transmission, including conditional
 conservative response allowances, not measured NCP traffic or billing credits.
 Rights and version are rechecked after asynchronous budget admission.
 
-Playwright/browser acquisition and alert delivery still need implementation
-and tests. Actual schedules, manifests,
+Failure notification is a separate `hufs-one-ai-data-refresh-alert.service`
+triggered only by the refresh service's `OnFailure`. It runs as `hufs-crawler`,
+loads a root-owned `/etc/hufs-one/private/refresh-alert-factory.mjs`, and calls
+its `deliverRefreshAlert({event,idempotencyKey,occurredAt,signal})` export. The
+factory must use an operator-configured private destination and honour the
+idempotency key and abort signal. The only event is `SOURCE_REFRESH_FAILED`;
+no source URL, document, job details, private error or token is passed.
+`{state:'DELIVERED'}` is required to report delivery. Unknown outcomes/timeouts
+remain `UNCONFIRMED`; the notifier has no retry or collection fallback.
+
+The handler requires systemd 251+ for the triggering unit's
+`MONITOR_INVOCATION_ID` and `MONITOR_UNIT` environment variables (see
+[systemd's execution environment contract](https://github.com/systemd/systemd/blob/main/man/systemd.exec.xml)).
+The operator must install the refresh service, timer **and** alert service
+together, configure the private notifier, run `systemctl daemon-reload`, and
+test one approved synthetic failure before enabling a live schedule. These
+host operations and actual alert delivery have not been executed locally.
+`node tools/ingestion/refresh-alert-cli.mjs --plan` remains offline and inert.
+
+Playwright/browser acquisition still needs implementation and tests. Actual schedules, manifests,
 SQL privileges, site policies and NCP installation remain NOT_CONNECTED/NOT_RUN.
 
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual

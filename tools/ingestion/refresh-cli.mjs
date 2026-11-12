@@ -17,7 +17,7 @@ export function refreshFactoryPath(raw){
     throw new Error('CONFIGURATION_REQUIRED: private refresh factory');
   return raw;
 }
-async function assertTrustedFactory(path){
+export async function assertTrustedFactory(path){
   let current=path,leaf=true;
   for(;;){
     const stat=await lstat(current);
