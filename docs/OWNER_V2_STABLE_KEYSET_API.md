@@ -43,11 +43,31 @@ This is a correctness baseline, **not high-scale server-side filtered SQL**.
 The 5,000-row cap and up-to-two full verified scans **per HTTP request** are
 intentional and may be costly; they cannot return a partial or misleading
 count when exceeded. The normal unpaged reader's 500-row cap remains.
-The implementation does not guarantee a single MVCC snapshot across SQL page
-transactions or across HTTP requests; double checking the same epoch detects
-changes but is not a substitute for an immutable independently approved global
-catalog revision/authorization epoch. Long scans or concurrent mutations
-may deny service instead of showing inconsistent results.
+Each **single complete scan** now holds exactly **one** PostgreSQL client
+and one `REPEATABLE READ READ ONLY` transaction for **all keyset pages**.
+The first SQL read pins one MVCC snapshot through the final lookahead; there is
+no separate exporter connection, `pg_export_snapshot()`, or per-page
+`SET TRANSACTION SNAPSHOT`. This removes the request-to-connection-pool
+deadlock found in the reviewer test with `pg.Pool(max=5)` and five simultaneous
+scans. Consent, RLS, reviewed-source proofs, rights/HEAD checks and projection
+hashes remain enforced for every page. The bounded transaction is rolled back
+and its sole client released on success, denial or error. PostgreSQL
+`idle_in_transaction_session_timeout='30s'` still limits stalls. The
+actor's external authority is checked **before acquiring** this connection
+and again **after releasing** it, so a check never waits for a second client
+while holding an active pinned scan. Finally, the response gate performs a
+**second independent fresh full scan**, comparing all verified page hashes
+and current rights before returning any result. A pinned snapshot never
+serves as a standalone authorization grant.
+
+The synthetic pool-5 concurrency regression and disposable PostgreSQL
+mid-scan writer test must both pass before integration; neither is proof
+of NCP production pool sizing, latency or rights permission.
+
+This still does **not** pin one MVCC snapshot **across HTTP requests** or
+provide a durable global catalog publication/authorization epoch. A page
+scan may fail closed if concurrent changes invalidate current grants. Long
+scans remain costly; actual NCP runtime/replica/timeout acceptance is pending.
 
 Next release gate: independent read-only PostgreSQL RLS/role verification,
 source/rights/consent epoch schema and publisher transaction design, a stable
@@ -60,3 +80,7 @@ Run synthetic unit/e2e: `npm run typecheck` and
 `npx vitest run tests/api/owner-v2-catalog-keyset-http.test.ts`.
 Real SQL approved reader keyset 1,250 rows/25 pages, index probe and revocation
 remain under the isolated opt-in PostgreSQL CI in dependent PR #465.
+The new synthetic and **real disposable PostgreSQL** tests additionally prove
+that a concurrent V2 HEAD insertion after page 1 cannot become visible within
+the same exported snapshot, while a freshly exported snapshot sees it.
+No actual institution records or credentials are involved.

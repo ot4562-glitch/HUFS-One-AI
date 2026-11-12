@@ -60,8 +60,7 @@ async function canonicalPageProof(connection:ReviewerSqlConnection,
   const result=await connection.query(sql,
     [JSON.stringify([...refs.values()]),actorId,now]);
   if(result.rows.length!==refs.size)deny();
-  // A 50-row page verifies its 51st lookahead as well; each row can carry
-  // up to 100 approved rights pairs, so the maximum is 5,100 (not 5,050).
+  // A 50-row page also verifies the 51st lookahead (100 refs each).
   const parsed=Canonical.array().max((BATCH_SIZE+1)*100).parse(result.rows);
   if(new Set(parsed.map(x=>key(x.source_id,x.permission_ref))).size!==refs.size
     ||parsed.some(x=>!refs.has(key(x.source_id,x.permission_ref))))deny();
@@ -96,16 +95,18 @@ export class PostgresOwnerV2StableKeysetSource implements TrustedOwnerV2CatalogS
 
   private async scan(input:Query,now:string){
     ActorId.parse(input.actorId);ISO.parse(input.asOf);ISO.parse(now);
+    // A single REPEATABLE READ exported snapshot fences every keyset page.
+    // The separate pre-response revalidation opens an entirely NEW snapshot.
+    return this.reader.withV2KeysetSnapshot(input,now,async readPage=>{
     const items:C.OpportunityCatalogItem[]=[];
     const pageDigests:{first:string|null;last:string|null;fingerprint:string}[]=[];
     let consentVersion:string|null=null,validUntil='9999-12-31T23:59:59.999Z';
     let lastId:string|undefined;
     for(let pageNo=0;pageNo<=MAX_VERIFIED_V2_CATALOG_ROWS/BATCH_SIZE;pageNo++){
       if(pageNo===MAX_VERIFIED_V2_CATALOG_ROWS/BATCH_SIZE)deny();
-      const page=await this.reader.readV2KeysetPage({
-        actorId:input.actorId,asOf:input.asOf,pageSize:BATCH_SIZE,
-        ...(lastId?{afterEntityId:lastId}:{}),
-      },now,(connection,rows)=>canonicalPageProof(connection,rows,input.actorId,now));
+      const page=await readPage({
+        pageSize:BATCH_SIZE,...(lastId?{afterEntityId:lastId}:{}),
+      },(connection,rows)=>canonicalPageProof(connection,rows,input.actorId,now));
       if(!page)return null;
       if(!SHA.test(page.fingerprint)||!Id.safeParse(page.consentVersion).success
         ||!Array.isArray(page.rows)||page.rows.length>BATCH_SIZE
@@ -143,6 +144,7 @@ export class PostgresOwnerV2StableKeysetSource implements TrustedOwnerV2CatalogS
       if(!lastId||page.nextAfterEntityId!==lastId)deny();
     }
     return deny();
+    });
   }
 
   async read(input:Query):Promise<ApprovedV2CatalogSnapshot|null>{
