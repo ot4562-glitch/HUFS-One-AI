@@ -35,7 +35,7 @@
 #### 2026-11-06 업데이트
 
 - 오너의 NCP/운영 코드·IaC는 병합되어 있어도 **실 NCP 계정·서버 생성·SSH·HTTPS/OIDC/PG/CLOVA/실비용·롤백/반납은 미실행**. `RELEASE_BLOCKED`.
-- [초보자 서버 개설 가이드](BEGINNER_NCP_SERVER_SETUP.md) · [NCP 제품·Codex/Claude 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [운영 증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md). `csv/` 원본 5개는 무단 변경/삭제하지 않으며 공개 배포에 넣지 않음.
+- [초보자 서버 개설 가이드](BEGINNER_NCP_SERVER_SETUP.md) · [NCP 제품·Codex/Claude 설치](BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [운영 증거 원장](ENGINEERING_ARCHIVE.md#owner-track-release-evidence). `csv/` 원본 5개는 무단 변경/삭제하지 않으며 공개 배포에 넣지 않음.
 
 ---
 
@@ -86,7 +86,7 @@ node dist/apps/api/src/production-main.js --plan
 - BETA/REVIEWER/ADMIN 역할·로그아웃/만료/복구·401/403/409/422/429/503, 두 사용자 자료 교차 거부·동의 철회 및 레이스.
 - 학생 경험→AI 후보→**본인 승인**→추천→철회 종단의 실제 모델/데이터와 UI #258·학업 #260 소비자 검수.
 - 학교 공식 자료·RulePack/학점·수업 개설 증거, 실제 기기/모바일/스크린리더, 모델 청구·CPU/RSS/p95, 운영 중단/반납. 독립 사람 Gold는 이번 범위에서 제외되었으므로 **미완료**로 두고 달성률로 포장하지 않는다.
-- **현재 상태:** 실계정/서버·요금/학생별 최신 권리·복구/검증이 없으므로 출시 `RELEASE_BLOCKED`. 완료 증거를 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 및 [운영 증거 원장](OWNER_TRACK_RELEASE_EVIDENCE_20261106.md)에 반영.
+- **현재 상태:** 실계정/서버·요금/학생별 최신 권리·복구/검증이 없으므로 출시 `RELEASE_BLOCKED`. 완료 증거를 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 및 [운영 증거 원장](ENGINEERING_ARCHIVE.md#owner-track-release-evidence)에 반영.
 
 #### 5. 문서와 운영 인계
 
