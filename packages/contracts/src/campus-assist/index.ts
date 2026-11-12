@@ -134,9 +134,17 @@ export const ExchangePartnerSummarySchema=z.strictObject({
 export const ExchangePartnerListSchema=z.strictObject({
   asOf:Iso,sourceVersion:Id,partners:z.array(ExchangePartnerSummarySchema).max(50),
 });
+/** Source-only fallback: references are reviewed server metadata, not generated text. */
+export const FaqSourceLinkSchema=z.strictObject({
+  documentId:Id,revisionId:Id,title:z.string().min(1).max(200),
+  sourceUrl:Source,verifiedAt:Iso,
+});
 export const FaqAskResponseSchema=z.discriminatedUnion('status',[
   z.strictObject({status:z.literal('NOT_FOUND'),asOf:Iso,evidence:z.array(z.never()).length(0)}),
-  z.strictObject({status:z.literal('CONFIGURATION_REQUIRED'),asOf:Iso,evidence:z.array(z.never()).length(0)}),
+  z.strictObject({status:z.literal('CONFIGURATION_REQUIRED'),asOf:Iso,
+    evidence:z.array(z.never()).length(0),
+    /** No model answer or paragraph text. Safe, current official source links only. */
+    sourceLinks:z.array(FaqSourceLinkSchema).max(6).optional()}),
   z.strictObject({status:z.literal('NEEDS_REVIEW'),asOf:Iso,answer:FaqCandidateSchema,
     evidence:z.array(z.strictObject({citationId:Id,sourceUrl:Source,title:z.string().min(1),verifiedAt:Iso})).max(6),
     usage:z.strictObject({promptTokens:z.number().int().nonnegative(),completionTokens:z.number().int().positive(),
