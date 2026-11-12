@@ -7,6 +7,7 @@ import {BasicCrawler,RequestQueue} from 'crawlee';
 import {load} from 'cheerio';
 import {createApprovedCrawleeRefreshWorker} from '../crawlee-approved-dispatch.mjs';
 import {extractReviewedLinkCandidates} from '../approved-link-candidates.mjs';
+export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
 
 const ALLOWED_STORAGE='/var/lib/hufs-one-crawler/crawlee';
 function fail(){throw new Error('CONFIGURATION_REQUIRED: private Crawlee worker');}

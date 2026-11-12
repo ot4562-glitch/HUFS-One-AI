@@ -101,7 +101,7 @@ export const SourceRevisionVNextSchema=z.strictObject({
   revisionId:Token,
   sourceId:Token,
   supersedes:Token.optional(),
-  mediaKind:z.enum(['HTML','IMAGE','PDF','TEXT']),
+  mediaKind:z.enum(['HTML','IMAGE','PDF','TEXT','HWP','HWPX']),
   originalSha256:Sha256,
   contentSha256:Sha256,
   sourceClass:SourceClassSchema,

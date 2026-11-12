@@ -1,5 +1,36 @@
 # #445 Crawlee native worker package (NCP deployment pending)
 
+## Durable HWP/HWPX ingestion port
+
+The NCP-private operator factory can pass
+`documentExtractor: createApprovedKoreanDocumentExtractor()` (exported by
+`native-worker.mjs`) to `createOperatorApprovedSource` or directly to
+`createApprovedDurableSourceExecutor`. Keep its existing
+current rights resolver, exact canonical URL/pinned egress, reader and immutable
+writer pools. Do not pass the legacy paragraph-only wrappers as the binary
+`extractor` fallback. No new provider, OCR, network request or root process is
+created by this adapter.
+
+Apply the separately approved `infra/sql/20261111_source_korean_document_media.sql`
+before enabling document collection. Deploy compatible readers together: older
+readers reject the added `HWP`/`HWPX` media kinds. The migration preserves originals,
+privileges, RLS and independent review; do not narrow its constraint on rollback
+while HWP/HWPX rows remain. Operational NCP application is **NOT_RUN**.
+
+The executor advertises only explicit HWP/HWPX MIME types when this optional
+adapter is present, checks the parser's source/revision IDs, format, original SHA,
+review-only state and unique bounded paragraphs, and rechecks COLLECT/STORE rights.
+It stores exact original bytes plus candidate paragraphs, keeps the true media
+kind, and cannot insert a self-approved revision. These local parsers do not
+require EXTERNAL_TRANSFER rights because no external processor is called.
+
+The existing **256 KiB fetch** and **500,000-byte writer** bounds remain. Generic
+`application/octet-stream`, encrypted/unsupported containers and unconfigured
+adapters are rejected. Text-only extraction omits or rejects unsupported layout,
+images and controls; independent reviewers must compare the retained original
+before approving individual source claims. This is not complete HWP fidelity or
+real-school-data acceptance. All tests use synthetic inputs.
+
 This is a separate Node package under `tools/ingestion/worker`, **not** a
 second crawler engine or a new root dependency. Install with
 `npm ci --omit=dev --ignore-scripts --no-audit --no-fund` from this directory
