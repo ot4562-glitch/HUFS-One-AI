@@ -220,7 +220,7 @@ export function FeatureUniverse({navigate}: {navigate: (path: string) => void}) 
       </fieldset>
     </div>
     <div className="feature-universe__results">
-      <p role="status" aria-live="polite">{filtered.length}개 항목 · {groups.length}개 분류</p>
+      <p aria-live="polite">{filtered.length}개 항목 · {groups.length}개 분류</p>
       {(query || scope !== 'all' || category !== 'all') && <button type="button" onClick={clear}>검색 조건 초기화</button>}
     </div>
     {filtered.length === 0 && <div className="feature-universe__empty">

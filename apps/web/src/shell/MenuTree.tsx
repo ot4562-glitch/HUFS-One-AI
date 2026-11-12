@@ -69,7 +69,7 @@ export function MenuTree({path, navigate, variant}: {path: string; navigate: (p:
           <button type="button" aria-pressed={filter === 'ours'} onClick={() => setFilter('ours')}>HUFS One AI</button>
           <button type="button" aria-pressed={filter === 'school'} onClick={() => setFilter('school')}>학교 참고 메뉴</button>
         </div>
-        <p role="status" aria-live="polite">{groups.reduce((count, group) => count + group.items.length, 0)}개 메뉴 · {groups.length}개 분류</p>
+        <p aria-live="polite">{groups.reduce((count, group) => count + group.items.length, 0)}개 메뉴 · {groups.length}개 분류</p>
         {(search || filter !== 'all') && <button type="button" className="menu__reset" onClick={reset}>전체 다시 보기</button>}
       </div>}
       {groups.map(g => (
