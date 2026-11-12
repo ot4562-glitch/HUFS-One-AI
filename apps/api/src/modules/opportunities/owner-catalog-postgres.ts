@@ -50,9 +50,14 @@ export type ApprovedOwnerProjection=z.infer<typeof Projection>;
 export type ApprovedOwnerRead={rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;validUntil:string;hasMore?:boolean};
 type ReadQuery={actorId:string;kind:ApprovedProjectionKind;entityId?:string;asOf:string;
   page?:{afterEntityId?:string;pageSize:number}};
+/** Only withV2KeysetSnapshot creates this scope. No second pooled connection or
+ * transaction can be opened by read() while the MVCC scan holds its client. */
+type ScopedV2Read={connection:ReviewerSqlConnection;grants:CurrentEvidenceGrants};
 export type ApprovedOwnerKeysetPage={
   rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;
   validUntil:string;hasMore:boolean;nextAfterEntityId:string|null;
+  /** Verified in the same read-only transaction and fingerprint as each page. */
+  extra?:unknown;
 };
 
 /** Shared actual SQL reader for catalog and academic loader. There is no writer,
@@ -61,7 +66,8 @@ export class PostgresApprovedOwnerReader {
   constructor(private readonly pool:ReviewerSqlPool,private readonly authority:OwnerCatalogAuthority,
     private readonly clock:()=>string=()=>new Date().toISOString()){}
   async read(query:ReadQuery,now:string,extra?:(connection:ReviewerSqlConnection,
-    projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>):
+    projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+    scoped?:ScopedV2Read):
     Promise<(ApprovedOwnerRead&{extra?:unknown})|null>{
     Ref.parse(query.actorId);Utc.parse(query.asOf);Utc.parse(now);
     if(query.page&&(query.kind!=='V2_CATALOG'||query.entityId!==undefined
@@ -71,13 +77,18 @@ export class PostgresApprovedOwnerReader {
       throw new Error('Invalid approved owner keyset scope');
     const clock=timestamp(this.clock());
     if(Date.parse(query.asOf)>Math.min(Date.parse(now),Date.parse(clock)))return null;
-    const grants=await this.authority.resolve({actorId:query.actorId,now});
+    const grants=scoped?.grants??await this.authority.resolve({actorId:query.actorId,now});
     if(!grants||!grants.permissionRefs.size)return null;
-    const policy=policyFingerprint(grants),c=await this.pool.connect();
+    const policy=policyFingerprint(grants);
+    const c=scoped?.connection??await this.pool.connect();
     let open=false,result:(ApprovedOwnerRead&{extra?:unknown})|null=null;
     try{
-      await c.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');open=true;
-      await c.query("SET LOCAL statement_timeout='5s'");
+      if(!scoped){
+        await c.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');open=true;
+        await c.query("SET LOCAL statement_timeout='5s'");
+      }
+      // A scoped scan already opened a READ ONLY REPEATABLE READ transaction on
+      // THIS client. Never allocate or commit another client/transaction here.
       await c.query("SELECT set_config('hufs.self_actor',$1,true)",[query.actorId]);
       const consent=await c.query(`SELECT version,choices_json,updated_at FROM api_self_consents
         WHERE actor_id=$1 AND choices_json->>'personalStorage'='true'
@@ -85,7 +96,8 @@ export class PostgresApprovedOwnerReader {
       if(consent.rows.length!==1||consent.rows[0]?.choices_json===null
         ||typeof consent.rows[0]?.choices_json!=='object'
         ||(consent.rows[0]?.choices_json as Record<string,unknown>).personalStorage!==true){
-        await c.query('COMMIT');open=false;return null;
+        if(!scoped){await c.query('COMMIT');open=false;}
+        return null;
       }
       const consentVersion=String(consent.rows[0]!.version);
       const loaded=await c.query(`SELECT p.* FROM api_owner_approved_projections p
@@ -121,7 +133,7 @@ export class PostgresApprovedOwnerReader {
         for(const ref of projection.sources_json){
           if(!grants.permissionRefs.has(ref.permissionRef)
             ||grants.sourceIds&&!grants.sourceIds.has(ref.sourceId))
-            return await this.deny(c,()=>{open=false;});
+            return await this.deny(c,()=>{open=false;},!!scoped);
           distinctRefs.set(refKey(ref),ref);
         }
       }
@@ -152,10 +164,10 @@ export class PostgresApprovedOwnerReader {
         for(const raw of proofBatch.rows){
           const candidate=raw as Record<string,unknown>;
           const key=JSON.stringify([candidate.source_id,candidate.revision_id,candidate.permission_ref]);
-          if(!distinctRefs.has(key)||proofsByKey.has(key))return await this.deny(c,()=>{open=false;});
+          if(!distinctRefs.has(key)||proofsByKey.has(key))return await this.deny(c,()=>{open=false;},!!scoped);
           proofsByKey.set(key,candidate);
         }
-        if(proofsByKey.size!==distinctRefs.size)return await this.deny(c,()=>{open=false;});
+        if(proofsByKey.size!==distinctRefs.size)return await this.deny(c,()=>{open=false;},!!scoped);
       }
       for(const p of rows){
         bound(p.expires_at);
@@ -164,13 +176,13 @@ export class PostgresApprovedOwnerReader {
           ||canonicalProjectionHash(p.payload_json)!==p.payload_sha256)
           throw new Error('Approved owner projection binding failed');
         for(const instant of [p.reviewed_at,p.as_of])
-          if(Date.parse(timestamp(instant))>Date.parse(query.asOf))return await this.deny(c,()=>{open=false;});
+          if(Date.parse(timestamp(instant))>Date.parse(query.asOf))return await this.deny(c,()=>{open=false;},!!scoped);
         if(Date.parse(timestamp(p.starts_at))>Math.min(Date.parse(now),Date.parse(clock))
           ||Date.parse(timestamp(p.expires_at))<=Math.max(Date.parse(now),Date.parse(clock)))
-          return await this.deny(c,()=>{open=false;});
+          return await this.deny(c,()=>{open=false;},!!scoped);
         for(const ref of p.sources_json){
           if(!grants.permissionRefs.has(ref.permissionRef)||grants.sourceIds&&!grants.sourceIds.has(ref.sourceId))
-            return await this.deny(c,()=>{open=false;});
+            return await this.deny(c,()=>{open=false;},!!scoped);
           const s=proofsByKey.get(refKey(ref));
           if(!s||s.revision_id!==ref.revisionId||s.source_id!==ref.sourceId
             ||s.permission_ref!==ref.permissionRef||s.status!=='ACTIVE'||s.change_kind==='CANCELLED'
@@ -181,7 +193,7 @@ export class PostgresApprovedOwnerReader {
             ||[s.fetched_at,s.last_verified_at,s.review_checked_at].some(at=>Date.parse(timestamp(at))>Date.parse(query.asOf))
             ||s.valid_from&&Date.parse(timestamp(s.valid_from))>Date.parse(query.asOf)
             ||s.valid_until&&Date.parse(timestamp(s.valid_until))<=Date.parse(query.asOf)
-            ||!matchesEvidenceScope(this.scope(s),grants))return await this.deny(c,()=>{open=false;});
+            ||!matchesEvidenceScope(this.scope(s),grants))return await this.deny(c,()=>{open=false;},!!scoped);
           bound(s.rights_expires_at);
         }
       }
@@ -201,12 +213,22 @@ export class PostgresApprovedOwnerReader {
       result={rows:exposed,consentVersion,fingerprint,validUntil,
         ...(hasMore===undefined?{}:{hasMore}),
         ...(extraValue===undefined?{}:{extra:extraValue})};
-      await c.query('COMMIT');open=false;
-    }finally{if(open)try{await c.query('ROLLBACK');}catch{/* deny failed read */}c.release();}
-    const after=await this.authority.resolve({actorId:query.actorId,now:timestamp(this.clock())});
+      if(!scoped){await c.query('COMMIT');open=false;}
+    }finally{
+      if(!scoped){
+        if(open)try{await c.query('ROLLBACK');}catch{/* deny failed read */}
+        c.release();
+      }
+    }
     const completed=timestamp(this.clock());
-    return after&&policyFingerprint(after)===policy&&result
-      &&Date.parse(completed)>=Date.parse(clock)&&Date.parse(completed)<Date.parse(result.validUntil)?result:null;
+    if(!result||Date.parse(completed)<Date.parse(clock)
+      ||Date.parse(completed)>=Date.parse(result.validUntil))return null;
+    // The outer scope checks current authority AFTER releasing the sole SQL
+    // client. Checking from here could require a second connection from the
+    // same pool and recreate starvation under concurrent scans.
+    if(scoped)return result;
+    const after=await this.authority.resolve({actorId:query.actorId,now:completed});
+    return after&&policyFingerprint(after)===policy?result:null;
   }
   /**
    * True PostgreSQL entity_id keyset scan for V2_CATALOG projections. Every
@@ -217,21 +239,78 @@ export class PostgresApprovedOwnerReader {
    * pinned global revision/consistency design.
    */
   async readV2KeysetPage(input:{actorId:string;asOf:string;pageSize:number;
-    afterEntityId?:string},now:string):Promise<ApprovedOwnerKeysetPage|null>{
+    afterEntityId?:string},now:string,
+    extra?:(connection:ReviewerSqlConnection,
+      projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+    scoped?:ScopedV2Read,
+  ):Promise<ApprovedOwnerKeysetPage|null>{
     const result=await this.read({
       actorId:input.actorId,kind:'V2_CATALOG',asOf:input.asOf,
       page:{pageSize:input.pageSize,
         ...(input.afterEntityId===undefined?{}:{afterEntityId:input.afterEntityId})},
-    },now);
+    },now,extra,scoped);
     if(!result)return null;
     const last=result.rows.at(-1)?.entity_id??null;
     if(result.hasMore&&!last)throw new Error('Invalid verified page lookahead');
     return {rows:result.rows,consentVersion:result.consentVersion,
       fingerprint:result.fingerprint,validUntil:result.validUntil,
-      hasMore:result.hasMore===true,nextAfterEntityId:result.hasMore?last:null};
+      hasMore:result.hasMore===true,nextAfterEntityId:result.hasMore?last:null,
+      ...(result.extra===undefined?{}:{extra:result.extra})};
   }
-  private async deny(c:ReviewerSqlConnection,done:()=>void):Promise<null>{
-    await c.query('COMMIT');done();return null;
+  /**
+   * #447 / #472 bounded, pinned read. One PostgreSQL client and one READ ONLY
+   * REPEATABLE READ transaction serve ALL keyset pages. A second exporter and
+   * importer client would exhaust a small pool with five concurrent scans.
+   *
+   * Authority is checked before opening the SQL client and again ONLY after
+   * closing it; each page still checks actor, consent, independent RLS/source
+   * rights, proofs, hashes and TTL inside the pinned SQL view. A source/rights
+   * change during the scan is caught by the subsequent fresh response-check
+   * scan, and a policy change by the post-release authority check.
+   */
+  async withV2KeysetSnapshot<T>(
+    input:{actorId:string;asOf:string},now:string,
+    consume:(readPage:(
+      page:{pageSize:number;afterEntityId?:string},
+      extra?:(connection:ReviewerSqlConnection,
+        projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>,
+    )=>Promise<ApprovedOwnerKeysetPage|null>)=>Promise<T>,
+  ):Promise<T|null>{
+    Ref.parse(input.actorId);Utc.parse(input.asOf);Utc.parse(now);
+    const grants=await this.authority.resolve({actorId:input.actorId,now});
+    // No current owner authority is a permission denial, not a provider outage.
+    // Returning null preserves the read-only catalog HTTP 403 boundary.
+    if(!grants||!grants.permissionRefs.size)return null;
+    const policy=policyFingerprint(grants);
+    const connection=await this.pool.connect();
+    let opened=false;
+    let value!:T;
+    try{
+      await connection.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+      opened=true;
+      await connection.query("SET LOCAL statement_timeout='5s'");
+      // No exporter remains idle waiting on another pooled client. Still guard
+      // against a stalled callback holding the pinned MVCC transaction open.
+      await connection.query("SET LOCAL idle_in_transaction_session_timeout='30s'");
+      const scoped:ScopedV2Read={connection,grants};
+      value=await consume((page,extra)=>this.readV2KeysetPage({
+        actorId:input.actorId,asOf:input.asOf,pageSize:page.pageSize,
+        ...(page.afterEntityId===undefined?{}:{afterEntityId:page.afterEntityId}),
+      },now,extra,scoped));
+    }finally{
+      if(opened)try{await connection.query('ROLLBACK');}catch{/* do not reuse failed transaction */}
+      connection.release();
+    }
+    const completed=timestamp(this.clock());
+    const after=await this.authority.resolve({actorId:input.actorId,now:completed});
+    // Any authority change invalidates the entire pinned result (403 via
+    // source.read), even though the SQL transaction had a consistent view.
+    if(!after||policyFingerprint(after)!==policy)return null;
+    return value;
+  }
+  private async deny(c:ReviewerSqlConnection,done:()=>void,scoped=false):Promise<null>{
+    if(!scoped){await c.query('COMMIT');done();}
+    return null; // the enclosing read-only transaction will be rolled back
   }
   private scope(s:Record<string,unknown>):EvidenceScope{
     const result:Record<string,unknown>={};

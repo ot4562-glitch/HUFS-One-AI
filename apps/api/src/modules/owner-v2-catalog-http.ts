@@ -4,6 +4,7 @@ import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {searchApprovedCatalogV2} from '../../../../packages/core/src/feature-additions/catalog-v2.js';
 import type {CatalogCursorSigner,CursorRequestContext} from '../../../../packages/core/src/feature-additions/server-cursor.js';
 import {ApiFailure} from './auth/gates.js';
+import {MAX_VERIFIED_V2_CATALOG_ROWS} from './owner-v2-catalog-limits.js';
 import {betaActor,betaRecheck,type BetaRouteVerifier} from './profiles/self-account-http.js';
 
 type Receipt={actorId:string;sourceVersion:string;expiresAt:string};
@@ -24,10 +25,11 @@ export interface TrustedOwnerV2CatalogSource {
   revalidate(input:{actorId:string;receipt:Receipt;now:string}):Promise<boolean>;
 }
 
-/** #366/#348 — actual read-only BETA API path over an approved bounded snapshot.
- * A large production catalog still needs an independently reviewed SQL keyset
- * implementation and current RLS/rights-backed source reader.
- */
+/** #366/#348 read-only BETA catalog. For a large actor-authorized view,
+ * the operator may supply PostgresOwnerV2StableKeysetSource: it rebuilds the
+ * *entire* verified epoch from bounded SQL pages and rechecks it before send.
+ * The JS search engine remains the only filter/count/order authority. */
+
 export function registerOwnerV2CatalogRoutes(input:{
   app:FastifyInstance;session:BetaRouteVerifier;
   source?:TrustedOwnerV2CatalogSource;signer?:CatalogCursorSigner;
@@ -87,7 +89,10 @@ export function registerOwnerV2CatalogRoutes(input:{
     }
     let page:ReturnType<typeof searchApprovedCatalogV2>;
     try{
-      const items=V.OpportunityCatalogItemSchema.array().max(2000).parse(snapshot.items);
+      // Strict upper bound shared with the stable PostgreSQL keyset source.
+      // 5,001st item is a full deny, never a misleading partial total/count.
+      const items=V.OpportunityCatalogItemSchema.array()
+        .max(MAX_VERIFIED_V2_CATALOG_ROWS).parse(snapshot.items);
       page=searchApprovedCatalogV2({items,query,scopeKey:snapshot.scopeKey,
         catalogRevision:snapshot.catalogRevision,...(cursor?{cursor}:{})});
     }catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}

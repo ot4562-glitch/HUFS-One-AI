@@ -13,6 +13,8 @@ import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {catalogFilterKey, type CatalogInternalCursor} from './catalog-v2.js';
 
 const Id=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
+// Same actor identifier grammar as the authorized PostgreSQL owner reader.
+const ActorId=z.string().regex(/^[A-Za-z0-9_.:@-]{1,200}$/);
 const Envelope=z.strictObject({
   v:z.literal(1),
   keyId:Id,
@@ -49,7 +51,7 @@ export class CatalogCursorError extends Error {
 const checkId=(value:string):boolean=>Id.safeParse(value).success;
 const checkContext=(context:CursorRequestContext,
   timeCode:'MISCONFIGURED_CURSOR'|'INVALID_CURSOR'='MISCONFIGURED_CURSOR'):void=>{
-  if(!checkId(context.actorId)||!checkId(context.consentVersion)
+  if(!ActorId.safeParse(context.actorId).success||!checkId(context.consentVersion)
     ||!checkId(context.catalogRevision)
     ||!context.scopeKey||context.scopeKey.length>512
     ||!Number.isSafeInteger(context.nowMs)||context.nowMs<0
