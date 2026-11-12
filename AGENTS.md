@@ -69,3 +69,5 @@
 - 다른 사람의 dirty worktree/브랜치·핵심 코드를 초기화·강제 push하지 않는다. 공통 계약/DB/lockfile은 소비자들과 교차 검토한다.
 - 현재 HEAD 테스트·CI·코드 diff·사람 검토 의견 및 실환경 실행 결과를 구분한다. **2026-11-11부터 작성자와 다른 팀 협업자의 최신 PR HEAD `APPROVED`가 최소 1건 필요하며, 미해결 `CHANGES_REQUESTED`가 있으면 병합하지 않는다. 이전의 리뷰 선택 규칙은 폐기한다.** 에이전트는 모든 PR의 실제 코드·반례·보안/권한 영향·CI 결과·미해결 의견을 직접 검토하고 수정해야 한다. 실제 차단 결함·실패한 필수 기능/보안 CI·충돌이 있으면 수정 전에는 병합하지 않는다. 담당자 이견과 확인하지 못한 위험은 숨기지 않고 기록한다. 사용자 승인 없는 `main` 직접 push/force push로 검증을 우회하지 않는다. [PR 리뷰 운영 가이드](docs/PR_WORKFLOW.md)를 적용하며, 합성 PASS를 실 운영·인적 Gold·학교 공식 인수로 주장하지 않는다.
 - 수정 전에 현재 코드, 관련 기능 이슈, 폴더별 `AGENTS.md`, [STATUS](STATUS.md), [Architecture](Architecture.md), [PR workflow](docs/PR_WORKFLOW.md)를 읽고 정확한 변경 내용과 남은 미검증을 보고한다.
+
+**웹 UI 정본(필수):** 웹 프런트엔드·챗봇·홈·생성 이미지를 수정하는 에이전트는 별도 가이드 파일을 만들기 전에 [apps/web/AGENTS.md](apps/web/AGENTS.md)의 **AI 슬롭 금지 100 + 허용 100**을 읽고 PR에서 해당 AS/AL 규칙과 검증 근거를 확인한다.
