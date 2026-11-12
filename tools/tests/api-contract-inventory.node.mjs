@@ -391,6 +391,34 @@ test('current-state-only documentation can omit historical issue and A13.2 table
   assert.equal(report.runtimeEvidence,'NOT_RUN');
 });
 
+test('current status issue tables are not the historical canonical contract table',t=>{
+  const {root}=fixture(t);
+  write(root,'STATUS.md','## 3. Current assigned work\n'
+    +'| [#445 pipeline](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) | OPEN |\n'
+    +'## 5. Next priorities\n'
+    +'| [#447 features](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447) | OPEN |\n');
+  const report=audit(root);
+  assert.equal(report.validationStatus,'PASS');assert.equal(report.runtimeEvidence,'NOT_RUN');
+});
+
+test('the canonical issue table ends at the next section even when later tables mention issues',t=>{
+  const {root}=fixture(t);
+  write(root,'STATUS.md','## 5. Canonical issues\n'
+    +ISSUES.map(n=>'| [#'+n+'](https://github.com/ot4562-glitch/HUFS-One-AI/issues/'+n+') | reference |\n').join('')
+    +'## 6. Current work\n| [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445) | OPEN |\n');
+  assert.equal(audit(root).validationStatus,'PASS');
+});
+
+test('a missing or empty canonical issue table cannot borrow rows from another section',t=>{
+  const {root}=fixture(t);
+  for(const numbers of [[],ISSUES.slice(0,-1)]){
+    write(root,'STATUS.md','## 5. Canonical issues\n'
+      +numbers.map(n=>'| [#'+n+'](https://github.com/ot4562-glitch/HUFS-One-AI/issues/'+n+') | reference |\n').join('')
+      +'## 6. Other table\n| [#133](https://github.com/ot4562-glitch/HUFS-One-AI/issues/133) | unrelated |\n');
+    assert.ok(codes(audit(root,1)).includes('CANONICAL_ISSUES_MISMATCH'));
+  }
+});
+
 test('unmapped API contracts require an explicit disposition without inventing a route',t=>{
   const {root,manifest,save}=fixture(t);
   manifest.designContracts[0].actualRouteIds=[];

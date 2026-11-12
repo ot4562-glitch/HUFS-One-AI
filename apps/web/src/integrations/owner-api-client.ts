@@ -464,9 +464,14 @@ export class HufsOwnerApiClient {
     return this.mutate('/api/owner/counseling/routes',response,'POST',params,signal);
   }
   /** #339: the server owns the rights-gated source data. Never accept browser source payloads. */
-  listCampusActivities(query:{asOf:string;organizationId?:string;year?:number;query?:string},signal?:AbortSignal){
+  listCampusActivities(query:{asOf:string;organizationId?:string;year?:number;
+    campus?:'SEOUL'|'GLOBAL'|'BOTH';kind?:'ORIENTATION'|'ACADEMIC'|'RECRUITMENT'|'LECTURE'|'OTHER';
+    query?:string},signal?:AbortSignal){
     const checked=clientInput(z.strictObject({asOf:Iso,organizationId:CampusToken.optional(),
-      year:z.number().int().min(2000).max(2200).optional(),query:z.string().max(100).optional()}),query);
+      year:z.number().int().min(2000).max(2200).optional(),
+      campus:z.enum(['SEOUL','GLOBAL','BOTH']).optional(),
+      kind:z.enum(['ORIENTATION','ACADEMIC','RECRUITMENT','LECTURE','OTHER']).optional(),
+      query:z.string().max(100).optional()}),query);
     return this.request(queryPath('/api/owner/activities',checked),ActivityArchiveResponseSchema,{signal});
   }
   getCampusActivityForecast(query:{asOf:string;organizationId:string;seriesId:string;targetYear:number},signal?:AbortSignal){

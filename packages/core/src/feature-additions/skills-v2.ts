@@ -1,6 +1,6 @@
 /** #347 — NCS-like requirement/source evidence crosswalk and owner review. */
 import {TOPIC_CODES,type FeatureAdditions as C} from '@hufs-one/contracts';
-import {safeIntersection,verifySemanticProposals,verifySource,
+import {conflictingIds,safeIntersection,verifySemanticProposals,verifySource,
   type FeatureMode} from './source-policy.js';
 export type RequirementEvidenceRow={
   requirementId:string;sourceSpanId:string;
@@ -20,17 +20,33 @@ export function compareSkillsV2(input:{
   asOf:string;mode?:FeatureMode;
 }):RequirementEvidenceRow[]{
   const xwalk=new Map<string,Set<string>>();
+  // Multiple approved mappings within one reviewed taxonomy revision are valid.
+  // Conflicting revisions of the SAME official code must not be unioned into
+  // an apparently verified mapping. Quarantine the entire disputed code.
+  const sourceHeads=new Map<string,Set<string>>();
+  const conflictingCrosswalkIds=conflictingIds(input.crosswalk);
+  const conflictingRequirements=conflictingIds(input.requirements);
+  const conflictingExperiences=conflictingIds(input.experiences);
   for (const x of input.crosswalk) {
-    if (!verifySource(x.source,input.asOf,input.mode).usable) continue;
+    if(conflictingCrosswalkIds.has(x.id)
+      ||!verifySource(x.source,input.asOf,input.mode).usable)continue;
+    const heads=sourceHeads.get(x.officialRequirementTopic)??new Set<string>();
+    heads.add(x.source.sourceId+':'+x.source.revisionId);
+    sourceHeads.set(x.officialRequirementTopic,heads);
     const codes=xwalk.get(x.officialRequirementTopic)??new Set<string>();
     codes.add(x.oneAiTopic);xwalk.set(x.officialRequirementTopic,codes);
   }
+  const disputed=new Set([...sourceHeads].filter(([,heads])=>heads.size>1)
+    .map(([code])=>code));
+  for(const code of disputed)xwalk.delete(code);
   return input.requirements.map(req=>{
     const base={requirementId:req.id,sourceSpanId:req.sourceSpanId,
       ownerEvidenceIds:[] as string[],matchedOneAiTopics:[] as string[],
       requiredOneAiTopics:[] as string[],unmappedRequirementTopics:[] as string[]};
-    if(!verifySource(req.source,input.asOf,input.mode).usable
-      || !req.source.evidenceSpanIds.includes(req.sourceSpanId)) return {...base,
+    if(conflictingRequirements.has(req.id)
+      ||!verifySource(req.source,input.asOf,input.mode).usable
+      || !req.source.evidenceSpanIds.includes(req.sourceSpanId)
+      || req.topicCodes.some(code=>disputed.has(code)))return {...base,
         status:'NEEDS_REVIEW',interpretation:'UNKNOWN'};
     if (!req.topicCodes.length) return {...base,status:'UNMAPPED',interpretation:'UNKNOWN'};
     // Distinguish an unknown official taxonomy label from a genuinely absent
@@ -44,7 +60,8 @@ export function compareSkillsV2(input:{
     // student has evidence for one of the mapped subrequirements.
     if (!mapped.length) return {...base,unmappedRequirementTopics:unmapped,
       status:'UNMAPPED',interpretation:'UNKNOWN'};
-    const eligible=input.experiences.filter(e=>e.approved && e.evidenceSpanIds.length>0
+    const eligible=input.experiences.filter(e=>e.approved
+      && !conflictingExperiences.has(e.id) && e.evidenceSpanIds.length>0
       && safeIntersection(e.topicCodes,mapped).length);
     const ids=[...new Set(eligible.map(e=>e.id))].sort();
     const matched=[...new Set(eligible.flatMap(e=>safeIntersection(e.topicCodes,mapped)))].sort();

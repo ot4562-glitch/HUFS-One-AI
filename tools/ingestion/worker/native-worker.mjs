@@ -7,7 +7,6 @@ import {BasicCrawler,RequestQueue} from 'crawlee';
 import {load} from 'cheerio';
 import {createApprovedCrawleeRefreshWorker} from '../crawlee-approved-dispatch.mjs';
 import {extractReviewedLinkCandidates} from '../approved-link-candidates.mjs';
-export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
 
 const ALLOWED_STORAGE='/var/lib/hufs-one-crawler/crawlee';
 function fail(){throw new Error('CONFIGURATION_REQUIRED: private Crawlee worker');}
@@ -45,8 +44,13 @@ export function collectCandidatesFromApprovedBytes({
   });
 }
 
-// Operator-selected, already-authorized document byte decoders. No fetch,
-// credentials, browser, unreviewed source activation or filesystem writes.
+// Optional operator-selected, previously fetched HTML detail extractor. This
+// does NOT perform HTTP, source approval or model/OCR inference.
+export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
+  from './notice-html-extractor.mjs';
+
+// Optional offline HWP/HWPX parsing; never grants source publication rights.
+export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
 export {createApprovedHwpxExtractor,createApprovedLegacyHwpExtractor,
   parseApprovedHwpxDraft,parseApprovedLegacyHwpDraft}
   from './korean-documents.mjs';

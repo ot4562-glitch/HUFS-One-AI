@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {DataQualitySchema, EligibilitySchema, LifecycleSchema, OpportunityTopicsSchema, TopicCodeSchema, VerificationStateSchema} from '../topics/index.js';
+import {OfficialHttpsUrlSchema} from '../feature-additions/official-url.js';
 
 export const EvidenceSpanSchema = z.strictObject({
   evidenceId:z.string().min(1),sourceId:z.string().min(1),snapshotVersion:z.string().min(1),
@@ -30,12 +31,9 @@ export const OpportunitySchema = z.strictObject({
   id:z.string().min(1),version:z.string().min(1),sourceSnapshotId:z.string().min(1),
   title:z.string().min(1),organization:z.string().min(1),
   // #317 separate from source/application URL; HTTPS only, never inferred from organization name.
-  organizationHomepage:z.url().refine(value=>{
-    try{const u=new URL(value);return u.protocol==='https:'&&u.username===''&&u.password===''&&u.hostname.length>3
-      &&!['localhost','127.0.0.1','0.0.0.0','::1'].includes(u.hostname)
-      &&!u.hostname.endsWith('.localhost')&&!u.hostname.endsWith('.internal');}
-    catch{return false;}
-  }).optional(),
+  // Share the reviewed public-HTTPS hostname boundary with official links:
+  // no loopback, RFC1918, metadata, IPv6 literal or reserved test host.
+  organizationHomepage:OfficialHttpsUrlSchema.optional(),
   kind:z.enum(['JOB','INTERNSHIP','CONTEST','EXTRACURRICULAR','SCHOLARSHIP']),
   /** Only present when source evidence distinguishes campus vs external activities. */
   programScope:z.enum(['ON_CAMPUS','OFF_CAMPUS','UNKNOWN']).optional(),

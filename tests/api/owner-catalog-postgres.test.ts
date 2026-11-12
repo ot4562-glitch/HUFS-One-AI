@@ -11,7 +11,8 @@ const course={courseId:'SYN-COURSE',courseCode:'SYN101',title:'Synthetic course'
     permissionRef:'SYN-PERMISSION',status:'SYNTHETIC'}};
 function fixture(){
   let consent=true,current=true,policy=true,payload:unknown=course,driverDates=false;
-  let projectionCount=1,refsPerProjection=1,proofMode:'NORMAL'|'MISSING'|'DUPLICATE'='NORMAL';
+  let projectionCount=1,refsPerProjection=1,projectionKind:'COURSE'|'V2_CATALOG'='COURSE',
+    proofMode:'NORMAL'|'MISSING'|'DUPLICATE'='NORMAL';
   let projectionActor=actorId;
   let hash=canonicalProjectionHash(payload),sourceStatus='ACTIVE';
   const calls:string[]=[],proofInputs:unknown[][]=[];
@@ -32,14 +33,15 @@ function fixture(){
       &&(projectionCount!==1||refsPerProjection!==1))return {rows:current?
       Array.from({length:projectionCount},(_,index)=>{
         const value={...course,courseId:'SYN-COURSE-'+index};
-        return {projection_id:'SYN-PROJECTION-'+index,actor_id:projectionActor,kind:'COURSE',
+        return {projection_id:'SYN-PROJECTION-'+index,actor_id:projectionActor,kind:projectionKind,
           entity_id:'SYN-COURSE-'+index,version:'SYN-CATALOG-1',payload_json:value,
           payload_sha256:canonicalProjectionHash(value),
           sources_json:Array.from({length:refsPerProjection},()=>({
             sourceId:'SYN-SOURCE',revisionId:'SYN-REV',permissionRef:'SYN-PERMISSION'})),
           reviewed_by:'SYN-INDEPENDENT',reviewed_at:now,as_of:now,starts_at:now,
           expires_at:'2026-12-01T00:00:00Z'};
-      }):[]};
+      }).filter(row=>typeof params?.[6]!=='string'||row.entity_id>String(params[6]))
+        .slice(0,typeof params?.[7]==='number'?Number(params[7]):501):[]};
     if(sql.includes('FROM api_owner_approved_projections'))return {rows:current?[{
       projection_id:'SYN-PROJECTION',actor_id:projectionActor,kind:'COURSE',entity_id:'SYN-COURSE',
       version:'SYN-CATALOG-1',payload_json:payload,payload_sha256:hash,
@@ -60,6 +62,7 @@ function fixture(){
   const catalog=new PostgresTrustedOwnerCatalog(pool,{resolve:async()=>policy?grants:null},()=>now);
   return {catalog,calls,proofInputs,source,
     setBatch:(count:number,perProjection:number)=>{projectionCount=count;refsPerProjection=perProjection;},
+    setKind:(value:'COURSE'|'V2_CATALOG')=>{projectionKind=value;},
     setProofMode:(mode:'NORMAL'|'MISSING'|'DUPLICATE')=>{proofMode=mode;},
     setConsent:(value:boolean)=>{consent=value;},
     setActor:(value:string)=>{projectionActor=value;},
@@ -154,6 +157,47 @@ describe('approved owner PostgreSQL catalog (SQL protocol tests)',()=>{
       expect(await h.catalog.reader.read({actorId,kind:'COURSE',asOf:now},now)).toBeNull();
       expect(h.calls.some(sql=>sql.includes('FROM jsonb_to_recordset('))).toBe(true);
     }
+  });
+  it('reads V2 PostgreSQL keysets in exact C order with validated lookahead',async()=>{
+    const h=fixture();h.setBatch(5,1);h.setKind('V2_CATALOG');
+    const start=await h.catalog.reader.readV2KeysetPage({
+      actorId,asOf:now,pageSize:2,
+    },now);
+    expect(start?.rows.map(x=>x.entity_id)).toEqual(['SYN-COURSE-0','SYN-COURSE-1']);
+    expect(start?.hasMore).toBe(true);
+    expect(start?.nextAfterEntityId).toBe('SYN-COURSE-1');
+    const middle=await h.catalog.reader.readV2KeysetPage({
+      actorId,asOf:now,pageSize:2,afterEntityId:start!.nextAfterEntityId!,
+    },now);
+    expect(middle?.rows.map(x=>x.entity_id)).toEqual(['SYN-COURSE-2','SYN-COURSE-3']);
+    expect(middle?.hasMore).toBe(true);
+    const last=await h.catalog.reader.readV2KeysetPage({
+      actorId,asOf:now,pageSize:2,afterEntityId:middle!.nextAfterEntityId!,
+    },now);
+    expect(last?.rows.map(x=>x.entity_id)).toEqual(['SYN-COURSE-4']);
+    expect(last?.hasMore).toBe(false);
+    expect(last?.nextAfterEntityId).toBeNull();
+    expect(h.calls.filter(sql=>sql.includes('FROM jsonb_to_recordset('))).toHaveLength(3);
+    expect(h.calls.some(sql=>sql.includes('p.entity_id COLLATE "C" > $7'))).toBe(true);
+  });
+  it('rejects invalid V2 page bounds and denies pages after current proof withdrawal',async()=>{
+    const h=fixture();h.setBatch(3,1);h.setKind('V2_CATALOG');
+    for(const bad of [0,51,-1,1.5]){
+      await expect(h.catalog.reader.readV2KeysetPage({
+        actorId,asOf:now,pageSize:bad,
+      },now)).rejects.toThrow('Invalid approved owner keyset scope');
+    }
+    await expect(h.catalog.reader.readV2KeysetPage({
+      actorId,asOf:now,pageSize:2,afterEntityId:'../../other-actor',
+    },now)).rejects.toThrow();
+    h.setProofMode('MISSING');
+    expect(await h.catalog.reader.readV2KeysetPage({
+      actorId,asOf:now,pageSize:2,
+    },now)).toBeNull();
+    h.setProofMode('NORMAL');h.setStatus('RETRACTED');
+    expect(await h.catalog.reader.readV2KeysetPage({
+      actorId,asOf:now,pageSize:2,
+    },now)).toBeNull();
   });
   it('deduplicates 100 source references within a single projection before its SQL lookup',async()=>{
     const h=fixture();h.setBatch(1,100);
