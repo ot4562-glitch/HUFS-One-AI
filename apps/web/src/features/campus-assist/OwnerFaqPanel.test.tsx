@@ -73,6 +73,27 @@ describe('#341 authorized offline FAQ source links, no model claims or stale act
     expect(screen.queryByRole('link',{name:'가상 학사 문의 출처'})).toBeNull();
     expect(b.ask).not.toHaveBeenCalled();
   });
+  it('erases already rendered source links when a new owner port becomes active',async()=>{
+    const a=fixture(),b=fixture();
+    const view=render(<OwnerFaqPanel port={a.port} navigate={vi.fn()}/>);
+    await waitForQuery();
+    expect(await screen.findByRole('link',{name:'가상 학사 문의 출처'})).toBeTruthy();
+    view.rerender(<OwnerFaqPanel port={b.port} navigate={vi.fn()}/>);
+    await waitFor(()=>expect(screen.queryByRole('link',
+      {name:'가상 학사 문의 출처'})).toBeNull());
+    expect(b.ask).not.toHaveBeenCalled();
+  });
+  it('shows ISO verification instants as Korean calendar dates',async()=>{
+    const f=fixture();
+    f.ask.mockImplementation(async query=>({status:'CONFIGURATION_REQUIRED',
+      asOf:query.asOf,evidence:[],sourceLinks:[{
+        ...source,verifiedAt:'2026-11-30T15:00:00Z',
+      }]}));
+    render(<OwnerFaqPanel port={f.port} navigate={vi.fn()}/>);
+    await waitForQuery();
+    expect(await screen.findByText(/검증 2026\\. 12\\. 01/)).toBeTruthy();
+    expect(screen.queryByText(/검증 2026-11-30/)).toBeNull();
+  });
   it('returns NOT_FOUND rather than showing a speculative model answer',async()=>{
     const f=fixture();
     f.ask.mockImplementation(async q=>({status:'NOT_FOUND',asOf:q.asOf,evidence:[]}));
