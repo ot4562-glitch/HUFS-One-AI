@@ -1,5 +1,7 @@
 # #449 — NCP 데이터 계약 사전 구현 (제안/NOT_APPROVED)
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 이 문서와 `packages/contracts/src/ingestion/ncp-data-draft.ts`는 **실제 소스·NCP 서버·DB에 접근하지 않는 타입 계약 초안**입니다. `NcpIngestionDraft` 네임스페이스를 통해 데이터 파이프라인 담당자가 합성 fixture로 미리 합의할 수 있습니다. 이 코드를 실제 서비스 경로/SQL에 조립하지 않았고, 현재 운영 스키마로 승인한 것이 아닙니다.
 
 ## 2026-11-11 계약·코드 진척 및 미승인 경계
