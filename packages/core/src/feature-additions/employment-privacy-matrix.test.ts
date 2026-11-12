@@ -14,7 +14,8 @@ describe('#351 30-cell synthetic employment privacy/provenance decision matrix',
         expect(value.percent).toBeUndefined();
       }else{
         expect(value).toMatchObject({status:'PERCENT',numerator:count,
-          denominator:100,percent:count});
+          denominator:100});
+        expect(value.percent).toBeCloseTo(count,10);
       }
     });
   it('complementary tiny cells must also be suppressed',()=>{
