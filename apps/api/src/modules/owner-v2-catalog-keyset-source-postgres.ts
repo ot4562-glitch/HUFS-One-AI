@@ -60,7 +60,9 @@ async function canonicalPageProof(connection:ReviewerSqlConnection,
   const result=await connection.query(sql,
     [JSON.stringify([...refs.values()]),actorId,now]);
   if(result.rows.length!==refs.size)deny();
-  const parsed=Canonical.array().max(BATCH_SIZE*101).parse(result.rows);
+  // A 50-row page verifies its 51st lookahead as well; each row can carry
+  // up to 100 approved rights pairs, so the maximum is 5,100 (not 5,050).
+  const parsed=Canonical.array().max((BATCH_SIZE+1)*100).parse(result.rows);
   if(new Set(parsed.map(x=>key(x.source_id,x.permission_ref))).size!==refs.size
     ||parsed.some(x=>!refs.has(key(x.source_id,x.permission_ref))))deny();
   return parsed;
