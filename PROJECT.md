@@ -6,6 +6,10 @@ HUFS One AI는 한국외국어대학교 학생의 기회 탐색·학사 공지·
 
 공고·장학·비교과·취업·학칙 정보가 여러 곳에 나뉘어 있고, 같은 공고라도 학생의 학과/전공·관심·학점·마감/지원 자격에 따라 적합성이 바뀝니다. 이 서비스는 확인 가능한 조건을 코드로 구분하여 **왜 보이는지·왜 보류되는지·무엇을 확인해야 하는지**를 설명합니다.
 
+## 2026-11-12 프로젝트 범위·검증 현황
+
+[main `3c6b87b`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3c6b87b1f28e360b37f90a0dc59557d3f9e30b74) 기준 [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 전 기능 검색 디렉터리·제품형 진입 UI와 #339–#352 추가 기능의 다수 코드/계약/웹 PR이 반영되었습니다. **전체 메뉴 탐색 가능**은 **학교 기능 전체가 구현·운영·승인됐다**는 뜻이 아니며, 공식 학교 권한 기능은 미지원 상태를 유지합니다. 실 데이터 취득·권리·Gold는 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)/[#446](https://github.com/ot4562-glitch/HUFS-One-AI/issues/446), NCP 수집기·설계는 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445)/[#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449), 전체 범위는 [#447](https://github.com/ot4562-glitch/HUFS-One-AI/issues/447)로 추적합니다. 실서비스는 `RELEASE_BLOCKED`입니다. [현재 전체 31개 이슈 상태](STATUS.md).
+
 ## 현재 제공하는 합성 여정
 
 - 데스크톱 참고 대분류 11개 GNB와 실제 화면 LNB, 모바일 하단 5탭, HUFSAbility 원 메뉴 24개는 **미지원**이라고 표시. 상단 합성 계정 선택기는 실제 학교 로그인 아님(#297/#299).
@@ -21,6 +25,6 @@ HUFS One AI는 한국외국어대학교 학생의 기회 탐색·학사 공지·
 **현재 구현과 단계별 출시 게이트:** [STATUS](STATUS.md) · [#276 실운영·실자료 통합](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) · [#255 팀 협업](https://github.com/ot4562-glitch/HUFS-One-AI/issues/255). 상세 설명은 [README](README.md), 기술 계약은 [Architecture](Architecture.md)에 있습니다.
 
 
-**현재 반영:** [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
+**과거 단계(2026-11-06 이전) 반영:** [PR #292](https://github.com/ot4562-glitch/HUFS-One-AI/pull/292)(학업 독립 참조모형·탐색 예산) · [PR #293](https://github.com/ot4562-glitch/HUFS-One-AI/pull/293)(학사공지 SourceRevision/mock claim·clean HEAD 벤치) · [PR #295](https://github.com/ot4562-glitch/HUFS-One-AI/pull/295)(교과코드 미확인 원장/전망 `forecast-offering-v3`, API `NOT_CONNECTED`) · [PR #304](https://github.com/ot4562-glitch/HUFS-One-AI/pull/304)(공통 UI/발표 S04·공개 합성 Pages 자동배포 유지). 실제 학교 인증·팀원 4명 개인별 데이터/학수번호 132개 공식 매핑·NCP/PG/CLOVA 실행·포스터/모바일/스크린리더 사람 인수는 `NOT_RUN/CONFIGURATION_REQUIRED` 또는 미완료입니다. 운영 제품은 `RELEASE_BLOCKED`이며, 공개 GitHub Pages는 **실자료·외부 AI 호출 없는 합성 시연**으로 `main` push 때 자동 배포를 계속합니다. 원본 `csv/` 다섯 파일은 내용·경로/이름·인코딩·추적 상태를 그대로 유지합니다.
 
-**2026-11-06 이전 코드 진행:** 오너 분할 #267~#275 중 8개·BETA 원본 화면 #277, 학업 전망 #278, 추천 경험 코어 #279가 `main`에 병합됐습니다. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 CLOSED, #10/#11/#258/#260 및 실제 NCP·Google/PG·학생별 동의/권리·CLOVA·복구 #276은 OPEN. [처음 읽을 가이드 3종](README.md#7-중요-문서--처음-설치하는-분비전공자용). 실제 운영은 `RELEASE_BLOCKED`.
+**2026-11-06 당시 코드 진행(역사적 기록):** 오너 분할 #267~#275 중 8개·BETA 원본 화면 #277, 학업 전망 #278, 추천 경험 코어 #279가 `main`에 병합됐습니다. [#259](https://github.com/ot4562-glitch/HUFS-One-AI/issues/259) 순수 코어는 CLOSED, #10/#11/#258/#260 및 실제 NCP·Google/PG·학생별 동의/권리·CLOVA·복구는 별도 운영 게이트로 남았습니다(과거 #276은 2026-11-07 중복 이관으로 CLOSED). [처음 읽을 문서](README.md). 실제 운영은 `RELEASE_BLOCKED`.
