@@ -69,7 +69,7 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
   });
 
   it('#341 quarantines an unsafe FAQ paragraph before budget admission',async()=>{
-    const admit=vi.fn(async()=>true),execute=vi.fn(async()=>({status:{code:'20000'}}));
+    const admit=vi.fn(async()=>true),execute=vi.fn(async (_input:Parameters<NonNullable<CampusAssistServices['hcx007']>['execute']>[0])=>({status:{code:'20000'}}));
     const h=fixture({admit,execute});
     const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,documentId:'SYN-FAQ-PRIVATE',
       revisionId:'SYN-FAQ-PRIVATE-r1',title:'가상 교환학생 어학',
@@ -84,7 +84,7 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect(response.body).not.toContain('010-1234-5678');
   });
   it('#341 admits only clean paragraphs when one official FAQ chunk contains an office phone',async()=>{
-    const admit=vi.fn(async()=>true),execute=vi.fn(async()=>({status:{code:'20000'}}));
+    const admit=vi.fn(async()=>true),execute=vi.fn(async (_input:Parameters<NonNullable<CampusAssistServices['hcx007']>['execute']>[0])=>({status:{code:'20000'}}));
     const h=fixture({admit,execute});
     const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,documentId:'SYN-FAQ-MIXED-CHUNKS',
       revisionId:'SYN-FAQ-MIXED-CHUNKS-r1',title:'가상 교환학생 어학',
