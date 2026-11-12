@@ -73,18 +73,18 @@ describe('permitted official curriculum collection (synthetic transport)',()=>{
     expect(result.courses).toHaveLength(1);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
-  it('requires an operator review record for robots-disallowed public HTTP collection',async()=>{
+  it('denies robots-disallowed HTTP even when an operator review note exists',async()=>{
     const fetcher=vi.fn(async()=>new Response(csv,{headers:{'content-type':'text/csv'}}));
     const restricted={...policy,robots:'DISALLOWED' as const};
     await expect(collectCurriculum({sourceUrl:policy.sourceUrl,
       authority:{resolve:async()=>restricted},fetcher,now:()=>now}))
       .rejects.toThrow('SOURCE_NOT_PERMITTED');
     expect(fetcher).not.toHaveBeenCalled();
-    const authorized={...restricted,robotsReviewRef:'OPERATOR-ROBOTS-REVIEW-2026'};
-    const result=await collectCurriculum({sourceUrl:policy.sourceUrl,
-      authority:{resolve:async()=>authorized},fetcher,now:()=>now});
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(result.courses[0]?.courseCode).toBe('SYN101');
+    const reviewed={...restricted,robotsReviewRef:'OPERATOR-ROBOTS-REVIEW-2026'};
+    await expect(collectCurriculum({sourceUrl:policy.sourceUrl,
+      authority:{resolve:async()=>reviewed},fetcher,now:()=>now}))
+      .rejects.toThrow('SOURCE_NOT_PERMITTED');
+    expect(fetcher).not.toHaveBeenCalled();
   });
   it('deduplicates exact course rows, preserves semesters, and leaves offering/rule checks unknown',()=>{
     const result=normalizeCurriculum([csv,line,line.replace('2026-2','2027-1')].join('\n'),policy,now);
