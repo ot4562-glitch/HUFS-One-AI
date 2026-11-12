@@ -53,9 +53,15 @@ export function comparePublishedStats(
   const sameSource=records.every(r=>r.source.sourceId===records[0]!.source.sourceId
     && r.source.revisionId===records[0]!.source.revisionId);
   if(!sameSource) return {rows,comparable:false,reason:'DIFFERENT_SOURCE'};
+  const firstPolicy=records[0]!.publicationPolicy;
   const sameMetric=records.every(r=>r.metricId===records[0]!.metricId
     && r.populationId===records[0]!.populationId
-    && r.year===records[0]!.year);
+    && r.year===records[0]!.year
+    // A source revision must not silently combine incompatible publication/
+    // small-cell rules in an apparently comparable group.
+    && r.publicationPolicy.minimumPositiveCell===firstPolicy.minimumPositiveCell
+    && r.publicationPolicy.allowPublishedZero===firstPolicy.allowPublishedZero
+    && r.publicationPolicy.aggregationAllowed===firstPolicy.aggregationAllowed);
   return {rows,comparable:sameMetric,
     reason:sameMetric?'COMPATIBLE':'DIFFERENT_DEFINITION'};
 }

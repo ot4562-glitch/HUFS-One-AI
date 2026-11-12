@@ -45,7 +45,8 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
   });
   it('refuses URLs/parent traversal as private object keys and invalid effective ranges',()=>{
     for(const rawObjectKey of ['https://example.org/file','../secret','/private/secret',
-      'a\\b','s/../secret'])
+      'a\\b','s/../secret','s/%2e%2e/secret','s/%252f/secret',
+      's//secret','s?key=1','s#fragment','s/./%2f'])
       expect(D.SourceRevisionDraftSchema.safeParse({...revision,rawObjectKey}).success).toBe(false);
     expect(D.SourceRevisionDraftSchema.safeParse({...revision,
       effectiveFrom:'2026-11-05T00:00:00Z',effectiveUntil:'2026-11-01T00:00:00Z'}).success).toBe(false);
@@ -134,7 +135,14 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
         {url:'https://example.org/private/4',type:'DOCUMENT'},
         {url:'https://example.org/notices/%252e%252e/admin',type:'DOCUMENT'},
       ]};
+    const registration={sourceId:'SYN-SOURCE',
+      canonicalUrl:'https://example.org/notices/index',permissionRef:'SYN-GRANT',
+      publisher:'Synthetic Official',sourceClass:'PUBLIC_WEB' as const,
+      observedAt:'2026-11-01T00:00:00Z',
+      rights:{collect:true,store:true,search:false,externalTransfer:false}};
+    const bound={registration,revision};
     const drafts=D.prepareDiscoveryReviewDrafts({
+      ...bound,
       sourceId:'SYN-SOURCE',revisionId:'SYN-REV-1',
       seenAt:'2026-11-11T02:00:00Z',scope,discovered,
     });
@@ -151,13 +159,96 @@ describe('#449 pre-NCP ingestion draft contract (synthetic only)',()=>{
     expect(D.isDiscoveryCandidateInScopeForReview({
       ...item,proposedUrl:'https://example.org/notices/%2fadmin'},scope)).toBe(false);
     expect(()=>D.prepareDiscoveryReviewDrafts({
-      sourceId:'OTHER',revisionId:'SYN-REV-1',seenAt:'2026-11-11T02:00:00Z',
+      ...bound,sourceId:'OTHER',revisionId:'SYN-REV-1',seenAt:'2026-11-11T02:00:00Z',
       scope,discovered,
     })).toThrow();
     expect(()=>D.prepareDiscoveryReviewDrafts({
-      sourceId:'SYN-SOURCE',revisionId:'SYN-REV-1',seenAt:'2026-11-11T02:00:00Z',
+      ...bound,sourceId:'SYN-SOURCE',revisionId:'SYN-REV-1',seenAt:'2026-11-11T02:00:00Z',
       scope,discovered:{...discovered,state:'ACTIVE'},
     })).toThrow();
+  });
+
+  it('requires the captured source and immutable revision to match the discovered batch',()=>{
+    const registration={sourceId:'SYN-SOURCE',canonicalUrl:'https://example.org/notices/index',
+      permissionRef:'SYN-GRANT',publisher:'Synthetic Official',
+      sourceClass:'PUBLIC_WEB' as const,observedAt:'2026-11-01T00:00:00Z',
+      rights:{collect:true,store:true,search:false,externalTransfer:false}};
+    const scope={sourceId:'SYN-SOURCE',approvedOrigin:'https://example.org/',
+      pathPrefixes:['/notices'],robotsStatus:'UNKNOWN' as const,
+      termsStatus:'UNKNOWN' as const,policyRef:'SYN-POLICY',
+      observedAt:'2026-11-11T00:00:00Z'};
+    const discovered={state:'REVIEW_REQUIRED',kind:'HTML',scanned:1,
+      sourceUrl:registration.canonicalUrl,
+      candidates:[{url:'https://example.org/notices/2',type:'DOCUMENT'}]};
+    const build=(changes:Record<string,unknown>={})=>D.prepareDiscoveryReviewDrafts({
+      sourceId:'SYN-SOURCE',revisionId:'SYN-REV-1',
+      seenAt:'2026-11-11T02:00:00Z',registration,revision,scope,discovered,
+      ...changes,
+    });
+    expect(build()).toHaveLength(1);
+    for(const changed of [
+      {registration:{...registration,canonicalUrl:'https://example.org/notices/other'}},
+      {registration:{...registration,permissionRef:'OTHER'}},
+      {registration:{...registration,rights:{...registration.rights,store:false}}},
+      {revision:{...revision,revisionId:'SYN-REV-2'}},
+      {revision:{...revision,stage:'FETCHED'}},
+      {revision:{...revision,fetchedAt:'2026-12-01T00:00:00Z'}},
+      {discovered:{...discovered,sourceUrl:'https://example.org/notices/other'}},
+    ])expect(()=>build(changed)).toThrow();
+  });
+
+  it('preflights permissions, robots/terms, retry-after and budgets without network',()=>{
+    const registration={sourceId:'SYN-SOURCE',canonicalUrl:'https://example.org/notices/index',
+      permissionRef:'SYN-GRANT',publisher:'Synthetic Official',
+      sourceClass:'PUBLIC_WEB' as const,observedAt:'2026-11-01T00:00:00Z',
+      rights:{collect:true,store:true,search:false,externalTransfer:false}};
+    const scope={sourceId:'SYN-SOURCE',approvedOrigin:'https://example.org/',
+      pathPrefixes:['/notices'],robotsStatus:'REVIEWED_PERMITTED' as const,
+      termsStatus:'REVIEWED_PERMITTED' as const,policyRef:'SYN-POLICY',
+      observedAt:'2026-11-01T00:00:00Z'};
+    const good={registration,scope,pageUrl:registration.canonicalUrl,
+      now:'2026-11-11T00:00:00Z',remainingRequests:2,remainingBytes:10000,
+      attemptsForUrl:0,maxAttempts:2};
+    expect(D.evaluateSourceRefreshPreflight(good)).toEqual({
+      state:'READY_FOR_OPERATOR_RECHECK',reasons:[],
+    });
+    const cases=[
+      [{registration:{...registration,rights:{...registration.rights,collect:false}}},
+        'PURPOSE_RIGHTS_NOT_REVIEWED'],
+      [{scope:{...scope,robotsStatus:'UNKNOWN'}},'ROBOTS_NOT_PERMITTED'],
+      [{scope:{...scope,termsStatus:'RESTRICTED'}},'TERMS_NOT_PERMITTED'],
+      [{remainingRequests:0},'BUDGET_EXHAUSTED'],
+      [{remainingBytes:0},'BUDGET_EXHAUSTED'],
+      [{attemptsForUrl:2},'ATTEMPT_LIMIT'],
+      [{lastHttpStatus:401},'ACCESS_CONTROLLED_NO_RETRY'],
+      [{lastHttpStatus:403},'ACCESS_CONTROLLED_NO_RETRY'],
+      [{lastHttpStatus:500},'HTTP_ERROR_REVIEW_REQUIRED'],
+      [{lastHttpStatus:429},'THROTTLED_OPERATOR_REVIEW'],
+      [{lastHttpStatus:503,retryAfterHeader:'nonsense'},'THROTTLED_OPERATOR_REVIEW'],
+      [{lastHttpStatus:429,retryAfterHeader:'120'},'RETRY_AFTER'],
+      [{retryAfter:'2026-11-11T00:05:00Z'},'RETRY_AFTER'],
+      [{pageUrl:'https://example.org/notices/other'},'UNREGISTERED_SOURCE'],
+      [{scope:{...scope,pathPrefixes:['/files']}},'PATH_NOT_APPROVED'],
+      [{registration:{...registration,observedAt:'2026-12-01T00:00:00Z'}},
+        'FUTURE_REVIEW'],
+    ] as const;
+    for(const [change,reason] of cases){
+      const result=D.evaluateSourceRefreshPreflight({...good,...change});
+      expect(result.state).toBe('BLOCKED');
+      expect(result.reasons).toContain(reason);
+    }
+    expect(D.parseReviewedRetryAfter('120',good.now))
+      .toBe('2026-11-11T00:02:00.000Z');
+    expect(D.parseReviewedRetryAfter('Wed, 11 Nov 2026 00:05:00 GMT',good.now))
+      .toBe('2026-11-11T00:05:00.000Z');
+    for(const bad of ['nonsense','86401','99999999','-1','Thu, 01 Jan 1970 00:00:00 GMT'])
+      expect(D.parseReviewedRetryAfter(bad,good.now)).toBeNull();
+    expect(D.parseReviewedRetryAfter(null,good.now)).toBeNull();
+    expect(D.evaluateSourceRefreshPreflight({...good,lastHttpStatus:429,
+      retryAfterHeader:'0'}).state).toBe('READY_FOR_OPERATOR_RECHECK');
+    expect(D.evaluateSourceRefreshPreflight({...good,remainingRequests:-1})).toEqual({
+      state:'BLOCKED',reasons:['INVALID_CONFIGURATION'],
+    });
   });
 
   it('detects incompatible schema versions before deployment',()=>{

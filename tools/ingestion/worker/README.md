@@ -24,3 +24,50 @@ credential.
 Run `npm ci --ignore-scripts --no-audit --no-fund` from this folder and execute `node synthetic-smoke.mjs`. CI always uses this committed dependency lockfile, not temporary `npm install`. NCP server installation,
 private operator factory, credentials, rights and live source approval remain
 NOT_CONNECTED/NOT_RUN.
+
+## Offline approved HTML5 notice detail
+
+`notice-html-extractor.mjs` consumes *already authorized/fetched* UTF-8 HTML
+only (max 256KiB) and uses pinned Cheerio to parse h1-h3, paragraphs,
+lists and table rows into immutable, ordered paragraph IDs. It strips
+script/form/iframe content, rejects DTD/entity declarations, invalid UTF-8,
+ambiguous section selectors, more than 200 paragraphs and 20k-char lines.
+A NCP-private operator must choose a reviewed root selector (simple body/main/
+article/id/class only), verify current source/permission and preserve the
+original-bytes SHA before calling this plugin as a SourceContentExtractor.
+The result remains `NEEDS_REVIEW`; it cannot declare official deadlines,
+student eligibility or publication rights without the independent source review.
+
+The synthetic real-Cheerio regression runs in the pinned worker CI and covers
+Korean public notice dates/table cells/active content rejection. No live site,
+attachment, CAPTCHA/login or network request is exercised. HWP/HWPX and
+unlicensed PDFs remain separate unsupported formats until an approved native
+parser exists. Do not infer these as TEXT from file names or extensions.
+
+## Public board layout adapters (offline only, #445)
+
+`site-adapters.mjs` provides two deliberately **synthetic layout families**,
+`TABLE_BOARD_V1` and `CARD_BOARD_V1`, for institutional notice listing pages.
+An NCP-private policy supplies the exact verified canonical HTTPS listing URL,
+approved origin, allowed path prefixes/query keys, section root and bounded
+Cheerio selectors. Only already-authorized HTML bytes are parsed; no HTTP
+requests, browser navigation, credentials, site registry or automatic
+pagination/attachment download.
+
+The result contains bounded `REVIEW_REQUIRED` detail URLs, attachment
+candidates (HWP/HWPX/PDF/Office) and page-link proposals. No item is
+automatically registered, fetched, published or marked ACTIVE. Source/date
+display strings are **candidates**, never independently verified facts.
+Unknown HUFS site selectors, robots/terms, permission receipts and anti-bot/
+authentication restrictions must be independently reviewed before use.
+`node --test tools/ingestion/worker/site-adapters.node.test.mjs` exercises
+Cheerio with synthetic table/card HTML, same-origin redirects, paging and
+malicious inputs. A real NCP site adapter is NOT_CONNECTED.
+
+`reconcileReviewedBoardPages` additionally joins at most 40 independently
+captured listing page drafts while retaining each page's byte SHA and unique
+listing URL. Duplicate documents with changed titles or attachment lists,
+foreign pagination targets and duplicate page captures fail closed. The returned
+`unfetchedPageCandidates` are **review proposals**, not crawler jobs; rights,
+site-specific robots/terms, NCP original bytes and SourceRevision alignment
+must still be rechecked separately.

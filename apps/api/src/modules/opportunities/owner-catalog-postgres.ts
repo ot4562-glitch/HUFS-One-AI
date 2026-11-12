@@ -16,7 +16,7 @@ const Ref=z.string().regex(/^[A-Za-z0-9_.:@-]{1,200}$/);
 const Id=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
 const Utc=z.iso.datetime({offset:true});
 const Sources=z.array(z.strictObject({sourceId:Id,revisionId:Id,permissionRef:Id})).min(1).max(100);
-export type ApprovedProjectionKind='TRANSCRIPT'|'COURSE'|'OFFERING'|'OPPORTUNITY'|'PLAN_INPUT';
+export type ApprovedProjectionKind='TRANSCRIPT'|'COURSE'|'OFFERING'|'OPPORTUNITY'|'PLAN_INPUT'|'V2_CATALOG';
 export interface OwnerCatalogAuthority {
   /** Bind an actual verified identity to independently reviewed current facts.
    * No browser facts or derived source-scope union. SQL also verifies exact
@@ -47,8 +47,13 @@ const Projection=z.object({projection_id:Id,actor_id:Ref,kind:z.string(),entity_
   payload_json:z.unknown(),payload_sha256:z.string().regex(/^[a-f0-9]{64}$/),sources_json:Sources,
   reviewed_by:Ref,reviewed_at:z.unknown(),as_of:z.unknown(),starts_at:z.unknown(),expires_at:z.unknown()});
 export type ApprovedOwnerProjection=z.infer<typeof Projection>;
-export type ApprovedOwnerRead={rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;validUntil:string};
-type ReadQuery={actorId:string;kind:ApprovedProjectionKind;entityId?:string;asOf:string};
+export type ApprovedOwnerRead={rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;validUntil:string;hasMore?:boolean};
+type ReadQuery={actorId:string;kind:ApprovedProjectionKind;entityId?:string;asOf:string;
+  page?:{afterEntityId?:string;pageSize:number}};
+export type ApprovedOwnerKeysetPage={
+  rows:ApprovedOwnerProjection[];consentVersion:string;fingerprint:string;
+  validUntil:string;hasMore:boolean;nextAfterEntityId:string|null;
+};
 
 /** Shared actual SQL reader for catalog and academic loader. There is no writer,
  * default authority, approval creation, intake fallback or operational launcher. */
@@ -58,7 +63,13 @@ export class PostgresApprovedOwnerReader {
   async read(query:ReadQuery,now:string,extra?:(connection:ReviewerSqlConnection,
     projections:readonly ApprovedOwnerProjection[])=>Promise<unknown>):
     Promise<(ApprovedOwnerRead&{extra?:unknown})|null>{
-    Ref.parse(query.actorId);Utc.parse(query.asOf);Utc.parse(now);const clock=timestamp(this.clock());
+    Ref.parse(query.actorId);Utc.parse(query.asOf);Utc.parse(now);
+    if(query.page&&(query.kind!=='V2_CATALOG'||query.entityId!==undefined
+      ||!Number.isSafeInteger(query.page.pageSize)||query.page.pageSize<1
+      ||query.page.pageSize>50
+      ||query.page.afterEntityId!==undefined&&!Id.safeParse(query.page.afterEntityId).success))
+      throw new Error('Invalid approved owner keyset scope');
+    const clock=timestamp(this.clock());
     if(Date.parse(query.asOf)>Math.min(Date.parse(now),Date.parse(clock)))return null;
     const grants=await this.authority.resolve({actorId:query.actorId,now});
     if(!grants||!grants.permissionRefs.size)return null;
@@ -84,9 +95,12 @@ export class PostgresApprovedOwnerReader {
         AND p.starts_at<=LEAST($5::timestamptz,$6::timestamptz,clock_timestamp())
         AND p.expires_at>GREATEST($5::timestamptz,$6::timestamptz,clock_timestamp())
         AND NOT EXISTS(SELECT 1 FROM api_owner_projection_revocations x WHERE x.projection_id=p.projection_id)
-        ORDER BY p.entity_id COLLATE "C" LIMIT 501`,
-      [query.actorId,query.kind,query.entityId??null,query.asOf,now,clock]);
-      if(loaded.rows.length>500)throw new Error('Approved owner catalog exceeds read bound');
+        AND ($7::text IS NULL OR p.entity_id COLLATE "C" > $7::text COLLATE "C")
+        ORDER BY p.entity_id COLLATE "C" LIMIT $8::int`,
+      [query.actorId,query.kind,query.entityId??null,query.asOf,now,clock,
+        query.page?.afterEntityId??null,query.page?query.page.pageSize+1:501]);
+      if(loaded.rows.length>500&&!query.page)
+        throw new Error('Approved owner catalog exceeds read bound');
       const rows=loaded.rows.map(row=>Projection.parse(row));
       let validUntil='9999-12-31T23:59:59.999Z';
       const bound=(until:unknown)=>{
@@ -180,13 +194,41 @@ export class PostgresApprovedOwnerReader {
       const extraValue=extra?await extra(c,rows):undefined;
       const fingerprint=canonicalProjectionHash({query,consentVersion,policy,rows,sourceProofs,
         ...(extraValue===undefined?{}:{extra:extraValue})});
-      result={rows,consentVersion,fingerprint,validUntil,...(extraValue===undefined?{}:{extra:extraValue})};
+      // Validate the lookahead row and its rights as rigorously as displayed
+      // rows; otherwise hasMore would disclose an unauthorized record.
+      const hasMore=query.page?rows.length>query.page.pageSize:undefined;
+      const exposed=query.page?rows.slice(0,query.page.pageSize):rows;
+      result={rows:exposed,consentVersion,fingerprint,validUntil,
+        ...(hasMore===undefined?{}:{hasMore}),
+        ...(extraValue===undefined?{}:{extra:extraValue})};
       await c.query('COMMIT');open=false;
     }finally{if(open)try{await c.query('ROLLBACK');}catch{/* deny failed read */}c.release();}
     const after=await this.authority.resolve({actorId:query.actorId,now:timestamp(this.clock())});
     const completed=timestamp(this.clock());
     return after&&policyFingerprint(after)===policy&&result
       &&Date.parse(completed)>=Date.parse(clock)&&Date.parse(completed)<Date.parse(result.validUntil)?result:null;
+  }
+  /**
+   * True PostgreSQL entity_id keyset scan for V2_CATALOG projections. Every
+   * returned row + lookahead goes through the SAME independent source/rights,
+   * consent, hash, HEAD and revocation proofs as the bounded legacy read.
+   * A page fingerprint is NOT a stable whole-catalog revision: the HTTP layer
+   * must not expose it as a cross-page signed cursor without a separately
+   * pinned global revision/consistency design.
+   */
+  async readV2KeysetPage(input:{actorId:string;asOf:string;pageSize:number;
+    afterEntityId?:string},now:string):Promise<ApprovedOwnerKeysetPage|null>{
+    const result=await this.read({
+      actorId:input.actorId,kind:'V2_CATALOG',asOf:input.asOf,
+      page:{pageSize:input.pageSize,
+        ...(input.afterEntityId===undefined?{}:{afterEntityId:input.afterEntityId})},
+    },now);
+    if(!result)return null;
+    const last=result.rows.at(-1)?.entity_id??null;
+    if(result.hasMore&&!last)throw new Error('Invalid verified page lookahead');
+    return {rows:result.rows,consentVersion:result.consentVersion,
+      fingerprint:result.fingerprint,validUntil:result.validUntil,
+      hasMore:result.hasMore===true,nextAfterEntityId:result.hasMore?last:null};
   }
   private async deny(c:ReviewerSqlConnection,done:()=>void):Promise<null>{
     await c.query('COMMIT');done();return null;

@@ -33,7 +33,10 @@ BEGIN
   SELECT max_requests_per_minute INTO v_limit
     FROM public.owner_v2_catalog_quota_policy
     WHERE singleton=1;
-  IF v_limit IS NULL THEN RETURN false; END IF;
+  -- Absence of policy is an operator configuration failure, not actor throttling.
+  IF v_limit IS NULL THEN
+    RAISE EXCEPTION 'owner catalog quota policy not configured' USING ERRCODE='55000';
+  END IF;
   -- Database clock and one atomic UPSERT across all API replicas.
   v_window:=date_trunc('minute',clock_timestamp());
   INSERT INTO public.owner_v2_catalog_quota_windows(identity_digest,window_start,uses)

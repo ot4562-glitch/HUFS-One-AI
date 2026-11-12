@@ -33,7 +33,7 @@ describe('#447 durable owner catalog quota (synthetic SQL)',()=>{
     expect(seen[0]).toBe(seen[1]);
     expect(seen[0]).not.toBe(seen[2]);
   });
-  it('returns database denial as false and rejects malformed/unavailable results',async()=>{
+  it('distinguishes true rate-limit denial from SQL configuration failure',async()=>{
     const pool=(rows:Record<string,unknown>[]):ReviewerSqlPool=>({connect:async()=>({
       query:async()=>({rows}),release:()=>{},
     })});
@@ -43,6 +43,12 @@ describe('#447 durable owner catalog quota (synthetic SQL)',()=>{
       await expect(new PostgresOwnerV2CatalogQuota(pool(rows),key).consume(request('SYN-OWNER-A')))
         .rejects.toBeInstanceOf(OwnerV2CatalogQuotaUnavailable);
     }
+    const unconfigured:ReviewerSqlPool={connect:async()=>({
+      query:async()=>{throw Error('owner catalog quota policy not configured');},
+      release:()=>{},
+    })};
+    await expect(new PostgresOwnerV2CatalogQuota(unconfigured,key).consume(request('SYN-OWNER-A')))
+      .rejects.toBeInstanceOf(OwnerV2CatalogQuotaUnavailable);
     const offline:ReviewerSqlPool={connect:async()=>{throw Error('connection unavailable');}};
     await expect(new PostgresOwnerV2CatalogQuota(offline,key).consume(request('SYN-OWNER-A')))
       .rejects.toBeInstanceOf(OwnerV2CatalogQuotaUnavailable);

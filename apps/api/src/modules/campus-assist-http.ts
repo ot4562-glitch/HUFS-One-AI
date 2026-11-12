@@ -33,6 +33,8 @@ export interface CampusAssistServices{
 interface Session{verify:VerifySession;now:()=>string;allowedOrigin:string;}
 const Read=z.strictObject({
   asOf:Iso,organizationId:Id.optional(),year:z.coerce.number().int().min(2000).max(2200).optional(),
+  campus:z.enum(['SEOUL','GLOBAL','BOTH']).optional(),
+  kind:z.enum(['ORIENTATION','ACADEMIC','RECRUITMENT','LECTURE','OTHER']).optional(),
   query:z.string().max(100).optional(),
 });
 const Forecast=z.strictObject({asOf:Iso,organizationId:Id,seriesId:Id,
@@ -97,9 +99,15 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       const rows=ActivityRecordSchema.array().max(10000).parse(snapshot.items);
       const answer=archiveActivities(rows,args.asOf,{
         ...(args.organizationId?{organizationId:args.organizationId}:{}),
-        ...(args.year?{year:args.year}:{}),...(args.query?{query:args.query}:{})});
+        ...(args.year?{year:args.year}:{}),
+        ...(args.campus?{campus:args.campus}:{}),
+        ...(args.kind?{kind:args.kind}:{}),
+        ...(args.query?{query:args.query}:{})});
       await current(req,actor,port,snapshot);
-      return {asOf:args.asOf,sourceVersion:snapshot.receipt.sourceVersion,items:answer.slice(0,200)};
+      // No cursor contract exists yet: never imply that these 200 records are
+      // the entire authorized history. All filters run BEFORE the page cap.
+      return {asOf:args.asOf,sourceVersion:snapshot.receipt.sourceVersion,
+        items:answer.slice(0,200),hasMore:answer.length>200};
     });
     app.get('/api/owner/activities/forecast',async req=>{
       const actor=await verify(req),args=Forecast.parse(req.query);

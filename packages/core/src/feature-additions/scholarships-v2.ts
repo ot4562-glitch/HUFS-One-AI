@@ -47,7 +47,9 @@ export function checkScholarship(
         : closes!==undefined&&at>closes ? 'CLOSED'
         : opens===undefined&&closes===undefined ? 'UNKNOWN' : 'OPEN';
   if (!source.usable) {
-    return {...blank,mode:'NOT_AVAILABLE',overall:'UNKNOWN',applicationWindow:window,
+    // An unapproved, expired or revoked policy may contain stale open/close
+    // dates. Never expose an "OPEN" status derived from a blocked source.
+    return {...blank,mode:'NOT_AVAILABLE',overall:'UNKNOWN',applicationWindow:'UNKNOWN' as const,
       groups:[],missingFactKeys:policy.groups.flatMap(g=>g.conditions.map(c=>c.factKey))
         .filter((v,i,all)=>all.indexOf(v)===i).sort()};
   }

@@ -175,11 +175,18 @@ describe('#343 — actionable scholarship evaluation',()=>{
       mode:'NOT_AVAILABLE',overall:'UNKNOWN',sourceReason:'REVOKED'});
   });
   it('separates application not yet open and closed',()=>{
-    const early=checkScholarship({policy:scholarship(),verifiedFacts:[fact()],
+    const earlyUnverified=checkScholarship({policy:scholarship(),verifiedFacts:[fact()],
       authorizedFactRevisions:FACT_REVISIONS,asOf:'2026-09-01T12:00:00+09:00'});
+    // The default policy is not VERIFIED until Nov 1. Its earlier calendar
+    // opening date is not an authorized fact as of September.
+    expect(earlyUnverified.applicationWindow).toBe('UNKNOWN');
+    const earlyReviewed=checkScholarship({policy:scholarship({
+      source:{...source(),verifiedAt:'2026-01-02T00:00:00+09:00'}}),
+      verifiedFacts:[fact()],authorizedFactRevisions:FACT_REVISIONS,
+      asOf:'2026-09-01T12:00:00+09:00'});
     const closed=checkScholarship({policy:scholarship(),verifiedFacts:[fact()],
       authorizedFactRevisions:FACT_REVISIONS,asOf:'2027-01-01T12:00:00+09:00'});
-    expect(early.applicationWindow).toBe('BEFORE_OPEN');
+    expect(earlyReviewed.applicationWindow).toBe('BEFORE_OPEN');
     expect(closed.applicationWindow).toBe('CLOSED');
   });
 });
@@ -343,6 +350,7 @@ describe('#352 — reviewed translations and owner-only administrative checklist
   });
   it('reconciles checked steps only for the exact guide version',()=>{
     const saved={guideId:'international-guide-1',guideRevisionId:'source-r1',
+      locale:'ko' as const,translationVersion:'ko-r1',
       ownerCheckedStepIds:['step-1','ghost','step-1'],expectedVersion:3};
     expect(reconcileGuideChecklist(guide(),saved,3,FIXED_NOW)).toMatchObject({
       state:'READY',checkedStepIds:['step-1'],invalidatedStepIds:['ghost'],
@@ -354,6 +362,7 @@ describe('#352 — reviewed translations and owner-only administrative checklist
 
   it('#377 refuses saved checkmarks when the same guide revision loses rights or expires',()=>{
     const saved={guideId:'international-guide-1',guideRevisionId:'source-r1',
+      locale:'ko' as const,translationVersion:'ko-r1',
       ownerCheckedStepIds:['step-1','step-1','removed-step'],expectedVersion:3};
     const invalid=[
       guide({source:{...source(),status:'REVOKED'}}),
@@ -375,6 +384,7 @@ describe('#352 — reviewed translations and owner-only administrative checklist
   });
   it('#377 invalidates removed steps and never marks official administration complete',()=>{
     const saved={guideId:'international-guide-1',guideRevisionId:'source-r1',
+      locale:'ko' as const,translationVersion:'ko-r1',
       ownerCheckedStepIds:['step-1'],expectedVersion:3};
     const changed=guide({steps:[{id:'step-2',order:1,documentCodes:['APPLICATION'],
       sourceSpanId:'span-1'}]});
