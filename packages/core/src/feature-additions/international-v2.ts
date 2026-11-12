@@ -81,11 +81,13 @@ export function reconcileGuideChecklist(
     &&new Set(guide.steps.map(step=>step.order)).size===guide.steps.length
     &&guide.steps.every(step=>guide.source.evidenceSpanIds.includes(step.sourceSpanId));
   const translation=saved.locale?guide.translations[saved.locale]:undefined;
-  const translationCurrent=(saved.locale===undefined&&saved.translationVersion===undefined)
-    ||(saved.locale!==undefined&&saved.translationVersion!==undefined
-      &&translation?.review==='HUMAN_VERIFIED'
-      &&translation.basedOnRevisionId===guide.source.revisionId
-      &&translation.translationVersion===saved.translationVersion);
+  // Legacy checklists without a locale/version binding have no verifiable
+  // translation provenance. Invalidate their checked state rather than
+  // silently treating them as current after the reviewed text changes.
+  const translationCurrent=saved.locale!==undefined&&saved.translationVersion!==undefined
+    &&translation?.review==='HUMAN_VERIFIED'
+    &&translation.basedOnRevisionId===guide.source.revisionId
+    &&translation.translationVersion===saved.translationVersion;
   if(!sourceOk||!stepsOk||!translationCurrent||saved.guideId!==guide.id
     ||saved.guideRevisionId!==guide.source.revisionId)
     return {...base,state:'STALE_GUIDE',checkedStepIds:[],
