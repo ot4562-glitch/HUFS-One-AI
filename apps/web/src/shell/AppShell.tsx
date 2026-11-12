@@ -76,7 +76,7 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
         <div className="app__foot-in">
           <strong>HUFS One AI</strong>
           <span>학교 공식 서비스가 아닌 독립 학생 프로젝트</span>
-          {transportLabel && <span>합성 데이터 시연</span>}
+          {(transportLabel || selector) && <span>합성 데이터 시연</span>}
           <span className="app__foot-links">
             <InAppLink to="/menu" navigate={navigate}>메뉴 전체 보기</InAppLink>
           </span>
