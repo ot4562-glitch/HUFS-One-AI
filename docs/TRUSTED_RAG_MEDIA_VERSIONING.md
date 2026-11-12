@@ -1,5 +1,7 @@
 # HUFS One AI — SourceRevision·미디어·Temporal RAG 현재 계약
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 ## 목적과 운영 상태
 
 시점별 바뀌는 공고·학칙·포스터·PDF에서 **누가 어떤 원문·권리·판본·근거를 언제 확인했는가**를 재현하고, AI가 허가되지 않은 자료로 적격·마감/졸업을 확정하지 못하게 한다. SourceRevision/수집 job·HTML/IMAGE/PDF·검수/검색/인용/권리·Temporal API/SQL 경계 코드는 존재하나 **프로젝트 승인은 소유자 완료 확인**했지만 실제 기관 자료 이용권의 적용 범위·운영 DB/실 OCR/HCX·사람 정답 판정은 미검증입니다. `RELEASE_BLOCKED`.
