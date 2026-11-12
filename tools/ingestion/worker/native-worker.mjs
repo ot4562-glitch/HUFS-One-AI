@@ -7,6 +7,8 @@ import {BasicCrawler,RequestQueue} from 'crawlee';
 import {load} from 'cheerio';
 import {createApprovedCrawleeRefreshWorker} from '../crawlee-approved-dispatch.mjs';
 import {extractReviewedLinkCandidates} from '../approved-link-candidates.mjs';
+export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
+export {createApprovedCheerioAcquisition} from './approved-cheerio-acquisition.mjs';
 
 const ALLOWED_STORAGE='/var/lib/hufs-one-crawler/crawlee';
 function fail(){throw new Error('CONFIGURATION_REQUIRED: private Crawlee worker');}
@@ -49,12 +51,12 @@ export function collectCandidatesFromApprovedBytes({
 export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
   from './notice-html-extractor.mjs';
 
-// Offline board candidates remain review-only, with no network access.
+// Offline public listing layout adapters. Only review proposals; never HTTP.
 export {parseApprovedBoardCandidates,reconcileReviewedBoardPages}
   from './site-adapters.mjs';
 
-// Optional local HWP/HWPX parsing; no runtime source activation.
-export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
+// Operator-selected, already-authorized document byte decoders. No fetch,
+// credentials, browser, unreviewed source activation or filesystem writes.
 export {createApprovedHwpxExtractor,createApprovedLegacyHwpExtractor,
   parseApprovedHwpxDraft,parseApprovedLegacyHwpDraft}
   from './korean-documents.mjs';

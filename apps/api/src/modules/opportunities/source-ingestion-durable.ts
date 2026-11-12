@@ -15,6 +15,9 @@ import type {SourcePdfExtractor} from './approved-pdf-extractor.js';
 import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
 import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
 import {KOREAN_DOCUMENT_MIMES,parseSourceDocumentDraft,type SourceDocumentExtractor} from './source-document-extractor.js';
+import {acquireApprovedSourceResponse,type ApprovedSourceAcquisition} from './source-acquisition.js';
+import {requireCurrentSourceRefreshPreflight,type TrustedSourceRefreshPreflight}
+  from './source-refresh-operator-preflight.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/xml','text/xml',
@@ -79,6 +82,10 @@ export function createApprovedDurableSourceExecutor(options:{
   rights:ApprovedSourceRightsResolver;
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
+  /** Optional native crawler; gets one guarded request, never arbitrary egress. */
+  acquisition?:ApprovedSourceAcquisition;
+  /** Mandatory private live policy/robots/terms/budget snapshot for native acquisition. */
+  preflight?:TrustedSourceRefreshPreflight;
   /** Optional local HWP/HWPX parser. Its output never constitutes human review. */
   documentExtractor?:SourceDocumentExtractor;
   /** Explicit private image adapter; absent means binary extraction is refused. */
@@ -89,6 +96,8 @@ export function createApprovedDurableSourceExecutor(options:{
   writer:Pick<PostgresSourceRevisionWriter,'append'|'observeUnchanged'|'storeHttpValidators'>;
   now?:()=>string;
 }):TrustedDurableSourceExecutor{
+  if(options.acquisition&&typeof options.preflight?.loadCurrent!=='function')
+    throw new Error('Approved source preflight configuration required');
   const now=options.now??(()=>new Date().toISOString());
   const readHead=async(sourceId:string,canonicalUrl:string):Promise<StoredHead|null>=>{
     const c=await options.readerPool.connect();
@@ -127,6 +136,9 @@ export function createApprovedDurableSourceExecutor(options:{
       const policy={...registered};
       const u=reviewPolicy(policy,input.sourceId,input.permissionRef);
       const at=now(),initial=await approvedFingerprint({policy,resolver:options.rights,now:at});
+      if(options.acquisition)await requireCurrentSourceRefreshPreflight(
+        options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
+          canonicalUrl:u.href,now:at});
       const head=await readHead(input.sourceId,u.href);
       if(head&&head.permissionRef!==input.permissionRef)
         throw new Error('Existing source permission changed');
@@ -135,16 +147,25 @@ export function createApprovedDurableSourceExecutor(options:{
       const transport=createApprovedPinnedTransport({canonicalUrl:u.href,beforeSend:async()=>{
         // Head lookup and both DNS checks may outlive the original grant.
         // Revalidate the same COLLECT/STORE authority immediately before HTTP.
-        if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+        const currentTime=now();
+        if(await approvedFingerprint({policy,resolver:options.rights,now:currentTime})!==initial)
           throw new Error('Source rights changed before HTTP');
+        // A queue admission preflight is not a network grant. Re-read the
+        // private operator's current robots/terms/TTL/budget immediately
+        // before the one-use pinned network operation.
+        if(options.acquisition)await requireCurrentSourceRefreshPreflight(
+          options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
+            canonicalUrl:u.href,now:currentTime});
       }},options.egress);
       const headers:Record<string,string>={
         Accept:[...ALLOWED,...(options.documentExtractor?KOREAN_DOCUMENT_MIMES.keys():[])].join(','),
       };
       if(head?.etag)headers['If-None-Match']=head.etag;
       if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
-      const response=await transport(u,{method:'GET',redirect:'error',credentials:'omit',
-        headers,signal:AbortSignal.timeout(5000)});
+      const response=await acquireApprovedSourceResponse({canonicalUrl:u.href,
+        ...(options.acquisition?{acquisition:options.acquisition}:{}),
+        request:signal=>transport(u,{method:'GET',redirect:'error',credentials:'omit',
+          headers,signal:signal?AbortSignal.any([signal,AbortSignal.timeout(5000)]):AbortSignal.timeout(5000)})});
       try{
       // Conditional requests are valid only with a persisted validator for
       // exactly this canonical URL and current immutable source revision.
