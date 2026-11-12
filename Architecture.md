@@ -1,5 +1,7 @@
 # HUFS One AI — Architecture
 
+> **2026-11-12 현행 재감사:** [36개 PR·31개 이슈 전수 기록](docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 새로 PR 3개 병합·버그 #427만 완료해 **PR 33건 / Issue 30건 OPEN**(감사 시점). 아래 옛 수치/상태는 기록 당시 스냅샷입니다. 합성 CI는 실 NCP·공식 출처 권리/사람 Gold 인수를 대신하지 않으며 `RELEASE_BLOCKED` 유지.
+
 **규범:** 이 문서는 현재 목표·권한·API·검증 계약이다. 실제 코드 정본은 [STATUS](STATUS.md)·GitHub `main`·[inventory](tools/api_contract_inventory.json). 기존 #252/#253/#257은 후속을 이관하여 종료되었으며, 실서비스 운영·실사용자/원본/기관/요금·출시 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 검증한다. 계획/스키마·합성 CI는 실운영·공식 학교 증명이 아니고 현재 `RELEASE_BLOCKED`.
 
 **업무 자동 배정/고정 역할 이슈 변경 금지:** [신규 에이전트 가이드](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md) · [대규모 실제 데이터 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360). 아래 과거 TASK 명칭은 코드 영역을 설명하는 참고이며 현행 사람별 기능 담당은 각 이슈의 최신 assignee/댓글을 따른다.
