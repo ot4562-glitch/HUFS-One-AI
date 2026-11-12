@@ -20,4 +20,4 @@
 
 **품질 목표:** 고정 40공고×5 합성 슬롯 200개 케이스의 실제 비작성자 Gold(현재 0/200), 근거/조건 precision/recall·P@3/nDCG/false eligibility 평가. 개발 코드·CI는 실출처 이용권·독립 사람 판정과 구분.
 
-[계약](../../../../Architecture.md) · [RAG](../../../../docs/TRUSTED_RAG_MEDIA_VERSIONING.md) · [인수 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).
+[계약](../../../../Architecture.md) · [RAG](../../../../Architecture.md#trusted-rag-media-versioning) · [인수 #252](https://github.com/minseong-hufs/HUFS-One-AI/issues/252).

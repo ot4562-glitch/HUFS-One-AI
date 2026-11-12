@@ -195,3 +195,85 @@ Claude/GPT 기반 바이브코딩은 초안 코드·문서·테스트/재현을 
 - A05/A06/A15: #279는 합성 40기회+10학사공지 분포 및 **AI 후보 ≠ 학생의 ACTIVE 승인 경험 신호**에 관한 결정론 코어. #259 한정 코어 완료, 실제 UI #258·독립 Gold·실출처/추천 전체 #10은 미완료.
 - A08/A13: `csv/`의 기존 Forms 1 + 학생별 수강 CSV 4개 총 5개 원본은 **무단 변경/삭제 금지**, 현행 Git blob SHA 검사. 운영 BETA actor↔4인 source rights/동의/owner registry·실 PG 적용/본인 조회는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276) 별도 검증; 단순 CSV 복구/DB 적재로 실학사 판정 완성 아님.
 - [NCP 서버 개설](docs/BEGINNER_NCP_SERVER_SETUP.md) · [제품·GPT(Codex)/Claude 설치](docs/BEGINNER_NCP_PRODUCT_AND_AGENTS.md) · [비전공자 제품 구조](docs/BEGINNER_PRODUCT_ARCHITECTURE.md). 자세한 병합·실운영 상태는 [STATUS](STATUS.md).
+
+<a id="contract-boundaries"></a>
+## 공통 계약·4개 소비 트랙 경계 (기존 문서 통합)
+
+> 원본: `docs/CONTRACT_BOUNDARIES.md`, Git blob `27cb685eaf3868d662745d9737a691014705e68d`. 계약의 실제 정본은 코어·API 코드와 최신 검증 결과다.
+
+### HUFS One AI — 공통 계약·4개 소비 트랙 경계
+
+**현재 정본:** `packages/contracts`의 TypeScript/Zod, 실제 API registrations/DTO·TASK는 [inventory](tools/api_contract_inventory.json)와 [audit](tools/audit_api_contracts.mjs), 구현·테스트 최신 상태는 [STATUS](STATUS.md). 기존 계약 #253은 완료 이관, 실원본/실사용자·사람/운영 수락은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 후속 검수합니다.
+
+#### 모든 트랙이 공유해야 할 것
+
+| 계약 | 현재 기준과 실패 시 동작 |
+| --- | --- |
+| Actor/Subject/Context | actorId는 인증 서버로부터; 합성 demoSubjectId/REVIEWER·실원본 4인 구별. 5슬롯 전환/다중탭·늦은 응답/철회 뒤 이전 데이터 0 |
+| Grant/Consent/SourceRights | 목적·현재 기한/철회·COLLECT/STORE/DISPLAY/AI 전송별 scope, SQL/응답 직전 재확인. 명시 권한 없으면 403/NOT_SHARED/BLOCKED_RIGHTS |
+| Version/asOf | dataset/projection/grant/consent/overlay/RulePack/SourceRevision/rank/schema/model·수집/검수/공표 시각. 다른 판본의 근거로 답을 확정하지 않음 |
+| Topic/Recommendation | 닫힌 TopicCode24, 현재 근거/마감/자격; ELIGIBLE/INELIGIBLE/UNKNOWN, featured/compact와 제외 이유, 정정된 SourceRevision 무효화 |
+| Academic | `csv/`에는 Forms 1개(26열)·수강 CSV 4개(6열)의 원본 5개를 보존; **실운영 사용자별 identity/권리 원장은 비공개**. 정수 CreditUnits, earned·inProgress·planned 분리, RulePack/AREA_SPREAD/GROUP_CHOICE/What-if UNKNOWN |
+| AI/미디어 | `SafeLlmPacket`·4제품 작업·인용 exact-match·bbox/original hash, 필요한 source consent, 예산 UNKNOWN_BILLING·비동기 취소 |
+| Error/HTTP | code/message/requestId/retryable/contextId?, 401/403/409/422/429/503, SQL/원본/비밀/다른 사용자 메타데이터 비노출 |
+
+#### 현재 API와 소비자
+
+2026-11-06 `tools/api_contract_inventory.json` 기준 등록 경로 **99**, 설계 계약 **39**, TASK **19**. 설계 API 직접 미매핑은 반드시 신규 공개 route를 요구하는 것이 아니며, 비밀번호 로그인 retired·학사 import private operator·demo/academic/admin 별도 경로/의도적 제외를 검토한 #270 코드가 병합됐습니다. 추후 총량은 actual inventory/audit 결과를 기준으로 갱신합니다.
+
+**4개 트랙 교차**:
+- 웹/사용자 경험: `apps/web/src`·React/Chrome, 공개/미지원·REVIEWER/ADMIN·접근성/캐시
+- 추천/공지: `packages/core/src/opportunities`, `notices`, 결정론/공고·시점 품질
+- 학사/전망: `packages/core/src/academics`, `forecast`, 원장/RulePack·실학교 인수 분리
+- API/영속: `apps/api/src`, SQL roles/RLS·인증/컨텍스트·Source/AI/문서 증거
+
+계약 추가/수정 시 정상/거부/권한·버전/늦은 응답·실제 소비자/격리 PG·브라우저 테스트를 같은 SHA에서 실행하고 부작용이 없는 기존 기능을 유지한다. 정적 import/entrypoint/DTO 감사의 `UNKNOWN`은 동적 런타임 실행 증거가 아니다.
+
+**검증:**
+
+```sh
+npm run typecheck
+npm run test:contracts
+npm run test:consumers
+npm run audit:api-contracts
+npm run test:api-contracts
+npm run audit:entrypoints
+```
+
+실제 학교 권리/비작성자 Gold/기기·NCP 수락은 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252)가 독립 판단한다.
+
+
+<a id="trusted-rag-media-versioning"></a>
+## SourceRevision·미디어·Temporal RAG 계약 (기존 문서 통합)
+
+> 원본: `docs/TRUSTED_RAG_MEDIA_VERSIONING.md`, Git blob `0e18b755b9e5a066fb498d51308f0bf3e21af656`. 계약의 실제 정본은 코어·API 코드와 최신 검증 결과다.
+
+### HUFS One AI — SourceRevision·미디어·Temporal RAG 현재 계약
+
+#### 목적과 운영 상태
+
+시점별 바뀌는 공고·학칙·포스터·PDF에서 **누가 어떤 원문·권리·판본·근거를 언제 확인했는가**를 재현하고, AI가 허가되지 않은 자료로 적격·마감/졸업을 확정하지 못하게 한다. SourceRevision/수집 job·HTML/IMAGE/PDF·검수/검색/인용/권리·Temporal API/SQL 경계 코드는 존재하나 **프로젝트 승인은 소유자 완료 확인**했지만 실제 기관 자료 이용권의 적용 범위·운영 DB/실 OCR/HCX·사람 정답 판정은 미검증입니다. `RELEASE_BLOCKED`.
+
+#### 수집→검수→검색 상태
+
+1. **허가 확인:** SourceClass와 URL/필드·collect/store/display/AI transmit, actor/소유 목적·현재 동의·저장 기간/철회. 권한 미확인/만료면 원문 요청/DB 저장/모델 외부 전송 금지.
+2. **수집:** exact HTTPS allowlist, DNS/IP pin·redirect/응답 크기/취소/시간제한·중복 요청의 원자 job/lease·전역 single executor, GET 직전 권리 재확인.
+3. **불변 저장:** 원본 전체 SHA·문단 순서/anchor SHA, sourceId/revisionId, ETag/Last-Modified·304 확인 시각을 검수/발행 시각으로 자동 승격하지 않음.
+4. **미디어:** PNG/JPEG 원본과 실제 OCR bbox, PDF 지원 v1 한도/원본/페이지 PNG·좌표계/페이지별 SHA 검증. OCR 후보는 독립 reviewer가 원문/문장·인용을 확인해야 공개 승인 가능.
+5. **시간/권한:** `publishedAt/observedAt/reviewedAt/asOf` 차이, 미래 판본·나중 검수/철회·cache scope 축소 뒤 숨겨야 할 문단/수치·메타데이터 노출 차단.
+6. **검색/표시:** 현재 actor·SharingGrant/SourceRights·서명된 검수·source head/version에 묶인 최소 extractive 근거만 검색→React/AI에 제공. `READY/NO_EVIDENCE/STALE/CONFLICT/BLOCKED_RIGHTS/UNKNOWN`을 명확히 표시.
+
+#### AI와 비용
+
+구조화 HCX·OCR·Vision은 필요한 경우만(규칙/단순 HTML 우선), `SafeLlmPacket`에 actor/권리/원문 SHA/문단·bbox/asOf·policy/schema/model/prompt 버전과 허용된 사실만 싣는다. LLM의 문장을 사실로 채택하기 전 정확한 인용/숫자/조건/보안 필드 재검증, 거짓 확정 자격·마감 0을 목표로 검증한다. 네 제품 AI 작업 외 임의 외부전송/자동 크롤링 금지. 예산 예약/전송/정산은 원자 ledger와 timeout/UNKNOWN_BILLING 보호.
+
+Laya는 선택 보조 worker/기본 OFF, CPUQuota/RSS/OOM/네트워크·시간 제한/kill-switch·코드 fallback, API 사용자 응답 경로 우선. 프로젝트 승인 여부와 별개로 실 모델 다운로드/ON/유료 호출은 구체적인 현재 이용권·비용 상한·자원 제한·복구 증거를 검증한 구성에서만 실행합니다.
+
+#### 자동·독립 검증
+
+- 합성 normal/denial: 304/동일판·정정·취소·global lease·source 권리 축소, 비허가 media/탈취·늦은 AI 응답·미검수 미래 시점 인용/캐시 누출.
+- disposable PG: source head/revision·RLS·current rights·page/bbox·writer/reviewer/reader 분리와 rollback/동시성.
+- 실제 독립 사람: 추천 Gold 200·포스터 PNG/HTML 20·시간 정정12 사례의 원문/인용/bbox/시점 판정. 현재 **0/200·0/32**, 합성 시험과 구분.
+- 실제 Provider/NCP/원본 권리: 프로젝트 승인 `OWNER_CONFIRMED_APPROVED`; 실제 구성·호출·원본/권한 대조는 `NOT_RUN/RELEASE_BLOCKED`. 실제 tokenizer·receipt·token/KRW·호스트 CPU/RSS·p95/회복성 별도 검증.
+
+**정본:** [Architecture A04/A06/A13](Architecture.md) · [PDF runtime](infra/ai/PDF_RUNTIME.md) · [데이터 권리](docs/DATA_GOVERNANCE.md) · [인적 Gold](docs/INDEPENDENT_EVALUATION.md) · [#253 코드](https://github.com/ot4562-glitch/HUFS-One-AI/issues/253) · [#252 실인수](https://github.com/ot4562-glitch/HUFS-One-AI/issues/252).
