@@ -119,7 +119,7 @@ AI QA: 박준영의 시험/결함/수정/재시험
 
 ## 3. 현재 기능·데이터 배정
 
-- [#339–#352 중 13개 추가기능](https://github.com/ot4562-glitch/HUFS-One-AI/issues/339): 박준영 6개(#339, #340, #344, #348, #349, #350), 이의상 7개(#341, #343, #345, #346, #347, #351, #352). **모두 공식 데이터 필요로 김채윤을 공동 assignee**에 지정했다.
+- [#506–#518 새 잔여 작업 13개](https://github.com/ot4562-glitch/HUFS-One-AI/issues/506): 박준영 6개(#506, #507, #510, #514, #515, #516), 이의상 7개(#508, #509, #511, #512, #513, #517, #518). **모두 실제 자료/독립 Gold를 위한 김채윤 공동 assignee**가 배정되어 있다. 구 이슈 #339–#352는 Closed/Duplicate, 기존 댓글은 현행 인수 근거가 아니다. P0 실자료/전체 기능 통합 [#519](https://github.com/ot4562-glitch/HUFS-One-AI/issues/519)는 심민성·김채윤이 담당한다.
 - [#360 대규모 데이터 요청](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360): 김채윤 단독 주담당, 13개 기능의 공식 원문/포스터/권리/Gold/웹 콘텐츠. 본문에 PR #342/#353의 실제 Zod 스키마 필드를 명시했다.
 - 실사용 자료량/Gold/이미지 게시 허가 수량은 미확정. 데이터 요청의 완료 수치를 임의로 채우지 않는다.
 - [PR #342](https://github.com/ot4562-glitch/HUFS-One-AI/pull/342), [PR #353](https://github.com/ot4562-glitch/HUFS-One-AI/pull/353)의 합성 코어 및 [PR #354](https://github.com/ot4562-glitch/HUFS-One-AI/pull/354)의 HCX-007/OCR 정책 변경은 **main 병합된 코드**이다. API/DB/UI/실자료·실모델 인수는 독립적으로 확인해야 한다. 현재 병합/검증 상태를 매번 확인한다.
