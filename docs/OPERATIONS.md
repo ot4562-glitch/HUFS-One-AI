@@ -1,5 +1,7 @@
 # HUFS One AI — 통합 데모·NCP 운영 매뉴얼
 
+**2026-11-12 운영 확인:** [main `3c6b87b`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3c6b87b1f28e360b37f90a0dc59557d3f9e30b74)에서 UI와 Crawlee 파서·사전 검증 코드가 확장됐으나 이 문서의 11월 6–9일 NCP/실 PostgreSQL/학교메일/HCX/권리 상태는 실제 운영 인수가 아닌 준비·합성 기록입니다. 새로운 NCP 실환경·원본 권리·Gold·백업/복원 수락 증거가 확보되기 전 `RELEASE_BLOCKED`. [현재 인수/이슈 정본](../STATUS.md) · [NCP 내부 취득 게이트](../infra/ncp/NCP_CRAWLEE_DISPATCH_PREFLIGHT.md).
+
 > **정본 경계:** 사용 중인 코드·인증·권한/동의·실서비스 출시 근거보다 이 문서의 과거 절차를 우선하지 않는다. 운영은 `docs/PRODUCTION_RUNTIME.md` 및 `infra/ncp/README.md`와 실제 승인된 환경을 확인한다. 이 문서는 8개 분산된 운영/시연/자원/의존성 문서를 통합하며 원본 경로·blob SHA를 남긴다. 2026-11-05/06 과거 계획은 현재 완료 사실이 아니다.
 
 **바로가기:** [NCP operations 2026](#ncp-operations-2026) · [Product activation runbook](#product-activation-runbook) · [Demo manual](#demo-manual) · [Empty demo runbook](#empty-demo-runbook) · [Prefinal operations plan (historic)](#prefinal-operations-plan) · [Dependency security operations](#dependency-security-operations) · [Laya CPU spike protection](#laya-cpu-spike-protection) · [Source queue busy semantics](#source-queue-busy-semantics)

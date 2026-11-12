@@ -1,5 +1,7 @@
 # HUFS One AI — Architecture
 
+**2026-11-12 구현 현황(현행):** [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 전기능 탐색 UI, [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486) 카탈로그 UX, [#477](https://github.com/ot4562-glitch/HUFS-One-AI/pull/477)/[#479](https://github.com/ot4562-glitch/HUFS-One-AI/pull/479) Crawlee 취득/사전검사 코드, [#478](https://github.com/ot4562-glitch/HUFS-One-AI/pull/478) FAQ 판본 충돌 격리가 병합되었다. 이는 실제 학교 SSO/공식 원장/NCP 실배포/HCX·사람 검수 승인이 아니며 출시 `RELEASE_BLOCKED`. 실제 31개 Issue·PR 정책은 [STATUS](STATUS.md)/[PR_WORKFLOW](docs/PR_WORKFLOW.md)를 따른다.
+
 **규범:** 이 문서는 현재 목표·권한·API·검증 계약이다. 실제 코드 정본은 [STATUS](STATUS.md)·GitHub `main`·[inventory](tools/api_contract_inventory.json). 기존 #252/#253/#257은 후속을 이관하여 종료되었으며, 실서비스 운영·실사용자/원본/기관/요금·출시 인수는 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에서 검증한다. 계획/스키마·합성 CI는 실운영·공식 학교 증명이 아니고 현재 `RELEASE_BLOCKED`.
 
 **업무 자동 배정/고정 역할 이슈 변경 금지:** [신규 에이전트 가이드](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md) · [대규모 실제 데이터 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360). 아래 과거 TASK 명칭은 코드 영역을 설명하는 참고이며 현행 사람별 기능 담당은 각 이슈의 최신 assignee/댓글을 따른다.
@@ -141,7 +143,7 @@ UI 대상 전환만 100회면 새 LLM 호출 **0**이 목표다. 정량 수치·
 
 ## A16. 다섯 팀원·AI 보조 개발
 
-**현행 정본(2026-11-08):** [루트 AGENTS](AGENTS.md) · [이슈 자동 배정 플레이북](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 이슈 **#355–#359는 읽기 전용**으로 수정·댓글·담당/상태 변경을 수행하지 않는다.
+**2026-11-12 현행 업무 정본:** [루트 AGENTS](AGENTS.md) · [이슈 자동 배정 플레이북](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 이슈 **#355–#359의 원래 제목·본문·담당·라벨·마일스톤·열림 상태는 불변**이며, 진행/수정 이력은 **새 댓글만 허용**한다.
 
 - **심민성:** 신규 `[추가 기능]` 최초 assignee, 가능한 Core/Contracts/API/DB/보안/인증·일반 비AI 기능/통합을 실제로 구현하며 전 과정 코드 검수·개발 조정을 수행한다.
 - **박준영 ↔ 이의상:** 규칙/가중치·검색 관련도·추천/랭킹/예측 같은 **코드 기반 AI**와 HCX-007·CLOVA OCR·NLP/RAG 등 AI 범위가 생기면 두 사람 중 기능 주작성자를 반드시 지정해 구현을 넘긴다. 다른 AI 개발자는 상호 피드백/교차 리뷰, **박준영은 AI 제품 기술 QA 및 재시험**을 수행한다.
@@ -281,7 +283,7 @@ UI 대상 전환만 100회면 새 LLM 호출 **0**이 목표다. 정량 수치·
 
 ## A16. 다섯 팀원·AI 보조 개발
 
-**현행 정본(2026-11-08):** [루트 AGENTS](AGENTS.md) · [이슈 자동 배정 플레이북](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 이슈 **#355–#359는 읽기 전용**으로 수정·댓글·담당/상태 변경을 수행하지 않는다.
+**현행 정본(2026-11-08):** [루트 AGENTS](AGENTS.md) · [이슈 자동 배정 플레이북](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md). 고정 역할 이슈 **#355–#359의 원래 제목·본문·담당·라벨·마일스톤·열림 상태는 불변**이며, 진행/수정 이력은 **새 댓글만 허용**한다.
 
 - **심민성:** 신규 `[추가 기능]` 최초 assignee, 가능한 Core/Contracts/API/DB/보안/인증·일반 비AI 기능/통합을 실제로 구현하며 전 과정 코드 검수·개발 조정을 수행한다.
 - **박준영 ↔ 이의상:** 규칙/가중치·검색 관련도·추천/랭킹/예측 같은 **코드 기반 AI**와 HCX-007·CLOVA OCR·NLP/RAG 등 AI 범위가 생기면 두 사람 중 기능 주작성자를 반드시 지정해 구현을 넘긴다. 다른 AI 개발자는 상호 피드백/교차 리뷰, **박준영은 AI 제품 기술 QA 및 재시험**을 수행한다.

@@ -1,5 +1,7 @@
 # HUFS One AI — 이슈 자동 분류·공정 배정 봇
 
+**2026-11-12 업무 보호 확인:** 고정 역할 #355–#359은 기존 제목·본문·assignees·labels·milestone·상태 변경 없이 **새 댓글만** 허용합니다. [#500](https://github.com/ot4562-glitch/HUFS-One-AI/issues/500)은 `routing:hold`·assignees 빈 목록 그대로 두며, P0/실증/보안도 자동 완료·배정하지 않습니다. 현재 [31개 Issue 인수 판정](../STATUS.md)과 [이슈 배정 규칙](ISSUE_ASSIGNMENT_PLAYBOOK.md)을 우선합니다.
+
 기존 [AGENTS](../AGENTS.md) 및 [신규 이슈 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md)의 **단계별 인계 규칙을 유지**하면서, 새 이슈에 영역·우선순위 라벨을 부착하고 담당자를 초기 배정합니다. 난이도(`effort:*`) 라벨은 자동 생성하지 않으며 기존 라벨도 라우팅 시 제거합니다. 외부 AI API·유료 서버가 필요하지 않습니다.
 
 **2026-11-08 상태:** 라우팅 봇을 도입한 [PR #382](https://github.com/ot4562-glitch/HUFS-One-AI/pull/382)는 main에 **MERGED**됐습니다. stale webhook 경쟁(기존 이벤트 스냅샷/수동 담당·`routing:hold`) 차단 수정을 포함합니다. **활성화 코드가 병합된 것**과 **개별 이슈 이벤트에서 Action이 실제 실행·성공해 결과가 적용된 것**은 다릅니다. 새 이슈별로 GitHub Actions, 최신 assignees·labels, protected role 이슈 비변경을 확인하세요. P0/보안/실증 인수를 자동 완료하거나 사람 검토를 생략하지 않습니다.

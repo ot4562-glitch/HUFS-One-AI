@@ -1,5 +1,7 @@
 # 추가 기능 코어 선행 구현 (#341–#352)
 
+**2026-11-12 진행 경계:** 순수 코어 인계 단계 이후 기능별 UI/API·규칙·합성 회귀 PR [#487](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487)~[#498](https://github.com/ot4562-glitch/HUFS-One-AI/pull/498) 중 다수 및 [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486)/[#489](https://github.com/ot4562-glitch/HUFS-One-AI/pull/489)가 병합되었습니다. 아래 2026-11-08 역할표·미연결 설명은 그 당시 상태로 읽고, 각 코드 소비자·현재 기능/자료 인수는 [STATUS](../../../../STATUS.md)와 #339–#352 이슈를 확인하세요. 실제 공식 자료·권리·Gold/NCP/모델 호출은 여전히 별도 인수(`RELEASE_BLOCKED`)입니다.
+
 ## 핵심: AI 추천은 LLM 호출과 다르다
 
 - 기본 추천은 **규칙·가중치·토픽 교집합·Jaccard·조건/시점 검증**으로 동작한다. `rankMentorsV2`와 `recommendLearningV2`는 기본적으로 `RULE_ONLY`이며 **HCX-007 또는 외부 LLM 호출이 전혀 없다**.
