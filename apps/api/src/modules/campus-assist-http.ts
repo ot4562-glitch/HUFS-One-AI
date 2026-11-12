@@ -7,6 +7,7 @@ import {ApiFailure,authorizeSession,requireStateChangeProof} from './auth/gates.
 import {archiveActivities,forecastActivity} from '../../../../packages/core/src/campus-assist/activities.js';
 import {evaluateExchange,resolveExchangePolicy} from '../../../../packages/core/src/campus-assist/exchange.js';
 import {retrieveFaqEvidence} from '../../../../packages/core/src/campus-assist/faq.js';
+import {maskFaqQuestion} from '../../../../packages/core/src/campus-assist/faq-privacy.js';
 import {buildFaqHcx007Request,parseFaqHcx007Response} from '../../../../packages/ai/src/faq-hcx007.js';
 
 const Iso=z.iso.datetime({offset:true});
@@ -166,10 +167,15 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
         return {status:'CONFIGURATION_REQUIRED' as const,evidence:[],asOf:args.asOf,
           sourceLinks:[...sources.values()].slice(0,6)};
       }
-      // Source and question privacy preflight is done BEFORE budget admission:
-      // untrusted personal data cannot create a charge or leave via HCX-007.
+      // Quarantine only unsafe *paragraphs*, never redact quoted text. The
+      // original retrieval already rejects mixed source modes and duplicate IDs.
+      // Keeping safe paragraphs usable avoids rejecting whole official FAQs
+      // merely because an unrelated source chunk lists an office contact.
+      // All evidence sent back with a model candidate must be the same subset
+      // the model actually saw, so it cannot cite a quarantined paragraph.
+      const modelEvidence=evidence.filter(e=>maskFaqQuestion(e.text).redactions.length===0);
       let wire:ReturnType<typeof buildFaqHcx007Request>;
-      try{wire=buildFaqHcx007Request(args.question,evidence);}
+      try{wire=buildFaqHcx007Request(args.question,modelEvidence);}
       catch{throw new ApiFailure('UNVERIFIED_EVIDENCE');}
       if(!await services.hcx007.admit({actor,sourceVersion:snapshot.receipt.sourceVersion,now:session.now()}))
         throw new ApiFailure('RATE_LIMITED');
@@ -180,11 +186,11 @@ export function registerCampusAssistRoutes(app:FastifyInstance,services:CampusAs
       try{raw=await services.hcx007.execute({actor,wire});}
       catch{throw new ApiFailure('PROVIDER_UNAVAILABLE');}
       let validated:ReturnType<typeof parseFaqHcx007Response>;
-      try{validated=parseFaqHcx007Response(raw,evidence);}
+      try{validated=parseFaqHcx007Response(raw,modelEvidence);}
       catch{throw new ApiFailure('UNVERIFIED_EVIDENCE');}
       await current(req,actor,port,snapshot);
       return {status:'NEEDS_REVIEW' as const,asOf:args.asOf,
-        answer:validated.candidate,evidence:evidence.map(e=>({
+        answer:validated.candidate,evidence:modelEvidence.map(e=>({
           citationId:e.citationId,sourceUrl:e.sourceUrl,title:e.title,verifiedAt:e.verifiedAt})),
         usage:validated.usage};
     });
