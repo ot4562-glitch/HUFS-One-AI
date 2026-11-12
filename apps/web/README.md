@@ -1,10 +1,12 @@
 # HUFS One AI — React 웹
 
-**2026-11-09 현행 웹·업무 정본:** React UI/UX·모바일/접근성·실제 기능/API 화면 배치는 이서연 `lhh42001`([#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357)), 일반 API·DB·보안·NCP 코드·통합·릴리스 검수는 심민성 `ot4562-glitch`([#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359))이 담당합니다. 공식 자료·포스터 이용권·독립 Gold·경량 시연은 김채윤 `qamarrchae`([#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358), [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)), AI 기술 QA·교차검증은 박준영 `taewangim-alt`([#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356))과 이의상 `uisang2004-maker`([#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355))이 맡습니다. 고정 역할 이슈 #355–#359 자체에는 변경·댓글을 달지 않습니다.
+> **2026-11-12 현행 스냅샷:** [#499](https://github.com/ot4562-glitch/HUFS-One-AI/pull/499)에서 기존 홈 장식·중복 CTA를 축소하고 [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503)에서 실제 홈 데이터를 유지한 채 기능별 제품 레일·전체 기능 검색/필터 디렉터리 및 `/menu` 필터를 추가했습니다. 내부 이동/외부 링크/인증 필요/미지원 학교 메뉴를 구별하며, 미지원은 임의 링크가 없습니다. [#502](https://github.com/ot4562-glitch/HUFS-One-AI/pull/502)의 UI AI 슬롭 금지 AS-001~100/허용 AL-001~100은 [웹 AGENTS](AGENTS.md)에 있습니다. 기준 main `3c6b87b`: 열린 PR 0건, 이슈 31건(이후 실시간 목록 우선). 검색 화면 버그 #418의 수리 #486은 병합·협업자 승인 완료, 실브라우저/다중 탭·권리 검수는 미인수. 실서비스 `RELEASE_BLOCKED`.
 
-**현재 GitHub:** 2026-11-09 확인 시 기존 PR 17건 병합, OPEN PR 0건, OPEN 이슈 28건. [현재 상태](../../STATUS.md)·[2026-11-09 감사](../../docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)·[팀 역할 정본](../../docs/WORKSTREAMS.md)을 우선합니다. 이전 #317/#318/#321–#325 분장과 #323의 '웹 담당자 NCP 서버 설치 책임'은 **2026-11-07 이전 이력이며 현재 배정이 아닙니다.** 기능/API 코드가 존재해도 공식 학교·실계정/권리·실서버·독립 사람 인수는 `NOT_CONNECTED/NOT_RUN`, 실서비스는 `RELEASE_BLOCKED`입니다.
+**2026-11-09 당시 웹·업무 기록:** React UI/UX·모바일/접근성·실제 기능/API 화면 배치는 이서연 `lhh42001`([#357](https://github.com/ot4562-glitch/HUFS-One-AI/issues/357)), 일반 API·DB·보안·NCP 코드·통합·릴리스 검수는 심민성 `ot4562-glitch`([#359](https://github.com/ot4562-glitch/HUFS-One-AI/issues/359))이 담당합니다. 공식 자료·포스터 이용권·독립 Gold·경량 시연은 김채윤 `qamarrchae`([#358](https://github.com/ot4562-glitch/HUFS-One-AI/issues/358), [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)), AI 기술 QA·교차검증은 박준영 `taewangim-alt`([#356](https://github.com/ot4562-glitch/HUFS-One-AI/issues/356))과 이의상 `uisang2004-maker`([#355](https://github.com/ot4562-glitch/HUFS-One-AI/issues/355))이 맡습니다. 고정 역할 이슈 #355–#359의 제목·원본문·담당·라벨·마일스톤·상태는 변경하지 않으며 진행 기록은 새 댓글만 허용합니다.
 
-**현재 웹:** 독립 제품 네이비/블루 v5 디자인, 1024px 이상 **11개 대분류 GNB + 실제 화면 LNB**, 모바일 하단 **5탭**, `HUFSAbility 메뉴` disclosure에 기존 24개 기능의 **미지원** 표시, 홈 장식 배너·맞춤 공고/7일 내 확정 마감/취득 학점 요약 및 페이지별 breadcrumb/h1. 상단 계정 인사는 현재 합성 개발/미리보기에서는 가상 선택기를 옮겨 놓은 것이며 **실제 팀원 학교 계정 로그인 기능이 아닙니다**. 공개 Pages 접근 제어와 인증된 실제 BETA 전환은 #297/#299 후속 과제입니다. 학교 공식 운영 화면이나 원본 UI 복제물이 아닙니다.
+**과거 GitHub(2026-11-09):** 당시 기존 PR 17건 병합, OPEN PR 0건, OPEN 이슈 28건. [현재 상태](../../STATUS.md)·[2026-11-09 감사](../../docs/REVIEW_AND_ISSUE_AUDIT_20261109.md)·[팀 역할 정본](../../docs/WORKSTREAMS.md)을 우선합니다. 이전 #317/#318/#321–#325 분장과 #323의 '웹 담당자 NCP 서버 설치 책임'은 **2026-11-07 이전 이력이며 현재 배정이 아닙니다.** 기능/API 코드가 존재해도 공식 학교·실계정/권리·실서버·독립 사람 인수는 `NOT_CONNECTED/NOT_RUN`, 실서비스는 `RELEASE_BLOCKED`입니다.
+
+**과거 UI 베이스:** 독립 제품 네이비/블루 v5 디자인, 1024px 이상 **11개 대분류 GNB + 실제 화면 LNB**, 모바일 하단 **5탭**, `HUFSAbility 메뉴` disclosure에 기존 24개 기능의 **미지원** 표시, 현재 홈 데이터와 요약 패널(기존 장식 대형 Hero는 #499에서 제거) 및 페이지별 breadcrumb/h1. 상단 계정 인사는 현재 합성 개발/미리보기에서는 가상 선택기를 옮겨 놓은 것이며 **실제 팀원 학교 계정 로그인 기능이 아닙니다**. 공개 Pages 접근 제어와 인증된 실제 BETA 전환은 #297/#299 후속 과제입니다. 학교 공식 운영 화면이나 원본 UI 복제물이 아닙니다.
 
 ## 주요 화면
 
@@ -15,7 +17,7 @@
 | `/graduation`·하위 What-if | 취득/진행/계획·복수전공 가정·RulePack/미개설 불확실성 | 공식 학칙/학생 원본 검증 전 보수적 UNKNOWN |
 | `/clubs`·합성 ADMIN | 가상 모집글/이미지, 승인·수정·철회 | 실동아리/학교 게시 권한 없음 |
 | `/demo-profile`·REVIEWER | 독립 빈 계정·합성 심사자·RESET·세션 격리 | 실제 4인 자료/유료 AI 접근 차단 |
-| `/owner-opportunities/v2-catalog` | #417 인증 BETA 승인 공고 전역 검색·서명 커서(운영 source 의존) | 실원장 미연결, 409/422·429·KST UX 결함 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418) OPEN |
+| `/owner-opportunities/v2-catalog` | #417 인증 BETA 승인 공고 전역 검색·서명 커서(운영 source 의존) | 실원장 미연결, 409/422·429·KST 수정 [#486] 병합(실사용 UX 미검증) · 추적 [#418](https://github.com/ot4562-glitch/HUFS-One-AI/issues/418) OPEN |
 | `/owner-scholarships`·`/owner-badges` | #420 본인 장학·오픈배지 준비 API/UI | 실제 학교 자격·배지 발급이 아니며 운영 권리/원장 미인수 |
 | `/owner-insights/{kind}` | #422 멘토·교외활동 인정준비·NCS·학습·취업통계·국제학생 BETA API/UI | 6개 소비자 코드 병합, 실제 공식 source·Gold·RLS 인수 별도 |
 
