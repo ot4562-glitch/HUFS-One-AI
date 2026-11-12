@@ -2,7 +2,7 @@
 
 > 2026-11-12 확인한 현행 팀 운영 정책. **고정 역할의 정의는 #355–#359 원래 본문이며, 최신 실행 가이드와 인수 기록은 해당 이슈의 댓글로만 추가**한다. #321–#325는 보관됐으며 과거 배정 방식·일정·담당을 현재 기준에 적용하지 않는다. 기능별 담당·실제 인수 상태의 최신 정본은 개별 `[추가 기능]` 이슈와 PR이다.
 
-**2026-11-12 협업 유의:** [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 웹 탐색·[#502](https://github.com/ot4562-glitch/HUFS-One-AI/pull/502) 웹 가이드와 #339–#352 기능 후속 코드는 병합됐으나 실제 NCP/원본 권리·Gold/독립 QA 완료는 아닙니다. [전체 Issue 인수 현황](../STATUS.md)을 따릅니다. #355–#359는 원본 메타데이터·상태 불변, **새 진행 댓글만** 허용합니다.
+**2026-11-12 협업 유의:** [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503) 웹 탐색·[#502](https://github.com/ot4562-glitch/HUFS-One-AI/pull/502) 웹 가이드 및 기존 13개 기능 후속 코드는 병합됐으나 실제 NCP/원본 권리·Gold/독립 QA 완료는 아닙니다. [전체 Issue 인수 현황](../STATUS.md)을 따릅니다. #355–#359는 원본 메타데이터·상태 불변, **새 진행 댓글만** 허용합니다.
 
 ## 1. 고정 팀 역할
 
@@ -38,14 +38,16 @@
 5. **웹·품질·사용자 시연:** 이서연은 김채윤 자료/디자인 자산을 활용한 React UI·실제 API 배치, 박준영은 AI 기술 QA와 수정 후 재시험, 김채윤은 데이터 직접 투입·가벼운 전체 사용자 시연/이슈 제보, 이의상·박준영은 상호 정확도 피드백, 심민성은 일반 기술 조사 담당 지정과 전체 코드 리뷰를 진행한다.
 6. **인수:** 단계와 기여 코드는 해당 `[추가 기능]` 이슈 댓글·PR에, 데이터 요청/권리·원장/Gold 상태는 독립 `[데이터 요청]` 이슈에 기록한다. 합성 코어/CI/PR OPEN과 실서비스 인수를 구분한다.
 
-## 3. 현재 추가 기능의 구조 인계/구현 담당 스냅샷
+## 3. 새 작업 이슈 #506–#519의 현재 담당/잔여 인수
 
 심민성의 초기 구조·합성 코어는 **이미 병합된** [PR #342](https://github.com/ot4562-glitch/HUFS-One-AI/pull/342), [PR #353](https://github.com/ot4562-glitch/HUFS-One-AI/pull/353)에서 확인할 수 있다. **기능 인수는 각 이슈의 최신 인계 댓글**이 우선한다.
 
-| 본기능 구현 주담당 | 개별 추가 기능 이슈 |
+| 후속 검수/인수 주담당 | 새 추가 기능 이슈 |
 | --- | --- |
-| **박준영 — 6개** | [#339 활동 아카이브/연례 예측](https://github.com/ot4562-glitch/HUFS-One-AI/issues/339), [#340 교환 자격 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/340), [#344 멘토 추천](https://github.com/ot4562-glitch/HUFS-One-AI/issues/344), [#348 서버 공고 통합 검색](https://github.com/ot4562-glitch/HUFS-One-AI/issues/348), [#349 오픈배지 준비도](https://github.com/ot4562-glitch/HUFS-One-AI/issues/349), [#350 학습공동체 추천](https://github.com/ot4562-glitch/HUFS-One-AI/issues/350) |
-| **이의상 — 7개** | [#341 FAQ/RAG](https://github.com/ot4562-glitch/HUFS-One-AI/issues/341), [#343 장학 자격 대조](https://github.com/ot4562-glitch/HUFS-One-AI/issues/343), [#345 상담 경로 안내](https://github.com/ot4562-glitch/HUFS-One-AI/issues/345), [#346 교외활동 증빙/OCR](https://github.com/ot4562-glitch/HUFS-One-AI/issues/346), [#347 NCS 역량 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/347), [#351 취업통계/AI 설명](https://github.com/ot4562-glitch/HUFS-One-AI/issues/351), [#352 국제학생 다국어 절차](https://github.com/ot4562-glitch/HUFS-One-AI/issues/352) |
+| **박준영 — 6개** | [#506 활동 아카이브/연례 예측](https://github.com/ot4562-glitch/HUFS-One-AI/issues/506), [#507 교환 자격 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/507), [#510 멘토 추천](https://github.com/ot4562-glitch/HUFS-One-AI/issues/510), [#514 서버 공고 통합 검색](https://github.com/ot4562-glitch/HUFS-One-AI/issues/514), [#515 오픈배지 준비도](https://github.com/ot4562-glitch/HUFS-One-AI/issues/515), [#516 학습공동체 추천](https://github.com/ot4562-glitch/HUFS-One-AI/issues/516) |
+| **이의상 — 7개** | [#508 FAQ/RAG](https://github.com/ot4562-glitch/HUFS-One-AI/issues/508), [#509 장학 자격 대조](https://github.com/ot4562-glitch/HUFS-One-AI/issues/509), [#511 상담 경로 안내](https://github.com/ot4562-glitch/HUFS-One-AI/issues/511), [#512 교외활동 증빙/OCR](https://github.com/ot4562-glitch/HUFS-One-AI/issues/512), [#513 NCS 역량 비교](https://github.com/ot4562-glitch/HUFS-One-AI/issues/513), [#517 취업통계/AI 설명](https://github.com/ot4562-glitch/HUFS-One-AI/issues/517), [#518 국제학생 다국어 절차](https://github.com/ot4562-glitch/HUFS-One-AI/issues/518) |
+
+**이관 기준:** 구 기능 #339–#352는 Closed/Duplicate로 정리했고, 위 링크의 #506–#518만 현행 업무입니다. P0 전 기능 실자료 통합 [#519](https://github.com/ot4562-glitch/HUFS-One-AI/issues/519)는 심민성·김채윤 담당입니다. 구 이슈 댓글을 현행 작업으로 해석하지 않습니다.
 
 **데이터 공동 배정:** 위 13개 기능 모두 공식 원문/포스터·규정/권리·독립 Gold가 필요하여 **김채윤 `qamarrchae`가 공동 assignee**이다. [데이터 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)은 데이터 측 담당 이슈다. 심민성은 기존 PR의 뼈대 이후에도 API/DB/비AI 코어·통합 코드를 구현 가능한 만큼 계속 이어간다.
 

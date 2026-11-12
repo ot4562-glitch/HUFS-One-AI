@@ -1,6 +1,6 @@
 # 추가 기능 코어 선행 구현 (#341–#352)
 
-**2026-11-12 진행 경계:** 순수 코어 인계 단계 이후 기능별 UI/API·규칙·합성 회귀 PR [#487](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487)~[#498](https://github.com/ot4562-glitch/HUFS-One-AI/pull/498) 중 다수 및 [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486)/[#489](https://github.com/ot4562-glitch/HUFS-One-AI/pull/489)가 병합되었습니다. 아래 2026-11-08 역할표·미연결 설명은 그 당시 상태로 읽고, 각 코드 소비자·현재 기능/자료 인수는 [STATUS](../../../../STATUS.md)와 #339–#352 이슈를 확인하세요. 실제 공식 자료·권리·Gold/NCP/모델 호출은 여전히 별도 인수(`RELEASE_BLOCKED`)입니다.
+**2026-11-12 진행 경계:** 순수 코어 인계 단계 이후 기능별 UI/API·규칙·합성 회귀 PR [#487](https://github.com/ot4562-glitch/HUFS-One-AI/pull/487)~[#498](https://github.com/ot4562-glitch/HUFS-One-AI/pull/498) 중 다수 및 [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486)/[#489](https://github.com/ot4562-glitch/HUFS-One-AI/pull/489)가 병합되었습니다. 아래 2026-11-08 역할표·미연결 설명은 그 당시 상태로 읽고, 각 코드 소비자·현재 기능/자료 인수는 [STATUS](../../../../STATUS.md)와 **새 잔여 작업 [#506–#518](https://github.com/ot4562-glitch/HUFS-One-AI/issues/506), P0 통합 [#519](https://github.com/ot4562-glitch/HUFS-One-AI/issues/519)**를 확인하세요. 구 기능 #339–#352와 #447은 이관·종료됐고, 아래 코드 표의 구 번호는 당시 코드 이력 식별자로만 보존합니다. 실제 공식 자료·권리·Gold/NCP/모델 호출은 여전히 별도 인수(`RELEASE_BLOCKED`)입니다.
 
 ## 핵심: AI 추천은 LLM 호출과 다르다
 
@@ -20,7 +20,7 @@
 | **김채윤** | **별도 `[데이터 요청]` 이슈**에서 공식 원문·포스터·출처/목적별 이용권·독립 Gold·웹 디자인 자산을 확보한다. 해당 기능에 **공동 assignee**로 참여해 자료를 직접 입력하며 전체 서비스를 가볍게 시연/제보한다. **기존 13개 기능 대규모 자료 요청: [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360).** |
 | **이서연** | 김채윤의 허가된 실포스터/문구를 활용해 웹 UI/UX·기능/API·콘텐츠를 실제 기존 사이트에 배치한다. |
 
-**현재 기능 담당:** 박준영은 #339/#340/#344/#348/#349/#350, 이의상은 #341/#343/#345/#346/#347/#351/#352의 AI/후속 개발 주담당이며, **모두 김채윤 공동 assignee**다. PR #342/#353은 심민성이 구현한 **기본 구조·합성 코어**이고 API/DB·실데이터·UI·QA/독립 인수는 별개로 추적한다. 아직 이 PR의 Pure Core가 실운영 출시됐다는 뜻은 아니다.
+**현행 후속 인수 담당:** 박준영은 #506/#507/#510/#514/#515/#516, 이의상은 #508/#509/#511/#512/#513/#517/#518의 AI 품질·결함 보완 담당이며, **모두 김채윤 공동 assignee**다. PR #342/#353은 심민성이 구현한 **기본 구조·합성 코어**이고 API/DB·실데이터·UI·QA/독립 인수는 별개로 추적한다. 아직 이 PR의 Pure Core가 실운영 출시됐다는 뜻은 아니다.
 
 ## 진행 매핑
 
