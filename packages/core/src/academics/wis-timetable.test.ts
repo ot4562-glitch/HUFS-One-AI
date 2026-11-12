@@ -342,3 +342,38 @@ describe('script and comment blocks are cut before rows are read (CodeQL #1-#6)'
     expect(importWisTimetable(request(html)).rows.map(r => r.rawCode)).toEqual(ROWS.map(r => r.code));
   });
 });
+
+
+describe('commented timetable markup is not approved source data (#431 follow-up)', () => {
+  it('ignores commented fake course rows and stale syllabus term links', () => {
+    const ghost = '<tr><td>4</td><td>잘못된 주석 행</td></tr>'
+      + " lecture_open('2025','1','A','SYN000000')";
+    const html = page(ROWS).replace('<table>', `<!-- ${ghost} --><table>`);
+    const result = importWisTimetable(request(html));
+    expect(result.rows.map(row => row.rawCode)).toEqual(ROWS.map(row => row.code));
+    expect(result.term).toEqual({year:2026, session:'2', academicTerm:'2026-2'});
+    // Keep parsing the browser-saved provenance comment from the raw page.
+    expect(result.source.savedFromUrl).toBe('https://wis.hufs.ac.kr/src08/jsp/lecture/LECTURE2020L.jsp');
+  });
+  it('keeps a real table after a script string containing an HTML comment opener', () => {
+    const html = page(ROWS)
+      .replace('<table>', '<script>const marker="<!--";</script><table>')
+      .replace('</table>', '</table><!-- footer -->');
+    const result = importWisTimetable(request(html));
+    expect(result.rows.map(row => row.rawCode)).toEqual(ROWS.map(row => row.code));
+    expect(result.term).toEqual({year:2026, session:'2', academicTerm:'2026-2'});
+  });
+  it('keeps rows after old script-comment wrappers while deleting commented fake rows', () => {
+    const html = page(ROWS).replace('<table>',
+      '<script><!-- var legacy=1; //--></script><!-- <tr><td>fake</td></tr> --><table>');
+    expect(importWisTimetable(request(html)).rows.map(r => r.rawCode))
+      .toEqual(ROWS.map(r => r.code));
+  });
+  it('does not count commented campus controls as real checked inputs', () => {
+    const actual = '<input name="campus_sect" value="H1" checked>'
+      + '<select name="ag_crs_strct_cd"><option>(서울) - 가상학과</option></select>';
+    const phantom = '<!-- <input name="campus_sect" value="H2" checked> -->';
+    const html = page(ROWS).replace('<table>', actual + phantom + '<table>');
+    expect(importWisTimetable(request(html)).campus).toBe('SEOUL');
+  });
+});

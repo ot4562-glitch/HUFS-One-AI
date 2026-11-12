@@ -211,6 +211,14 @@ export function withoutBlocks(html:string, kind:'script'|'comment'):string {
   }
 }
 
+/** Strip scripts before comments: HTML comment delimiters inside script
+ * strings are not DOM comments. The script scanner already skips commented
+ * fake scripts, and the comment pass then drops fake rows and controls. The
+ * raw HTML is used only for browser-saved source provenance. */
+function withoutNonDataBlocks(html:string):string {
+  return withoutBlocks(withoutBlocks(html, 'script'), 'comment');
+}
+
 function savedFromUrl(html:string):string {
   const match = /<!--\s*saved from url=\(\d+\)(\S+)\s*-->/i.exec(html);
   if (!match) throw new TypeError('not a browser-saved page: no "saved from url" comment');
@@ -312,7 +320,7 @@ function units(text:string):number|null {
 
 export function importWisTimetable(input:TimetableImportRequest):TimetableImport {
   if (!Number.isFinite(Date.parse(input.savedAt))) throw new TypeError('savedAt must be a datetime');
-  const html = withoutBlocks(input.html, 'script');
+  const html = withoutNonDataBlocks(input.html);
   const url = savedFromUrl(input.html);
 
   const rowsHtml = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map(match => match[1]!);
@@ -468,7 +476,7 @@ function result(
     source:{system:'HUFS_WIS_LECTURE_TIMETABLE', savedFromUrl:savedFrom, fileName:input.fileName, savedAt:input.savedAt},
     term:{...term, ...(term.session === '1' || term.session === '2' ? {academicTerm:`${term.year}-${term.session}`} : {})},
     departmentLabel,
-    campus:pageCampus(withoutBlocks(input.html, 'script')),
+    campus:pageCampus(withoutNonDataBlocks(input.html)),
     coverage:'ONE_DEPARTMENT_PAGE',
     codeFormat:{reviewed:input.codeFormatReviewed === true, consistentWithCourse7Section2:consistent},
     rows,
