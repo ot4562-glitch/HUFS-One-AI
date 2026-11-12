@@ -40,65 +40,34 @@ student eligibility or publication rights without the independent source review.
 
 The synthetic real-Cheerio regression runs in the pinned worker CI and covers
 Korean public notice dates/table cells/active content rejection. No live site,
-attachment, CAPTCHA/login or network request is exercised. HWP/HWPX extraction is a separate optional review-only adapter;
-unlicensed PDFs remain unsupported. No binary text becomes trusted without an
-independent original-document review. Do not infer these as TEXT from file names or extensions.
+attachment, CAPTCHA/login or network request is exercised. HWP/HWPX and
+unlicensed PDFs remain separate unsupported formats until an approved native
+parser exists. Do not infer these as TEXT from file names or extensions.
 
-## Durable HWP/HWPX ingestion port
+## Public board layout adapters (offline only, #445)
 
-The NCP-private operator factory can pass
-`documentExtractor: createApprovedKoreanDocumentExtractor()` (exported by
-`native-worker.mjs`) to `createOperatorApprovedSource` or directly to
-`createApprovedDurableSourceExecutor`. Keep its existing
-current rights resolver, exact canonical URL/pinned egress, reader and immutable
-writer pools. Do not pass the legacy paragraph-only wrappers as the binary
-`extractor` fallback. No new provider, OCR, network request or root process is
-created by this adapter.
+`site-adapters.mjs` provides two deliberately **synthetic layout families**,
+`TABLE_BOARD_V1` and `CARD_BOARD_V1`, for institutional notice listing pages.
+An NCP-private policy supplies the exact verified canonical HTTPS listing URL,
+approved origin, allowed path prefixes/query keys, section root and bounded
+Cheerio selectors. Only already-authorized HTML bytes are parsed; no HTTP
+requests, browser navigation, credentials, site registry or automatic
+pagination/attachment download.
 
-Apply the separately approved `infra/sql/20261111_source_korean_document_media.sql`
-before enabling document collection. Deploy compatible readers together: older
-readers reject the added `HWP`/`HWPX` media kinds. The migration preserves originals,
-privileges, RLS and independent review; do not narrow its constraint on rollback
-while HWP/HWPX rows remain. Operational NCP application is **NOT_RUN**.
+The result contains bounded `REVIEW_REQUIRED` detail URLs, attachment
+candidates (HWP/HWPX/PDF/Office) and page-link proposals. No item is
+automatically registered, fetched, published or marked ACTIVE. Source/date
+display strings are **candidates**, never independently verified facts.
+Unknown HUFS site selectors, robots/terms, permission receipts and anti-bot/
+authentication restrictions must be independently reviewed before use.
+`node --test tools/ingestion/worker/site-adapters.node.test.mjs` exercises
+Cheerio with synthetic table/card HTML, same-origin redirects, paging and
+malicious inputs. A real NCP site adapter is NOT_CONNECTED.
 
-The executor advertises only explicit HWP/HWPX MIME types when this optional
-adapter is present, checks the parser's source/revision IDs, format, original SHA,
-review-only state and unique bounded paragraphs, and rechecks COLLECT/STORE rights.
-It stores exact original bytes plus candidate paragraphs, keeps the true media
-kind, and cannot insert a self-approved revision. These local parsers do not
-require EXTERNAL_TRANSFER rights because no external processor is called.
-
-The existing **256 KiB fetch** and **500,000-byte writer** bounds remain. Generic
-`application/octet-stream`, encrypted/unsupported containers and unconfigured
-adapters are rejected. Text-only extraction omits or rejects unsupported layout,
-images and controls; independent reviewers must compare the retained original
-before approving individual source claims. This is not complete HWP fidelity or
-real-school-data acceptance. All tests use synthetic inputs.
-
-## Binary Korean documents — offline prototype (#445)
-
-`korean-documents.mjs` implements a bounded HWPX ZIP central-directory reader:
-CRC-32, entry/path de-duplication, encryption/ZIP64 rejection, deflate size and
-total limits, XML DTD/ENTITY denial, manifest/spine order, and **hp:p → hp:t**
-paragraph text with stable IDs. It accepts **already permission-verified
-bytes**; the HWPX adapter returns `NEEDS_REVIEW` source candidate paragraphs.
-It skips drawings, footnotes, revision controls and layout interpretation;
-original SHA-256 is bound to the archive bytes. Never claim approved eligibility
-or published official rules from extracted text.
-
-Legacy HWP 5 is a **different OLE2/CFB format**. The HWP5 section-record
-decoder in the same module accepts FileHeader and BodyText/SectionN streams
-provided by an independently reviewed CFB reader. It supports uncompressed
-and raw-deflated records, rejects encryption/distribution-only flags and
-unrecognized embedded control text. **Raw .hwp container parsing is now implemented as a bounded offline
-CFB/OLE2 reader** in `hwp-cfb.mjs` including FAT, MiniFAT, explicit directory
-parenting, sector-chain cycle/alias detection and generic errors. The bytes
-flow through `parseApprovedLegacyHwpDraft` for the existing HWP5 text-record
-decoder. This is **text-only draft parsing**, not a claim of full real-world
-HWP compatibility. Rich binary controls/tables, encrypted/distribution-only
-formats, actual user documents and independent human Gold remain unsupported.
-The raw CFB parser has synthetic sector corruption and mini-stream tests only.
-
-Tests construct only fictional in-memory HWPX ZIP and HWP record fixtures.
-No personal data, actual NCP source inventory, real web fetching, file writes,
-or third-party document converter is used.
+`reconcileReviewedBoardPages` additionally joins at most 40 independently
+captured listing page drafts while retaining each page's byte SHA and unique
+listing URL. Duplicate documents with changed titles or attachment lists,
+foreign pagination targets and duplicate page captures fail closed. The returned
+`unfetchedPageCandidates` are **review proposals**, not crawler jobs; rights,
+site-specific robots/terms, NCP original bytes and SourceRevision alignment
+must still be rechecked separately.

@@ -49,7 +49,11 @@ export function collectCandidatesFromApprovedBytes({
 export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
   from './notice-html-extractor.mjs';
 
-// Optional offline HWP/HWPX parsing; never grants source publication rights.
+// Offline board candidates remain review-only, with no network access.
+export {parseApprovedBoardCandidates,reconcileReviewedBoardPages}
+  from './site-adapters.mjs';
+
+// Optional local HWP/HWPX parsing; no runtime source activation.
 export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
 export {createApprovedHwpxExtractor,createApprovedLegacyHwpExtractor,
   parseApprovedHwpxDraft,parseApprovedLegacyHwpDraft}

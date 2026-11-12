@@ -2,6 +2,7 @@ import {useEffect,useRef,useState,type FormEvent} from 'react';
 import type {ActivityForecast,ActivityRecord,ExchangeApplicant,ExchangeResult,FaqAskResponse} from '@hufs-one/contracts';
 import type {CampusAssistPort} from './ownerPort.js';
 import {publishedDayKst} from '../../../../../packages/core/src/campus-assist/activities.js';
+import {prepareExchangeApplication} from '../../../../../packages/core/src/campus-assist/exchange-preparation.js';
 import {InAppLink} from '../../shell/AppShell.js';
 
 const unavailable='승인된 공식 자료/서버 기능이 연결되지 않았습니다. 실제 학교 자료를 추정하지 않고 표시를 보류합니다.';
@@ -118,40 +119,80 @@ export function OwnerActivityPanel({port,navigate}:{port:CampusAssistPort;naviga
 }
 
 type PartnerList=Awaited<ReturnType<CampusAssistPort['partners']>>['partners'];
+type ExchangeComparison={partner:PartnerList[number];evaluation:ExchangeResult};
+// The partner ID can appear under multiple application tracks; keep both in UI identity.
+const exchangePartnerKey=(partner:PartnerList[number])=>partner.partnerId+'|'+partner.track;
 export function OwnerExchangePanel({port,navigate}:{port:CampusAssistPort;navigate:(p:string)=>void}){
   const [partners,setPartners]=useState<PartnerList|null>(null),[failure,setFailure]=useState(false);
-  const [chosen,setChosen]=useState('');
+  const [chosen,setChosen]=useState(''),[compare2,setCompare2]=useState(''),[compare3,setCompare3]=useState('');
   const [duration,setDuration]=useState<1|2>(1),[status,setStatus]=useState<ExchangeApplicant['status']>('ENROLLED');
   const [semesters,setSemesters]=useState('3'),[gpa,setGpa]=useState('3.0');
   const [transfer,setTransfer]=useState('UNKNOWN');
   const [cancellation,setCancellation]=useState<ExchangeApplicant['previousCancellation']>('UNKNOWN');
   const [test,setTest]=useState(''),[score,setScore]=useState('');
   const [expiry,setExpiry]=useState(''),[departure,setDeparture]=useState('');
-  const [result,setResult]=useState<ExchangeResult|null>(null),[busy,setBusy]=useState(false);
+  const [result,setResult]=useState<readonly ExchangeComparison[]|null>(null),[busy,setBusy]=useState(false);
   const abort=useRef<AbortController|null>(null);
+  const requestVersion=useRef(0);
+  const clear=()=>{
+    requestVersion.current++;abort.current?.abort();abort.current=null;
+    setResult(null);setBusy(false);setFailure(false);
+  };
   useEffect(()=>{
     const controller=new AbortController();
+    requestVersion.current++;abort.current?.abort();abort.current=null;
+    setPartners(null);setChosen('');setCompare2('');setCompare3('');
+    setResult(null);setBusy(false);setFailure(false);
     void port.partners(new Date().toISOString(),controller.signal)
-      .then(page=>{if(!controller.signal.aborted){setPartners(page.partners);setChosen(page.partners[0]?.partnerId||'');}})
+      .then(page=>{
+        if(!controller.signal.aborted){
+          setPartners(page.partners);
+          setChosen(page.partners[0]?exchangePartnerKey(page.partners[0]):'');
+        }
+      })
       .catch(()=>{if(!controller.signal.aborted)setFailure(true);});
-    return ()=>{controller.abort();abort.current?.abort();};
+    return ()=>{controller.abort();requestVersion.current++;abort.current?.abort();};
   },[port]);
-  const partner=partners?.find(p=>p.partnerId===chosen);
+  const partner=partners?.find(p=>exchangePartnerKey(p)===chosen);
+  const chosenPartners=[chosen,compare2,compare3]
+    .filter((key,index,all)=>!!key&&all.indexOf(key)===index)
+    .map(key=>partners?.find(p=>exchangePartnerKey(p)===key))
+    .filter((p):p is PartnerList[number]=>!!p);
   const submit=(event:FormEvent<HTMLFormElement>)=>{
-    event.preventDefault();if(!partner)return;
+    event.preventDefault();if(!partner||busy||chosenPartners.length===0)return;
     abort.current?.abort();
     const controller=new AbortController();abort.current=controller;
-    const applicant:ExchangeApplicant={track:partner.track,duration,status,previousCancellation:cancellation,
+    const ticket=++requestVersion.current;
+    const asOf=new Date().toISOString();
+    const base:Omit<ExchangeApplicant,'track'>={duration,status,previousCancellation:cancellation,
       ...(semesters?{completedSemesters:Number(semesters)}:{}),
       ...(gpa?{gpa:Number(gpa)}:{}),
       ...(transfer!=='UNKNOWN'?{transfer:transfer==='YES'}:{}),
       ...(test&&score&&expiry?{language:{test,score:Number(score),expiresOn:expiry}}:{}),
       ...(departure?{departureOn:departure}:{})};
+    const snapshot=[...chosenPartners];
     setBusy(true);setResult(null);setFailure(false);
-    void port.evaluate({asOf:new Date().toISOString(),partnerId:partner.partnerId,applicant},controller.signal)
-      .then(value=>{if(!controller.signal.aborted)setResult(value);})
-      .catch(()=>{if(!controller.signal.aborted)setFailure(true);})
-      .finally(()=>{if(!controller.signal.aborted)setBusy(false);});
+    // Sequential, one actor-scoped request per selected approved partner. Never
+    // reveal partial results if quota, rights, policy revision or identity changes.
+    void (async()=>{
+      try{
+        const rows:ExchangeComparison[]=[];
+        for(const p of snapshot){
+          const evaluation=await port.evaluate({asOf,partnerId:p.partnerId,
+            applicant:{...base,track:p.track}},controller.signal);
+          if(controller.signal.aborted||ticket!==requestVersion.current)return;
+          if(Date.parse(evaluation.asOf)!==Date.parse(asOf)
+            ||evaluation.policyRevision!==p.sourceRevision)
+            throw new Error('Stale or conflicting exchange policy revision');
+          rows.push({partner:p,evaluation});
+        }
+        if(!controller.signal.aborted&&ticket===requestVersion.current)setResult(rows);
+      }catch{
+        if(!controller.signal.aborted&&ticket===requestVersion.current)setFailure(true);
+      }finally{
+        if(!controller.signal.aborted&&ticket===requestVersion.current)setBusy(false);
+      }
+    })();
   };
   return <section className="section">
     <p className="muted" role="note">독립적인 참고용 자격 점검입니다. 합격·선발이나 학교 공식 적격 결정이 아닙니다. 입력은 이 화면에서만 유지하며 서버가 현행 규정 판본·권리를 검사합니다.</p>
@@ -160,49 +201,95 @@ export function OwnerExchangePanel({port,navigate}:{port:CampusAssistPort;naviga
       ?<p>현재 사용 권한과 최신성이 검증된 파견대학 요건이 없습니다.</p>:<>
       <form onSubmit={submit} className="club__filters">
         <label htmlFor="owner-ex-partner">파견대학 식별자</label>
-        <select id="owner-ex-partner" value={chosen} onChange={e=>{setChosen(e.target.value);setResult(null);}}>
-          {partners.map(p=><option key={p.partnerId} value={p.partnerId}>{p.partnerId} · {p.track}</option>)}
+        <select id="owner-ex-partner" value={chosen} onChange={e=>{
+          clear();setChosen(e.target.value);
+          if(compare2===e.target.value)setCompare2('');
+          if(compare3===e.target.value)setCompare3('');
+        }}>
+          {partners.map(p=><option key={exchangePartnerKey(p)} value={exchangePartnerKey(p)}>{p.partnerId} · {p.track}</option>)}
         </select>
+        <label htmlFor="owner-ex-compare-2">비교할 두 번째 대학 (선택)</label>
+        <select id="owner-ex-compare-2" value={compare2} onChange={e=>{
+          clear();setCompare2(e.target.value);
+          if(compare3===e.target.value)setCompare3('');
+        }}>
+          <option value="">비교하지 않음</option>
+          {partners.filter(p=>exchangePartnerKey(p)!==chosen).map(p=>
+            <option key={exchangePartnerKey(p)} value={exchangePartnerKey(p)}>{p.partnerId} · {p.track}</option>)}
+        </select>
+        <label htmlFor="owner-ex-compare-3">비교할 세 번째 대학 (선택)</label>
+        <select id="owner-ex-compare-3" value={compare3} onChange={e=>{
+          clear();setCompare3(e.target.value);
+        }}>
+          <option value="">비교하지 않음</option>
+          {partners.filter(p=>exchangePartnerKey(p)!==chosen&&exchangePartnerKey(p)!==compare2).map(p=>
+            <option key={exchangePartnerKey(p)} value={exchangePartnerKey(p)}>{p.partnerId} · {p.track}</option>)}
+        </select>
+        <p className="muted" role="note">최대 세 대학의 검증된 요건을 같은 조회 시점·자기 입력으로 비교합니다. 각 대학의 선발 경로에 맞는 규정을 독립적으로 조회하며 자동 지원하지 않습니다.</p>
         <p role="note" className="muted">승인된 공개 요건: 기본 평점 {partner?.minimumGpa??'미확인'},
           대학 추가 평점 {partner?.partnerMinimumGpa??'미확인'},
           어학 {partner?.requiredLanguage?partner.requiredLanguage.test+' '+partner.requiredLanguage.minimumScore:'미확인'}
           ({partner?.provenance==='SYNTHETIC'?'합성':'검증된 출처'}).</p>
         <label htmlFor="owner-ex-duration">파견기간</label>
-        <select id="owner-ex-duration" value={duration} onChange={e=>setDuration(Number(e.target.value) as 1|2)}>
+        <select id="owner-ex-duration" value={duration} onChange={e=>{setDuration(Number(e.target.value) as 1|2);clear();}}>
           <option value={1}>1학기</option><option value={2}>2학기</option>
         </select>
         <label htmlFor="owner-ex-status">재학·휴학</label>
-        <select id="owner-ex-status" value={status} onChange={e=>setStatus(e.target.value as ExchangeApplicant['status'])}>
+        <select id="owner-ex-status" value={status} onChange={e=>{setStatus(e.target.value as ExchangeApplicant['status']);clear();}}>
           <option value="ENROLLED">재학</option><option value="LEAVE">휴학</option><option value="UNKNOWN">미확인</option>
         </select>
         <label htmlFor="owner-ex-sem">수료 학기</label>
-        <input id="owner-ex-sem" type="number" min="0" max="15" value={semesters} onChange={e=>setSemesters(e.target.value)}/>
+        <input id="owner-ex-sem" type="number" min="0" max="15" value={semesters} onChange={e=>{setSemesters(e.target.value);clear();}}/>
         <label htmlFor="owner-ex-gpa">평점평균 (0~4.5)</label>
-        <input id="owner-ex-gpa" type="number" min="0" max="4.5" step="0.01" value={gpa} onChange={e=>setGpa(e.target.value)}/>
+        <input id="owner-ex-gpa" type="number" min="0" max="4.5" step="0.01" value={gpa} onChange={e=>{setGpa(e.target.value);clear();}}/>
         <label htmlFor="owner-ex-trans">편입생 여부</label>
-        <select id="owner-ex-trans" value={transfer} onChange={e=>setTransfer(e.target.value)}>
+        <select id="owner-ex-trans" value={transfer} onChange={e=>{setTransfer(e.target.value);clear();}}>
           <option value="UNKNOWN">미확인</option><option value="YES">예</option><option value="NO">아니오</option>
         </select>
         <label htmlFor="owner-ex-cancel">이전 선발 취소</label>
-        <select id="owner-ex-cancel" value={cancellation} onChange={e=>setCancellation(e.target.value as ExchangeApplicant['previousCancellation'])}>
+        <select id="owner-ex-cancel" value={cancellation} onChange={e=>{setCancellation(e.target.value as ExchangeApplicant['previousCancellation']);clear();}}>
           <option value="UNKNOWN">미확인</option><option value="CANCELLED">있음</option><option value="CLEAR">없음</option>
         </select>
         <label htmlFor="owner-ex-lang">시험종류</label>
-        <input id="owner-ex-lang" maxLength={120} value={test} onChange={e=>setTest(e.target.value)}/>
+        <input id="owner-ex-lang" maxLength={120} value={test} onChange={e=>{setTest(e.target.value);clear();}}/>
         <label htmlFor="owner-ex-score">어학 점수</label>
-        <input id="owner-ex-score" type="number" min="0" value={score} onChange={e=>setScore(e.target.value)}/>
+        <input id="owner-ex-score" type="number" min="0" value={score} onChange={e=>{setScore(e.target.value);clear();}}/>
         <label htmlFor="owner-ex-expiry">유효기간</label>
-        <input id="owner-ex-expiry" type="date" value={expiry} onChange={e=>setExpiry(e.target.value)}/>
+        <input id="owner-ex-expiry" type="date" value={expiry} onChange={e=>{setExpiry(e.target.value);clear();}}/>
         <label htmlFor="owner-ex-depart">예상 파견일</label>
-        <input id="owner-ex-depart" type="date" value={departure} onChange={e=>setDeparture(e.target.value)}/>
-        <button type="submit" disabled={!partner||busy}>{busy?'검증 중':'조건 확인'}</button>
+        <input id="owner-ex-depart" type="date" value={departure} onChange={e=>{setDeparture(e.target.value);clear();}}/>
+        <button type="submit" disabled={!partner||busy}>{busy?'검증 중':'선택 대학 조건 비교'}</button>
       </form>
-      {result&&<section aria-live="polite">
-        <h2 className="section__title">참고 결과: {statusLabel[result.result]}</h2>
-        <p>{result.disclaimer}</p>
-        <ul>{result.checks.map(c=><li key={c.code}>{c.code}: {statusLabel[c.status]} · {c.explanation}</li>)}</ul>
-        <p>규정 판본: {result.policyRevision||'미확인'}</p>
-        <p><a href={partner?.sourceUrl} target="_blank" rel="noopener noreferrer">파견대학 요건 출처 확인</a></p>
+      {result&&<section aria-live="polite" aria-label="파견대학별 비교 결과">
+        <h2 className="section__title">{result.length}개 파견대학 비교 (공식 선발 판정 아님)</h2>
+        <ul>{result.map(({partner:p,evaluation})=>{
+          const plan=prepareExchangeApplication({partner:p,result:evaluation,
+            expectedAsOf:evaluation.asOf});
+          return <li key={exchangePartnerKey(p)}>
+            <h3>{p.partnerId} · {p.track} — 참고 결과: {statusLabel[evaluation.result]}</h3>
+            <p>{evaluation.disclaimer}</p>
+            <ul>{evaluation.checks.map(c=><li key={c.code}>{c.code}: {statusLabel[c.status]} · {c.explanation}</li>)}</ul>
+            <p>적용 규정 판본: {evaluation.policyRevision} ·
+              <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">파견대학 요건 출처 확인</a></p>
+            <section aria-label={p.partnerId+' 지원 준비 체크리스트'}>
+              <h4>지원 준비 체크리스트 (공식 지원서 아님)</h4>
+              <p role="note">학생 입력값은 자기신고이며, 모든 기준 충족 표시도 공식 적격·합격이나 제출 완료를 뜻하지 않습니다.</p>
+              {plan.state==='STALE_POLICY'?<p role="alert">현재 규정 판본과 조회 시점이 맞지 않아 준비 안내를 보류합니다. 공식 원문을 다시 확인해 주세요.</p>:<>
+                <p>준비 상태: {plan.state==='HAS_BLOCKERS'?'조건상 불일치 항목 있음'
+                  :plan.state==='NEEDS_EVIDENCE'?'확인 또는 추가 입력 필요':'공식 서류 확인 단계'}</p>
+                <ul>{plan.steps.map(step=><li key={step.code}>
+                  {step.code} — {step.state==='CONDITION_BLOCKER'?'불일치'
+                    :step.state==='NEEDS_EVIDENCE'?'확인 필요'
+                    :step.state==='NOT_APPLICABLE'?'해당 없음':'자기 입력 기준 확인'}
+                  {step.dataStatus==='SELF_REPORTED'?' (학생 자기신고 자료)':''}
+                  : {step.action}
+                </li>)}</ul>
+                <p className="muted">정식 지원 마감일·신청 일정은 현재 승인 요약에 없어 생성하지 않습니다.
+                  파견대학별 공식 모집공고를 직접 확인하세요. 자동 신청은 지원하지 않습니다.</p>
+              </>}
+            </section>
+          </li>;
+        })}</ul>
       </section>}
     </>}
     <p><InAppLink to="/faq" navigate={navigate}>학사 FAQ</InAppLink></p>
