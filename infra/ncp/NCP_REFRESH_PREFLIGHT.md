@@ -1,5 +1,7 @@
 # #445 NCP refresh 사전 구현 — 서버 설치 전 계약
 
+> **2026-11-12 NCP/문서 현행:** [전체 PR·이슈 인수표](../../docs/REVIEW_AND_ISSUE_AUDIT_20261112.md). 코드 PR 3건 실제 병합/버그 #427만 종료; 현재 PR 33건·이슈 30건 미완. 이 문서의 서버 명령·마이그레이션·백업·권한/비용 표는 **실 NCP에서 실행했다고 확인한 기록이 아닙니다**. 기관 출처 권리/Gold/실학생·실운영은 `NOT_RUN / RELEASE_BLOCKED`.
+
 현재 `tools/ingestion/refresh-cli.mjs`와 두 개의 systemd unit은 **NCP 없는 오프라인 검증 가능한 운영 진입점**입니다. 실제 Crawlee 수집과 DB/원문 저장을 완료하지 않았으며, 명시적 승인 없이 크롤링을 시작하지 않습니다.
 
 - `node tools/ingestion/refresh-cli.mjs --plan`: 원본·운영 registry·키를 읽지 않는 plan-only 상태. 요청 0건.
