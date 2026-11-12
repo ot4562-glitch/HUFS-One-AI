@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {extractProofCandidate,PROOF_KINDS,type ProofOcrLine} from './proof-ocr.js';
 import {classifyProofCandidate} from './recognition-v2.js';
-import {recognitionRule} from './v2.fixtures.js';
+import {FIXED_NOW,recognitionRule} from './v2.fixtures.js';
 
 // Counterexamples from the PR #372 reviews (심민성, 박준영). Synthetic lines and fictional names only.
 type Row=[text:string,y:number,confidence?:number];
@@ -91,7 +91,7 @@ describe('#372 review: kind codes and line ids',()=>{
       ['활동내용: 가상 교내 멘토링',0.3],['느낀점: 설명하는 능력이 늘었다.',0.45]]));
     expect(r.proposedKind).toBe('REPORT');
     expect(classifyProofCandidate({rule:recognitionRule(),assetId:'asset-r',proposedKind:r.proposedKind,evidencePage:0,
-      confidence:0.95,ownerConfirmed:true}).status).not.toBe('REJECTED');
+      confidence:0.95,ownerConfirmed:true,asOf:FIXED_NOW}).status).not.toBe('REJECTED');
   });
   it('a repeated line id is rejected instead of hiding a low-confidence line',()=>{
     const lines=doc([['수료증',0.08,0.95],['가상미래교육재단 이사장',0.82,0.5]]).map(l=>({...l,id:'dup'}));
