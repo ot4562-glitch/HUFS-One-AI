@@ -2,11 +2,21 @@
 import {afterEach, describe, expect, it} from 'vitest';
 import {cleanup, fireEvent, render, screen, within} from '@testing-library/react';
 import {PageBanner, AreaNav} from './PageBanner.js';
+import {AppShell} from './AppShell.js';
 import {AREAS} from './areas.js';
 
 afterEach(cleanup);
 
 describe('product shell consistency', () => {
+  it('keeps the synthetic-data disclaimer on public demo screens without a transport badge', () => {
+    const props = {path: '/', navigate: () => {}, status: null, children: <p>기능 미리보기</p>};
+    const view = render(<AppShell {...props} transportLabel={null} selector={<span>시연 사용자 선택</span>}/>);
+    expect(screen.getByText('합성 데이터 시연')).toBeTruthy();
+    view.rerender(<AppShell {...props} transportLabel={null} selector={null}/>);
+    expect(screen.queryByText('합성 데이터 시연')).toBeNull();
+    view.rerender(<AppShell {...props} transportLabel="합성 환경" selector={null}/>);
+    expect(screen.getByText('합성 데이터 시연')).toBeTruthy();
+  });
   it('renders the BETA and synthetic homes with the same direct heading and no invented CTA', () => {
     const {rerender} = render(<PageBanner path="/" title="오늘" navigate={() => {}} headingRef={null} />);
     expect(screen.getByRole('heading', {level: 1}).textContent).toBe('오늘');
