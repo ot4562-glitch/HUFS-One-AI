@@ -33,9 +33,11 @@ const HttpPermission=PermissionBase.extend({
   acquisitionMethod:z.literal('HTTP').optional(),
   robotsReviewRef:Ref.optional(),
 }).superRefine((v,ctx)=>{
-  if(v.robots==='DISALLOWED'&&!v.robotsReviewRef){
-    ctx.addIssue({code:'custom',path:['robotsReviewRef'],
-      message:'Operator review required for robots-disallowed HTTP collection'});
+  // A review reference cannot override an explicit robots prohibition.
+  // Separately authorized operator-saved sources use the non-HTTP path.
+  if(v.robots==='DISALLOWED'){
+    ctx.addIssue({code:'custom',path:['robots'],
+      message:'Robots-disallowed HTTP collection is not permitted'});
   }
 });
 const SavedPermission=PermissionBase.extend({acquisitionMethod:z.literal('OPERATOR_SAVED'),
