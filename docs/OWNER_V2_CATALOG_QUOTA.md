@@ -8,7 +8,10 @@ and counts are stored, never actor IDs, student details or search text.
 
 **Fail-closed deployment:** the migration creates an **empty** quota policy
 table. Until the owner approves a per-minute limit between 1 and 120 and an
-independent operator enters it, every call is DENIED. The SQL file does not
+independent operator enters it, every call fails closed as an operator
+configuration error (`PROVIDER_UNAVAILABLE`), **not** a misleading
+per-actor `RATE_LIMITED` response. Actual quota exhaustion returns false
+and maps to `RATE_LIMITED`. The SQL file does not
 automatically grant EXECUTE, create roles, or enable catalog data sources.
 Only a reviewed operator role can call the function. DB time, rather than an
 untrusted browser clock, is authoritative, and one UPSERT arbitrates concurrent
