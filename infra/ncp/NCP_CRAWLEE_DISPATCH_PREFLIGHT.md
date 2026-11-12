@@ -52,3 +52,40 @@ lockfile, operator-provided NCP storage and a current rights registry.
 **Production package lock:** `tools/ingestion/worker/package-lock.json` is generated under the exact pinned Crawlee and Cheerio versions and must be committed before NCP install.
 
 **Lockfile reconciliation (2026-11-11):** the real Crawlee+Cheerio CI now installs the isolated worker via `npm ci` from the committed exact `package-lock.json`, runs the native worker's synthetic parser and `BasicCrawler` behavior, and does not dynamically regenerate or print lockfile contents. Package and original data remain strictly separate.
+
+## Approved-capture binding and conservative source preflight (#449)
+
+`NcpIngestionDraft.prepareDiscoveryReviewDrafts` now requires **both** the
+NCP-only `SourceRegistrationDraft` and immutable `SourceRevisionDraft` read by
+the private operator. It rejects a mismatched source ID, permission ref,
+exact listing-page URL, revision ID, bad/future capture or missing COLLECT/STORE
+purpose; no free-floating caller-supplied revision ID can create a draft.
+Matching these records does **not** independently attest that the private DB
+was read: the NCP adapter must fetch the records from its trusted ledger and
+re-verify their hashes before invoking this helper.
+
+`evaluateSourceRefreshPreflight` consumes a candidate private source/scope
+policy and a bounded request/byte budget. UNKNOWN or RESTRICTED robots/terms,
+missing rights, an unregistered page, future policy date, out-of-scope paths,
+exhausted quota or outstanding Retry-After all return BLOCKED. Its affirmative
+state is deliberately `READY_FOR_OPERATOR_RECHECK`, **never** permission to
+crawl. At the actual request boundary the NCP operator must recheck live
+permissions, current robots and terms, DNS/IP pinning, redirect policy,
+per-domain budgets and receipt expiry. 401/403/CAPTCHA/SSO cannot be bypassed.
+
+Contract verification: `tests/contracts/ncp-ingestion-draft.test.ts` with
+synthetic registration/captured revision. Actual NCP source registry, site
+policies, review and real network remain `NOT_RUN / RELEASE_BLOCKED`.
+
+### Rate limiting, Retry-After and no auth-bypass policy (pre-NCP)
+
+The offline preflight requires a durable per-source URL `attemptsForUrl` and
+explicit `maxAttempts` (1–3), plus remaining request/byte budgets. An observed
+401/403 blocks automated access, other 4xx/5xx errors require operator review;
+429/503 require a strict reviewed `Retry-After` candidate (decimal seconds or
+canonical IMF-fixdate, max 24 hours). An invalid/missing header blocks rather
+than allowing a blind retry. Once the observed delay has expired, preflight
+returns only `READY_FOR_OPERATOR_RECHECK`, not an automatic request. Actual
+NCP durable queue must persist attempt counts and perform fresh rights/robots/
+terms and pinned-egress validations at every request. The public repository
+does not schedule or perform a retry on any real website.
