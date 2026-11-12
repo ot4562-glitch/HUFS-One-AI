@@ -9,7 +9,7 @@
 <details>
 <summary>원문 펼치기 (Git blob `864c3dceec36ec98dc5ca07dddf3b422090a444a`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #339 활동 아카이브 — NCP 연결 전 구현·검증 경계
 
 > 2026-11-12 KST. 이 문서는 코드에 실제로 연결된 **합성/오프라인** 경계를 설명합니다.
@@ -33,7 +33,7 @@
 5. 과거 연도 0~1건, 동일 행사 vs 이름만 같은 행사, 학교/조직 개편, 정정·취소·연기, 학기 경계/윤년, 개인 정보 비수집에 대해 사람이 정한 독립 Gold와 운영 허가를 확인. 실학생·실브라우저 사용성/접근성 320~1440px 별도 평가.
 
 **상태:** 합성 단위/통합 기능만 개발 가능, 실제 NCP `NOT_CONNECTED`, 공식 자료/재게시 권리·독립 Gold `NOT_RUN`, 실서비스 `RELEASE_BLOCKED`. 이슈 #339는 **OPEN**입니다.
-```
+~~~~~~~
 
 </details>
 
@@ -44,7 +44,7 @@
 <details>
 <summary>원문 펼치기 (Git blob `4b72d991336ff999d730dbd248a12d8b29617299`)</summary>
 
-```markdown
+~~~~~~~markdown
 # HUFS One AI — Claude / GPT 도구 채택 기준 (이슈 #450)
 
 > 제안된 설정과 후보 목록입니다. 이 파일은 협업자 5인의 계정에 플러그인을 설치하거나 권한을 부여하지 않습니다. 사용 환경의 연결·라이선스·요금·외부 전송 여부는 **각 사용자**가 확인합니다. [팀 업무](WORKSTREAMS.md), [PR 리뷰](PR_WORKFLOW.md), [자료 설계 #449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449).
@@ -160,7 +160,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 | [GSD Core](https://github.com/open-gsd/gsd-core) (커뮤니티) | 기존 Get Shit Done 저장소는 이전되어 현재 정본·변경 내역 검증 필요 | **보류**: 기존 gsd-build/get-shit-done에서 곧바로 설치하지 않음 |
 
 **결정 규칙:** 첫 실험은 Superpowers로 하고, 설계가 특히 복잡한 경우 **GitHub Spec Kit만 대조 실험**. Superpowers + Spec Kit + BMad + 기존 팀 이슈 봇을 한꺼번에 강제하지 않습니다. #450이 실험 결과를 모아 공통 지침에 반영하도록 합니다.
-```
+~~~~~~~
 
 </details>
 
@@ -171,7 +171,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 <details>
 <summary>원문 펼치기 (Git blob `cce1f0e5aede12bb230c00f40943e5e8823d70f8`)</summary>
 
-```markdown
+~~~~~~~markdown
 # 공개 Git 기록의 CSV 메타데이터 조사 — #362
 
 **공식 게시·개인정보 동의 판정 문서가 아닙니다.** 현재 공개 저장소에 보호되어 있는 5개 원본은 사용자 지시에 따라 내용·경로·커밋 기록을 변경하지 않습니다.
@@ -195,7 +195,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 출력은 집계 건수와 owner_publication_rights_and_consent=NOT_VERIFIED를 포함합니다. GitHub 관리자/권리 담당자는 포크와 과거 노출을 별도 확인하고 김채윤/자료 제공자에게 **비공개로** 최초 동의 목적, 게시권, 공개 범위, 재식별성, 철회 절차의 근거를 인수해야 합니다. 실제 원본과 학생 개인정보를 공개 이슈/로그에 적지 않습니다.
 
 허가된 공개판 분리/접근 제한 등은 사용자와 데이터 권리자의 승인을 받은 뒤에만 적용하며, 원본 5개나 Git 기록을 임의로 변경하지 않습니다. 따라서 **#362 OPEN / RELEASE_BLOCKED 유지**.
-```
+~~~~~~~
 
 </details>
 
@@ -206,7 +206,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 <details>
 <summary>원문 펼치기 (Git blob `4fd7eb818897c274c4db04b9c430d8b9463989a2`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #344 현직자·졸업생 멘토 추천 — NCP 전 평가/보안 기초
 
 > 2026-11-12 KST. 아래는 **가상 멘토 20명 × 가상 질문 30개**를 이용한 오프라인 판정·평가 계약입니다. 실제 졸업생 명단·연락처·대외 서비스·실학생이 없으며, 스스로 만든 합성 정답을 독립 전문가 Gold 또는 AI 성능 향상 증거로 간주하지 않습니다.
@@ -226,7 +226,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 4. 무관한 인기 멘토가 유사한 승인 경험·프로젝트 근거를 이길 수 없는지, 고유 ID·AI 환각 근거/새 출처·친족/학교 민감 사항 편향, 소수 표본/학과별 편중, 320~1440px 키보드·스크린리더/실학생 피드백 동의를 독립 검증.
 
 **상태:** NCP `NOT_CONNECTED`, 공식 멘토·권리/Gold·실AI `NOT_RUN`, 사용자 연락·학교 보증 불가, `RELEASE_BLOCKED`, #344 OPEN.
-```
+~~~~~~~
 
 </details>
 
@@ -237,7 +237,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 <details>
 <summary>원문 펼치기 (Git blob `9dcb2aac25f1bf323ba7eca35d2c119524b95078`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #449 — NCP 데이터 계약 사전 구현 (제안/NOT_APPROVED)
 
 이 문서와 `packages/contracts/src/ingestion/ncp-data-draft.ts`는 **실제 소스·NCP 서버·DB에 접근하지 않는 타입 계약 초안**입니다. `NcpIngestionDraft` 네임스페이스를 통해 데이터 파이프라인 담당자가 합성 fixture로 미리 합의할 수 있습니다. 이 코드를 실제 서비스 경로/SQL에 조립하지 않았고, 현재 운영 스키마로 승인한 것이 아닙니다.
@@ -269,7 +269,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 ## 수집 후보 → 인적 검토 DTO 연결 (NCP 설치 전)
 
 `prepareDiscoveryReviewDrafts`는 Crawlee/Cheerio가 **이미 허가받아 읽은 바이트**에서 뽑은 최대 100개 링크 제안을 `DiscoveryCandidateDraft`로 변환하고, 현재 입력된 동일 출처 origin·경로 prefix 범위 밖 URL과 중복을 제외합니다. 반환 항목은 오직 `REVIEW_REQUIRED`이며 자동 enqueue·수집·권리 확인·ACTIVE 승격은 없습니다. 예제는 합성 도메인만 사용하고 실제 소스/운영 registry는 NCP 비공개 원장에만 보관합니다. `UNKNOWN` robots/terms도 검토할 후보는 만들 수 있지만, 실제 수집 권한을 뜻하지는 않습니다.
-```
+~~~~~~~
 
 </details>
 
@@ -280,7 +280,7 @@ Claude Code 안에서 **각자 직접 승인 후** 사용합니다. 공식 [Clau
 <details>
 <summary>원문 펼치기 (Git blob `6746c59a3cceae9648ceccbeabd2fa8836dfcb24`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #447 — Owner V2 approved catalog source (NCP-independent implementation)
 
 The existing GET `/api/owner/features/v2/catalog` accepted a trusted source
@@ -343,7 +343,7 @@ No production PostgreSQL/NCP/real student data migration, independent Gold or
 human rights approval was run. `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`
 remains the correct status until an operator explicitly supplies the private
 data, current rights, and reviewed deployment.
-```
+~~~~~~~
 
 </details>
 
@@ -354,7 +354,7 @@ data, current rights, and reviewed deployment.
 <details>
 <summary>원문 펼치기 (Git blob `a691ed3aec3c64745a29a98940908fc135737f0d`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #447 — V2 owner catalog durable quota (pre-NCP)
 
 `PostgresOwnerV2CatalogQuota` provides the **existing**
@@ -386,7 +386,7 @@ the `signer` must be a secret server-held cursor signer. This quota does
 uses synthetic SQL fake and tests invalid input, fail-closed responses,
 digest separation and no DB connection during construction. NCP SQL apply,
 operator grants/policy, real load, backup/restore and rates are **NOT_RUN**.
-```
+~~~~~~~
 
 </details>
 
@@ -397,7 +397,7 @@ operator grants/policy, real load, backup/restore and rates are **NOT_RUN**.
 <details>
 <summary>원문 펼치기 (Git blob `ee606b8e8668fe042f83d995040988c321ad458b`)</summary>
 
-```markdown
+~~~~~~~markdown
 # Public tracked CSV exposure review — #362
 
 **Status: OPEN / HUMAN RIGHTS REVIEW REQUIRED (2026-11-09).**
@@ -429,7 +429,7 @@ A private worksheet may mark each original **APPROVED_FOR_RAW_PUBLICATION**, **N
 **Unresolved:** participant-specific permission and lawful use review, historical exposure/remediation scope, actual forks/caches and human sign-off. Issue #362 must remain open. This file does not authorize anyone to modify or remove original data.
 
 [Issue #362](https://github.com/ot4562-glitch/HUFS-One-AI/issues/362) · [AGENTS policy](../AGENTS.md) · [Data governance](DATA_GOVERNANCE.md) · [Release status](../STATUS.md).
-```
+~~~~~~~
 
 </details>
 
@@ -440,7 +440,7 @@ A private worksheet may mark each original **APPROVED_FOR_RAW_PUBLICATION**, **N
 <details>
 <summary>원문 펼치기 (Git blob `fb8d2f98f28a33ed1f095de3fc22f33207128a19`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #343 장학금 자격·준비 체크리스트 — NCP 연결 전
 
 > 2026-11-12 KST. 학생의 **자기신고**와 승인된 공식 출처/학업 자료 증거를 구별하는 코드 인수 범위입니다. 학교의 장학금 지급·합격/접수·공식 지원 자격 판정이 아니며 실제 장학금 지급에 사용할 수 없습니다.
@@ -463,7 +463,7 @@ A private worksheet may mark each original **APPROVED_FOR_RAW_PUBLICATION**, **N
 5. 익명/REVIEWER/BETA A/B와 교내 권리·비밀·API/RLS/429/503·실제 학생 E2E 및 독립 Gold; 최소 24 합성 회귀가 **독립 사람이 만든 Gold를 대체하지 않음**.
 
 **상태:** `NCP NOT_CONNECTED`, 실학교 출처 사용권·인간 Gold·실학생 E2E `NOT_RUN`, `RELEASE_BLOCKED`. 이슈 #343 OPEN.
-```
+~~~~~~~
 
 </details>
 
@@ -473,7 +473,7 @@ A private worksheet may mark each original **APPROVED_FOR_RAW_PUBLICATION**, **N
 
 <details><summary>원문 펼치기 (Git blob `1a2ee4b4e4a84bcbfc54b4a13a6a616a3cbcad4c`)</summary>
 
-```markdown
+~~~~~~~markdown
 # #340 교환학생 지원 조건 비교 — NCP 연결 전 개발/인수
 
 > 2026-11-12 KST, 합성 대학·합성 규칙만 검증한 코드 경계입니다. 학교의 실제 합격·서류 제출·학점 인정·모집 마감에 대한 공식 판정이 아닙니다.
@@ -496,17 +496,18 @@ A private worksheet may mark each original **APPROVED_FOR_RAW_PUBLICATION**, **N
 5. 공식 선발 담당자·실학생/교환학생 코디네이터의 독립 Gold·학년도 경계·캠퍼스/트랙·320/360/390/768/1440px 키보드/스크린리더 테스트, 권리 변경·동시 다중탭·NCP 401/403/409/429/503 확인.
 
 **상태:** 합성 코어·웹/비교·준비 체크리스트는 NCP 없이 개발 가능. `NCP NOT_CONNECTED`, 실제 학교 자료/학생 권리/Gold `NOT_RUN`, `RELEASE_BLOCKED`. 이슈 #340 OPEN.
-```
+~~~~~~~
 
 </details>
 
 ---
 
+<a id="owner-track-release-evidence"></a>
 ## 추가 통합 기록 · `docs/OWNER_TRACK_RELEASE_EVIDENCE_20261106.md`
 
 <details><summary>원문 펼치기 (Git blob `5ca72225b532d480c632487272318b42ab214751`)</summary>
 
-```markdown
+~~~~~~~markdown
 # HUFS One AI — 코드·원본·운영 실행 증거 원장 (2026-11-06)
 
 > **현재 업무 배정 주의(2026-11-08):** 이 문서의 이전 시점 담당 이슈 #317·#321–#325 및 당시 인수/운영 분장은 **역사적 기록**이다. 현행 정본은 [루트 AGENTS](../AGENTS.md) · [업무 자동 배정 플레이북](ISSUE_ASSIGNMENT_PLAYBOOK.md) · [팀 역할](WORKSTREAMS.md)이다. 고정 역할 #355–#359는 **완전 읽기 전용**으로 수정·댓글/담당 변경을 하지 않는다. 신규 추가기능은 **심민성 최초 배정·가능한 비AI 코드 직접 구현 → 코드 기반 AI까지 포함해 박준영/이의상에게 AI 구현 인계**한다. 공식 문서·포스터·Gold 자료가 필요하면 **별도 `[데이터 요청]` 이슈**를 김채윤에게 만들고 원 기능에도 김채윤을 공동 assignee로 추가한다. 현재 13개 기능의 요청은 [#360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)이다. 김채윤은 사용자 관점 경량 시연, 박준영은 AI 제품 기술 QA, 이서연은 실제 웹 디자인/배치, 심민성은 전 과정 검수를 맡는다.
@@ -594,8 +595,6 @@ A private worksheet may mark each original **APPROVED_FOR_RAW_PUBLICATION**, **N
 4. 실제 수락에는 테스트 HEAD·환경·권리/원문 판본·실행 명령·PASS/FAIL/HOLD/NOT_RUN/CONFIGURATION_REQUIRED·비용·rollback과 검증자 기록을 요구한다. 미실시 항목은 성공 처리하지 않는다.
 
 [NCP 서버 운영 #323](https://github.com/ot4562-glitch/HUFS-One-AI/issues/323) · [실인증·릴리스 #325](https://github.com/ot4562-glitch/HUFS-One-AI/issues/325) · [코드 리뷰 #278](https://github.com/ot4562-glitch/HUFS-One-AI/pull/278) · [코드 리뷰 #279](https://github.com/ot4562-glitch/HUFS-One-AI/pull/279) · [현행 팀 상태](../STATUS.md).
-```
+~~~~~~~
 
 </details>
-
-<a id="owner-track-release-evidence"></a>
