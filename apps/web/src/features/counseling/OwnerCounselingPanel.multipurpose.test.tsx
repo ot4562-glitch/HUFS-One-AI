@@ -53,7 +53,7 @@ describe('#345 multiple independently chosen counseling purposes',()=>{
     expect(screen.queryByText('가상 안내 창구')).toBeNull();
     fireEvent.click(screen.getByRole('button',{name:'공식 기관 후보 찾기'}));
     await waitFor(()=>expect(f.search).toHaveBeenCalledTimes(2));
-    const codes=f.search.mock.calls[1]?.[0].purposes;
+    const codes=f.search.mock.calls[1]![0].purposes;
     expect(new Set(codes).size).toBe(codes.length);
     expect(codes.length).toBeLessThanOrEqual(5);
   });
