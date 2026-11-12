@@ -110,3 +110,17 @@ Windows Python stdout 기본 코드페이지로 문자가 손실되는 실험 ha
 새 migration은 temporal source/관측 테이블 뒤에 적용하며 private writer의 명시적 INSERT grant가 필요하다. 실행기 runtime이 구성된 경우에만 새 테이블을 쓰므로 기존 수동/legacy 저장을 임의 manifest로 표시하지 않는다. 실제 아티팩트 승인·NCP 설치 증거를 receipt로 대체하지 않는다.
 
 수집·시간 판본·브라우저·운영 구성 집중 회귀 35개 파일/483개 시험 PASS, 로컬 SQL opt-in 1개는 기본 SKIP이다. 이를 별도로 켜 실제 10개 migration·writer를 실행한 PGlite/취득/receipt 시험 24개 PASS를 확인했다. 실제 SQL로 정확한 3종 receipt, 공개 조회 차단·수정/삭제/절단 거부, 잘못된 manifest/관측 binding과 원본·head·관측 롤백을 확인했다. 동일 proof를 네이티브 disposable PostgreSQL suite에도 추가했으나 다중 연결/NCP는 NOT_RUN이다. 타입 검사·API 빌드와 실제 CheerioCrawler/컴파일된 executor 통합 3개 PASS. 별도 코드 검토에서 남은 차단 결함은 없었다.
+
+### 기능 요구사항 재감사와 증빙 충돌 수정 — #506/#512/#518
+
+독립 코드 검토로 #506–#518의 실제 Core/API/웹 소비 경로를 다시 대조했다. 기존 구현과 테스트의 존재를 전 기능 완료 증거로 간주하지 않았다. #512에서 동일 증빙 ID가 CERTIFICATE/REPORT 두 종류로 입력되면 한 파일로 모든 서류 요건을 충족했고, PRESENT/REMOVED 사본이 함께 있어도 PRESENT를 사용했다. 인증된 insights snapshot도 중복 proof ID를 허용하므로 실제 HTTP 경로에서 재현된다. core/HTTP 실패 7개를 확인한 뒤 기존 `conflictingIds` 정책으로 모든 중복 사본을 종류/활동/검토/유효기간 필터보다 먼저 격리했다. 입력 순서·제거/기각·미검토·다른 활동·동일 중복을 검증하고 별도 ID의 유효한 대체 증빙은 보존했다. 공식 인정 상태는 계속 false다.
+
+최종 core/HTTP 집중 시험 84개, 전체 feature-additions/insights 화면 소비 회귀 24개 파일/590개 시험, 타입 검사·API 빌드 PASS. 독립 코드 검토에서 해당 수정에 남은 결함은 없었다.
+
+이번 감사에서 확인한 **NCP 전 구현 대상**은 다음과 같으며 아직 완료하지 않았다.
+
+- #518: `international-v2.ts`의 `reconcileGuideChecklist`는 core/tests까지만 연결되어 있다. `owner-v2-insights-http.ts`의 국제학생 GET은 신뢰된 snapshot의 언어/topic을 사용하고, `owner-api-client.ts`/`OwnerInsightsPanel.tsx`에는 KO/EN/ZH 선택 및 본인 체크리스트 read/write CAS 연결이 없다. 언어·원문/번역 판본 변경 시 체크 재검수, actor/동의/권리 전환, 늦은 응답·다중탭 충돌을 API/UI까지 구현·시험해야 한다.
+- #512: `classifyProofCandidate`가 core/tests까지만 있으며 인정 준비 화면은 보고서 조회만 한다. 일반 `CareerEvidenceAttachments` 포트만으로 OCR 후보의 마스킹 검토/수락·거부/철회·삭제 및 이후 저장·표시·모델 입력 제외를 완료했다고 할 수 없다. 인증된 후보 lifecycle과 UI 연결이 필요하다. 실제 OCR/파일 저장·학생 원본 인수는 별도 게이트다.
+- #506: `forecastActivity`의 보류·정정·권리 단위 회귀는 있으나 기존 `forecast/rolling-origin.ts`는 수강 개설 예측용이다. 연례 행사의 origin별 과거 관측/held-out outcome과 전년도 기준선 평가를 별도로 연결해야 한다. 합성 시험을 실제 독립 행사 Gold로 표시하지 않는다.
+
+이외 #507–#511/#513–#517에서 이번 표적 검토가 재현한 추가 결함은 없었지만, 실자료/Gold·운영 인수나 모든 E2E 요구가 완료됐다는 결론은 아니다. OSS PDF/Office 후보의 선택 개발 의존성은 기존 무시되는 가상환경에만 추가했고 아직 변환 비교를 실행하지 않았다. 다음 작업은 위 기능 누락 구현이며 OSS 조사와 PR은 계속 진행 중이다.

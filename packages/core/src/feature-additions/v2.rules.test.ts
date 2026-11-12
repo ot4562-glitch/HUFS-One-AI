@@ -251,6 +251,24 @@ describe('#346 — consented private activity evidence preparation',()=>{
       kinds:['CERTIFICATE','REPORT']}]});
     expect(run(rule,[proof('REPORT')]).status).toBe('READY_FOR_OFFICIAL_REVIEW');
   });
+  it.each(['different-kind','removed','rejected','unreviewed','other-activity','identical'] as const)
+    ('quarantines every duplicate proof identity: %s',variant=>{
+      const original=proof('CERTIFICATE'),other=variant==='different-kind'?proof('REPORT',{id:original.id})
+        :{...original,...(variant==='removed'?{sourceState:'REMOVED' as const}:variant==='rejected'?{sourceState:'REJECTED' as const}:variant==='unreviewed'?{ownerReviewed:false}
+          :variant==='other-activity'?{activityId:'OTHER'}:{})};
+      for(const items of [[original,other],[other,original]]){
+        const result=run(recognitionRule(),items);
+        expect(result.status).toBe('DOCUMENTS_PENDING');expect(result.checkedProofIds).toEqual([]);
+        expect(result.missingKinds).toEqual(['CERTIFICATE','REPORT']);
+      }
+    });
+  it('keeps distinct alternative proof identities usable when a conflicting identity is quarantined',()=>{
+    const original=proof('CERTIFICATE');
+    const result=run(recognitionRule(),[original,{...original,sourceState:'REMOVED'},
+      proof('CERTIFICATE',{id:'SYN-DISTINCT-CERT'}),proof('REPORT')]);
+    expect(result.status).toBe('READY_FOR_OFFICIAL_REVIEW');
+    expect(result.checkedProofIds).toEqual(['SYN-DISTINCT-CERT','proof-REPORT']);
+  });
   it('does not claim eligibility for wrong activity type',()=>{
     expect(run(recognitionRule({eligibleKinds:['INTERNSHIP']})).status).toBe('NOT_APPLICABLE');
   });

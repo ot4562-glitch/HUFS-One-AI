@@ -1,6 +1,6 @@
 /** #346 — prepare activity proof without implying institutional recognition. */
 import type {FeatureAdditions as C} from '@hufs-one/contracts';
-import {aggregateAnd,aggregateOr,parseAsOf,verifySource,
+import {aggregateAnd,aggregateOr,conflictingIds,parseAsOf,verifySource,
   type EvidenceState,type FeatureMode} from './source-policy.js';
 export type ActivityInfo={id:string;kind:string;endedAt?:string};
 export type ProofItem={id:string;state:'PRESENT_SELF_REPORTED'|'MISSING'|'UNKNOWN'};
@@ -34,9 +34,13 @@ export function prepareRecognitionV2(input:{
     || parseAsOf(activity.endedAt)<parseAsOf(rule.minActivityEndAt))) return blank('UNKNOWN_RULE');
   if (rule.applicationEndsAt&&at>parseAsOf(rule.applicationEndsAt)) return blank('CLOSED');
   const checkedProofIds=new Set<string>();
+  // Input order cannot determine which copy of an identity is current.
+  // Quarantine removals and other conflicting copies before filtering kinds,
+  // activity ownership, review or validity; never revive a convenient copy.
+  const conflicts=conflictingIds(proofs);
   const groups=rule.documentGroups.map(group=>{
     const documents=group.kinds.map(kind=>{
-      const candidates=proofs.filter(p=>p.activityId===activity.id
+      const candidates=proofs.filter(p=>!conflicts.has(p.id)&&p.activityId===activity.id
         && p.kind===kind && p.ownerReviewed && p.sourceState==='PRESENT'
         && (!p.issuedAt||parseAsOf(p.issuedAt)<=at)
         && (!p.expiryAt||parseAsOf(p.expiryAt)>at));

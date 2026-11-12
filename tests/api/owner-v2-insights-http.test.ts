@@ -156,6 +156,19 @@ describe('#366 six owner insights consume current approved sources separately',(
     expect(recognition.result.reports[0]).toMatchObject({
       status:'DOCUMENTS_PENDING',officiallyRecognized:false});
   });
+  it('never treats a reused or removed proof identity as ready for official review',async()=>{
+    for(const state of ['KIND','REMOVED','REJECTED'] as const){
+      const h=setup(),original=proof('CERTIFICATE');
+      const duplicate=state==='KIND'?proof('REPORT',{id:original.id}):{...original,sourceState:state};
+      for(const proofs of [[original,duplicate],[duplicate,original]]){
+        h.cases.RECOGNITION.cases[0]!.proofs=proofs;
+        const response=await h.get('RECOGNITION');expect(response.statusCode).toBe(200);
+        expect(response.json().result.reports[0]).toMatchObject({
+          status:'DOCUMENTS_PENDING',checkedProofIds:[],missingKinds:['CERTIFICATE','REPORT'],officiallyRecognized:false,
+        });
+      }
+    }
+  });
   it('quarantines duplicate mentor identities and rejects ambiguous skill requirements',async()=>{
     const h=setup();
     h.cases.MENTORS.mentors.push(mentor('mentor-1',{active:false}));
