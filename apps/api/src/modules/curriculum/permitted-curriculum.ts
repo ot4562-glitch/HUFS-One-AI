@@ -22,7 +22,24 @@ const PermissionBase=z.strictObject({
   verifiedAt:Utc,expiresAt:Utc,edition:Ref,sourceKind:z.enum(['CURRICULUM','OFFERINGS']),
   collection:z.literal('ALLOWED'),retention:z.literal('ALLOWED'),terms:z.literal('ALLOWED'),revoked:z.literal(false),
 });
-const HttpPermission=PermissionBase.extend({robots:z.literal('ALLOWED'),acquisitionMethod:z.literal('HTTP').optional()});
+/** Robots metadata is not an access grant. Under a DISALLOWED rule the operator
+ * must record a source-specific review of publicly accessible content,
+ * applicable terms and collection impacts. This does not certify REP
+ * compliance or bypass authentication/HTTP denial. A missing robots file
+ * likewise does not grant content-reuse rights.
+ */
+const HttpPermission=PermissionBase.extend({
+  robots:z.enum(['ALLOWED','NOT_FOUND','DISALLOWED']),
+  acquisitionMethod:z.literal('HTTP').optional(),
+  robotsReviewRef:Ref.optional(),
+}).superRefine((v,ctx)=>{
+  // A review reference cannot override an explicit robots prohibition.
+  // Separately authorized operator-saved sources use the non-HTTP path.
+  if(v.robots==='DISALLOWED'){
+    ctx.addIssue({code:'custom',path:['robots'],
+      message:'Robots-disallowed HTTP collection is not permitted'});
+  }
+});
 const SavedPermission=PermissionBase.extend({acquisitionMethod:z.literal('OPERATOR_SAVED'),
   robots:z.literal('NOT_APPLICABLE'),savedArtifactSha256:Sha,normalizedCsvSha256:Sha,
   capturedAt:Utc,term:SavedCurriculumCaptureSchema.shape.term,campus:ScopeLabel,scope:ScopeLabel,converterVersion:Ref,
@@ -31,7 +48,8 @@ export const CurriculumPermissionSchema=z.union([HttpPermission,SavedPermission]
 export type CurriculumPermission=z.infer<typeof CurriculumPermissionSchema>;
 export interface CurriculumAuthority{
   /** Trusted operator evidence, not page assertions. Check exact URL, allowed
-   * reuse/retention, current robots/terms, review expiry and revocations. */
+   * reuse/retention, current robots/terms and operator review of robots restrictions,
+   * review expiry and revocations. */
   resolve(sourceUrl:string,now:string):Promise<unknown|null>;
 }
 export const courseCsvHeaders=['courseCode','courseName','credits','category','major','semester','campus','cohort'] as const;
