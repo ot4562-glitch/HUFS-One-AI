@@ -1,5 +1,7 @@
 # HUFS One AI — 제품 실행·검증·실서비스 전환 순서
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **현행 판정(2026-11-06):** 프로젝트 범위 승인 `OWNER_CONFIRMED_APPROVED`, 코드 병합·합성 CI는 검증됨. **실 NCP 서버/Google/학교메일/운영 PostgreSQL·학생 4명 DB 적재/실 CLOVA·비용/복원은 `NOT_RUN` 또는 `CONFIGURATION_REQUIRED`; 공개 서비스는 `RELEASE_BLOCKED`.** 과거 문서의 #252/#253/#257 이슈는 후속을 [#276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276)에 이관하며 종료됨.
 
 ## 최신 코드 통합 확인 (2026-11-06)
