@@ -1,6 +1,7 @@
 import type {PageRenderer} from '../App.js';
 import {InAppLink} from '../shell/AppShell.js';
 import {AREAS} from '../shell/areas.js';
+import {MENU_GROUPS} from '../shell/menuCatalog.js';
 
 const OUR_TEXT: Readonly<Record<string, string>> = {
   '/graduation': '취득·수강 중·계획 학점과 요건 현황, 수강계획 검사를 나란히 봅니다.',
@@ -12,6 +13,9 @@ const OUR_TEXT: Readonly<Record<string, string>> = {
   '/experience': '활동을 기록하고, AI 후보 태그는 내가 승인한 것만 추천에 씁니다.',
   '/notices': '나와 관련된 학사 공지와 확정 마감을 봅니다.',
 };
+
+const OWNER_ONLY_ROUTES = new Set(MENU_GROUPS.find(g => g.id === 'owner-independent')?.items
+  .flatMap(i => i.route ? [i.route] : []) ?? []);
 
 /**
  * /area/:id (UIUX master spec TYPE_GUIDE): what HUFS One AI offers inside one of the 11 observed
@@ -35,7 +39,8 @@ export const areaPage: PageRenderer = ({path, navigate}) => {
             ? <ul className="area__cards">{area.ours.map(o => (
               <li key={o.route} className="area__card">
                 <h3><InAppLink to={o.route} navigate={navigate}>{o.label}</InAppLink></h3>
-                <p>{OUR_TEXT[o.route] ?? ''}</p>
+                {OWNER_ONLY_ROUTES.has(o.route) && <span className="area__status">본인 인증·승인 자료 필요</span>}
+                {OUR_TEXT[o.route] && <p>{OUR_TEXT[o.route]}</p>}
               </li>
             ))}</ul>
             : <p className="muted">이 영역에는 이번 시연에서 HUFS One AI 화면이 없습니다.</p>}
