@@ -30,16 +30,15 @@ async function open(path: string) {
 }
 
 describe('interactive discovery', () => {
-  it('changes the home next-step panel without changing route or inventing student data', async () => {
+  it('shows data destinations directly without duplicate action selectors or marketing copy', async () => {
     await open('/');
-    const controls = screen.getByRole('group', {name: '오늘의 활동 선택'});
-    const credits = within(controls).getByRole('button', {name: /취득 학점/});
-    expect(credits.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.click(credits);
-    expect(credits.getAttribute('aria-pressed')).toBe('true');
-    const panel = screen.getByRole('region', {name: '취득 학점 안내'});
-    expect(panel.textContent).toContain('공식 판정 아님');
-    expect(within(panel).getByRole('link', {name: /졸업지원 보기/}).getAttribute('href')).toBe('/graduation');
+    expect(screen.getByRole('heading', {level: 1}).textContent).toBe('오늘');
+    expect(screen.queryByText('오늘도 가능성을 넓혀보세요')).toBeNull();
+    expect(screen.queryByRole('group', {name: '오늘의 활동 선택'})).toBeNull();
+    const links = within(screen.getByRole('region', {name: '오늘의 요약'})).getAllByRole('link');
+    expect(links).toHaveLength(3);
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/opportunities', '/opportunities', '/graduation']);
+    expect(links[2]!.textContent).toContain('공식 판정 아님');
   });
 
   it('filters and resets currently visible opportunities while preserving the source order', async () => {

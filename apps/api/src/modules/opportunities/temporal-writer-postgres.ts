@@ -29,6 +29,9 @@ export class PostgresSourceRevisionWriter {
   }):Promise<RevisionInvalidationVNext|null>{
     if(!input.permissionReviewed)throw new Error('Missing approved source rights');
     const r=SourceRevisionVNextSchema.parse(input.revision);
+    if((r.mediaKind==='HWP'||r.mediaKind==='HWPX')
+      &&(r.status==='ACTIVE'||r.lastVerifiedAt!==undefined))
+      throw new Error('Source document requires independent original review');
     if(input.originalBytes.byteLength>500_000||input.paragraphs.length>200)
       throw new Error('Immutable revision integrity failure');
     // Snapshot caller-owned mutable buffers before asynchronous pool/SQL work.

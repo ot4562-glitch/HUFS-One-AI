@@ -14,6 +14,7 @@ import {parseSourceImageEvidence} from './source-image-evidence.js';
 import type {SourcePdfExtractor} from './approved-pdf-extractor.js';
 import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
 import {discardUnreadSourceBody,readApprovedSourceBody} from './source-response-body.js';
+import {KOREAN_DOCUMENT_MIMES,parseSourceDocumentDraft,type SourceDocumentExtractor} from './source-document-extractor.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/xml','text/xml',
@@ -78,6 +79,8 @@ export function createApprovedDurableSourceExecutor(options:{
   rights:ApprovedSourceRightsResolver;
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
+  /** Optional local HWP/HWPX parser. Its output never constitutes human review. */
+  documentExtractor?:SourceDocumentExtractor;
   /** Explicit private image adapter; absent means binary extraction is refused. */
   imageExtractor?:SourceImageExtractor;
   /** Explicit pinned local renderer and independently approved OCR adapter. */
@@ -136,7 +139,7 @@ export function createApprovedDurableSourceExecutor(options:{
           throw new Error('Source rights changed before HTTP');
       }},options.egress);
       const headers:Record<string,string>={
-        Accept:'text/plain,text/html,application/rss+xml,application/atom+xml,application/xml,text/xml,application/pdf,image/png,image/jpeg',
+        Accept:[...ALLOWED,...(options.documentExtractor?KOREAN_DOCUMENT_MIMES.keys():[])].join(','),
       };
       if(head?.etag)headers['If-None-Match']=head.etag;
       if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
@@ -158,14 +161,22 @@ export function createApprovedDurableSourceExecutor(options:{
       const etag=safeValidator(response.headers.get('etag'));
       const lastModified=safeValidator(response.headers.get('last-modified'));
       const media=(response.headers.get('content-type')??'').split(';')[0]!.trim().toLowerCase();
-      if(!ALLOWED.has(media))throw new Error('Unsupported approved content type');
+      const documentKind=KOREAN_DOCUMENT_MIMES.get(media);
+      if(!ALLOWED.has(media)&&!documentKind)throw new Error('Unsupported approved content type');
       const bytes=await readApprovedSourceBody(response),originalSha256=SHA(bytes);
       const revisionId='revision-'+randomUUID();
       let image:ReturnType<typeof parseSourceImageEvidence>|undefined;
       let pdf:ReturnType<typeof parseSourcePdfEvidence>|undefined,pdfRasters:SourcePdfRaster[]|undefined;
       let revalidateMedia:(()=>Promise<void>)|undefined;
       let paragraphs:RevisionParagraph[];
-      if(media==='application/pdf'){
+      if(documentKind){
+        if(!options.documentExtractor)throw new Error('Approved document extractor unavailable');
+        // Give the optional adapter a copy: it cannot mutate retained original bytes.
+        const extracted=await options.documentExtractor.extract({content:Buffer.from(bytes),contentType:media,
+          canonicalUrl:u.href,sourceId:input.sourceId,revisionId});
+        paragraphs=parseSourceDocumentDraft(extracted,{sourceId:input.sourceId,revisionId,
+          mediaKind:documentKind,originalSha256});
+      }else if(media==='application/pdf'){
         if(head?.mediaKind==='PDF'&&head.hasPdfEvidence&&head.originalSha256===originalSha256){
           if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
             throw new Error('Source rights changed during PDF check');
@@ -259,7 +270,7 @@ export function createApprovedDurableSourceExecutor(options:{
       const checkedAt=now();
       if(head&&Date.parse(checkedAt)<=Date.parse(head.fetchedAt))
         throw new Error('Nonmonotonic revision time');
-      const mediaKind=pdf?'PDF':image?'IMAGE':media==='text/html'?'HTML':'TEXT';
+      const mediaKind=documentKind??(pdf?'PDF':image?'IMAGE':media==='text/html'?'HTML':'TEXT');
       const revision:SourceRevisionVNext={
         sourceId:input.sourceId,revisionId,
         ...(head?{supersedes:head.revisionId}:{}),

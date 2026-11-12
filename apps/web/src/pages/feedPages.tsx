@@ -8,7 +8,6 @@ import {InAppLink} from '../shell/AppShell.js';
 import {decodeDetailId} from '../shell/router.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
-import {HomeJourney} from './HomeJourney.js';
 import {OpportunityExplorer} from './OpportunityExplorer.js';
 import {DeadlineRow, deadlineBasisText, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../features/graduation/graduationView.js';
@@ -37,7 +36,6 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
         <TodaySummary view={view} navigate={navigate} />
-        <HomeJourney key={state.selected ?? 'none'} view={view} navigate={navigate} />
         <div className="modules">
           <div className="module module--cal">
             <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />

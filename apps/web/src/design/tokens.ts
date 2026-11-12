@@ -45,7 +45,7 @@ export const COLOR_ROLES = {
 } as const;
 
 export const SPACING_PX = [4, 8, 12, 16, 24, 32] as const;
-export const RADIUS_PX = {card: 16, control: 14} as const;
+export const RADIUS_PX = {card: 12, control: 8} as const;
 export const TOUCH_TARGET_PX = 48;
 
 export const TYPE_SCALE = {

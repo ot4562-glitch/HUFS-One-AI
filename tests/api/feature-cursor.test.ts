@@ -39,6 +39,16 @@ describe('#348 server-only opaque cursor signer and verifier',()=>{
     fail('{"lastId":"item-1"}');
     fail('a'.repeat(2050));
   });
+  it('supports the reviewed PostgreSQL actor ID grammar without exposing it',()=>{
+    const authorized={...context,actorId:'synthetic.student@school.example'};
+    const token=signer.sign(cursor,authorized);
+    expect(signer.verify(token,authorized)).toEqual(cursor);
+    fail(token,context,'STALE_CURSOR');
+    const decoded=Buffer.from(token.split('.')[0]!,'base64url').toString('utf8');
+    expect(decoded).not.toContain(authorized.actorId);
+    expect(()=>signer.sign(cursor,{...authorized,actorId:'unsafe/actor'}))
+      .toThrow('MISCONFIGURED_CURSOR');
+  });
   it('binds cursor to actor, verified current consent and scope',()=>{
     const token=sign();
     fail(token,{...context,actorId:'owner-S02'},'STALE_CURSOR');

@@ -68,6 +68,44 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect(provider.execute).not.toHaveBeenCalled();
   });
 
+  it('#341 quarantines an unsafe FAQ paragraph before budget admission',async()=>{
+    const admit=vi.fn(async()=>true),execute=vi.fn(async (_input:Parameters<NonNullable<CampusAssistServices['hcx007']>['execute']>[0])=>({status:{code:'20000'}}));
+    const h=fixture({admit,execute});
+    const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,documentId:'SYN-FAQ-PRIVATE',
+      revisionId:'SYN-FAQ-PRIVATE-r1',title:'가상 교환학생 어학',
+      paragraphs:[{id:'p1',text:'가상 교환학생 어학 상담 번호는 010-1234-5678입니다.'}]};
+    h.faq.read.mockResolvedValue({items:[doc],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const response=await h.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    expect(response.statusCode).toBe(422);
+    expect(admit).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
+    expect(response.body).not.toContain('010-1234-5678');
+  });
+  it('#341 admits only clean paragraphs when one official FAQ chunk contains an office phone',async()=>{
+    const admit=vi.fn(async()=>true),execute=vi.fn(async (_input:Parameters<NonNullable<CampusAssistServices['hcx007']>['execute']>[0])=>({status:{code:'20000'}}));
+    const h=fixture({admit,execute});
+    const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,documentId:'SYN-FAQ-MIXED-CHUNKS',
+      revisionId:'SYN-FAQ-MIXED-CHUNKS-r1',title:'가상 교환학생 어학',
+      paragraphs:[
+        {id:'safe',text:'가상 교환학생 어학 준비 요건은 공식 원문에서 확인해야 합니다.'},
+        {id:'contact',text:'가상 교환학생 어학 관련 문의는 부서 02-1234-5678로 연락하세요.'},
+      ]};
+    h.faq.read.mockResolvedValue({items:[doc],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const response=await h.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    // A mock without a valid candidate fails *after* model execution, but
+    // the safe query was admitted and the unsafe source was never sent.
+    expect(response.statusCode).toBe(422);
+    expect(admit).toHaveBeenCalledOnce();
+    expect(execute).toHaveBeenCalledOnce();
+    const payload=JSON.stringify(execute.mock.calls[0]![0].wire.body.messages[1]!.content);
+    expect(payload).toContain('공식 원문에서 확인해야 합니다');
+    expect(payload).not.toContain('02-1234-5678');
+    expect(payload).not.toContain(':contact');
+  });
   it('scopes activity reads to an authorized, revalidated snapshot',async()=>{
     const h=fixture(),r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
     expect(r.statusCode).toBe(200);
@@ -95,9 +133,32 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     const h=fixture(),r=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학'});
     expect(r.statusCode).toBe(200);
     expect(r.json().status).toBe('CONFIGURATION_REQUIRED');
+    expect(r.json().evidence).toEqual([]);
     expect(r.body).not.toContain('가상 파견대학의 어학 점수는');
+    const links=r.json().sourceLinks as {documentId:string;revisionId:string;
+      title:string;sourceUrl:string;verifiedAt:string}[];
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every(x=>x.sourceUrl.startsWith('https://example.org/synthetic/'))).toBe(true);
+    expect(links.every(x=>!('text' in x)&&!('answer' in x))).toBe(true);
+    expect(new Set(links.map(x=>x.documentId+':'+x.revisionId)).size).toBe(links.length);
+    expect(h.faq.revalidate).toHaveBeenCalledOnce();
     const none=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'양자악어비행선'});
     expect(none.json().status).toBe('NOT_FOUND');
+    expect(none.json().sourceLinks).toBeUndefined();
+  });
+  it('#341 never reveals source links after actor switch or rights revocation',async()=>{
+    const h=fixture();
+    h.switchActor();
+    const crossActor=await h.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    expect(crossActor.statusCode).toBe(503);
+    expect(crossActor.body).not.toContain('https://example.org/synthetic/faq/');
+    const other=fixture();
+    other.revoke();
+    const revoked=await other.post('/api/owner/faq/ask',
+      {asOf:NOW,question:'가상 교환학생 어학'});
+    expect(revoked.statusCode).toBe(403);
+    expect(revoked.body).not.toContain('sourceLinks');
   });
   it('revoked rights or logout fail closed for all three features',async()=>{
     const h=fixture();h.revoke();

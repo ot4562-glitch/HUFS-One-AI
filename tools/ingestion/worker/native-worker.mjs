@@ -52,3 +52,9 @@ export {createCheerioApprovedNoticeExtractor,parseApprovedNoticeHtmlDraft}
 // Offline board candidates remain review-only, with no network access.
 export {parseApprovedBoardCandidates,reconcileReviewedBoardPages}
   from './site-adapters.mjs';
+
+// Optional local HWP/HWPX parsing; no runtime source activation.
+export {createApprovedKoreanDocumentExtractor} from './korean-documents.mjs';
+export {createApprovedHwpxExtractor,createApprovedLegacyHwpExtractor,
+  parseApprovedHwpxDraft,parseApprovedLegacyHwpDraft}
+  from './korean-documents.mjs';

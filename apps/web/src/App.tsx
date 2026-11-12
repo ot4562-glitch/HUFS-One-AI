@@ -139,8 +139,6 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
     ?? {title: '페이지를 찾을 수 없습니다', body: <p className="muted">주소를 확인하거나 아래 메뉴를 이용해 주세요.</p>};
 
   const area = path === '/' ? null : areaOf(path);
-  const subject = state.status === 'READY' ? state.profiles.find(p => p.demoSubjectId === state.selected)?.displayLabel : undefined;
-  const greeting = path === '/' && subject ? <>{subject.split(' · ')[0]}님, 오늘의 정보를 확인하세요 <span className="hero__chip">합성 데이터</span></> : undefined;
 
   // Move focus to the new page heading after in-app navigation (not on first load).
   const heading = useRef<HTMLHeadingElement>(null);
@@ -166,7 +164,7 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
       status={independent || path === '/reviewer/invite' || (path === '/local-demo' && LocalWorkbench) ? null
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
-      <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} greeting={greeting} />
+      <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} />
       {area ? <div className="layout"><AreaNav area={area} path={path} navigate={navigate} /><div className="layout__body">{page.body}</div></div> : page.body}
     </AppShell>
   );
