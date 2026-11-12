@@ -102,6 +102,18 @@ describe('#352 NCP-free multilingual Korean/English/Chinese guide consistency',(
     expect(reconcile(base,{locale:'ko',translationVersion:'ko-r1'}).state)
       .toBe('READY');
   });
+  it('quarantines legacy checklist flags with no locale or translation version',()=>{
+    const legacy=reconcile(base);
+    expect(legacy).toMatchObject({
+      state:'STALE_GUIDE',checkedStepIds:[],invalidatedStepIds:['step-1'],
+      officialAdministrationComplete:false,
+    });
+    // Missing bindings must not become valid merely because the Korean
+    // text changed while the underlying source revision stayed the same.
+    const changed=guide({translations:{...base.translations,
+      ko:{...base.translations.ko,translationVersion:'ko-r2'}}});
+    expect(reconcile(changed).state).toBe('STALE_GUIDE');
+  });
   it.each([
     [{locale:'zh'}],
     [{translationVersion:'ko-r1'}],
