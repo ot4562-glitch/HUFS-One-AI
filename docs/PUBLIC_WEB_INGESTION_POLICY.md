@@ -57,4 +57,4 @@ HUFS One AI는 학사 공지, 교과정보, 장학, 비교과, 취업, 교환학
 
 이 정책은 **프로젝트 소유자가 수집 확대 방향을 승인한 설계 결정**이며, 제3자 사이트가 특정 이용·재게시·개인정보 처리 목적을 허가했다는 사실을 만들어내지 않는다. 연구·개발/운영/대외 서비스 출시를 구분한다. `OWNER_CONFIRMED_APPROVED`, `CONFIGURATION_REQUIRED`, `HUMAN_ACCEPTED`, `RELEASE_BLOCKED` 상태의 기존 의미는 변경하지 않는다.
 
-참고: [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html) · [개인정보보호위원회 공개된 개인정보 AI 개발·서비스 활용 안내](https://pipc.go.kr/eng/user/ltn/new/noticeDetail.do?bbsId=BBSMSTR_000000000001&nttId=2591) · [데이터 처리 정본](DATA_GOVERNANCE.md) · [SourceRevision](TRUSTED_RAG_MEDIA_VERSIONING.md)
+참고: [RFC 9309](https://www.rfc-editor.org/rfc/rfc9309.html) · [개인정보보호위원회 공개된 개인정보 AI 개발·서비스 활용 안내](https://pipc.go.kr/eng/user/ltn/new/noticeDetail.do?bbsId=BBSMSTR_000000000001&nttId=2591) · [데이터 처리 정본](DATA_GOVERNANCE.md) · [SourceRevision·권리/판본 설계](../Architecture.md)
