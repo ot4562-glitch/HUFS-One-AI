@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {bookmarkProgressInput,nextBookmarkStage,STAGE_NAMES} from './bookmarkProgress.js';
 import type {OwnerWorkspaceRecord,BookmarkStage} from '@hufs-one/contracts';
-const original:OwnerWorkspaceRecord={
+const original:OwnerWorkspaceRecord & {value:Extract<OwnerWorkspaceRecord['value'],{kind:'BOOKMARK'}>}={
   itemId:'bookmark-1',version:1,updatedAt:'2026-11-07T00:00:00Z',
   value:{kind:'BOOKMARK',dataMode:'OWNER_CONSENTED',opportunityId:'op1',state:'SAVED'},
 };

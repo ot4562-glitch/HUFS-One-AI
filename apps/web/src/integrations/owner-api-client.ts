@@ -64,8 +64,13 @@ const FromOpportunity=z.strictObject({itemId:Id,opportunityId:Id});
 const ExperienceTagResult=z.strictObject({approval:ExperienceTagApprovalSchema});
 const PortfolioQuery=ExperiencePortfolioQuerySchema.omit({view:true});
 const BookmarkAdvance=z.strictObject({stage:BookmarkStageSchema,outcome:BookmarkOutcomeSchema.optional()});
-const Paths:Record<WorkspaceKind,string>={EXPERIENCE:'/api/experience/cards',
-  STUDY_PLAN:'/api/study-plans',BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'};
+const Paths={EXPERIENCE:'/api/experience/cards',
+  STUDY_PLAN:'/api/study-plans',BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'} satisfies Partial<Record<WorkspaceKind,string>>;
+function workspacePath(kind:WorkspaceKind):string{
+  // Guide writes must use current-source/translation checks, never generic CRUD.
+  const name=clientInput(WorkspaceKindSchema.exclude(['GUIDE_CHECKLIST']),kind);
+  return Paths[name]!;
+}
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 function unavailable():never {throw new HufsApiError('PROVIDER_UNAVAILABLE',503);}
 function queryPath(path:string,query:Record<string,string|number|undefined>):string {
@@ -165,7 +170,7 @@ export class HufsOwnerApiClient {
   }
   async listWorkspace(kind:WorkspaceKind,query:WorkspaceQuery={},signal?:AbortSignal){
     const k=clientInput(WorkspaceKindSchema,kind),q=clientInput(WorkspaceQuerySchema,query);
-    const page=await this.request(queryPath(Paths[k],q),WorkspacePage,{signal});
+    const page=await this.request(queryPath(workspacePath(k),q),WorkspacePage,{signal});
     assertPage(page,q,item=>item.itemId);
     if(page.items.some(item=>item.value.kind!==k))unavailable();
     return page;
@@ -224,14 +229,14 @@ export class HufsOwnerApiClient {
   }
   async createWorkspace(change:z.infer<typeof OwnerWorkspaceCreateSchema>,signal?:AbortSignal){
     const input=clientInput(OwnerWorkspaceCreateSchema,change);
-    const result=await this.mutate(Paths[input.value.kind],ItemWrite,'POST',input,signal);
+    const result=await this.mutate(workspacePath(input.value.kind),ItemWrite,'POST',input,signal);
     matchItem(result.item,input.itemId,input.value.kind,1,input.value);return result;
   }
   async updateWorkspace(itemId:string,change:z.infer<typeof OwnerWorkspaceUpdateSchema>,signal?:AbortSignal){
     const id=clientInput(Id,itemId),input=clientInput(OwnerWorkspaceUpdateSchema,change);
     if(input.value.kind==='BOOKMARK')throw new HufsApiError('INVALID_INPUT',422);
     const method=input.value.kind==='STUDY_PLAN'?'PUT':'PATCH';
-    const result=await this.mutate(Paths[input.value.kind]+'/'+id,ItemWrite,method,input,signal);
+    const result=await this.mutate(workspacePath(input.value.kind)+'/'+id,ItemWrite,method,input,signal);
     matchItem(result.item,id,input.value.kind,input.expectedVersion+1,input.value);return result;
   }
   /**
@@ -261,7 +266,7 @@ export class HufsOwnerApiClient {
   async deleteWorkspace(kind:'EXPERIENCE'|'BOOKMARK',itemId:string,expectedVersion:number,signal?:AbortSignal){
     const k=clientInput(z.enum(['EXPERIENCE','BOOKMARK']),kind),id=clientInput(Id,itemId);
     const input=clientInput(OwnerWorkspaceDeleteSchema,{expectedVersion});
-    const result=await this.mutate(Paths[k]+'/'+id,DeleteReceipt,'DELETE',input,signal);
+    const result=await this.mutate(workspacePath(k)+'/'+id,DeleteReceipt,'DELETE',input,signal);
     requireMatchingReceipt(result.version===expectedVersion+1);return result;
   }
   async createExperienceFromOpportunity(change:z.infer<typeof FromOpportunity>,signal?:AbortSignal){
@@ -429,6 +434,25 @@ export class HufsOwnerApiClient {
     const name=clientInput(V.OwnerInsightsKindSchema,kind);
     const result=await this.request('/api/owner/features/v2/insights/'+name,V.OwnerInsightsResponseSchema,{signal});
     requireMatchingReceipt(result.state==='NOT_CONNECTED'?result.kind===name:result.result.kind===name);
+    return result;
+  }
+  async getOwnerGuideChecklist(guideId:string,locale:'ko'|'en'|'zh',signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),guideId);
+    const language=clientInput(z.enum(['ko','en','zh']),locale);
+    const result=await this.request('/api/owner/features/v2/international/'+encodeURIComponent(id)+'/checklist?locale='+language,
+      V.GuideChecklistResponseV2Schema,{signal});
+    if(result.state==='READY')requireMatchingReceipt(result.guide.guideId===id);
+    return result;
+  }
+  async saveOwnerGuideChecklist(guideId:string,change:z.input<typeof V.GuideChecklistWriteV2Schema>,signal?:AbortSignal){
+    const id=clientInput(z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),guideId);
+    const input=clientInput(V.GuideChecklistWriteV2Schema,change);
+    const result=await this.mutate('/api/owner/features/v2/international/'+encodeURIComponent(id)+'/checklist',
+      V.GuideChecklistResponseV2Schema,'PUT',input,signal);
+    if(result.state==='READY')requireMatchingReceipt(result.guide.guideId===id&&result.version===input.expectedVersion+1
+      &&result.guide.locale===input.displayedLocale&&result.guide.sourceRevisionId===input.guideRevisionId
+      &&result.translationVersion===input.translationVersion&&result.contextVersion===input.contextVersion
+      &&result.checklist.state==='READY'&&same(result.checklist.checkedStepIds,[...input.checkedStepIds].sort()));
     return result;
   }
   /** #366/#348: server signs all cursors and revalidates owner/consent/source on every page. */

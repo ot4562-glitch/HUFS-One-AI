@@ -124,3 +124,17 @@ Windows Python stdout 기본 코드페이지로 문자가 손실되는 실험 ha
 - #506: `forecastActivity`의 보류·정정·권리 단위 회귀는 있으나 기존 `forecast/rolling-origin.ts`는 수강 개설 예측용이다. 연례 행사의 origin별 과거 관측/held-out outcome과 전년도 기준선 평가를 별도로 연결해야 한다. 합성 시험을 실제 독립 행사 Gold로 표시하지 않는다.
 
 이외 #507–#511/#513–#517에서 이번 표적 검토가 재현한 추가 결함은 없었지만, 실자료/Gold·운영 인수나 모든 E2E 요구가 완료됐다는 결론은 아니다. OSS PDF/Office 후보의 선택 개발 의존성은 기존 무시되는 가상환경에만 추가했고 아직 변환 비교를 실행하지 않았다. 다음 작업은 위 기능 누락 구현이며 OSS 조사와 PR은 계속 진행 중이다.
+
+### 국제학생 체크리스트의 API·저장 연결 — #518 (화면 연결 미완료)
+
+`/api/owner/features/v2/international/:id/checklist`의 GET/PUT과 전용 client 메서드를 구현했다. GET의 ko/en/zh는 표시 언어만 선택하며 topic·캠퍼스·학기·대상·출처·권리·동의는 기존 신뢰된 source가 정한다. PUT은 표시했던 원문 판본·실제 언어·번역 버전·현재 scope context와 CAS version을 함께 확인한다. 한국어 fallback은 ko로 저장한다. source/번역 변경 또는 다른 언어의 기존 체크는 재검수 상태로 비워 표시한다. 원문/번역이 조회와 저장 사이에 바뀌면 현재 CAS가 맞아도 409로 거부한다.
+
+새 `GUIDE_CHECKLIST`는 기존 본인용 workspace의 OWNER_CONSENTED/SELF_REPORTED 기록이다. 원문 텍스트·여권·체류정보를 저장하지 않으며 guide/판본/번역과 체크한 step ID만 보존한다. item ID는 guide/동의 epoch에 결속하고 별도 context는 actor/source/consent/rights에 결속해, 동의 철회·재동의 이후 옛 요청을 새 기록으로 재생하지 못하게 한다. generic CRUD client는 이 kind를 거부하고 기존 generic HTTP 경로도 고정 kind를 검사하므로 출처 검증을 건너뛸 수 없다. 준비 체크는 학교 학사 처리 완료가 아니다.
+
+운영자는 `20261113_international_checklists.sql`을 기존 self workspace/tombstone migration 뒤에 적용하고, 기존 private `PostgresOwnerWorkspaceStore`(또는 동일 계약의 승인된 store)를 `ownerInsights.checklists`에 명시적으로 제공해야 한다. 해당 authority는 GUIDE_CHECKLIST의 본인 읽기/쓰기를 독립적으로 허용해야 한다. 기존 RLS·개인 저장 동의 row lock·CAS·수량 제한·메타데이터 audit·철회 시 전체 workspace 삭제를 재사용한다. 저장 port가 없으면 NOT_CONNECTED이며, 공용/미검수 source나 가상 체크로 대체하지 않는다.
+
+독립 코드 검토에서 await source.revalidate 중 receipt가 만료되는 경합을 발견했고, 실패 시험으로 재현한 뒤 마지막 actor 재검증 뒤에도 만료를 확인하도록 수정했다. HTTP 7개와 client 2개 시험 PASS. 별도로 켠 PGlite 실제 5개 migration/제한된 역할에서 GUIDE 저장·CAS·다른 actor RLS 격리·실제 `PostgresSelfAccountStore.putConsents`에 의한 개인 저장 철회/삭제 시험 1개 PASS. 같은 proof를 native PG suite에도 넣었지만 다중 연결/NCP는 NOT_RUN이다.
+
+이 단계의 전체 회귀는 Node 24.15.0에서 435개 파일/5,114개 시험 PASS, 14개 파일/107개 시험 명시적 SKIP이다. 위 PGlite 1개는 별도 실행했다. 타입 검사·API 빌드·공개 경계 172개 PASS. 기존 bookmark/action/experience fixture는 실제 kind로 타입을 좁혀 새 union을 잘못된 synthetic 값으로 변형하지 않도록 유지했다. source-authority/TTL와 client binding 후속 검토에서 남은 차단 결함은 없었다.
+
+**남은 #518 작업:** `OwnerInsightsPanel`의 KO/EN/ZH 선택·체크박스·저장/재조회·409 회복과 actor/언어 전환의 늦은 응답/다중탭 처리는 아직 연결하지 않았다. AS-094→AL-094(실제로 동작하는 언어/체크 컨트롤), AS-093→AL-093(미연결·충돌·만료 회복), AS-100→AL-100(실제 작업 경로)을 적용할 계획이다. 현재 화면 변경/스크린샷·실기기·사람 검수는 NOT_RUN이며, API 시험을 화면 완료로 간주하지 않는다.

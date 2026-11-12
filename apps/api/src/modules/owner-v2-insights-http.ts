@@ -12,6 +12,8 @@ import {recommendLearningV2} from '../../../../packages/core/src/feature-additio
 import {comparePublishedStats} from '../../../../packages/core/src/feature-additions/employment-v2.js';
 import {resolveInternationalGuide} from '../../../../packages/core/src/feature-additions/international-v2.js';
 import {ApiFailure} from './auth/gates.js';
+import type {OwnerWorkspacePort} from './profiles/self-workspace-postgres.js';
+import {registerInternationalChecklistRoutes} from './owner-international-checklist-http.js';
 import {betaActor,betaRecheck,type BetaRouteVerifier} from './profiles/self-account-http.js';
 
 const Iso=z.iso.datetime({offset:true});
@@ -64,12 +66,15 @@ export interface TrustedOwnerInsightsQuota {
 export interface OwnerInsightsServices {
   source:TrustedOwnerInsightsSource;
   quota:TrustedOwnerInsightsQuota;
+  checklists?:Pick<OwnerWorkspacePort,'read'|'create'|'update'>;
 }
 export function validateOwnerInsightsServices(v:OwnerInsightsServices):void{
   if(!v||typeof v.source?.read!=='function'
     ||typeof v.source?.revalidate!=='function'
     ||typeof v.quota?.consume!=='function')
     throw new Error('Owner insights require current rights source and durable quota');
+  if(v.checklists&&['read','create','update'].some(key=>typeof v.checklists?.[key as keyof typeof v.checklists]!=='function'))
+    throw new Error('Owner guide checklist store required');
 }
 const empty=z.strictObject({});
 const unique=<T extends {id:string}>(rows:readonly T[]):boolean=>
@@ -80,6 +85,7 @@ export function registerOwnerInsightsRoutes(input:{
 }):void{
   const {app,session,services}=input;
   if(services)validateOwnerInsightsServices(services);
+  registerInternationalChecklistRoutes({app,session,services,parse:raw=>Cases.parse(raw)});
   app.get('/api/owner/features/v2/insights/:kind',async(req,reply)=>{
     reply.header('Cache-Control','no-store');
     empty.parse(req.query);

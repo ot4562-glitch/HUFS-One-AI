@@ -24,6 +24,7 @@ import {proveSourceDocumentPg} from './source-document-live-slice.js';
 import {proveSourceRefreshBudgetPg} from './source-refresh-budget-live-slice.js';
 import {proveSourceBrowserPg} from './source-browser-live-slice.js';
 import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js';
+import {proveGuideWorkspace} from './international-checklist-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -68,6 +69,7 @@ const migrationNames=[
   '20261101_intake_staging.sql','20261101_self_account.sql',
   '20261101_personal_storage_withdrawal.sql',
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
+  '20261113_international_checklists.sql',
   '20261101_experience_tag_approval.sql',
   '20261101_demo_overlays.sql',
   '20261101_verified_source_rights.sql',
@@ -413,6 +415,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await expect(reader.query('SELECT * FROM api_self_profiles')).rejects.toMatchObject({code:'42501'});
     await expect(admin.query('UPDATE api_self_consent_events SET changed_purposes=ARRAY[\'externalAi\']'))
       .rejects.toThrow('cannot be mutated');
+  });
+  it('isolates owner international checklists and purges withdrawn owner data',async()=>{
+    await proveGuideWorkspace(admin,selfAccount);
   });
   it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
     const actorId='SYN-SELF-OWNER';

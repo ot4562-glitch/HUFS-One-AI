@@ -144,6 +144,22 @@ export const GuideResolutionV2Schema=z.strictObject({
   officialAdministrationComplete:z.literal(false),
 });
 export type GuideResolutionV2=z.infer<typeof GuideResolutionV2Schema>;
+export const GuideChecklistWriteV2Schema=z.strictObject({
+  expectedVersion:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER-1),
+  locale:z.enum(['ko','en','zh']),displayedLocale:z.enum(['ko','en','zh']),
+  guideRevisionId:Id,translationVersion:Id,contextVersion:z.string().regex(/^[a-f0-9]{64}$/),
+  checkedStepIds:z.array(Id).max(50).refine(ids=>new Set(ids).size===ids.length),
+});
+export const GuideChecklistResponseV2Schema=z.discriminatedUnion('state',[
+  z.strictObject({state:z.literal('NOT_CONNECTED')}),
+  z.strictObject({state:z.literal('READY'),guide:GuideResolutionV2Schema,
+    translationVersion:Id.nullable(),contextVersion:z.string().regex(/^[a-f0-9]{64}$/),
+    version:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+    checklist:z.strictObject({state:z.enum(['READY','STALE_GUIDE','VERSION_CONFLICT']),
+      checkedStepIds:z.array(Id).max(50),invalidatedStepIds:z.array(Id).max(50),
+      officialAdministrationComplete:z.literal(false)}),
+  }),
+]);
 
 /** HTTP layer MUST sign an opaque cursor; the pure core's cursor is internal. */
 export const SignedCatalogPageV2Schema=z.strictObject({

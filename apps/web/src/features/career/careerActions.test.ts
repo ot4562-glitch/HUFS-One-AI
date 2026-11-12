@@ -1,7 +1,7 @@
 import {describe,expect,it} from 'vitest';
 import {newCareerAction,updateCareerAction} from './careerActions.js';
 import type {OwnerWorkspaceRecord} from '@hufs-one/contracts';
-const record:OwnerWorkspaceRecord={itemId:'plan-1',version:3,updatedAt:'2026-11-07T00:00:00Z',
+const record:OwnerWorkspaceRecord & {value:Extract<OwnerWorkspaceRecord['value'],{kind:'ACTION_PLAN'}>}={itemId:'plan-1',version:3,updatedAt:'2026-11-07T00:00:00Z',
   value:{kind:'ACTION_PLAN',dataMode:'OWNER_CONSENTED',state:'DRAFT',
     opportunityId:'opp-1',task:'기존 자기 계획',done:false}};
 describe('#317 private action plan / opportunity linkage',()=>{

@@ -7,7 +7,8 @@ const at='2026-11-20T00:00:00.000Z',csrfToken='C'.repeat(32);
 const profile={version:1,value:{displayName:'Synthetic owner',interestTopics:['AI_ML'],desiredJobTopics:[]},updatedAt:at};
 const choices={personalStorage:true,teamReview:false,externalAi:false,ncpStorage:false,presentation:false};
 const json=(data:unknown)=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json'}});
-const value=(kind:WorkspaceKind):OwnerWorkspaceValue=>{
+type CrudKind=Exclude<WorkspaceKind,'GUIDE_CHECKLIST'>;
+const value=(kind:CrudKind):OwnerWorkspaceValue=>{
   switch(kind){
     case 'EXPERIENCE':return {kind,dataMode:'SYNTHETIC',state:'DRAFT',title:'Synthetic practice',summary:''};
     case 'STUDY_PLAN':return {kind,dataMode:'SYNTHETIC',state:'DRAFT',courseId:'SYN-COURSE',targetTerm:'2027-1',planned:true};
@@ -15,7 +16,7 @@ const value=(kind:WorkspaceKind):OwnerWorkspaceValue=>{
     case 'ACTION_PLAN':return {kind,dataMode:'SYNTHETIC',state:'DRAFT',opportunityId:'SYN-OPP',task:'Read requirements',done:false};
   }
 };
-const record=(kind:WorkspaceKind,itemId='SYN-I1',version=1)=>({itemId,version,value:value(kind),updatedAt:at});
+const record=(kind:CrudKind,itemId='SYN-I1',version=1)=>({itemId,version,value:value(kind),updatedAt:at});
 const endpoints={EXPERIENCE:'/api/experience/cards',STUDY_PLAN:'/api/study-plans',
   BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'} as const;
 function harness(response:unknown){
@@ -51,7 +52,7 @@ describe('owner API client: typed private account and workspace, never demo iden
     const wrong=harness({consents:{version:2,choices:{...choices,externalAi:true},updatedAt:at}});
     await expect(wrong.owner.updateConsents({expectedVersion:1,choices})).rejects.toMatchObject({code:'VERSION_CONFLICT'});
   });
-  it.each(Object.keys(endpoints) as WorkspaceKind[])('creates and lists only %s at its declared route',async kind=>{
+  it.each(Object.keys(endpoints) as CrudKind[])('creates and lists only %s at its declared route',async kind=>{
     const item=record(kind),h=harness({item});
     expect(await h.owner.createWorkspace({itemId:item.itemId,value:item.value})).toEqual({item});
     expect(h.calls[1]!.url).toBe(endpoints[kind]);
