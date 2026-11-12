@@ -169,4 +169,4 @@ sudo ss -lntp
 - [NCP ACG](https://guide.ncloud-docs.com/docs/server-acg-vpc)
 - [NCP Network ACL](https://guide.ncloud-docs.com/docs/vpc-nacl-vpc)
 - [NCP 상품별 현재 요금](https://www.ncloud.com/charge/price/ko)
-- [HUFS One AI 운영 책임](NCP_OPERATIONS_2026.md)
+- [HUFS One AI 운영 책임](OPERATIONS.md#ncp-operations-2026)

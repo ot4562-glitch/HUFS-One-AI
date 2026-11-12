@@ -146,7 +146,7 @@ npm run start:api:synthetic-accounts
 npm run dev:web -- --mode synthetic
 ```
 
-시연 프로필과 실제 사용자 인증은 다른 체계입니다. 독립 빈 계정/가상 ADMIN은 [EMPTY_DEMO_RUNBOOK](docs/EMPTY_DEMO_RUNBOOK.md)에 따라 별도 모드로 실행합니다. [웹 사용 설명](apps/web/README.md) · [API 사용 설명](apps/api/README.md)
+시연 프로필과 실제 사용자 인증은 다른 체계입니다. 독립 빈 계정/가상 ADMIN은 [EMPTY_DEMO_RUNBOOK](docs/OPERATIONS.md#empty-demo-runbook)에 따라 별도 모드로 실행합니다. [웹 사용 설명](apps/web/README.md) · [API 사용 설명](apps/api/README.md)
 
 ### 3. 검증
 
@@ -245,7 +245,7 @@ GitHub Pages는 **실자료 없이 동작하는 합성 UI 미리보기**를 위�
 | **[③ 제품 구조와 동작 원리](docs/BEGINNER_PRODUCT_ARCHITECTURE.md)** | 비전공자·심사자 — React/API/DB, 추천/학업, RAG, 개인정보 |
 | **[기술 아키텍처 정본](Architecture.md)** | 개발자 — A00–A19 인터페이스·시점·권한 계약 |
 | **[현재 구현·검증](STATUS.md)** | 전체 팀 — 검증된 것과 미실행·구성 필요 영역 |
-| **[시연 매뉴얼](docs/DEMO_MANUAL.md)** | 심사자·발표자 — 합성 시연 경로와 설명 |
+| **[시연 매뉴얼](docs/OPERATIONS.md#demo-manual)** | 심사자·발표자 — 합성 시연 경로와 설명 |
 | **[보안·데이터 정책](docs/DATA_GOVERNANCE.md)** | 전체 팀 — 원본 CSV, 권리, 철회, 접근 제어 |
 | **[에이전트 자동 배정·데이터 요청 절차](docs/ISSUE_ASSIGNMENT_PLAYBOOK.md)** | 처음 참여하는 코딩 에이전트 — 고정 역할 이슈 동결, 새 기능/데이터 분리 배정, AI 인계 규칙 |
 | **[대규모 실제 자료 요청 #360](https://github.com/ot4562-glitch/HUFS-One-AI/issues/360)** | 김채윤 및 AI/웹 개발팀 — 13개 기능 공식 데이터/포스터·권리·Gold 요구 |

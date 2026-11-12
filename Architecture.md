@@ -185,7 +185,7 @@ Claude/GPT 기반 바이브코딩은 초안 코드·문서·테스트/재현을 
 
 참조 기술/서비스의 **사용자 문제 해결 원리**만 비교하여 채택하고 학교/외부 제품 UI·코드를 그대로 복제하지 않는다. npm direct/transitive/CycloneDX SBOM과 native/Python/pypdf/Poppler/bubblewrap·폰트·모델/그림·외부 원문·학교 로고의 LICENSE/NOTICE/상업·재배포/게시/전송 이용권을 별도 검수. UNKNOWN 증거는 배포 가능으로 승인하지 않는다.
 
-**정본 링크:** [HUFSAbility 공개 참고와 권리](reference/hufsability/INVENTORY.md) · [데이터 거버넌스](docs/DATA_GOVERNANCE.md) · [REVIEWER 접근](docs/REVIEWER_ACCESS.md) · [NCP 운영](docs/NCP_OPERATIONS_2026.md) · [실제 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
+**정본 링크:** [HUFSAbility 공개 참고와 권리](reference/hufsability/INVENTORY.md) · [데이터 거버넌스](docs/DATA_GOVERNANCE.md) · [REVIEWER 접근](docs/REVIEWER_ACCESS.md) · [NCP 운영](docs/OPERATIONS.md#ncp-operations-2026) · [실제 인수](docs/HUMAN_ACCEPTANCE_GATE_20261104.md).
 
 
 ## 2026-11-06 현행 구현 보충 (규범 및 출시 조건은 그대로)
