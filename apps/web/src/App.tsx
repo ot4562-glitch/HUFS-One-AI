@@ -26,6 +26,7 @@ import type {OwnerInsightsPort} from './features/owner-insights/OwnerInsightsPan
 import type {OwnerPreparationPort} from './features/owner-preparation/OwnerPreparationPanel.js';
 import type {DemoController, DemoViewState} from './app/index.js';
 import {AppShell} from './shell/AppShell.js';
+import {FeatureUniverse, ProductRail} from './features/discovery/FeatureUniverse.js';
 import {AreaNav, PageBanner} from './shell/PageBanner.js';
 import {areaOf} from './shell/areas.js';
 import {DemoSelector} from './shell/DemoSelector.js';
@@ -165,7 +166,9 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} />
+      {path === '/' && <ProductRail navigate={navigate} />}
       {area ? <div className="layout"><AreaNav area={area} path={path} navigate={navigate} /><div className="layout__body">{page.body}</div></div> : page.body}
+      {path === '/' && <FeatureUniverse navigate={navigate} />}
     </AppShell>
   );
 }
