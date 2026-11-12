@@ -102,3 +102,11 @@ Windows Python stdout 기본 코드페이지로 문자가 손실되는 실험 ha
 현재 #445/#449/#519 본문을 재대조하면서 버전 검사 기준이 호출자 객체를 계속 참조하는 결함을 확인했다. 실제 수집 callback이 HTTP 이후 expected datasetRevision과 live manifest를 함께 바꾸면 기존 실행기가 NEW_DRAFT를 저장했고, loader 대기 중 reader 범위 확대도 허용했다. 두 반례를 실패로 재현한 뒤 executor 생성 시 expected/reader를 검증·복사·동결하도록 수정했다. live loader의 조회와 메서드 this 바인딩은 유지하며, 새 배포는 새 executor를 구성해야 한다. 단독 handshake도 await 전에 reader 범위를 복사·검증한다.
 
 버전/취득/브라우저/운영 구성 집중 회귀 42개와 타입 검사·API 빌드 PASS. 실제 고정 CheerioCrawler와 컴파일된 executor 통합 3개도 PASS했다. 별도 코드 검토에서 남은 차단 결함은 없었다. 이 수정은 런타임 버전의 일관성 검사이며, **수집·변경 없음 관측 원장에 실제 실행 버전 전체를 영속 기록하는 요구는 아직 남아 있다**. 현재 writer의 새 원본과 source_check_observations INSERT에는 git/build/migration/adapter/dataset/schema manifest를 기록하지 않는다. 다음 구현은 이 private 이력 결속이며, 이를 기존 handshake 통과만으로 완료 처리하지 않는다.
+
+### 수집·관측의 실행 버전 영속 기록 — #445/#449
+
+위 단계의 미연결 항목을 `source_ingest_runtime_receipts`로 구현했다. 새 원본과 모든 동일 내용 200/304 확인 경로는 고정 git/build/migration/adapter/dataset/schema manifest를 private writer에 전달한다. writer는 비동기 SQL 전에 검증·직렬화하고 원본 또는 관측과 같은 트랜잭션에 기록한다. SQL은 해당 source/판본·원본·이벤트 시각/응답 상태를 결속하고 누락/추가 JSON 필드·잘못된 버전을 거부한다. UPDATE/DELETE/TRUNCATE와 PUBLIC 접근도 거부한다. 원본/관측 저장 실패를 포함해 receipt 실패 시 전체 트랜잭션을 롤백한다. legacy에 버전을 추정해 채우거나 검수일/ACTIVE를 승격하지 않는다.
+
+새 migration은 temporal source/관측 테이블 뒤에 적용하며 private writer의 명시적 INSERT grant가 필요하다. 실행기 runtime이 구성된 경우에만 새 테이블을 쓰므로 기존 수동/legacy 저장을 임의 manifest로 표시하지 않는다. 실제 아티팩트 승인·NCP 설치 증거를 receipt로 대체하지 않는다.
+
+수집·시간 판본·브라우저·운영 구성 집중 회귀 35개 파일/483개 시험 PASS, 로컬 SQL opt-in 1개는 기본 SKIP이다. 이를 별도로 켜 실제 10개 migration·writer를 실행한 PGlite/취득/receipt 시험 24개 PASS를 확인했다. 실제 SQL로 정확한 3종 receipt, 공개 조회 차단·수정/삭제/절단 거부, 잘못된 manifest/관측 binding과 원본·head·관측 롤백을 확인했다. 동일 proof를 네이티브 disposable PostgreSQL suite에도 추가했으나 다중 연결/NCP는 NOT_RUN이다. 타입 검사·API 빌드와 실제 CheerioCrawler/컴파일된 executor 통합 3개 PASS. 별도 코드 검토에서 남은 차단 결함은 없었다.

@@ -112,6 +112,7 @@ export function createApprovedDurableSourceExecutor(options:{
   if(native&&typeof options.budget?.reserve!=='function')
     throw new Error('Source refresh budget configuration required');
   const runtimeVersion=options.runtimeVersion?pinSourceRuntimeVersion(options.runtimeVersion):undefined;
+  const runtimeAudit=runtimeVersion?{runtimeManifest:runtimeVersion.expected}:{};
   const now=options.now??(()=>new Date().toISOString());
   const requireVersion=async(sourceId:string,permissionRef:string)=>{
     if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{sourceId,permissionRef,now:now()});
@@ -211,7 +212,7 @@ export function createApprovedDurableSourceExecutor(options:{
           throw new Error('Source rights changed during conditional fetch');
         await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.observeUnchanged({sourceId:input.sourceId,
-          revisionId:head.revisionId,checkedAt:now(),responseStatus:304});
+          revisionId:head.revisionId,checkedAt:now(),responseStatus:304,...runtimeAudit});
         return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
       }
       if(response.status!==200)throw new Error('Unapproved source response');
@@ -240,7 +241,7 @@ export function createApprovedDurableSourceExecutor(options:{
             throw new Error('Source rights changed during PDF check');
           const checkedAt=now();
           await requireVersion(input.sourceId,input.permissionRef);
-          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200,...runtimeAudit});
           await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
             canonicalUrl:u.href,checkedAt,etag,lastModified});
@@ -285,7 +286,7 @@ export function createApprovedDurableSourceExecutor(options:{
             throw new Error('Source rights changed during image check');
           const checkedAt=now();
           await requireVersion(input.sourceId,input.permissionRef);
-          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200,...runtimeAudit});
           await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
             canonicalUrl:u.href,checkedAt,etag,lastModified});
@@ -346,7 +347,7 @@ export function createApprovedDurableSourceExecutor(options:{
         if(revalidateMedia)await revalidateMedia();
         await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.observeUnchanged({sourceId:input.sourceId,
-          revisionId:head.revisionId,checkedAt,responseStatus:200});
+          revisionId:head.revisionId,checkedAt,responseStatus:200,...runtimeAudit});
         await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.storeHttpValidators({sourceId:input.sourceId,
           revisionId:head.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
@@ -373,7 +374,7 @@ export function createApprovedDurableSourceExecutor(options:{
       if(revalidateMedia)await revalidateMedia();
       await requireVersion(input.sourceId,input.permissionRef);
       await options.writer.append({revision,paragraphs,originalBytes:bytes,
-        permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{}),...(pdfInput??{}),
+        permissionReviewed:true,...runtimeAudit,...(image?{imageEvidence:image.evidence}:{}),...(pdfInput??{}),
         ...(browser?{browserEvidence:browser.evidence,browserDomBytes:browser.domBytes}:{})});
       if(revalidateMedia)await revalidateMedia();
       await requireVersion(input.sourceId,input.permissionRef);

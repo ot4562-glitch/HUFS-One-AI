@@ -23,6 +23,7 @@ import {proveSourcePdfPg} from './source-pdf-live-slice.js';
 import {proveSourceDocumentPg} from './source-document-live-slice.js';
 import {proveSourceRefreshBudgetPg} from './source-refresh-budget-live-slice.js';
 import {proveSourceBrowserPg} from './source-browser-live-slice.js';
+import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -71,6 +72,7 @@ const migrationNames=[
   '20261101_demo_overlays.sql',
   '20261101_verified_source_rights.sql',
   '20261112_source_browser_evidence.sql',
+  '20261113_source_runtime_receipts.sql',
   '20261103_ai_budget.sql',
   '20261103_ai_provider_inputs.sql',
   '20261103_ai_provider_results.sql',
@@ -188,6 +190,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await proveSourceDocumentPg(admin,temporal);
     await proveSourceRefreshBudgetPg(admin,temporal);
     await proveSourceBrowserPg(admin,temporal);
+    await proveSourceRuntimeReceipts(admin,temporal);
   });
 
   const billingHash='a'.repeat(64),usageReceipt='b'.repeat(64);

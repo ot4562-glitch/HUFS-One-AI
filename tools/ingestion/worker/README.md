@@ -191,6 +191,41 @@ with `HUFS_SOURCE_BROWSER_LINUX=1`. No runtime image, source rights, account or
 NCP installation is manufactured by that test. Real Linux execution is NOT_RUN
 in this Windows development session.
 
+### Private runtime execution receipts (#445/#449)
+
+Apply `infra/sql/20261113_source_runtime_receipts.sql` after the temporal source
+tables, before deploying an executor configured with a runtime-version port.
+Explicitly grant INSERT on `source_ingest_runtime_receipts` to the private source
+writer. Only a separately authorized private audit role needs SELECT. PUBLIC
+has no access; the public API, head-reader metadata and UI do not expose the
+manifest. No UPDATE/DELETE/TRUNCATE privileges or new approval power are needed.
+
+The immutable receipt binds source/revision, checked time, REVISION/OBSERVATION
+kind and response status to the exact pinned git/build/migration/adapter/dataset/
+schema manifest. The writer snapshots/validates the manifest before SQL and
+inserts it in the original or observation transaction. Failed receipt storage
+rolls back the new original/head or unchanged observation. SQL independently
+requires the corresponding persisted original/event and exact time/status,
+validates the six-field manifest and rejects mutation/truncation. New originals,
+identical 200 responses, conditional 304 responses and image/PDF byte matches
+use the same contract. A current runtime must still pass the live handshake
+immediately before persistence. A receipt is execution provenance, not proof of
+artifact approval, NCP deployment, source rights or independent human review.
+
+Legacy/manual writers without runtime configuration do not get guessed or
+backfilled manifests. Native crawler/browser configurations require the runtime
+port and therefore pass their pinned manifest. A fresh deployment constructs a
+new executor; it cannot mutate an existing executor's target. Verification and
+approval times remain in the independent review ledger; receipt insertion does
+not upgrade `lastVerifiedAt` or ACTIVE status.
+
+`source-runtime-receipt.test.ts` covers snapshotting and transaction failure.
+`source-runtime-receipt-live-slice.ts` exercises actual SQL binding, strict JSON,
+private visibility, immutable history and full rollback; it runs in the native
+disposable PostgreSQL suite and the opt-in local PGlite proof. PGlite is a
+single-connection proof. Native multi-connection/NCP validation remains NOT_RUN
+in the current Windows session.
+
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
 pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled
 executor in `durable-acquisition.integration.mjs`. The integration test has

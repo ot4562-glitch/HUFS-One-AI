@@ -109,6 +109,14 @@ describe('#445 guarded source acquisition driver',()=>{
     expect(x.append.mock.calls[0]![0].originalBytes).toEqual(Buffer.from(text));
     expect(x.append.mock.calls[0]![0].revision.originalSha256).toBe(createHash('sha256').update(text).digest('hex'));
     expect(x.storeHttpValidators.mock.calls[0]![0].etag).toBe('"RAW"');
+    expect(x.append.mock.calls[0]![0].runtimeManifest).toEqual(x.runtime.expected);
+  });
+  it('binds an unchanged 304 observation to the same pinned deployment manifest',async()=>{
+    const x=harness(async({request})=>{await request();},()=>new Response(null,{status:304}),true);
+    await x.service.execute(input);
+    expect(x.observeUnchanged).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      revisionId:'SYN-OLD',responseStatus:304,runtimeManifest:x.runtime.expected,
+    }));
   });
   it.each(['zero','twice','throws'])('refuses a %s driver without storing a draft',async mode=>{
     const x=harness(async({request})=>{

@@ -5,6 +5,7 @@ import {readFile} from 'node:fs/promises';
 import type {Pool} from 'pg';
 import {describe,it} from 'vitest';
 import {proveSourceBrowserPg} from './source-browser-live-slice.js';
+import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js';
 
 describe.skipIf(process.env.HUFS_SOURCE_BROWSER_PGLITE!=='1')('local synthetic browser SQL via PGlite',()=>{
   it('retains separate bytes, requires review and invalidates changed/revoked dependencies',async()=>{
@@ -15,7 +16,7 @@ describe.skipIf(process.env.HUFS_SOURCE_BROWSER_PGLITE!=='1')('local synthetic b
       for(const file of ['20261031_temporal_evidence.sql','20261101_source_review.sql',
         '20261105_source_image_evidence.sql','20261109_source_image_ocr_unique.sql','20261105_source_pdf_evidence.sql',
         '20261101_source_http_validators.sql','20261111_source_korean_document_media.sql',
-        '20261101_verified_source_rights.sql','20261112_source_browser_evidence.sql'])
+        '20261101_verified_source_rights.sql','20261112_source_browser_evidence.sql','20261113_source_runtime_receipts.sql'])
         await db.exec(await readFile(new URL('../../infra/sql/'+file,import.meta.url),'utf8'));
       await db.exec(`CREATE ROLE synthetic_browser_reader NOLOGIN;
         GRANT USAGE ON SCHEMA public TO synthetic_browser_reader;
@@ -26,6 +27,7 @@ describe.skipIf(process.env.HUFS_SOURCE_BROWSER_PGLITE!=='1')('local synthetic b
         await tx.exec('SET LOCAL ROLE synthetic_browser_reader');return tx.query(sql,[...params]);
       })};
       await proveSourceBrowserPg(admin as unknown as Pool,reader as unknown as Pool);
+      await proveSourceRuntimeReceipts(admin as unknown as Pool,reader as unknown as Pool);
     }finally{await db.close();}
   },30000);
 });

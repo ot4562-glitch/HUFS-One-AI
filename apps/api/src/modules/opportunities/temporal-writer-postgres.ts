@@ -1,15 +1,24 @@
 import {createHash} from 'node:crypto';
 import {
-  SourceRevisionVNextSchema,RevisionInvalidationVNextSchema,
+  SourceRevisionVNextSchema,RevisionInvalidationVNextSchema,NcpIngestionDraft as D,
 } from '@hufs-one/contracts';
 import type {SourceRevisionVNext,RevisionInvalidationVNext} from '@hufs-one/contracts';
-import type {ReviewerSqlPool} from '../auth/reviewer-postgres.js';
+import type {ReviewerSqlPool,ReviewerSqlConnection} from '../auth/reviewer-postgres.js';
 import {hashRevisionParagraphs} from './revision-ledger.js';
 import type {RevisionParagraph} from './revision-ledger.js';
 import {parseSourceImageEvidence} from './source-image-evidence.js';
 import {parseSourcePdfEvidence,type SourcePdfRaster} from './source-pdf-evidence.js';
 import {validatePdfRasters} from './source-pdf-rasters.js';
 import {parseSourceBrowserEvidence} from './source-browser-evidence.js';
+
+async function runtimeReceipt(c:ReviewerSqlConnection,input:{sourceId:string;revisionId:string;checkedAt:string},
+  kind:'REVISION'|'OBSERVATION',status:200|304,manifest:string|null){
+  if(manifest!==null)await c.query(`INSERT INTO source_ingest_runtime_receipts(
+    source_id,revision_id,checked_at,event_kind,response_status,manifest)
+    VALUES($1,$2,$3,$4,$5,$6::jsonb)`,[
+      input.sourceId,input.revisionId,input.checkedAt,kind,status,manifest,
+    ]);
+}
 
 /**
  * Transactional Postgres source writer. Cannot be reached by browser routes.
@@ -29,9 +38,11 @@ export class PostgresSourceRevisionWriter {
     pdfRasters?:readonly SourcePdfRaster[];
     browserEvidence?:unknown;
     browserDomBytes?:Uint8Array;
+    runtimeManifest?:unknown;
   }):Promise<RevisionInvalidationVNext|null>{
     if(!input.permissionReviewed)throw new Error('Missing approved source rights');
     const r=SourceRevisionVNextSchema.parse(input.revision);
+    const runtime=input.runtimeManifest===undefined?null:JSON.stringify(D.VersionHandshakeDraftSchema.parse(input.runtimeManifest));
     if((r.mediaKind==='HWP'||r.mediaKind==='HWPX')
       &&(r.status==='ACTIVE'||r.lastVerifiedAt!==undefined))
       throw new Error('Source document requires independent original review');
@@ -162,6 +173,7 @@ export class PostgresSourceRevisionWriter {
         await c.query(`INSERT INTO source_invalidation_deliveries(event_id,target)
           SELECT $1, unnest($2::text[])`,[event.eventId,event.invalidates]);
       }
+      await runtimeReceipt(c,{sourceId:r.sourceId,revisionId:r.revisionId,checkedAt:r.fetchedAt},'REVISION',200,runtime);
       await c.query('COMMIT');started=false;
       return event;
     }catch(e){
@@ -199,7 +211,9 @@ export class PostgresSourceRevisionWriter {
 
   async observeUnchanged(input:{
     sourceId:string;revisionId:string;checkedAt:string;responseStatus:200|304;
+    runtimeManifest?:unknown;
   }):Promise<void>{
+    const runtime=input.runtimeManifest===undefined?null:JSON.stringify(D.VersionHandshakeDraftSchema.parse(input.runtimeManifest));
     const c=await this.pool.connect();
     let started=false;
     try{
@@ -216,6 +230,7 @@ export class PostgresSourceRevisionWriter {
           input.sourceId,input.checkedAt,input.revisionId,input.responseStatus,
         ]);
       // Never modify lastVerifiedAt or an immutable source revision here.
+      await runtimeReceipt(c,input,'OBSERVATION',input.responseStatus,runtime);
       await c.query('COMMIT');started=false;
     }catch(e){
       if(started)try{await c.query('ROLLBACK');}catch{/* fail closed */}
