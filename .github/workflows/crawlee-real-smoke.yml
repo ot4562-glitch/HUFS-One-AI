@@ -56,3 +56,5 @@ jobs:
           npm ci --ignore-scripts --no-audit --no-fund
           npm run build:api
           node --test tools/ingestion/worker/durable-acquisition.integration.mjs
+          node --test tools/ingestion/worker/approved-browser-routes.node.test.mjs tools/ingestion/worker/approved-playwright-linux.node.test.mjs
+          node --experimental-test-module-mocks --test tools/ingestion/worker/approved-playwright-extractor.node.test.mjs

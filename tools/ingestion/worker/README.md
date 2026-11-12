@@ -67,10 +67,10 @@ test one approved synthetic failure before enabling a live schedule. These
 host operations and actual alert delivery have not been executed locally.
 `node tools/ingestion/refresh-alert-cli.mjs --plan` remains offline and inert.
 
-Playwright/browser acquisition still needs implementation and tests. Actual schedules, manifests,
+Playwright/browser rendering is implemented below, default off. Actual schedules, manifests,
 SQL privileges, site policies and NCP installation remain NOT_CONNECTED/NOT_RUN.
 
-### Browser runtime foundation (#445, rendering integration pending)
+### Browser runtime foundation (#445)
 
 `apps/api/src/modules/opportunities/source-browser-runtime.ts` verifies the
 separate Chromium runtime without launching a browser or fetching a source.
@@ -96,11 +96,10 @@ entries, unknown targets, escaping links and cycles fail closed. Links resolve
 in filesystem order before subsequent `..` components. The fixed
 `usr/lib/chromium/chromium` target must be an executable native ELF file.
 
-The current synthetic tests simulate metadata/bytes and execute only shell
-argument validation. They do not establish that an NCP rootfs, user namespaces
-or Chromium is installed or runnable. The next implementation must connect
-this boundary to Crawlee/Playwright and serve only already-authorized captured
-bytes. The following storage contract is implemented independently of rendering.
+The runtime tests simulate metadata/bytes and execute only shell argument
+validation. They do not establish that an NCP rootfs, user namespaces or
+Chromium is installed or runnable. The renderer below connects this boundary
+to Crawlee/Playwright and serves only already-authorized captured bytes.
 
 ### Browser DOM proof and review storage
 
@@ -135,7 +134,62 @@ enabled PGlite proof can exercise the same slice on Windows:
 It requires an operator-installed development-only PGlite at
 `local_only/sql-validation`; the test does not install packages or open a socket.
 PostgreSQL-WASM is a single-connection proof, not native pool/concurrency or NCP
-acceptance. Actual browser rendering still needs the Crawlee adapter connection.
+acceptance. The renderer's actual Linux runtime test remains opt-in/NOT_RUN.
+
+### Private captured-resource rendering
+
+The worker pins `playwright-core` 1.64.1 and exports async
+`createApprovedPlaywrightExtractor({runtime, resources, rootSelector, enabled})`.
+Pass the returned port as `browserExtractor` to `createOperatorApprovedSource`.
+`enabled` defaults to false; merely importing/building the worker does not launch
+or download Chromium. The operator supplies the verified runtime manifest and
+`createPostgresSourceBrowserResources({pool, actorRef, registrations})` from the
+compiled API. Each private registration binds exact source/permission/URL,
+SCRIPT/STYLE/JSON/IMAGE kind and a permitted explicit MIME. The resource pool
+needs private original-byte/rights access and must remain separate from public
+retrieval and head-reader roles. This loader reads already-retained originals;
+it does not discover, fetch or approve missing resources.
+
+The durable executor requires current preflight, runtime-version and budget
+ports for browser mode even without a native acquisition driver. It retains
+the fetched original independently from DOM, rejects 304/conditional reuse,
+and requires matching original, paragraphs and stable rendering hash for an
+unchanged observation. Renderer/resource changes create a new review draft.
+Disabling rendering does not inherit earlier browser approval. Explicitly grant
+the private head reader SELECT on `source_browser_revision_metadata_vnext`;
+the two-column view exposes only revision ID and rendering hash, never bytes.
+
+The renderer verifies root-owned runtime artifacts before work and immediately
+before launch, and checks the actual Chromium version. Its custom launcher
+discards Crawlee's proxy and anti-detection flag mutations and passes only fixed
+verified launch options to Chromium. One fresh incognito context blocks service
+workers/downloads and starts with no stored credentials. Context-wide request
+routes replay exact original/resource byte copies or abort; there is no fetch,
+continue or fallback. Unknown URLs, repeated navigation, other frames, cookies,
+authorization, inappropriate resource kinds, WebSockets, popups, downloads and
+script errors invalidate the capture. CSP additionally blocks workers, frames,
+forms, base URLs and unapproved active formats. Request replay is capped at
+64 requests/2 MiB. UTF-8/EUC-KR HTML content types are explicit; retained DOM is
+UTF-8 and capped at 256 KiB. A network-idle snapshot is draft evidence, not proof
+that an arbitrary site's asynchronous content is complete.
+
+Execution has a 20-second deadline and separately bounded one-second cleanup.
+All cleanup paths are attempted, including a browser that finishes launching
+after timeout. Current source and resource authorities are checked before
+rendering, capture and persistence. The SQL review/dependency checks still gate
+activation; successful JavaScript execution grants no approval.
+
+`approved-browser-routes.node.test.mjs` exercises byte replay and denial cases.
+After `npm run build:api`, run the SDK/process harness with
+`node --experimental-test-module-mocks --test tools/ingestion/worker/approved-playwright-extractor.node.test.mjs`.
+It mocks SDK/process boundaries and is not real-browser evidence. The real
+`approved-playwright-linux.node.test.mjs` uses actual Crawlee/Chromium with
+synthetic in-memory JS/JSON and refuses unregistered requests. It is skipped by
+default. A nonroot Linux operator must independently install the fixed wrapper,
+bwrap/rootfs and root-owned `/etc/hufs-one/source-browser-runtime.json`, then run
+with `HUFS_SOURCE_BROWSER_LINUX=1`. No runtime image, source rights, account or
+NCP installation is manufactured by that test. Real Linux execution is NOT_RUN
+in this Windows development session.
 
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
 pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled

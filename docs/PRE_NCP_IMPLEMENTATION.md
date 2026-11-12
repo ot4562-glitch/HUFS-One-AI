@@ -82,3 +82,11 @@
 `createPostgresSourceBrowserResources`는 private 운영자가 등록한 정확한 URL·source·permission·종류별 MIME만 읽는다. 현재 source head의 불변 원본, 해당 운영자의 최신 독립 권리 receipt 및 COLLECT/STORE/SEARCH를 확인하고 DB/호출 시각 중 먼저 도래한 만료도 거부한다. 자원당 256 KiB·전체 16개/1 MiB 한도를 적용하며 SQL 전송 자체도 원본 크기를 제한한다. 반환 바이트를 복사하고 렌더링 이후 revalidate에서 판본과 receipt의 불변 사실을 재조회한다. URL 발견/네트워크/권리 승인/원본 생성 기능은 없다. 원본을 읽을 private resource-reader 역할은 일반 head/retrieval 역할과 분리해야 한다.
 
 18개 합성 단위 시험과 실제 SQL을 실행하는 PGlite 통합 1개 PASS. 통합에서 정확한 바이트/receipt 결속, head 정정 및 권리 철회 이후 revalidate 실패를 확인했다. 타입 검사 PASS. 별도 코드 검토에서 차단 결함은 없었다. 실제 브라우저 렌더러와 이 loader를 연결하는 단계는 계속 진행한다.
+
+### Crawlee/Playwright 렌더러 연결
+
+고정 `playwright-core` 1.64.1과 실제 `PlaywrightCrawler` 어댑터를 추가했다. 검증된 런타임 옵션만 실제 Chromium에 전달하고 Crawlee가 추가한 proxy/옵션은 넘기지 않는다. fresh incognito context에서 권리 검증된 보존 바이트만 재생하며 미등록 URL·다른 프레임·재탐색·인증·WebSocket·다운로드·script 오류를 전체 실패로 처리한다. 원문/DOM을 구별하고 최대 64 요청/2 MiB 및 20초 실행·1초 종료 제한을 둔다. 성공한 DOM도 NEEDS_REVIEW이며 임의 사이트의 지연 로딩 완료를 보장하지 않는다.
+
+별도 검토에서 종료 호출 무한 대기와 늦은 launch의 소유권 누락을 찾았다. 종료 무한 대기를 실패하는 시험으로 재현한 뒤 각 종료 경로에 독립 제한을 적용하고, 타임아웃 이후 생성되는 브라우저도 정리하도록 수정했다. SDK 모의 9개 시험은 Node 22.22.2/24.15.0 모두 PASS. 바이트 재생 13개와 기존 실제 Cheerio/컴파일된 executor 7개 PASS. 실제 Linux Chromium/namespace 합성 시험은 추가했지만 런타임이 없는 현재 Windows에서 1개 명시적 SKIP이며 NOT_RUN이다. CI에 재생/SDK 모의 시험을 연결했다. 실제 사이트·NCP 연결·사람 검수는 수행하지 않았다. OSS 비교 및 전체 이슈의 남은 pre-NCP 구현 감사·최종 PR은 계속 남아 있다.
+
+이 연결 단계의 전체 회귀는 Node 24.15.0에서 432개 파일/5,087개 시험 PASS, 13개 파일/105개 시험 명시적 SKIP이다. 타입 검사·API 빌드·공개 경계 172개 PASS. 실제 Crawlee 3.18.2 생성자에서 새 custom launcher/incognito 옵션을 구성·종료하는 검증도 PASS했으며 브라우저는 실행하지 않았다. 실행기/저장소/렌더러 코드 검토에서 발견한 사항을 반영했고, 후속 검토에 남은 차단 결함은 없었다. 모의·단일 연결 SQL·SDK 구성·실제 Linux 실행의 증거 수준을 구별한다.
