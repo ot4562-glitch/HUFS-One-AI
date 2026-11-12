@@ -337,3 +337,38 @@ test('product heading aligns with the shared header and stays compact on mobile'
   const overflow = await noHorizontalOverflow(page);
   expect(overflow.scroll, JSON.stringify(overflow.offenders)).toBeLessThanOrEqual(overflow.width);
 });
+
+
+test('editorial feature universe exposes every listed function without making school-only entries clickable', async ({page}) => {
+  for (const width of [360, 1440]) {
+    await page.setViewportSize({width, height: 900});
+    await page.goto('/');
+    const universe = page.locator('#feature-directory');
+    await expect(universe.getByRole('heading', {name: '한 화면에서 모든 기능 찾기.'})).toBeVisible();
+    await expect(page.locator('.product-rail__tile')).toHaveCount(4);
+    await expect(universe.locator('.feature-universe__item--unavailable').first()).toBeVisible();
+    expect(await universe.locator('.feature-universe__item--unavailable a').count()).toBe(0);
+    const initial = await universe.locator('.feature-universe__item').count();
+    await universe.getByRole('searchbox', {name: '기능 검색'}).fill('교환학생');
+    const filtered = await universe.locator('.feature-universe__item').count();
+    expect(filtered).toBeGreaterThan(0);
+    expect(filtered).toBeLessThan(initial);
+    await universe.getByRole('button', {name: '검색 조건 초기화'}).click();
+    await expect(universe.locator('.feature-universe__item')).toHaveCount(initial);
+    await universe.getByRole('button', {name: '인증·운영'}).click();
+    await expect(universe.locator('.feature-universe__item--owner').first()).toBeVisible();
+    const overflow = await noHorizontalOverflow(page);
+    expect(overflow.scroll, JSON.stringify(overflow.offenders)).toBeLessThanOrEqual(overflow.width);
+  }
+});
+
+test('menu filters keep all canonical routes on reset and never link an unsupported school function', async ({page}) => {
+  await page.goto('/menu');
+  const menu = page.locator('.menu--page');
+  const initial = await menu.locator('.menu__item').count();
+  await menu.getByRole('searchbox', {name: '메뉴 검색'}).fill('장학');
+  expect(await menu.locator('.menu__item').count()).toBeLessThan(initial);
+  await menu.getByRole('button', {name: '전체 다시 보기'}).click();
+  await expect(menu.locator('.menu__item')).toHaveCount(initial);
+  expect(await menu.locator('.menu__item.is-off a').count()).toBe(0);
+});
