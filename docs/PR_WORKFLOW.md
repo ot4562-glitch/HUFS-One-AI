@@ -2,6 +2,13 @@
 
 현재 `main`과 실제 등록된 코드/계약·테스트를 정본으로 판단합니다. 이슈/PR 숫자 또는 이전 커밋 PASS를 최신 코드 검증으로 전용하지 않습니다.
 
+## 2026-11-12 사후 병합 정책 검증 — 정본
+
+- `main` [`3c6b87b`](https://github.com/ot4562-glitch/HUFS-One-AI/commit/3c6b87b1f28e360b37f90a0dc59557d3f9e30b74) 기준 열린 PR은 0건입니다. 새 문서·코드 PR도 **작성자 외 협업자 현재 HEAD `APPROVED` + 필수 CI + 미해결 결함 검토**를 만족하기 전 병합하지 않습니다. 단순 COMMENT/CI SUCCESS/SKIPPED는 APPROVED가 아닙니다.
+- [#503](https://github.com/ot4562-glitch/HUFS-One-AI/pull/503): 최신 HEAD 협업자 리뷰 0건, `independent-collaborator-review` FAILURE(13개 SUCCESS, Pages 1개 SKIPPED). 이미 병합됨. [#502](https://github.com/ot4562-glitch/HUFS-One-AI/pull/502): 리뷰 0건, 같은 검수 검사 FAILURE(14개 SUCCESS, Pages 1개 SKIPPED). **두 병합은 현행 규칙 미준수에 대한 사후 검토 부채**이며 성공으로 소급하지 않습니다.
+- [#478](https://github.com/ot4562-glitch/HUFS-One-AI/pull/478): FAQ 출처판본 충돌 격리 코드가 병합됐지만 리뷰 목록에서 소유자 COMMENT만 확인(협업자 APPROVED 없음). [#486](https://github.com/ot4562-glitch/HUFS-One-AI/pull/486): `taewangim-alt` 협업자의 정확한 HEAD `788345d` APPROVED 확인. [#489](https://github.com/ot4562-glitch/HUFS-One-AI/pull/489): AI QA 협업자 COMMENT로 공식 문의처 전화·이메일 과차단 반례를 지적; QA 수리 없이 모든 경계를 검증한 것으로 표시 금지.
+- **조치:** 실효적 병합 차단은 저장소 보호 규칙/required check 관리자 검증이 필요. 후속 PR에서 독립 재검토·수정 코드를 받아 현재 HEAD를 검증한다. 이미 병합된 PR의 `APPROVED`를 꾸며 추가하거나 원래 리뷰를 편집하지 않음. 보호 규칙 확인 전 신규 PR은 리뷰만 요청하고 자동/수동 병합 보류.
+
 ## 2026-11-11 사용자 지시 — 최신 HEAD 협업자 승인 없이는 병합 금지 (현행 우선)
 
 - 과거 2026-11-09의 독립 리뷰 선택 및 자동 검사 폐기 지침은 **이후 사용자 지시로 변경**되었습니다. 아래 2026-11-09 내용은 역사적 기록으로만 읽으며 현재 병합 권한을 부여하지 않습니다.
