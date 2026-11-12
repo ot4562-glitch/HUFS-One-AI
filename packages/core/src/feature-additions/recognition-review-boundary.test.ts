@@ -41,7 +41,11 @@ describe('#346 private OCR classification never becomes official recognition',()
     ['expired official application period',{rule:recognitionRule({
       applicationEndsAt:'2026-11-01T00:00:00Z'})},'REJECTED'],
   ] as const)('fails closed on %s',(_case,overrides,expected)=>{
-    expect(classifyProofCandidate({...candidate,...overrides}).status).toBe(expected);
+    // Runtime payloads can omit optional metadata; strict TypeScript fixtures
+    // cannot express an explicitly undefined property with exactOptionalTypes.
+    const raw=Object.fromEntries(Object.entries({...candidate,...overrides})
+      .filter(([,value])=>value!==undefined));
+    expect(classifyProofCandidate(raw as typeof candidate).status).toBe(expected);
   });
   it.each(['CERTIFICATE','PARTICIPATION_PROOF','ACTIVITY_REPORT','AWARD_PROOF','OTHER'])(
     'candidate kind %s requires that kind in independently verified document rule',kind=>{
