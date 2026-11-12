@@ -1,5 +1,7 @@
 # NCP 서버 개설·초기 보안 가이드 — 처음 시작하는 사람용
 
+> **2026-11-12 현행 문서 동기화:** [PR 36개·Issue 31개 감사 및 33/30 OPEN 스냅샷](REVIEW_AND_ISSUE_AUDIT_20261112.md). 이전 완료/PR 수치·운영 상태는 과거 시점 기록입니다. NCP 실운영·기관 권리/실원문·독립 Gold는 별도 인수이며 `NOT_CONNECTED / NOT_RUN / RELEASE_BLOCKED`를 유지합니다.
+
 > **현행 2026-11-11 참고:** 아래 2026-11-06 예시는 실제 서버/요금/SKU 생성 완료 증거가 아닙니다. 이전 #276은 **보관·이관 완료** 이슈이며, 현행 개발은 [#445](https://github.com/ot4562-glitch/HUFS-One-AI/issues/445), 미확정 운영자 정책은 [#449](https://github.com/ot4562-glitch/HUFS-One-AI/issues/449)에서 관리합니다. 5명은 NCP 개별 Sub Account/SSH 키·최소권한으로 접근하고 운영 원본/권리·Gold/DB/키는 NCP 안에만 저장합니다. GitHub의 [전수 감사](REVIEW_AND_ISSUE_AUDIT_20261111.md) 및 [운영 상태](NCP_OPERATIONS_2026.md)를 확인하세요. `CONFIGURATION_REQUIRED / NOT_RUN / RELEASE_BLOCKED` 유지.
 
 
