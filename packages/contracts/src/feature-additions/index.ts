@@ -269,3 +269,4 @@ export * from './owner-v2-catalog.js';
 export * from './owner-v2-insights.js';
 export * from './owner-preparation.js';
 export * from './proof-review.js';
+export * from './recognition-assets.js';

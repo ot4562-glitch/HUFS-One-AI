@@ -15,6 +15,7 @@ import {ApiFailure} from './auth/gates.js';
 import type {OwnerWorkspacePort} from './profiles/self-workspace-postgres.js';
 import {registerInternationalChecklistRoutes} from './owner-international-checklist-http.js';
 import {registerRecognitionProofRoutes} from './owner-recognition-proof-http.js';
+import {registerRecognitionAssetRoutes,validateRecognitionAssetsPort,type RecognitionAssetsPort} from './owner-recognition-assets-http.js';
 import {validateRecognitionProofServices,readRecognitionProofPage,recognitionActivityInfo,type RecognitionProofServices} from './owner-recognition-proof-service.js';
 import {withProofDeadline} from './profiles/recognition-cleanup-postgres.js';
 import {betaActor,betaRecheck,type BetaRouteVerifier} from './profiles/self-account-http.js';
@@ -71,6 +72,7 @@ export interface OwnerInsightsServices {
   quota:TrustedOwnerInsightsQuota;
   checklists?:Pick<OwnerWorkspacePort,'read'|'create'|'update'>;
   proofReviews?:RecognitionProofServices;
+  assets?:RecognitionAssetsPort;
 }
 export function validateOwnerInsightsServices(v:OwnerInsightsServices):void{
   if(!v||typeof v.source?.read!=='function'
@@ -80,6 +82,7 @@ export function validateOwnerInsightsServices(v:OwnerInsightsServices):void{
   if(v.checklists&&['read','create','update'].some(key=>typeof v.checklists?.[key as keyof typeof v.checklists]!=='function'))
     throw new Error('Owner guide checklist store required');
   if(v.proofReviews)validateRecognitionProofServices(v.proofReviews);
+  if(v.assets)validateRecognitionAssetsPort(v.assets);
 }
 const empty=z.strictObject({});
 const unique=<T extends {id:string}>(rows:readonly T[]):boolean=>
@@ -92,6 +95,7 @@ export function registerOwnerInsightsRoutes(input:{
   if(services)validateOwnerInsightsServices(services);
   registerInternationalChecklistRoutes({app,session,services,parse:raw=>Cases.parse(raw)});
   registerRecognitionProofRoutes({app,session,services,parse:raw=>Cases.parse(raw)});
+  registerRecognitionAssetRoutes({app,session,services});
   app.get('/api/owner/features/v2/insights/:kind',async(req,reply)=>{
     reply.header('Cache-Control','no-store');
     empty.parse(req.query);

@@ -1,6 +1,7 @@
 import type {DemoScreenView} from '../demo/sectionView.js';
 import {creditsText} from '../graduation/graduationView.js';
 import {InAppLink} from '../../shell/AppShell.js';
+import {UiIcon} from '../../design/UiIcon.js';
 
 /** "마감 임박" = a confirmed, still-open deadline within this many Seoul calendar days of asOf. */
 export const DUE_SOON_DAYS = 7;
@@ -46,9 +47,10 @@ export function buildTodaySummary(view: DemoScreenView): readonly SummaryCardVie
 /** P001 summary: three horizontal cards; the whole card is one link. Numbers are the screen's own. */
 export function TodaySummary({view, navigate}: {view: DemoScreenView; navigate: (p: string) => void}) {
   return (
-    <section className="summary" aria-label="오늘의 요약">
+    <section className="summary" id="today-summary" aria-label="오늘의 요약">
       {buildTodaySummary(view).map(c => (
         <InAppLink key={c.id} to={c.to} navigate={navigate} className={`summary__card summary__card--${c.id}`}>
+          <span className="summary__mark" aria-hidden="true"><UiIcon name={c.id === 'matched' ? 'briefcase' : c.id === 'due' ? 'calendar' : 'book'} /></span>
           <span className="summary__text">
             <span className="summary__label">{c.label}</span>
             {c.value

@@ -47,6 +47,8 @@ const Iso=z.iso.datetime({offset:true});
 const ProofRef=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).refine(v=>v!=='.'&&v!=='..');
 const proofPath=(activityId:string,id?:string,action?:string)=>'/api/owner/features/v2/recognition/'+encodeURIComponent(clientInput(ProofRef,activityId))
   +'/proofs'+(id!==undefined?'/'+encodeURIComponent(clientInput(ProofRef,id)):'')+(action?'/'+action:'');
+const assetPath=(activityId:string,id?:string,action?:string)=>'/api/owner/features/v2/recognition/'+encodeURIComponent(clientInput(ProofRef,activityId))
+  +'/assets'+(id!==undefined?'/'+encodeURIComponent(clientInput(V.RecognitionAssetIdSchema,id)):'')+(action?'/'+action:'');
 const WorkspaceQuerySchema=z.strictObject({afterId:Id.optional(),limit:Limit.optional()});
 const CatalogQuerySchema=z.strictObject({q:z.string().trim().min(2).max(100).optional(),
   afterId:CatalogId.optional(),limit:Limit.optional(),asOf:Iso.optional()});
@@ -437,6 +439,41 @@ export class HufsOwnerApiClient {
     const name=clientInput(V.OwnerInsightsKindSchema,kind);
     const result=await this.request('/api/owner/features/v2/insights/'+name,V.OwnerInsightsResponseSchema,{signal});
     requireMatchingReceipt(result.state==='NOT_CONNECTED'?result.kind===name:result.result.kind===name);
+    return result;
+  }
+  /** Owner-original uploads are private and never implicitly available to reviewer/demo sessions.
+   * Validate requested scope and every response receipt before returning a usable value. */
+  async getOwnerRecognitionAssetPolicy(activityId:string,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId);
+    const result=await this.request(assetPath(activity,undefined,'policy'),V.RecognitionAssetPolicyResponseSchema,{signal});
+    if(result.state==='READY')requireMatchingReceipt(result.activityId===activity);
+    return result;
+  }
+  async getOwnerRecognitionAssets(activityId:string,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId);
+    const result=await this.request(assetPath(activity),V.RecognitionAssetListResponseSchema,{signal});
+    if(result.state==='READY')requireMatchingReceipt(result.activityId===activity
+      &&result.items.every(item=>item.activityId===activity));
+    return result;
+  }
+  async uploadOwnerRecognitionAsset(activityId:string,change:z.input<typeof V.RecognitionAssetIntakeSchema>,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId),input=clientInput(V.RecognitionAssetIntakeSchema,change);
+    const result=await this.mutate(assetPath(activity),V.RecognitionAssetIntakeResponseSchema,'POST',input,signal);
+    if(result.state==='READY')requireMatchingReceipt(result.activityId===activity
+      &&result.contextVersion===input.contextVersion
+      &&result.requestId===input.requestId
+      &&result.item.activityId===activity&&result.item.sha256===input.sha256
+      &&result.item.size===input.size&&result.item.mimeType===input.mimeType);
+    return result;
+  }
+  async eraseOwnerRecognitionAsset(activityId:string,assetId:string,
+    change:z.input<typeof V.RecognitionAssetEraseSchema>,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId),asset=clientInput(V.RecognitionAssetIdSchema,assetId);
+    const input=clientInput(V.RecognitionAssetEraseSchema,change);
+    const result=await this.mutate(assetPath(activity,asset,'erase'),V.RecognitionAssetEraseResponseSchema,'POST',input,signal);
+    if(result.state==='READY')requireMatchingReceipt(result.activityId===activity&&result.assetId===asset
+      &&result.assetVersion===input.assetVersion&&result.originalErased===true
+      &&result.cleanupState==='PENDING'&&result.allComponentsErased===false);
     return result;
   }
   async getOwnerRecognitionProofs(activityId:string,signal?:AbortSignal){

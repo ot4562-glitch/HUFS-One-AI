@@ -5,14 +5,14 @@
  */
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {PersonalPurposeChoicesSchema} from '@hufs-one/contracts';
+import {PersonalPurposeChoicesSchema,FeatureAdditions as V} from '@hufs-one/contracts';
 import type {ReviewerSqlConnection,ReviewerSqlPool} from '../auth/reviewer-postgres.js';
 import {withProofDeadline} from './recognition-cleanup-postgres.js';
 import {recognitionProofId} from '../owner-recognition-proof-service.js';
 const Actor=z.string().regex(/^[A-Za-z0-9_.:@-]{1,200}$/),Id=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/);
 const Iso=z.iso.datetime({offset:true}),Version=z.number().int().min(1).max(Number.MAX_SAFE_INTEGER-1);
-const Hash=z.string().regex(/^[a-f0-9]{64}$/),Mime=z.enum(['image/png','image/jpeg','application/pdf']);
-const RequestId=z.string().regex(/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+const Hash=z.string().regex(/^[a-f0-9]{64}$/),Mime=V.RecognitionAssetMimeSchema;
+const RequestId=V.RecognitionAssetRequestIdSchema;
 export const RecognitionAssetGrantSchema=z.strictObject({actorId:Actor,activityId:Id,storageConsentVersion:Version,
   consentVersion:Id,rightsVersion:Id,expiresAt:Iso});
 export type RecognitionAssetGrant=z.infer<typeof RecognitionAssetGrantSchema>;
@@ -31,10 +31,8 @@ export interface RecognitionFileInspector{
 }
 const Inspection=z.strictObject({state:z.literal('CLEAN'),sha256:Hash,mimeType:Mime,receiptId:Id,inspectorVersion:Id,
   inspectedAt:Iso,expiresAt:Iso});
-export const RecognitionAssetMetadataSchema=z.strictObject({assetId:Id,assetVersion:Id,proofId:Id,activityId:Id,
-  mimeType:Mime,size:z.number().int().min(1).max(2*1024*1024),sha256:Hash,recordedAt:Iso,
-  provenance:z.literal('OWNER_UPLOADED_UNVERIFIED'),officiallyRecognized:z.literal(false),modelInputAllowed:z.literal(false)});
-export type RecognitionAssetMetadata=z.infer<typeof RecognitionAssetMetadataSchema>;
+export const RecognitionAssetMetadataSchema=V.RecognitionAssetMetadataSchema;
+export type RecognitionAssetMetadata=V.RecognitionAssetMetadata;
 export class RecognitionAssetDenied extends Error{constructor(){super('Recognition asset access denied');}}
 export class RecognitionAssetConflict extends Error{constructor(){super('Recognition asset context or request changed');}}
 export class RecognitionAssetQuota extends Error{constructor(){super('Recognition asset storage limit reached');}}
@@ -96,30 +94,30 @@ export class PostgresRecognitionPrivateAssets{
     if(Date.parse(receipt.expiresAt)<=latest||extraExpiry&&Date.parse(extraExpiry)<=latest)throw new RecognitionAssetDenied();
   }
   private async withGrant<T>(receipt:RecognitionAssetGrant,purpose:RecognitionAssetPurpose,signal:AbortSignal,
-    run:(c:ReviewerSqlConnection)=>Promise<T>,extraExpiry?:string){
-    await this.permit(receipt,purpose,signal);
+    run:(c:ReviewerSqlConnection)=>Promise<T>,extraExpiry?:string,guard?:()=>Promise<void>){
+    await this.permit(receipt,purpose,signal);await guard?.();live(signal);
     return this.transaction(receipt.actorId,signal,async c=>{
       await this.current(c,receipt,extraExpiry);const result=await run(c);
-      await this.permit(receipt,purpose,signal);await this.current(c,receipt,extraExpiry);return result;
+      await this.permit(receipt,purpose,signal);await guard?.();live(signal);await this.current(c,receipt,extraExpiry);return result;
     });
   }
-  policy(input:{actorId:string;activityId:string;signal?:AbortSignal}){
+  policy(input:{actorId:string;activityId:string;signal?:AbortSignal;guard?:()=>Promise<void>}){
     return withProofDeadline(async signal=>{
       const receipt=await this.grant(input.actorId,input.activityId,'INTAKE',signal);
       return this.withGrant(receipt,'INTAKE',signal,async()=>({receipt,contextVersion:this.contextVersion(receipt),maxFileBytes:2*1024*1024,
-        maxFilesPerActivity:10,allowedMimeTypes:Mime.options}));
+        maxFilesPerActivity:10,allowedMimeTypes:Mime.options}),undefined,input.guard);
     },5000,input.signal);
   }
-  list(input:{actorId:string;activityId:string;signal?:AbortSignal}){
+  list(input:{actorId:string;activityId:string;signal?:AbortSignal;guard?:()=>Promise<void>}){
     return withProofDeadline(async signal=>{
       const receipt=await this.grant(input.actorId,input.activityId,'METADATA',signal);
       return this.withGrant(receipt,'METADATA',signal,async c=>{
         const rows=await c.query(`SELECT ${columns} FROM api_self_recognition_assets WHERE actor_id=$1 AND activity_id=$2 AND state='LIVE' ORDER BY asset_id LIMIT 11`,[receipt.actorId,receipt.activityId]);
         if(rows.rows.length>10)throw new RecognitionAssetDenied();return {receipt,items:rows.rows.map(metadata)};
-      });
+      },undefined,input.guard);
     },5000,input.signal);
   }
-  async intake(input:{actorId:string;activityId:string;requestId:string;contextVersion:string;mimeType:z.infer<typeof Mime>;bytes:Uint8Array;signal?:AbortSignal}){
+  async intake(input:{actorId:string;activityId:string;requestId:string;contextVersion:string;mimeType:z.infer<typeof Mime>;bytes:Uint8Array;signal?:AbortSignal;guard?:()=>Promise<void>}){
     // Copy before the first await. Neither caller nor scanner mutation may
     // change what the inspected hash authorizes for persistence.
     if(!(input.bytes instanceof Uint8Array)||input.bytes.byteLength<1||input.bytes.byteLength>2*1024*1024
@@ -129,6 +127,7 @@ export class PostgresRecognitionPrivateAssets{
     return withProofDeadline(async signal=>{
       const receipt=await this.grant(input.actorId,input.activityId,'INTAKE',signal);
       if(contextVersion!==this.contextVersion(receipt))throw new RecognitionAssetConflict();
+      await input.guard?.();live(signal);
       const inspectionBytes=Buffer.from(bytes);
       const scan=Inspection.parse(await this.inspector.inspect({bytes:inspectionBytes,sha256,mimeType,signal}));live(signal);
       const inspectedNow=Date.parse(Iso.parse(this.now()));
@@ -151,10 +150,10 @@ export class PostgresRecognitionPrivateAssets{
           [receipt.actorId,assetId,assetVersion,recognitionProofId(receipt.actorId,receipt.activityId,assetId),receipt.activityId,
             receipt.storageConsentVersion,receipt.rightsVersion,receipt.consentVersion,mimeType,bytes.length,sha256,bytes,scan.receiptId,scan.inspectorVersion]);
         if(saved.rows.length!==1)throw new RecognitionAssetDenied();return metadata(saved.rows[0]!);
-      },scan.expiresAt);
+      },scan.expiresAt,input.guard);
     },5000,input.signal);
   }
-  readOriginal(input:{actorId:string;activityId:string;assetId:string;assetVersion:string;signal?:AbortSignal}){
+  readOriginal(input:{actorId:string;activityId:string;assetId:string;assetVersion:string;signal?:AbortSignal;guard?:()=>Promise<void>}){
     Id.parse(input.assetId);Id.parse(input.assetVersion);
     return withProofDeadline(async signal=>{
       const receipt=await this.grant(input.actorId,input.activityId,'ORIGINAL_READ',signal);
@@ -164,16 +163,16 @@ export class PostgresRecognitionPrivateAssets{
         if(rows.rows.length!==1)throw new RecognitionAssetDenied();const row=rows.rows[0]!,item=metadata(row);
         if(!(row.raw_bytes instanceof Uint8Array))throw new RecognitionAssetDenied();const bytes=Buffer.from(row.raw_bytes);
         if(bytes.length!==item.size||hash(bytes)!==item.sha256)throw new RecognitionAssetDenied();return {receipt,item,bytes};
-      });
+      },undefined,input.guard);
     },5000,input.signal);
   }
-  erase(input:{actorId:string;activityId:string;assetId:string;assetVersion:string;signal?:AbortSignal}){
+  erase(input:{actorId:string;activityId:string;assetId:string;assetVersion:string;signal?:AbortSignal;guard?:()=>Promise<void>}){
     const actorId=Actor.parse(input.actorId),activityId=Id.parse(input.activityId),assetId=Id.parse(input.assetId),assetVersion=Id.parse(input.assetVersion);
     return withProofDeadline(async signal=>{
       const permit=async()=>{live(signal);if(await this.authority.mayErase({actorId,activityId,assetId,now:Iso.parse(this.now()),signal})!==true)throw new RecognitionAssetDenied();live(signal);};
-      await permit();return this.transaction(actorId,signal,async c=>{
+      await permit();await input.guard?.();live(signal);return this.transaction(actorId,signal,async c=>{
         const r=await c.query('SELECT public.api_self_erase_recognition_asset($1,$2,$3,$4) AS erased',[actorId,activityId,assetId,assetVersion]);
-        if(r.rows.length!==1||r.rows[0]?.erased!==true)throw new RecognitionAssetConflict();await permit();
+        if(r.rows.length!==1||r.rows[0]?.erased!==true)throw new RecognitionAssetConflict();await permit();await input.guard?.();live(signal);
         return {state:'ERASURE_PENDING' as const,assetId,assetVersion,originalErased:true as const};
       });
     },5000,input.signal);
