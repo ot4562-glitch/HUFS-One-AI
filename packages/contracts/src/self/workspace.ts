@@ -1,8 +1,9 @@
 import {BookmarkStageSchema,BookmarkOutcomeSchema} from './bookmark-stage.js';
 import {z} from 'zod';
+import {RecognitionProofReviewSchema} from '../feature-additions/proof-review.js';
 const Id=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
 const Mode=z.enum(['SYNTHETIC','OWNER_CONSENTED']);
-export const WorkspaceKindSchema=z.enum(['EXPERIENCE','STUDY_PLAN','BOOKMARK','ACTION_PLAN','GUIDE_CHECKLIST']);
+export const WorkspaceKindSchema=z.enum(['EXPERIENCE','STUDY_PLAN','BOOKMARK','ACTION_PLAN','GUIDE_CHECKLIST','RECOGNITION_PROOF']);
 /** Owner-submitted references are links, not verified credentials or institution evidence. Never fetch automatically. */
 export const OwnerExperienceReferenceUrlSchema=z.url().max(500).refine(value=>{
   try{
@@ -61,7 +62,7 @@ const GuideChecklist=z.strictObject({kind:z.literal('GUIDE_CHECKLIST'),dataMode:
   locale:z.enum(['ko','en','zh']),translationVersion:GuideRef,contextVersion:z.string().regex(/^[a-f0-9]{64}$/),
   ownerCheckedStepIds:z.array(GuideRef).max(50).refine(ids=>new Set(ids).size===ids.length),
 });
-export const OwnerWorkspaceValueSchema=z.union([Experience,StudyPlan,Bookmark,Action,GuideChecklist]);
+export const OwnerWorkspaceValueSchema=z.union([Experience,StudyPlan,Bookmark,Action,GuideChecklist,RecognitionProofReviewSchema]);
 export type OwnerWorkspaceValue=z.infer<typeof OwnerWorkspaceValueSchema>;
 export type WorkspaceKind=z.infer<typeof WorkspaceKindSchema>;
 export const OwnerWorkspaceCreateSchema=z.strictObject({

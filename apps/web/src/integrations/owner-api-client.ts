@@ -68,7 +68,7 @@ const Paths={EXPERIENCE:'/api/experience/cards',
   STUDY_PLAN:'/api/study-plans',BOOKMARK:'/api/saved-items',ACTION_PLAN:'/api/action-plans'} satisfies Partial<Record<WorkspaceKind,string>>;
 function workspacePath(kind:WorkspaceKind):string{
   // Guide writes must use current-source/translation checks, never generic CRUD.
-  const name=clientInput(WorkspaceKindSchema.exclude(['GUIDE_CHECKLIST']),kind);
+  const name=clientInput(WorkspaceKindSchema.exclude(['GUIDE_CHECKLIST','RECOGNITION_PROOF']),kind);
   return Paths[name]!;
 }
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);

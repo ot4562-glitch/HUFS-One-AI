@@ -7,7 +7,7 @@ const at='2026-11-20T00:00:00.000Z',csrfToken='C'.repeat(32);
 const profile={version:1,value:{displayName:'Synthetic owner',interestTopics:['AI_ML'],desiredJobTopics:[]},updatedAt:at};
 const choices={personalStorage:true,teamReview:false,externalAi:false,ncpStorage:false,presentation:false};
 const json=(data:unknown)=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json'}});
-type CrudKind=Exclude<WorkspaceKind,'GUIDE_CHECKLIST'>;
+type CrudKind=Exclude<WorkspaceKind,'GUIDE_CHECKLIST'|'RECOGNITION_PROOF'>;
 const value=(kind:CrudKind):OwnerWorkspaceValue=>{
   switch(kind){
     case 'EXPERIENCE':return {kind,dataMode:'SYNTHETIC',state:'DRAFT',title:'Synthetic practice',summary:''};

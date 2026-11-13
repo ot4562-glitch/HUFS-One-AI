@@ -30,9 +30,13 @@ const Confirmed=z.strictObject({...binding,state:z.literal('OWNER_CONFIRMED_CAND
     ctx.addIssue({code:'custom',message:'Confirmed candidate must retain its review holds'});
 });
 const Redacted=z.strictObject({...identity,state:z.enum(['REJECTED','WITHDRAWN','DELETION_PENDING','DELETED']),
-  redactedAt:Iso,removalReceiptId:Id.optional()}).superRefine((r,ctx)=>{
+  redactedAt:Iso,cleanupState:z.enum(['PENDING','ACKNOWLEDGED']),cleanupReceiptId:Id.optional(),removalReceiptId:Id.optional()}).superRefine((r,ctx)=>{
   if((r.state==='DELETED')!==(r.removalReceiptId!==undefined))
     ctx.addIssue({code:'custom',message:'Only acknowledged deletion has a removal receipt'});
+  if((r.cleanupState==='ACKNOWLEDGED')!==(r.cleanupReceiptId!==undefined)
+    ||r.state==='DELETION_PENDING'&&r.cleanupState!=='PENDING'
+    ||r.state==='DELETED'&&(r.cleanupState!=='ACKNOWLEDGED'||r.cleanupReceiptId!==r.removalReceiptId))
+    ctx.addIssue({code:'custom',message:'Redaction is distinct from acknowledged external cleanup'});
 });
 /** No raw OCR, raw file bytes, storage URLs or model authorization in any state. */
 export const RecognitionProofReviewSchema=z.discriminatedUnion('state',[Pending,Confirmed,Redacted]).superRefine((r,ctx)=>{

@@ -25,6 +25,7 @@ import {proveSourceRefreshBudgetPg} from './source-refresh-budget-live-slice.js'
 import {proveSourceBrowserPg} from './source-browser-live-slice.js';
 import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js';
 import {proveGuideWorkspace} from './international-checklist-live-slice.js';
+import {proveRecognitionCleanup} from './recognition-cleanup-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -70,6 +71,7 @@ const migrationNames=[
   '20261101_personal_storage_withdrawal.sql',
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
   '20261113_international_checklists.sql',
+  '20261113_recognition_proof_cleanup.sql',
   '20261101_experience_tag_approval.sql',
   '20261101_demo_overlays.sql',
   '20261101_verified_source_rights.sql',
@@ -141,6 +143,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_profiles TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_workspace_records TO hufs_test_self;
        GRANT INSERT ON api_self_workspace_events TO hufs_test_self;
+       GRANT SELECT ON api_self_proof_cleanup TO hufs_test_self;
+       GRANT UPDATE(status,receipt_id,acknowledged_at) ON api_self_proof_cleanup TO hufs_test_self;
        GRANT INSERT ON api_self_consent_events TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_experience_tag_approvals TO hufs_test_self;
        GRANT INSERT ON api_experience_tag_events TO hufs_test_self;
@@ -418,6 +422,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   });
   it('isolates owner international checklists and purges withdrawn owner data',async()=>{
     await proveGuideWorkspace(admin,selfAccount);
+  });
+  it('retains recognition erasure jobs through consent withdrawal and verifies owner isolation',async()=>{
+    await proveRecognitionCleanup(admin,selfAccount);
   });
   it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
     const actorId='SYN-SELF-OWNER';

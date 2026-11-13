@@ -76,6 +76,17 @@ it('allows cleanup after rule/lease expiry but never revives a terminal document
   const deleted=redactProofReview(pending,{action:'ACK_DELETE',asOf,removalReceiptId:'SYN-DONE'});
   expect(()=>redactProofReview(deleted,{action:'REJECT',asOf})).toThrow();
 });
+it('distinguishes local redaction from acknowledged cleanup for rejected and withdrawn documents',()=>{
+  const raw=candidate();
+  for(const action of ['REJECT','WITHDRAW'] as const){
+    const pending=redactProofReview(raw,{action,asOf:FIXED_NOW});
+    expect(pending).toMatchObject({cleanupState:'PENDING'});
+    const done=redactProofReview(pending,{action:'ACK_CLEANUP',asOf:FIXED_NOW,removalReceiptId:'SYN-PURGE-RECEIPT'});
+    expect(done).toMatchObject({state:pending.state,cleanupState:'ACKNOWLEDGED',cleanupReceiptId:'SYN-PURGE-RECEIPT'});
+    expect(()=>confirmProofReview(done,{...context,maskingConfirmed:true,acceptedFieldNames:[]})).toThrow();
+    expect(()=>redactProofReview(done,{action:'ACK_CLEANUP',asOf:FIXED_NOW,removalReceiptId:'SYN-OTHER-RECEIPT'})).toThrow();
+  }
+});
 it('validates normalized OCR identity and geometry and refuses creation without a usable rule',()=>{
   const raw=candidate();
   for(const lines of [[...cert.lines,cert.lines[0]!],[{...cert.lines[0]!,bboxNorm:[0.9,0.2,0.1,0.3] as const}]])

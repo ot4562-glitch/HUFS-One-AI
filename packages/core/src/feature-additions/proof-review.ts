@@ -71,16 +71,20 @@ export function confirmProofReview(raw:Review,input:Context&{maskingConfirmed:bo
 }
 /** Must be guarded by current owner authorization and durable CAS in the caller.
  * Cleanup deliberately does not require a still-valid recognition rule/lease. */
-export function redactProofReview(raw:Review,input:{action:'REJECT'|'WITHDRAW'|'REQUEST_DELETE'|'ACK_DELETE';asOf:string;removalReceiptId?:string}):Review{
+export function redactProofReview(raw:Review,input:{action:'REJECT'|'WITHDRAW'|'REQUEST_DELETE'|'ACK_DELETE'|'ACK_CLEANUP';asOf:string;removalReceiptId?:string}):Review{
   const review=V.RecognitionProofReviewSchema.parse(raw),asOf=Iso.parse(input.asOf);
   if(review.state==='DELETED'||(review.state==='DELETION_PENDING'&&!['REQUEST_DELETE','ACK_DELETE'].includes(input.action))
-    ||(input.action==='ACK_DELETE'&&(review.state!=='DELETION_PENDING'||!input.removalReceiptId)))throw new ProofReviewStale();
-  if(input.action==='ACK_DELETE')Id.parse(input.removalReceiptId);
-  if(input.action!=='ACK_DELETE'&&input.removalReceiptId!==undefined)throw new ProofReviewStale();
+    ||(input.action==='ACK_DELETE'&&(review.state!=='DELETION_PENDING'||!input.removalReceiptId))
+    ||(input.action==='ACK_CLEANUP'&&(!['REJECTED','WITHDRAWN'].includes(review.state)||!input.removalReceiptId
+      ||!('cleanupState' in review)||review.cleanupState==='ACKNOWLEDGED')))throw new ProofReviewStale();
+  const acknowledged=input.action==='ACK_DELETE'||input.action==='ACK_CLEANUP';
+  if(acknowledged)Id.parse(input.removalReceiptId);
+  if(!acknowledged&&input.removalReceiptId!==undefined)throw new ProofReviewStale();
   const {kind,dataMode,proofId,activityId,assetId,assetVersion,scopeVersion}=review;
   return V.RecognitionProofReviewSchema.parse({kind,dataMode,proofId,activityId,assetId,assetVersion,scopeVersion,
-    state:input.action==='REJECT'?'REJECTED':input.action==='WITHDRAW'?'WITHDRAWN':input.action==='REQUEST_DELETE'?'DELETION_PENDING':'DELETED',
+    state:input.action==='ACK_CLEANUP'?review.state:input.action==='REJECT'?'REJECTED':input.action==='WITHDRAW'?'WITHDRAWN':input.action==='REQUEST_DELETE'?'DELETION_PENDING':'DELETED',
     redactedAt:asOf,officiallyRecognized:false,modelInputAllowed:false,
+    cleanupState:acknowledged?'ACKNOWLEDGED':'PENDING',...(acknowledged?{cleanupReceiptId:input.removalReceiptId}:{}),
     ...(input.action==='ACK_DELETE'?{removalReceiptId:input.removalReceiptId}:{})});
 }
 /** Only current, owner-reviewed, unheld candidates can count as self-reported

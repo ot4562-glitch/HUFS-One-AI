@@ -178,3 +178,18 @@ Node 24.15.0의 집중 회귀 5개 파일/59개 시험과 전체 회귀 436개 �
 거부/철회/삭제 요청은 후보 전체와 파일 해시를 제거한 최소 상태로 바뀐다. 삭제 확인 ID 없는 DELETED는 계약에서 거부하고, DELETION_PENDING에서만 ACK_DELETE가 가능하다. 이는 외부 삭제를 수행/인증하는 기능이 아니다. 다음 API 단계에서 현재 actor/파일 소유권·원본/파생물 삭제 receipt를 독립 확인하고 CAS로 저장해야 한다. core/contract 최종 8개 시험 PASS(미래 발급일 필드를 가려도 보류 유지 포함). 그 전 계약/소비자/기존 기능 회귀 82개 파일/1,126개 시험, 타입 검사·공개 경계 172개 PASS. 별도 읽기 전용 코드 검토에서 이 단계의 차단 결함은 없었으며 인증/CAS/receipt 검증은 호출자 경계라는 한계를 확인했다. **후보 API·durable 저장·동의 철회 purge 연결·client/UI·실제 파일 삭제는 아직 구현 완료하지 않았다.**
 
 계약 변경의 필수 API 감사에서 앞 #518 체크리스트 GET/PUT의 목록 등록 누락 2개를 발견해 `tools/api_contract_inventory.json`에 실제 registrar/상위 호출·DTO·시험·소비자 참조를 추가했다. API 목록 회귀 30개 PASS. 재감사 finding 0개/validationStatus PASS이며 기존 동적 import/호출 깊이 등 정적 미판정 때문에 coverage UNKNOWN·exit 3·runtime NOT_RUN·RELEASE_BLOCKED는 유지한다. 이 기록을 운영 인수 통과로 해석하지 않는다.
+
+
+### OCR 후보의 영구 저장·철회 정리 기반 — #512 (API/화면 연결 대기)
+
+`RECOGNITION_PROOF`를 기존 owner workspace의 strict union에 추가했다. 기존 RLS·본인 저장 동의 row lock·CAS·메타데이터 audit·동의 철회 payload purge를 재사용한다. generic HTTP 경로는 여전히 네 고정 kind만 등록하며 generic client도 proof kind를 거부한다. 실제 후보 생성/검토는 다음 전용 API 경로에서만 연결해야 한다. 거부/철회에도 cleanupState PENDING/ACKNOWLEDGED를 구별하고 이미 확인된 receipt의 덮어쓰기를 거부한다. 로컬 문구 제거만으로 외부 파생물 정리 완료를 표시하지 않는다.
+
+새 `20261113_recognition_proof_cleanup.sql`은 workspace/국제학생 체크리스트 migration 뒤에 적용한다. private `api_self_proof_cleanup`에는 actor/item/asset 판본·작업 종류·상태·receipt ID만 있으며 문구/좌표/파일 해시는 없다. workspace의 terminal 정화, generic tombstone 및 동의 철회 DELETE가 같은 트랜잭션에서 정리 작업을 예약한다. 따라서 후보 삭제만 커밋하고 작업 예약이 유실되는 간극을 만들지 않는다. 거부는 OCR cache/파생 필드/모델 입력 제거, 철회/삭제/동의 철회는 원본까지 제거하는 작업이다. 고정 search_path의 비공개 trigger 함수만 예약하며 runtime에는 INSERT/DELETE 권한을 주지 않는다. cleanup 역할에는 SELECT와 UPDATE(status,receipt_id,acknowledged_at)만 별도로 부여한다. FORCE RLS와 hufs.self_actor는 동의 철회 중에도 적용되므로 운영 SQL도 정확한 본인 context를 설정해야 한다.
+
+`PostgresRecognitionCleanupOutbox`는 별도의 현재 본인/운영자 정리 권한만 사용하며 저장 동의 철회 후에도 정리 상태를 읽고 확인할 수 있다. 후보 payload 접근을 허가하지 않는다. 정리 완료 후에도 최소 차단 원장을 보존해 재동의가 옛 asset ID를 자동 복원하지 않도록 한다. 다음 후보/OCR source adapter는 isAssetBlocked를 원본 조회·추출·모델 입력 전에 적용해야 하며, 현재 이 consumer 연결은 미완료다.
+
+`drainProofCleanup`는 명시적 삭제 포트가 없으면 NOT_CONNECTED이고 작업을 실행하지 않는다. 최대 20개 batch, 각 I/O 최대 5초이며 새 스케줄러/서비스/유료 호출을 만들거나 실행하지 않는다. 정확한 actor/asset/판본/작업과 필요한 원본·OCR cache·파생 필드·모델 입력 제거를 모두 확인하고, 별도의 현재 삭제 증거 검증이 true인 receipt만 저장한다. 재시도/replica 간 같은 작업의 멱등 키는 고정이다. 권한 조회·pool 획득·목록·삭제·독립 확인·ACK 대기 모두 시간 제한을 둔다. 제한 이후 도착한 연결은 반환하고, 삭제 응답은 후속 확인/ACK를 시작하지 않는다. 늦은 SQL 결과는 다음 단계/COMMIT 전에 취소를 검사하고 rollback한다. 단, 이미 보낸 COMMIT의 응답이 늦으면 결과가 불명확하므로 timeout만으로 rollback/계속 PENDING을 단정하지 않고 멱등 원장을 다시 조회해야 한다. 이 ACK는 독립적으로 확인한 삭제의 불변 메타데이터이며 후보나 원본을 복원하지 않는다.
+
+합성 PGlite의 실제 6개 migration/제한 역할에서 후보 저장·정화, 원장 문구 비잔존, 실패 후 대기, 확인 후 ACK, 다른 actor RLS, 동의 철회 후 작업 보존/정리, 재동의 후 옛 asset 차단, active 후보 hard purge, generic CAS tombstone 및 receipt 변경 거부를 통과했다. 같은 proof를 native disposable PG suite에도 추가했으나 다중 연결/NCP는 NOT_RUN이다. 단위/실제 SQL 최종 3개 파일/18개 시험 PASS, 그 전 계약/소비자/기존 기능 회귀 84개 파일/1,154개 시험 PASS. 타입 검사·API 빌드·공개 경계 172개 PASS. API 목록 감사는 finding 0/validation PASS, 기존 미판정에 따른 coverage UNKNOWN·exit 3·RELEASE_BLOCKED 유지다.
+
+독립 코드 검토에서 목록/ACK·권한/pool 획득에 시간 제한이 빠진 결함을 재현하고 위 제한·AbortSignal/SQL 단계 검사를 추가했다. 종료 뒤의 원격 follow-up/ACK 및 이미 확인한 receipt 덮어쓰기 반례도 보완했다. 좁힌 후속 검토에서 남은 차단 결함은 없었다. 현재는 저장·정리 기반이며 **전용 후보 API·receipt 공급자 구성·실제 owner client/UI·실제 파일/OCR/모델 입력 정리·NCP/실학생 인수는 아직 완료하지 않았다.** 다음은 현재 규정/파일/OCR 권한을 신뢰된 source로 확인하는 API와 CAS·차단 원장 소비를 연결한다.
