@@ -4,12 +4,14 @@ import type {HufsOwnerApiClient} from '../../integrations/owner-api-client.js';
 import type {OwnerSessionController} from '../../app/owner-session-controller.js';
 import {OwnerSessionFailure} from '../../app/OwnerSessionFailure.js';
 import {OwnerInternationalGuides} from './OwnerInternationalGuides.js';
+import {OwnerRecognitionProofs,OwnerProofCleanupBatch,type OwnerProofPort} from './OwnerRecognitionProofs.js';
 
 export interface OwnerInsightsPort {
   session:OwnerSessionController;
   read:HufsOwnerApiClient['getOwnerInsights'];
   readGuide?:HufsOwnerApiClient['getOwnerGuideChecklist'];
   saveGuide?:HufsOwnerApiClient['saveOwnerGuideChecklist'];
+  proofs?:OwnerProofPort;
 }
 type Result=Awaited<ReturnType<OwnerInsightsPort['read']>>;
 type Ready=Extract<Result,{state:'READY'}>['result'];
@@ -87,13 +89,7 @@ function details(data:Ready,port:OwnerInsightsPort,onBusyChange:(busy:boolean)=>
         </li>)}</ul>
       </section>;
     case 'RECOGNITION':
-      return <section><p>증빙은 학생이 확인할 제출 준비 항목이며, 공식 활동 인정이 아닙니다.</p>
-        <ul>{data.reports.map(r=><li key={r.activityId}>
-          <strong>활동 {r.activityId}</strong> · {r.status}
-          <p>추가 증빙 {r.missingKinds.join(', ')||'현재 기록상 없음'}</p>
-          <p className="muted">규정 판본 {r.ruleRevisionId} · 공식 인정 여부: 미확정</p>
-        </li>)}</ul>
-      </section>;
+      return <OwnerRecognitionProofs reports={data.reports} port={port} onBusyChange={onBusyChange}/>;
     case 'SKILLS':
       return <section><p>기록이 없다고 역량이 없다는 뜻은 아닙니다. 학교·채용기관 적합성 판정이 아닙니다.</p>
         <ul>{data.rows.map(r=><li key={r.requirementId}>
@@ -122,6 +118,7 @@ export function OwnerInsightsPanel({port,kind}:{port:OwnerInsightsPort;kind:V.Ow
   const [result,setResult]=useState<Result|null>(null);
   const [busy,setBusy]=useState(false);
   const [guideBusy,setGuideBusy]=useState(false);
+  const [proofBatchBusy,setProofBatchBusy]=useState(false);
   const requestVersion=useRef(0);
   useEffect(()=>{void port.session.initialize();},[port.session]);
   useEffect(()=>{
@@ -141,18 +138,23 @@ export function OwnerInsightsPanel({port,kind}:{port:OwnerInsightsPort;kind:V.Ow
   };
   if(scope.status==='IDLE'||scope.status==='CHECKING')
     return <p role="status" aria-busy="true">BETA 본인 인증 확인 중입니다.</p>;
-  if(scope.status!=='READY')return <OwnerSessionFailure controller={port.session}>
-    {scope.status==='CONFLICT'?'다른 탭의 저장 또는 안내 판본이 바뀌었습니다. 현재 계정·권한을 다시 확인한 뒤 새 안내를 읽고 체크해 주세요.'
+  const proofCleanup=kind==='RECOGNITION'?<OwnerProofCleanupBatch key="proof-cleanup" port={port} disabled={scope.status==='READY'&&(busy||guideBusy)} onBusyChange={setProofBatchBusy}
+    onStart={()=>{requestVersion.current++;setResult(null);}}/>:null;
+  if(scope.status!=='READY')return <section className="section owner-insights"><OwnerSessionFailure controller={port.session}>
+    {scope.status==='CONFLICT'?(kind==='RECOGNITION'?'다른 탭의 문서·규정·검토 상태가 바뀌었습니다. 현재 계정·권한을 다시 확인한 뒤 문서·후보를 새로 읽어 주세요.'
+      :'다른 탭의 저장 또는 안내 판본이 바뀌었습니다. 현재 계정·권한을 다시 확인한 뒤 새 안내를 읽고 체크해 주세요.')
       :scope.error==='RATE_LIMITED'?'요청 한도에 도달했습니다. 잠시 뒤 현재 계정·권한을 다시 확인해 주세요.'
+      :kind==='RECOGNITION'&&scope.error==='PROVIDER_UNAVAILABLE'?'현재 문서·검토 공급자 응답을 확인하지 못했습니다. 잠시 뒤 현재 계정·권한을 다시 확인해 주세요.'
       :'현재 본인·목적별 자료 권한 또는 연결 상태를 확인하지 못해 기존 기록을 숨겼습니다.'}
-  </OwnerSessionFailure>;
+  </OwnerSessionFailure>{proofCleanup}</section>;
   return <section className="section owner-insights" aria-label={OWNER_INSIGHT_TITLES[kind]}>
     <p role="note">이 기능은 조회 시점에 본인에게 허가된 원장과 근거를 사용합니다. 모델 추천·준비 상태는 학교/기관 공식 승인·합격/발급/지원 결과가 아닙니다.</p>
-    <button type="button" disabled={busy||guideBusy} onClick={()=>void load()}>{busy?'권한 확인 중':'현재 권한으로 확인하기'}</button>
+    {proofCleanup}
+    <button type="button" disabled={busy||guideBusy||proofBatchBusy} onClick={()=>void load()}>{busy?'권한 확인 중':'현재 권한으로 확인하기'}</button>
     {result?.state==='NOT_CONNECTED'?<p role="status">
       NOT_CONNECTED — 해당 기능의 허가된 공식 자료/현재 본인 동의·검증 공급자와 요청 한도가 운영 서버에 연결되지 않았습니다. 합성 결과로 대체하지 않습니다.
     </p>:result?.state==='READY'?<section aria-live="polite">
-      <p className="muted">{kind==='INTERNATIONAL'?'안내 목록 조회 기준':'기준'} {kst(result.asOf)} · 허가된 출처 판본 {result.sourceVersion}</p>
+      <p className="muted">{kind==='INTERNATIONAL'?'안내 목록 조회 기준':kind==='RECOGNITION'?'활동 목록 조회 기준':'기준'} {kst(result.asOf)} · 허가된 출처 판본 {result.sourceVersion}</p>
       {details(result.result,port,setGuideBusy)}
     </section>:null}
   </section>;

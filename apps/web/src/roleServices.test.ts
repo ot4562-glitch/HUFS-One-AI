@@ -17,6 +17,20 @@ function fakeApi(session: () => Promise<unknown>, caps: () => Promise<{actions: 
 const down = () => Promise.reject(new HufsApiError('PROVIDER_UNAVAILABLE', 503));
 
 describe('#85 role-gated ports: only a confirmed BETA gets the overlay', () => {
+  it('wires proof lifecycle to the owner and isolates erasure authorization from private-read denials',async()=>{
+    const api=fakeApi(async()=>BETA,async()=>({actions:[]})),none=async()=>({state:'NOT_CONNECTED' as const});
+    const read=vi.fn(none),extract=vi.fn(none),confirm=vi.fn(none),redact=vi.fn(none),cleanup=vi.fn(none),batch=vi.fn(none);
+    Object.assign(api.owner,{getOwnerRecognitionProofs:read,extractOwnerRecognitionProof:extract,confirmOwnerRecognitionProof:confirm,
+      redactOwnerRecognitionProof:redact,cleanupOwnerRecognitionProof:cleanup,requestOwnerRecognitionCleanup:batch});
+    const services=roleServices(api,await resolveSessionRole(api)),p=services.ownerInsights!.proofs!,scope='a'.repeat(64);
+    await p.read('SYN-A');await p.extract('SYN-A','SYN-ASSET',{expectedVersion:0,contextVersion:scope});
+    await p.confirm('SYN-A','SYN-P',{expectedVersion:1,contextVersion:scope,maskingConfirmed:true,acceptedFieldNames:[]});
+    await p.redact('SYN-A','SYN-P',{expectedVersion:2,scopeVersion:scope,action:'WITHDRAW'});
+    await p.cleanup('SYN-A','SYN-P',{expectedVersion:3,scopeVersion:scope});await p.batch();
+    for(const call of [read,extract,confirm,redact,cleanup,batch])expect(call).toHaveBeenCalledOnce();
+    expect(services.ownerInsights?.session).toBe(services.ownerDemoProfile?.session);
+    expect(p.cleanupSession).not.toBe(services.ownerInsights?.session);
+  });
   it('connects guide read/save to the confirmed owner API and the shared private session',async()=>{
     const api=fakeApi(async()=>BETA,async()=>({actions:[]}));
     const read=vi.fn(async()=>({state:'NOT_CONNECTED' as const})),save=vi.fn(async()=>({state:'NOT_CONNECTED' as const}));
