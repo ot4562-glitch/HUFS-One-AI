@@ -738,6 +738,35 @@
           }
         ]
       }
+    },
+    {
+      "id": "owner-international-checklist",
+      "source": "apps/api/src/modules/owner-international-checklist-http.ts",
+      "registrar": "registerInternationalChecklistRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/modules/owner-v2-insights-http.ts",
+          "caller": "registerOwnerInsightsRoutes"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority.",
+          "International guide owner checks (#518) require a trusted current guide/translation and owner checklist store; no school administration completion is granted."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
     }
   ],
   "routes": [
@@ -3379,6 +3408,58 @@
       ],
       "consumerRefs": [
         "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "get-api-owner-international-checklist",
+      "surface": "owner-international-checklist",
+      "method": "GET",
+      "path": "/api/owner/features/v2/international/:id/checklist",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/results.ts",
+            "symbol": "GuideChecklistResponseV2Schema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-international-checklist.test.ts",
+        "tests/consumers/owner-guide-checklist-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts",
+        "apps/web/src/features/owner-insights/OwnerInternationalGuides.tsx"
+      ]
+    },
+    {
+      "id": "put-api-owner-international-checklist",
+      "surface": "owner-international-checklist",
+      "method": "PUT",
+      "path": "/api/owner/features/v2/international/:id/checklist",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/results.ts",
+            "symbol": "GuideChecklistResponseV2Schema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/results.ts",
+            "symbol": "GuideChecklistWriteV2Schema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-international-checklist.test.ts",
+        "tests/consumers/owner-guide-checklist-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts",
+        "apps/web/src/features/owner-insights/OwnerInternationalGuides.tsx"
       ]
     }
   ],
