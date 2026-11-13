@@ -258,3 +258,19 @@ HTML 외 비교 공백에 대해 개발 전용 MarkItDown 0.1.9의 PdfConverter/
 실험 코드/원문/고정 응답 해시·설치 의존성과 관측값은 docs/oss/langextract-alignment-synthetic-20261113.json, 공식 v1.6.0 코드/Apache-2.0 근거·분모·좌표 의미·채택 보류 이유·재현은 docs/oss/README.md에 있다. NCP/학생 원본/외부 모델 호출은 없고, network/subprocess 관찰 0건이다. production 의존성/API/정규화는 바꾸지 않았다. 운영 채택에는 승인된 모델 adapter·Gold·정확한 source span 단위/판본·권리/철회/예산 검증이 더 필요하다.
 
 선택된 실제 두 venv로 Python 시험 5개 PASS, 기본 환경은 3개 PASS/2개 명시적 SKIP, 기존 HTML 비교 Node 시험 2개 PASS/1개 선택 SKIP, 공개 경계 172개 PASS. 원격 전체 이슈 170개·열림 31개 재조회 결과 제목/상태 변경이 없고 목표 시작(2026-11-12T12:28:00Z) 이후 updatedAt이 증가한 이슈도 없다. 따라서 최초 읽은 전체 본문/댓글 이후 새 이슈 변경은 이 조회 시점에 관찰하지 못했다. 검색/도구·사람별 A/B의 잔여 범위, #512 파일/원본 미리보기 감사, 전체 최종 요구사항 대조와 PR은 계속 남아 있다.
+
+
+### #512 원본 수명주기 재감사와 실제 픽셀 가림 구현
+
+현재 #512의 사용자 검토/가림/철회·삭제 요구 및 이관 전 #346의 업로드/미리보기 요구를 코드와 대조했다. 별도 읽기 전용 검토도 기존 trusted documents(list/extract/revalidate)와 career 첨부 포트만으로 비공개 파일 유입/원본·가림 page 미리보기가 구현됐다고 볼 수 없다고 확인했다. 실제 NCP 계정은 운영 연결 조건이며 이 프로토콜의 로컬 구현을 보류할 근거가 아니다. 현재 필드-only UI는 원본 익명화를 보증하지 않는다고 정직하게 표시하지만 필요한 다음 구현은 계속 남아 있다.
+
+구현 계획(이 문서를 정본으로 유지):
+
+- [x] apps/api/src/modules/recognition-private-preview.ts에 신뢰된 decoder의 bounded RGBA와 서버 mask rectangles를 받아 실제 불투명 검정 픽셀로 치환하고 원본 메타데이터 없는 PNG를 만드는 primitive를 구현한다. tests/api/recognition-private-preview.test.ts로 잘못된 크기/좌표·픽셀 채널·겹침·PNG 경계·해시를 검증한다.
+- [ ] 독립 owner/activity 자산 ledger와 bounded intake/list/delete 계약·SQL adapter를 구현한다. OCR 전 파일도 동의 철회/삭제 정리에서 빠지지 않아야 한다. 현재 consent epoch/권리·원자 quota·CAS·cross-owner RLS를 보존한다. 원본/파생물 저장 전략은 실제 authority/cleanup 원자성을 확인한 뒤 정하고, 미완료 외부 삭제를 완료로 표시하지 않는다.
+- [ ] 현재 자산 판본/hash/page/권리/마스크 명세에 결속된 보호된 preview 경로와 trusted document factory를 연결한다. renderer/scanner/OCR 공급자가 없으면 NOT_CONNECTED이며 HTTP가 파일명/스토리지 URL/임의 raw OCR을 신뢰하지 않는다. PNG primitive는 decoder·파일 검역·민감정보 탐지나 권한 검사를 대신하지 않는다.
+- [ ] typed client/실제 owner UI를 연결하고 업로드 전후, 미리보기·마스크 변경·만료·철회/계정 전환·OCR 전 삭제·동의 철회 경로를 합성 SQL/HTTP/브라우저로 검증한다. 실제 NCP/OCR/실원본 권리·독립 Gold/실기기는 별도 gate를 유지한다.
+
+첫 primitive는 최대 4096축/4,194,304픽셀/500개 normalized rectangle을 제한하고 fractional edge를 밖으로 반올림해 가림 영역을 축소하지 않는다. 모든 RGBA 채널을 교체하고 겹친 가림은 행별 구간 합집합으로 한 번만 처리한다. 원본 버퍼를 변경하지 않으며 IHDR/IDAT/IEND 외 chunk를 생성하지 않는다. 빈 mask는 원본 픽셀을 유지하는 명시적 경우이고 익명화 완료가 아니다. 임의 binary decoder는 포함하지 않는다.
+
+누락 모듈 실패를 확인한 뒤 focused Vitest 12개 PASS(무작위 고정 seed 40개 구간 합집합, 최대 약 419만 픽셀/500개 겹침, CRC·압축 해제·픽셀/알파·메타데이터 없음·크기/geometry 한도 포함), 타입 검사 PASS. 무시되는 local_only/recognition-preview-decoder-proof.mts로 설치된 Edge의 실제 PNG decoder/canvas가 출력 크기와 가림 픽셀을 읽는 proof 1개 PASS. 합성 4×3 raster일 뿐 원본 파일/전체 page 렌더·사람 시각/원본 업로드 경로의 완료 증거는 아니다. 이 단계에서 API나 UI에서 사용할 수 있는 preview endpoint를 제공했다고 주장하지 않는다.
