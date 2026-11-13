@@ -4,7 +4,7 @@
 
 ## 2026-11-13 — MarkItDown HTML 경로
 
-**현재 코드 채택 판단: 기존 Cheerio HTML 추출기를 유지한다.** MarkItDown의 HTML 운영 의존성 도입은 보류한다. 이번 작은 표본에서는 추가 정확도 이점이 없고 Python 실행 환경이 추가된다. PDF/Office의 가치까지 배제한 결론은 아니다. #453의 PDF/Office·LangExtract·검색 비교와 #454 실제 검수자 시연은 아직 남아 있다.
+**현재 코드 채택 판단: 기존 Cheerio HTML 추출기를 유지한다.** MarkItDown의 HTML 운영 의존성 도입은 보류한다. 이번 작은 표본에서는 추가 정확도 이점이 없고 Python 실행 환경이 추가된다. PDF/DOCX 고정 합성 변환과 LangExtract의 가짜 모델 응답 정렬 시험은 아래에 별도로 기록한다. 승인된 실문서/다른 Office·LangExtract 실제 모델·검색 비교와 #454 실제 검수자 시연은 아직 남아 있다.
 
 [실측 JSON](markitdown-html-v1.json)은 Node 24.15.0/Python 3.14.6, Cheerio 1.2.0/MarkItDown 0.1.9에서 실행했다. 고정 fixture·각 원문·실제 baseline extractor·worker lock·Node/Python harness의 SHA-256과 설치된 Python 패키지 버전을 기록한다. 시험 대상은 저자가 작성한 한국어 HTML 8개이며, 독립 사람 Gold가 아니다. 후보는 프로젝트 내부의 무시되는 `local_only/oss/markitdown-0.1.9` 가상환경에만 설치했다. root/worker 운영 의존성은 변경하지 않았다. 설치된 MarkItDown wheel SHA-256은 `52f59c48bea9cf887224c56247f648d68beb7aa7af5a12d414748210c83c20ea`였다.
 
@@ -65,3 +65,25 @@ python -m unittest discover -s tools/evaluation/oss -p test_document_probe.py
 ```
 
 환경변수 없이 단위 시험을 실행하면 fixture/지표 2개만 실행하고 실제 변환 1개는 명시적으로 SKIP한다. probe는 정상 결과에 원문·변환 본문을 출력하지 않고 오류도 고정 메시지만 내보낸다.
+
+## LangExtract 원문 정렬 시험 — #452/#453
+
+2026-11-13 별도 개발 가상환경의 `langextract==1.6.0`, Python 3.12.10으로 [합성 alignment probe](../../tools/evaluation/oss/alignment_probe.py)를 실행했다. 실제 LangExtract 파싱/정렬에 고정 `BaseLanguageModel` 구현이 작성자 지정 JSON 응답만 반환한다. LLM 추론·프롬프트 비교·HCX adapter·기존 정규화 코드와의 품질 비교가 아니다. [측정 JSON](langextract-alignment-synthetic-20261113.json)에 각 입력/고정 응답/실행 코드의 해시, 기대·관측 좌표와 지표·의존성·지연을 기록했다. production 경로/의존성은 바꾸지 않았다.
+
+한글 캠퍼스·학년도·마감의 정확한 인용, 반복 캠퍼스, 원문에 없는 학년도, 누락 필드, 이모지 앞부분, 이전/변경 마감의 6개 사례다. 기대 `(종류, 값, 시작, 끝)` 10개 중 7개가 일치했다. 중복 결과를 수차례 반환해도 정답 수를 늘리지 않는다. 관측 9개 중 원문 slice가 값과 일치하는 것은 7개이고, 반복 캠퍼스 및 원문에 없는 학년도 2개는 좌표가 없었다. 누락 필드 1개는 기대 분모에 남는다. 반복 사례의 이 특정 문구에서 정렬되지 않았다는 결과이며 일반적인 모든 반복문구 실패라는 주장은 아니다. `oldDeadline/newDeadline` 의미는 고정 응답 작성자가 부여한 것이므로 모델이 정정을 해석했다는 증거가 아니다. 지연도 모델 추론/토큰/요금을 포함하지 않는다.
+
+좌표는 **Python Unicode code point 단위**다. 이모지 뒤 캠퍼스 시작은 2로 나오며 JavaScript UTF-16 code unit에서는 3이다. 실제 SourceRevision/evidence span에 연결하려면 현재 원문 판본 결속, 단위 변환, 경계·정확한 slice 검증, 중복 문맥·미정렬/부분/유사 일치의 검토 보류가 필요하다. 라이브러리의 alignment status만으로 의미·권리·학교 자격의 확정을 허용하지 않는다.
+
+**결정:** 운영 도입은 보류한다. 독립 검수된 원문/Gold·승인된 HCX 또는 로컬 모델 adapter와 모델 출력 품질·호출 예산·현재 권리/철회 처리의 비교가 확보되지 않았다. 공식 [v1.6.0 extraction API](https://github.com/google/langextract/blob/v1.6.0/langextract/extraction.py)와 [provider base interface](https://github.com/google/langextract/blob/v1.6.0/langextract/core/base_model.py)를 확인했다. [Apache-2.0 LICENSE](https://github.com/google/langextract/blob/v1.6.0/LICENSE) 및 별도 의존성 배포 검토가 필요하며, 공식 저장소는 Google의 공식 지원 제품이 아니라고 설명한다. 본체 OSS 라이선스는 모델/호스팅 이용권과 별개다. 검증일의 고정 판본에 대한 판단이며 미래 지원 보증이 아니다.
+
+모델은 고정 인스턴스로 직접 넘기고 URL 취득을 끄며, 설치 이후 probe의 network/subprocess 관찰은 0건, 외부 모델 호출은 0회다. CLI 입력은 받지 않는다. Python audit는 sandbox가 아니며 결과의 합성 값은 학생 원본이 아니다. 모델을 흉내 낸 숫자를 실제 AI 성능/HCX 호환성/실 운영 인수로 사용하지 않는다.
+
+```powershell
+py -3.12 -m venv local_only/oss/langextract-1.6.0
+local_only/oss/langextract-1.6.0/Scripts/python.exe -m pip install --only-binary=:all: langextract==1.6.0
+$env:HUFS_LANGEXTRACT_PYTHON = (Resolve-Path local_only/oss/langextract-1.6.0/Scripts/python.exe).Path
+python -m unittest discover -s tools/evaluation/oss -p test_alignment_probe.py
+& $env:HUFS_LANGEXTRACT_PYTHON tools/evaluation/oss/alignment_probe.py
+```
+
+선택 환경변수 없이는 지표 단위 시험 1개만 실행하고 실제 라이브러리 시험 1개는 SKIP한다.

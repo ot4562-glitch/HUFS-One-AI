@@ -249,3 +249,12 @@ HTML 외 비교 공백에 대해 개발 전용 MarkItDown 0.1.9의 PdfConverter/
 입력/출력/실행 코드 해시와 의존성·측정은 docs/oss/markitdown-documents-synthetic-20261113.json, 재현·공식 구현 근거·채택 결정은 docs/oss/README.md에 있다. network/subprocess 관찰 0건, 외부 모델 0회이며 Python audit를 sandbox로 주장하지 않는다. 임의 파일/URL 인수는 거부한다. production dependency/worker는 변경하지 않고 오프라인 후보 보류를 유지했다. 승인된 실자료/Gold·HWP/HWPX·의존성 배포 LICENSE/NOTICE·운영 sandbox·사람 인수는 남아 있다.
 
 실제 선택 가상환경 포함 Python 시험 3개 PASS, 공개 경계 172개 PASS. 읽기 전용 별도 검토는 probe/fixture 해시 및 수치의 제한된 의미를 재확인했고 중대한 결함을 찾지 못했다(변환 재실행 검토는 아님). 전체 서비스 회귀는 이 개발 전용 실험 단계에서 재실행하지 않았다. #450–454의 나머지 비교 및 #512 원본/가림 미리보기·파일 유입 가능 범위 감사와 전체 요구사항 대조는 계속 남아 있다. PR 목표는 진행 중이다.
+
+
+### LangExtract 고정 응답의 원문 정렬 검증 — #452/#453
+
+별도 Python 3.12 개발 가상환경에 LangExtract 1.6.0을 선택 설치해 실제 파싱/정렬 라이브러리를 실행했다. 모델은 작성자 지정 응답만 반환하는 BaseLanguageModel이며 외부 provider/LLM 추론을 구성하지 않았다. 6개 고정 사례의 기대 kind/value/좌표 10개 중 7개 일치, 관측 9개 중 원문 slice 일치 7개, 위치 없는 결과 2개, 누락 필드 1개다. 반복 캠퍼스 및 원문에 없는 학년도는 이 시험에서 미정렬이었다. 이모지 뒤 Python code point 좌표가 JS UTF-16과 다르다는 실제 경계를 기록했다. 고정 응답의 의미 라벨·응답 누락을 LLM 품질/HCX 성능 측정으로 해석하지 않는다.
+
+실험 코드/원문/고정 응답 해시·설치 의존성과 관측값은 docs/oss/langextract-alignment-synthetic-20261113.json, 공식 v1.6.0 코드/Apache-2.0 근거·분모·좌표 의미·채택 보류 이유·재현은 docs/oss/README.md에 있다. NCP/학생 원본/외부 모델 호출은 없고, network/subprocess 관찰 0건이다. production 의존성/API/정규화는 바꾸지 않았다. 운영 채택에는 승인된 모델 adapter·Gold·정확한 source span 단위/판본·권리/철회/예산 검증이 더 필요하다.
+
+선택된 실제 두 venv로 Python 시험 5개 PASS, 기본 환경은 3개 PASS/2개 명시적 SKIP, 기존 HTML 비교 Node 시험 2개 PASS/1개 선택 SKIP, 공개 경계 172개 PASS. 원격 전체 이슈 170개·열림 31개 재조회 결과 제목/상태 변경이 없고 목표 시작(2026-11-12T12:28:00Z) 이후 updatedAt이 증가한 이슈도 없다. 따라서 최초 읽은 전체 본문/댓글 이후 새 이슈 변경은 이 조회 시점에 관찰하지 못했다. 검색/도구·사람별 A/B의 잔여 범위, #512 파일/원본 미리보기 감사, 전체 최종 요구사항 대조와 PR은 계속 남아 있다.
