@@ -1,4 +1,5 @@
 import {ActivityForecastSchema,ActivityRecordSchema,type ActivityRecord,type ActivityForecast} from '@hufs-one/contracts';
+export const ACTIVITY_FORECAST_MODEL_VERSION='activity-seasonal-window-v1';
 
 function epoch(iso:string):number{
   const ms=Date.parse(iso);

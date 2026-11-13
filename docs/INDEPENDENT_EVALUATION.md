@@ -58,3 +58,19 @@ node tools/evaluation/run.mjs report \
 - 실 호스트/실 계정/실기기/스크린리더 등은 평가 HTML+CI로 완료 표시하지 않는다.
 
 **진행·증거:** [STATUS](../STATUS.md), [REPORT](../REPORT.md), [추천 인수 #281](https://github.com/ot4562-glitch/HUFS-One-AI/issues/281), [운영 통합 #276](https://github.com/ot4562-glitch/HUFS-One-AI/issues/276).
+
+## 연례 행사 전망의 과거 시점 평가 (#506)
+
+`packages/core/src/evaluation/activity-rolling-origin.ts`는 수강 개설 평가와 별도로 실제 `forecastActivity`를 호출한다. 아래 명령으로 합성 입력의 평가 결과를 무시되는 로컬 파일에 생성할 수 있다. 지원 Node 22.22.2/24.15.0 이상을 사용하며 기존 파일을 덮어쓰지 않는다.
+
+```powershell
+npm run build:contracts
+npm run build:evaluation
+node tools/evaluation/run.mjs activity-evaluate --input tools/evaluation/fixtures/activity-origins.synthetic.json --out local_only/activity-origins.json
+```
+
+입력의 `datasetKind`는 SYNTHETIC 또는 REAL_APPROVED이며, 모든 기록/정답의 provenance와 일치해야 한다. `subjects`는 명시적인 organizationId/seriesId 목록, `origins`는 과거 asOf/targetYear 목록, `records`는 수정/취소/철회를 포함한 `ActivityRecord` 판본 원장이다. `outcomes`는 독립적으로 준비할 정답 원장이며 outcomeId/revisionId, 조직/행사군/연도, HELD/CANCELLED/UNKNOWN, HELD의 eventDate, verifiedAt, rights, review, provenance를 담는다. 날짜를 모르는 개최·미검수·권리 없는 정답은 점수로 메우지 않는다. 조직/행사군은 200개, origin 16개, 기록/정답 각각 10,000개까지 검증한다. 이미 알려진 확정/취소나 개최 후 origin은 평가에서 제외한다. Gold의 최신 판본은 `truthAsOf`에서 선택하고, 당시 이미 정답이 알려졌는지는 origin별 Gold head로 따로 확인한다. 같은 최신 head의 충돌과 독립 outcome ID 간 정답 충돌은 격리한다.
+
+OUTLOOK은 실제 기간 전망이고 PREVIOUS_YEAR는 같은 origin에 보이는 **정확히 전년도**의 확정일을 대상 연도로 옮긴 점 기준선이다. 전년도 기록이 없으면 더 오래된 해로 대체하지 않는다. 윤년 2/29는 비윤년 2/28로 접는다. `scored`는 두 방법에 공통인 held-out 대상 수이며 답변/보류, HELD의 답변/기간 포함/미포함, 포함 기간까지 일수 거리와 중점 절대오차의 합, 답변 기간 폭(양끝 포함)을 제공한다. `cancelledWindows`는 실제 취소된 행사에 표시한 예상 기간 수다. 보류는 정확하거나 틀린 날짜로 바꾸지 않는다. `paired`는 둘 다 답한 동일 대상만 따로 집계한다. 넓은 기간의 포함률과 단일 날짜 적중률만 비교해 우열을 주장하지 말고, 폭·오차·취소 오표시·보류 및 각 분모를 함께 확인해야 한다. 두 개 이상의 서로 다른 origin에서 점수를 낸 READY는 평가 가능 상태이며 품질/출시 통과가 아니다.
+
+CLI는 입력 바이트 및 실제 실행 evaluator/model/contracts JS의 해시를 보존하고 표준 출력에는 저장 여부만 쓴다. 실자료 입력과 결과는 권리 있는 운영자만 NCP/제한된 경로에서 처리하며 공개 Git/이슈/웹에 올리지 않는다. `HUMAN_VERIFIED`는 입력의 주장일 뿐 이 도구가 서명/검수자 독립성을 인증하지 않는다. 따라서 결과는 항상 `reviewAssurance: DECLARED_REVIEW_ONLY`, `independentAcceptance: NOT_RUN`, `releaseEligible: false`다. 제공 fixture는 전부 생성한 합성 데이터이며 실제 채널/연도별 독립 Gold·실자료 성능·사람 시연 인수를 대신하지 않는다. 실제 판본·권리·검수자 독립성 확인은 #360/#446/#506의 운영 인수에서 별도로 수행한다.

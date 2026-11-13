@@ -41,7 +41,7 @@
     "assets:check": "node tools/generate_demo_assets.mjs --check && node tools/check_synthetic_artwork.mjs",
     "build:evaluation": "node node_modules/typescript/bin/tsc -p tools/evaluation/tsconfig.json",
     "eval:review": "node tools/evaluation/run.mjs",
-    "test:evaluation:cli": "node --test tools/evaluation/tests/cli.node.mjs tools/evaluation/tests/review-html.node.mjs",
+    "test:evaluation:cli": "node --test tools/evaluation/tests/cli.node.mjs tools/evaluation/tests/review-html.node.mjs tools/evaluation/tests/activity-cli.node.mjs",
     "start:api:synthetic-accounts": "npm run build:api && node dist/apps/api/src/dev/local-account-main.js --synthetic",
     "check:privacy": "python3 tools/verify_release_boundary.py",
     "build:contracts": "npm run build -w @hufs-one/contracts",
