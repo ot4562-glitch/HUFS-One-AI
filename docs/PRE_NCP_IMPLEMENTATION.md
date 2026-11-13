@@ -240,3 +240,12 @@ Node 24.15.0에서 최종 웹 전체 72개 파일/494개 시험 PASS, 타입 검
 실제 App/스타일과 개발 전용 합성 port를 설치된 Edge로 실행한 9개 시험 PASS: 다섯 폭(320/360/390/768/1440)의 가로 넘침/캡처, 키보드 추출·필드 선택/수락, OCR 전 삭제와 receipt 대기/확인, 409 복구 무재생, 공급자/actor 전환, private 조회 없는 batch, 긴 유효 판본, 미연결 시 manual snapshot, private403 뒤 cleanup 도달. 마지막 간격 수정 후 다섯 폭 캡처 시험 1개, Tab/Escape를 보강한 키보드 시험 1개도 따로 PASS했다. 같은 합성 계정/초기 자료의 전후 PNG는 무시되는 `local_only/ui/recognition-proofs/{before,after}/{width}.png`에 있고 320px 전후 및 1440px 이후를 시각 확인했다. 재현은 `npm run test:e2e:web -- recognition-proof.spec.ts`다. 이 브라우저 proof는 합성 port이며 앞 실제 SQL/HTTP proof와 구별한다. 원본 파일·OCR 공급자·독립 erasure provider·NCP/실학생/실기기·사람 검수는 NOT_CONNECTED/NOT_RUN이다.
 
 독립 코드 검토에서 미연결 시 기존 준비 결과 소실과 private403 뒤 erasure 경로 차단을 발견해 각각 실패 시험으로 재현하고 수정했다. 좁힌 후속 검토에 남은 알려진 결함은 없었다. **다음 전체 이슈 감사에서 유지할 항목:** 원본/가림 원본 미리보기와 개인 파일 유입 경로의 NCP 전 구현 가능 범위, 실제 source/provider factory·권리/Gold 인수와 현재 필드-only 검토의 차이. 이 상태를 #512의 모든 실증 인수 완료로 간주하지 않는다. OSS 잔여 비교, 전체 이슈별 현재 구현 감사와 최종 PR은 계속 남아 있다.
+
+
+### PDF/DOCX 실제 합성 변환 비교 — #453
+
+HTML 외 비교 공백에 대해 개발 전용 MarkItDown 0.1.9의 PdfConverter/DocxConverter를 실제 실행했다. 고정 메모리 합성 fixture 6개는 한국어 본문·학년도·캠퍼스·표·마감 정정·이미지 전용 음성을 포함한다. 기대 문구 19/19개, 두 표의 같은 줄 내 셀 문자열 동시 존재 6/6행, 이미지 전용 빈 출력 1/1개였다. 이것은 표 구조·span·정정 해석·OCR·실문서 품질 평가가 아니다. PDF 글꼴/시각 검수 없는 parser fixture 및 2×2 raster의 한계를 명시했다. 기존 HTML 파서의 바이너리 형식 미지원은 수치 기준선으로 꾸미지 않았다.
+
+입력/출력/실행 코드 해시와 의존성·측정은 docs/oss/markitdown-documents-synthetic-20261113.json, 재현·공식 구현 근거·채택 결정은 docs/oss/README.md에 있다. network/subprocess 관찰 0건, 외부 모델 0회이며 Python audit를 sandbox로 주장하지 않는다. 임의 파일/URL 인수는 거부한다. production dependency/worker는 변경하지 않고 오프라인 후보 보류를 유지했다. 승인된 실자료/Gold·HWP/HWPX·의존성 배포 LICENSE/NOTICE·운영 sandbox·사람 인수는 남아 있다.
+
+실제 선택 가상환경 포함 Python 시험 3개 PASS, 공개 경계 172개 PASS. 읽기 전용 별도 검토는 probe/fixture 해시 및 수치의 제한된 의미를 재확인했고 중대한 결함을 찾지 못했다(변환 재실행 검토는 아님). 전체 서비스 회귀는 이 개발 전용 실험 단계에서 재실행하지 않았다. #450–454의 나머지 비교 및 #512 원본/가림 미리보기·파일 유입 가능 범위 감사와 전체 요구사항 대조는 계속 남아 있다. PR 목표는 진행 중이다.

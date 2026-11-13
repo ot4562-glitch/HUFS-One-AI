@@ -43,3 +43,25 @@ node tools/evaluation/oss/notice-comparison.mjs --python $env:HUFS_MARKITDOWN_PY
 #452가 요구한 macro-F1, Recall@k/MRR, 근거 span 및 자격 오판율은 이미 [기존 metrics](../../packages/core/src/evaluation/metrics.ts)에 있다. FAQ의 TUNED/HOLDOUT 기준선도 [기존 회귀](../../tests/evaluation/faq-retrieval-metrics.test.ts)에 존재한다. 이 비교를 위해 같은 지표·Gold 원장·평가 framework를 다시 작성하지 않았다. [독립 평가 절차](../INDEPENDENT_EVALUATION.md)의 서명·판본·사람 검수 상태도 바꾸지 않았다.
 
 OpenAI의 [플랫폼 dataset/grader 절차](https://developers.openai.com/api/docs/guides/evaluation-getting-started)는 별도 서비스 흐름이며, 해당 문서를 읽었다는 사실이 OpenAI Evals OSS나 HCX 호환성을 시험한 증거는 아니다. Evals/외부 모델·Claude↔GPT A/B·개인 플러그인 권한은 아직 NOT_RUN이다. [공식 skills 설명](https://developers.openai.com/plugins/concepts/skills)도 workflow 지침의 배포 형태를 설명할 뿐 팀원 계정 연결·실행 증거를 제공하지 않는다.
+
+## PDF·DOCX 선택 시험 — #453
+
+2026-11-13 같은 개발 가상환경의 `markitdown[docx,pdf]==0.1.9`로 [고정 합성 probe](../../tools/evaluation/oss/document_probe.py)를 실행했다. [측정 JSON](markitdown-documents-synthetic-20261113.json)은 실행 코드·입력 바이트·출력의 SHA-256, 설치 의존성 판본, Python 판본, 첫 변환과 warm 5회 중앙값을 담는다. 가상환경은 개발 전용이며 production 의존성·수집 worker·lockfile을 바꾸지 않았다.
+
+DOCX 본문/표/마감 정정, PDF 본문/3열/이미지 전용의 6개다. 한글·학년도·캠퍼스·이전/변경 마감을 포함한 기대 문자열 19/19개를 찾았다. DOCX 표와 PDF 3열의 각 3개 행은 해당 셀 문자열이 같은 출력 줄에 함께 나타나 6/6개였다. 이 지표는 **한 줄 내 문자열 동시 존재**이며 셀 순서·중복·정확한 표 구조·필드 관계·원문 좌표/span·정정 우선순위의 정확도를 검증하지 않는다. 문구의 포함만으로 eligibility 판정/분류 F1/검색 지표가 좋아졌다고 해석하지 않는다.
+
+PDF는 Unicode map을 명시한 작은 parser fixture이며 글꼴을 내장하거나 시각 검수한 학교 문서 모사본이 아니다. 이미지 음성 사례는 텍스트 없는 2×2 raster로, 빈 출력 1/1개였다. OCR이나 복잡한 실제 스캔·다단·병합 셀·HWP/HWPX·다른 Office 형식은 시험하지 않았다. 기존 Cheerio 경로는 HTML 전용이므로 `UNSUPPORTED_BINARY_FORMATS`로 기록하고 같은 문서를 변환한 성능 기준선으로 꾸미지 않았다. 작은 고정 입력의 지연은 실서비스 비용·RSS·동시 부하의 근거가 아니다.
+
+고정 `PdfConverter`/`DocxConverter`에 메모리 바이트만 전달하고 dispatcher·URL·OCR·LLM·plugin을 구성하지 않는다. 기존 HTML 실험과 같은 Python audit 거부에서 관찰된 network/subprocess 시도는 각각 0건, 외부 모델 호출은 0회다. 이 거부는 파일시스템·네이티브 코드 sandbox가 아니다. 임의 파일/URL/문자열 CLI 인수를 거부하며 실자료 처리 도구로 제공하지 않는다. 실제 자료용 변환 경로를 채택하려면 권리·파일 검역·resource/egress 제한·변환 산출물과 SourceRevision/span 계약을 별도로 통합해야 한다.
+
+**결정:** 기존 HTML 경로를 유지하고, MarkItDown은 PDF/DOCX 오프라인 후보로만 보류한다. 공식 [PDF 구현](https://github.com/microsoft/markitdown/blob/v0.1.9/packages/markitdown/src/markitdown/converters/_pdf_converter.py)은 pdfplumber/pdfminer 경로를, [DOCX 구현](https://github.com/microsoft/markitdown/blob/v0.1.9/packages/markitdown/src/markitdown/converters/_docx_converter.py)은 Mammoth/HTML 변환 경로를 사용한다(2026-11-13 조회). 설치한 MIT 본체 외 의존성 LICENSE/NOTICE 배포 검토, 승인된 실자료·독립 Gold 평가, HWP/HWPX 별도 파서, 운영 sandbox 검증은 남아 있다. 이 실험은 `releaseEligible:false`이며 NCP·운영 채택·사람 인수를 완료하지 않는다.
+
+재현(기존 선택 가상환경에 extras 설치 후):
+
+```powershell
+$env:HUFS_MARKITDOWN_PYTHON = (Resolve-Path local_only/oss/markitdown-0.1.9/Scripts/python.exe).Path
+python -m unittest discover -s tools/evaluation/oss -p test_document_probe.py
+& $env:HUFS_MARKITDOWN_PYTHON tools/evaluation/oss/document_probe.py
+```
+
+환경변수 없이 단위 시험을 실행하면 fixture/지표 2개만 실행하고 실제 변환 1개는 명시적으로 SKIP한다. probe는 정상 결과에 원문·변환 본문을 출력하지 않고 오류도 고정 메시지만 내보낸다.
