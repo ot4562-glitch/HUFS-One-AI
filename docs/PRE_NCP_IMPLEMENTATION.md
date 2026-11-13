@@ -274,3 +274,20 @@ HTML 외 비교 공백에 대해 개발 전용 MarkItDown 0.1.9의 PdfConverter/
 첫 primitive는 최대 4096축/4,194,304픽셀/500개 normalized rectangle을 제한하고 fractional edge를 밖으로 반올림해 가림 영역을 축소하지 않는다. 모든 RGBA 채널을 교체하고 겹친 가림은 행별 구간 합집합으로 한 번만 처리한다. 원본 버퍼를 변경하지 않으며 IHDR/IDAT/IEND 외 chunk를 생성하지 않는다. 빈 mask는 원본 픽셀을 유지하는 명시적 경우이고 익명화 완료가 아니다. 임의 binary decoder는 포함하지 않는다.
 
 누락 모듈 실패를 확인한 뒤 focused Vitest 12개 PASS(무작위 고정 seed 40개 구간 합집합, 최대 약 419만 픽셀/500개 겹침, CRC·압축 해제·픽셀/알파·메타데이터 없음·크기/geometry 한도 포함), 타입 검사 PASS. 무시되는 local_only/recognition-preview-decoder-proof.mts로 설치된 Edge의 실제 PNG decoder/canvas가 출력 크기와 가림 픽셀을 읽는 proof 1개 PASS. 합성 4×3 raster일 뿐 원본 파일/전체 page 렌더·사람 시각/원본 업로드 경로의 완료 증거는 아니다. 이 단계에서 API나 UI에서 사용할 수 있는 preview endpoint를 제공했다고 주장하지 않는다.
+
+
+### #512 독립 원본 자산 원장·검역·동의 철회 SQL 구현
+
+Ruling: 로컬 검증 가능한 최초 원본 저장 adapter는 비공개 SQL BYTEA(파일당 2 MiB)로 구현한다. 외부 object put의 불명확한 완료/늦은 쓰기를 무시하지 않고 원본과 owner epoch/정리를 같은 DB 트랜잭션에 결속하기 위한 선택이다. NCP Object Storage adapter를 추후 선택하면 durable intent·조건부 쓰기/늦은 완료·독립 검증을 별도로 구현해야 하며 이 SQL 증거를 그 실행 증거로 바꾸지 않는다. 실제 학생 자료는 승인된 암호화 private DB/백업·파일 검역·권리/현재 owner authority 없이는 받지 않는다. 현재 애플리케이션의 업로드 API나 기본 연결 factory는 아직 추가하지 않았다.
+
+PostgresRecognitionPrivateAssets는 명시적 INTAKE/METADATA/ORIGINAL_READ 권리를 독립 authority에서 확인한다. actor/activity·현재 실제 SQL consent version·권리/동의/lease 판본을 context hash에 결속하고, 정확한 bytes hash/MIME/현재 CLEAN 검사 receipt가 있어야 저장한다. 헤더 sniff는 검역으로 주장하지 않는다. caller와 inspector가 await 동안 bytes를 바꾸는 경계를 분리하고, 검사 결과 뒤 현재 권리와 local/DB 시각·검사 lease를 재검사한다. 임의 파일명/URL/모델 입력은 저장 DTO에 없다. 안정된 UUID 요청 ID를 actor/activity에 결속해 멱등 재확인을 허용하되 다른 bytes·권리/epoch·삭제 자산의 재생은 거부한다.
+
+새 migration 20261113_recognition_private_assets.sql은 원본 identity를 불변으로 두고 owner consent row FOR UPDATE 아래 활동당 LIVE 10개/계정당 LIVE 50개를 제한한다. SQL trigger도 epoch/quota를 확인한다. 삭제된 원본은 바이트·hash·MIME·크기·검사/권리 토큰을 비우고 최소 identity/version/timestamp만 남기는 복구 불가 tombstone이다. runtime은 assets SELECT/INSERT와 owner-context 검사 erase 함수 EXECUTE만 가지며 직접 UPDATE/DELETE를 허용하지 않는다. 최초 실제 SQL 시험에서 asset FOR SHARE가 UPDATE 권한을 요구함을 재현했다. 권한을 넓히지 않고 read/erase를 consent row로 직렬화했다([PostgreSQL SELECT 권한](https://www.postgresql.org/docs/current/sql-select.html)).
+
+자산 삭제는 해당 원본의 workspace 후보를 먼저 지우고 기존 proof cleanup 큐에 작업을 남긴다. OCR을 한 번도 하지 않은 파일은 별도의 fallback PURGE_DOCUMENT job을 같은 트랜잭션에 생성한다. 기존 proof 거부의 PURGE_EXTRACTION은 원본을 보존하며, WITHDRAW/REQUEST_DELETE/동의 철회의 PURGE_DOCUMENT는 새 SQL 원본도 같은 트랜잭션에서 지운다. 개인 저장 동의 철회 trigger는 원본을 OCR 후보와 독립적으로 처리한다. 원본이 DB에서 지워져도 외부 OCR/cache/derived/model 정리의 독립 receipt 전에는 ERASURE_PENDING으로만 응답한다. 동의 철회 뒤 같은 현재 owner의 erasure는 가능하며 재동의는 옛 asset/request ID를 되살리지 않는다.
+
+검증: 새 기본 단위 7개 PASS(스코프/크기/MIME·감염/다른hash/만료검사·검역 뒤 권리변경·바이트변경·5초 deadline/late clean/late connection release·선취소 포함). 관련 proof/cleanup/픽셀 시험과 함께 최종 4개 파일/42개 시험 PASS, 실제 PGlite 재실행은 2개 파일/8개 시험 PASS다. PGlite proof는 7개 migration과 제한된 비소유자 role로 기존 cleanup/HTTP와 새 자산 수명주기를 실행했다. exact replay·다른bytes 재생거부·RLS/cross-owner·직접 UPDATE 거부·OCR 전 동의철회/원본정화/큐·재동의/SQL stale epoch 거부·원본 읽기·기존 후보 삭제에 의한 원본 동시정화·자산 삭제 시 후보 정화·10건 제한·철회 후 전체 LIVE 0건과 큐를 확인했다. scanner는 알려진 합성 PNG hash만 허용하는 시험 대역이며 실제 malware 검역이 아니다.
+
+타입 검사 및 공개 경계 172개 PASS. 읽기 전용 독립 검토는 권한·잠금 순서·outbox/자산 trigger 종료·불변 tombstone에 알려진 중대한 결함이 없다고 판단했다(재실행 검토 아님). 같은 proof를 native PostgreSQL opt-in suite에도 연결했지만 native PG/다중 연결 경쟁은 NOT_RUN이다. 단일 연결 PGlite를 동시성 증거로 사용하지 않는다.
+
+남은 #512 구현: typed intake/list/erase HTTP 계약과 CSRF/현재 actor/할당량, ledger→trusted documents/OCR·검역·renderer 공급자 factory, 현재 asset/hash/page/mask에 결속된 보호된 raster preview, client/owner UI 연결 및 SQL→HTTP→브라우저 E2E. 실제 NCP/실원본 권리·독립 erasure/OCR/사람 Gold·실기기는 외부 gate다. 나머지 OSS 비교·전체 요구사항 최종 대조 및 PR도 진행 중이다.

@@ -27,6 +27,7 @@ import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js
 import {proveGuideWorkspace} from './international-checklist-live-slice.js';
 import {proveRecognitionCleanup} from './recognition-cleanup-live-slice.js';
 import {proveRecognitionProofHttp} from './recognition-proof-http-live-slice.js';
+import {proveRecognitionPrivateAssets} from './recognition-private-assets-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -73,6 +74,7 @@ const migrationNames=[
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
   '20261113_international_checklists.sql',
   '20261113_recognition_proof_cleanup.sql',
+  '20261113_recognition_private_assets.sql',
   '20261101_experience_tag_approval.sql',
   '20261101_demo_overlays.sql',
   '20261101_verified_source_rights.sql',
@@ -146,6 +148,8 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        GRANT INSERT ON api_self_workspace_events TO hufs_test_self;
        GRANT SELECT ON api_self_proof_cleanup TO hufs_test_self;
        GRANT UPDATE(status,receipt_id,acknowledged_at) ON api_self_proof_cleanup TO hufs_test_self;
+       GRANT SELECT,INSERT ON api_self_recognition_assets TO hufs_test_self;
+       GRANT EXECUTE ON FUNCTION api_self_erase_recognition_asset(text,text,text,text) TO hufs_test_self;
        GRANT INSERT ON api_self_consent_events TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_experience_tag_approvals TO hufs_test_self;
        GRANT INSERT ON api_experience_tag_events TO hufs_test_self;
@@ -429,6 +433,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   });
   it('uses owner proof HTTP extraction/review/redaction and durable erasure acknowledgment',async()=>{
     await proveRecognitionProofHttp(admin,selfAccount);
+  });
+  it('persists private recognition originals and purges never-OCR and reviewed assets through consent/cleanup',async()=>{
+    await proveRecognitionPrivateAssets(admin,selfAccount);
   });
   it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
     const actorId='SYN-SELF-OWNER';
