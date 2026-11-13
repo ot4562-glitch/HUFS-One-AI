@@ -96,6 +96,52 @@ export function DeadlineRow({item, navigate}: {item: ReturnType<typeof upcomingD
   );
 }
 
+/** Actual next steps only. Every deadline is projected from the current permitted snapshot. */
+export function HomeActionBrief({items, basis, navigate, hasSharedSchedule}: {
+  items: ReturnType<typeof upcomingDeadlines>;
+  basis: readonly string[];
+  navigate: Nav;
+  hasSharedSchedule: boolean;
+}) {
+  return <section className="work-brief" id="today-action" aria-labelledby="work-brief-title">
+    <div className="work-brief__content">
+      <span className="work-brief__eyebrow"><span className="work-brief__dot" aria-hidden="true" /> TODAY / CAREER DESK</span>
+      <h2 id="work-brief-title">오늘 확인할 일</h2>
+      <p className="work-brief__intro">공고 자격과 마감을 확인하고 지원 준비를 기록하세요.</p>
+      <div className="work-brief__actions">
+        <InAppLink to="/opportunities" navigate={navigate} className="work-brief__action-primary">공고 살펴보기 <span aria-hidden="true">↗</span></InAppLink>
+        <InAppLink to="/applications" navigate={navigate} className="work-brief__action-secondary">지원 준비 현황 <span aria-hidden="true">↗</span></InAppLink>
+      </div>
+      <nav className="work-jumpnav" aria-label="오늘 화면의 섹션 바로가기">
+        <a href="#today-summary">주요 현황</a>
+        <a href="#today-workspace">일정과 공고</a>
+        <a href="#service-tools">업무 도구</a>
+        <a href="#feature-directory-panel">전체 기능</a>
+      </nav>
+      <span className="work-brief__art" aria-hidden="true"><span /><span /><span /></span>
+    </div>
+    <div className="work-brief__upcoming" aria-label="확인된 다음 일정">
+      <div className="work-brief__upcoming-head">
+        <span>확정된 다음 마감</span>
+        <span className="work-brief__upcoming-count">{items.length ? `확정 ${items.length}건` : '표시할 일정 없음'}</span>
+      </div>
+      {items.length ? (
+        <ul className="work-brief__list">{items.slice(0, 3).map(item => (
+          <li key={item.key}>
+            <span className="work-brief__date"><DDayText dday={item.dday} /></span>
+            <InAppLink to={item.path} navigate={navigate} className="work-brief__deadline-link">
+              <span>{item.title}</span><span aria-hidden="true">↗</span>
+            </InAppLink>
+          </li>
+        ))}</ul>
+      ) : (
+        <p className="work-brief__empty">{hasSharedSchedule ? '현재 화면에 표시할 확정 마감이 없습니다.' : '공유되지 않은 자료의 마감은 표시하지 않습니다.'}</p>
+      )}
+      {basis.length > 0 && <p className="work-brief__basis">{basis.join(' · ')}</p>}
+    </div>
+  </section>;
+}
+
 const CAL_ICON = (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false">
     <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" />

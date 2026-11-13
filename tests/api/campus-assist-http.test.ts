@@ -106,6 +106,36 @@ describe('authenticated campus assistance route boundaries (#339 #340 #341)',()=
     expect(payload).not.toContain('02-1234-5678');
     expect(payload).not.toContain(':contact');
   });
+  it('#508 admits a revision-bound public office contact without exempting the question',async()=>{
+    const admit=vi.fn(async()=>true),execute=vi.fn(async (_input:Parameters<NonNullable<CampusAssistServices['hcx007']>['execute']>[0])=>({status:{code:'20000'}}));
+    const h=fixture({admit,execute});
+    const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,
+      paragraphs:[{id:'office',text:'가상 교환학생 어학 문의는 office@example.org 또는 02-1234-5678입니다.',
+        publicContacts:['office@example.org','02-1234-5678']}]};
+    h.faq.read.mockResolvedValue({items:[doc],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학 제 메일 office@example.org'});
+    expect(admit).toHaveBeenCalledOnce();
+    expect(execute).toHaveBeenCalledOnce();
+    const prompt=JSON.parse(execute.mock.calls[0]![0].wire.body.messages[1]!.content);
+    expect(prompt.context[0].text).toBe(doc.paragraphs[0]!.text);
+    expect(prompt.question).not.toContain('office@example.org');
+    expect(prompt.question).toContain('[이메일]');
+  });
+  it('#508 quarantines mixed private identifiers before admission despite a reviewed office',async()=>{
+    const admit=vi.fn(async()=>true),execute=vi.fn(async()=>({}));
+    const h=fixture({admit,execute});
+    const doc={...SYNTHETIC_FAQ_DOCUMENTS[0]!,
+      paragraphs:[{id:'office',text:'가상 교환학생 어학 문의 office@example.org, 학번은 202012345입니다.',
+        publicContacts:['office@example.org']}]};
+    h.faq.read.mockResolvedValue({items:[doc],receipt:{actorId:actor.actorId,
+      sourceVersion:'SYN-REV-1',expiresAt:'2026-12-01T00:00:00Z'}});
+    const response=await h.post('/api/owner/faq/ask',{asOf:NOW,question:'가상 교환학생 어학'});
+    expect(response.statusCode).toBe(422);
+    expect(admit).not.toHaveBeenCalled();
+    expect(execute).not.toHaveBeenCalled();
+    expect(response.body).not.toContain('202012345');
+  });
   it('scopes activity reads to an authorized, revalidated snapshot',async()=>{
     const h=fixture(),r=await h.app.inject({url:'/api/owner/activities?asOf='+encodeURIComponent(NOW)});
     expect(r.statusCode).toBe(200);

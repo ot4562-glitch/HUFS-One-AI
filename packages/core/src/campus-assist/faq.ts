@@ -6,6 +6,7 @@ import {searchFaqParagraphs} from './faq-search.js';
 export interface FaqEvidence {
   citationId:string;documentId:string;revisionId:string;title:string;sourceUrl:string;
   verifiedAt:string;text:string;provenance:FaqDocument['provenance'];
+  publicContacts?:string[];
 }
 /** Instant first, then a numeric-aware revision ID ("r10" after "r9"). Strings would misorder time offsets.
  * 0 means the same revision position. */
@@ -64,7 +65,9 @@ export function retrieveFaqEvidence(question:string,raw:readonly FaqDocument[],a
       const citationId=doc.documentId+':'+doc.revisionId+':'+p.id;
       if(paragraphs.has(citationId)||citationId.length>120)throw new RangeError('Ambiguous FAQ citation ID');
       paragraphs.set(citationId,{citationId,documentId:doc.documentId,revisionId:doc.revisionId,title:doc.title,
-        sourceUrl:doc.sourceUrl,verifiedAt:doc.verifiedAt,text:p.text,provenance:doc.provenance});
+        sourceUrl:doc.sourceUrl,verifiedAt:doc.verifiedAt,text:p.text,provenance:doc.provenance,
+        ...(p.publicContacts?{publicContacts:p.publicContacts}:{}),
+      });
     }
   }
   const hits=searchFaqParagraphs(question,[...paragraphs.values()].map(e=>({key:e.citationId,title:e.title,text:e.text})),{limit});

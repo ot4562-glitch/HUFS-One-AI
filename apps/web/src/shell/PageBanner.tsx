@@ -20,7 +20,11 @@ export function PageBanner({path, title, navigate, headingRef}: {
 }) {
   if (path === '/') {
     return <header className="page-head page-head--home">
-      <h1 id="page-title" ref={headingRef} tabIndex={-1} className="page__title">{title}</h1>
+      <div className="page-head__home-intro">
+        <span className="page-head__kicker">취업·학업 지원</span>
+        <h1 id="page-title" ref={headingRef} tabIndex={-1} className="page__title">{title}</h1>
+        <p className="page-head__lede">공고, 일정, 학업 현황을 확인하세요.</p>
+      </div>
     </header>;
   }
   const area = areaOf(path);

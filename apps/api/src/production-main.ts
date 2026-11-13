@@ -1,5 +1,5 @@
 import {lstat,realpath} from 'node:fs/promises';
-import {dirname,isAbsolute,resolve} from 'node:path';
+import {dirname,posix,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {prepareOperatorPostgres,startOperatorPostgres} from './operator-postgres-runtime.js';
 import type {OperatorPostgresInputs,OperatorServer,ApprovedPrivateBridge} from './operator-postgres-runtime.js';
@@ -9,8 +9,8 @@ const ROOT='/etc/hufs-one/private';
 /** A trusted server module supplies actual credentials and provider adapters.
  * Its path is not a URL, command, browser parameter, or repository secret. */
 export function productionConfigPath(raw:string|undefined):string{
-  if(!raw||!isAbsolute(raw)||!raw.endsWith('.mjs')||raw.includes('\0')
-    ||resolve(raw)!==raw||!raw.startsWith(ROOT+'/'))
+  if(!raw||!posix.isAbsolute(raw)||!raw.endsWith('.mjs')||/[\x00-\x1f\x7f\\]/.test(raw)
+    ||posix.resolve(raw)!==raw||!raw.startsWith(ROOT+'/'))
     throw new Error('CONFIGURATION_REQUIRED: private production factory path');
   return raw;
 }

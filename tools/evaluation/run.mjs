@@ -15,6 +15,7 @@ import {recommendationReport,RankEnrichmentObservationSchema} from '../../dist/e
 import {buildMediaFixturePack,validateMediaFixturePack} from '../../dist/evaluation/packages/core/src/evaluation/media-fixtures.js';
 import {mediaComparisonReport,MediaObservationSchema} from '../../dist/evaluation/packages/core/src/evaluation/media-evaluation.js';
 import {runCoreBenchmark} from '../../dist/evaluation/packages/core/src/evaluation/core-benchmark.js';
+import {evaluateActivityOrigins} from '../../dist/evaluation/packages/core/src/evaluation/activity-rolling-origin.js';
 import {renderReviewHtml} from './review-html.mjs';
 
 const root=fileURLToPath(new URL('../../',import.meta.url)),FIXTURE_DIR=join(root,'packages/fixtures/synthetic/evaluation-v1');
@@ -108,6 +109,7 @@ async function main(){
   'ledger-report':['--package','--ledger','--authority','--authority-sha256'],
   'media-report':['--fixtures','--ocr-observation','--hcx-observation','--out','--review-package','--ledger','--reference','--authority','--authority-sha256'],benchmark:['--samples','--out'],
   'authority-digest':['--authority'],
+  'activity-evaluate':['--input','--out'],
  };
  if(!allowed[command]||Object.keys(options).some(k=>!allowed[command].includes(k)))throw Error();
  if(command==='export')result=await exportAll(options);
@@ -153,6 +155,16 @@ async function main(){
    const approved=await authority(options);reference={packet,ledger:await json(required(options,'--ledger')),
     now:new Date().toISOString(),reference:kind,...(approved?{authority:approved}:{})};}
   result=mediaComparisonReport(pack.manifest,new Map(pack.assets.map(a=>[a.path,a.bytes])),observations,reference);
+ }else if(command==='activity-evaluate'){
+  required(options,'--out');
+  const bytes=await boundedBytes(required(options,'--input'));
+  const report=evaluateActivityOrigins(JSON.parse(bytes.toString('utf8')));
+  // Bind the actually imported JS, not an unbuilt source file or a claimed Git HEAD.
+  const implementation={};
+  for(const path of ['evaluation/activity-rolling-origin.js','campus-assist/activities.js'])
+   implementation[path]=hashBytes(await boundedBytes(join(root,'dist/evaluation/packages/core/src',path)));
+  implementation.contracts=hashBytes(await boundedBytes(join(root,'packages/contracts/dist/campus-assist/index.js')));
+  result={...report,inputSha256:hashBytes(bytes),implementationSha256:hashCanonical(implementation)};
  }else if(command==='benchmark')result={...runCoreBenchmark(Number(options['--samples']??50)),
    environment:{node:process.version,platform:platform(),arch:arch(),logicalCpus:cpus().length,measuredAt:new Date().toISOString()}};
  else if(command==='authority-digest')result={canonicalSha256:hashCanonical(AuthorityConfig.parse(await json(required(options,'--authority')))),

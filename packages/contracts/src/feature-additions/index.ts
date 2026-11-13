@@ -237,6 +237,8 @@ export const GuideTranslationSchema = z.strictObject({
   review: z.enum(['HUMAN_VERIFIED','MACHINE_DRAFT','MISSING']),
   basedOnRevisionId: Id,
   translationVersion: Id,
+  /** Optional human-reviewed step captions belong to this translation version. */
+  stepLabels:z.record(Id,z.string().trim().min(1).max(160)).refine(labels=>Object.keys(labels).length<=50).optional(),
 });
 export const InternationalGuideSchema = z.strictObject({
   id: Id, topicCode: Id, campuses: BoundedCodeList, terms: BoundedCodeList,
@@ -266,3 +268,5 @@ export {OfficialHttpsUrlSchema} from './official-url.js';
 export * from './owner-v2-catalog.js';
 export * from './owner-v2-insights.js';
 export * from './owner-preparation.js';
+export * from './proof-review.js';
+export * from './recognition-assets.js';

@@ -1,0 +1,29 @@
+[Unit]
+Description=HUFS One AI private source refresh failure notification
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=10min
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+User=hufs-crawler
+Group=hufs-crawler
+WorkingDirectory=/opt/hufs-one/current
+Environment=NODE_ENV=production
+Environment=HUFS_NCP_ALERT_FACTORY=/etc/hufs-one/private/refresh-alert-factory.mjs
+ExecStart=/usr/bin/node /opt/hufs-one/current/tools/ingestion/refresh-alert-cli.mjs --notify
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+MemoryMax=128M
+CPUQuota=25%
+TimeoutStartSec=15s

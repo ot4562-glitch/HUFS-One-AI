@@ -3,7 +3,13 @@ import type {FeatureAdditions as C} from '@hufs-one/contracts';
 import {parseAsOf,verifySource,type FeatureMode} from './source-policy.js';
 export type GuideLocale='ko'|'en'|'zh';
 export type GuideStep={id:string;order:number;documentCodes:readonly string[];
-  officeCode?:string|undefined;sourceSpanId:string};
+  officeCode?:string|undefined;sourceSpanId:string;label?:string|undefined};
+type Translation=C.InternationalGuide['translations']['ko'];
+function reviewedTranslation(t:Translation|undefined,guide:C.InternationalGuide):t is Translation{
+  if(!t||t.review!=='HUMAN_VERIFIED'||!t.text.trim()||t.basedOnRevisionId!==guide.source.revisionId)return false;
+  const ids=new Set(guide.steps.map(s=>s.id)),labels=Object.entries(t.stepLabels??{});
+  return labels.length<=50&&labels.every(([id,label])=>ids.has(id)&&typeof label==='string'&&!!label.trim()&&label.length<=160);
+}
 export type GuideResponse={
   guideId:string;sourceRevisionId:string;
   status:'READY'|'KOREAN_FALLBACK'|'UNKNOWN_SOURCE'|'NOT_APPLICABLE'
@@ -43,13 +49,14 @@ export function resolveInternationalGuide(input:{
     return blank('UNKNOWN_SOURCE');
   const request=guide.translations[input.locale];
   const korean=guide.translations.ko;
-  const approved=(t:typeof korean|undefined):t is typeof korean=>!!t
-    && t.review==='HUMAN_VERIFIED' && t.text.trim().length>0
-    && t.basedOnRevisionId===guide.source.revisionId;
   const steps=validatedSteps.map(s=>({...s,documentCodes:[...s.documentCodes]}))
     .sort((a,b)=>a.order-b.order||a.id.localeCompare(b.id,'en'));
-  if(approved(request)) return {...base,status:'READY',locale:input.locale,body:request.text,steps};
-  if(approved(korean)) return {...base,status:'KOREAN_FALLBACK',locale:'ko',body:korean.text,steps};
+  const withLabels=(t:Translation)=>steps.map(step=>{
+    const label=t.stepLabels&&Object.hasOwn(t.stepLabels,step.id)?t.stepLabels[step.id]:undefined;
+    return {...step,...(label?{label}:{})};
+  });
+  if(reviewedTranslation(request,guide)) return {...base,status:'READY',locale:input.locale,body:request.text,steps:withLabels(request)};
+  if(reviewedTranslation(korean,guide)) return {...base,status:'KOREAN_FALLBACK',locale:'ko',body:korean.text,steps:withLabels(korean)};
   return blank('TRANSLATION_UNAVAILABLE');
 }
 export type GuideChecklist={
@@ -85,8 +92,7 @@ export function reconcileGuideChecklist(
   // translation provenance. Invalidate their checked state rather than
   // silently treating them as current after the reviewed text changes.
   const translationCurrent=saved.locale!==undefined&&saved.translationVersion!==undefined
-    &&translation?.review==='HUMAN_VERIFIED'
-    &&translation.basedOnRevisionId===guide.source.revisionId
+    &&reviewedTranslation(translation,guide)
     &&translation.translationVersion===saved.translationVersion;
   if(!sourceOk||!stepsOk||!translationCurrent||saved.guideId!==guide.id
     ||saved.guideRevisionId!==guide.source.revisionId)

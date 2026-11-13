@@ -18,6 +18,10 @@ import {KOREAN_DOCUMENT_MIMES,parseSourceDocumentDraft,type SourceDocumentExtrac
 import {acquireApprovedSourceResponse,type ApprovedSourceAcquisition} from './source-acquisition.js';
 import {requireCurrentSourceRefreshPreflight,type TrustedSourceRefreshPreflight}
   from './source-refresh-operator-preflight.js';
+import {requireSourceRuntimeVersion,pinSourceRuntimeVersion,type TrustedSourceRuntimeVersion} from './source-runtime-version.js';
+import type {TrustedSourceRefreshBudget} from './source-refresh-budget.js';
+import type {SourceBrowserExtractor} from './source-browser-extractor.js';
+import {parseSourceBrowserEvidence,SourceBrowserRendererSchema} from './source-browser-evidence.js';
 
 const ALLOWED=new Set(['text/plain','text/html','application/rss+xml',
   'application/atom+xml','application/xml','text/xml',
@@ -30,7 +34,7 @@ function safeValidator(value:string|null):string|null{
 type StoredHead={
   revisionId:string;originalSha256:string;contentSha256:string;
   fetchedAt:string;permissionRef:string;etag:string|null;lastModified:string|null;
-  mediaKind:string;hasImageEvidence:boolean;hasPdfEvidence:boolean;
+  mediaKind:string;hasImageEvidence:boolean;hasPdfEvidence:boolean;browserRenderingSha256:string|null;
 };
 function stringDate(value:unknown):string{
   if(value instanceof Date)return value.toISOString();
@@ -86,19 +90,33 @@ export function createApprovedDurableSourceExecutor(options:{
   acquisition?:ApprovedSourceAcquisition;
   /** Mandatory private live policy/robots/terms/budget snapshot for native acquisition. */
   preflight?:TrustedSourceRefreshPreflight;
+  runtimeVersion?:TrustedSourceRuntimeVersion;
+  budget?:TrustedSourceRefreshBudget;
   /** Optional local HWP/HWPX parser. Its output never constitutes human review. */
   documentExtractor?:SourceDocumentExtractor;
   /** Explicit private image adapter; absent means binary extraction is refused. */
   imageExtractor?:SourceImageExtractor;
   /** Explicit pinned local renderer and independently approved OCR adapter. */
   pdfExtractor?:SourcePdfExtractor;
+  browserExtractor?:SourceBrowserExtractor;
   readerPool:ReviewerSqlPool;
   writer:Pick<PostgresSourceRevisionWriter,'append'|'observeUnchanged'|'storeHttpValidators'>;
   now?:()=>string;
 }):TrustedDurableSourceExecutor{
-  if(options.acquisition&&typeof options.preflight?.loadCurrent!=='function')
+  const native=Boolean(options.acquisition||options.browserExtractor);
+  const browserRenderer=options.browserExtractor?SourceBrowserRendererSchema.parse(options.browserExtractor.renderer):undefined;
+  if(native&&typeof options.preflight?.loadCurrent!=='function')
     throw new Error('Approved source preflight configuration required');
+  if(native&&typeof options.runtimeVersion?.loadCurrent!=='function')
+    throw new Error('Source runtime version configuration required');
+  if(native&&typeof options.budget?.reserve!=='function')
+    throw new Error('Source refresh budget configuration required');
+  const runtimeVersion=options.runtimeVersion?pinSourceRuntimeVersion(options.runtimeVersion):undefined;
+  const runtimeAudit=runtimeVersion?{runtimeManifest:runtimeVersion.expected}:{};
   const now=options.now??(()=>new Date().toISOString());
+  const requireVersion=async(sourceId:string,permissionRef:string)=>{
+    if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{sourceId,permissionRef,now:now()});
+  };
   const readHead=async(sourceId:string,canonicalUrl:string):Promise<StoredHead|null>=>{
     const c=await options.readerPool.connect();
     try{
@@ -108,11 +126,13 @@ export function createApprovedDurableSourceExecutor(options:{
           WHERE p.revision_id=r.revision_id AND p.image_span IS NOT NULL) AS has_image_evidence,
         EXISTS(SELECT 1 FROM source_paragraphs_vnext p
           WHERE p.revision_id=r.revision_id
-            AND p.image_span->>'transformVersion'='pdf-full-page-v1') AS has_pdf_evidence
+            AND p.image_span->>'transformVersion'='pdf-full-page-v1') AS has_pdf_evidence,
+        b.rendering_sha256 AS browser_rendering_sha256
         FROM source_ingest_heads h LEFT JOIN source_revisions_vnext r
           ON r.revision_id=h.revision_id
         LEFT JOIN source_http_validators v ON v.source_id=h.source_id
           AND v.revision_id=h.revision_id AND v.canonical_url=$2
+        LEFT JOIN source_browser_revision_metadata_vnext b ON b.revision_id=h.revision_id
         WHERE h.source_id=$1`,[sourceId,canonicalUrl]);
       if(r.rows.length>1)throw new Error('Multiple source heads');
       if(r.rows.length===0||r.rows[0]?.revision_id===null)return null;
@@ -126,7 +146,8 @@ export function createApprovedDurableSourceExecutor(options:{
         etag:typeof v.etag==='string'?v.etag:null,
         lastModified:typeof v.last_modified==='string'?v.last_modified:null,
         mediaKind:typeof v.media_kind==='string'?v.media_kind:'TEXT',hasImageEvidence:v.has_image_evidence===true,
-        hasPdfEvidence:v.has_pdf_evidence===true};
+        hasPdfEvidence:v.has_pdf_evidence===true,
+        browserRenderingSha256:typeof v.browser_rendering_sha256==='string'?v.browser_rendering_sha256:null};
     }finally{c.release();}
   };
   return {
@@ -136,7 +157,8 @@ export function createApprovedDurableSourceExecutor(options:{
       const policy={...registered};
       const u=reviewPolicy(policy,input.sourceId,input.permissionRef);
       const at=now(),initial=await approvedFingerprint({policy,resolver:options.rights,now:at});
-      if(options.acquisition)await requireCurrentSourceRefreshPreflight(
+      if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{...input,now:at});
+      if(native)await requireCurrentSourceRefreshPreflight(
         options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
           canonicalUrl:u.href,now:at});
       const head=await readHead(input.sourceId,u.href);
@@ -148,20 +170,34 @@ export function createApprovedDurableSourceExecutor(options:{
         // Head lookup and both DNS checks may outlive the original grant.
         // Revalidate the same COLLECT/STORE authority immediately before HTTP.
         const currentTime=now();
+        if(runtimeVersion)await requireSourceRuntimeVersion(runtimeVersion,{...input,now:currentTime});
         if(await approvedFingerprint({policy,resolver:options.rights,now:currentTime})!==initial)
           throw new Error('Source rights changed before HTTP');
         // A queue admission preflight is not a network grant. Re-read the
         // private operator's current robots/terms/TTL/budget immediately
         // before the one-use pinned network operation.
-        if(options.acquisition)await requireCurrentSourceRefreshPreflight(
+        if(native)await requireCurrentSourceRefreshPreflight(
           options.preflight!,{sourceId:input.sourceId,permissionRef:input.permissionRef,
             canonicalUrl:u.href,now:currentTime});
+        // Reserve the complete response cap durably before any request bytes
+        // leave the host. Never refund failures, 304s or unknown outcomes.
+        if(options.budget&&await options.budget.reserve({sourceId:input.sourceId,
+          permissionRef:input.permissionRef,canonicalUrl:u.href,now:currentTime})!==true)
+          throw new Error('Source refresh budget exhausted');
+        if(options.budget){
+          if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+            throw new Error('Source rights changed during budget admission');
+          await requireVersion(input.sourceId,input.permissionRef);
+        }
       }},options.egress);
       const headers:Record<string,string>={
         Accept:[...ALLOWED,...(options.documentExtractor?KOREAN_DOCUMENT_MIMES.keys():[])].join(','),
       };
-      if(head?.etag)headers['If-None-Match']=head.etag;
-      if(head?.lastModified)headers['If-Modified-Since']=head.lastModified;
+      // An unchanged main document says nothing about its rendered resources.
+      // Also force a fresh response when transitioning away from browser mode.
+      const conditional=!options.browserExtractor&&!head?.browserRenderingSha256;
+      if(conditional&&head?.etag)headers['If-None-Match']=head.etag;
+      if(conditional&&head?.lastModified)headers['If-Modified-Since']=head.lastModified;
       const response=await acquireApprovedSourceResponse({canonicalUrl:u.href,
         ...(options.acquisition?{acquisition:options.acquisition}:{}),
         request:signal=>transport(u,{method:'GET',redirect:'error',credentials:'omit',
@@ -170,12 +206,13 @@ export function createApprovedDurableSourceExecutor(options:{
       // Conditional requests are valid only with a persisted validator for
       // exactly this canonical URL and current immutable source revision.
       if(response.status===304){
-        if(!head||(!head.etag&&!head.lastModified))
+        if(!conditional||!head||(!head.etag&&!head.lastModified))
           throw new Error('Unconditional 304 refused');
         if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
           throw new Error('Source rights changed during conditional fetch');
+        await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.observeUnchanged({sourceId:input.sourceId,
-          revisionId:head.revisionId,checkedAt:now(),responseStatus:304});
+          revisionId:head.revisionId,checkedAt:now(),responseStatus:304,...runtimeAudit});
         return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
       }
       if(response.status!==200)throw new Error('Unapproved source response');
@@ -187,6 +224,7 @@ export function createApprovedDurableSourceExecutor(options:{
       const bytes=await readApprovedSourceBody(response),originalSha256=SHA(bytes);
       const revisionId='revision-'+randomUUID();
       let image:ReturnType<typeof parseSourceImageEvidence>|undefined;
+      let browser:ReturnType<typeof parseSourceBrowserEvidence>|undefined;
       let pdf:ReturnType<typeof parseSourcePdfEvidence>|undefined,pdfRasters:SourcePdfRaster[]|undefined;
       let revalidateMedia:(()=>Promise<void>)|undefined;
       let paragraphs:RevisionParagraph[];
@@ -202,7 +240,9 @@ export function createApprovedDurableSourceExecutor(options:{
           if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
             throw new Error('Source rights changed during PDF check');
           const checkedAt=now();
-          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await requireVersion(input.sourceId,input.permissionRef);
+          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200,...runtimeAudit});
+          await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
             canonicalUrl:u.href,checkedAt,etag,lastModified});
           return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -245,7 +285,9 @@ export function createApprovedDurableSourceExecutor(options:{
           if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
             throw new Error('Source rights changed during image check');
           const checkedAt=now();
-          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200});
+          await requireVersion(input.sourceId,input.permissionRef);
+          await options.writer.observeUnchanged({sourceId:input.sourceId,revisionId:head.revisionId,checkedAt,responseStatus:200,...runtimeAudit});
+          await requireVersion(input.sourceId,input.permissionRef);
           await options.writer.storeHttpValidators({sourceId:input.sourceId,revisionId:head.revisionId,
             canonicalUrl:u.href,checkedAt,etag,lastModified});
           return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -270,6 +312,25 @@ export function createApprovedDurableSourceExecutor(options:{
         image=parseSourceImageEvidence(prepared.evidence,{sourceId:input.sourceId,revisionId,
           permissionRef:input.permissionRef,originalSha256});
         paragraphs=image.paragraphs;
+      }else if(media==='text/html'&&options.browserExtractor){
+        const assertSourceRights=async()=>{
+          if(await approvedFingerprint({policy,resolver:options.rights,now:now()})!==initial)
+            throw new Error('Source rights changed during browser processing');
+          await requireVersion(input.sourceId,input.permissionRef);
+        };
+        await assertSourceRights();
+        const prepared=await options.browserExtractor.extract({content:Buffer.from(bytes),
+          contentType:response.headers.get('content-type')!,canonicalUrl:u.href,
+          sourceId:input.sourceId,sourceRevisionId:revisionId,permissionRef:input.permissionRef,
+          actorRef:input.actorRef,originalSha256,assertSourceRights});
+        if(typeof prepared.revalidate!=='function')throw new Error('Browser authority recheck unavailable');
+        revalidateMedia=async()=>{await prepared.revalidate();await assertSourceRights();};
+        await revalidateMedia();
+        browser=parseSourceBrowserEvidence(prepared.evidence,prepared.domBytes,prepared.paragraphs,{
+          sourceId:input.sourceId,revisionId,permissionRef:input.permissionRef,
+          originalSha256,originalByteLength:bytes.length,asOf:now(),expectedRenderer:browserRenderer!});
+        if(browser.evidence.canonicalUrl!==u.href)throw new Error('Browser canonical URL mismatch');
+        paragraphs=browser.paragraphs;
       }else paragraphs=await options.extractor.extract({content:bytes,contentType:media,canonicalUrl:u.href});
       if(!Array.isArray(paragraphs)||!paragraphs.length||paragraphs.length>200
         ||paragraphs.some(p=>!p.id||!p.text||p.text.length>20_000
@@ -280,10 +341,14 @@ export function createApprovedDurableSourceExecutor(options:{
         throw new Error('Source rights changed during IO');
       // Duplicate content never upgrades human verification timestamps.
       if(head&&head.originalSha256===originalSha256
-        &&head.contentSha256===contentSha256&&(media!=='application/pdf'||head.hasPdfEvidence)){
+        &&head.contentSha256===contentSha256&&(media!=='application/pdf'||head.hasPdfEvidence)
+        &&head.browserRenderingSha256===(browser?.evidence.renderingSha256??null)){
         const checkedAt=now();
+        if(revalidateMedia)await revalidateMedia();
+        await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.observeUnchanged({sourceId:input.sourceId,
-          revisionId:head.revisionId,checkedAt,responseStatus:200});
+          revisionId:head.revisionId,checkedAt,responseStatus:200,...runtimeAudit});
+        await requireVersion(input.sourceId,input.permissionRef);
         await options.writer.storeHttpValidators({sourceId:input.sourceId,
           revisionId:head.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
         return {kind:'NOT_MODIFIED',revisionId:head.revisionId};
@@ -307,9 +372,12 @@ export function createApprovedDurableSourceExecutor(options:{
         pdfInput={pdfEvidence:pdf.evidence,pdfRasters};
       }
       if(revalidateMedia)await revalidateMedia();
+      await requireVersion(input.sourceId,input.permissionRef);
       await options.writer.append({revision,paragraphs,originalBytes:bytes,
-        permissionReviewed:true,...(image?{imageEvidence:image.evidence}:{}),...(pdfInput??{})});
+        permissionReviewed:true,...runtimeAudit,...(image?{imageEvidence:image.evidence}:{}),...(pdfInput??{}),
+        ...(browser?{browserEvidence:browser.evidence,browserDomBytes:browser.domBytes}:{})});
       if(revalidateMedia)await revalidateMedia();
+      await requireVersion(input.sourceId,input.permissionRef);
       await options.writer.storeHttpValidators({sourceId:input.sourceId,
         revisionId:revision.revisionId,canonicalUrl:u.href,checkedAt,etag,lastModified});
       // A revocation after append leaves an unapproved DRAFT, never ACTIVE.

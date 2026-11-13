@@ -9,7 +9,7 @@ import {decodeDetailId} from '../shell/router.js';
 import {MiniCalendar} from '../features/today/MiniCalendar.js';
 import {TodaySummary} from '../features/today/TodaySummary.js';
 import {OpportunityExplorer} from './OpportunityExplorer.js';
-import {DeadlineRow, deadlineBasisText, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
+import {DeadlineRow, deadlineBasisText, HomeActionBrief, HomeNoticeRow, HomeOppRow, Module, OppCard, upcomingDeadlines} from './homeParts.js';
 import {NOT_OFFICIAL_GRADUATION_TEXT, creditsText} from '../features/graduation/graduationView.js';
 import {NoticeReadToggle, OpportunityActions} from '../features/sandbox/SandboxControls.js';
 import {DDayText} from '../features/demo/DDayText.js';
@@ -35,8 +35,10 @@ export const todayPage: PageRenderer = ({path, state, navigate, controller, serv
     body: (
       <>
         <Badges items={view.snapshotBadges} label="이 화면의 자료" />
+        <HomeActionBrief items={deadlines} basis={basis} navigate={navigate}
+          hasSharedSchedule={feed !== null || view.notices.kind === 'SHOW'} />
         <TodaySummary view={view} navigate={navigate} />
-        <div className="modules">
+        <div className="modules" id="today-workspace">
           <div className="module module--cal">
             <MiniCalendar state={state} controller={controller} loadCalendar={services.loadCalendar} navigate={navigate} />
           </div>

@@ -1,6 +1,7 @@
 import type {MouseEvent, ReactNode} from 'react';
 import {TABS, activeTab, inAppHref} from './router.js';
 import {AREAS, areaOf, areaPath} from './areas.js';
+import {UiIcon} from '../design/UiIcon.js';
 
 interface Props {
   readonly path: string;
@@ -51,7 +52,13 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
             <ul>
               {TABS.map(t => (
                 <li key={t.path}>
-                  <InAppLink to={t.path} navigate={navigate} current={tab === t.path} className="tab">{t.label}</InAppLink>
+                  <InAppLink to={t.path} navigate={navigate} current={tab === t.path} className="tab">
+                    <UiIcon name={t.path === '/' ? 'calendar'
+                      : t.path === '/opportunities' ? 'briefcase'
+                        : t.path === '/experience' ? 'folder'
+                          : t.path === '/graduation' ? 'book' : 'check'} width={17} height={17} />
+                    <span className="tab__label">{t.label}</span>
+                  </InAppLink>
                 </li>
               ))}
             </ul>
@@ -74,12 +81,18 @@ export function AppShell({path, navigate, transportLabel, selector, status, chil
       <main id="main" className="app__main" tabIndex={-1}>{children}</main>
       <footer className="app__foot">
         <div className="app__foot-in">
-          <strong>HUFS One AI</strong>
-          <span>학교 공식 서비스가 아닌 독립 학생 프로젝트</span>
-          {(transportLabel || selector) && <span>합성 데이터 시연</span>}
-          <span className="app__foot-links">
+          <div className="app__foot-identity">
+            <strong>HUFS One AI</strong>
+            <span>학교 공식 서비스가 아닌 독립 학생 프로젝트</span>
+            {(transportLabel || selector) && <span className="app__foot-demo">합성 데이터 시연</span>}
+          </div>
+          <nav className="app__foot-links" aria-label="하단 바로가기">
+            <InAppLink to="/opportunities" navigate={navigate}>기회 찾기</InAppLink>
+            <InAppLink to="/experience" navigate={navigate}>나의 경험</InAppLink>
+            <InAppLink to="/graduation" navigate={navigate}>졸업지원</InAppLink>
+            <InAppLink to="/faq" navigate={navigate}>FAQ</InAppLink>
             <InAppLink to="/menu" navigate={navigate}>메뉴 전체 보기</InAppLink>
-          </span>
+          </nav>
         </div>
       </footer>
     </div>

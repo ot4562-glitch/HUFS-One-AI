@@ -2,6 +2,7 @@
 Description=HUFS One AI NCP-only approved Crawlee refresh (non-root)
 After=network-online.target
 Wants=network-online.target
+OnFailure=hufs-one-ai-data-refresh-alert.service
 
 [Service]
 Type=oneshot

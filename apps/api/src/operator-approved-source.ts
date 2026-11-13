@@ -15,6 +15,9 @@ import type {TrustedSourceIngestionAuthority} from './modules/opportunities/sour
 import type {SourceDocumentExtractor} from './modules/opportunities/source-document-extractor.js';
 import type {ApprovedSourceAcquisition} from './modules/opportunities/source-acquisition.js';
 import type {TrustedSourceRefreshPreflight} from './modules/opportunities/source-refresh-operator-preflight.js';
+import type {TrustedSourceRuntimeVersion} from './modules/opportunities/source-runtime-version.js';
+import type {TrustedSourceRefreshBudget} from './modules/opportunities/source-refresh-budget.js';
+import type {SourceBrowserExtractor} from './modules/opportunities/source-browser-extractor.js';
 
 type OperatorSourcePort=NonNullable<PostgresPlatformConfig['sourceIngestion']>;
 export interface OperatorApprovedSourceInput {
@@ -24,8 +27,11 @@ export interface OperatorApprovedSourceInput {
   egress:ApprovedPinnedEgress;
   extractor:SourceContentExtractor;
   documentExtractor?:SourceDocumentExtractor;
+  browserExtractor?:SourceBrowserExtractor;
   acquisition?:ApprovedSourceAcquisition;
   preflight?:TrustedSourceRefreshPreflight;
+  runtimeVersion?:TrustedSourceRuntimeVersion;
+  budget?:TrustedSourceRefreshBudget;
   /** Independently revocation-aware operator authorization, never a browser claim. */
   authority:TrustedSourceIngestionAuthority;
   now?:()=>string;
@@ -39,6 +45,7 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
     ||typeof input.egress?.requestPinned!=='function'
     ||typeof input.extractor?.extract!=='function'
     ||(input.documentExtractor!==undefined&&typeof input.documentExtractor?.extract!=='function')
+    ||(input.browserExtractor!==undefined&&typeof input.browserExtractor?.extract!=='function')
     ||(input.acquisition!==undefined&&typeof input.acquisition?.acquire!=='function')
     ||(input.acquisition!==undefined&&typeof input.preflight?.loadCurrent!=='function')
     ||(input.preflight!==undefined&&typeof input.preflight?.loadCurrent!=='function')
@@ -48,6 +55,8 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
   if(pools.length!==4||new Set(pools).size!==4
     ||pools.some(pool=>typeof pool?.connect!=='function'))
     throw new Error('Four independent restricted SourceRevision pools required');
+  if(input.budget?.connectionPool===input.pools.queue)
+    throw new Error('Independent source budget pool required');
   const policies=new Map<string,ApprovedFetchPolicy>();
   for(const policy of input.policies){
     if(!policy||!policy.rightsReviewed||policy.provenance!=='REAL_APPROVED'
@@ -90,8 +99,11 @@ export function createOperatorApprovedSource(input:OperatorApprovedSourceInput):
   const executor=createApprovedDurableSourceExecutor({
     policies,rights,egress:input.egress,extractor:input.extractor,
     ...(input.documentExtractor?{documentExtractor:input.documentExtractor}:{}),
+    ...(input.browserExtractor?{browserExtractor:input.browserExtractor}:{}),
     ...(input.acquisition?{acquisition:input.acquisition}:{}),
     ...(input.preflight?{preflight:input.preflight}:{}),
+    ...(input.runtimeVersion?{runtimeVersion:input.runtimeVersion}:{}),
+    ...(input.budget?{budget:input.budget}:{}),
     readerPool:input.pools.headReader,writer,now,
   });
   return {pool:input.pools.queue,authority,executor};

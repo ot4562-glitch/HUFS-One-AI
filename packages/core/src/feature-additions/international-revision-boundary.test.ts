@@ -16,6 +16,18 @@ const reconcile=(recovery:ReturnType<typeof guide>,change:Partial<ReturnType<typ
   reconcileGuideChecklist(recovery,saved(change),1,FIXED_NOW);
 
 describe('#352 NCP-free multilingual Korean/English/Chinese guide consistency',()=>{
+  it('uses optional step labels only from the actually reviewed displayed translation',()=>{
+    const g=guide();
+    g.translations.ko.stepLabels={'step-1':'합성 준비 확인'};
+    g.translations.en!.stepLabels={'step-1':'UNREVIEWED label'};
+    const result=select('en',g);
+    expect(result.locale).toBe('ko');expect(result.steps[0]!.label).toBe('합성 준비 확인');
+  });
+  it('refuses labels referring to a different step and invalidates its saved checks',()=>{
+    const g=guide();g.translations.zh!.stepLabels={'SYN-FOREIGN-STEP':'foreign label'};
+    expect(select('zh',g).locale).toBe('ko');
+    expect(reconcile(g,{locale:'zh',translationVersion:g.translations.zh!.translationVersion}).state).toBe('STALE_GUIDE');
+  });
   it.each([
     ['ko','READY','ko'],
     ['en','KOREAN_FALLBACK','ko'],

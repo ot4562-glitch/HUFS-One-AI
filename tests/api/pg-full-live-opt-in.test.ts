@@ -21,6 +21,13 @@ import {proveSourceJobControlPg} from './source-job-control-live-slice.js';
 import {proveSourceImagePg} from './source-image-live-slice.js';
 import {proveSourcePdfPg} from './source-pdf-live-slice.js';
 import {proveSourceDocumentPg} from './source-document-live-slice.js';
+import {proveSourceRefreshBudgetPg} from './source-refresh-budget-live-slice.js';
+import {proveSourceBrowserPg} from './source-browser-live-slice.js';
+import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js';
+import {proveGuideWorkspace} from './international-checklist-live-slice.js';
+import {proveRecognitionCleanup} from './recognition-cleanup-live-slice.js';
+import {proveRecognitionProofHttp} from './recognition-proof-http-live-slice.js';
+import {proveRecognitionPrivateAssets} from './recognition-private-assets-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -59,14 +66,20 @@ const migrationNames=[
   '20261031_temporal_evidence.sql','20261101_source_review.sql','20261105_source_image_evidence.sql',
   '20261109_source_image_ocr_unique.sql','20261105_source_pdf_evidence.sql','20261101_source_http_validators.sql',
   '20261111_source_korean_document_media.sql',
+  '20261112_source_refresh_budget.sql',
   '20261101_source_ingest_queue.sql',
   '20261104_source_ingest_cancellation.sql',
   '20261101_intake_staging.sql','20261101_self_account.sql',
   '20261101_personal_storage_withdrawal.sql',
   '20261101_self_workspace.sql','20261101_self_workspace_tombstones.sql',
+  '20261113_international_checklists.sql',
+  '20261113_recognition_proof_cleanup.sql',
+  '20261113_recognition_private_assets.sql',
   '20261101_experience_tag_approval.sql',
   '20261101_demo_overlays.sql',
   '20261101_verified_source_rights.sql',
+  '20261112_source_browser_evidence.sql',
+  '20261113_source_runtime_receipts.sql',
   '20261103_ai_budget.sql',
   '20261103_ai_provider_inputs.sql',
   '20261103_ai_provider_results.sql',
@@ -133,6 +146,10 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_profiles TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_self_workspace_records TO hufs_test_self;
        GRANT INSERT ON api_self_workspace_events TO hufs_test_self;
+       GRANT SELECT ON api_self_proof_cleanup TO hufs_test_self;
+       GRANT UPDATE(status,receipt_id,acknowledged_at) ON api_self_proof_cleanup TO hufs_test_self;
+       GRANT SELECT,INSERT ON api_self_recognition_assets TO hufs_test_self;
+       GRANT EXECUTE ON FUNCTION api_self_erase_recognition_asset(text,text,text,text) TO hufs_test_self;
        GRANT INSERT ON api_self_consent_events TO hufs_test_self;
        GRANT SELECT,INSERT,UPDATE,DELETE ON api_experience_tag_approvals TO hufs_test_self;
        GRANT INSERT ON api_experience_tag_events TO hufs_test_self;
@@ -140,7 +157,7 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
        GRANT SELECT,INSERT ON api_intake_revisions TO hufs_test_intake;
        GRANT EXECUTE ON FUNCTION reviewer_sandbox_allowed(text,text) TO hufs_test_sandbox;
        GRANT SELECT,INSERT,UPDATE ON reviewer_sandbox_state TO hufs_test_sandbox;
-      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_effective_revisions_vnext,source_paragraphs_vnext,
+      GRANT SELECT ON source_ingest_heads,source_http_validators,source_revisions_vnext,source_effective_revisions_vnext,source_browser_revision_metadata_vnext,source_paragraphs_vnext,
         source_conflict_decisions_vnext TO hufs_test_temporal;
       GRANT SELECT,INSERT,UPDATE ON auth_attempt_windows TO hufs_test_limiter;
       GRANT USAGE ON SCHEMA public TO hufs_test_ai_budget;
@@ -182,6 +199,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
 
   it('retains HWP/HWPX original media and bytes as review-only through the durable executor',async()=>{
     await proveSourceDocumentPg(admin,temporal);
+    await proveSourceRefreshBudgetPg(admin,temporal);
+    await proveSourceBrowserPg(admin,temporal);
+    await proveSourceRuntimeReceipts(admin,temporal);
   });
 
   const billingHash='a'.repeat(64),usageReceipt='b'.repeat(64);
@@ -404,6 +424,18 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
     await expect(reader.query('SELECT * FROM api_self_profiles')).rejects.toMatchObject({code:'42501'});
     await expect(admin.query('UPDATE api_self_consent_events SET changed_purposes=ARRAY[\'externalAi\']'))
       .rejects.toThrow('cannot be mutated');
+  });
+  it('isolates owner international checklists and purges withdrawn owner data',async()=>{
+    await proveGuideWorkspace(admin,selfAccount);
+  });
+  it('retains recognition erasure jobs through consent withdrawal and verifies owner isolation',async()=>{
+    await proveRecognitionCleanup(admin,selfAccount);
+  });
+  it('uses owner proof HTTP extraction/review/redaction and durable erasure acknowledgment',async()=>{
+    await proveRecognitionProofHttp(admin,selfAccount);
+  });
+  it('persists private recognition originals and purges never-OCR and reviewed assets through consent/cleanup',async()=>{
+    await proveRecognitionPrivateAssets(admin,selfAccount);
   });
   it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
     const actorId='SYN-SELF-OWNER';

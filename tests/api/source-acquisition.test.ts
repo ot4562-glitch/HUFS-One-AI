@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {describe,it,expect,vi} from 'vitest';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {syntheticPreflightDraft} from './fixtures/source-refresh-preflight.js';
+import {syntheticSourceRuntimeVersion} from './fixtures/source-runtime-version.js';
 
 const canonicalUrl='https://synthetic.example.edu/notice';
 const policy={sourceId:'SYN-ACQUIRE',permissionRef:'SYN-RIGHTS',canonicalUrl,
@@ -15,6 +16,9 @@ function harness(acquire?:(i:{canonicalUrl:string;request:()=>Promise<Response>}
   const loadCurrent=vi.fn(async(i:Parameters<typeof syntheticPreflightDraft>[0])=>syntheticPreflightDraft(i));
   const requestPinned=vi.fn(async()=>response());
   const append=vi.fn(async(_value:any)=>null),storeHttpValidators=vi.fn(async(_value:any)=>{}),observeUnchanged=vi.fn();
+  const runtime=syntheticSourceRuntimeVersion();
+  const loadVersion=vi.fn(runtime.loadCurrent);
+  const reserve=vi.fn(async()=>true);
   const service=createApprovedDurableSourceExecutor({policies:new Map([[policy.sourceId,policy]]),
     rights:{resolve:async()=>({...policy,policyVersion:'SYN-v1',reviewedBy:'SYN-REVIEWER',
       reviewedAt:'2026-11-10T00:00:00Z',status:'APPROVED',allowedPurposes:new Set(['COLLECT','STORE'])})},
@@ -22,14 +26,46 @@ function harness(acquire?:(i:{canonicalUrl:string;request:()=>Promise<Response>}
     extractor:{extract:async({content})=>[{id:'p1',text:new TextDecoder().decode(content)}]},
     ...(acquireFn?{acquisition:{acquire:acquireFn}}:{}),
     ...(acquireFn?{preflight:{loadCurrent}}:{}),
+    ...(acquireFn?{runtimeVersion:{...runtime,loadCurrent:loadVersion}}:{}),
+    ...(acquireFn?{budget:{reserve}}:{}),
     readerPool:{connect:async()=>({query:async()=>({rows:conditional?[{revision_id:'SYN-OLD',
       original_sha256:'a'.repeat(64),content_sha256:'b'.repeat(64),fetched_at:'2026-11-10T00:00:00Z',
       permission_ref:policy.permissionRef,etag:'"OLD"',last_modified:null,media_kind:'TEXT',has_image_evidence:false,has_pdf_evidence:false}]:[]}),release:()=>{}})},
     writer:{append,storeHttpValidators,observeUnchanged},now:()=> '2026-11-11T00:00:00Z',
   });
-  return {service,acquireFn,loadCurrent,requestPinned,append,storeHttpValidators,observeUnchanged};
+  return {service,acquireFn,loadCurrent,loadVersion,runtime,reserve,requestPinned,append,storeHttpValidators,observeUnchanged};
 }
 describe('#445 guarded source acquisition driver',()=>{
+  it('does not issue HTTP or write a draft if durable budget reservation is denied',async()=>{
+    const x=harness(async({request})=>{await request();});x.reserve.mockResolvedValue(false);
+    await expect(x.service.execute(input)).rejects.toThrow('Approved source acquisition failed');
+    expect(x.reserve).toHaveBeenCalledOnce();expect(x.requestPinned).not.toHaveBeenCalled();
+    expect(x.append).not.toHaveBeenCalled();
+  });
+  it('#449 blocks deployment drift before HTTP and persistence',async()=>{
+    const x=harness(async({request})=>{await request();});
+    x.loadVersion.mockResolvedValue({...x.runtime.expected,adapterVersion:'SYN-OTHER'});
+    await expect(x.service.execute(input)).rejects.toThrow('Source runtime version blocked');
+    expect(x.requestPinned).not.toHaveBeenCalled();
+    expect(x.append).not.toHaveBeenCalled();
+  });
+  it('#449 refuses a dataset change during acquisition before any draft write',async()=>{
+    const x=harness(async({request})=>{await request();
+      x.loadVersion.mockResolvedValue({...x.runtime.expected,datasetRevision:'SYN-NEW'});
+    });
+    await expect(x.service.execute(input)).rejects.toThrow('Source runtime version blocked');
+    expect(x.requestPinned).toHaveBeenCalledOnce();
+    expect(x.append).not.toHaveBeenCalled();
+    expect(x.storeHttpValidators).not.toHaveBeenCalled();
+  });
+  it('#449 cannot move the pinned deployment target by mutating caller configuration during acquisition',async()=>{
+    const x=harness(async({request})=>{await request();
+      x.runtime.expected.datasetRevision='SYN-MOVED-TARGET';
+      x.loadVersion.mockResolvedValue({...x.runtime.expected});
+    });
+    await expect(x.service.execute(input)).rejects.toThrow('Source runtime version blocked');
+    expect(x.append).not.toHaveBeenCalled();expect(x.storeHttpValidators).not.toHaveBeenCalled();
+  });
   it('requires the independent source preflight and checks it twice before pinned HTTP',async()=>{
     const x=harness(async({request})=>{await request();});
     await x.service.execute(input);
@@ -73,6 +109,14 @@ describe('#445 guarded source acquisition driver',()=>{
     expect(x.append.mock.calls[0]![0].originalBytes).toEqual(Buffer.from(text));
     expect(x.append.mock.calls[0]![0].revision.originalSha256).toBe(createHash('sha256').update(text).digest('hex'));
     expect(x.storeHttpValidators.mock.calls[0]![0].etag).toBe('"RAW"');
+    expect(x.append.mock.calls[0]![0].runtimeManifest).toEqual(x.runtime.expected);
+  });
+  it('binds an unchanged 304 observation to the same pinned deployment manifest',async()=>{
+    const x=harness(async({request})=>{await request();},()=>new Response(null,{status:304}),true);
+    await x.service.execute(input);
+    expect(x.observeUnchanged).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      revisionId:'SYN-OLD',responseStatus:304,runtimeManifest:x.runtime.expected,
+    }));
   });
   it.each(['zero','twice','throws'])('refuses a %s driver without storing a draft',async mode=>{
     const x=harness(async({request})=>{

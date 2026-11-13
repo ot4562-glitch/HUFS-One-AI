@@ -19,6 +19,11 @@ export const PRODUCT_COLORS = {
   link: '#28699F',
   border: '#DDE3EA',
   goldBg: '#F6F1E8',
+  navyDeep: '#102638',
+  inkStrong: '#102A3A',
+  surfaceSoft: '#EFF4F6',
+  borderStrong: '#B6C7D1',
+  warmSurface: '#F8F6F1',
 } as const;
 
 /**
@@ -42,6 +47,11 @@ export const COLOR_ROLES = {
   accentBg: PRODUCT_COLORS.goldBg,
   success: HUFS_COLORS.green,
   focusRing: HUFS_COLORS.navy,
+  navyDeep: PRODUCT_COLORS.navyDeep,
+  inkStrong: PRODUCT_COLORS.inkStrong,
+  surfaceSoft: PRODUCT_COLORS.surfaceSoft,
+  borderStrong: PRODUCT_COLORS.borderStrong,
+  warmSurface: PRODUCT_COLORS.warmSurface,
 } as const;
 
 export const SPACING_PX = [4, 8, 12, 16, 24, 32] as const;

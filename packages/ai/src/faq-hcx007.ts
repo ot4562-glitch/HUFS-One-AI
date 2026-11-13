@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import type {FaqCandidate} from '@hufs-one/contracts';
 import {validateFaqCandidate,type FaqEvidence} from '../../core/src/campus-assist/faq.js';
-import {maskFaqQuestion} from '../../core/src/campus-assist/faq-privacy.js';
+import {faqEvidenceIsModelSafe,maskFaqQuestion} from '../../core/src/campus-assist/faq-privacy.js';
 
 const Response=z.object({
   status:z.object({code:z.literal('20000')}),
@@ -35,11 +35,11 @@ export function buildFaqHcx007Request(question:string,evidence:readonly FaqEvide
   // Official documents may accidentally contain a student email, phone number,
   // name or identifier. Redaction would break the quote-to-source contract, so
   // quarantine the whole input BEFORE any admission or billable provider call.
-  if(evidence.some(e=>maskFaqQuestion(e.text).redactions.length>0))
+  if(evidence.some(e=>!faqEvidenceIsModelSafe(e)))
     throw new RangeError('FAQ source contains personal identifiers');
   const context=evidence.map(e=>({citationId:e.citationId,text:e.text,
     revisionId:e.revisionId,verifiedAt:e.verifiedAt}));
-  // Student numbers, phones, e-mails and RRNs never reach the external model.
+  // Question identifiers stay masked independently of reviewed source contacts.
   const prompt=JSON.stringify({question:maskFaqQuestion(question).text,context});
   if(Buffer.byteLength(prompt,'utf8')>18000)throw new RangeError('FAQ context size exceeds limit');
   return {path:'/v3/chat-completions/HCX-007' as const,

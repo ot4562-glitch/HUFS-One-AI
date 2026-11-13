@@ -7,7 +7,8 @@
     "node": "^22.22.2 || ^24.15.0"
   },
   "dependencies": {
+    "cheerio": "1.2.0",
     "crawlee": "3.18.2",
-    "cheerio": "1.2.0"
+    "playwright-core": "1.64.1"
   }
 }

@@ -39,6 +39,10 @@ export function OpportunityExplorer({cards, navigate, hasMore}: {
   const sortId = useId();
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const shown = cards.filter(card => matches(card, filter, normalizedQuery));
+  const filterCounts = Object.fromEntries(FILTERS.map(item => [
+    item.id, cards.filter(card => matches(card, item.id, '')).length,
+  ])) as Record<Filter, number>;
+  const isFiltered = query.trim().length > 0 || filter !== 'all' || order !== 'recommended';
   if (order === 'deadline') shown.sort((a, b) => daysUntilDeadline(a) - daysUntilDeadline(b));
 
   function clear() {
@@ -49,6 +53,10 @@ export function OpportunityExplorer({cards, navigate, hasMore}: {
 
   return (
     <section className="explorer" aria-label="공고 탐색">
+      <div className="explorer__intro">
+        <div><span className="explorer__kicker">조건으로 찾기</span><h3>나에게 필요한 공고</h3></div>
+        <span className="explorer__scope-label">현재 공유된 공고만 검색</span>
+      </div>
       <div className="explorer__tools">
         <div className="explorer__search">
           <label htmlFor={searchId}>공고 검색</label>
@@ -67,14 +75,19 @@ export function OpportunityExplorer({cards, navigate, hasMore}: {
           <div className="explorer__filter-row">
             {FILTERS.map(item => (
               <button key={item.id} type="button" aria-pressed={filter === item.id}
-                onClick={() => setFilter(item.id)} className="explorer__filter">{item.label}</button>
+                onClick={() => setFilter(item.id)} className="explorer__filter">
+                {item.label}<span className="explorer__filter-count" aria-hidden="true">{filterCounts[item.id]}</span>
+              </button>
             ))}
           </div>
         </fieldset>
       </div>
-      <p className="explorer__result" role="status" aria-live="polite" aria-atomic="true">
-        현재 목록 {cards.length}건 중 <strong>{shown.length}건</strong> 표시
-      </p>
+      <div className="explorer__result-bar">
+        <p className="explorer__result" role="status" aria-live="polite" aria-atomic="true">
+          현재 목록 {cards.length}건 중 <strong>{shown.length}건</strong> 표시
+        </p>
+        {isFiltered && shown.length > 0 && <button type="button" className="explorer__reset" onClick={clear}>검색 조건 초기화</button>}
+      </div>
       {shown.length
         ? <ul className="opps">{shown.map(card => <OppCard key={card.opportunityId} card={card} navigate={navigate} />)}</ul>
         : <div className="explorer__empty">

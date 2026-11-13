@@ -166,9 +166,17 @@ export function App({controller, transportLabel = null, historyPort, pages = [],
         : <StatusBanner state={state} onRetry={() => void controller.retry()} />}
     >
       <PageBanner path={path} title={page.title} navigate={navigate} headingRef={heading} />
-      {path === '/' && <ProductRail navigate={navigate} />}
       {area ? <div className="layout"><AreaNav area={area} path={path} navigate={navigate} /><div className="layout__body">{page.body}</div></div> : page.body}
-      {path === '/' && <FeatureUniverse navigate={navigate} />}
+      {path === '/' && <>
+        <ProductRail navigate={navigate} />
+        <details className="home-directory" id="feature-directory-panel">
+          <summary className="home-directory__trigger">
+            <span><strong>전체 기능과 지원 상태</strong><small>학교 참고 메뉴와 실제 제공 기능을 구분해 살펴보세요.</small></span>
+            <span className="home-directory__toggle" aria-hidden="true" />
+          </summary>
+          <FeatureUniverse navigate={navigate} />
+        </details>
+      </>}
     </AppShell>
   );
 }

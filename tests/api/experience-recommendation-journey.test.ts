@@ -18,6 +18,7 @@ const record=OwnerWorkspaceRecordSchema.parse({itemId:'SYN-EXP-01',version:3,upd
 const consent=SelfConsentSchema.parse({version:2,updatedAt:NOW,
   choices:{personalStorage:true,teamReview:true,externalAi:true,ncpStorage:true,presentation:false}});
 // Synthetic-only provider fixture; the consented owner record is NOT sent to the mock model.
+if(record.value.kind!=='EXPERIENCE')throw new Error('Expected experience fixture');
 const pack=SafeLlmPacketSchema.parse(buildExperienceSkillPacket({
   packetId:'SYNTHETIC_E2E_OPAQUE_PACKET_001',experience:{...record,value:{...record.value,dataMode:'SYNTHETIC'}}}));
 const opportunities=[ownerOpportunity('SYN-COMPUTE',['AI_ML']),

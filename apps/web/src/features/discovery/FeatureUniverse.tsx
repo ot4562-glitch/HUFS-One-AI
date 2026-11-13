@@ -1,4 +1,5 @@
 import {useMemo, useState} from 'react';
+import {UiIcon} from '../../design/UiIcon.js';
 import {InAppLink} from '../../shell/AppShell.js';
 import {AREAS} from '../../shell/areas.js';
 import {MENU_GROUPS, type MenuItem} from '../../shell/menuCatalog.js';
@@ -106,31 +107,33 @@ export function buildFeatureInventory(): readonly FeatureEntry[] {
 export const FEATURE_INVENTORY = buildFeatureInventory();
 
 const SPOTLIGHTS = [
-  {route: '/opportunities', eyebrow: '기회', title: '맞춤 기회', detail: '자격·마감·근거를 함께 살펴보기', tone: 'navy'},
-  {route: '/graduation', eyebrow: '학업', title: '졸업지원', detail: '이수 현황과 계획 검사', tone: 'blue'},
-  {route: '/faq', eyebrow: '질문', title: 'FAQ·학사 안내', detail: '연결된 공식 근거가 있는지 확인', tone: 'pearl'},
-  {route: '/experience', eyebrow: '활동', title: '나의 경험', detail: '경험과 진로 자료 확인', tone: 'mint'},
+  {route: '/opportunities', category: '공고 탐색', title: '맞춤 기회', detail: '지원 조건 · 마감 · 근거 확인', number: '01', icon: 'briefcase'},
+  {route: '/experience', category: '경험 관리', title: '나의 경험', detail: '활동 기록과 승인 상태 확인', number: '02', icon: 'folder'},
+  {route: '/graduation', category: '학업 관리', title: '졸업지원', detail: '이수 현황과 학업 계획 점검', number: '03', icon: 'book'},
+  {route: '/faq', category: '학교 정보', title: 'FAQ·학사 안내', detail: '연결된 자료와 답변 근거 확인', number: '04', icon: 'help'},
 ] as const;
 
-/** Apple's deliberate product-grid rhythm, not Apple's brand, imagery or copy. */
+/** Functional links, not decorative marketing panels; all destinations exist in the router. */
 export function ProductRail({navigate}: {navigate: (path: string) => void}) {
-  return <section className="product-rail" aria-labelledby="product-rail-title">
+  return <section className="product-rail" id="service-tools" aria-labelledby="product-rail-title">
     <div className="product-rail__lead">
       <div>
-        <p className="product-rail__eyebrow">HUFS ONE AI / 학생 기능</p>
-        <h2 id="product-rail-title">학업부터 기회까지.<br/>필요한 화면으로 바로.</h2>
-        <p className="product-rail__description">각 화면은 현재 연결된 자료와 접근 권한에 따라 이용 범위가 달라집니다.</p>
+        <p className="product-rail__eyebrow">화면 바로가기</p>
+        <h2 id="product-rail-title">필요한 도구</h2>
       </div>
-      <a href="#feature-directory" className="product-rail__jump">모든 기능 찾아보기 <span aria-hidden="true">↓</span></a>
+      <InAppLink to="/menu" navigate={navigate} className="product-rail__jump">전체 메뉴 보기 <span aria-hidden="true">↗</span></InAppLink>
     </div>
     <div className="product-rail__grid">
-      {SPOTLIGHTS.map(feature => <article className={'product-rail__tile product-rail__tile--' + feature.tone} key={feature.route}>
+      {SPOTLIGHTS.map(feature => <article className="product-rail__tile" key={feature.route}>
         <InAppLink to={feature.route} navigate={navigate} className="product-rail__tile-link">
-          <span className="product-rail__tile-eyebrow">{feature.eyebrow}</span>
+          <span className="product-rail__tile-top">
+            <span className="product-rail__tile-eyebrow">{feature.category}</span>
+            <span className="product-rail__tile-number" aria-hidden="true">{feature.number}</span>
+          </span>
+          <span className="product-rail__icon"><UiIcon name={feature.icon} width={23} height={23} /></span>
           <h3>{feature.title}</h3>
           <p>{feature.detail}</p>
           <span className="product-rail__tile-action">화면 열기 <span aria-hidden="true">↗</span></span>
-          <span className="product-rail__tile-art" aria-hidden="true"><i/><i/><i/></span>
         </InAppLink>
       </article>)}
     </div>

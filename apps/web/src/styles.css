@@ -666,3 +666,20 @@ a { color: var(--color-link); }
   .summary__card, .module { padding: 16px; }
   .topbar__tagline { font-size: 11px; }
 }
+/* Owner-only guide workflow uses the existing surface, spacing and touch tokens. */
+.owner-guide,.owner-insights { min-width: 0; overflow-wrap: anywhere; }
+.owner-guide__language { display: flex; flex-direction: column; gap: var(--space-2); margin-block: var(--space-3); min-width: 0; }
+.owner-guide__language select { width: 100%; max-width: 100%; min-height: var(--touch-target); font: inherit; }
+.owner-guide__body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.owner-guide__checks { min-width: 0; margin-block: var(--space-4); padding: var(--space-3); border: 1px solid var(--color-border); }
+.owner-guide__checks label { display: flex; align-items: flex-start; gap: var(--space-2); min-height: var(--touch-target); padding-block: var(--space-2); overflow-wrap: anywhere; }
+.owner-guide__checks input { flex: 0 0 auto; margin-top: .3em; }
+.owner-guide__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.owner-guide__actions button { min-height: var(--touch-target); font: inherit; }
+.owner-proof { min-width: 0; overflow-wrap: anywhere; margin-block: var(--space-4); }
+.owner-proof button,.owner-insights>button { min-height: var(--touch-target); max-width: 100%; white-space: normal; font: inherit; }
+.owner-proof__fields { min-width: 0; margin-block: var(--space-4); padding: var(--space-3); border: 1px solid var(--color-border); }
+.owner-proof__fields label,.owner-proof__ack { display: flex; align-items: flex-start; gap: var(--space-2); min-height: var(--touch-target); padding-block: var(--space-2); }
+.owner-proof input[type=checkbox] { flex: 0 0 auto; margin-top: .3em; }
+.owner-proof__quote { border-inline-start: 2px solid var(--color-border); padding-inline-start: var(--space-3); margin-block: var(--space-2); }
+.owner-proof .owner-guide__actions { margin-block: var(--space-3); }

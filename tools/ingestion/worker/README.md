@@ -11,12 +11,220 @@ reads its copy. The driver cannot replace origin bytes or create another URL.
 Sessions, cookies, proxy use, automatic retries, source logging and persistent
 Crawlee storage are disabled. Conditional 304 remains an unchanged observation.
 
-This is a **partial acquisition implementation**, not the finished #445
-pipeline. Playwright/browser fallback, execution of the draft source preflight,
-source/domain TTL and budget accounting, alert delivery and runtime version
-handshake enforcement remain unfinished. No actual source/NCP was accessed.
-The development snapshot is submitted as a draft with these unfinished items
-preserved for later review.
+This remains a **partial #445 pipeline**. The native acquisition path now
+requires the private source preflight and runtime version manifest; both are
+rechecked immediately before pinned HTTP. Version drift is also checked before
+every persistence operation. No actual source/NCP was accessed.
+
+The private `runtimeVersion` port passed to `createOperatorApprovedSource`
+contains `expected` (`gitSha`, `buildSha`, `migrationVersion`, `adapterVersion`,
+`datasetRevision`, `schemaVersion`), a reader schema range, and `loadCurrent`.
+The initial policy permits only exact pinned versions. Missing configuration,
+drift or loader failure blocks native acquisition; it never initiates migration.
+
+`PostgresSourceRefreshScheduler` and `createScheduledSourceQueue` (compiled API
+modules) can wrap the existing SQL queue before passing it to
+`createNativeApprovedQueueWorker`. A private `loadSchedules` supplies at most 16
+records with `sourceId`, `permissionRef`, `actorRef`, `scheduleVersion`,
+`anchorAt`, and explicit `intervalSeconds` (300 seconds–30 days). Configuration
+is loaded once per one-shot worker, never from a browser or source HTML. A
+stable interval key, per-source advisory lock, last settled job timestamp and
+the existing global capacity lock prevent duplicate/catch-up work. Pending,
+ambiguous or rights-blocked jobs are not automatically retried. Schedule
+selection and rights-aware enqueue share one connection and transaction,
+including for a single-slot pool; the independent rights resolver retains its
+separate restricted pool. Only the existing systemd timer triggers execution.
+
+`PostgresSourceRefreshBudget` supplies the mandatory native `budget` port.
+Apply the separately reviewed `infra/sql/20261112_source_refresh_budget.sql`
+before configuring it. Give the restricted worker only EXECUTE on
+`reserve_source_refresh_budget(text,text,integer,bigint,integer,bigint,integer)`;
+do not grant direct table access. Use a pool independent of the active queue
+lease pool (composition rejects reuse). Private per-source policies include a
+canonical HTTPS origin and explicit source/origin daily request and byte caps.
+The SQL clock determines UTC days. Each HTTP attempt reserves the full 256 KiB
+response bound against both scopes before transmission, including conditional
+304s and failures; unknown outcomes are never refunded or retried. Limits are
+conservative response allowances, not measured NCP traffic or billing credits.
+Rights and version are rechecked after asynchronous budget admission.
+
+Failure notification is a separate `hufs-one-ai-data-refresh-alert.service`
+triggered only by the refresh service's `OnFailure`. It runs as `hufs-crawler`,
+loads a root-owned `/etc/hufs-one/private/refresh-alert-factory.mjs`, and calls
+its `deliverRefreshAlert({event,idempotencyKey,occurredAt,signal})` export. The
+factory must use an operator-configured private destination and honour the
+idempotency key and abort signal. The only event is `SOURCE_REFRESH_FAILED`;
+no source URL, document, job details, private error or token is passed.
+`{state:'DELIVERED'}` is required to report delivery. Unknown outcomes/timeouts
+remain `UNCONFIRMED`; the notifier has no retry or collection fallback.
+
+The handler requires systemd 251+ for the triggering unit's
+`MONITOR_INVOCATION_ID` and `MONITOR_UNIT` environment variables (see
+[systemd's execution environment contract](https://github.com/systemd/systemd/blob/main/man/systemd.exec.xml)).
+The operator must install the refresh service, timer **and** alert service
+together, configure the private notifier, run `systemctl daemon-reload`, and
+test one approved synthetic failure before enabling a live schedule. These
+host operations and actual alert delivery have not been executed locally.
+`node tools/ingestion/refresh-alert-cli.mjs --plan` remains offline and inert.
+
+Playwright/browser rendering is implemented below, default off. Actual schedules, manifests,
+SQL privileges, site policies and NCP installation remain NOT_CONNECTED/NOT_RUN.
+
+### Browser runtime foundation (#445)
+
+`apps/api/src/modules/opportunities/source-browser-runtime.ts` verifies the
+separate Chromium runtime without launching a browser or fetching a source.
+The private manifest pins `wrapperSha256`, `bwrapSha256`, `rootfsSha256`,
+`chromiumVersion`, and `policyVersion`. Runtime paths are fixed:
+`/usr/local/libexec/hufs-one-source-browser`, `/usr/bin/bwrap`, and
+`/opt/hufs-one-source-browser/rootfs`. Root and non-Linux workers are refused.
+
+The wrapper is provided by `infra/ncp/launch-source-browser.sh` and must be
+installed root-owned/executable at the fixed path. It runs Chromium inside
+`bubblewrap --unshare-all` with a separate read-only rootfs, private proc/dev/tmp,
+cleared environment and dropped capabilities; no host root or private data
+directory is mounted. Chromium's own sandbox remains enabled. Alternate
+switch spellings that disable isolation are rejected. Playwright's inherited
+debugging pipes are carried into the child; no TCP debugging port is enabled.
+[bubblewrap's source](https://github.com/containers/bubblewrap/blob/main/bubblewrap.c)
+defines namespace and inherited-file-descriptor behaviour.
+
+Verification streams rootfs files (512 MiB/file, 2 GiB total, 30,000 entries,
+depth 32) and hashes ordered `D/path/mode`, `F/path/mode/size/SHA-256`, and
+`L/path/target` records. Ownership, writable/setuid modes, hardlinks, unsupported
+entries, unknown targets, escaping links and cycles fail closed. Links resolve
+in filesystem order before subsequent `..` components. The fixed
+`usr/lib/chromium/chromium` target must be an executable native ELF file.
+
+The runtime tests simulate metadata/bytes and execute only shell argument
+validation. They do not establish that an NCP rootfs, user namespaces or
+Chromium is installed or runnable. The renderer below connects this boundary
+to Crawlee/Playwright and serves only already-authorized captured bytes.
+
+### Browser DOM proof and review storage
+
+Apply `infra/sql/20261112_source_browser_evidence.sql` after the PDF evidence
+and verified-source-rights migrations **before deploying the new source writer
+or reviewer**, including when browser rendering is disabled. The existing
+originals table gains private DOM bytes, a separate DOM metadata bundle and
+its hash. No public DTO/view exposes those bytes. Originals and DOM proof are
+inserted in one transaction; existing immutable-history triggers cover all
+added columns. Browser-produced HTML must start as `NEEDS_REVIEW`.
+
+`source-browser-evidence.ts` binds the original byte SHA/length, DOM SHA/length,
+paragraph hash, root selector, exact renderer identity and resource references.
+Its stable rendering hash excludes capture time/revision identity, allowing
+unchanged captures to be recognized without mislabelling DOM as origin bytes.
+Resources are bounded to 16 distinct canonical URLs/1 MiB, each linked to an
+immutable source revision and exact `rightsReceiptId` with current
+COLLECT/STORE/SEARCH authority. Native resource acquisition remains separately
+rights/egress/budget gated; metadata alone grants no fetch permission.
+
+The independent review port must acknowledge `browserEvidenceSha256` for the
+exact retained bundle. SQL activation also checks that each resource still has
+the same current head and latest non-revoked, unexpired rights receipt.
+Correction or withdrawal of a resource immediately makes the derived parent
+`NEEDS_REVIEW`; it cannot retain a previous browser approval. The prior
+TEXT/image/PDF view columns and behaviour are preserved.
+
+The native disposable PostgreSQL suite includes the complete synthetic
+writer→review→effective-view flow and dependency changes. A local, explicitly
+enabled PGlite proof can exercise the same slice on Windows:
+`$env:HUFS_SOURCE_BROWSER_PGLITE='1'; npx vitest run tests/api/source-browser-local-pg-opt-in.test.ts` (PowerShell).
+It requires an operator-installed development-only PGlite at
+`local_only/sql-validation`; the test does not install packages or open a socket.
+PostgreSQL-WASM is a single-connection proof, not native pool/concurrency or NCP
+acceptance. The renderer's actual Linux runtime test remains opt-in/NOT_RUN.
+
+### Private captured-resource rendering
+
+The worker pins `playwright-core` 1.64.1 and exports async
+`createApprovedPlaywrightExtractor({runtime, resources, rootSelector, enabled})`.
+Pass the returned port as `browserExtractor` to `createOperatorApprovedSource`.
+`enabled` defaults to false; merely importing/building the worker does not launch
+or download Chromium. The operator supplies the verified runtime manifest and
+`createPostgresSourceBrowserResources({pool, actorRef, registrations})` from the
+compiled API. Each private registration binds exact source/permission/URL,
+SCRIPT/STYLE/JSON/IMAGE kind and a permitted explicit MIME. The resource pool
+needs private original-byte/rights access and must remain separate from public
+retrieval and head-reader roles. This loader reads already-retained originals;
+it does not discover, fetch or approve missing resources.
+
+The durable executor requires current preflight, runtime-version and budget
+ports for browser mode even without a native acquisition driver. It retains
+the fetched original independently from DOM, rejects 304/conditional reuse,
+and requires matching original, paragraphs and stable rendering hash for an
+unchanged observation. Renderer/resource changes create a new review draft.
+Disabling rendering does not inherit earlier browser approval. Explicitly grant
+the private head reader SELECT on `source_browser_revision_metadata_vnext`;
+the two-column view exposes only revision ID and rendering hash, never bytes.
+
+The renderer verifies root-owned runtime artifacts before work and immediately
+before launch, and checks the actual Chromium version. Its custom launcher
+discards Crawlee's proxy and anti-detection flag mutations and passes only fixed
+verified launch options to Chromium. One fresh incognito context blocks service
+workers/downloads and starts with no stored credentials. Context-wide request
+routes replay exact original/resource byte copies or abort; there is no fetch,
+continue or fallback. Unknown URLs, repeated navigation, other frames, cookies,
+authorization, inappropriate resource kinds, WebSockets, popups, downloads and
+script errors invalidate the capture. CSP additionally blocks workers, frames,
+forms, base URLs and unapproved active formats. Request replay is capped at
+64 requests/2 MiB. UTF-8/EUC-KR HTML content types are explicit; retained DOM is
+UTF-8 and capped at 256 KiB. A network-idle snapshot is draft evidence, not proof
+that an arbitrary site's asynchronous content is complete.
+
+Execution has a 20-second deadline and separately bounded one-second cleanup.
+All cleanup paths are attempted, including a browser that finishes launching
+after timeout. Current source and resource authorities are checked before
+rendering, capture and persistence. The SQL review/dependency checks still gate
+activation; successful JavaScript execution grants no approval.
+
+`approved-browser-routes.node.test.mjs` exercises byte replay and denial cases.
+After `npm run build:api`, run the SDK/process harness with
+`node --experimental-test-module-mocks --test tools/ingestion/worker/approved-playwright-extractor.node.test.mjs`.
+It mocks SDK/process boundaries and is not real-browser evidence. The real
+`approved-playwright-linux.node.test.mjs` uses actual Crawlee/Chromium with
+synthetic in-memory JS/JSON and refuses unregistered requests. It is skipped by
+default. A nonroot Linux operator must independently install the fixed wrapper,
+bwrap/rootfs and root-owned `/etc/hufs-one/source-browser-runtime.json`, then run
+with `HUFS_SOURCE_BROWSER_LINUX=1`. No runtime image, source rights, account or
+NCP installation is manufactured by that test. Real Linux execution is NOT_RUN
+in this Windows development session.
+
+### Private runtime execution receipts (#445/#449)
+
+Apply `infra/sql/20261113_source_runtime_receipts.sql` after the temporal source
+tables, before deploying an executor configured with a runtime-version port.
+Explicitly grant INSERT on `source_ingest_runtime_receipts` to the private source
+writer. Only a separately authorized private audit role needs SELECT. PUBLIC
+has no access; the public API, head-reader metadata and UI do not expose the
+manifest. No UPDATE/DELETE/TRUNCATE privileges or new approval power are needed.
+
+The immutable receipt binds source/revision, checked time, REVISION/OBSERVATION
+kind and response status to the exact pinned git/build/migration/adapter/dataset/
+schema manifest. The writer snapshots/validates the manifest before SQL and
+inserts it in the original or observation transaction. Failed receipt storage
+rolls back the new original/head or unchanged observation. SQL independently
+requires the corresponding persisted original/event and exact time/status,
+validates the six-field manifest and rejects mutation/truncation. New originals,
+identical 200 responses, conditional 304 responses and image/PDF byte matches
+use the same contract. A current runtime must still pass the live handshake
+immediately before persistence. A receipt is execution provenance, not proof of
+artifact approval, NCP deployment, source rights or independent human review.
+
+Legacy/manual writers without runtime configuration do not get guessed or
+backfilled manifests. Native crawler/browser configurations require the runtime
+port and therefore pass their pinned manifest. A fresh deployment constructs a
+new executor; it cannot mutate an existing executor's target. Verification and
+approval times remain in the independent review ledger; receipt insertion does
+not upgrade `lastVerifiedAt` or ACTIVE status.
+
+`source-runtime-receipt.test.ts` covers snapshotting and transaction failure.
+`source-runtime-receipt-live-slice.ts` exercises actual SQL binding, strict JSON,
+private visibility, immutable history and full rollback; it runs in the native
+disposable PostgreSQL suite and the opt-in local PGlite proof. PGlite is a
+single-connection proof. Native multi-connection/NCP validation remains NOT_RUN
+in the current Windows session.
 
 Focused verification uses `tests/api/source-acquisition.test.ts`, the actual
 pinned SDK in `approved-cheerio-acquisition.node.test.mjs`, and the compiled

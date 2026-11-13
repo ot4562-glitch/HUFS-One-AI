@@ -68,7 +68,20 @@ export class PostgresSourceIngestionQueue {
     const input=Request.parse(raw);
     if(!await this.authority.mayProcess({...input,now:this.now()}))
       throw new SourceQueueDenied();
-    return this.withTransaction(async c=>{
+    return this.withTransaction(c=>this.enqueueRows(c,input));
+  }
+  /** Trusted scheduler only: caller owns BEGIN/COMMIT/ROLLBACK and release.
+   * Preserve current rights, idempotency and the global capacity lock while
+   * avoiding a nested connection acquisition in max:1 restricted pools. */
+  async enqueueInTransaction(c:ReviewerSqlConnection,raw:z.infer<typeof Request>):
+    Promise<{jobId:string;created:boolean}>{
+    const input=Request.parse(raw);
+    if(!await this.authority.mayProcess({...input,now:this.now()}))
+      throw new SourceQueueDenied();
+    return this.enqueueRows(c,input);
+  }
+  private async enqueueRows(c:ReviewerSqlConnection,input:z.infer<typeof Request>):
+    Promise<{jobId:string;created:boolean}>{
       // Serialize enqueues across all process instances before capacity and duplicate checks.
       await c.query('SELECT pg_advisory_xact_lock($1::bigint)',[64091001]);
       const exists=await c.query(`SELECT job_id,actor_ref,permission_ref FROM source_ingest_jobs
@@ -93,7 +106,6 @@ export class PostgresSourceIngestionQueue {
         RETURNING job_id`,[jobId,input.actorRef,input.sourceId,input.permissionRef,input.requestKey]);
       if(inserted.rows.length!==1)throw new Error('Concurrent queue conflict');
       return {jobId,created:true};
-    });
   }
 
   /** Read-only requester status. Does not claim, recover or retry a job, and

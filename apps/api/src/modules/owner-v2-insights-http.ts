@@ -12,6 +12,12 @@ import {recommendLearningV2} from '../../../../packages/core/src/feature-additio
 import {comparePublishedStats} from '../../../../packages/core/src/feature-additions/employment-v2.js';
 import {resolveInternationalGuide} from '../../../../packages/core/src/feature-additions/international-v2.js';
 import {ApiFailure} from './auth/gates.js';
+import type {OwnerWorkspacePort} from './profiles/self-workspace-postgres.js';
+import {registerInternationalChecklistRoutes} from './owner-international-checklist-http.js';
+import {registerRecognitionProofRoutes} from './owner-recognition-proof-http.js';
+import {registerRecognitionAssetRoutes,validateRecognitionAssetsPort,type RecognitionAssetsPort} from './owner-recognition-assets-http.js';
+import {validateRecognitionProofServices,readRecognitionProofPage,recognitionActivityInfo,type RecognitionProofServices} from './owner-recognition-proof-service.js';
+import {withProofDeadline} from './profiles/recognition-cleanup-postgres.js';
 import {betaActor,betaRecheck,type BetaRouteVerifier} from './profiles/self-account-http.js';
 
 const Iso=z.iso.datetime({offset:true});
@@ -64,12 +70,19 @@ export interface TrustedOwnerInsightsQuota {
 export interface OwnerInsightsServices {
   source:TrustedOwnerInsightsSource;
   quota:TrustedOwnerInsightsQuota;
+  checklists?:Pick<OwnerWorkspacePort,'read'|'create'|'update'>;
+  proofReviews?:RecognitionProofServices;
+  assets?:RecognitionAssetsPort;
 }
 export function validateOwnerInsightsServices(v:OwnerInsightsServices):void{
   if(!v||typeof v.source?.read!=='function'
     ||typeof v.source?.revalidate!=='function'
     ||typeof v.quota?.consume!=='function')
     throw new Error('Owner insights require current rights source and durable quota');
+  if(v.checklists&&['read','create','update'].some(key=>typeof v.checklists?.[key as keyof typeof v.checklists]!=='function'))
+    throw new Error('Owner guide checklist store required');
+  if(v.proofReviews)validateRecognitionProofServices(v.proofReviews);
+  if(v.assets)validateRecognitionAssetsPort(v.assets);
 }
 const empty=z.strictObject({});
 const unique=<T extends {id:string}>(rows:readonly T[]):boolean=>
@@ -80,6 +93,9 @@ export function registerOwnerInsightsRoutes(input:{
 }):void{
   const {app,session,services}=input;
   if(services)validateOwnerInsightsServices(services);
+  registerInternationalChecklistRoutes({app,session,services,parse:raw=>Cases.parse(raw)});
+  registerRecognitionProofRoutes({app,session,services,parse:raw=>Cases.parse(raw)});
+  registerRecognitionAssetRoutes({app,session,services});
   app.get('/api/owner/features/v2/insights/:kind',async(req,reply)=>{
     reply.header('Cache-Control','no-store');
     empty.parse(req.query);
@@ -120,7 +136,19 @@ export function registerOwnerInsightsRoutes(input:{
           break;
         case 'RECOGNITION':
           if(!unique(snapshot.cases.map(c=>c.activity)))throw new Error('duplicate activity');
-          report={kind,reports:snapshot.cases.map(c=>V.RecognitionReportV2Schema.parse(
+          if(services.proofReviews){
+            const recognition=snapshot;
+            report=await withProofDeadline(async signal=>{
+              const reports:V.RecognitionReportV2[]=[];
+              for(const c of recognition.cases){
+                const page=await readRecognitionProofPage({actorId:actor.actorId,activityId:c.activity.id,asOf,now:session.now,services,signal,
+                  guard:()=>betaRecheck(req,session,actor),parse:raw=>Cases.parse(raw),snapshot:recognition});
+                reports.push(page.state==='READY'&&page.preparation?page.preparation:V.RecognitionReportV2Schema.parse(
+                  prepareRecognitionV2({rule:c.rule,activity:recognitionActivityInfo(c.activity),proofs:[],asOf,mode:'LIVE'})));
+              }
+              return {kind,reports};
+            },10000);
+          }else report={kind,reports:snapshot.cases.map(c=>V.RecognitionReportV2Schema.parse(
             prepareRecognitionV2({rule:c.rule,
               activity:{id:c.activity.id,kind:c.activity.kind,
                 ...(c.activity.endedAt?{endedAt:c.activity.endedAt}:{})},
