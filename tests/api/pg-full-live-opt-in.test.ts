@@ -26,6 +26,7 @@ import {proveSourceBrowserPg} from './source-browser-live-slice.js';
 import {proveSourceRuntimeReceipts} from './source-runtime-receipt-live-slice.js';
 import {proveGuideWorkspace} from './international-checklist-live-slice.js';
 import {proveRecognitionCleanup} from './recognition-cleanup-live-slice.js';
+import {proveRecognitionProofHttp} from './recognition-proof-http-live-slice.js';
 import {createApprovedDurableSourceExecutor} from '../../apps/api/src/modules/opportunities/source-ingestion-durable.js';
 import {ApprovedPlainTextExtractor} from '../../apps/api/src/modules/opportunities/approved-text-extractor.js';
 import {PostgresSourceRevisionWriter} from '../../apps/api/src/modules/opportunities/temporal-writer-postgres.js';
@@ -425,6 +426,9 @@ describe.skipIf(!RUN)('REAL PostgreSQL: full migrations and least-privilege adap
   });
   it('retains recognition erasure jobs through consent withdrawal and verifies owner isolation',async()=>{
     await proveRecognitionCleanup(admin,selfAccount);
+  });
+  it('uses owner proof HTTP extraction/review/redaction and durable erasure acknowledgment',async()=>{
+    await proveRecognitionProofHttp(admin,selfAccount);
   });
   it('isolates owner workspace REST data using consent locks, version CAS, audit and hard withdrawal',async()=>{
     const actorId='SYN-SELF-OWNER';

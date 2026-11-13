@@ -2,6 +2,7 @@ import {readFile} from 'node:fs/promises';
 import type {Pool} from 'pg';
 import {describe,it} from 'vitest';
 import {proveRecognitionCleanup} from './recognition-cleanup-live-slice.js';
+import {proveRecognitionProofHttp} from './recognition-proof-http-live-slice.js';
 describe.skipIf(process.env.HUFS_PROOF_CLEANUP_PGLITE!=='1')('synthetic recognition cleanup SQL',()=>{
   it('enqueues redaction/consent erasure atomically, isolates owners and drains only acknowledged cleanup',async()=>{
     const {PGlite}=await import(/* @vite-ignore */ new URL('../../local_only/sql-validation/node_modules/@electric-sql/pglite/dist/index.js',import.meta.url).href);
@@ -22,6 +23,7 @@ describe.skipIf(process.env.HUFS_PROOF_CLEANUP_PGLITE!=='1')('synthetic recognit
         return db.query(sql,[...params]);
       }})};
       await proveRecognitionCleanup(admin as unknown as Pool,owner as unknown as Pool);
+      await proveRecognitionProofHttp(admin as unknown as Pool,owner as unknown as Pool);
     }finally{await db.close();}
   },30000);
 });

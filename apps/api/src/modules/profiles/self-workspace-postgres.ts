@@ -78,8 +78,16 @@ export class PostgresOwnerWorkspaceStore implements OwnerWorkspacePort{
       if(consent.rows.length!==1||PersonalPurposeChoicesSchema.parse(
         consent.rows[0]?.choices_json).personalStorage!==true)
         throw new WorkspaceDenied();
+      let proofConsentVersion:number|undefined;
+      if(kind==='RECOGNITION_PROOF'){
+        const head=await c.query('SELECT version FROM api_self_consents WHERE actor_id=$1',[actorId]);
+        const version=Number(head.rows[0]?.version);
+        if(head.rows.length!==1||!Number.isSafeInteger(version)||version<1)throw new WorkspaceDenied();proofConsentVersion=version;
+      }
       const approvals:Array<{itemId:string;value:OwnerWorkspaceValue;operation:'READ'|'WRITE'}>=[];
       const gate=async(v:{itemId:string;value:OwnerWorkspaceValue;operation:'READ'|'WRITE'})=>{
+        if(v.operation==='WRITE'&&v.value.kind==='RECOGNITION_PROOF'&&'candidate' in v.value
+          &&v.value.storageConsentVersion!==proofConsentVersion)throw new WorkspaceDenied();
         await this.permit({actorId,kind,...v});approvals.push(v);
       };
       const result=await run(c,gate);

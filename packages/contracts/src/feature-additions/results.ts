@@ -9,6 +9,7 @@
 import {z} from 'zod';
 import {OpportunityCatalogItemSchema} from './index.js';
 import {OfficialHttpsUrlSchema} from './official-url.js';
+import {RecognitionProofItemSchema} from './proof-review.js';
 
 const Id=z.string().min(1).max(128).regex(/^[A-Za-z0-9_.:-]+$/);
 const Code=z.string().min(1).max(128);
@@ -75,6 +76,12 @@ export const RecognitionReportV2Schema=z.strictObject({
   officiallyRecognized:z.literal(false),
 });
 export type RecognitionReportV2=z.infer<typeof RecognitionReportV2Schema>;
+export const RecognitionProofPageSchema=z.discriminatedUnion('state',[
+  z.strictObject({state:z.literal('NOT_CONNECTED')}),
+  z.strictObject({state:z.literal('READY'),activityId:Id,asOf:z.iso.datetime({offset:true}),
+    ruleState:z.enum(['CURRENT','UNAVAILABLE']),ocrAllowed:z.boolean(),ruleRevisionId:Id.nullable(),expiresAt:z.iso.datetime({offset:true}).nullable(),
+    preparation:RecognitionReportV2Schema.nullable(),items:z.array(RecognitionProofItemSchema).max(210)}),
+]);
 
 export const SkillRowV2Schema=z.strictObject({
   requirementId:Id,sourceSpanId:Id,

@@ -5,7 +5,8 @@ const job:ProofCleanupJob={actorId:'SYN-OWNER',itemId:'SYN-PROOF',assetId:'SYN-A
 const receipt={actorId:job.actorId,assetId:job.assetId,assetVersion:job.assetVersion,operation:job.operation,
   receiptId:'SYN-RECEIPT',erasedAt:now,erasedComponents:['ORIGINAL_ASSET','OCR_CACHE','DERIVED_FIELDS','MODEL_INPUTS']};
 function fixture(){
-  const outbox:ProofCleanupOutbox={list:vi.fn(async()=>[job]),acknowledge:vi.fn(async()=>true),isAssetBlocked:vi.fn(async()=>true)};
+  const outbox:ProofCleanupOutbox={list:vi.fn(async()=>[job]),find:vi.fn(async()=>null),blockedProofIds:vi.fn(async()=>[]),
+    acknowledge:vi.fn(async()=>true),isAssetBlocked:vi.fn(async()=>true)};
   const eraser={erase:vi.fn(async(_input:unknown):Promise<unknown>=>receipt),verifyErasure:vi.fn(async()=>true)};
   return {outbox,eraser,input:{actorId:job.actorId,outbox,eraser,now:()=>now}};
 }

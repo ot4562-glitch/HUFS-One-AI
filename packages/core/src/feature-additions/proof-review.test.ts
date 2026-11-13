@@ -7,7 +7,7 @@ const cert=PROOF_OCR_CASES.find(c=>c.id==='cert')!;
 const rule=recognitionRule();
 const context={rule,scopeVersion:'a'.repeat(64),asOf:FIXED_NOW};
 function candidate(){return createProofReview({proofId:'SYN-PROOF',activityId:'SYN-ACTIVITY',assetId:'SYN-ASSET',
-  assetVersion:'SYN-FILE-R1',assetSha256:'b'.repeat(64),scopeVersion:context.scopeVersion,expiresAt:'2026-11-30T00:00:00Z',
+  assetVersion:'SYN-FILE-R1',assetSha256:'b'.repeat(64),scopeVersion:context.scopeVersion,storageConsentVersion:1,expiresAt:'2026-11-30T00:00:00Z',
   evidencePage:0,rule,asOf:FIXED_NOW,lines:cert.lines,...(cert.claimed?{claimed:cert.claimed}:{})});}
 const confirm=(value:ReturnType<typeof candidate>)=>confirmProofReview(value,{...context,maskingConfirmed:true,acceptedFieldNames:['ISSUER']});
 it('creates a version-bound review candidate without any raw OCR, identity lines or model/official approval',()=>{

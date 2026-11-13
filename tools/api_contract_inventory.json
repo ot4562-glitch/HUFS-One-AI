@@ -767,6 +767,35 @@
           }
         ]
       }
+    },
+    {
+      "id": "owner-recognition-proof",
+      "source": "apps/api/src/modules/owner-recognition-proof-http.ts",
+      "registrar": "registerRecognitionProofRoutes",
+      "composition": [
+        {
+          "path": "apps/api/src/modules/owner-v2-insights-http.ts",
+          "caller": "registerOwnerInsightsRoutes"
+        }
+      ],
+      "exposure": {
+        "mode": "INTERNAL_COMPOSITION_ONLY",
+        "conditions": [
+          "Registered by createIntegratedApi with BETA session checks; live source/consent/rights, provider configuration and operator acceptance are separate gates.",
+          "Static references do not prove source data, real-user runtime, browser or NCP acceptance.",
+          "Missing optional source configuration returns NOT_CONNECTED without a synthetic fallback; configured requests still recheck current authority.",
+          "Owner recognition OCR candidates (#512) require current official rules, owner file/OCR authority, locked storage-consent version and durable cleanup. Missing ports return NOT_CONNECTED; no upload, model permission or official recognition is granted."
+        ],
+        "refusalRefs": [
+          {
+            "path": "apps/api/src/main.ts"
+          },
+          {
+            "path": "apps/api/src/integration.ts",
+            "symbol": "createIntegratedApi"
+          }
+        ]
+      }
     }
   ],
   "routes": [
@@ -3460,6 +3489,166 @@
       "consumerRefs": [
         "apps/web/src/integrations/owner-api-client.ts",
         "apps/web/src/features/owner-insights/OwnerInternationalGuides.tsx"
+      ]
+    },
+    {
+      "id": "get-api-owner-features-v2-recognition-activityid-proofs",
+      "surface": "owner-recognition-proof",
+      "method": "GET",
+      "path": "/api/owner/features/v2/recognition/:activityId/proofs",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/results.ts",
+            "symbol": "RecognitionProofPageSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-recognition-proof.test.ts",
+        "tests/api/recognition-proof-http-live-slice.ts",
+        "tests/consumers/owner-recognition-proof-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-features-v2-recognition-activityid-proofs-id-extract",
+      "surface": "owner-recognition-proof",
+      "method": "POST",
+      "path": "/api/owner/features/v2/recognition/:activityId/proofs/:id/extract",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofMutationSchema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofExtractSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-recognition-proof.test.ts",
+        "tests/api/recognition-proof-http-live-slice.ts",
+        "tests/consumers/owner-recognition-proof-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-features-v2-recognition-activityid-proofs-id-confirm",
+      "surface": "owner-recognition-proof",
+      "method": "POST",
+      "path": "/api/owner/features/v2/recognition/:activityId/proofs/:id/confirm",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofMutationSchema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofConfirmSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-recognition-proof.test.ts",
+        "tests/api/recognition-proof-http-live-slice.ts",
+        "tests/consumers/owner-recognition-proof-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-features-v2-recognition-activityid-proofs-id-redact",
+      "surface": "owner-recognition-proof",
+      "method": "POST",
+      "path": "/api/owner/features/v2/recognition/:activityId/proofs/:id/redact",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofMutationSchema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofRedactSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-recognition-proof.test.ts",
+        "tests/api/recognition-proof-http-live-slice.ts",
+        "tests/consumers/owner-recognition-proof-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-features-v2-recognition-activityid-proofs-id-cleanup",
+      "surface": "owner-recognition-proof",
+      "method": "POST",
+      "path": "/api/owner/features/v2/recognition/:activityId/proofs/:id/cleanup",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofMutationSchema"
+          },
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionProofCleanupSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-recognition-proof.test.ts",
+        "tests/api/recognition-proof-http-live-slice.ts",
+        "tests/consumers/owner-recognition-proof-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
+      ]
+    },
+    {
+      "id": "post-api-owner-features-v2-recognition-cleanup",
+      "surface": "owner-recognition-proof",
+      "method": "POST",
+      "path": "/api/owner/features/v2/recognition/cleanup",
+      "primaryIssue": 27,
+      "dto": {
+        "state": "REFERENCES_ONLY",
+        "refs": [
+          {
+            "path": "packages/contracts/src/feature-additions/proof-review.ts",
+            "symbol": "RecognitionCleanupBatchSchema"
+          }
+        ]
+      },
+      "testRefs": [
+        "tests/api/owner-recognition-proof.test.ts",
+        "tests/api/recognition-proof-http-live-slice.ts",
+        "tests/consumers/owner-recognition-proof-client.test.ts"
+      ],
+      "consumerRefs": [
+        "apps/web/src/integrations/owner-api-client.ts"
       ]
     }
   ],

@@ -19,6 +19,7 @@ export const ProofReviewCandidateSchema=z.strictObject({
 });
 const identity={kind:z.literal('RECOGNITION_PROOF'),dataMode:z.literal('OWNER_CONSENTED'),
   proofId:Id,activityId:Id,assetId:Id,assetVersion:Id,scopeVersion:Hash,
+  storageConsentVersion:z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
   officiallyRecognized:z.literal(false),modelInputAllowed:z.literal(false)};
 const binding={...identity,assetSha256:Hash,ruleId:Id,ruleRevisionId:Id,asOf:Iso,expiresAt:Iso,
   evidencePage:z.number().int().min(0).max(50),candidate:ProofReviewCandidateSchema};
@@ -44,3 +45,32 @@ export const RecognitionProofReviewSchema=z.discriminatedUnion('state',[Pending,
     ctx.addIssue({code:'custom',message:'Proof review lease must follow its snapshot'});
 });
 export type RecognitionProofReview=z.infer<typeof RecognitionProofReviewSchema>;
+export const RecognitionProofExtractSchema=z.strictObject({expectedVersion:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER-1),contextVersion:Hash});
+export const RecognitionProofConfirmSchema=z.strictObject({expectedVersion:z.number().int().min(1).max(Number.MAX_SAFE_INTEGER-1),contextVersion:Hash,
+  maskingConfirmed:z.literal(true),acceptedFieldNames:z.array(ProofReviewFieldNameSchema).max(6).refine(v=>new Set(v).size===v.length)});
+export const RecognitionProofRedactSchema=z.strictObject({expectedVersion:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER-1),scopeVersion:Hash,
+  action:z.enum(['REJECT','WITHDRAW','REQUEST_DELETE'])});
+export const RecognitionProofCleanupSchema=z.strictObject({expectedVersion:z.number().int().min(1).max(Number.MAX_SAFE_INTEGER-1),scopeVersion:Hash});
+export const RecognitionProofItemSchema=z.strictObject({proofId:Id,activityId:Id,assetId:Id,assetVersion:Id,
+  version:z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),state:z.enum(['AVAILABLE','CURRENT','STALE','REDACTED']),
+  contextVersion:Hash.nullable(),recordScopeVersion:Hash.nullable(),expiresAt:Iso.nullable(),review:RecognitionProofReviewSchema.nullable(),
+}).superRefine((item,ctx)=>{
+  const active=item.review&&'candidate' in item.review;
+  if(item.state==='AVAILABLE'&&(item.version!==0||item.review!==null||item.recordScopeVersion!==null||!item.contextVersion||!item.expiresAt)
+    ||item.state==='CURRENT'&&(!active||item.version<1||item.recordScopeVersion!==item.contextVersion||!item.expiresAt)
+    ||item.state==='STALE'&&(item.review!==null||item.version<1||!item.recordScopeVersion)
+    ||item.state==='REDACTED'&&(!item.review||active||item.version<1||item.contextVersion!==null||item.expiresAt!==null)
+    ||item.review&&(item.review.proofId!==item.proofId||item.review.activityId!==item.activityId||item.review.assetId!==item.assetId
+      ||item.review.assetVersion!==item.assetVersion||item.review.scopeVersion!==item.recordScopeVersion))
+    ctx.addIssue({code:'custom',message:'Proof view does not match current stored/source binding'});
+});
+export type RecognitionProofItem=z.infer<typeof RecognitionProofItemSchema>;
+export const RecognitionProofMutationSchema=z.discriminatedUnion('state',[
+  z.strictObject({state:z.literal('NOT_CONNECTED')}),z.strictObject({state:z.literal('READY'),item:RecognitionProofItemSchema}),
+]);
+export const RecognitionCleanupBatchSchema=z.discriminatedUnion('state',[
+  z.strictObject({state:z.literal('NOT_CONNECTED')}),
+  z.strictObject({state:z.literal('READY'),attempted:z.number().int().min(0).max(1),acknowledged:z.number().int().min(0).max(1),
+    failed:z.number().int().min(0).max(1),batchLimitReached:z.boolean()})
+    .refine(v=>v.attempted===v.acknowledged+v.failed),
+]);

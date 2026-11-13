@@ -44,6 +44,9 @@ const Id=z.string().regex(/^[A-Za-z0-9_-]{1,90}$/);
 const CatalogId=z.string().regex(/^[A-Za-z0-9_:-]{1,90}$/);
 const Limit=z.number().int().min(1).max(50);
 const Iso=z.iso.datetime({offset:true});
+const ProofRef=z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/).refine(v=>v!=='.'&&v!=='..');
+const proofPath=(activityId:string,id?:string,action?:string)=>'/api/owner/features/v2/recognition/'+encodeURIComponent(clientInput(ProofRef,activityId))
+  +'/proofs'+(id!==undefined?'/'+encodeURIComponent(clientInput(ProofRef,id)):'')+(action?'/'+action:'');
 const WorkspaceQuerySchema=z.strictObject({afterId:Id.optional(),limit:Limit.optional()});
 const CatalogQuerySchema=z.strictObject({q:z.string().trim().min(2).max(100).optional(),
   afterId:CatalogId.optional(),limit:Limit.optional(),asOf:Iso.optional()});
@@ -435,6 +438,47 @@ export class HufsOwnerApiClient {
     const result=await this.request('/api/owner/features/v2/insights/'+name,V.OwnerInsightsResponseSchema,{signal});
     requireMatchingReceipt(result.state==='NOT_CONNECTED'?result.kind===name:result.result.kind===name);
     return result;
+  }
+  async getOwnerRecognitionProofs(activityId:string,signal?:AbortSignal){
+    const id=clientInput(ProofRef,activityId),result=await this.request(proofPath(id),V.RecognitionProofPageSchema,{signal});
+    if(result.state==='READY')requireMatchingReceipt(result.activityId===id&&result.items.every(item=>item.activityId===id)
+      &&new Set(result.items.map(item=>item.proofId)).size===result.items.length
+      &&new Set(result.items.map(item=>item.assetId)).size===result.items.length);
+    return result;
+  }
+  async extractOwnerRecognitionProof(activityId:string,assetId:string,change:z.input<typeof V.RecognitionProofExtractSchema>,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId),asset=clientInput(ProofRef,assetId),input=clientInput(V.RecognitionProofExtractSchema,change);
+    const result=await this.mutate(proofPath(activity,asset,'extract'),V.RecognitionProofMutationSchema,'POST',input,signal);
+    if(result.state==='READY')requireMatchingReceipt(result.item.activityId===activity&&result.item.assetId===asset
+      &&result.item.version===input.expectedVersion+1&&result.item.contextVersion===input.contextVersion&&result.item.state==='CURRENT'
+      &&result.item.review?.state==='NEEDS_REVIEW');return result;
+  }
+  async confirmOwnerRecognitionProof(activityId:string,proofId:string,change:z.input<typeof V.RecognitionProofConfirmSchema>,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId),id=clientInput(ProofRef,proofId),input=clientInput(V.RecognitionProofConfirmSchema,change);
+    const result=await this.mutate(proofPath(activity,id,'confirm'),V.RecognitionProofMutationSchema,'POST',input,signal);
+    if(result.state==='READY')requireMatchingReceipt(result.item.activityId===activity&&result.item.proofId===id
+      &&result.item.version===input.expectedVersion+1&&result.item.contextVersion===input.contextVersion&&result.item.state==='CURRENT'
+      &&result.item.review?.state==='OWNER_CONFIRMED_CANDIDATE'
+      &&same(result.item.review.candidate.fields.map(f=>f.name).sort(),[...input.acceptedFieldNames].sort()));return result;
+  }
+  async redactOwnerRecognitionProof(activityId:string,proofId:string,change:z.input<typeof V.RecognitionProofRedactSchema>,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId),id=clientInput(ProofRef,proofId),input=clientInput(V.RecognitionProofRedactSchema,change);
+    const result=await this.mutate(proofPath(activity,id,'redact'),V.RecognitionProofMutationSchema,'POST',input,signal);
+    const expected=input.action==='REJECT'?'REJECTED':input.action==='WITHDRAW'?'WITHDRAWN':'DELETION_PENDING';
+    if(result.state==='READY')requireMatchingReceipt(result.item.activityId===activity&&result.item.proofId===id
+      &&result.item.version===input.expectedVersion+1&&result.item.recordScopeVersion===input.scopeVersion&&result.item.state==='REDACTED'
+      &&result.item.review?.state===expected&&'cleanupState' in result.item.review&&result.item.review.cleanupState==='PENDING');return result;
+  }
+  async cleanupOwnerRecognitionProof(activityId:string,proofId:string,change:z.input<typeof V.RecognitionProofCleanupSchema>,signal?:AbortSignal){
+    const activity=clientInput(ProofRef,activityId),id=clientInput(ProofRef,proofId),input=clientInput(V.RecognitionProofCleanupSchema,change);
+    const result=await this.mutate(proofPath(activity,id,'cleanup'),V.RecognitionProofMutationSchema,'POST',input,signal);
+    if(result.state==='READY')requireMatchingReceipt(result.item.activityId===activity&&result.item.proofId===id
+      &&result.item.recordScopeVersion===input.scopeVersion&&result.item.state==='REDACTED'
+      &&[input.expectedVersion,input.expectedVersion+1].includes(result.item.version)&&!!result.item.review&&'cleanupState' in result.item.review
+      &&(result.item.review.cleanupState==='ACKNOWLEDGED'||result.item.version===input.expectedVersion));return result;
+  }
+  async requestOwnerRecognitionCleanup(signal?:AbortSignal){
+    return this.mutate('/api/owner/features/v2/recognition/cleanup',V.RecognitionCleanupBatchSchema,'POST',{},signal);
   }
   async getOwnerGuideChecklist(guideId:string,locale:'ko'|'en'|'zh',signal?:AbortSignal){
     const id=clientInput(z.string().regex(/^[A-Za-z0-9_.:-]{1,128}$/),guideId);

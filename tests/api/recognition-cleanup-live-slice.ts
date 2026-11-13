@@ -18,7 +18,7 @@ export async function proveRecognitionCleanup(admin:Pool,owner:Pool){
   await accounts.putConsents(actorId,{expectedVersion:0,choices});
   const fixture=PROOF_OCR_CASES.find(c=>c.id==='cert')!;
   const value=createProofReview({proofId:'SYN-PROOF',activityId:'SYN-ACTIVITY',assetId:'SYN-ASSET',assetVersion:'SYN-ASSET-R1',
-    assetSha256:'b'.repeat(64),scopeVersion:'a'.repeat(64),expiresAt:'2026-11-30T00:00:00Z',evidencePage:0,
+    assetSha256:'b'.repeat(64),scopeVersion:'a'.repeat(64),storageConsentVersion:1,expiresAt:'2026-11-30T00:00:00Z',evidencePage:0,
     rule:recognitionRule(),asOf:FIXED_NOW,lines:fixture.lines,claimed:fixture.claimed!});
   const created=await store.create({actorId,itemId:'SYN-PROOF',value});expect(created.version).toBe(1);
   const rejected=redactProofReview(value,{action:'REJECT',asOf:FIXED_NOW});
@@ -51,10 +51,12 @@ export async function proveRecognitionCleanup(admin:Pool,owner:Pool){
   // tombstones also retain a purge job without retaining their candidate text.
   await accounts.putConsents(actorId,{expectedVersion:2,choices});
   expect(await outbox.isAssetBlocked({actorId,assetId:'SYN-ASSET'})).toBe(true);
-  const second={...value,proofId:'SYN-PROOF-2',assetId:'SYN-ASSET-2',scopeVersion:'c'.repeat(64)};
+  await expect(store.create({actorId,itemId:'SYN-STALE-PROOF',value:{...value,proofId:'SYN-STALE-PROOF',assetId:'SYN-STALE-ASSET'}}))
+    .rejects.toThrow('access denied');
+  const second={...value,proofId:'SYN-PROOF-2',assetId:'SYN-ASSET-2',scopeVersion:'c'.repeat(64),storageConsentVersion:3};
   await store.create({actorId,itemId:second.proofId,value:second});
   await store.delete({actorId,kind:'RECOGNITION_PROOF',itemId:second.proofId,expectedVersion:1});
-  const third={...value,proofId:'SYN-PROOF-3',assetId:'SYN-ASSET-3',scopeVersion:'c'.repeat(64)};
+  const third={...value,proofId:'SYN-PROOF-3',assetId:'SYN-ASSET-3',scopeVersion:'c'.repeat(64),storageConsentVersion:3};
   await store.create({actorId,itemId:third.proofId,value:third});
   await accounts.putConsents(actorId,{expectedVersion:3,choices:{...choices,personalStorage:false}});
   const remaining=await outbox.list({actorId,limit:10});expect(remaining).toHaveLength(2);

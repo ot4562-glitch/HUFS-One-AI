@@ -193,3 +193,24 @@ Node 24.15.0의 집중 회귀 5개 파일/59개 시험과 전체 회귀 436개 �
 합성 PGlite의 실제 6개 migration/제한 역할에서 후보 저장·정화, 원장 문구 비잔존, 실패 후 대기, 확인 후 ACK, 다른 actor RLS, 동의 철회 후 작업 보존/정리, 재동의 후 옛 asset 차단, active 후보 hard purge, generic CAS tombstone 및 receipt 변경 거부를 통과했다. 같은 proof를 native disposable PG suite에도 추가했으나 다중 연결/NCP는 NOT_RUN이다. 단위/실제 SQL 최종 3개 파일/18개 시험 PASS, 그 전 계약/소비자/기존 기능 회귀 84개 파일/1,154개 시험 PASS. 타입 검사·API 빌드·공개 경계 172개 PASS. API 목록 감사는 finding 0/validation PASS, 기존 미판정에 따른 coverage UNKNOWN·exit 3·RELEASE_BLOCKED 유지다.
 
 독립 코드 검토에서 목록/ACK·권한/pool 획득에 시간 제한이 빠진 결함을 재현하고 위 제한·AbortSignal/SQL 단계 검사를 추가했다. 종료 뒤의 원격 follow-up/ACK 및 이미 확인한 receipt 덮어쓰기 반례도 보완했다. 좁힌 후속 검토에서 남은 차단 결함은 없었다. 현재는 저장·정리 기반이며 **전용 후보 API·receipt 공급자 구성·실제 owner client/UI·실제 파일/OCR/모델 입력 정리·NCP/실학생 인수는 아직 완료하지 않았다.** 다음은 현재 규정/파일/OCR 권한을 신뢰된 source로 확인하는 API와 CAS·차단 원장 소비를 연결한다.
+
+
+### OCR 후보의 전용 API·웹 client 연결 — #512 (화면 연결 대기)
+
+후보 목록 GET `/api/owner/features/v2/recognition/:activityId/proofs`와 extract/confirm/redact/cleanup POST, 동의 철회 후의 본인 cleanup batch POST를 연결했다. 신뢰된 파일 공급자의 메타데이터 조회는 OCR을 실행하지 않으며, 명시적 extract만 현재 권한·예산을 확인한 공급자를 호출한다. 브라우저가 원시 파일·OCR 줄·후보 값·삭제 receipt를 제출하는 API는 없다. 본인/세션·Origin/CSRF·현재 규정/활동·파일 판본/해시·동의/권리·유효기한·할당량을 검사한다. 원시 OCR은 core의 제한된 정규화 입력에서만 처리하며 후보/HTTP 응답에는 허용 필드만 남긴다. 미연결은 NOT_CONNECTED다.
+
+`ownerInsights.proofReviews`는 private workspace store, trusted documents(list/extract/revalidate), cleanup outbox 및 선택적 eraser/독립 verifyErasure를 명시적으로 요구한다. `RecognitionDocumentCatalogueSchema`가 파일/actor/활동과 metadata/OCR 목적을 결속한다. 실제 factory는 현재 소유권·각 목적의 동의/권리·불변 파일 판본·CLOVA 호출의 durable 예산을 검증해야 하며, 이 코드가 NCP 연결이나 실제 OCR/파일 저장을 만들어 주지는 않는다. 출처/규정이 바뀐 후보, 만료된 후보와 이용권 없는 후보는 본문 없이 STALE로 표시한다. 다른 탭의 변경은 409로 보류한다. 규정/권한 판본이 달라졌거나 후보가 만료되면 현재 권한을 확인한 뒤 명시적으로 재추출해야 하며 terminal 문서는 자동 복원하지 않는다.
+
+trusted catalogue/후보에 실제 `api_self_consents.version`에 대응하는 `storageConsentVersion`을 추가했다. workspace는 기존 동의 행의 FOR SHARE 잠금을 유지한 채 현재 SQL version을 확인하고, 후보 본문 쓰기의 version이 다르면 거부한다. 철회 전 작업이 재동의 뒤 늦게 저장되는 실제 SQL 반례를 실패로 재현해 수정했다. 개인 본문을 새로 쓰지 않는 정화·삭제 확인은 규정/옛 동의 epoch 때문에 막지 않는다. API와 contracts/client를 함께 갱신하고, factory가 실제 version을 제공해야 한다.
+
+현재 준비 보고서와 기존 insights 소비자는 현재·본인 검토·보류 없는 후보만 SELF_REPORTED 서류로 합친다. 자체 후보 ID와 차단 원장의 ID는 source가 반환한 사본보다 lifecycle 상태를 우선한다. OCR 권한이 없는 경우에도 별도로 허가된 기존 수동 증빙의 준비 결과는 유지한다. 공식 인정은 언제나 false이며 모델 입력 등록 경로를 추가하지 않았다. 기존 경험 AI 등록 SQL은 EXPERIENCE kind만 읽는다. 모델/원본 파생물 정리 확인은 eraser의 독립 증거가 별도로 필요하다.
+
+거부/철회/삭제는 후보를 먼저 정화하고 정확한 판본의 outbox 예약을 확인한 뒤 응답한다. 예약이 없으면 성공으로 반환하지 않는다. OCR 실행 전에도 본인 파일 메타데이터 권한으로 철회/삭제 요청을 만들 수 있다. cleanup은 정확한 대상 작업만 처리하고, 이미 독립적으로 확인된 outbox receipt를 workspace 상태에 CAS로 반영한다. 외부 삭제 확인이 없으면 PENDING이며, 실제 NCP 삭제로 표시하지 않는다. 저장 동의 철회로 workspace 자체가 삭제된 뒤에도 본인 batch는 별도의 정리 권한으로 한 건씩 진행할 수 있다. 요청 단계와 batch는 10초/각 정리 I/O 5초로 제한하며, 완료되지 않은 저장/COMMIT 결과는 재조회해야 한다.
+
+응답 직전에는 source/파일/actor, 차단 원장, context lease와 후보 자체 lease를 재검사한다. mutation은 최종 저장 버전/본문을 다시 읽고, GET도 마지막 provider/outbox await 뒤 현재 활동의 bounded 저장 목록을 다시 읽어 버전/내용·새 후보 생성 여부가 달라졌으면 409로 거부한다. 따라서 다른 탭이 일부 필드만 수락한 동안 예전 GET이 제외된 필드를 다시 표시하지 않는다. 이후 일어나는 외부 변경을 push 없이 즉시 감지한다는 보장은 아니다.
+
+웹 owner client에 목록·명시적 추출·수락·정화·삭제 확인·동의 철회 후 batch 메서드를 추가했다. fresh CSRF와 AbortSignal을 재사용하고 활동/파일/후보·scope·CAS·선택 필드·정화/삭제 상태의 정확한 응답 일치를 검사한다. generic workspace CRUD는 계속 proof kind를 거부한다. 아직 `OwnerInsightsPanel`의 실제 검토/마스킹 UI와 roleServices 연결은 추가하지 않았다.
+
+모의 권한·OCR/삭제 공급자와 실제 제한 역할 PGlite SQL을 연결한 HTTP→저장→수락→기존 insights→삭제 예약→독립 확인→ACK→동의 철회/batch 흐름 PASS. PostgreSQL JSONB 순서와 무관하게 본문을 검증한다. 같은 proof를 native PG suite에도 연결했지만 다중 연결/NCP는 NOT_RUN이다. 집중 38개 시험 PASS 당시 이후 추가한 GET 경합 2개도 실패→409로 재현·수정했고 최종 HTTP 15개·client 5개 PASS. 최종 전체 회귀는 Node 24.15.0에서 441개 파일/5,179개 시험 PASS, 15개 파일/110개 시험 명시적 SKIP이다. 타입 검사·API 빌드/맵 제거·공개 경계 172개·API 목록 회귀 30개 PASS. 새 6개 경로의 실제 registrar/DTO/시험/client를 API 목록에 등록했다. 감사 validation PASS/finding 0, 기존 정적 미판정으로 coverage UNKNOWN·exit 3·RELEASE_BLOCKED는 유지한다.
+
+독립 코드 검토에서 수동 증빙/OCR 권한 결합, 마지막 await 중 lease 만료, GET의 동시 수락/마스킹 뒤 낡은 필드 반환을 재현해 수정했다. 동의 epoch, 이미 지난 후보 lease의 연장, 반환 직전 철회, 예약 없는 정리, 새 후보 생성 경합도 보완했고 마지막 좁힌 검토에 남은 알려진 결함은 없었다. **남은 #512:** 실제 사용자 검토·마스킹·수락/거부·철회/삭제 UI, roleServices 및 합성 브라우저 검증. 실제 업로드/파일·CLOVA·NCP provider factory, 독립 Gold·실학생 E2E는 NOT_CONNECTED/NOT_RUN이다. OSS 잔여 비교, 전체 이슈별 완료 감사와 최종 PR은 계속 남아 있다.

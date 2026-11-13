@@ -13,6 +13,7 @@ const Lines=z.array(z.strictObject({id:Id,text:z.string().max(1000),confidence:z
     .refine(b=>b[0]<b[2]&&b[1]<b[3])})).min(1).max(500);
 const Claims=z.strictObject({organization:z.string().trim().min(1).max(160).optional(),
   startDate:z.iso.date().optional(),endDate:z.iso.date().optional()});
+export const ProofReviewExtractionSchema=z.strictObject({evidencePage:z.number().int().min(0).max(50),lines:Lines,claimed:Claims.optional()});
 interface Context{rule:V.ActivityRecognitionRule;scopeVersion:string;asOf:string;mode?:FeatureMode;}
 export class ProofReviewStale extends Error{constructor(){super('Proof review authority or state changed');}}
 function ruleAt(context:Context){
@@ -29,7 +30,7 @@ function activeAt(review:Review,context:Context):asserts review is Pending|Confi
 /** Called only with an independently owner/asset/permission-checked OCR snapshot.
  * Parsing here is not authentication; it cannot grant file/OCR rights. */
 export function createProofReview(input:{proofId:string;activityId:string;assetId:string;assetVersion:string;assetSha256:string;
-  scopeVersion:string;expiresAt:string;evidencePage:number;lines:readonly ProofOcrLine[];claimed?:ClaimedActivity}&Context):Pending{
+  scopeVersion:string;storageConsentVersion:number;expiresAt:string;evidencePage:number;lines:readonly ProofOcrLine[];claimed?:ClaimedActivity}&Context):Pending{
   ruleAt(input);const lines=Lines.parse(input.lines),claimed=Claims.parse(input.claimed??{});
   const extraction=extractProofCandidate(lines,{
     ...(claimed.organization!==undefined?{organization:claimed.organization}:{}),
@@ -45,6 +46,7 @@ export function createProofReview(input:{proofId:string;activityId:string;assetI
   const result=V.RecognitionProofReviewSchema.parse({kind:'RECOGNITION_PROOF',dataMode:'OWNER_CONSENTED',state:'NEEDS_REVIEW',
     proofId:input.proofId,activityId:input.activityId,assetId:input.assetId,assetVersion:input.assetVersion,
     assetSha256:input.assetSha256,scopeVersion:input.scopeVersion,ruleId:input.rule.id,ruleRevisionId:input.rule.source.revisionId,
+    storageConsentVersion:input.storageConsentVersion,
     asOf:input.asOf,expiresAt,evidencePage:input.evidencePage,maskingConfirmed:false,officiallyRecognized:false,modelInputAllowed:false,
     candidate:{proposedKind:extraction.proposedKind,confidence:extraction.confidence,fields:extraction.fields,
       flags,maskedLineCount:extraction.maskedLineIds.length,personalDataLineCount:extraction.personalDataLineIds.length,
@@ -80,8 +82,8 @@ export function redactProofReview(raw:Review,input:{action:'REJECT'|'WITHDRAW'|'
   const acknowledged=input.action==='ACK_DELETE'||input.action==='ACK_CLEANUP';
   if(acknowledged)Id.parse(input.removalReceiptId);
   if(!acknowledged&&input.removalReceiptId!==undefined)throw new ProofReviewStale();
-  const {kind,dataMode,proofId,activityId,assetId,assetVersion,scopeVersion}=review;
-  return V.RecognitionProofReviewSchema.parse({kind,dataMode,proofId,activityId,assetId,assetVersion,scopeVersion,
+  const {kind,dataMode,proofId,activityId,assetId,assetVersion,scopeVersion,storageConsentVersion}=review;
+  return V.RecognitionProofReviewSchema.parse({kind,dataMode,proofId,activityId,assetId,assetVersion,scopeVersion,storageConsentVersion,
     state:input.action==='ACK_CLEANUP'?review.state:input.action==='REJECT'?'REJECTED':input.action==='WITHDRAW'?'WITHDRAWN':input.action==='REQUEST_DELETE'?'DELETION_PENDING':'DELETED',
     redactedAt:asOf,officiallyRecognized:false,modelInputAllowed:false,
     cleanupState:acknowledged?'ACKNOWLEDGED':'PENDING',...(acknowledged?{cleanupReceiptId:input.removalReceiptId}:{}),
